@@ -1,0 +1,9 @@
+{
+  "name": "processpuzzle-ui-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/processpuzzle-ui-e2e/src",
+  "implicitDependencies": ["processpuzzle-ui"],
+  "// targets": "to see all targets run: nx show project processpuzzle-ui-e2e --web",
+  "targets": {}
+}
