@@ -1,0 +1,57 @@
+{
+  "name": "base-entity",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/base-entity/src",
+  "prefix": "base-entity",
+  "tags": ["scope:base-entity", "type:domain"],
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:ng-packagr",
+      "options": {
+        "project": "libs/base-entity/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/base-entity/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/base-entity/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/base-entity/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true,
+          "coverageDirectory": "{projectRoot}/reports/coverage"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/base-entity/src/**/*.ts", "libs/base-entity/src/**/*.spec.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    }
+  }
+}

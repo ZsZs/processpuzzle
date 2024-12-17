@@ -1,0 +1,8 @@
+<ng-container *ngIf="config().visible">
+    <div class="row" [formGroup]="formGroup">
+      <mat-form-field [ngClass]="config().styleClass">
+        <mat-label [ngClass]="config().labelClass">{{config().label}}</mat-label>
+        <textarea matInput formControlName="{{config().attrName}}" placeholder="Ex. It makes me feel..."></textarea>
+      </mat-form-field>
+    </div>
+</ng-container>

@@ -1,0 +1,11 @@
+<ng-container *ngIf="config().visible">
+  <div class="row" [formGroup]="formGroup">
+    <mat-form-field>
+      <mat-label>{{ config().attrName }}</mat-label>
+      <input matInput formControlName="{{config().attrName}}">
+    </mat-form-field>
+    <a (click)="navigateToRelated()" aria-label="Related entity">
+      <mat-icon>link</mat-icon>
+    </a>
+  </div>
+</ng-container>

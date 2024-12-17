@@ -1,0 +1,10 @@
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
+  <a mat-tab-link (click)="onShowList()" [active]="store.currentTab() === listTabName()">{{listTabName()}}</a>
+  <a mat-tab-link [disabled]="store.currentEntity() === undefined" (click)="onShowDetails()" [active]="store.currentTab() === detailsTabName()">{{detailsTabName()}}</a>
+</nav>
+
+<mat-tab-nav-panel #tabPanel>
+  <base-entity-statusbar [baseEntityListOptions]="baseEntityListOptions()"/>
+  <base-entity-toolbar [baseEntityListOptions]="baseEntityListOptions()"/>
+  <router-outlet [routerOutletData]="baseEntityListOptions()"/>
+</mat-tab-nav-panel>

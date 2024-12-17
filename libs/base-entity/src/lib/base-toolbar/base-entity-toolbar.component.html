@@ -1,0 +1,22 @@
+<mat-toolbar *ngIf="store.activeRouteSegment() === RouteSegments.LIST_ROUTE">
+  <div class="dense-3" [ngStyle]="{'padding-top': '12px' }">
+    <mat-form-field>
+      <input test-id="filter-input" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
+    </mat-form-field>
+  </div>
+  <span class="toolbar-spacer"></span>
+  @if(isSmallDevice()) {
+    <div [ngClass]="layoutService.layoutClass()">
+      <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu"><mat-icon>menu</mat-icon> Choose action</button>
+      <mat-menu test-id="menu" #beforeMenu="matMenu" xPosition="before">
+        <button test-id="add" mat-menu-item (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+        <button test-id="delete" mat-menu-item [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+      </mat-menu>
+    </div>
+  } @else {
+    <div [ngClass]="layoutService.layoutClass()">
+      <button test-id="add" mat-button (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+      <button test-id="delete" mat-button [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+    </div>
+  }
+</mat-toolbar>

@@ -1,0 +1,12 @@
+<ng-container *ngIf="config().visible">
+    <div class="row" [formGroup]="formGroup">
+      <mat-form-field>
+        <mat-label>{{config().label}}</mat-label>
+        <mat-select formControlName="{{config().attrName}}">
+          @for (option of config().selectables; track option) {
+            <mat-option [value]="option.value">{{option.value}}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+</ng-container>

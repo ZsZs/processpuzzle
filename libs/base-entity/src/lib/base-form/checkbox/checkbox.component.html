@@ -1,0 +1,5 @@
+<ng-container *ngIf="config().visible">
+    <div [formGroup]="formGroup" class="row">
+      <mat-checkbox [ngClass]="config().labelClass" formControlName="{{config().attrName}}">{{config().label}}</mat-checkbox>
+    </div>
+</ng-container>

@@ -1,0 +1,9 @@
+<ng-container *ngIf="config().visible">
+    <ng-container *ngIf="config().isHeading; else normalText">
+        <h3 [id]="config().attrName">{{value()}}</h3>
+    </ng-container>
+
+    <ng-template #normalText>
+        <p [id]="config().attrName" [ngStyle]="config().style">{{value()}}</p>
+    </ng-template>
+</ng-container>

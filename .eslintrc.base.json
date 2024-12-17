@@ -1,0 +1,47 @@
+{
+  "root": true,
+  "ignorePatterns": ["**/*"],
+  "plugins": ["@nx"],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx" ],
+      "rules": {
+        "@nx/enforce-module-boundaries": [
+          "error",
+          {
+            "enforceBuildableLibDependency": true,
+            "allow": ["@angular/**", "@basis-gui/**","@ngrx", "build-url-ts", "eslint", "jest-preset-angular/**", "rxjs", "uuid"],
+            "depConstraints": [
+              {"sourceTag": "scope:shared", "onlyDependOnLibsWithTags": ["scope:shared"]},
+              {"sourceTag": "scope:base-entity", "onlyDependOnLibsWithTags": ["scope:shared"]},
+              {"sourceTag": "type:app", "onlyDependOnLibsWithTags": ["scope:*", "type:app", "type:feature", "type:util"]},
+              {"sourceTag": "type:domain", "onlyDependOnLibsWithTags": ["type:domain", "type:util"]},
+              {"sourceTag": "type:feature", "onlyDependOnLibsWithTags": ["type:domain", "type:util"]},
+              {"sourceTag": "type:usecase", "onlyDependOnLibsWithTags": ["type:domain", "type:util"]},
+              {"sourceTag": "type:util", "onlyDependOnLibsWithTags": ["type:util"]}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:@nx/typescript"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    },
+    {
+      "files": ["*.js", "*.jsx"],
+      "extends": ["plugin:@nx/javascript"],
+      "rules": {}
+    },
+    {
+      "files": ["*.spec.ts", "*.spec.tsx", "*.spec.js", "*.spec.jsx"],
+      "env": {
+        "jest": true
+      },
+      "rules": {}
+    }
+  ]
+}

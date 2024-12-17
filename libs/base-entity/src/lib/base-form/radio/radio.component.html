@@ -1,0 +1,20 @@
+<ng-container *ngIf="config().visible">
+    <div class="row" [formGroup]="formGroup">
+        <ng-container *ngIf="config().label">
+            <label [for]="config().attrName">{{config().label}}</label>
+        </ng-container>
+        <div 
+            [ngClass]="config().styleClass ? config().styleClass : ''"
+            *ngFor="let radio of config().selectables; let i = index">
+            <input type="radio"
+                class="form-check-input"
+                [name]="config().attrName"
+                [id]="config().attrName + i"
+                [value]="radio.value"
+                [checked]="radio.key === value()"
+                [disabled]="config().disabled"
+            >
+            <label [for]="config().attrName" [ngClass]="config().labelClass ? config().labelClass : ''">{{radio.value}}</label>
+        </div>
+    </div>
+</ng-container>
