@@ -15,12 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@processpuzzle/base-entity": ["./dist/base-entity"],
-      "@processpuzzle/util": ["./dist/util"]
-      /*
       "@processpuzzle/base-entity": ["libs/base-entity/src/public-api.ts"],
       "@processpuzzle/util": ["libs/util/src/public-api.ts"]
-      */
     }
   },
   "exclude": ["node_modules", "tmp"]

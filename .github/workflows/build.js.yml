@@ -29,8 +29,6 @@ jobs:
       run: npm ci
     - name: Lint libs and apps
       run: npm run lint-all-ci
-    - name: Build util
-      run: npm run build-util
     - name: Test libs and apps
       run: npm run test-all-ci
     - name: SonarQube Scan
