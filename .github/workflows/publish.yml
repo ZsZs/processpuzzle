@@ -18,6 +18,6 @@ jobs:
       - name: Build libs
         run: npm run build-util-ci --if-present
       - name: Publish package on NPM 📦
-        run: npm publish
+        run: nx release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
