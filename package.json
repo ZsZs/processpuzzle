@@ -9,6 +9,7 @@
     "i18n-processpuzzle-ui": "nx extract-i18n processpuzzle-ui",
     "build-all-ci": "nx run-many -t build --configuration=production --no-cloud",
     "build-base-entity": "nx run base-entity:build --no-cloud",
+    "build-util": "nx run util:build --no-cloud",
     "lint-all": "nx run-many -t lint --no-cloud",
     "lint-all-ci": "nx run-many -t lint --configuration=ci --no-cloud",
     "lint-base-entity": "nx run base-entity:lint --no-cloud",
