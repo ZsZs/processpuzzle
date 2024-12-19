@@ -86,7 +86,7 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
       queryParams = new Map<string, string>([...Array.from(pageParam)]);
     }
 
-    let params: any | null = {};
+    let params: any = {};
     if (queryParams.size > 0) {
       for (const [key, value] of queryParams) {
         params = { ...params, [key]: value };
