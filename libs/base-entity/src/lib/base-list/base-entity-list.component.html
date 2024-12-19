@@ -8,13 +8,13 @@
       <mat-checkbox (change)="$event ? onToggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()" [indeterminate]="selection.hasValue() && !isAllSelected()"> </mat-checkbox>
     </th>
     <td mat-cell *matCellDef="let row">
-      <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null; onChangeSelection(row)" [checked]="selection.isSelected(row)"></mat-checkbox>
+      <mat-checkbox (click)="$event.stopPropagation()" (onKeydown)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null; onChangeSelection(row)" [checked]="selection.isSelected(row)"></mat-checkbox>
     </td>
   </ng-container>
 
   <ng-container *ngFor="let colDescriptor of columnDescriptors(); index as i" [matColumnDef]="colDescriptor.attrName">
     <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</th>
-    <td mat-cell *matCellDef="let element" (click)="onRowClick(element)">
+    <td mat-cell *matCellDef="let element" (click)="onRowClick(element)" (click)="onKeydown(element)">
       @if (colDescriptor.isLinkToDetails === true) {
         <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
       } @else if (colDescriptor.linkedEntityType !== undefined ) {
