@@ -24,7 +24,7 @@ jobs:
       - name: Build packages
         run: npm run build-util-ci
       - name: Publish package on NPM 📦
-        run: npm run release
+        run: npm run release-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: fase
