@@ -17,6 +17,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies and build 🔧
         run: npm ci
+      - name: Install Nx CLI
+        run: npm i -g @nrwl/cli
       - name: Check changes
         run: nx release plan:check
       - name: Publish package on NPM 📦
