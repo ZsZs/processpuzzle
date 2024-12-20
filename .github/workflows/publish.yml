@@ -19,6 +19,8 @@ jobs:
         run: npm ci
       - name: Install Nx CLI
         run: npm i -g @nrwl/cli
+      - name: Set git author
+        run: git config --global user.email "zsolt.zsuffa@gmail.com" && git config --global user.name "Zsolt Zsuffa"
       - name: Publish package on NPM 📦
         run: npm run release
         env:
