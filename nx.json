@@ -75,11 +75,11 @@
     }
   ],
   "release": {
-    "projects": ["util", "base-entity"],
+    "projects": ["util"],
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "npm run build-util-ci && npm run build-base-entity-ci",
+      "preVersionCommand": "npm run build-util-ci",
       "generatorOptions": {
         "fallbackCurrentVersionResolver": "disk"
       }
