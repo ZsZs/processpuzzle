@@ -17,8 +17,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies and build 🔧
         run: npm ci
-      - name: Build libs
-        run: npm run build-util-ci --if-present
+      - name: Check changes
+        run: nx release plan:check
       - name: Publish package on NPM 📦
         run: nx release
         env:

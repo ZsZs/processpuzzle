@@ -75,19 +75,30 @@
     }
   ],
   "release": {
-    "projects": ["@processpuzzle/util"],
+    "projects": ["util"],
     "projectsRelationship": "independent",
     "version": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "preVersionCommand": "npm run build-util-ci"
+    },
+    "conventionalCommits": {
+      "types": {
+        "docs": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "Documentation Changes"
+          }
+        }
+      }
+    },
+    "versionPlans": {
+      "ignorePatternsForPlanCheck": ["**/*.spec.ts"]
     },
     "releaseTagPattern": "release/{projectName}/{version}",
     "git": {
       "commitMessage": "chore(release): {projectName}-{version}"
     },
     "changelog": {
-      "workspaceChangelog": {
-        "createRelease": "github"
-      },
       "projectChangelogs": true
     }
   },
