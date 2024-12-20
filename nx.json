@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "defaultBase": "master",
+  "defaultBase": "origin/develop",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -46,6 +46,14 @@
     },
     "e2e-ci--**/*": {
       "dependsOn": ["^build"]
+    },
+    "nx-release-publish": {
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "packageRoot": "dist/{projectName}"
+      }
     }
   },
   "plugins": [
@@ -75,14 +83,36 @@
     }
   ],
   "release": {
-    "projects": ["util"],
+    "projects": ["util", "base-entity"],
+    "projectsRelationship": "independent",
     "version": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "preVersionCommand": "npm run build-all-ci",
+      "generatorOptions": {
+        "fallbackCurrentVersionResolver": "disk"
+      }
+    },
+    "conventionalCommits": {
+      "types": {
+        "docs": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "Documentation Changes"
+          }
+        }
+      }
+    },
+    "versionPlans": {
+      "ignorePatternsForPlanCheck": ["**/*.spec.ts"]
+    },
+    "releaseTagPattern": "release/{projectName}/{version}",
+    "git": {
+      "commitMessage": "chore(release): {projectName}-{version}"
     },
     "changelog": {
-      "workspaceChangelog": {
-        "createRelease": "github"
-      }
+      "file": false,
+      "createRelease": "github",
+      "projectChangelogs": true
     }
   },
   "generators": {

@@ -52,6 +52,11 @@
           "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
         }
       }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/base-entity"
+      }
     }
   }
 }

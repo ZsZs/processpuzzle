@@ -1,23 +1,44 @@
 name: Publish to NPM
+
+# Rules that triggers the workflows
 on:
   release:
-    types: [created]
+    types:
+      - created
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Node
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Additional steps to get a version and package name from a tag
+      # it will not be used in this example, but might be useful for some
+      # customization (like additional release of the package, or some external notifications)
+      - name: Get Version
+        run: |
+          TAG_NAME=${{github.event.release.tag_name}}
+          echo "PACKAGE_NAME=$(echo $TAG_NAME | cut -d "@" -f 1)" >> $GITHUB_ENV
+          echo "APP_VERSION=$(echo $TAG_NAME | cut -d "@" -f 2)" >> $GITHUB_ENV
+
+      - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
-          registry-url: 'https://registry.npmjs.org'
-      - name: Install dependencies and build 🔧
-        run: npm ci
-      - name: Build libs
-        run: npm run build-util-ci --if-present
-      - name: Publish package on NPM 📦
-        run: nx release
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish packages
+        run: |
+          git config --global user.email "zsolt.zsuffa@gmail.com"
+          git config --global user.name "Zsolt Zsuffa"
+          npx nx release publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
