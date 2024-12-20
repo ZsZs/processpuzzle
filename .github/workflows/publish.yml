@@ -38,7 +38,7 @@ jobs:
         run: |
           git config --global user.email "zsolt.zsuffa@gmail.com"
           git config --global user.name "Zsolt Zsuffa"
-          npx nx release publish
+          npx nx release publish --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
