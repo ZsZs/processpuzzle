@@ -20,8 +20,8 @@ jobs:
       - name: Install Nx CLI
         run: npm i -g @nrwl/cli
       - name: Check changes
-        run: nx release plan:check
+        run: npm run release-plan
       - name: Publish package on NPM 📦
-        run: nx release
+        run: npm run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -13,12 +13,14 @@
     "lint-all": "nx run-many -t lint --no-cloud",
     "lint-all-ci": "nx run-many -t lint --configuration=ci --no-cloud",
     "lint-base-entity": "nx run base-entity:lint --no-cloud",
+    "lint-test-build": "nx run-many --targets=lint,test,build --coverage --no-cloud",
     "publish-all": "nx release --skip-publish --no-cloud",
     "publish-all-ci": "nx release publish --no-cloud",
     "test-all": "nx run-many -t test --coverage --no-cloud",
     "test-all-ci": "nx run-many -t test --exclude=processpuzzle-ui --configuration=ci --no-cloud",
     "test-base-entity": "nx run base-entity:test --coverage --no-cloud",
-    "lint-test-build": "nx run-many --targets=lint,test,build --coverage --no-cloud"
+    "release": "nx release",
+    "release-check": "nx release plan:check"
   },
   "private": false,
   "dependencies": {
