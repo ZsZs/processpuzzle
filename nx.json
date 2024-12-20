@@ -46,6 +46,14 @@
     },
     "e2e-ci--**/*": {
       "dependsOn": ["^build"]
+    },
+    "nx-release-publish": {
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "packageRoot": "dist/{projectName}"
+      }
     }
   },
   "plugins": [
@@ -75,11 +83,11 @@
     }
   ],
   "release": {
-    "projects": ["util"],
+    "projects": ["util", "base-entity"],
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "npm run build-util-ci",
+      "preVersionCommand": "npm run build-all-ci",
       "generatorOptions": {
         "fallbackCurrentVersionResolver": "disk"
       }

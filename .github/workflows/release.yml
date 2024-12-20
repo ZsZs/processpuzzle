@@ -1,0 +1,40 @@
+name: Publish to NPM
+on:
+  push:
+    branches: [ "release/*" ]
+  release:
+    types: [created]
+
+permissions:
+  actions: read
+  contents: read
+env:
+  GITHUB_TOKEN: ${{ secrets.PAT }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies and build 🔧
+        run: npm ci
+
+      - name: Sets the base and head SHAs for the nx affected commands in CI
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Set git author
+        run: git config --global user.email "zsolt.zsuffa@gmail.com" && git config --global user.name "Zsolt Zsuffa"
+
+      - name: Build packages
+        run: npm run build-all-ci
+
+      - name: Publish package on NPM 📦
+        run: npx nx release --skip-publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: fase

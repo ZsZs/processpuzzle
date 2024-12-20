@@ -1,5 +1,5 @@
 {
-  "name": "@processpuzzle/source",
+  "name": "@processpuzzle/main",
   "version": "0.2.0",
   "license": "MIT",
   "scripts": {
@@ -17,12 +17,12 @@
     "lint-base-entity": "nx run base-entity:lint --no-cloud",
     "lint-test-build": "nx run-many --targets=lint,test,build --coverage --no-cloud",
     "publish-all": "nx release --skip-publish --no-cloud",
-    "publish-all-ci": "nx release publish --no-cloud",
+    "publish-all-ci": "npx nx release publish --dry-run --no-cloud",
+    "release-all-ci": "npx nx release --skip-publish --no-cloud",
+    "release-check": "nx release plan:check --no-cloud",
     "test-all": "nx run-many -t test --coverage --no-cloud",
     "test-all-ci": "nx run-many -t test --exclude=processpuzzle-ui --configuration=ci --no-cloud",
-    "test-base-entity": "nx run base-entity:test --coverage --no-cloud",
-    "release-publish": "nx release publish --no-cloud --verbose",
-    "release-check": "nx release plan:check --no-cloud --verbose"
+    "test-base-entity": "nx run base-entity:test --coverage --no-cloud"
   },
   "private": false,
   "dependencies": {
@@ -39,7 +39,7 @@
     "@ngrx/component-store": "^19.0.0-rc.0",
     "@ngrx/operators": "^19.0.0-rc.0",
     "@ngrx/signals": "^19.0.0-rc.0",
-    "@processpuzzle/util": "^0.2.0",
+    "@processpuzzle/util": "^0.2.1",
     "@types/uuid": "^10.0.0",
     "build-url-ts": "^6.1.8",
     "es6-dynamic-template": "^2.0.0",
