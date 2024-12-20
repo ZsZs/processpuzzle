@@ -81,7 +81,7 @@
       "conventionalCommits": true,
       "preVersionCommand": "npm run build-util-ci",
       "generatorOptions": {
-        "fallbackCurrentVersionResolver": true
+        "fallbackCurrentVersionResolver": "disk"
       }
     },
     "conventionalCommits": {
