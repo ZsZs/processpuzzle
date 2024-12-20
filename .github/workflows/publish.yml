@@ -20,7 +20,7 @@ jobs:
       - name: Install Nx CLI
         run: npm i -g @nrwl/cli
       - name: Check changes
-        run: npm run release-plan
+        run: npm run release-check
       - name: Publish package on NPM 📦
         run: npm run release
         env:
