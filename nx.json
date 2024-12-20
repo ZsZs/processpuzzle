@@ -79,7 +79,10 @@
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "npm run build-util-ci"
+      "preVersionCommand": "npm run build-util-ci",
+      "generatorOptions": {
+        "fallbackCurrentVersionResolver": true
+      }
     },
     "conventionalCommits": {
       "types": {
