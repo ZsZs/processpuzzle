@@ -75,14 +75,20 @@
     }
   ],
   "release": {
-    "projects": ["util"],
+    "projects": ["@processpuzzle/util"],
+    "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true
+    },
+    "releaseTagPattern": "release/{projectName}/{version}",
+    "git": {
+      "commitMessage": "chore(release): {projectName}-{version}"
     },
     "changelog": {
       "workspaceChangelog": {
         "createRelease": "github"
-      }
+      },
+      "projectChangelogs": true
     }
   },
   "generators": {
