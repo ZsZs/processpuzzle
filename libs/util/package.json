@@ -1,6 +1,9 @@
 {
   "name": "@processpuzzle/util",
-  "version": "0.1.0",
+  "version": "0.2.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@angular/common": "^19.0.0",
     "@angular/core": "^19.0.0"
