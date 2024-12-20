@@ -33,7 +33,7 @@ jobs:
       - name: Build packages
         run: npm run build-all-ci
 
-      - name: Publish package on NPM 📦
+      - name: Release packages 📦
         run: npx nx release --skip-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

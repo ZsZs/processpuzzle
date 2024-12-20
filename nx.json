@@ -110,6 +110,8 @@
       "commitMessage": "chore(release): {projectName}-{version}"
     },
     "changelog": {
+      "file": false,
+      "createRelease": "github",
       "projectChangelogs": true
     }
   },
