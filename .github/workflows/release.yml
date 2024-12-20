@@ -1,4 +1,4 @@
-name: Publish to NPM
+name: Create release
 on:
   push:
     branches: [ "release/*" ]
