@@ -55,7 +55,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist/base-entity"
+        "packageRoot": "{projectRoot}/dist/base-entity"
       }
     }
   }
