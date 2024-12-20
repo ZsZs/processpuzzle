@@ -21,6 +21,8 @@ jobs:
         run: npm i -g @nrwl/cli
       - name: Set git author
         run: git config --global user.email "zsolt.zsuffa@gmail.com" && git config --global user.name "Zsolt Zsuffa"
+      - name: Build packages
+        run: npm run build-util-ci
       - name: Publish package on NPM 📦
         run: npm run release
         env:
