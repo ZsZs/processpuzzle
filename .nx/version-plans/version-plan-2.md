@@ -1,4 +1,4 @@
 ---
-util: minor
+util: patch
 ---
 First release

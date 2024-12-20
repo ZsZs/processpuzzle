@@ -39,6 +39,7 @@
     "@ngrx/component-store": "^19.0.0-rc.0",
     "@ngrx/operators": "^19.0.0-rc.0",
     "@ngrx/signals": "^19.0.0-rc.0",
+    "@processpuzzle/util": "^0.2.0",
     "@types/uuid": "^10.0.0",
     "build-url-ts": "^6.1.8",
     "es6-dynamic-template": "^2.0.0",
