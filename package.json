@@ -19,8 +19,8 @@
     "test-all": "nx run-many -t test --coverage --no-cloud",
     "test-all-ci": "nx run-many -t test --exclude=processpuzzle-ui --configuration=ci --no-cloud",
     "test-base-entity": "nx run base-entity:test --coverage --no-cloud",
-    "release": "nx release",
-    "release-check": "nx release plan:check"
+    "release": "nx release --verbose",
+    "release-check": "nx release plan:check --verbose"
   },
   "private": false,
   "dependencies": {
