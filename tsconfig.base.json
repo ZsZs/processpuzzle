@@ -10,16 +10,24 @@
     "importHelpers": true,
     "target": "es2022",
     "module": "esnext",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      /*
-      "@processpuzzle/base-entity": ["libs/base-entity/src/public-api.ts"],
-      "@processpuzzle/util": ["libs/util/src/public-api.ts"]
-      */
+      "@processpuzzle/base-entity": [
+        "libs/base-entity/src/public-api.ts"
+      ],
+      "@processpuzzle/util": [
+        "libs/util/src/public-api.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

@@ -1,0 +1,41 @@
+/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+.dense-1 {
+  @include mat.all-component-densities(-1);
+}
+
+.dense-2 {
+  @include mat.all-component-densities(-2);
+}
+
+.dense-3 {
+  @include mat.all-component-densities(-3);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.centered-card {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-field-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 500px;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}

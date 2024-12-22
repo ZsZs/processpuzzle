@@ -4,7 +4,7 @@ import { inject, Inject, InjectionToken } from '@angular/core';
 import { BaseEntityMapper } from './base-entity.mapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BaseEntityLoadResponse } from './base-entity-load-response';
-import buildUrl from 'build-url-ts';
+import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 
 export const BASE_ENTITY_SERVICE = new InjectionToken<BaseEntityService<any>>('BASE_ENTITY_SERVICE');
@@ -74,6 +74,7 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
       );
     } else throw new Error('Could not determine the full url');
   }
+
   // endregion
 
   // region protected, private helper methods
@@ -130,5 +131,6 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
       return new Array(this.entityMapper.fromDto(response));
     }
   }
+
   // endregion
 }
