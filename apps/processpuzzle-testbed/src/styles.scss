@@ -39,3 +39,22 @@ body {
 .toolbar-spacer {
   flex: 1 1 auto;
 }
+
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 0px;
+}
+
+@function cmyk($c, $m, $y, $k) {
+
+  $c: calc($c / 100);
+  $m: calc($m / 100);
+  $y: calc($y / 100);
+  $k: calc($k / 100);
+
+  $r: 255 * (1 - $c) * (1 - $k);
+  $g: 255 * (1 - $m) * (1 - $k);
+  $b: 255 * (1 - $y) * (1 - $k);
+
+  @return rgb($r, $g, $b);
+
+}

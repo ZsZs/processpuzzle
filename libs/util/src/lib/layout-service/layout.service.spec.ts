@@ -1,25 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
-import { BehaviorSubject, Observable, skip } from 'rxjs';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { LayoutService, SidenavStatus } from './layout.service';
-
-class MockBreakpointObserver {
-  private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-
-  resize(size: string) {
-    if (size === 'handset') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Handset]: true } } as BreakpointState);
-    } else if (size === 'tablet') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Tablet]: true } } as BreakpointState);
-    } else if (size === 'web') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-    } else this.state.next({ matches: Number.parseInt(size) >= 700, breakpoints: {} });
-  }
-
-  observe(): Observable<BreakpointState> {
-    return this.state.asObservable().pipe(skip(1));
-  }
-}
+import { MockBreakpointObserver } from '../../test-setup';
 
 describe('LayoutService', () => {
   let service: LayoutService;
@@ -36,9 +18,24 @@ describe('LayoutService', () => {
   it('should push sidenavMode side when window width >= 700', () => {
     breakpointObserver.resize('400');
     expect(service.sidenavMode()).toBe(SidenavStatus.CLOSE);
+    expect(service.layoutClass()).toBe('handset-layout');
+    expect(service.isSmallDevice()).toBeTruthy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeFalsy();
+
+    breakpointObserver.resize('500');
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
 
     breakpointObserver.resize('700');
     expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
+    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeTruthy();
   });
 
   it('should set layoutClass differently when breakpoint is Handset || Table || Web', () => {
@@ -55,7 +52,7 @@ describe('LayoutService', () => {
   });
 
   it('should determine if isSmallDevice when this.layoutClass === "handset-layout" || layoutClass === ""', () => {
-    expect(service.isSmallDevice()).toBeTruthy();
+    expect(service.isSmallDevice()).toBeFalsy();
 
     breakpointObserver.resize('tablet');
     expect(service.isSmallDevice()).toBeFalsy();

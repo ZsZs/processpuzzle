@@ -15,6 +15,7 @@ import { ContentComponent } from './content/content.component';
 export const appRoutes: Route[] = [
   { path: 'home', component: ContentComponent },
   { path: '', pathMatch: 'full', redirectTo: 'home' },
+  { path: 'util', loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
   {
     path: 'base-forms',
     loadComponent: () => import('./content/base-forms/test-forms.component').then((comp) => comp.TestFormsComponent),
