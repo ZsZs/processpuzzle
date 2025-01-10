@@ -4,27 +4,54 @@ import { Breakpoints, BreakpointState } from '@angular/cdk/layout';
 
 setupZoneTestEnv();
 
+export enum DeviceTypes {
+  HANDSET,
+  TABLET,
+  WEB,
+}
+
 export class MockBreakpointObserver {
   private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
 
-  resize(size: string) {
-    if (size === 'handset') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Handset]: true } } as BreakpointState);
-    } else if (size === 'small') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Small]: true } } as BreakpointState);
-    } else if (size === 'tablet') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Tablet]: true } } as BreakpointState);
-    } else if (size === 'medium') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Medium]: true } } as BreakpointState);
-    } else if (size === 'web') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-    } else if (size === 'large') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Large]: true } } as BreakpointState);
-    } else if (Number.parseInt(size) <= 400) {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Handset]: true } });
-    } else if (Number.parseInt(size) < 700) {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Medium]: true } });
-    } else this.state.next({ matches: Number.parseInt(size) >= 700, breakpoints: { [Breakpoints.Large]: true } });
+  resize(width: number, deviceType = DeviceTypes.WEB) {
+    let breakpoints = {};
+    if (width < 600) {
+      breakpoints = { [Breakpoints.XSmall]: true };
+      if (deviceType === DeviceTypes.HANDSET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetPortrait]: true };
+      }
+    } else if (width >= 600 && width < 840) {
+      breakpoints = { [Breakpoints.Small]: true };
+      if (deviceType === DeviceTypes.HANDSET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetLandscape]: true };
+      } else if (deviceType === DeviceTypes.TABLET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletPortrait]: true };
+      }
+    } else if (width >= 840 && width < 960) {
+      breakpoints = { [Breakpoints.Small]: true };
+      if (deviceType === DeviceTypes.HANDSET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetLandscape]: true };
+      } else if (deviceType === DeviceTypes.TABLET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletLandscape]: true };
+      } else if (deviceType === DeviceTypes.WEB) {
+        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebPortrait]: true };
+      }
+    } else if (width >= 960 && width < 1280) {
+      breakpoints = { [Breakpoints.Medium]: true };
+      if (deviceType === DeviceTypes.TABLET) {
+        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletLandscape]: true };
+      } else if (deviceType === DeviceTypes.WEB) {
+        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebPortrait]: true };
+      }
+    } else if (width >= 1280 && width < 1920) {
+      breakpoints = { [Breakpoints.Large]: true };
+      if (deviceType === DeviceTypes.WEB) {
+        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebLandscape]: true };
+      }
+    } else {
+      breakpoints = { [Breakpoints.XLarge]: true, [Breakpoints.Web]: true, [Breakpoints.WebLandscape]: true };
+    }
+    this.state.next({ matches: true, breakpoints } as BreakpointState);
   }
 
   observe(): Observable<BreakpointState> {

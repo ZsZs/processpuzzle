@@ -5,6 +5,7 @@
   "scripts": {
     "run-mock-backend": "npx json-server --watch mock-backend/db.json",
     "run-http-server": "http-server dist/processpuzzle-ui/browser --proxy http://localhost:8080?",
+    "serve-processpuzzle-testbed": "nx run processpuzzle-testbed:serve --configuration=de-DE",
     "serve-processpuzzle-ui": "nx run processpuzzle-ui:serve --configuration=de-DE",
     "i18n-processpuzzle-ui": "nx extract-i18n processpuzzle-ui",
     "build-all-ci": "nx run-many -t build --configuration=production --no-cloud",

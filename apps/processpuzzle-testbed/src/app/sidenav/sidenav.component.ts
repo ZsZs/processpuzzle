@@ -9,20 +9,22 @@ import { NgClass } from '@angular/common';
   selector: 'app-sidenav',
   imports: [MatActionList, MatListItem, RouterLinkActive, RouterLink, MatIcon, NgClass],
   template: `
-    <mat-action-list [disabled]="layoutService.isSmallDevice()">
-      <mat-list-item routerLinkActive="active" routerLink="/" [ngClass]="layoutService.layoutClass()">
-        <mat-icon matListItemIcon class="material-icons-outlined">home</mat-icon>
-        <div matListItemTitle>&nbsp;Home</div>
-      </mat-list-item>
-      <mat-list-item routerLinkActive="active" routerLink="/util" [ngClass]="layoutService.layoutClass()">
-        <span matListItemIcon class="material-symbols-outlined">service_toolbox</span>
-        <span matListItemTitle>&nbsp;Utils</span>
-      </mat-list-item>
-      <mat-list-item routerLinkActive="active" routerLink="/base-forms" [ngClass]="layoutService.layoutClass()">
-        <span matListItemIcon class="material-symbols-outlined">checkbook</span>
-        <span matListItemTitle>&nbsp;Base Form</span>
-      </mat-list-item>
-    </mat-action-list>
+    @if (!layoutService.isSmallDevice()) {
+      <mat-action-list>
+        <mat-list-item routerLinkActive="active" routerLink="/" [ngClass]="layoutService.layoutClass()">
+          <mat-icon matListItemIcon class="material-icons-outlined">home</mat-icon>
+          <div matListItemTitle>&nbsp;Home</div>
+        </mat-list-item>
+        <mat-list-item routerLinkActive="active" routerLink="/util" [ngClass]="layoutService.layoutClass()">
+          <span matListItemIcon class="material-symbols-outlined">service_toolbox</span>
+          <span matListItemTitle>&nbsp;Utils</span>
+        </mat-list-item>
+        <mat-list-item routerLinkActive="active" routerLink="/base-forms" [ngClass]="layoutService.layoutClass()">
+          <span matListItemIcon class="material-symbols-outlined">checkbook</span>
+          <span matListItemTitle>&nbsp;Base Form</span>
+        </mat-list-item>
+      </mat-action-list>
+    }
   `,
   styleUrl: 'sidenav.component.scss',
 })
