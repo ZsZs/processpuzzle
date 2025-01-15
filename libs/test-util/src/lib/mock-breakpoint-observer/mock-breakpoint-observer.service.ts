@@ -11,7 +11,7 @@ export class MockBreakpointObserver {
   private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
 
   resize(width: number, deviceType?: DeviceTypes) {
-    let breakpoints = {};
+    let breakpoints;
     if (width < 600) {
       breakpoints = { [Breakpoints.XSmall]: true };
       if (deviceType === DeviceTypes.HANDSET) {
