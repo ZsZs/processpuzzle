@@ -20,13 +20,14 @@ import { LayoutService } from '@processpuzzle/util';
 })
 export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements OnInit {
   baseEntityListOptions = input.required<BaseEntityDescriptor>();
-  layoutService = inject(LayoutService);
+  readonly layoutService = inject(LayoutService);
   store: any;
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
     this.store = this.baseEntityListOptions().store;
   }
+
   // endregion
 
   // event handling methods
@@ -42,12 +43,14 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
     const filterValue = ($event.target as HTMLInputElement).value;
     this.store.doFilter(filterValue);
   }
+
   // endregion
 
   // public queries and mutators
   isSmallDevice(): boolean {
     return this.layoutService.isSmallDevice();
   }
+
   // endregion
 
   // protected, private helper methods

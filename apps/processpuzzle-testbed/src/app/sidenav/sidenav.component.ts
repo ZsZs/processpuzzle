@@ -17,11 +17,11 @@ import { NgClass } from '@angular/common';
         </mat-list-item>
         <mat-list-item routerLinkActive="active" routerLink="/util" [ngClass]="layoutService.layoutClass()">
           <span matListItemIcon class="material-symbols-outlined">service_toolbox</span>
-          <span matListItemTitle>&nbsp;Utils</span>
+          <div matListItemTitle>&nbsp;Utils</div>
         </mat-list-item>
         <mat-list-item routerLinkActive="active" routerLink="/base-forms" [ngClass]="layoutService.layoutClass()">
           <span matListItemIcon class="material-symbols-outlined">checkbook</span>
-          <span matListItemTitle>&nbsp;Base Form</span>
+          <div matListItemTitle>&nbsp;Base Form</div>
         </mat-list-item>
       </mat-action-list>
     }

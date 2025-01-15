@@ -12,3 +12,18 @@ mat-toolbar {
   margin: 5px;
   border: 5px solid white;
 }
+
+mat-menu {
+  width: 100%;
+}
+
+.handset-layout {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+mat-list-item.handset-layout > div {
+  margin: 10px;
+  padding-bottom: 10px;
+}
