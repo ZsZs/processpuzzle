@@ -13,11 +13,13 @@ import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 
 export const appRoutes: Route[] = [
-  { path: 'home', component: ContentComponent },
+  { path: 'home', title: 'Home', component: ContentComponent, data: { icon: 'home' } },
   { path: '', pathMatch: 'full', redirectTo: 'home' },
-  { path: 'util', loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
+  { path: 'util', title: 'Util', data: { icon: 'service_toolbox' }, loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
   {
     path: 'base-forms',
+    title: 'Base Forms',
+    data: { icon: 'checkbook' },
     loadComponent: () => import('./content/base-forms/test-forms.component').then((comp) => comp.TestFormsComponent),
     providers: [LayoutService],
     children: [

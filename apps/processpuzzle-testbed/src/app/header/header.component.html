@@ -10,18 +10,12 @@
         <mat-icon>menu</mat-icon>
       </button>
       <mat-menu test-id="menu" #beforeMenu="matMenu" xPosition="before">
-        <button test-id="home" mat-menu-item routerLinkActive="active" routerLink="/" [ngClass]="layoutService.layoutClass()">
-          <mat-icon class="material-icons-outlined">home</mat-icon>
-          <div>&nbsp;Home</div>
-        </button>
-        <button test-id="utils" mat-menu-item routerLinkActive="active" routerLink="/util" [ngClass]="layoutService.layoutClass()">
-          <span class="material-symbols-outlined">service_toolbox</span>
-          <span>&nbsp;Utils</span>
-        </button>
-        <button test-id="base-form" routerLinkActive="active" routerLink="/base-forms" [ngClass]="layoutService.layoutClass()">
-          <span class="material-symbols-outlined">checkbook</span>
-          <span>&nbsp;Base Form</span>
-        </button>
+        @for (item of routes; track item) {
+          <button mat-menu-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
+            <span matListItemIcon class="material-symbols-outlined">{{ item.data ? item.data['icon'] : '' }}</span>
+            <span matListItemTitle>&nbsp;{{ item.title }}</span>
+          </button>
+        }
       </mat-menu>
     </div>
   }

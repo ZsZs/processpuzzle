@@ -2,20 +2,23 @@ import { Component, inject, output } from '@angular/core';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgOptimizedImage } from '@angular/common';
 import { LayoutService } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { appRoutes } from '../app.routes';
+import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
 
 @Component({
   selector: 'app-header',
-  imports: [MatToolbar, MatIcon, MatIconButton, NgOptimizedImage, MatButton, MatMenu, MatMenuTrigger, RouterLinkActive, RouterLink, NgClass, MatMenuItem],
+  imports: [MatToolbar, MatIcon, MatIconButton, NgOptimizedImage, MatButton, MatMenu, MatMenuTrigger, RouterLink, NgClass, MatMenuItem, MatListItemIcon, MatListItemTitle],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
 })
 export class HeaderComponent {
   readonly layoutService = inject(LayoutService);
   readonly router = inject(Router);
+  readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
   readonly toggleSideNav = output<undefined>();
 
   // region event handlers

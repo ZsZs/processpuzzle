@@ -23,7 +23,6 @@ mat-menu {
   justify-content: space-between;
 }
 
-mat-list-item.handset-layout > div {
-  margin: 10px;
-  padding-bottom: 10px;
+button.handset-layout > span:nth-child(2) {
+  margin-bottom: 20px;
 }
