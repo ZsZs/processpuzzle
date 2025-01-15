@@ -29,5 +29,5 @@ import { NgClass } from '@angular/common';
   styleUrl: 'sidenav.component.scss',
 })
 export class SidenavComponent {
-  layoutService = inject(LayoutService);
+  readonly layoutService = inject(LayoutService);
 }
