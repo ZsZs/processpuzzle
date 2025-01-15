@@ -1,25 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
-import { BehaviorSubject, Observable, skip } from 'rxjs';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { LayoutService, SidenavStatus } from './layout.service';
-
-class MockBreakpointObserver {
-  private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-
-  resize(size: string) {
-    if (size === 'handset') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Handset]: true } } as BreakpointState);
-    } else if (size === 'tablet') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Tablet]: true } } as BreakpointState);
-    } else if (size === 'web') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-    } else this.state.next({ matches: Number.parseInt(size) >= 700, breakpoints: {} });
-  }
-
-  observe(): Observable<BreakpointState> {
-    return this.state.asObservable().pipe(skip(1));
-  }
-}
+import { DeviceTypes, MockBreakpointObserver } from '@processpuzzle/test-util';
 
 describe('LayoutService', () => {
   let service: LayoutService;
@@ -33,34 +15,95 @@ describe('LayoutService', () => {
     breakpointObserver = TestBed.inject(BreakpointObserver) as unknown as MockBreakpointObserver;
   });
 
-  it('should push sidenavMode side when window width >= 700', () => {
-    breakpointObserver.resize('400');
+  it('If screen width is under size < 600px then is handset-layout', () => {
+    breakpointObserver.resize(599, DeviceTypes.HANDSET);
+
     expect(service.sidenavMode()).toBe(SidenavStatus.CLOSE);
-
-    breakpointObserver.resize('700');
-    expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
-  });
-
-  it('should set layoutClass differently when breakpoint is Handset || Table || Web', () => {
-    expect(service.layoutClass()).toBe('');
-
-    breakpointObserver.resize('handset');
     expect(service.layoutClass()).toBe('handset-layout');
-
-    breakpointObserver.resize('tablet');
-    expect(service.layoutClass()).toBe('tablet-layout');
-
-    breakpointObserver.resize('web');
-    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeTruthy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeFalsy();
   });
 
-  it('should determine if isSmallDevice when this.layoutClass === "handset-layout" || layoutClass === ""', () => {
-    expect(service.isSmallDevice()).toBeTruthy();
+  it('If screen width is under 600 <= size < 840 pixel then is tablet-layout', () => {
+    breakpointObserver.resize(839, DeviceTypes.HANDSET);
 
-    breakpointObserver.resize('tablet');
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
     expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
 
-    breakpointObserver.resize('handset');
-    expect(service.isSmallDevice()).toBeTruthy();
+    breakpointObserver.resize(839, DeviceTypes.TABLET);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
+  });
+
+  it('If screen width is under 840 <= size < 960 pixel then is tablet-layout', () => {
+    breakpointObserver.resize(959, DeviceTypes.HANDSET);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
+
+    breakpointObserver.resize(959, DeviceTypes.TABLET);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
+
+    breakpointObserver.resize(959, DeviceTypes.WEB);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.SHRINK);
+    expect(service.layoutClass()).toBe('tablet-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeTruthy();
+    expect(service.isLargeDevice()).toBeFalsy();
+  });
+
+  it('If screen width is under 960 <= size < 1280 pixel then is web-layout', () => {
+    breakpointObserver.resize(1279, DeviceTypes.TABLET);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
+    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeTruthy();
+
+    breakpointObserver.resize(1279, DeviceTypes.WEB);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
+    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeTruthy();
+  });
+
+  it('If screen width is under 1280 <= size < 1920 pixel then is web-layout', () => {
+    breakpointObserver.resize(1279, DeviceTypes.WEB);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
+    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeTruthy();
+  });
+
+  it('If screen width is under 1920 <= size then is web-layout', () => {
+    breakpointObserver.resize(1920, DeviceTypes.WEB);
+
+    expect(service.sidenavMode()).toBe(SidenavStatus.EXPAND);
+    expect(service.layoutClass()).toBe('web-layout');
+    expect(service.isSmallDevice()).toBeFalsy();
+    expect(service.isMediumDevice()).toBeFalsy();
+    expect(service.isLargeDevice()).toBeTruthy();
   });
 });

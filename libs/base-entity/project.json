@@ -3,11 +3,20 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/base-entity/src",
-  "prefix": "base-entity",
-  "tags": ["scope:base-entity", "type:domain"],
+  "prefix": "",
+  "tags": [
+    "scope:base-entity",
+    "type:domain"
+  ],
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:ng-packagr",
+      "executor": "@nx/angular:package",
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
       "options": {
         "project": "libs/base-entity/ng-package.json"
       },
@@ -23,7 +32,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/reports/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "libs/base-entity/jest.config.ts",
         "passWithNoTests": true
@@ -38,9 +49,14 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/base-entity/src/**/*.ts", "libs/base-entity/src/**/*.spec.ts"]
+        "lintFilePatterns": [
+          "libs/base-entity/src/**/*.ts",
+          "libs/base-entity/src/**/*.spec.ts"
+        ]
       },
       "configurations": {
         "ci": {

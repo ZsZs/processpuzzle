@@ -1,0 +1,14 @@
+@use '../../styles' as *;
+
+mat-toolbar {
+  background-color: rgb(92, 218, 207) //cmyk(60, 0, 33, 5);
+}
+
+.app-header {
+  height: auto;
+}
+
+.app-logo {
+  margin: 5px;
+  border: 5px solid white;
+}

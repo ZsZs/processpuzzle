@@ -1,0 +1,116 @@
+{
+  "test-entity": [
+    {
+      "id": "1",
+      "name": "entity_1",
+      "description": "test entity one",
+      "boolean": true,
+      "number": 100,
+      "date": "2024-01-18T20:02:27",
+      "enumValue": 3
+    },
+    {
+      "id": "2",
+      "name": "entity_2",
+      "description": "test entity changed",
+      "boolean": true,
+      "number": 200,
+      "date": "2024-02-18T20:02:27",
+      "enumValue": 0
+    },
+    {
+      "id": "3",
+      "name": "entity_3",
+      "description": "test entity three",
+      "boolean": true,
+      "number": 300,
+      "date": "2024-03-21T23:00:00.000Z",
+      "enumValue": 0
+    },
+    {
+      "id": "4",
+      "name": "entity_4",
+      "description": "test entity four",
+      "boolean": false,
+      "number": 400,
+      "date": "2024-04-18T20:02:27",
+      "enumValue": 0
+    },
+    {
+      "id": "5",
+      "name": "entity_5",
+      "description": "test entity five",
+      "boolean": true,
+      "number": 500,
+      "date": "2024-05-18T20:02:27",
+      "enumValue": 4
+    },
+    {
+      "id": "4b8fbe5f-a2ce-436c-a2fc-7d19d9f212ad",
+      "name": "Hello",
+      "description": "this is a new entity",
+      "boolean": false,
+      "number": 1,
+      "date": "2024-10-30T17:24:11.050Z",
+      "enumValue": 2
+    }
+  ],
+  "test-entity-component": [
+    {
+      "id": "1",
+      "name": "component_1",
+      "description": "component one",
+      "testEntityId": "3"
+    },
+    {
+      "id": "2",
+      "name": "component_2",
+      "description": "component two",
+      "testEntityId": "3"
+    },
+    {
+      "id": "3",
+      "name": "component_3",
+      "description": "component three",
+      "testEntityId": "3"
+    },
+    {
+      "id": "4",
+      "name": "component_4",
+      "description": "component four",
+      "testEntityId": "5"
+    },
+    {
+      "id": "5",
+      "name": "component_5",
+      "description": "component five",
+      "testEntityId": "5"
+    }
+  ],
+  "trunk-data": [
+    {
+      "id": "1",
+      "name": "schüssel_1",
+      "description": "einfache Benutzer Rolle",
+      "value": "wert 1"
+    },
+    {
+      "id": "2",
+      "name": "schüssel_2",
+      "description": "Trainer Rolle",
+      "value": "wert 2"
+    },
+    {
+      "id": "3",
+      "name": "schüssel_3",
+      "description": "Administrator Rolle",
+      "value": "wert 3"
+    },
+    {
+      "id": "4",
+      "name": "schüssel_4",
+      "description": "Supervisor Rolle",
+      "value": "wert 4"
+    }
+  ]
+}

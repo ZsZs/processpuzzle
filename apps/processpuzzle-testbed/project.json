@@ -1,0 +1,130 @@
+{
+  "name": "processpuzzle-testbed",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/processpuzzle-testbed/src",
+  "tags": [
+    "type:app"
+  ],
+  "i18n": {
+    "sourceLocale": "en-US",
+    "locales": {
+      "de-DE": "src/locales/messages.de-DE.xlf"
+    }
+  },
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/apps/processpuzzle-testbed",
+        "index": "apps/processpuzzle-testbed/src/index.html",
+        "browser": "apps/processpuzzle-testbed/src/main.ts",
+        "polyfills": [
+          "zone.js"
+        ],
+        "tsConfig": "apps/processpuzzle-testbed/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/processpuzzle-testbed/public"
+          },
+          "apps/processpuzzle-testbed/src/assets",
+          "apps/processpuzzle-testbed/src/environments",
+          "apps/processpuzzle-testbed/src/run-time-conf"
+        ],
+        "styles": [
+          "apps/processpuzzle-testbed/src/custom-theme.scss",
+          "apps/processpuzzle-testbed/src/styles.scss",
+          "node_modules/prismjs/themes/prism-okaidia.css",
+          "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
+          "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.css",
+          "node_modules/prismjs/plugins/command-line/prism-command-line.css"
+        ],
+        "scripts": [
+          "node_modules/prismjs/prism.js",
+          "node_modules/prismjs/components/prism-csharp.min.js",
+          "node_modules/prismjs/components/prism-css.min.js",
+          "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.js",
+          "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.js",
+          "node_modules/prismjs/plugins/command-line/prism-command-line.js",
+          "node_modules/mermaid/dist/mermaid.min.js",
+          "node_modules/clipboard/dist/clipboard.min.js"
+        ],
+        "allowedCommonJsDependencies": [
+          "prismjs",
+          "build-url-ts"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "1mb",
+              "maximumError": "4mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "10kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "processpuzzle-testbed:build:production"
+        },
+        "development": {
+          "buildTarget": "processpuzzle-testbed:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "options": {
+        "proxyConfig": "apps/processpuzzle-testbed/proxy.conf.json"
+      }
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "processpuzzle-testbed:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/processpuzzle-testbed/jest.config.ts"
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "processpuzzle-testbed:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/processpuzzle-testbed/browser",
+        "spa": true
+      }
+    }
+  }
+}

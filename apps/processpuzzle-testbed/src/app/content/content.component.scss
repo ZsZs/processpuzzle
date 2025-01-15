@@ -1,0 +1,19 @@
+.floating-cards-container {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+.floating-card mat-card-header mat-card-content mat-card-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.floating-card:first-child {
+  grid-column: span 2;
+}
+
+mat-card {
+  margin: 5px;
+}

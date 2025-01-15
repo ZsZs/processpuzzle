@@ -1,0 +1,11 @@
+{
+  "name": "mock-backend",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "npx http-server test  -S -C cert.pem -o --port 8443 || npx json-server db.json --port 8443"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1",
+    "json-server": "^1.0.0-beta.3"
+  }
+}
