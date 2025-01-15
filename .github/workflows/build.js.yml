@@ -7,7 +7,7 @@ on:
   push:
     branches: [ "develop", "feature/*" ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
     branches: [ "develop", "master" ]
 
 jobs:
@@ -15,26 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [ 20.x, 22.x ]
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v4
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: package-lock.json
-    - name: Install dependencies
-      run: npm ci
-    - name: Lint libs and apps
-      run: npm run lint-all-ci
-    - name: Test libs and apps
-      run: npm run test-all-ci
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v4
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    - name: Build libs and apps
-      run: npm run build-util-ci --if-present
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      - name: Lint libs and apps
+        run: npm run lint-all-ci
+      - name: Test libs and apps
+        run: npm run test-all-ci
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Build libs and apps
+        run: npm run build-util-ci --if-present
