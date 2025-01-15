@@ -1,12 +1,11 @@
 {
-  "name": "base-entity",
+  "name": "test-util",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/test-util/src",
   "projectType": "library",
-  "sourceRoot": "libs/base-entity/src",
-  "prefix": "",
   "tags": [
-    "scope:base-entity",
-    "type:domain"
+    "scope:shared",
+    "type:util"
   ],
   "targets": {
     "build": {
@@ -15,14 +14,14 @@
         "{workspaceRoot}/dist/{projectRoot}"
       ],
       "options": {
-        "project": "libs/base-entity/ng-package.json"
+        "project": "libs/test-util/ng-package.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/base-entity/tsconfig.lib.prod.json"
+          "tsConfig": "libs/test-util/tsconfig.lib.prod.json"
         },
         "development": {
-          "tsConfig": "libs/base-entity/tsconfig.lib.json"
+          "tsConfig": "libs/test-util/tsconfig.lib.json"
         }
       },
       "defaultConfiguration": "production"
@@ -30,10 +29,10 @@
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": [
-        "{workspaceRoot}/reports/coverage/{projectRoot}"
+        "{projectRoot}/reports/coverage"
       ],
       "options": {
-        "jestConfig": "libs/base-entity/jest.config.ts",
+        "jestConfig": "libs/test-util/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -51,8 +50,8 @@
       ],
       "options": {
         "lintFilePatterns": [
-          "libs/base-entity/src/**/*.ts",
-          "libs/base-entity/src/**/*.spec.ts"
+          "libs/test-util/src/**/*.ts",
+          "libs/test-util/src/**/*.spec.ts"
         ]
       },
       "configurations": {
@@ -68,7 +67,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/base-entity"
+        "packageRoot": "{workspaceRoot}/dist/util"
       }
     }
   }

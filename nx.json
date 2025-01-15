@@ -47,6 +47,11 @@
       "options": {
         "packageRoot": "dist/{projectName}"
       }
+    },
+    "@nx/esbuild:esbuild": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "plugins": [
@@ -70,6 +75,20 @@
         },
         "build": {
           "targetName": "tsc:build",
+          "configName": "tsconfig.lib.json"
+        }
+      },
+      "exclude": ["libs/test-util/*"]
+    },
+    {
+      "plugin": "@nx/js/typescript",
+      "include": ["libs/test-util/*"],
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
           "configName": "tsconfig.lib.json"
         }
       }

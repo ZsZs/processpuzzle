@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { LayoutService, SidenavStatus } from './layout.service';
-import { DeviceTypes, MockBreakpointObserver } from '../../test-setup';
+import { DeviceTypes, MockBreakpointObserver } from '@processpuzzle/test-util';
 
 describe('LayoutService', () => {
   let service: LayoutService;

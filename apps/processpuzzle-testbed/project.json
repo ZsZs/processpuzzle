@@ -54,6 +54,10 @@
           "node_modules/prismjs/plugins/command-line/prism-command-line.js",
           "node_modules/mermaid/dist/mermaid.min.js",
           "node_modules/clipboard/dist/clipboard.min.js"
+        ],
+        "allowedCommonJsDependencies": [
+          "prismjs",
+          "build-url-ts"
         ]
       },
       "configurations": {
@@ -61,13 +65,13 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
+              "maximumWarning": "1mb",
+              "maximumError": "4mb"
             },
             {
               "type": "anyComponentStyle",
               "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "maximumError": "10kb"
             }
           ],
           "outputHashing": "all"

@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 
 export enum SidenavStatus {
   EXPAND,
@@ -7,7 +7,7 @@ export enum SidenavStatus {
   SHRINK,
 }
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class LayoutService {
   private readonly HANDSET_LAYOUT = 'handset-layout';
   private readonly TABLET_LAYOUT = 'tablet-layout';
@@ -15,7 +15,7 @@ export class LayoutService {
   isSmallDevice = computed<boolean>(() => this.layoutClass() === this.HANDSET_LAYOUT);
   isLargeDevice = computed<boolean>(() => this.layoutClass() === this.WEB_LAYOUT || this.layoutClass() === '');
   isMediumDevice = computed<boolean>(() => this.layoutClass() === this.TABLET_LAYOUT);
-  layoutClass = signal<string>('');
+  layoutClass = signal<string>(this.WEB_LAYOUT);
   sidenavMode = computed<SidenavStatus>(() => {
     let sideNavMode = SidenavStatus.EXPAND;
     if (this.isSmallDevice()) sideNavMode = SidenavStatus.CLOSE;
@@ -23,13 +23,14 @@ export class LayoutService {
     else if (this.isLargeDevice()) sideNavMode = SidenavStatus.EXPAND;
     return sideNavMode;
   });
+  private breakpointObserver = inject(BreakpointObserver);
 
-  constructor(private breakpointObserver: BreakpointObserver) {
-    this.observeBreakpoint();
+  constructor() {
+    this.observeBreakpoints();
   }
 
   // region protected, private helper methods
-  private observeBreakpoint() {
+  private observeBreakpoints() {
     this.breakpointObserver.observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Medium, Breakpoints.Large, Breakpoints.XLarge]).subscribe((result) => {
       if (result.matches) {
         for (const query of Object.keys(result.breakpoints)) {

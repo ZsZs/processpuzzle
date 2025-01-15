@@ -1,4 +1,4 @@
-@import '../../styles';
+@use '../../styles' as *;
 
 mat-toolbar {
   background-color: rgb(92, 218, 207) //cmyk(60, 0, 33, 5);

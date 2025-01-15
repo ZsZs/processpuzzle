@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FooterComponent } from './footer.component';
+import { By } from '@angular/platform-browser';
 
 describe('FooterComponent', () => {
   let component: FooterComponent;
@@ -15,7 +16,16 @@ describe('FooterComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  describe('sanity test', () => {
+    it('Should create component', () => {
+      expect(component).toBeTruthy();
+    });
+  });
+
+  describe('template structure contains:', () => {
+    it('mat-toolbar:', () => {
+      const matToolbar = fixture.debugElement.query(By.css('mat-toolbar')).nativeElement;
+      expect(matToolbar).toBeTruthy();
+    });
   });
 });
