@@ -23,7 +23,7 @@ export class LayoutService {
     else if (this.isLargeDevice()) sideNavMode = SidenavStatus.EXPAND;
     return sideNavMode;
   });
-  private breakpointObserver = inject(BreakpointObserver);
+  private readonly breakpointObserver = inject(BreakpointObserver);
 
   constructor() {
     this.observeBreakpoints();

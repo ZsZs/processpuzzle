@@ -1,33 +1,28 @@
 import { Component, inject } from '@angular/core';
-import { MatActionList, MatListItem } from '@angular/material/list';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MatIcon } from '@angular/material/icon';
+import { MatListItem, MatNavList } from '@angular/material/list';
+import { RouterLink } from '@angular/router';
 import { LayoutService } from '@processpuzzle/util';
 import { NgClass } from '@angular/common';
+import { appRoutes } from '../app.routes';
 
 @Component({
   selector: 'app-sidenav',
-  imports: [MatActionList, MatListItem, RouterLinkActive, RouterLink, MatIcon, NgClass],
+  imports: [MatListItem, RouterLink, NgClass, MatNavList],
   template: `
     @if (!layoutService.isSmallDevice()) {
-      <mat-action-list>
-        <mat-list-item routerLinkActive="active" routerLink="/" [ngClass]="layoutService.layoutClass()">
-          <mat-icon matListItemIcon class="material-icons-outlined">home</mat-icon>
-          <div matListItemTitle>&nbsp;Home</div>
-        </mat-list-item>
-        <mat-list-item routerLinkActive="active" routerLink="/util" [ngClass]="layoutService.layoutClass()">
-          <span matListItemIcon class="material-symbols-outlined">service_toolbox</span>
-          <span matListItemTitle>&nbsp;Utils</span>
-        </mat-list-item>
-        <mat-list-item routerLinkActive="active" routerLink="/base-forms" [ngClass]="layoutService.layoutClass()">
-          <span matListItemIcon class="material-symbols-outlined">checkbook</span>
-          <span matListItemTitle>&nbsp;Base Form</span>
-        </mat-list-item>
-      </mat-action-list>
+      <mat-nav-list>
+        @for (item of routes; track item) {
+          <mat-list-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
+            <span matListItemIcon class="material-symbols-outlined">{{ item.data ? item.data['icon'] : '' }}</span>
+            <div matListItemTitle>&nbsp;{{ item.title }}</div>
+          </mat-list-item>
+        }
+      </mat-nav-list>
     }
   `,
   styleUrl: 'sidenav.component.scss',
 })
 export class SidenavComponent {
-  layoutService = inject(LayoutService);
+  readonly layoutService = inject(LayoutService);
+  readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
 }

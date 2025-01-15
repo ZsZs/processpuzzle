@@ -1,0 +1,29 @@
+<mat-toolbar color="primary" class="app-header">
+  @if (!layoutService.isSmallDevice()) {
+    <img ngSrc="assets/processpuzzle-logo-with-title.jpg" class="app-logo" priority width="75" height="85" (click)="navigateToHome()" alt="ProcessPuzzle Logo" />
+    <button mat-icon-button (click)="sidenavToggle()" class="example-icon" aria-label="Example icon-button with menu icon">
+      <mat-icon>menu</mat-icon>
+    </button>
+  } @else {
+    <div>
+      <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <mat-menu test-id="menu" #beforeMenu="matMenu" xPosition="before">
+        @for (item of routes; track item) {
+          <button mat-menu-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
+            <span matListItemIcon class="material-symbols-outlined">{{ item.data ? item.data['icon'] : '' }}</span>
+            <span matListItemTitle>&nbsp;{{ item.title }}</span>
+          </button>
+        }
+      </mat-menu>
+    </div>
+  }
+  <span class="toolbar-spacer"></span>
+  <button mat-icon-button class="example-icon favorite-icon" aria-label="Example icon-button with heart icon">
+    <mat-icon>favorite</mat-icon>
+  </button>
+  <button mat-icon-button class="example-icon" aria-label="Example icon-button with share icon">
+    <mat-icon>share</mat-icon>
+  </button>
+</mat-toolbar>

@@ -37,14 +37,14 @@ describe('SidenavComponent', () => {
   describe('template structure contains:', () => {
     it('mat-action-list:', () => {
       expect(layoutService.isSmallDevice()).toBeFalsy();
-      const matActionList = fixture.debugElement.query(By.css('mat-action-list')).nativeElement;
+      const matActionList = fixture.debugElement.query(By.css('mat-nav-list')).nativeElement;
       expect(matActionList).toBeTruthy();
     });
 
     it('empty, if its small device:', () => {
       breakpointObserver.resize(599);
       fixture.detectChanges();
-      const matActionList = fixture.debugElement.query(By.css('mat-action-list'));
+      const matActionList = fixture.debugElement.query(By.css('mat-nav-list'));
       expect(layoutService.isSmallDevice()).toBeTruthy();
       expect(matActionList).toBeNull();
     });
