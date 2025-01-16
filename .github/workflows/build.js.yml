@@ -22,9 +22,9 @@ jobs:
       - run: echo "selected runner = ${{ runner.name }}"
       - id: lint-test-build
         name: Lint test and build the application
-        uses: ./.github/lint-test-build
+        uses: .github/lint-test-build
       - id: deploy-to-aws
         name: Deploy distribution to AWS
-        uses: ./.github/deploy-to-aws
+        uses: .github/deploy-to-aws
         with:
           distribution_source_path: ./dist/apps/processpuzzle-testbed/browser
