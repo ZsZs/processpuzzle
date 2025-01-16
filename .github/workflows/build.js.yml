@@ -36,3 +36,5 @@ jobs:
         uses: ./.github/actions/deploy-to-aws
         with:
           distribution_source_path: ./dist/apps/processpuzzle-testbed/browser
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}
