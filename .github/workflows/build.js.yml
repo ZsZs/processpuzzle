@@ -20,6 +20,9 @@ jobs:
         node-version: [ 22.x ]
     steps:
       - run: echo "selected runner = ${{ runner.name }}"
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - run: echo "selected runner = ${{ runner.name }}"
       - id: lint-test-build
         name: Lint test and build the application
         uses: ./actions/lint-test-build
