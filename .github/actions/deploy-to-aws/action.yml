@@ -38,6 +38,6 @@ runs:
       shell: bash
 
     - name: Deploy new ElasticBeanstalk Application Version
-      run: aws elasticbeanstalk update-environment --environment-name processpuzzle-testbed-test --version-label "ver-${{ github.sha }}"
+      run: aws elasticbeanstalk update-environment --environment-name ProcessPuzzleTestbed-Test --version-label "ver-${{ github.sha }}"
       shell: bash
 
