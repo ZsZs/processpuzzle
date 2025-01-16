@@ -11,7 +11,7 @@ inputs:
   aws_access_secret:
     description: Secret to be able to access AWS
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Create ZIP deployment package
       run: zip -r deploy_package.zip ./dist/apps/processpuzzle-testbed/browser
@@ -23,7 +23,6 @@ runs:
         aws-access-key-id: ${{ inputs.aws_access_key }}
         aws-secret-access-key: ${{ inputs.aws_access_secret }}
         aws-region: "eu-central-1"
-      shell: bash
 
     - name: Upload package to S3 bucket
       run: aws s3 cp deploy_package.zip s3://processpuzzle-testbed/deploy
