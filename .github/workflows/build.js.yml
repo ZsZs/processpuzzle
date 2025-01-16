@@ -26,7 +26,7 @@ jobs:
 
       - id: lint-test-build
         name: Lint test and build the application
-        uses: ./.gihub/actions/lint-test-build
+        uses: ./.github/actions/lint-test-build
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           soner_token: ${{ secrets.SONAR_TOKEN }}
