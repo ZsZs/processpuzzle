@@ -29,7 +29,7 @@ jobs:
         uses: ./.github/actions/lint-test-build
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          soner_token: ${{ secrets.SONAR_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
 
       - id: deploy-to-aws
         name: Deploy distribution to AWS
