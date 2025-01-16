@@ -1,0 +1,27 @@
+name: lint-test-build
+description: Lint test and build the application
+runs:
+  using: composite
+  steps:
+    - run: echo "selected runner = ${{ runner.name }}"
+    - name: Checkout source code
+      uses: actions/checkout@v4
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+    - name: Lint libs and apps
+      run: npm run lint-all-ci
+    - name: Test libs and apps
+      run: npm run test-all-ci
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Build libs and apps
+      run: npm run build-all-ci --if-present

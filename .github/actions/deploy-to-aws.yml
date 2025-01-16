@@ -1,0 +1,39 @@
+name: deploy-to-aws
+description: Deploys the application to AWS Elastic Beanstalk
+inputs:
+  distribution_source_path:
+    description: "Path to the compiled source code to deploy"
+    required: true
+    default: "./dist/apps/processpuzzle-testbed/browser"
+runs:
+  using: "composite"
+  steps:
+    - name: Create ZIP deployment package
+      run: zip -r deploy_package.zip ./dist/apps/processpuzzle-testbed/browser
+      shell: bash
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET }}
+        aws-region: "eu-central-1"
+      shell: bash
+
+    - name: Upload package to S3 bucket
+      run: aws s3 cp deploy_package.zip s3://processpuzzle-testbed/deploy
+      shell: bash
+
+    - name: Create new ElasticBeanstalk Application Version
+      run: |
+        aws elasticbeanstalk create-application-version \
+        --application-name ProcessPuzzleTestbed \
+        --source-bundle S3Bucket="processpuzzle-testbed/deploy",S3Key="deploy_package.zip" \
+        --version-label "ver-${{ github.sha }}" \
+        --description "commit-sha-${{ github.sha }}"
+      shell: bash
+
+    - name: Deploy new ElasticBeanstalk Application Version
+      run: aws elasticbeanstalk update-environment --environment-name processpuzzle-testbed-test --version-label "ver-${{ github.sha }}"
+      shell: bash
+

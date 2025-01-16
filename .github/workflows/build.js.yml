@@ -19,51 +19,12 @@ jobs:
       matrix:
         node-version: [ 22.x ]
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - run: echo "selected runner = ${{ runner.name }}"
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ../actions/lint-test-build.yml
+      - id: deploy-to-aws
+        name: Deploy distribution to AWS
+        uses: ../actions/deploy-to-aws.yml
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-      - name: Lint libs and apps
-        run: npm run lint-all-ci
-      - name: Test libs and apps
-        run: npm run test-all-ci
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: Build libs and apps
-        run: npm run build-all-ci --if-present
-  deploy:
-    needs: build
-    runs-on: ${{needs.build.outputs.RUNNER}}
-    steps:
-      - name: Create ZIP deployment package
-        run: zip -r deploy_package.zip ./dist/apps/processpuzzle-testbed/browser
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET }}
-          aws-region: "eu-central-1"
-
-      - name: Upload package to S3 bucket
-        run: aws s3 cp deploy_package.zip s3://processpuzzle-testbed/deploy
-
-      - name: Create new ElasticBeanstalk Application Version
-        run: |
-          aws elasticbeanstalk create-application-version \
-          --application-name ProcessPuzzleTestbed \
-          --source-bundle S3Bucket="processpuzzle-testbed/deploy",S3Key="deploy_package.zip" \
-          --version-label "ver-${{ github.sha }}" \
-          --description "commit-sha-${{ github.sha }}"
-
-      - name: Deploy new ElasticBeanstalk Application Version
-        run: aws elasticbeanstalk update-environment --environment-name processpuzzle-testbed-test --version-label "ver-${{ github.sha }}"
+          distribution_source_path: ./dist/apps/processpuzzle-testbed/browser
