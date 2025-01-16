@@ -24,12 +24,13 @@ runs:
       shell: bash
     - name: Test libs and apps
       run: npm run test-all-ci
+      shell: bash
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v4
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
-      shell: bash
     - name: Build libs and apps
       run: npm run build-all-ci --if-present
       shell: bash
