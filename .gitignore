@@ -47,3 +47,8 @@ Thumbs.db
 .nx/workspace-data
 
 .angular
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
