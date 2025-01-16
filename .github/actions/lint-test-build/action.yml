@@ -1,5 +1,12 @@
 name: lint-test-build
 description: Lint test and build the application
+inputs:
+  github_token:
+    description: Token to get access to Github
+    required: true
+  sonar_token:
+    description: Token to get access to SonarCloud
+    required: true
 runs:
   using: composite
   steps:
@@ -11,14 +18,18 @@ runs:
         cache-dependency-path: package-lock.json
     - name: Install dependencies
       run: npm install --legacy-peer-deps
+      shell: bash
     - name: Lint libs and apps
       run: npm run lint-all-ci
+      shell: bash
     - name: Test libs and apps
       run: npm run test-all-ci
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v4
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        SONAR_TOKEN: ${{ inputs.sonar_token }}
+      shell: bash
     - name: Build libs and apps
       run: npm run build-all-ci --if-present
+      shell: bash
