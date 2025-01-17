@@ -30,12 +30,14 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
+
       - id: build-image
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
         with:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - id: deploy-to-aws
         name: Deploy distribution to AWS
         uses: ./.github/actions/deploy-to-aws
