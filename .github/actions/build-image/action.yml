@@ -22,15 +22,15 @@ runs:
     - name: Build Angular app and push
       uses: docker/build-push-action@v6
       with:
-        context: ../../
-        file: docker/nginx/Dockerfile
+        context: .
+        file: ./docker/nginx/Dockerfile
         push: true
         tags: processpuzzle-testbed/processpuzzle-testbed:latest
 
     - name: Build json-server and push
       uses: docker/build-push-action@v6
       with:
-        context: ../../
+        context: .
         file: docker/json-server/Dockerfile
         push: true
         tags: processpuzzle-testbed/json-server:latest
