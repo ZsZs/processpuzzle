@@ -4,8 +4,8 @@ inputs:
   dockerhub_username:
     description: Username to DockerHub
     required: true
-  dockerhub_password:
-    description: Password to DockerHub
+  dockerhub_token:
+    description: Token to DockerHub
     required: true
 runs:
   using: composite
@@ -17,7 +17,7 @@ runs:
       uses: docker/login-action@v3
       with:
         username: ${{ inputs.dockerhub_username }}
-        password: ${{ inputs.dockerhub_password }}
+        password: ${{ inputs.dockerhub_token }}
 
     - name: Build Angular app and push
       uses: docker/build-push-action@v6
