@@ -10,6 +10,7 @@ inputs:
     required: true
   aws_access_secret:
     description: Secret to be able to access AWS
+    required: true
 runs:
   using: composite
   steps:
