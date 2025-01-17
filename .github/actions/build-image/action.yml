@@ -19,13 +19,16 @@ runs:
         username: ${{ inputs.dockerhub_username }}
         password: ${{ inputs.dockerhub_token }}
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Build Angular app and push
       uses: docker/build-push-action@v6
       with:
         context: .
         file: ./docker/nginx/Dockerfile
         push: true
-        tags: processpuzzle-testbed/processpuzzle-testbed:latest
+        tags: processpuzzle/processpuzzle-testbed:latest
 
     - name: Build json-server and push
       uses: docker/build-push-action@v6
@@ -33,4 +36,4 @@ runs:
         context: .
         file: docker/json-server/Dockerfile
         push: true
-        tags: processpuzzle-testbed/json-server:latest
+        tags: processpuzzle/json-server:latest
