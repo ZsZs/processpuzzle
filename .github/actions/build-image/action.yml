@@ -28,7 +28,7 @@ runs:
         context: .
         file: ./docker/nginx/Dockerfile
         push: true
-        tags: processpuzzle/processpuzzle-testbed:latest
+        tags: zsuffazs/processpuzzle:latest
 
     - name: Build json-server and push
       uses: docker/build-push-action@v6
@@ -36,4 +36,4 @@ runs:
         context: .
         file: docker/json-server/Dockerfile
         push: true
-        tags: processpuzzle/json-server:latest
+        tags: zsuffazs/processpuzzle:latest
