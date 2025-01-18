@@ -38,10 +38,9 @@ jobs:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - id: deploy-to-aws
+      - id: deploy-to-aws-eb
         name: Deploy distribution to AWS
-        uses: ./.github/actions/deploy-to-aws
+        uses: ./.github/actions/deploy-to-aws-eb
         with:
-          distribution_source_path: ./dist/apps/processpuzzle-testbed/browser
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
           aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}

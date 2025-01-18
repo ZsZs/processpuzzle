@@ -1,0 +1,53 @@
+name: deploy-to-aws
+description: Deploys the application to AWS Elastic Beanstalk
+inputs:
+  aws_access_key:
+    description: Key to be able to access AWS
+    required: true
+  aws_access_secret:
+    description: Secret to be able to access AWS
+    required: true
+  aws_region:
+    description: Target AWS region
+    required: true
+    default: eu-central-1
+  aws_application_name:
+    description: Name of the AWS Application
+    required: true
+    default: ProcessPuzzleTestbed
+  aws_environment_name:
+    description: Name of the AWS environment
+    required: true
+    default: ProcessPuzzleTestbed-Dev
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key }}
+        aws-secret-access-key: ${{ inputs.aws_access_secret }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Generate deployment package
+      run: |
+        cp ./docker/docker-compose-prod.yml docker-compose-prod.editing.yml
+        sed -i 's/AWS_ACCOUNT_ID/'"${{ inputs.aws_access_key }}"'/g' docker-compose-prod.editing.yml
+        sed -i 's/IMAGE_TAG/'"$GITHUB_SHA"'/g' docker-compose-prod.editing.yml
+        sed -i 's/AWS_REGION/'"${{ inputs.aws_region }}"'/g' docker-compose-prod.editing.yml
+        sed -i 's/PROJECT_NAME/'"${{ inputs.project_name }}"'/g' docker-compose-prod.editing.yml
+        mv docker-compose-prod.editing.yml docker-compose.yml
+        zip -r deploy.zip ./docker-compose.yml
+      shell: bash
+
+    - name: Deploy latest Docker images to EB
+      uses: einaregilsson/beanstalk-deploy@v20
+      with:
+        aws_access_key: ${{ inputs.aws_access_key }}
+        aws_secret_key: ${{ inputs.aws_access_secret }}
+        application_name: ${{ inputs.aws_application_name }}
+        environment_name: ${{ inputs.aws_environment_name }}
+        region: ${{ inputs.aws_region }}
+        version_label: ${{ github.sha }}
+        deployment_package: deploy.zip
+
