@@ -11,6 +11,10 @@ inputs:
     description: Target AWS region
     required: true
     default: eu-central-1
+  aws_bucket_name:
+    description: Name of the AWS bucket dedicated for EB
+    required: true
+    default: processpuzzle-testbed
   aws_application_name:
     description: Name of the AWS Application
     required: true
@@ -47,6 +51,7 @@ runs:
         aws_secret_key: ${{ inputs.aws_access_secret }}
         application_name: ${{ inputs.aws_application_name }}
         environment_name: ${{ inputs.aws_environment_name }}
+        existing_bucket_name: ${{ inputs.aws_bucket_name }}
         region: ${{ inputs.aws_region }}
         version_label: ${{ github.sha }}
         deployment_package: deploy.zip
