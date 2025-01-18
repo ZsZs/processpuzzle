@@ -31,7 +31,7 @@ runs:
 
     - name: Generate deployment package
       run: |
-        cp ./docker/docker-compose-prod.yml docker-compose-prod.editing.yml
+        cp ./docker/docker-compose-prod.yaml docker-compose-prod.editing.yml
         sed -i 's/AWS_ACCOUNT_ID/'"${{ inputs.aws_access_key }}"'/g' docker-compose-prod.editing.yml
         sed -i 's/IMAGE_TAG/'"$GITHUB_SHA"'/g' docker-compose-prod.editing.yml
         sed -i 's/AWS_REGION/'"${{ inputs.aws_region }}"'/g' docker-compose-prod.editing.yml
