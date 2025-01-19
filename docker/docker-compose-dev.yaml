@@ -4,6 +4,8 @@ networks:
 
 services:
   processpuzzle-testbed:
+    depends_on:
+      - json-server
     build:
       context: ../
       dockerfile: docker/nginx/Dockerfile
@@ -11,8 +13,6 @@ services:
     container_name: processpuzzle-testbed
     ports:
       - "8080:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d/
     tty: true
     networks:
       - processpuzzle
@@ -23,7 +23,7 @@ services:
     image: json-server
     container_name: json-server
     ports:
-      - "4000:3000"
+      - "3000:3000"
     tty: true
     networks:
       - processpuzzle

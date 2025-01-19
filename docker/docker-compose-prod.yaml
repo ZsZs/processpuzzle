@@ -4,18 +4,18 @@ networks:
 
 services:
   processpuzzle-testbed:
+    depends_on:
+      - json-server
     image: zsuffazs/processpuzzle-testbed:latest
     container_name: processpuzzle-testbed
     ports:
       - "80:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d/
     networks:
       - processpuzzle
   json-server:
     image: zsuffazs/json-server:latest
     container_name: json-server
     ports:
-      - "4000:3000"
+      - "3000:3000"
     networks:
       - processpuzzle

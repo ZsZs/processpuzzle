@@ -57,6 +57,7 @@ runs:
         environment_name: ${{ inputs.aws_environment_name }}
         existing_bucket_name: ${{ inputs.aws_bucket_name }}
         region: ${{ inputs.aws_region }}
-        version_label: ${{ github.sha }}
+        version_label: ver-${{ github.sha }}
+        version_description: commit-sha-${{ github.sha }}
         deployment_package: deploy.zip
 
