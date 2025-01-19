@@ -41,7 +41,7 @@ runs:
         sed -i 's/AWS_REGION/'"${{ inputs.aws_region }}"'/g' docker-compose-prod.editing.yml
         sed -i 's/PROJECT_NAME/'"${{ inputs.project_name }}"'/g' docker-compose-prod.editing.yml
         mv docker-compose-prod.editing.yml docker-compose.yml
-        zip -r deploy.zip ./docker-compose.yml .ebextensions
+        zip -r deploy.zip ./docker-compose.yml
       shell: bash
 
     - name: Upload package to S3 bucket
