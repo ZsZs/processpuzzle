@@ -44,6 +44,10 @@ runs:
         zip -r deploy.zip ./docker-compose.yml
       shell: bash
 
+    - name: Upload package to S3 bucket
+      run: aws s3 cp deploy.zip s3://processpuzzle-testbed
+      shell: bash
+
     - name: Deploy latest Docker images to EB
       uses: einaregilsson/beanstalk-deploy@v20
       with:
