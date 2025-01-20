@@ -6,6 +6,7 @@ import { lastValueFrom } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ConfigurationService<TConfiguration> {
   private config?: TConfiguration;
+  private currentConfigUrl: string | undefined;
   private readonly httpClient = inject(HttpClient);
   private readonly injector = inject(Injector);
   private readonly configurationOptions = inject(CONFIGURATION_OPTIONS);
@@ -20,9 +21,10 @@ export class ConfigurationService<TConfiguration> {
     try {
       await this.initInternal();
     } catch (error: any) {
-      throw Error(`Configuration load failed - ${error.message}`);
+      throw Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`);
     }
   }
+
   // endregion
 
   // region protected, private helper methods
@@ -41,6 +43,7 @@ export class ConfigurationService<TConfiguration> {
   }
 
   private loadConfig(url: string): Promise<TConfiguration> {
+    this.currentConfigUrl = url;
     const config$ = this.httpClient.get<TConfiguration>(url);
     return lastValueFrom(config$);
   }
@@ -79,5 +82,6 @@ export class ConfigurationService<TConfiguration> {
     if (Array.isArray(result)) return result;
     throw new Error('Unexpected value returned from ConfigurationUrlFactory');
   }
+
   // endregion
 }
