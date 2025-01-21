@@ -9,6 +9,8 @@ services:
     build:
       context: ../
       dockerfile: docker/nginx/Dockerfile
+      args:
+        CICD_STAGE: dev
     image: processpuzzle-testbed
     container_name: processpuzzle-testbed
     ports:
