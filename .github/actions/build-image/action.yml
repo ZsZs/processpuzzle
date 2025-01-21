@@ -31,7 +31,7 @@ runs:
       with:
         context: .
         file: ./docker/nginx/Dockerfile
-        build-args: ${{ inputs.cicd_stage }}
+        build-args: CICD_STAGE=${{ inputs.cicd_stage }}
         push: true
         tags: zsuffazs/processpuzzle-testbed:${{ github.sha }}, zsuffazs/processpuzzle-testbed:latest
 
