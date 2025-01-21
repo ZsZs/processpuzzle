@@ -1,6 +1,9 @@
 FROM nginx:latest
-WORKDIR /usr/share/nginx/html/gui/qk-ng/
+WORKDIR /usr/share/nginx/html/
+ARG CICD_STAGE=dev
 
-COPY ./dist/ef-qk-ng/browser .
-COPY ./docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./docker/nginx/config.docker.json /usr/share/nginx/html/gui/qk-ng/run-time-conf/
+COPY dist/apps/processpuzzle-testbed/browser .
+COPY docker/nginx/config.$CICD_STAGE.json /usr/share/nginx/html/run-time-conf/config.custom.json
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
