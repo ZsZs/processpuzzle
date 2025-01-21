@@ -3,16 +3,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
-import {
-  AppInitializer,
-  CONFIGURATION_APP_INITIALIZER,
-  CONFIGURATION_OPTIONS,
-  CONFIGURATION_TYPE,
-  ConfigurationService,
-  getEnvironment,
-  LayoutService,
-  RUNTIME_CONFIGURATION,
-} from '@processpuzzle/util';
+import { AppInitializer, CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
@@ -34,8 +25,7 @@ export const appConfig: ApplicationConfig = {
       provide: CONFIGURATION_OPTIONS,
       useValue: {
         urlFactory: () => {
-          const env = getEnvironment();
-          return ['environments/config.common.json', `run-time-conf/config.${env}.json`];
+          return ['environments/config.common.json', `run-time-conf/config.custom.json`];
         },
         log: true,
       },

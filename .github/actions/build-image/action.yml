@@ -1,6 +1,10 @@
 name: deploy-to-aws
 description: Deploys the application to AWS Elastic Beanstalk
 inputs:
+  cicd_stage:
+    description: CI/CD stage name, toward the target environment
+    required: true
+    default: staging
   dockerhub_username:
     description: Username to DockerHub
     required: true
@@ -27,6 +31,7 @@ runs:
       with:
         context: .
         file: ./docker/nginx/Dockerfile
+        build-args: ${{ inputs.cicd_stage }}
         push: true
         tags: zsuffazs/processpuzzle-testbed:${{ github.sha }}, zsuffazs/processpuzzle-testbed:latest
 
