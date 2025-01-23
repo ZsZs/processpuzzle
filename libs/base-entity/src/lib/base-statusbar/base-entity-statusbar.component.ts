@@ -12,7 +12,7 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 export class BaseEntityStatusbarComponent implements OnInit {
   store: any;
   baseEntityListOptions = input.required<BaseEntityDescriptor>();
-  entityTitle: Signal<string> = computed<string>(() => [eval][0](this.baseEntityListOptions().entityTitle));
+  entityTitle: Signal<string> = computed<string>(() => this.evaluateEntityTitle(this.baseEntityListOptions().entityTitle));
   isVisible: Signal<boolean> = computed(() => this.store.currentEntity() != undefined || this.store.selectedEntities().length == 1);
 
   // region Angular lifecycle hooks
@@ -26,5 +26,9 @@ export class BaseEntityStatusbarComponent implements OnInit {
   // endregion
 
   // protected, private helper methods
+  private evaluateEntityTitle(title: string): string {
+    return eval(title); //NOSONAR the value title comes from a trusted source
+  }
+
   // endregion
 }
