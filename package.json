@@ -3,7 +3,8 @@
   "version": "0.2.1",
   "license": "MIT",
   "scripts": {
-    "run-mock-backend": "npx json-server --watch mock-backend/db.json",
+    "copy:config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
+    "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 4000",
     "run-http-server": "http-server dist/processpuzzle-ui/browser --proxy http://localhost:8080?",
     "serve-processpuzzle-testbed": "nx run processpuzzle-testbed:serve --configuration=de-DE",
     "serve-processpuzzle-ui": "nx run processpuzzle-ui:serve --configuration=de-DE",

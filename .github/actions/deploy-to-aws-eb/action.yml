@@ -1,4 +1,4 @@
-name: deploy-to-aws
+name: deploy-to-aws-elastic-beanstalk
 description: Deploys the application to AWS Elastic Beanstalk
 inputs:
   aws_access_key:
@@ -60,4 +60,5 @@ runs:
         version_label: ver-${{ github.sha }}
         version_description: commit-sha-${{ github.sha }}
         deployment_package: deploy.zip
+        use_existing_version_if_available: true
 

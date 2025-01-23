@@ -10,7 +10,7 @@ services:
       zsuffazs/processpuzzle-testbed:IMAGE_TAG
     container_name: processpuzzle-testbed
     ports:
-      - "80:80"
+      - "8080:80"
     networks:
       - processpuzzle
   json-server:

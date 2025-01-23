@@ -1,5 +1,3 @@
 {
-  "ICS_BACKEND_ROOT": "http://localhost:4200/services/ics",
-  "MESSAGE_SERVICE_ROOT": "http://localhost:8080/services/message-service/api/v1",
-  "TEST_SERVICE_ROOT": "http://staging.testbed.processpuzzle.com/backend"
+  "TEST_SERVICE_ROOT": "https://staging.testbed.processpuzzle.com/backend"
 }
