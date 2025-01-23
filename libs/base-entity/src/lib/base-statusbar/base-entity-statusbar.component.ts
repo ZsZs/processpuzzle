@@ -27,7 +27,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
 
   // protected, private helper methods
   private evaluateEntityTitle(title: string): string {
-    return eval(title);
+    return eval(title); //NOSONAR the value title comes from a trusted source
   }
 
   // endregion
