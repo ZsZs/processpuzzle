@@ -26,8 +26,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npx nx run processpuzzle-testbed:serve',
-    url: 'http://localhost:4200',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env,
     cwd: workspaceRoot,
   },
   projects: [
@@ -36,17 +35,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
+    // Uncomment for mobile browsers support
+    /* {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-
-    // Uncomment for mobile browsers support
     /* {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },

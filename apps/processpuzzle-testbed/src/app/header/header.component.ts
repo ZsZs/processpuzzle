@@ -8,10 +8,11 @@ import { LayoutService } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
+import { SubstringPipe } from '../substring-pipe';
 
 @Component({
   selector: 'app-header',
-  imports: [MatToolbar, MatIcon, MatIconButton, NgOptimizedImage, MatButton, MatMenu, MatMenuTrigger, RouterLink, NgClass, MatMenuItem, MatListItemIcon, MatListItemTitle],
+  imports: [MatToolbar, MatIcon, MatIconButton, NgOptimizedImage, MatButton, MatMenu, MatMenuTrigger, RouterLink, NgClass, MatMenuItem, MatListItemIcon, MatListItemTitle, SubstringPipe],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
 })
@@ -19,6 +20,7 @@ export class HeaderComponent {
   readonly layoutService = inject(LayoutService);
   readonly router = inject(Router);
   readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
+  readonly title = 'ProcessPuzzle Testbed';
   readonly toggleSideNav = output<undefined>();
 
   // region event handlers
