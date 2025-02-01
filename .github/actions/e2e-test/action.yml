@@ -1,0 +1,22 @@
+name: e2e-tests
+description: End to End playwright tests
+inputs:
+  target_environment:
+    description: Target environment.
+    required: true
+    default: ci
+runs:
+  using: composite
+  steps:
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        ENVIRONMENT: ${{inputs.target_url}}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: dist/.playwright/apps/processpuzzle-testbed-e2e
+        retention-days: 30

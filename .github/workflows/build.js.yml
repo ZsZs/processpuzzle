@@ -31,6 +31,18 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
 
+      - id: docker-compose
+        name: run-docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          compose-file: './docker/docker-compose-ci.yml'
+
+      - id: e2e-test
+        name: run-e2e-tests
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: 'ci'
+
       - id: build-image
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
