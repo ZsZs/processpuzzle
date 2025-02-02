@@ -10,10 +10,14 @@ runs:
   steps:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+      shell: bash
+
     - name: Run Playwright tests
       run: npx playwright test
+      shell: bash
       env:
         ENVIRONMENT: ${{inputs.target_url}}
+
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
