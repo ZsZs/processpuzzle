@@ -13,7 +13,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       <base-entity-tabs [baseEntityListOptions]="baseEntityListOptions()"></base-entity-tabs>
     </div>
   `,
-  styles: ``,
 })
 export class BaseEntityContainerComponent implements OnDestroy, OnInit {
   baseEntityListOptions = input.required<BaseEntityDescriptor>();
@@ -32,6 +31,7 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
   ngOnInit() {
     this.store = this.baseEntityListOptions().store;
   }
+
   // endregion
 
   // region protected, private helper methods
@@ -43,5 +43,6 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
       }
     });
   }
+
   // endregion
 }

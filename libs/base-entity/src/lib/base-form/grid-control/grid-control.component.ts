@@ -6,6 +6,5 @@ import { BaseFormControlComponent } from '../base-form-control.component';
   selector: 'grid-control',
   imports: [],
   templateUrl: './grid-control.component.html',
-  styleUrl: './grid-control.component.css',
 })
 export class GridControlComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}
