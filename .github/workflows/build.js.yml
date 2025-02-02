@@ -35,7 +35,7 @@ jobs:
         name: run-docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
-          compose-file: './docker/docker-compose-ci.yml'
+          compose-file: './docker/docker-compose-ci.yaml'
 
       - id: e2e-test
         name: run-e2e-tests
