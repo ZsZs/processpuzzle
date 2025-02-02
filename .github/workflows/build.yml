@@ -5,10 +5,10 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "develop", "feature/*" ]
+    branches: [ "feature/*" ]
   pull_request:
     types: [ opened, synchronize, reopened ]
-    branches: [ "develop", "master" ]
+    branches: [ "develop" ]
 
 jobs:
   build:
@@ -42,18 +42,3 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           target_environment: 'ci'
-
-      - id: build-image
-        name: Build and publish Docker images
-        uses: ./.github/actions/build-image
-        with:
-          cicd_stage: 'staging'
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - id: deploy-to-aws-eb
-        name: Deploy distribution to AWS
-        uses: ./.github/actions/deploy-to-aws-eb
-        with:
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
-          aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}
