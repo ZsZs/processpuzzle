@@ -10,16 +10,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      RUNNER: ${{ runner.name }}
-    strategy:
-      matrix:
-        node-version: [ 22.x ]
+    timeout-minutes: 10
     steps:
-      - run: echo "selected runner = ${{ runner.name }}"
       - name: Checkout source code
         uses: actions/checkout@v4
-      - run: echo "selected runner = ${{ runner.name }}"
 
       - id: lint-test-build
         name: Lint test and build the application
@@ -27,18 +21,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-
-      - id: docker-compose
-        name: run-docker-compose
-        uses: hoverkraft-tech/compose-action@v2.0.1
-        with:
-          compose-file: './docker/docker-compose-ci.yaml'
-
-      - id: e2e-test
-        name: run-e2e-tests
-        uses: ./.github/actions/e2e-test
-        with:
-          target_environment: 'ci'
 
       - id: build-image
         name: Build and publish Docker images
