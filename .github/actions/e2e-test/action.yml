@@ -24,7 +24,7 @@ runs:
       run: npm run e2e-test-processpuzzle-testbed
       shell: bash
       env:
-        ENVIRONMENT: ${{inputs.target_url}}
+        ENVIRONMENT: ${{inputs.target_environment}}
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
