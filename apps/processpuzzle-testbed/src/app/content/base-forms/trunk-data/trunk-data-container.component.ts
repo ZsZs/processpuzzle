@@ -21,7 +21,7 @@ export class TrunkDataContainerComponent implements OnDestroy {
     this.baseEntityListOptions = {
       entityName: 'Trunk Data',
       store: this.store,
-      columnDescriptors: trunkDataDescriptors,
+      attrDescriptors: trunkDataDescriptors,
       entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
     };
   }

@@ -32,10 +32,11 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
   private _label?: string;
   private _linkedEntityType?: any;
 
-  constructor(attrName: string, formControlType?: FormControlType, label?: string, isLinkToDetails?: boolean, options?: object) {
+  constructor(attrName: string, formControlType?: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
     this.attrName = attrName;
     this.formControlType = formControlType;
     this._label = label;
+    this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
   }

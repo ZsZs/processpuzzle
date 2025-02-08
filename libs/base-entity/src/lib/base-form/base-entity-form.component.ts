@@ -57,6 +57,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     this.store().determineActiveRouteSegment();
     this.baseEntityForm = this.formBuilder.group({});
   }
+
   // endregion
 
   // region event handlers
@@ -75,13 +76,14 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     this.store().setCurrentEntity(undefined);
     await this.store().navigateBack();
   }
+
   // endregion
 
   // region protected, private helper methods
   private buildForm(): void {
     this.componentHost.viewContainerRef.clear();
     const viewContainerRef = this.componentHost.viewContainerRef;
-    this.baseEntityListOptions().columnDescriptors.forEach((column: BaseEntityAttrDescriptor<Entity>) => {
+    this.baseEntityListOptions().attrDescriptors.forEach((column: BaseEntityAttrDescriptor<Entity>) => {
       const formControlType = this.createFormControl(column);
       const currentAttrValue = Reflect.get(this.entity(), column.attrName);
       if (formControlType) {
@@ -129,5 +131,6 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
       if (this.entity()) this.store().setCurrentEntity(this.entity().id);
     });
   }
+
   // endregion
 }

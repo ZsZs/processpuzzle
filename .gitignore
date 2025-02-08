@@ -55,3 +55,4 @@ apps/processpuzzle-testbed/src/run-time-conf/config.custom.json
 !.elasticbeanstalk/*.global.yml
 
 /docs/Sicherungskopie_von_ProcessPuzzle Testbed.cdr
+/docs/processpuzzle-testbed.ldb
