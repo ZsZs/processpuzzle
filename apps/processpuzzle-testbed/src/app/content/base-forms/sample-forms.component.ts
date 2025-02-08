@@ -4,13 +4,17 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from 
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
 import { MatDivider } from '@angular/material/divider';
 import { filter, startWith } from 'rxjs';
-import { MarkdownComponent } from 'ngx-markdown';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
+import { MarkdownComponent } from 'ngx-markdown';
+import 'prismjs';
+import 'prismjs/components/prism-typescript.min.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import 'prismjs/plugins/line-highlight/prism-line-highlight.js';
 
-@Component( {
+@Component({
   selector: 'base-forms',
   standalone: true,
-  imports: [ CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab ],
+  imports: [CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab],
   template: `
     <mat-tab-group>
       <mat-tab label="Overview">
@@ -18,7 +22,7 @@ import { MatTab, MatTabGroup } from '@angular/material/tabs';
       </mat-tab>
       <mat-tab label="Samples">
         <span>The following tables and forms helps to manage these custom entities:</span>
-        <img src="https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/docs/base-entity-sample_entities.jpg" alt="Sample Entities">
+        <img src="https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/docs/base-entity-sample_entities.jpg" alt="Sample Entities" />
         <div>
           <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
             <mat-button-toggle routerLink="/base-forms/test-entity" value="test-entity">Test Entity</mat-button-toggle>
@@ -31,12 +35,12 @@ import { MatTab, MatTabGroup } from '@angular/material/tabs';
       </mat-tab>
     </mat-tab-group>
   `,
-  styles: ``
-} )
-export class TestFormsComponent implements OnInit {
-  route = inject( ActivatedRoute );
-  router = inject( Router );
-  selectedButton: WritableSignal<string> = signal( 'test-entity' );
+  styles: ``,
+})
+export class SampleFormsComponent implements OnInit {
+  route = inject(ActivatedRoute);
+  router = inject(Router);
+  selectedButton: WritableSignal<string> = signal('test-entity');
 
   // region Angular lifecycle hooks
   ngOnInit() {
@@ -46,11 +50,11 @@ export class TestFormsComponent implements OnInit {
   // endregion
 
   // region event handling methods
-  onLoad( $event: string ) {
+  onLoad($event: string) {
     // TODO: find out the use of this event
   }
 
-  onError( $event: string | Error ) {
+  onError($event: string | Error) {
     // TODO: find out the use of this event
   }
 
@@ -60,18 +64,18 @@ export class TestFormsComponent implements OnInit {
   private subscribeToRoutingEvents() {
     this.router.events
       .pipe(
-        filter( ( event ) => event instanceof NavigationEnd ),
-        startWith( this.router )
+        filter((event) => event instanceof NavigationEnd),
+        startWith(this.router),
       )
-      .subscribe( ( event ) => {
+      .subscribe((event) => {
         const currentUrl: string = event.url;
-        if ( currentUrl ) {
-          if ( currentUrl.includes( 'test-entity-component' ) ) this.selectedButton.set( 'test-entity-component' );
-          else if ( currentUrl.includes( 'test-entity' ) ) this.selectedButton.set( 'test-entity' );
-          else if ( currentUrl.includes( 'trunk-data' ) ) this.selectedButton.set( 'trunk-data' );
-          else this.selectedButton.set( '' );
+        if (currentUrl) {
+          if (currentUrl.includes('test-entity-component')) this.selectedButton.set('test-entity-component');
+          else if (currentUrl.includes('test-entity')) this.selectedButton.set('test-entity');
+          else if (currentUrl.includes('trunk-data')) this.selectedButton.set('trunk-data');
+          else this.selectedButton.set('');
         }
-      } );
+      });
   }
 
   // endregion
