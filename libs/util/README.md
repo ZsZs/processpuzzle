@@ -7,20 +7,14 @@ Dieses Bibliothek enthelt algemein nützliches Funktionen oder Modulen.
 Diese Funktion vergleicht ein Text mit ein Vergleicher Text, welch wildcars beinhalten kann.
 
 ```typescript
-matchTextWith( textToSearchIn
-:
-string, textToMatchWidth
-:
-string
-):
-boolean;
+matchTextWith( textToSearchIn: string, textToMatchWidth: string ): boolean;
 ```
 
 - *textToSearchIn*: ist der Gegenstand string
 - *textToMachWidth*: ist der Vergleicher string welche wildchars '*' oder '.' beinhalten kann.
 
 ```typescript
-    const result = matchTextWith( 'Hello World', 'Hello*' ); // true
+const result = matchTextWith( 'Hello World', 'Hello*' ); // true
 const result = matchTextWith( 'Hello World', '*World' ); // true
 const result = matchTextWith( 'Hello World', 'He..o World' ); // true
 const result = matchTextWith( 'Hello World', 'Hello .ld' ); // false
@@ -39,20 +33,16 @@ zusammengefügt und steht als DI zur Verfügung. Der Entwickler spezifiziert die
 CONFIGURATION_OPTIONS injection token:
 
 ```typescript
-    {
-  provide: CONFIGURATION_OPTIONS, useValue
-:
+{
+  provide: CONFIGURATION_OPTIONS, useValue:
   {
     urlFactory: () => {
       const env = getEnvironment();
       return [ 'environments/config.common.json', `run-time-conf/config.${env}.json` ]
-    },
-      log
-  :
-    true
+    }, 
+    log: true
   }
 }
-,
 ```
 
 In dieses Beispiel wir die Datei ``environment/config.common.json`` erst gelesen, dann ``run-time-config/config.${env}.json``
@@ -62,17 +52,11 @@ Der Entwickler kann die Konfiguration Eigenschaften mit einer Klasse selber defi
 ein factory für die Klasse zu definieren:
 
 ```typescript
-    {
-  provide: RuntimeConfiguration,
-    useFactory
-:
-  ( configurationService: ConfigurationService<RuntimeConfiguration> ) => {
-    return configurationService.configuration, deps
-  :
-    [ ConfigurationService ]
+{
+  provide: RuntimeConfiguration, useFactory: ( configurationService: ConfigurationService<RuntimeConfiguration> ) => {
+    return configurationService.configuration, deps: [ ConfigurationService ]
   }
 }
-,
 ```
 
 Die mitgelieferte AppInitializer sort für die Konfiguration zu initialisieren, und andere funktionen durchzuführen.
@@ -80,16 +64,10 @@ Siehe [AppInitializer]().
 
 ```typescript
 {
-  provide: APP_INITIALIZER, multi
-:
-  true, useFactory
-:
-  ( initializer: AppInitializer ) => {
+  provide: APP_INITIALIZER, multi:true, useFactory: ( initializer: AppInitializer ) => {
     return async() => await initializer.init().then()
   },
-    deps
-:
-  [ AppInitializer ]
+  deps: [ AppInitializer ]
 }
 ```
 
@@ -100,6 +78,7 @@ konfiguriert wird. Zusätzlich kann der AppInitializer die Methoden die mit CONF
 definiert sind, auch ausführen. diese Methode sollen ein Promise<unknown> zurückgeben.
 
 ```typescript
-    { provide: CONFIGURATION_APP_INITIALIZER, useValue: [() => Promise.resolve('anything'), () => Promise.resolve('something')] }
+{ provide: CONFIGURATION_APP_INITIALIZER, useValue: [() => Promise.resolve('anything'), () => Promise.resolve('something')] }
+```
 
 Typische weise wird in app.config.ts konfiguriert, wie [oben](#runtimeconfiguration) dargestellt.

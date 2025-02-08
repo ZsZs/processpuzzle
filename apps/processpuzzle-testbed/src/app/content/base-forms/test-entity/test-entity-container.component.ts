@@ -21,7 +21,7 @@ export class TestEntityContainerComponent implements OnDestroy {
     this.baseEntityListOptions = {
       entityName: 'Test Entity',
       store: this.store,
-      columnDescriptors: testEntityDescriptors,
+      attrDescriptors: testEntityDescriptors,
       entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
     };
   }

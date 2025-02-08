@@ -13,6 +13,7 @@ import 'prismjs/plugins/line-highlight/prism-line-highlight.js';
   styleUrl: './util.component.scss',
 })
 export class UtilsComponent {
+  // region event handling methods
   onLoad($event: string) {
     // TODO: find out the use of this event
   }
@@ -20,4 +21,6 @@ export class UtilsComponent {
   onError($event: string | Error) {
     // TODO: find out the use of this event
   }
+
+  // endregion
 }

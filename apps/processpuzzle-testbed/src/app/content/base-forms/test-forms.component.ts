@@ -4,29 +4,39 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from 
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
 import { MatDivider } from '@angular/material/divider';
 import { filter, startWith } from 'rxjs';
+import { MarkdownComponent } from 'ngx-markdown';
+import { MatTab, MatTabGroup } from '@angular/material/tabs';
 
-@Component({
+@Component( {
   selector: 'base-forms',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider],
+  imports: [ CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab ],
   template: `
-    <h2>Basis Formulare Test Seite</h2>
-    <div>
-      <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
-        <mat-button-toggle routerLink="/base-forms/test-entity" value="test-entity">Test Entity</mat-button-toggle>
-        <mat-button-toggle routerLink="/base-forms/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
-        <mat-button-toggle routerLink="/base-forms/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
-      </mat-button-toggle-group>
-    </div>
-    <mat-divider />
-    <router-outlet></router-outlet>
+    <mat-tab-group>
+      <mat-tab label="Overview">
+        <markdown [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/README.md'" (load)="onLoad($event)" (error)="onError($event)"></markdown>
+      </mat-tab>
+      <mat-tab label="Samples">
+        <span>The following tables and forms helps to manage these custom entities:</span>
+        <img src="https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/docs/base-entity-sample_entities.jpg" alt="Sample Entities">
+        <div>
+          <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
+            <mat-button-toggle routerLink="/base-forms/test-entity" value="test-entity">Test Entity</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-forms/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-forms/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        <mat-divider />
+        <router-outlet></router-outlet>
+      </mat-tab>
+    </mat-tab-group>
   `,
-  styles: ``,
-})
+  styles: ``
+} )
 export class TestFormsComponent implements OnInit {
-  route = inject(ActivatedRoute);
-  router = inject(Router);
-  selectedButton: WritableSignal<string> = signal('test-entity');
+  route = inject( ActivatedRoute );
+  router = inject( Router );
+  selectedButton: WritableSignal<string> = signal( 'test-entity' );
 
   // region Angular lifecycle hooks
   ngOnInit() {
@@ -34,22 +44,35 @@ export class TestFormsComponent implements OnInit {
   }
 
   // endregion
+
+  // region event handling methods
+  onLoad( $event: string ) {
+    // TODO: find out the use of this event
+  }
+
+  onError( $event: string | Error ) {
+    // TODO: find out the use of this event
+  }
+
+  // endregion
+
   // protected, private helper methods
   private subscribeToRoutingEvents() {
     this.router.events
       .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        startWith(this.router),
+        filter( ( event ) => event instanceof NavigationEnd ),
+        startWith( this.router )
       )
-      .subscribe((event) => {
+      .subscribe( ( event ) => {
         const currentUrl: string = event.url;
-        if (currentUrl) {
-          if (currentUrl.includes('test-entity-component')) this.selectedButton.set('test-entity-component');
-          else if (currentUrl.includes('test-entity')) this.selectedButton.set('test-entity');
-          else if (currentUrl.includes('trunk-data')) this.selectedButton.set('trunk-data');
-          else this.selectedButton.set('');
+        if ( currentUrl ) {
+          if ( currentUrl.includes( 'test-entity-component' ) ) this.selectedButton.set( 'test-entity-component' );
+          else if ( currentUrl.includes( 'test-entity' ) ) this.selectedButton.set( 'test-entity' );
+          else if ( currentUrl.includes( 'trunk-data' ) ) this.selectedButton.set( 'trunk-data' );
+          else this.selectedButton.set( '' );
         }
-      });
+      } );
   }
+
   // endregion
 }

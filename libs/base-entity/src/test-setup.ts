@@ -93,7 +93,7 @@ class DummyComponent {}
 function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[]) {
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
-    columnDescriptors: attrDescriptors,
+    attrDescriptors: attrDescriptors,
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
   };
@@ -236,7 +236,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   const labelConfig = new BaseEntityAttrDescriptor<TestEntity>('description', FormControlType.LABEL);
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
-    columnDescriptors: [checkboxConfig, labelConfig],
+    attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
   };
