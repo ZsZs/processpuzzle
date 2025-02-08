@@ -6,7 +6,8 @@
 ## Introduction
 
 Base-Entity is a run-time form and table generator base on Entity Descriptor and Entity Attribute Descriptor. To make it short:
-<img src="/docs/base-entity-bird-eye-view.jpg" width=600px>
+
+![Bird eye view](/docs/base-entity-bird-eye-view.jpg)
 
 From these **Inputs:**
 
@@ -19,7 +20,8 @@ generates these **Outputs:**
 - Angular Material Table => Angular Material Table, create dynamically, run-time.
 
 Of course this is a very coarse, abstract view of the functionality. In more detail, the library offers the following classes:
-<img src="/docs/base-entity-architectural_context.jpg" width=600px>
+
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-architectural_context.jpg" width=600px alt="Architectural Context">
 
 - Base Entity => interface to implement from the subject Custom Entity
 - Base Entity Service => abstract class to extend by the Custom Service to deliver the Custom Entity
@@ -33,11 +35,12 @@ Of course this is a very coarse, abstract view of the functionality. In more det
 
 Basically the library user has to extend a couple of base classes. These extensions are minimal, it't more like configuration of the base class.
 
-<img src="/docs/base-entity-design_overview.jpg" width=600px alt="Design Overview">
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-design_overview.jpg" width=600px alt="Design Overview">
 
 ### Extend **Base Entity**
 
 As the **Base Entity** interface defines only an ID, you are almost completely free how you define your Entity to be managed by the library. For an example see the [sample entities](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed/src/app/content/base-forms), like TestEntity, TestEntityComponent and TrunkData.
+
 ```typescript
 export class TestEntity implements BaseEntity {
   id: string = uuidv4();
@@ -50,6 +53,7 @@ export class TestEntity implements BaseEntity {
   private enumValue: TestEnum;
 }
 ```
+
 The Base Entity Mapper increases the flexibility how you can define your Entity to be managed even more as it offers a mapping between the mostly predefined DTOs and the Entity in the front end. For an example see the [sample mappers](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed/src/app/content/base-forms), TestEntityMapper, TestEntityComponentMapper and TrunkDataMapper.
 ```typescript
 @Injectable({ providedIn: 'root' })
