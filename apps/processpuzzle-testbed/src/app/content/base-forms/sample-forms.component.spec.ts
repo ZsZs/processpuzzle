@@ -1,21 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TestFormsComponent } from './test-forms.component';
+import { SampleFormsComponent } from './sample-forms.component';
 import { provideRouter } from '@angular/router';
 import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 describe('BaseFormsComponent', () => {
-  let component: TestFormsComponent;
-  let fixture: ComponentFixture<TestFormsComponent>;
+  let component: SampleFormsComponent;
+  let fixture: ComponentFixture<SampleFormsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MarkdownComponent, TestFormsComponent],
+      imports: [MarkdownComponent, SampleFormsComponent],
       providers: [provideAnimations(), provideHttpClient(), provideMarkdown({ loader: HttpClient }), provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TestFormsComponent);
+    fixture = TestBed.createComponent(SampleFormsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

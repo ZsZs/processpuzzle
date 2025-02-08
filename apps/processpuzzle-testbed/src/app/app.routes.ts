@@ -20,7 +20,7 @@ export const appRoutes: Route[] = [
     path: 'base-forms',
     title: 'ProcessPuzzle Testbed - Base Forms',
     data: { icon: 'checkbook' },
-    loadComponent: () => import('./content/base-forms/test-forms.component').then((comp) => comp.TestFormsComponent),
+    loadComponent: () => import('./content/base-forms/sample-forms.component').then((comp) => comp.SampleFormsComponent),
     providers: [LayoutService],
     children: [
       {
