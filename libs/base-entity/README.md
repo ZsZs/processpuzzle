@@ -21,7 +21,7 @@ generates these **Outputs:**
 
 Of course this is a very coarse, abstract view of the functionality. In more detail, the library offers the following classes:
 
-<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-architectural_context.png?raw=true" width=600px alt="Architectural Context">
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-architectural-context.png?raw=true" width=600px alt="Architectural Context">
 
 - Base Entity => interface to implement from the subject Custom Entity
 - Base Entity Service => abstract class to extend by the Custom Service to deliver the Custom Entity
