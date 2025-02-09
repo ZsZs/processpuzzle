@@ -7,7 +7,7 @@
 
 Base-Entity is a run-time form and table generator base on Entity Descriptor and Entity Attribute Descriptor. To make it short:
 
-<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-bird-eye-view.jpg?raw=true" width=600px alt="Bird eye view">
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-bird-eye-view.png?raw=true" width=600px alt="Bird eye view">
 
 From these **Inputs:**
 
@@ -21,7 +21,7 @@ generates these **Outputs:**
 
 Of course this is a very coarse, abstract view of the functionality. In more detail, the library offers the following classes:
 
-<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-architectural_context.jpg?raw=true" width=600px alt="Architectural Context">
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-architectural_context.png?raw=true" width=600px alt="Architectural Context">
 
 - Base Entity => interface to implement from the subject Custom Entity
 - Base Entity Service => abstract class to extend by the Custom Service to deliver the Custom Entity
@@ -35,7 +35,7 @@ Of course this is a very coarse, abstract view of the functionality. In more det
 
 Basically the library user has to extend a couple of base classes. These extensions are minimal, it't more like configuration of the base class.
 
-<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-design_overview.jpg?raw=true" width=600px alt="Design Overview">
+<img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-design_overview.png?raw=true" width=600px alt="Design Overview">
 
 ### Extend **Base Entity**
 

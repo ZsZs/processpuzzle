@@ -6,10 +6,6 @@ import { MatDivider } from '@angular/material/divider';
 import { filter, startWith } from 'rxjs';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { MarkdownComponent } from 'ngx-markdown';
-import 'prismjs';
-import 'prismjs/components/prism-typescript.min.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-import 'prismjs/plugins/line-highlight/prism-line-highlight.js';
 
 @Component({
   selector: 'base-forms',
@@ -18,11 +14,18 @@ import 'prismjs/plugins/line-highlight/prism-line-highlight.js';
   template: `
     <mat-tab-group>
       <mat-tab label="Overview">
-        <markdown [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/README.md'" (load)="onLoad($event)" (error)="onError($event)"></markdown>
+        <markdown
+          clipboard
+          mermaid
+          [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/README.md'"
+          (load)="onLoad($event)"
+          (error)="onError($event)"
+          ngPreserveWhitespaces
+        ></markdown>
       </mat-tab>
       <mat-tab label="Samples">
-        <span>The following tables and forms helps to manage these custom entities:</span>
-        <img src="https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/docs/base-entity-sample_entities.jpg" alt="Sample Entities" />
+        <div>The following tables and forms helps to manage these custom entities:</div>
+        <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" alt="Sample Entities" />
         <div>
           <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
             <mat-button-toggle routerLink="/base-forms/test-entity" value="test-entity">Test Entity</mat-button-toggle>
