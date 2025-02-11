@@ -9,7 +9,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
   imports: [ReactiveFormsModule],
 })
 export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
-  config: Signal<BaseEntityAttrDescriptor<Entity>> = input.required<BaseEntityAttrDescriptor<Entity>>();
+  config: Signal<BaseEntityAttrDescriptor> = input.required<BaseEntityAttrDescriptor>();
   entity: Signal<Entity> = input.required();
   formGroup!: FormGroup;
   store!: any;

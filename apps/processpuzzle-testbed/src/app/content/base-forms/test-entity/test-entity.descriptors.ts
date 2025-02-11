@@ -1,5 +1,5 @@
 import { BaseEntityAttrDescriptor, FormControlType } from '@processpuzzle/base-entity';
-import { TestEntity, TestEnum } from './test-entity';
+import { TestEnum } from './test-entity';
 
 const selectables = Object.keys(TestEnum)
   .filter((key: any) => parseInt(key) >= 0)
@@ -12,4 +12,4 @@ const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_B
 const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
 const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
 
-export const testEntityDescriptors: BaseEntityAttrDescriptor<TestEntity>[] = [nameAttr, descriptionAttr, booleanAttr, numberAttr, dateAttr, enumAttr];
+export const testEntityDescriptors: BaseEntityAttrDescriptor[] = [nameAttr, descriptionAttr, booleanAttr, numberAttr, dateAttr, enumAttr];

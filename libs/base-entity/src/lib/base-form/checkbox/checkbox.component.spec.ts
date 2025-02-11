@@ -4,7 +4,7 @@ import { BaseEntityAttrDescriptor, FormControlType } from '../../base-entity/bas
 import { setupFormControlTest } from '../../../test-setup';
 
 describe('CheckboxComponent', () => {
-  const checkboxConfig: BaseEntityAttrDescriptor<TestEntity> = new BaseEntityAttrDescriptor<TestEntity>('boolean', FormControlType.CHECKBOX, 'Is project approved from the business?');
+  const checkboxConfig: BaseEntityAttrDescriptor = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Is project approved from the business?');
   checkboxConfig.styleClass = 'mt-3';
   checkboxConfig.labelClass = 'ms-2';
   checkboxConfig.visible = true;

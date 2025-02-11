@@ -1,5 +1,3 @@
-import { BaseEntity } from './base-entity';
-
 export enum FormControlType {
   CONTROL_GRID_CONTROL = 'CONTROL_GRID',
   DATE = 'DATE',
@@ -13,7 +11,7 @@ export enum FormControlType {
   FOREIGN_KEY = 'FOREIGN_KEY',
 }
 
-export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
+export class BaseEntityAttrDescriptor {
   attrName: string;
   description?: string;
   styleClass? = '';
@@ -30,7 +28,7 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
   lines?: number;
   options: { inputType: 'text' };
   private _label?: string;
-  private _linkedEntityType?: any;
+  private _linkedEntityType?: string;
 
   constructor(attrName: string, formControlType?: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
     this.attrName = attrName;
@@ -54,7 +52,7 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
     return this._linkedEntityType;
   }
 
-  setLinkedEntityType(linkedEntityType: { new (): Entity }) {
+  set linkedEntityType(linkedEntityType: string) {
     this._linkedEntityType = linkedEntityType;
   }
 

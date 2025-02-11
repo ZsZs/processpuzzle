@@ -45,7 +45,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   protected formBuilder = inject(FormBuilder);
   store: Signal<any> = computed(() => this.baseEntityListOptions().store);
-  private isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
+  private readonly isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
 
   constructor() {
@@ -83,7 +83,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private buildForm(): void {
     this.componentHost.viewContainerRef.clear();
     const viewContainerRef = this.componentHost.viewContainerRef;
-    this.baseEntityListOptions().attrDescriptors.forEach((column: BaseEntityAttrDescriptor<Entity>) => {
+    this.baseEntityListOptions().attrDescriptors.forEach((column: BaseEntityAttrDescriptor) => {
       const formControlType = this.createFormControl(column);
       const currentAttrValue = Reflect.get(this.entity(), column.attrName);
       if (formControlType) {
@@ -99,7 +99,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     });
   }
 
-  private createFormControl(column: BaseEntityAttrDescriptor<Entity>): Type<BaseFormControlComponent<Entity>> {
+  private createFormControl(column: BaseEntityAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
     if (column.formControlType === FormControlType.LABEL) {
       return LabelComponent<Entity>;
     } else if (column.formControlType === FormControlType.DATE) {

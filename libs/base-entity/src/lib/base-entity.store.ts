@@ -29,7 +29,7 @@ export interface LoadMethodParameters {
   page?: number;
 }
 
-export function BaseEntityStore<Entity extends BaseEntity>(entityType: { new (): Entity }, repositoryType: ProviderToken<BaseEntityService<Entity>>) {
+export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, repositoryType: ProviderToken<BaseEntityService<Entity>>) {
   return signalStoreFeature(
     withState<EntityStoreState<Entity>>({
       entities: [],
@@ -42,11 +42,10 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: { new ():
       error: undefined,
       selectedEntities: [],
     }),
+    //NOSONAR there is no simple way to reduce nesting here
     withMethods((store, repository = inject(repositoryType)) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
-      createEntity: (): Entity => {
-        return new entityType();
-      },
+      createEntity: (): Entity => new entityType(),
       delete: rxMethod<string>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: undefined })),

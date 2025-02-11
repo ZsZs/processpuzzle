@@ -4,7 +4,7 @@ import { setupFormControlTest } from '../../../test-setup';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 
 describe('RadioComponent', () => {
-  const radioConfig = new BaseEntityAttrDescriptor<TestEntity>('projectCloudTechnology', FormControlType.RADIO, 'Project cloud technology');
+  const radioConfig = new BaseEntityAttrDescriptor('projectCloudTechnology', FormControlType.RADIO, 'Project cloud technology');
   radioConfig.selectables = [
     { key: '1', value: 'AWS' },
     { key: '2', value: 'MS Azure' },
