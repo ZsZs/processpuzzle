@@ -1,10 +1,8 @@
 ![ProcessPuzzle - Business Agility](https://raw.githubusercontent.com/ZsZs/processpuzzle-parent/master/processpuzzle-logo-small.jpg)
-# processpuzzle-core
-[![Build Status](https://travis-ci.org/ZsZs/processpuzzle-core.svg?branch=master)](https://travis-ci.org/ZsZs/processpuzzle-core)
-[![Quality Gate](https://sonarqube.com/api/badges/gate?key=com.processpuzzle:processpuzzle-core:development)](https://sonarqube.com/dashboard/index/com.processpuzzle:processpuzzle-core:development)
-[![Code coverage ratio](https://sonarqube.com/api/badges/measure?key=com.processpuzzle:processpuzzle-core:development&metric=coverage)](https://sonarqube.com/dashboard/index/com.processpuzzle:processpuzzle-core:development)
-[![Technical debt ratio](https://sonarqube.com/api/badges/measure?key=com.processpuzzle:processpuzzle-core:development&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard/index/com.processpuzzle:processpuzzle-core:development)
-[![Dependency Status](https://www.versioneye.com/user/projects/59b28517368b08004a06a5f5/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/59b28517368b08004a06a5f5)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.processpuzzle/processpuzzle-core/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.processpuzzle/processpuzzle-core/)
-[![License](https://img.shields.io/github/license/spotify/dockerfile-maven.svg)](LICENSE)
-Core module of ProcessPuzzle business platform.
+# ProcessPuzzle
+ProcessPuzzle is a platform for content management and business workflow based applications. For more details see [the ProcessPuzzle website](https://processpuzzle.com). 
+
+This repository is so called Monorepository and contains a couple of libraries, which can be useful even independently from the platform.
+- [Util](/libs/util/README.md) => generic purpose functions, useful at building Angular applications
+- [Base Entity](/libs/base-entity/README.md) => Angular Material Table and Reactive Form generator base on Entity Definition.
+- [CI/CD](/.github/README.md) pipeline for all containing building blocks.
