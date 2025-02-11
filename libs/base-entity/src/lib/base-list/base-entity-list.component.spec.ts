@@ -3,7 +3,6 @@ import { BaseEntityAttrDescriptor, FormControlType } from '../base-entity/base-e
 import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
-import { TestEntityComponent } from '../test-entity-component';
 import { MatTableDataSource } from '@angular/material/table';
 
 describe('EntityListComponent', () => {
