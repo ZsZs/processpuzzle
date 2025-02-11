@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
-  selector: 'app-utils',
+  selector: 'app-ci-cd',
   imports: [CommonModule, MarkdownComponent],
-  templateUrl: './util.component.html',
-  styleUrl: './util.component.scss',
+  templateUrl: './ci-cd.component.html',
+  styleUrl: './ci-cd.component.scss',
 })
-export class UtilsComponent {
+export class CiCdComponent {
   // region event handling methods
   onLoad($event: string) {
     // TODO: find out the use of this event

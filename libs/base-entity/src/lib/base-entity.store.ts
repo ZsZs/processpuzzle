@@ -42,8 +42,8 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       error: undefined,
       selectedEntities: [],
     }),
+    //NOSONAR there is no simple way to reduce nesting here
     withMethods((store, repository = inject(repositoryType)) => ({
-      //NOSONAR there is no simple way to reduce nesting here
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
       delete: rxMethod<string>(

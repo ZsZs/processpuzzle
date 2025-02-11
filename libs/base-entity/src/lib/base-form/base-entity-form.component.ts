@@ -45,7 +45,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   protected formBuilder = inject(FormBuilder);
   store: Signal<any> = computed(() => this.baseEntityListOptions().store);
-  private isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
+  private readonly isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
 
   constructor() {
