@@ -28,9 +28,9 @@ import { MarkdownComponent } from 'ngx-markdown';
         <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" width="600px" alt="Sample Entities" />
         <div>
           <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
-            <mat-button-toggle routerLink="/base-forms/test-entity" value="test-entity">Test Entity</mat-button-toggle>
-            <mat-button-toggle routerLink="/base-forms/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
-            <mat-button-toggle routerLink="/base-forms/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-entity/test-entity" value="test-entity">Test Entity</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-entity/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-entity/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
         <mat-divider />
