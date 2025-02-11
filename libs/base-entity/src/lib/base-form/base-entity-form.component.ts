@@ -83,7 +83,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private buildForm(): void {
     this.componentHost.viewContainerRef.clear();
     const viewContainerRef = this.componentHost.viewContainerRef;
-    this.baseEntityListOptions().attrDescriptors.forEach((column: BaseEntityAttrDescriptor<Entity>) => {
+    this.baseEntityListOptions().attrDescriptors.forEach((column: BaseEntityAttrDescriptor) => {
       const formControlType = this.createFormControl(column);
       const currentAttrValue = Reflect.get(this.entity(), column.attrName);
       if (formControlType) {
@@ -99,7 +99,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     });
   }
 
-  private createFormControl(column: BaseEntityAttrDescriptor<Entity>): Type<BaseFormControlComponent<Entity>> {
+  private createFormControl(column: BaseEntityAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
     if (column.formControlType === FormControlType.LABEL) {
       return LabelComponent<Entity>;
     } else if (column.formControlType === FormControlType.DATE) {

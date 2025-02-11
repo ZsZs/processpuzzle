@@ -41,7 +41,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
   selection = new SelectionModel<Entity>(true, []);
   private baseEntityListOptions = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
-  columnDescriptors: Signal<BaseEntityAttrDescriptor<Entity>[]> = computed(() => this.baseEntityListOptions().attrDescriptors);
+  columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => this.baseEntityListOptions().attrDescriptors);
   displayedColumns: Signal<string[]> = computed(() => {
     const columns = this.columnDescriptors().map((column) => column.attrName);
     columns.unshift('select');
@@ -85,7 +85,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.store.setCurrentEntity(entity.id);
   }
 
-  onNavigateToRelated(config: BaseEntityAttrDescriptor<Entity>, entity: Entity) {
+  onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: Entity) {
     this.store.navigateToRelated(config.linkedEntityType, this.getPropertyValue(entity, config.attrName));
   }
 

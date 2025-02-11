@@ -6,7 +6,7 @@ import { TestEntity } from './test-entity';
 export const TestEntityStore = signalStore(
   { providedIn: 'root' },
   BaseEntityStore<TestEntity>(TestEntity, TestEntityService),
-  BaseFormNavigatorStore<TestEntity>(TestEntity),
+  BaseFormNavigatorStore('TestEntity'),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),
 );

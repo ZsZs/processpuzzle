@@ -44,9 +44,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: { new ():
     }),
     withMethods((store, repository = inject(repositoryType)) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
-      createEntity: (): Entity => {
-        return new entityType();
-      },
+      createEntity: (): Entity => new entityType(),
       delete: rxMethod<string>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: undefined })),

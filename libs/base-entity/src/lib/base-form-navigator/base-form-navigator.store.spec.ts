@@ -4,18 +4,18 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
 import { signalStore } from '@ngrx/signals';
 import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
-import { TestEntity } from '../test-entity';
 import { Component } from '@angular/core';
 import { TestEntityComponent } from '../test-entity-component';
 
 describe('BaseFormNavigatorStore', () => {
   @Component({
     selector: 'dummy-component',
-    template: `<div></div>`,
+    template: ` <div></div>`,
     standalone: true,
   })
   class DummyComponent {}
-  const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore(TestEntity));
+
+  const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
   let route: ActivatedRoute;
   let store: any;
 
@@ -72,7 +72,7 @@ describe('BaseFormNavigatorStore', () => {
   });
 
   it('navigateToRelated() navigates to related entities Details route.', async () => {
-    await store.navigateToRelated(TestEntityComponent, '2', 'home');
+    await store.navigateToRelated('TestEntityComponent', '2', 'home');
     expect(store.determineCurrentUrl()).toEqual('/test-entity-component/2/details');
     expect(store.navigateTo()).toEqual('/test-entity-component/2/details');
     expect(store.returnTo()).toEqual('home');

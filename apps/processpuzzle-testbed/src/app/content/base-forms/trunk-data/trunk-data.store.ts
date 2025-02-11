@@ -6,7 +6,7 @@ import { TrunkData } from './trunk-data';
 export const TrunkDataStore = signalStore(
   { providedIn: 'root' },
   BaseEntityStore<TrunkData>(TrunkData, TrunkDataService),
-  BaseFormNavigatorStore(TrunkData),
+  BaseFormNavigatorStore('TrunkData'),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),
 );

@@ -6,7 +6,7 @@ import { TestEntityComponent } from './test-entity-component';
 export const TestEntityComponentStore = signalStore(
   { providedIn: 'root' },
   BaseEntityStore<TestEntityComponent>(TestEntityComponent, TestEntityComponentService),
-  BaseFormNavigatorStore<TestEntityComponent>(TestEntityComponent),
+  BaseFormNavigatorStore('TestEntityComponent'),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),
 );
