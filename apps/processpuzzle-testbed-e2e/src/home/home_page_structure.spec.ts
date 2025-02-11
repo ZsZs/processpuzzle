@@ -30,6 +30,10 @@ test.describe('Home page navigation', () => {
 
     await applicationPage.navigateToBaseFormPage();
     expect(applicationPage.baseForms).toBeTruthy();
-    expect(page.url()).toContain('/base-forms');
+    expect(page.url()).toContain('/base-entity');
+
+    await applicationPage.navigateToCiCdPage();
+    expect(applicationPage.baseForms).toBeTruthy();
+    expect(page.url()).toContain('/ci-cd');
   });
 });

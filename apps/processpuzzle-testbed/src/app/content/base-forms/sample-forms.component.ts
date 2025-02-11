@@ -8,7 +8,7 @@ import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
-  selector: 'base-forms',
+  selector: 'base-entity',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab],
   template: `

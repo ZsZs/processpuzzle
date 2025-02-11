@@ -26,17 +26,24 @@ export class ApplicationPage {
     this.appContent = this.page.locator('app-root > mat-sidenav-container > app-content');
   }
 
-  async navigateToBaseFormPage() {
-    expect(this.navigationList).toBeTruthy();
-    await this.navigationList.locator(':nth-match(mat-list-item, 3)').click();
-    await this.page.waitForURL('**/base-forms');
-    this.baseForms = this.page.locator('app-root > mat-sidenav-container > base-forms');
-  }
-
   async navigateToUtilsPage() {
     expect(this.navigationList).toBeTruthy();
     await this.navigationList.locator(':nth-match(mat-list-item, 2)').click();
     await this.page.waitForURL('**/util');
     this.appUtils = this.page.locator('app-root > mat-sidenav-container > app-utils');
+  }
+
+  async navigateToBaseFormPage() {
+    expect(this.navigationList).toBeTruthy();
+    await this.navigationList.locator(':nth-match(mat-list-item, 3)').click();
+    await this.page.waitForURL('**/base-entity');
+    this.baseForms = this.page.locator('app-root > mat-sidenav-container > base-entity');
+  }
+
+  async navigateToCiCdPage() {
+    expect(this.navigationList).toBeTruthy();
+    await this.navigationList.locator(':nth-match(mat-list-item, 4)').click();
+    await this.page.waitForURL('**/ci-cd');
+    this.appUtils = this.page.locator('app-root > mat-sidenav-container > app-ci-cd');
   }
 }
