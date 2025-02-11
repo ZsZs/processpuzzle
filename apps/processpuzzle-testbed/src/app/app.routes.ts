@@ -17,8 +17,8 @@ export const appRoutes: Route[] = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'util', title: 'ProcessPuzzle Testbed - Util', data: { icon: 'service_toolbox' }, loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
   {
-    path: 'base-forms',
-    title: 'ProcessPuzzle Testbed - Base Forms',
+    path: 'base-entity',
+    title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook' },
     loadComponent: () => import('./content/base-forms/sample-forms.component').then((comp) => comp.SampleFormsComponent),
     providers: [LayoutService],
