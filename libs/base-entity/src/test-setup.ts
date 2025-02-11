@@ -47,7 +47,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   componentRef?: ComponentRef<C>;
   componentType: Signal<Type<C>> = input.required();
-  config: Signal<BaseEntityAttrDescriptor<TestEntity>> = input.required();
+  config: Signal<BaseEntityAttrDescriptor> = input.required();
   entity: Signal<TestEntity> = input.required<TestEntity>();
   protected baseEntityForm!: FormGroup;
   protected formBuilder = inject(FormBuilder);
@@ -90,7 +90,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
 })
 class DummyComponent {}
 
-function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[]) {
+function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor[]) {
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
     attrDescriptors: attrDescriptors,
@@ -126,7 +126,7 @@ export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPO
   }
 }
 
-export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[], entities: TestEntity[]) {
+export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const mockService = createSpyFromClass(TestEntityService);
   mockService.findAll.mockReturnValue(of(entities));
@@ -176,7 +176,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[], entity = new TestEntity(), isEntityNew = false) {
+export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
 
   await TestBed.configureTestingModule({
@@ -215,7 +215,7 @@ export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: BaseEntityAttrDescriptor<TestEntity>, entity: TestEntity) {
+export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: BaseEntityAttrDescriptor, entity: TestEntity) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
   }).compileComponents();
@@ -223,7 +223,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);
   const containerComponent = fixture.componentInstance;
   containerComponent.componentType = signal(controlType);
-  containerComponent.config = signal<BaseEntityAttrDescriptor<TestEntity>>(config);
+  containerComponent.config = signal<BaseEntityAttrDescriptor>(config);
   containerComponent.entity = signal<TestEntity>(entity);
   fixture.detectChanges();
   const component = containerComponent.componentRef?.instance;
@@ -232,8 +232,8 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 }
 
 export async function setupContainerComponentTest(componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>) {
-  const checkboxConfig = new BaseEntityAttrDescriptor<TestEntity>('boolean', FormControlType.CHECKBOX);
-  const labelConfig = new BaseEntityAttrDescriptor<TestEntity>('description', FormControlType.LABEL);
+  const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
+  const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
     attrDescriptors: [checkboxConfig, labelConfig],
