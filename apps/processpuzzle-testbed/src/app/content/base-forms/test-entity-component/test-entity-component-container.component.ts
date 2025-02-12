@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { testEntityComponentDescriptors } from './test-entity-component.descriptors';
 import { TestEntityComponentStore } from './test-entity-component.store';
+import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
   selector: 'test-entity-component',
   standalone: true,
-  imports: [CommonModule, BaseEntityContainerComponent],
-  template: ` <base-entity-container [baseEntityListOptions]="baseEntityListOptions"></base-entity-container> `,
+  imports: [CommonModule, BaseEntityContainerComponent, MarkdownComponent],
+  templateUrl: 'test-entity-component-container.component.html',
   styles: ``,
 })
 export class TestEntityComponentContainerComponent implements OnDestroy {

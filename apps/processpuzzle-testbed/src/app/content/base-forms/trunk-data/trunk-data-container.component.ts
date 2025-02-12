@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { trunkDataDescriptors } from './trunk-data.descriptors';
 import { TrunkDataStore } from './trunk-data.store';
+import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
   selector: 'trunk-data',
   standalone: true,
-  imports: [CommonModule, BaseEntityContainerComponent],
-  template: ` <base-entity-container [baseEntityListOptions]="baseEntityListOptions"></base-entity-container> `,
+  imports: [CommonModule, MarkdownComponent, BaseEntityContainerComponent],
+  templateUrl: 'trunk-data-container.component.html',
   styles: ``,
 })
 export class TrunkDataContainerComponent implements OnDestroy {

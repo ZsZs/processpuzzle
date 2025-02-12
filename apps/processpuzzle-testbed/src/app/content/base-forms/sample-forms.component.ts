@@ -24,9 +24,10 @@ import { MarkdownComponent } from 'ngx-markdown';
         ></markdown>
       </mat-tab>
       <mat-tab label="Samples">
-        <div>The following tables and forms helps to manage these custom entities:</div>
+        <div style="margin-bottom: 20px">The sample entities, to demonstrate the functionality this library are as follows:</div>
         <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" width="600px" alt="Sample Entities" />
-        <div>
+        <div><strong>The tables and forms below are generated from the entities end their attribute descriptors, run-time.</strong></div>
+        <div style="margin-top: 20px">
           <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
             <mat-button-toggle routerLink="/base-entity/test-entity" value="test-entity">Test Entity</mat-button-toggle>
             <mat-button-toggle routerLink="/base-entity/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>

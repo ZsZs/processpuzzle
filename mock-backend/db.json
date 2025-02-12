@@ -90,27 +90,27 @@
   "trunk-data": [
     {
       "id": "1",
-      "name": "schüssel_1",
+      "name": "schlüssel_1",
       "description": "einfache Benutzer Rolle",
-      "value": "wert 1"
+      "value": "Wert 1"
     },
     {
       "id": "2",
-      "name": "schüssel_2",
+      "name": "schlüssel_2",
       "description": "Trainer Rolle",
-      "value": "wert 2"
+      "value": "Wert 2"
     },
     {
       "id": "3",
-      "name": "schüssel_3",
+      "name": "schlüssel_3",
       "description": "Administrator Rolle",
-      "value": "wert 3"
+      "value": "Wert 3"
     },
     {
       "id": "4",
-      "name": "schüssel_4",
+      "name": "schlüssel_4",
       "description": "Supervisor Rolle",
-      "value": "wert 4"
+      "value": "Wert 4"
     }
   ]
 }
