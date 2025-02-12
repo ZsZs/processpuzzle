@@ -1,0 +1,15 @@
+<markdown clipboard mermaid ngPreserveWhitespaces>
+```typescript
+const selectables = Object.keys(TestEnum).filter((key: any) => parseInt(key) >= 0).map((key: string) => (&#123; key: key, value: TestEnum[key as keyof typeof TestEnum]&#125;));
+const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
+const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Boolean');
+const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, &#123; inputType: 'number' &#125;);
+const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, &#123; inputType: 'date' &#125;);
+const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
+
+export const testEntityDescriptors: BaseEntityAttrDescriptor&lt;TestEntity&gt;[] = [nameAttr, descriptionAttr, booleanAttr, numberAttr, dateAttr, enumAttr];
+const baseEntityDescriptor: BaseEntityDescriptor = &#123; entityName: 'Test Entity', store: this.store, attrDescriptors: testEntityAttrDescriptors, entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''", &#125;;
+```
+</markdown>
+<base-entity-container [baseEntityListOptions]="baseEntityListOptions"></base-entity-container>
