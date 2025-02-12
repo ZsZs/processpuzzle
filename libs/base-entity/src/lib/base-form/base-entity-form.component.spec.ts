@@ -6,7 +6,7 @@ import { setupFormComponentTest } from '../../test-setup';
 
 describe('GenericEntityFormComponent', () => {
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
-  const checkboxConfig: BaseEntityAttrDescriptor<TestEntity> = new BaseEntityAttrDescriptor<TestEntity>('boolean', FormControlType.CHECKBOX, 'Is project approved from the business?', false);
+  const checkboxConfig: BaseEntityAttrDescriptor = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Is project approved from the business?', undefined, false);
   const testEntity: TestEntity = new TestEntity('1', 'test-entity', 'description of the entity', true);
 
   describe('sanity tests', () => {

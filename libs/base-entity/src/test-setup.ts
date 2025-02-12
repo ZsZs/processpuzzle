@@ -1,7 +1,7 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 import { Spy } from 'jest-auto-spies/src/jest-auto-spies.types';
 import { BaseEntityLoadResponse } from './lib/base-entity-load-response';
-import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BaseEntityListComponent } from './lib/base-list/base-entity-list.component';
@@ -11,7 +11,7 @@ import { BaseEntityToolbarComponent } from './lib/base-toolbar/base-entity-toolb
 import { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
-import { Component, ComponentRef, input, OnInit, ViewChild, Signal, signal, inject, Type, InputSignal } from '@angular/core';
+import { Component, ComponentRef, inject, input, InputSignal, OnInit, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
@@ -27,7 +27,8 @@ import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CON
 import { TestConfiguration } from './lib/test-configuration';
 import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.component';
 import { createSpyFromClass } from 'jest-auto-spies';
-import { BehaviorSubject, Observable, of, skip } from 'rxjs';
+import { of } from 'rxjs';
+import { MockBreakpointObserver } from '@processpuzzle/test-util';
 
 // @ts-expect-error - configure test environment
 setupZoneTestEnv({ testEnvironment: '@happy-dom/jest-environment' });
@@ -46,7 +47,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   componentRef?: ComponentRef<C>;
   componentType: Signal<Type<C>> = input.required();
-  config: Signal<BaseEntityAttrDescriptor<TestEntity>> = input.required();
+  config: Signal<BaseEntityAttrDescriptor> = input.required();
   entity: Signal<TestEntity> = input.required<TestEntity>();
   protected baseEntityForm!: FormGroup;
   protected formBuilder = inject(FormBuilder);
@@ -56,12 +57,14 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.baseEntityForm = this.formBuilder.group({});
     this.createFromControl();
   }
+
   // endregion
 
   // region event handler methods
   onSubmit() {
     console.log(this.baseEntityForm.value);
   }
+
   // endregion
 
   // region, protected, private helper methods
@@ -76,38 +79,21 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, Validators.required);
     this.baseEntityForm.addControl(this.config().attrName, formControl);
   }
+
   // endregion
 }
 
 @Component({
   selector: 'dummy-component',
-  template: `<div></div>`,
+  template: ` <div></div>`,
   standalone: true,
 })
 class DummyComponent {}
 
-class MockBreakpointObserver {
-  private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-
-  resize(size: string) {
-    if (size === 'handset') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Handset]: true } } as BreakpointState);
-    } else if (size === 'tablet') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Tablet]: true } } as BreakpointState);
-    } else if (size === 'web') {
-      this.state.next({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
-    } else this.state.next({ matches: Number.parseInt(size) >= 700, breakpoints: {} });
-  }
-
-  observe(): Observable<BreakpointState> {
-    return this.state.asObservable().pipe(skip(1));
-  }
-}
-
-function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[]) {
+function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor[]) {
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
-    columnDescriptors: attrDescriptors,
+    attrDescriptors: attrDescriptors,
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
   };
@@ -140,7 +126,7 @@ export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPO
   }
 }
 
-export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[], entities: TestEntity[]) {
+export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const mockService = createSpyFromClass(TestEntityService);
   mockService.findAll.mockReturnValue(of(entities));
@@ -190,7 +176,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDescriptor<TestEntity>[], entity = new TestEntity(), isEntityNew = false) {
+export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
 
   await TestBed.configureTestingModule({
@@ -229,7 +215,7 @@ export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: BaseEntityAttrDescriptor<TestEntity>, entity: TestEntity) {
+export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: BaseEntityAttrDescriptor, entity: TestEntity) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
   }).compileComponents();
@@ -237,7 +223,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);
   const containerComponent = fixture.componentInstance;
   containerComponent.componentType = signal(controlType);
-  containerComponent.config = signal<BaseEntityAttrDescriptor<TestEntity>>(config);
+  containerComponent.config = signal<BaseEntityAttrDescriptor>(config);
   containerComponent.entity = signal<TestEntity>(entity);
   fixture.detectChanges();
   const component = containerComponent.componentRef?.instance;
@@ -246,11 +232,11 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 }
 
 export async function setupContainerComponentTest(componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>) {
-  const checkboxConfig = new BaseEntityAttrDescriptor<TestEntity>('boolean', FormControlType.CHECKBOX);
-  const labelConfig = new BaseEntityAttrDescriptor<TestEntity>('description', FormControlType.LABEL);
+  const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
+  const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
-    columnDescriptors: [checkboxConfig, labelConfig],
+    attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
   };
@@ -283,7 +269,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   entityDescriptor.store = store;
   store.load({ path: new Map<string, string>([]), filter: new Map<string, string>([]) });
   component.baseEntityListOptions = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
-  breakpointObserver.resize('web');
+  breakpointObserver.resize(1280);
   fixture.detectChanges();
 
   return { fixture, component, store, router, breakpointObserver };

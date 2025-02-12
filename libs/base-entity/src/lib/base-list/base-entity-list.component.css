@@ -1,0 +1,8 @@
+.mat-column-select {
+  overflow: initial;
+}
+
+.mat-mdc-row:hover {
+  background-color: cornflowerblue;
+  cursor: pointer;
+}

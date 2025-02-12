@@ -4,7 +4,7 @@ import { setupFormControlTest } from '../../../test-setup';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 
 describe('DropdownComponent', () => {
-  const dropdownConfig = new BaseEntityAttrDescriptor<TestEntity>('selectable', FormControlType.DROPDOWN, 'Project Status');
+  const dropdownConfig = new BaseEntityAttrDescriptor('selectable', FormControlType.DROPDOWN, 'Project Status');
   dropdownConfig.selectables = [
     { key: '1', value: 'Not Started' },
     { key: '2', value: 'Kick off' },

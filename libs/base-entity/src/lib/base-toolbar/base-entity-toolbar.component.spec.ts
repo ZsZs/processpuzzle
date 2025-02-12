@@ -23,7 +23,7 @@ describe('BaseEntityToolbarComponent', () => {
       let deleteButton = fixture.debugElement.query(By.css('mat-toolbar button[test-id=delete]')).nativeElement;
       expect(deleteButton).toBeTruthy();
 
-      breakpointObserver.resize('handset');
+      breakpointObserver.resize(599);
       fixture.detectChanges();
       const menu = fixture.debugElement.query(By.css('mat-toolbar mat-menu')).nativeElement;
       expect(menu).toBeTruthy();
@@ -62,20 +62,20 @@ describe('BaseEntityToolbarComponent', () => {
       expect(component.store.navigateToDetails).toHaveBeenCalledWith(BaseUrlSegments.NewEntity);
     });
 
-    it('onDeleteEntities()', async() => {
+    it('onDeleteEntities()', async () => {
       // SETUP:
-      const { fixture, component } = await setupContainerComponentTest( BaseEntityToolbarComponent );
-      component.store.selectEntity( '1' );
-      component.store.selectEntity( '2' );
-      jest.spyOn( component.store, 'delete' );
+      const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+      component.store.selectEntity('1');
+      component.store.selectEntity('2');
+      jest.spyOn(component.store, 'delete');
       fixture.detectChanges();
 
       // EXERCISE:
       (component as BaseEntityToolbarComponent<TestEntity>).onDeleteEntities();
 
       // VERIFY:
-      expect( component.store.delete ).toHaveBeenNthCalledWith( 1, '1' );
-      expect( component.store.delete ).toHaveBeenNthCalledWith( 2, '2' );
+      expect(component.store.delete).toHaveBeenNthCalledWith(1, '1');
+      expect(component.store.delete).toHaveBeenNthCalledWith(2, '2');
     });
 
     it('onDoFilter()', async () => {

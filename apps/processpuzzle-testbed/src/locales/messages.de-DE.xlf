@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-US" datatype="plaintext" original="ng2.template" target-language="de">
+    <body>
+      <trans-unit id="587434167570897752" datatype="html">
+        <source><x id="START_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;mat-icon&gt;"/>search<x id="CLOSE_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;/mat-icon&gt;"/>Search </source>
+        <target>Suche </target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">libs/qk-ng-commons/generic-message/feature/src/lib/toolbar/message-viewer-toolbar.component.html</context>
+          <context context-type="linenumber">16,17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="5308638704596623491" datatype="html">
+        <source><x id="START_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;mat-icon&gt;"/>delete<x id="CLOSE_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;/mat-icon&gt;"/>Clear </source>
+        <target> Löschen </target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">libs/qk-ng-commons/generic-message/feature/src/lib/toolbar/message-viewer-toolbar.component.html</context>
+          <context context-type="linenumber">19,20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="2149898108428279195" datatype="html">
+        <source><x id="START_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;mat-icon&gt;"/>search<x id="CLOSE_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;/mat-icon&gt;"/> Search </source>
+        <target> Suche </target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">libs/qk-ng-commons/generic-message/feature/src/lib/toolbar/message-viewer-toolbar.component.html</context>
+          <context context-type="linenumber">33,35</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="6226155917977226178" datatype="html">
+        <source><x id="START_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;mat-icon&gt;"/>delete<x id="CLOSE_TAG_MAT_ICON" ctype="x-mat_icon" equiv-text="&lt;/mat-icon&gt;"/> Clear </source>
+        <target> Löschen </target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">libs/qk-ng-commons/generic-message/feature/src/lib/toolbar/message-viewer-toolbar.component.html</context>
+          <context context-type="linenumber">37,39</context>
+        </context-group>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

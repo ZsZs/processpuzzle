@@ -1,0 +1,25 @@
+mat-sidenav {
+  width: auto;
+}
+
+.app-content-container {
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: #eee;
+}
+
+.app-sidenav-container {
+  border-radius: 0;
+  color: white;
+  background-color: rgb(24, 111, 206) //cmyk(84, 54, 5, 0);
+}
+
+.app-sidenav-content {
+  padding: 10px;
+}
+
+.app-footer {
+}

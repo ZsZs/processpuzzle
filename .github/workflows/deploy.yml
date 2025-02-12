@@ -1,0 +1,44 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Deploy and Test in Staging
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+      - id: build-image
+        name: Build and publish Docker images
+        uses: ./.github/actions/build-image
+        with:
+          cicd_stage: 'staging'
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: deploy-to-aws-eb
+        name: Deploy distribution to AWS
+        uses: ./.github/actions/deploy-to-aws-eb
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}
+
+      - id: integration-test
+        name: run-integration-tests
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: 'stage'

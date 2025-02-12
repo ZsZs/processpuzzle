@@ -1,0 +1,60 @@
+/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+.dense-1 {
+  @include mat.all-component-densities(-1);
+}
+
+.dense-2 {
+  @include mat.all-component-densities(-2);
+}
+
+.dense-3 {
+  @include mat.all-component-densities(-3);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.centered-card {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-field-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 500px;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 0px;
+}
+
+@function cmyk($c, $m, $y, $k) {
+
+  $c: calc($c / 100);
+  $m: calc($m / 100);
+  $y: calc($y / 100);
+  $k: calc($k / 100);
+
+  $r: 255 * (1 - $c) * (1 - $k);
+  $g: 255 * (1 - $m) * (1 - $k);
+  $b: 255 * (1 - $y) * (1 - $k);
+
+  @return rgb($r, $g, $b);
+
+}

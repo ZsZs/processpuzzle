@@ -47,3 +47,12 @@ Thumbs.db
 .nx/workspace-data
 
 .angular
+apps/processpuzzle-testbed/src/run-time-conf/config.custom.json
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+/docs/Sicherungskopie_von_ProcessPuzzle Testbed.cdr
+/docs/processpuzzle-testbed.ldb

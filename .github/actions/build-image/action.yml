@@ -1,0 +1,44 @@
+name: deploy-to-aws
+description: Deploys the application to AWS Elastic Beanstalk
+inputs:
+  cicd_stage:
+    description: CI/CD stage name, toward the target environment
+    required: true
+    default: staging
+  dockerhub_username:
+    description: Username to DockerHub
+    required: true
+  dockerhub_token:
+    description: Token to DockerHub
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Build
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.dockerhub_username }}
+        password: ${{ inputs.dockerhub_token }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Angular app and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./docker/nginx/Dockerfile
+        build-args: CICD_STAGE=${{ inputs.cicd_stage }}
+        push: true
+        tags: zsuffazs/processpuzzle-testbed:${{ github.sha }}, zsuffazs/processpuzzle-testbed:latest
+
+    - name: Build json-server and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: docker/json-server/Dockerfile
+        push: true
+        tags: zsuffazs/json-server:${{ github.sha }}, zsuffazs/json-server:latest

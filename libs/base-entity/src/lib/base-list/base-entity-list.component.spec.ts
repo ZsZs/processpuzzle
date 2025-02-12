@@ -3,14 +3,13 @@ import { BaseEntityAttrDescriptor, FormControlType } from '../base-entity/base-e
 import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
-import { TestEntityComponent } from '../test-entity-component';
 import { MatTableDataSource } from '@angular/material/table';
 
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
   const labelConfig = new BaseEntityAttrDescriptor('number', FormControlType.LABEL);
-  labelConfig.setLinkedEntityType(TestEntityComponent);
-  const textareaConfig = new BaseEntityAttrDescriptor<TestEntity>('description', FormControlType.TEXTAREA, 'Project feedback', false, { inputType: 'text' });
+  labelConfig.linkedEntityType = 'TestEntityComponent';
+  const textareaConfig = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Project feedback', undefined, false, { inputType: 'text' });
   const testEntity_1 = new TestEntity('1', 'hello', 'anything', false, 100, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_ONE);
   const testEntity_2 = new TestEntity('2', 'bella', 'something', true, 200, new Date('2023-02-18T20:02:27.000Z'), TestEnum.VALUE_TWO);
   const MOCK_STORE_RESPONSE: TestEntity[] = [testEntity_1, testEntity_2];
@@ -110,7 +109,7 @@ describe('EntityListComponent', () => {
 
       component.onNavigateToRelated(labelConfig, testEntity_2);
 
-      expect(store.navigateToRelated).toHaveBeenCalledWith(TestEntityComponent, testEntity_2.number);
+      expect(store.navigateToRelated).toHaveBeenCalledWith('TestEntityComponent', testEntity_2.number);
     });
 
     it('onRowClick() ', async () => {

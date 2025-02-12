@@ -1,0 +1,11 @@
+{
+  "name": "mock-backend",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "json-server db.json --port 3000"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1",
+    "json-server": "^1.0.0-beta.3"
+  }
+}

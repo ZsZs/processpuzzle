@@ -1,6 +1,5 @@
-import { BaseEntity } from './base-entity';
-
 export enum FormControlType {
+  CONTROL_GRID_CONTROL = 'CONTROL_GRID',
   DATE = 'DATE',
   LABEL = 'LABEL',
   TITLE = 'TITLE',
@@ -12,7 +11,7 @@ export enum FormControlType {
   FOREIGN_KEY = 'FOREIGN_KEY',
 }
 
-export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
+export class BaseEntityAttrDescriptor {
   attrName: string;
   description?: string;
   styleClass? = '';
@@ -29,12 +28,13 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
   lines?: number;
   options: { inputType: 'text' };
   private _label?: string;
-  private _linkedEntityType?: any;
+  private _linkedEntityType?: string;
 
-  constructor(attrName: string, formControlType?: FormControlType, label?: string, isLinkToDetails?: boolean, options?: object) {
+  constructor(attrName: string, formControlType?: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
     this.attrName = attrName;
     this.formControlType = formControlType;
     this._label = label;
+    this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
   }
@@ -43,6 +43,7 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
   get label(): string {
     return this._label ? this._label : this.attrName;
   }
+
   set label(label: string) {
     this._label = label;
   }
@@ -50,8 +51,10 @@ export class BaseEntityAttrDescriptor<Entity extends BaseEntity> {
   get linkedEntityType(): any {
     return this._linkedEntityType;
   }
-  setLinkedEntityType(linkedEntityType: { new (): Entity }) {
+
+  set linkedEntityType(linkedEntityType: string) {
     this._linkedEntityType = linkedEntityType;
   }
+
   // endregion
 }

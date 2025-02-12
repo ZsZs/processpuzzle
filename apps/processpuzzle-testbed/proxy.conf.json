@@ -1,0 +1,35 @@
+{
+  "/services/ics/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "http://localhost:3000",
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/services/ics": "/service/ics/"
+    }
+  },
+  "/services/message-service/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "http://localhost:9080/",
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/services/message-service/": "/services/message-service/"
+    }
+  },
+  "/services/test/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "http://localhost:3000",
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/services/test": ""
+    }
+  },
+  "/raw.githubusercontent.com/ZsZs/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "https://raw.githubusercontent.com/ZsZs",
+    "logLevel": "debug"
+  }
+}

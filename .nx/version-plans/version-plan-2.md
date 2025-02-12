@@ -2,4 +2,5 @@
 util: patch
 base-entity: patch
 ---
-First release
+- Update dependencies
+- Fix publish workflow

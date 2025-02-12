@@ -1,0 +1,22 @@
+networks:
+  processpuzzle:
+    driver: bridge
+
+services:
+  processpuzzle-testbed:
+    depends_on:
+      - json-server
+    image:
+      zsuffazs/processpuzzle-testbed:IMAGE_TAG
+    container_name: processpuzzle-testbed
+    ports:
+      - "8080:80"
+    networks:
+      - processpuzzle
+  json-server:
+    image: zsuffazs/json-server:IMAGE_TAG
+    container_name: json-server
+    ports:
+      - "3000:3000"
+    networks:
+      - processpuzzle

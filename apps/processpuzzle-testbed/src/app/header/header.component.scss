@@ -1,0 +1,28 @@
+@use '../../styles' as *;
+
+mat-toolbar {
+  background-color: rgb(92, 218, 207) //cmyk(60, 0, 33, 5);
+}
+
+.app-header {
+  height: auto;
+}
+
+.app-logo {
+  margin: 5px;
+  border: 5px solid white;
+}
+
+mat-menu {
+  width: 100%;
+}
+
+.handset-layout {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+button.handset-layout > span:nth-child(2) {
+  margin-bottom: 20px;
+}

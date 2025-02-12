@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, AfterViewInit, OnInit, InjectionToken, effect, computed, Signal } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, ViewChild } from '@angular/core';
 import { BaseEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
@@ -35,21 +35,13 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatCheckbox,
   ],
   templateUrl: 'base-entity-list.component.html',
-  styles: `
-    .mat-column-select {
-      overflow: initial;
-    }
-    .mat-mdc-row:hover {
-      background-color: cornflowerblue;
-      cursor: pointer;
-    }
-  `,
+  //  styleUrl: 'base-entity-list.component.css',
 })
 export class BaseEntityListComponent<Entity extends BaseEntity> implements AfterViewInit, OnInit {
   dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
   selection = new SelectionModel<Entity>(true, []);
-  private baseEntityListOptions = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
-  columnDescriptors: Signal<BaseEntityAttrDescriptor<Entity>[]> = computed(() => this.baseEntityListOptions().columnDescriptors);
+  private readonly baseEntityListOptions = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
+  columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => this.baseEntityListOptions().attrDescriptors);
   displayedColumns: Signal<string[]> = computed(() => {
     const columns = this.columnDescriptors().map((column) => column.attrName);
     columns.unshift('select');
@@ -76,6 +68,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   ngOnInit(): void {
     this.store.determineActiveRouteSegment();
   }
+
   // endregion
 
   // region event handling methods
@@ -92,7 +85,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.store.setCurrentEntity(entity.id);
   }
 
-  onNavigateToRelated(config: BaseEntityAttrDescriptor<Entity>, entity: Entity) {
+  onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: Entity) {
     this.store.navigateToRelated(config.linkedEntityType, this.getPropertyValue(entity, config.attrName));
   }
 
@@ -111,6 +104,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
       });
     }
   }
+
   // endregion
 
   // region protected, private helper methods
@@ -139,6 +133,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
       if (this.store.filterKey()) this.doFilter(this.store.filterKey());
     });
   }
+
   // endregion
 
   // region properties
@@ -151,5 +146,6 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   isSelected(row: Entity) {
     return this.selection.isSelected(row);
   }
+
   // endregion
 }
