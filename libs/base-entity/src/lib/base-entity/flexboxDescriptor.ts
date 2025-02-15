@@ -6,12 +6,12 @@ export enum FlexDirection {
   ROW = 2,
 }
 
-export class FlexboxContainer extends AbstractAttrDescriptor {
+export class FlexboxDescriptor extends AbstractAttrDescriptor {
   readonly attrDescriptors: AbstractAttrDescriptor[];
   readonly direction: FlexDirection;
 
   constructor(attrDescriptors: AbstractAttrDescriptor[], direction: FlexDirection) {
-    super('', FormControlType.FLEX_BOX);
+    super('dummy', FormControlType.FLEX_BOX);
     this.attrDescriptors = attrDescriptors;
     this.direction = direction;
   }

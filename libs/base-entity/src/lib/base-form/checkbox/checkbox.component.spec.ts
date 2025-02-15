@@ -1,6 +1,7 @@
 import { CheckboxComponent } from './checkbox.component';
 import { TestEntity } from '../../test-entity';
-import { BaseEntityAttrDescriptor, FormControlType } from '../../base-entity/base-entity-attr.descriptor';
+import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
+import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { setupFormControlTest } from '../../../test-setup';
 
 describe('CheckboxComponent', () => {

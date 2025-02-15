@@ -2,7 +2,7 @@ import { Component, computed, ViewChild } from '@angular/core';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { FlexBoxHostDirective } from './flex-box-host.directive';
-import { FlexboxContainer, FlexDirection } from '../../base-entity/flexbox.container';
+import { FlexboxDescriptor, FlexDirection } from '../../base-entity/flexboxDescriptor';
 import { NgClass, NgStyle } from '@angular/common';
 
 @Component({
@@ -13,7 +13,7 @@ import { NgClass, NgStyle } from '@angular/common';
 })
 export class FlexBoxComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   @ViewChild(FlexBoxHostDirective, { static: true, read: FlexBoxHostDirective }) flexBoxHost!: FlexBoxHostDirective;
-  flexBoxClass = computed<string>(() => this.calculateFlexStyle((this.config() as unknown as FlexboxContainer).direction));
+  flexBoxClass = computed<string>(() => this.calculateFlexStyle((this.config() as unknown as FlexboxDescriptor).direction));
 
   // region protected, private helper methods
   private calculateFlexStyle(direction: FlexDirection): string {

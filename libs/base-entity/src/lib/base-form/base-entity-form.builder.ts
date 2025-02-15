@@ -13,7 +13,7 @@ import { RadioComponent } from './radio/radio.component';
 import { TextareaComponent } from './textarea/textarea.component';
 import { FlexBoxComponent } from './flex-box/flex-box.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
-import { FlexboxContainer } from '../base-entity/flexbox.container';
+import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 
 @Injectable({ providedIn: 'root' })
 export class BaseEntityFormBuilder<Entity extends BaseEntity> {
@@ -33,7 +33,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           componentRef.instance.value = signal(currentAttrValue);
           const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, Validators.required);
           baseEntityForm.addControl(column.attrName, formControl);
-        } else if (column instanceof FlexboxContainer) {
+        } else if (column instanceof FlexboxDescriptor) {
           this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity);
         } else throw Error('Undefined subclass of AbstractAttrDescriptor');
       }

@@ -15,7 +15,8 @@ import { Component, ComponentRef, inject, input, InputSignal, OnInit, Signal, si
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
-import { BaseEntityAttrDescriptor, FormControlType } from './lib/base-entity/base-entity-attr.descriptor';
+import { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
+import { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 import { TestBed } from '@angular/core/testing';
 import { BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
@@ -29,6 +30,7 @@ import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.compon
 import { createSpyFromClass } from 'jest-auto-spies';
 import { of } from 'rxjs';
 import { MockBreakpointObserver } from '@processpuzzle/test-util';
+import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 
 // @ts-expect-error - configure test environment
 setupZoneTestEnv({ testEnvironment: '@happy-dom/jest-environment' });
@@ -90,7 +92,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
 })
 class DummyComponent {}
 
-function createEntityDescriptor(attrDescriptors: BaseEntityAttrDescriptor[]) {
+function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
   const entityDescriptor: BaseEntityDescriptor = {
     store: TestEntityStore,
     attrDescriptors: attrDescriptors,
@@ -176,7 +178,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
+export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
 
   await TestBed.configureTestingModule({
@@ -215,7 +217,7 @@ export async function setupFormComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store };
 }
 
-export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: BaseEntityAttrDescriptor, entity: TestEntity) {
+export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: FlexboxDescriptor | BaseEntityAttrDescriptor, entity: TestEntity) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
   }).compileComponents();
@@ -223,7 +225,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);
   const containerComponent = fixture.componentInstance;
   containerComponent.componentType = signal(controlType);
-  containerComponent.config = signal<BaseEntityAttrDescriptor>(config);
+  containerComponent.config = signal<BaseEntityAttrDescriptor>(config as BaseEntityAttrDescriptor);
   containerComponent.entity = signal<TestEntity>(entity);
   fixture.detectChanges();
   const component = containerComponent.componentRef?.instance;

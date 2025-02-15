@@ -1,5 +1,6 @@
 import { TestEntity } from '../test-entity';
-import { BaseEntityAttrDescriptor, FormControlType } from '../base-entity/base-entity-attr.descriptor';
+import { FormControlType } from '../base-entity/abstact-attr.descriptor';
+import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { setupFormComponentTest } from '../../test-setup';
 
 describe('BaseFormHostDirective', () => {

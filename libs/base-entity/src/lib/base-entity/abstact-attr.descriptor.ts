@@ -1,6 +1,5 @@
 export enum FormControlType {
   CHECKBOX = 'CHECKBOX',
-  CONTROL_GRID_CONTROL = 'CONTROL_GRID',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
   FLEX_BOX = 'FLEX_BOX',

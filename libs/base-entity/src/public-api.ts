@@ -19,4 +19,4 @@ export { BASE_ENTITY_SERVICE } from './lib/base-entity.service';
 export { BASE_ENTITY_STORE, BaseEntityStore, LoadMethodParameters } from './lib/base-entity.store';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorStore } from './lib/base-form-navigator/base-form-navigator.store';
-export { FlexboxContainer, FlexDirection } from './lib/base-entity/flexbox.container';
+export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';

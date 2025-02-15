@@ -1,13 +1,14 @@
 import { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
-import { FlexboxContainer, FlexDirection } from './flexbox.container';
+import { FlexboxDescriptor, FlexDirection } from './flexboxDescriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
+import { FormControlType } from '@processpuzzle/base-entity';
 
 describe('filterAttributeDescriptors()', () => {
-  const row1 = new FlexboxContainer([new BaseEntityAttrDescriptor('attr1'), new BaseEntityAttrDescriptor('attr2')], FlexDirection.ROW);
-  const row2 = new FlexboxContainer([new BaseEntityAttrDescriptor('attr3'), new BaseEntityAttrDescriptor('attr4')], FlexDirection.ROW);
-  const row3 = new FlexboxContainer([new BaseEntityAttrDescriptor('attr5'), new BaseEntityAttrDescriptor('attr6')], FlexDirection.ROW);
-  const column1 = new FlexboxContainer([row1, row2], FlexDirection.COLUMN);
-  const column2 = new FlexboxContainer([row3], FlexDirection.COLUMN);
+  const row1 = new FlexboxDescriptor([new BaseEntityAttrDescriptor('attr1', FormControlType.TEXT_BOX), new BaseEntityAttrDescriptor('attr2', FormControlType.TEXT_BOX)], FlexDirection.ROW);
+  const row2 = new FlexboxDescriptor([new BaseEntityAttrDescriptor('attr3', FormControlType.TEXT_BOX), new BaseEntityAttrDescriptor('attr4', FormControlType.TEXT_BOX)], FlexDirection.ROW);
+  const row3 = new FlexboxDescriptor([new BaseEntityAttrDescriptor('attr5', FormControlType.TEXT_BOX), new BaseEntityAttrDescriptor('attr6', FormControlType.TEXT_BOX)], FlexDirection.ROW);
+  const column1 = new FlexboxDescriptor([row1, row2], FlexDirection.COLUMN);
+  const column2 = new FlexboxDescriptor([row3], FlexDirection.COLUMN);
 
   it('should filter out ControlLayoutDescriptors', () => {
     expect(filterAttributeDescriptors([row1, row2]).length).toBe(4);
