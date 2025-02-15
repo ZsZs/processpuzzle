@@ -1,7 +1,7 @@
 import { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { FlexboxDescriptor, FlexDirection } from './flexboxDescriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
-import { FormControlType } from '@processpuzzle/base-entity';
+import { FormControlType } from './abstact-attr.descriptor';
 
 describe('filterAttributeDescriptors()', () => {
   const row1 = new FlexboxDescriptor([new BaseEntityAttrDescriptor('attr1', FormControlType.TEXT_BOX), new BaseEntityAttrDescriptor('attr2', FormControlType.TEXT_BOX)], FlexDirection.ROW);
