@@ -1,38 +1,23 @@
-export enum FormControlType {
-  CONTROL_GRID_CONTROL = 'CONTROL_GRID',
-  DATE = 'DATE',
-  LABEL = 'LABEL',
-  TITLE = 'TITLE',
-  TEXT_BOX = 'TEXT_BOX',
-  DROPDOWN = 'DROPDOWN',
-  CHECKBOX = 'CHECKBOX',
-  RADIO = 'RADIO',
-  TEXTAREA = 'TEXTAREA',
-  FOREIGN_KEY = 'FOREIGN_KEY',
-}
+import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 
-export class BaseEntityAttrDescriptor {
-  attrName: string;
+export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   description?: string;
   styleClass? = '';
   labelClass?: string = '';
   format?: string;
   isLinkToDetails?: boolean;
-  formControlType?: FormControlType;
   selectables?: Array<{ key: string; value: any }>;
   visible = true;
-  disabled = false;
   isHeading?: boolean;
-  style?: object;
   placeholder?: string;
   lines?: number;
   options: { inputType: 'text' };
   private _label?: string;
   private _linkedEntityType?: string;
 
-  constructor(attrName: string, formControlType?: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
+  constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
+    super(attrName, formControlType);
     this.attrName = attrName;
-    this.formControlType = formControlType;
     this._label = label;
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;

@@ -1,5 +1,5 @@
 <ng-container *ngIf="config().visible">
-  <div class="row" [formGroup]="formGroup">
+  <div class="row" style="margin-bottom: 10px" [formGroup]="formGroup">
     <mat-form-field>
       <mat-label>{{config().label}}</mat-label>
       <input matInput [matDatepicker]="picker" formControlName="{{config().attrName}}">
