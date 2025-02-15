@@ -10,6 +10,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { SelectionModel } from '@angular/cdk/collections';
+import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -35,13 +36,15 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatCheckbox,
   ],
   templateUrl: 'base-entity-list.component.html',
-  //  styleUrl: 'base-entity-list.component.css',
+  styleUrl: 'base-entity-list.component.css',
 })
 export class BaseEntityListComponent<Entity extends BaseEntity> implements AfterViewInit, OnInit {
   dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
   selection = new SelectionModel<Entity>(true, []);
-  private readonly baseEntityListOptions = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
-  columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => this.baseEntityListOptions().attrDescriptors);
+  private readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
+  columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => {
+    return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
+  });
   displayedColumns: Signal<string[]> = computed(() => {
     const columns = this.columnDescriptors().map((column) => column.attrName);
     columns.unshift('select');
@@ -53,7 +56,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   router = inject(Router);
 
   constructor() {
-    this.store = this.baseEntityListOptions().store;
+    this.store = this.entityDescriptor().store;
     this.registerEffects();
   }
 

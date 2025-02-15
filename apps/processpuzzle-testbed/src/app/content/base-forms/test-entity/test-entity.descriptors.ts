@@ -1,4 +1,4 @@
-import { BaseEntityAttrDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { TestEnum } from './test-entity';
 
 const selectables = Object.keys(TestEnum)
@@ -12,4 +12,8 @@ const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_B
 const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
 const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
 
-export const testEntityDescriptors: BaseEntityAttrDescriptor[] = [nameAttr, descriptionAttr, booleanAttr, numberAttr, dateAttr, enumAttr];
+const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr], FlexDirection.COLUMN);
+const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, enumAttr], FlexDirection.COLUMN);
+const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
+flexBoxContainer.style = { 'column-gap': '20px' };
+export const testEntityDescriptors: AbstractAttrDescriptor[] = [flexBoxContainer];

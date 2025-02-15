@@ -9,7 +9,7 @@ import { BaseEntity } from '../../base-entity/base-entity';
   selector: 'base-checkbox',
   standalone: true,
   templateUrl: './checkbox.component.html',
-  //  styleUrls: ['./checkbox.component.css'],
+  styleUrls: ['./checkbox.component.css'],
   imports: [NgClass, NgIf, MatCheckbox, FormsModule, ReactiveFormsModule],
 })
 export class CheckboxComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

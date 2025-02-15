@@ -1,0 +1,11 @@
+<mat-card appearance="outlined" class="dense-3">
+  <mat-card-content>
+    <form [formGroup]="baseEntityForm" (ngSubmit)="onSubmit()">
+      <ng-template baseFormHost></ng-template>
+    </form>
+  </mat-card-content>
+  <mat-card-actions>
+    <button id="cancel" mat-raised-button color="secondary" (click)="onCancel()">Cancel</button>
+    <button id="submit" mat-raised-button color="primary" type="submit" [disabled]="baseEntityForm.invalid || !baseEntityForm.dirty" (click)="onSubmit()">Save</button>
+  </mat-card-actions>
+</mat-card>
