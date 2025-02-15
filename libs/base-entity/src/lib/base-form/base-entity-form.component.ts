@@ -64,7 +64,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     effect(() => {
       if (this.entityId() && this.baseEntityListOptions() && this.entity())
         untracked(() => {
-          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store, this.baseEntityListOptions().attrDescriptors, this.entity);
+          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.baseEntityListOptions().attrDescriptors, this.entity);
         });
     });
 
