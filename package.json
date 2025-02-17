@@ -74,7 +74,7 @@
     "@nx/angular": "^20.4.2",
     "@nx/devkit": "20.4.2",
     "@nx/esbuild": "20.4.2",
-    "@nx/eslint": "20.4.2",
+    "@nx/eslint": "20.4.4",
     "@nx/eslint-plugin": "20.4.2",
     "@nx/jest": "20.4.2",
     "@nx/js": "^20.4.2",
