@@ -31,8 +31,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          github_token: ${{GITHUB_TOKEN}}
-          sonar_token: ${{SONAR_TOKEN}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          sonar_token: ${{secrets.SONAR_TOKEN}}
 
       - id: docker-compose
         name: run-docker-compose
