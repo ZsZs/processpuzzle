@@ -1,0 +1,79 @@
+name: Release-Testbed
+on:
+  create:
+    branches: [ "release/testbed/*" ]
+    paths:
+      - apps/processpuzzle-testbed
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: package-version
+        name: Get Version from package.json
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+        with:
+          path: libs/util
+
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.package-version.outputs.current-version }}',
+              sha: context.sha
+            })
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Sets the base and head SHAs for the nx affected commands in CI
+        uses: nrwl/nx-set-shas@v4
+
+      - run: |
+          echo "BASE: ${{ env.NX_BASE }}"
+          echo "HEAD: ${{ env.NX_HEAD }}"
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          nx_project: testbed
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Build package
+        run: npm run build-testbed
+
+      - id: build-image
+        name: Build and publish Docker images
+        uses: ./.github/actions/build-image
+        with:
+          cicd_stage: 'production'
+          app_version: '${{ steps.package-version.outputs.current-version }}'
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: deploy-to-aws-eb
+        name: Deploy distribution to AWS
+        uses: ./.github/actions/deploy-to-aws-eb
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}
+
+      - id: integration-test
+        name: run-integration-tests
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: 'prod'

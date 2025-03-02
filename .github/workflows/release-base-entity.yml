@@ -1,10 +1,9 @@
-name: Publish to NPM
-
-# Rules that triggers the workflows
+name: Release-Util
 on:
-  release:
-    types:
-      - created
+  create:
+    branches: [ "release/base-entity/*" ]
+    paths:
+      - libs/base-entity
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,14 +12,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Additional steps to get a version and package name from a tag
-      # it will not be used in this example, but might be useful for some
-      # customization (like additional release of the package, or some external notifications)
-      - name: Get Version
-        run: |
-          TAG_NAME=${{github.event.release.tag_name}}
-          echo "PACKAGE_NAME=$(echo $TAG_NAME | cut -d "@" -f 1)" >> $GITHUB_ENV
-          echo "APP_VERSION=$(echo $TAG_NAME | cut -d "@" -f 2)" >> $GITHUB_ENV
+      - id: package-version
+        name: Get Version from package.json
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+        with:
+          path: libs/base-entity
+
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.package-version.outputs.current-version}}',
+              sha: context.sha
+            })
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -31,12 +38,23 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
+      - name: Sets the base and head SHAs for the nx affected commands in CI
+        uses: nrwl/nx-set-shas@v4
+
+      - run: |
+          echo "BASE: ${{ env.NX_BASE }}"
+          echo "HEAD: ${{ env.NX_HEAD }}"
+
       - id: lint-test-build
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
+          nx_project: base-entity
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Build package
+        run: npm run build-util
 
       - name: Publish packages
         run: |
