@@ -77,3 +77,10 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           target_environment: 'prod'
+
+      - name: Create a Release
+        uses: elgohr/Github-Release-Action@v5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: @processpuzzle/testbed/${{steps.package-version.outputs.current-version}}
