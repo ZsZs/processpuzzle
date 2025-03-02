@@ -1,6 +1,10 @@
-name: deploy-to-aws
+name: build-image
 description: Deploys the application to AWS Elastic Beanstalk
 inputs:
+  app_version:
+    description: Version tag of the application.
+    required: true
+    default: ${{ github.sha }}
   cicd_stage:
     description: CI/CD stage name, toward the target environment
     required: true
@@ -33,7 +37,7 @@ runs:
         file: ./docker/nginx/Dockerfile
         build-args: CICD_STAGE=${{ inputs.cicd_stage }}
         push: true
-        tags: zsuffazs/processpuzzle-testbed:${{ github.sha }}, zsuffazs/processpuzzle-testbed:latest
+        tags: zsuffazs/processpuzzle-testbed:${{ inputs.app_version }}, zsuffazs/processpuzzle-testbed:latest
 
     - name: Build json-server and push
       uses: docker/build-push-action@v6
@@ -41,4 +45,4 @@ runs:
         context: .
         file: docker/json-server/Dockerfile
         push: true
-        tags: zsuffazs/json-server:${{ github.sha }}, zsuffazs/json-server:latest
+        tags: zsuffazs/json-server:${{ inputs.app_version }}, zsuffazs/json-server:latest

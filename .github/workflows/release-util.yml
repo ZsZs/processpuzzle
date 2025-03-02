@@ -1,0 +1,73 @@
+name: Release-Util
+on:
+  create:
+    branches: [ "release/util/*" ]
+    paths:
+      - libs/util
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: package-version
+        name: Get Version from package.json
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+        with:
+          path: libs/util
+
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.package-version.outputs.current-version}}',
+              sha: context.sha
+            })
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Sets the base and head SHAs for the nx affected commands in CI
+        uses: nrwl/nx-set-shas@v4
+
+      - run: |
+          echo "BASE: ${{ env.NX_BASE }}"
+          echo "HEAD: ${{ env.NX_HEAD }}"
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          nx_project: util
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Build package
+        run: npm run build-util
+
+      - name: Publish packages
+        run: |
+          git config --global user.email "zsolt.zsuffa@gmail.com"
+          git config --global user.name "Zsolt Zsuffa"
+          npx nx release publish --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Create a Release
+        uses: elgohr/Github-Release-Action@v5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: @processpuzzle/util/${{steps.package-version.outputs.current-version}}

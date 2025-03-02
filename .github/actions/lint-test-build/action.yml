@@ -1,6 +1,9 @@
 name: lint-test-build
 description: Lint test and build the application
 inputs:
+  nx_project:
+    description: Name of the Nx project
+    required: true
   github_token:
     description: Token to get access to Github
     required: true
@@ -20,10 +23,10 @@ runs:
       run: npm install --legacy-peer-deps
       shell: bash
     - name: Lint libs and apps
-      run: npm run lint-all-ci
+      run: npm run lint-${{inputs.nx_project}}
       shell: bash
     - name: Test libs and apps
-      run: npm run test-all-ci
+      run: npm run test-${{inputs.nx_project}}
       shell: bash
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v4
@@ -31,5 +34,5 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
     - name: Build libs and apps
-      run: npm run build-all-ci --if-present
+      run: npm run build-${{inputs.nx_project}} --if-present
       shell: bash
