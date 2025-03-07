@@ -56,3 +56,5 @@ apps/processpuzzle-testbed/src/run-time-conf/config.custom.json
 
 /docs/Sicherungskopie_von_ProcessPuzzle Testbed.cdr
 /docs/processpuzzle-testbed.ldb
+
+apps/**/firebase-debug.log
