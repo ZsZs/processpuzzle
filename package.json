@@ -66,6 +66,7 @@
     "@angular-eslint/template-parser": "^19.0.2",
     "@angular/cli": "~19.1.6",
     "@angular/compiler-cli": "~19.1.5",
+    "@angular/fire": "^19.0.0",
     "@angular/language-service": "~19.1.5",
     "@angular/localize": "^19.1.5",
     "@eslint/eslintrc": "^3.2.0",
