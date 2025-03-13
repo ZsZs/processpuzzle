@@ -33,11 +33,11 @@ runs:
       shell: bash
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v5.0.0
-      with:
-        projectBaseDir: ${{inputs.baseDir}}
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
+      with:
+        projectBaseDir: ${{inputs.baseDir}}
     - name: Build libs and apps
       run: npm run build-${{inputs.nx_project}} --if-present
       shell: bash
