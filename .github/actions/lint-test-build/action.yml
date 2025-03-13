@@ -37,7 +37,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
       with:
-        projectBaseDir: ${{inputs.baseDir}}
+        projectBaseDir: ${{inputs.base_dir}}
     - name: Build libs and apps
       run: npm run build-${{inputs.nx_project}} --if-present
       shell: bash
