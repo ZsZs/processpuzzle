@@ -26,7 +26,7 @@
     "e2e-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud",
     "test-all": "nx run-many -t test --exclude=processpuzzle-testbed --configuration=ci --no-cloud",
     "test-base-entity": "nx run base-entity:test --coverage --no-cloud",
-    "test-tesbed": "nx run testbed:test --coverage --no-cloud",
+    "test-testbed": "nx run processpuzzle-testbed:test --coverage --no-cloud",
     "test-util": "nx run util:test --coverage --no-cloud"
   },
   "private": false,
