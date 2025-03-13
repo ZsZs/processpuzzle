@@ -70,4 +70,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: @processpuzzle/util/${{steps.package-version.outputs.current-version}}
+          title: "@processpuzzle/util/${{steps.package-version.outputs.current-version}}"
