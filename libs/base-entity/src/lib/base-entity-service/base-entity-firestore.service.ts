@@ -45,7 +45,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
           return this.mapDocument(document.data() as Entity);
         })
         .catch((error) => {
-          new Error(`Error: ${error} occurred while finding document by id: ${id}`);
+          throw new Error(`Error: ${error} occurred while finding document by id: ${id}`);
         }),
     );
   }
@@ -76,7 +76,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
       orderBys = queryCondition.orderBys?.map((orderByCondition) => {
         const name = Object.keys(OrderByDirection).filter((key) => key === orderByCondition.direction);
         const direction = Object.values(OrderByDirection).filter((value) => value === name[0]);
-        return orderBy(orderByCondition.property as string, direction[0]);
+        return orderBy(orderByCondition.property, direction[0]);
       });
     }
 
@@ -84,7 +84,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
     if (queryCondition.filters && queryCondition.filters?.length > 0) {
       wheres =
         queryCondition.filters?.map((filter) => {
-          return where(filter.property as string, filter.operator, filter.value);
+          return where(filter.property, filter.operator, filter.value);
         }) ?? [];
     }
 
@@ -95,17 +95,15 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
     const query = this.createQuery(queryCondition);
     const results = await getDocs(query);
     const content: Entity[] = [];
-    results.docs.map((doc) => {
+    results.docs.forEach((doc) => {
       content.push(this.mapDocument({ id: doc.id, ...doc.data() } as Entity));
     });
 
-    return new Promise<BaseEntityLoadResponse<Entity>>((resolve, reject) => {
-      resolve({
-        page: queryCondition.page,
-        pageSize: queryCondition.pageSize,
-        totalPageCount: 1,
-        content,
-      });
+    return Promise.resolve({
+      page: queryCondition.page,
+      pageSize: queryCondition.pageSize,
+      totalPageCount: 1,
+      content,
     });
   }
 
@@ -113,7 +111,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
     const entities: Entity[] = [];
     collection.pipe(
       map((documents: any[]) => {
-        documents.map((document) => entities.push(this.entityMapper.fromDto(document)));
+        documents.forEach((document) => entities.push(this.entityMapper.fromDto(document)));
       }),
     );
     return entities;
@@ -133,9 +131,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
     const docRef = doc(this.firestore, this.collectionName, entity.id);
     await updateDoc(docRef, this.mapEntity(entity));
 
-    return new Promise<Entity>((resolve) => {
-      resolve(entity);
-    });
+    return Promise.resolve(entity);
   }
 
   // endregion

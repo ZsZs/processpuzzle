@@ -88,7 +88,7 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     const queryParams: Map<string, string> = new Map<string, string>();
     if (queryCondition.page) queryParams.set('page', queryCondition.page.toString());
     if (queryCondition.filters !== undefined && queryCondition.filters.length != 0) {
-      queryCondition.filters.map((filter) => queryParams.set(filter.property, filter.value));
+      queryCondition.filters.forEach((filter) => queryParams.set(filter.property, filter.value));
     }
 
     let params: any = {};

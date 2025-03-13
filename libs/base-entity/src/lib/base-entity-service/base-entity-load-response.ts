@@ -31,7 +31,7 @@ export interface OrderBy {
 export interface BaseEntityQueryCondition {
   path?: string;
   hash?: string;
-  page?: number | undefined;
+  page?: number;
   pageSize?: number;
   pathParams?: Map<string, string>;
   filters?: FilterCondition[];
