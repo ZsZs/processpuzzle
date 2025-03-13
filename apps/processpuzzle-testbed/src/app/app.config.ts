@@ -10,11 +10,19 @@ import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMa
 import { initializeApp } from 'firebase/app';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimationsAsync(),
+    provideAuth(() => {
+      const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
+      const stage = runtimeConfig.PIPELINE_STAGE;
+      const auth = getAuth();
+      if (stage === 'DEV' || stage === 'CI') connectAuthEmulator(auth, `http://localhost:9099`);
+      return auth;
+    }),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
     {
       provide: FIREBASE_OPTIONS,
@@ -24,7 +32,13 @@ export const appConfig: ApplicationConfig = {
       },
       deps: [RUNTIME_CONFIGURATION],
     },
-    provideFirestore(() => getFirestore()),
+    provideFirestore(() => {
+      const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
+      const stage = runtimeConfig.PIPELINE_STAGE;
+      const firestore = getFirestore();
+      if (stage === 'DEV' || stage === 'CI') connectFirestoreEmulator(firestore, 'localhost', 8080);
+      return firestore;
+    }),
     provideHttpClient(),
     provideRouter(appRoutes, withComponentInputBinding()),
     provideZoneChangeDetection({ eventCoalescing: true }),

@@ -1,6 +1,6 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 import { Spy } from 'jest-auto-spies/src/jest-auto-spies.types';
-import { BaseEntityLoadResponse } from './lib/base-entity-load-response';
+import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -23,7 +23,7 @@ import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ROUTER_OUTLET_DATA } from '@angular/router';
-import { TestEntityService } from './lib/test-entity.service';
+import { TestEntityService } from './lib/base-entity-service/test-entity.service';
 import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { TestConfiguration } from './lib/test-configuration';
 import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.component';
@@ -114,15 +114,15 @@ export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPO
   if (isApiFailed) {
     mockService.delete.throwWith({ message: 'API Failed' });
     mockService.deleteAll.throwWith({ message: 'API Failed' });
-    mockService.findAll.throwWith({ message: 'API Failed' });
-    mockService.save.throwWith({ message: 'API Failed' });
+    mockService.findByQuery.throwWith({ message: 'API Failed' });
+    mockService.add.throwWith({ message: 'API Failed' });
     mockService.update.throwWith({ message: 'API Failed' });
   } else {
     mockService.delete.mockReturnValue(of(undefined));
     mockService.deleteAll.mockReturnValue(of(undefined));
-    if (payload) mockService.findAll.mockReturnValue(of(payload));
-    else mockService.findAll.mockReturnValue(of(MOCK_API_RESPONSE));
-    mockService.save.mockReturnValue(of(newTestEntity));
+    if (payload) mockService.findByQuery.mockReturnValue(of(payload));
+    else mockService.findByQuery.mockReturnValue(of(MOCK_API_RESPONSE));
+    mockService.add.mockReturnValue(of(newTestEntity));
     Reflect.set(testEntity_1, 'name', 'changed');
     mockService.update.mockReturnValue(of(testEntity_1));
   }
@@ -131,7 +131,7 @@ export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPO
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const mockService = createSpyFromClass(TestEntityService);
-  mockService.findAll.mockReturnValue(of(entities));
+  mockService.findByQuery.mockReturnValue(of(entities));
 
   await TestBed.configureTestingModule({
     imports: [BaseEntityListComponent, NoopAnimationsModule],
@@ -269,7 +269,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   const breakpointObserver = TestBed.inject(BreakpointObserver) as unknown as MockBreakpointObserver;
   const component = fixture.componentInstance;
   entityDescriptor.store = store;
-  store.load({ path: new Map<string, string>([]), filter: new Map<string, string>([]) });
+  store.load({});
   component.baseEntityListOptions = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
   breakpointObserver.resize(1280);
   fixture.detectChanges();

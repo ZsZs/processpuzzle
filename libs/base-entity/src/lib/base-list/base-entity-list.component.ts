@@ -11,6 +11,7 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { SelectionModel } from '@angular/cdk/collections';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
+import { FilterCondition } from '../base-entity-service/base-entity-load-response';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -125,9 +126,9 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   private loadAllData() {
-    const path = new Map<string, string>([]);
-    const filter = new Map<string, string>([]);
-    this.store.load({ path, filter });
+    const pathParams = new Map<string, string>([]);
+    const filters: FilterCondition[] = [];
+    this.store.load({ pathParams, filters });
   }
 
   protected registerEffects(): void {

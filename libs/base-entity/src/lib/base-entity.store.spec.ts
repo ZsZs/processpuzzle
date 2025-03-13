@@ -1,11 +1,11 @@
 import { TestEntity } from './test-entity';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { TestEntityService } from './test-entity.service';
+import { TestEntityService } from './base-entity-service/test-entity.service';
 import { TestEntityStore } from './test-entity.store';
 import { provideRouter } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
-import { BaseEntityLoadResponse } from './base-entity-load-response';
+import { BaseEntityLoadResponse } from './base-entity-service/base-entity-load-response';
 import { MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, mockService, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../test-setup';
 
 describe('BaseEntityStore', () => {
@@ -51,13 +51,13 @@ describe('BaseEntityStore', () => {
 
     it('load() will call API and add returned entities to entities[]', () => {
       const { store, mockService } = setup();
-      expect(mockService.findAll).toHaveBeenCalledTimes(1);
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
       expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
     });
 
     it('load(), can handle paged response', () => {
       const { store, mockService } = setup({ payload: MOCK_PAGED_RESPONSE });
-      expect(mockService.findAll).toHaveBeenCalledTimes(1);
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
       expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
       expect(store.page()).toEqual(33);
       expect(store.pageSize()).toEqual(2);
@@ -67,7 +67,7 @@ describe('BaseEntityStore', () => {
     it('load() will verify if API is failed', () => {
       const { store, mockService } = setup({ isApiFailed: true });
 
-      expect(mockService.findAll).toHaveBeenCalledTimes(1);
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
     });
 
@@ -92,7 +92,7 @@ describe('BaseEntityStore', () => {
       const { store, mockService } = setup();
       store.save(newTestEntity);
 
-      expect(mockService.save).toHaveBeenCalledTimes(1);
+      expect(mockService.add).toHaveBeenCalledTimes(1);
       const expectedEntities = [...MOCK_API_RESPONSE, ...[newTestEntity]];
       expect(store.entities()).toStrictEqual(expectedEntities);
     });
@@ -102,7 +102,7 @@ describe('BaseEntityStore', () => {
 
       store.save(newTestEntity);
 
-      expect(mockService.findAll).toHaveBeenCalledTimes(1);
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
     });
 

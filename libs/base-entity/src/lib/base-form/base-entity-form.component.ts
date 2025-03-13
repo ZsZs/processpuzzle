@@ -49,7 +49,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   async onSubmit() {
     const objectToSave = { ...this.entity(), ...this.baseEntityForm.value };
     if (this.isNewObject()) {
-      this.store().save(objectToSave);
+      this.store().add(objectToSave);
     } else {
       this.store().update(objectToSave, objectToSave.id);
     }

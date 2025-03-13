@@ -1,15 +1,14 @@
-import { BaseEntity } from './base-entity/base-entity';
-import { map, Observable } from 'rxjs';
-import { inject, Inject, InjectionToken } from '@angular/core';
-import { BaseEntityMapper } from './base-entity.mapper';
+import { BaseEntity } from '../base-entity/base-entity';
+import { map, Observable, of } from 'rxjs';
+import { inject, Inject } from '@angular/core';
+import { BaseEntityMapper } from '../base-entity.mapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BaseEntityLoadResponse } from './base-entity-load-response';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition } from './base-entity-load-response';
 import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { BaseEntityService } from './base-entity.service';
 
-export const BASE_ENTITY_SERVICE = new InjectionToken<BaseEntityService<any>>('BASE_ENTITY_SERVICE');
-
-export abstract class BaseEntityService<Entity extends BaseEntity> {
+export abstract class BaseEntityRestService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   private readonly runtimeConfiguration = inject(RUNTIME_CONFIGURATION);
   private readonly baseUrl: string;
   protected httpClient = inject(HttpClient);
@@ -38,20 +37,28 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
     return this.httpClient.delete(this.resourceUrl, { headers: this.headers });
   }
 
-  public findAll(path?: Map<string, string>, filter?: Map<string, string>, page?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[]> {
-    const fullUrl = this.buildFullUrl(this.resourceUrl, path, filter, page);
+  findAll(page?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[]> {
+    return this.findByQuery({ page });
+  }
+
+  findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[]> {
+    const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
         map((httpResponse: any) => {
-          return page ? this.mapPagedResponse(httpResponse) : this.mapSimpleResponse(httpResponse);
+          return queryCondition.page ? this.mapPagedResponse(httpResponse) : this.mapSimpleResponse(httpResponse);
         }),
       );
     } else throw new Error('Could not determine the full url');
   }
 
-  save(entity: Entity, id?: number): Observable<Entity> {
+  findById(id: string): Observable<void | Entity> {
+    return of(undefined);
+  }
+
+  add(entity: Entity, id?: number): Observable<Entity> {
     const dto = this.entityMapper.toDto(entity);
-    const fullUrl = this.buildFullUrl(this.resourceUrl);
+    const fullUrl = this.buildFullUrl(this.resourceUrl, {});
     if (fullUrl) {
       return this.httpClient.post(fullUrl, dto, { headers: this.headers }).pipe(
         map((response: any) => {
@@ -63,9 +70,8 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
 
   update(entity: Entity): Observable<Entity> {
     const dto = this.entityMapper.toDto(entity);
-    const path = new Map<string, string>([['id', String(entity.id)]]);
-    const filter = new Map<string, string>([]);
-    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', path, filter);
+    const pathParams = new Map<string, string>([['id', String(entity.id)]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', { pathParams });
     if (fullUrl) {
       return this.httpClient.put(fullUrl, dto, { headers: this.headers }).pipe(
         map((response: any) => {
@@ -78,13 +84,11 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
   // endregion
 
   // region protected, private helper methods
-  protected buildFullUrl(resourceUri: string, path?: Map<string, string>, filter?: Map<string, string>, page?: number, hash?: string): string | undefined {
-    const pageParam = new Map<string, string>(page ? [['page', page.toString()]] : []);
-    let queryParams: Map<string, string>;
-    if (filter !== undefined && filter.size != 0) {
-      queryParams = new Map<string, string>([...Array.from(pageParam), ...Array.from(filter.entries())]);
-    } else {
-      queryParams = new Map<string, string>([...Array.from(pageParam)]);
+  protected buildFullUrl(resourceUri: string, queryCondition: BaseEntityQueryCondition): string | undefined {
+    const queryParams: Map<string, string> = new Map<string, string>();
+    if (queryCondition.page) queryParams.set('page', queryCondition.page.toString());
+    if (queryCondition.filters !== undefined && queryCondition.filters.length != 0) {
+      queryCondition.filters.map((filter) => queryParams.set(filter.property, filter.value));
     }
 
     let params: any = {};
@@ -94,8 +98,8 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
       }
     } else params = null;
 
-    if (path !== undefined && path.size != 0) {
-      path.forEach((value: string, key: string) => {
+    if (queryCondition.pathParams !== undefined && queryCondition.pathParams.size != 0) {
+      queryCondition.pathParams.forEach((value: string, key: string) => {
         const pathParam = '%{' + key + '}';
         resourceUri = resourceUri.replace(pathParam, value);
       });
@@ -103,7 +107,7 @@ export abstract class BaseEntityService<Entity extends BaseEntity> {
 
     const urlOptions = {
       path: resourceUri,
-      hash: hash,
+      hash: queryCondition.hash,
       queryParams: params,
     };
     return buildUrl(this.baseUrl, urlOptions);

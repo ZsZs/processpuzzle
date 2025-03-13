@@ -5,9 +5,9 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { tapResponse } from '@ngrx/operators';
-import { BaseEntityService } from './base-entity.service';
-import { BaseEntityLoadResponse } from './base-entity-load-response';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition } from './base-entity-service/base-entity-load-response';
 import { MatTableDataSource } from '@angular/material/table';
+import { BaseEntityService } from './base-entity-service/base-entity.service';
 
 export const BASE_ENTITY_STORE = new InjectionToken<any>('BASE_ENTITY_STORE');
 
@@ -21,12 +21,6 @@ export interface EntityStoreState<Entity extends BaseEntity> {
   isLoading: boolean;
   error: string | undefined;
   selectedEntities: Array<Entity>;
-}
-
-export interface LoadMethodParameters {
-  path?: Map<string, string>;
-  filter?: Map<string, string>;
-  page?: number;
 }
 
 export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, repositoryType: ProviderToken<BaseEntityService<Entity>>) {
@@ -46,6 +40,25 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
     withMethods((store, repository = inject(repositoryType)) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
+      add: rxMethod<Entity>(
+        pipe(
+          switchMap((entity) => {
+            patchState(store, { isLoading: true, error: undefined });
+            return repository.add(entity).pipe(
+              tapResponse<Entity>({
+                next: (newEntity: Entity) => {
+                  const currentEntities = store.entities();
+                  const indexToUpdate = currentEntities.findIndex((item) => item.id === entity.id);
+                  currentEntities[indexToUpdate] = newEntity;
+                  patchState(store, { entities: [...currentEntities], isLoading: false });
+                },
+                error: (error) => patchState(store, { error: (error as HttpErrorResponse).message }),
+                finalize: () => patchState(store, { isLoading: false }),
+              }),
+            );
+          }),
+        ),
+      ),
       delete: rxMethod<string>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: undefined })),
@@ -91,13 +104,13 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
           }
         }
       },
-      load: rxMethod<LoadMethodParameters>(
+      load: rxMethod<BaseEntityQueryCondition>(
         pipe(
-          tap((parameters) => patchState(store, { page: parameters.page, isLoading: true, error: undefined })),
+          tap((parameters: BaseEntityQueryCondition) => patchState(store, { page: parameters.page, isLoading: true, error: undefined })),
           //        debounceTime(1000),
           //        distinctUntilChanged(),
           switchMap((parameters) =>
-            repository.findAll(parameters.path, parameters.filter, parameters.page).pipe(
+            repository.findByQuery(parameters).pipe(
               tapResponse({
                 next: (response: BaseEntityLoadResponse<Entity> | Entity[]) => {
                   if (Object.prototype.hasOwnProperty.call(response, 'content')) {
@@ -135,7 +148,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
         pipe(
           switchMap((entity) => {
             patchState(store, { isLoading: true, error: undefined });
-            return repository.save(entity).pipe(
+            return repository.add(entity).pipe(
               tapResponse({
                 next: (savedEntity: Entity) => {
                   patchState(store, { entities: store.entities().concat([savedEntity]), isLoading: false });
@@ -164,14 +177,14 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
           switchMap((entity) => {
             patchState(store, { isLoading: true, error: undefined });
             return repository.update(entity).pipe(
-              tapResponse({
+              tapResponse<Entity>({
                 next: (updatedEntity: Entity) => {
                   const currentEntities = store.entities();
                   const indexToUpdate = currentEntities.findIndex((item) => item.id === entity.id);
                   currentEntities[indexToUpdate] = updatedEntity;
                   patchState(store, { entities: [...currentEntities], isLoading: false });
                 },
-                error: (error: HttpErrorResponse) => patchState(store, { error: error.message }),
+                error: (error) => patchState(store, { error: (error as HttpErrorResponse).message }),
                 finalize: () => patchState(store, { isLoading: false }),
               }),
             );
@@ -181,9 +194,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
     })),
     withHooks((store) => ({
       onInit: () => {
-        const path = new Map<string, string>([]);
-        const filter = new Map<string, string>([]);
-        store.load({ path, filter });
+        store.load({});
       },
     })),
     withComputed((store) => ({

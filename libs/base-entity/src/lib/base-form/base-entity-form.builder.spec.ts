@@ -10,7 +10,7 @@ import { TestEntityStore } from '../test-entity.store';
 import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { TestEntityService } from '../test-entity.service';
+import { TestEntityService } from '../base-entity-service/test-entity.service';
 import { mockService } from '../../test-setup';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 

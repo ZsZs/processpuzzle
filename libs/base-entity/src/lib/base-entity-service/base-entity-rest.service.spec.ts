@@ -1,16 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { TestEntityService } from './test-entity.service';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestEntityMapper } from './test-entity.mapper';
+import { TestEntityMapper } from '../test-entity.mapper';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { TestEntity, TestEnum } from './test-entity';
-import { BaseEntityLoadResponse } from './base-entity-load-response';
-import { TestConfiguration } from './test-configuration';
+import { TestEntity, TestEnum } from '../test-entity';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition } from './base-entity-load-response';
+import { TestConfiguration } from '../test-configuration';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 
 describe('BaseEntityService', () => {
   const pathParams = new Map<string, string>([['messageId', '123']]);
-  const queryParams = new Map<string, string>([['xpath', '/ie4q01']]);
+  const filters: FilterCondition[] = [{ property: 'xpath', operator: '==', value: '/ie4q01' }];
+  const queryCondition: BaseEntityQueryCondition = { pathParams, filters };
   const expectedEntity = new TestEntity('1', 'hello', 'anything', false, 100, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_FOUR);
   const expectedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?xpath=%2Fie4q01';
   const expectedPagedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?page=1&xpath=%2Fie4q01';
@@ -37,25 +38,25 @@ describe('BaseEntityService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  it('findAll() calculates resource URL from Environment, path and query parameters', () => {
-    baseEntityService.findAll(pathParams, queryParams).subscribe(() => {
+  it('findByQuery() calculates resource URL from Environment, path and query parameters', () => {
+    baseEntityService.findByQuery(queryCondition).subscribe(() => {
       // do nothing here
     });
     controller.expectOne(expectedUrl);
     controller.verify();
   });
 
-  it('findAll() calculates resource URL from Environment, path, query parameters and page', () => {
-    baseEntityService.findAll(pathParams, queryParams, 1).subscribe(() => {
+  it('findByQuery() calculates resource URL from Environment, path, query parameters and page', () => {
+    baseEntityService.findByQuery({ ...queryCondition, ...{ page: 1 } }).subscribe(() => {
       // do nothing here
     });
     controller.expectOne(expectedPagedUrl);
     controller.verify();
   });
 
-  it('findAll() maps response body to array of entities if no page specified.', () => {
+  it('findByQuery() maps response body to array of entities if no page specified.', () => {
     let actualEntities: Array<TestEntity> | undefined;
-    baseEntityService.findAll(pathParams, queryParams).subscribe((entities) => {
+    baseEntityService.findByQuery(queryCondition).subscribe((entities) => {
       actualEntities = entities as TestEntity[];
       expect(actualEntities).toEqual([expectedEntity]);
     });
@@ -65,9 +66,9 @@ describe('BaseEntityService', () => {
     expect(actualEntities).toEqual([expectedEntity]);
   });
 
-  it('findAll() maps response body to array of entities if no page specified.', () => {
+  it('findByQuery() maps response body to array of entities if no page specified.', () => {
     let actualResponse: BaseEntityLoadResponse<TestEntity> | undefined;
-    baseEntityService.findAll(pathParams, queryParams, 1).subscribe((response) => {
+    baseEntityService.findByQuery({ ...queryCondition, ...{ page: 1 } }).subscribe((response) => {
       actualResponse = response as BaseEntityLoadResponse<TestEntity>;
     });
     const request = controller.expectOne(expectedPagedUrl);
@@ -76,13 +77,13 @@ describe('BaseEntityService', () => {
     expect(actualResponse).toEqual({ page: 1, pageSize: 10, totalPageCount: 8, content: [expectedEntity] });
   });
 
-  it('findAll() fails when HTTP Error occurs.', () => {
+  it('findByQuery() fails when HTTP Error occurs.', () => {
     const status = 500;
     const statusText = 'Internal Server Error';
     const errorEvent = new ErrorEvent('API error');
     let actualError: HttpErrorResponse | undefined;
 
-    baseEntityService.findAll(pathParams, queryParams).subscribe(
+    baseEntityService.findByQuery(queryCondition).subscribe(
       () => fail('next handler must be called'),
       (error) => (actualError = error),
       () => fail('complete handler must be called'),
