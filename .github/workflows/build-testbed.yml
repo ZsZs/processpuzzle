@@ -3,12 +3,12 @@ on:
   push:
     branches: [ "feature/*" ]
     paths:
-      - apps/processpuzzle-testbed
+      - 'apps/processpuzzle-testbed/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
-      - apps/processpuzzle-testbed
+      - 'apps/processpuzzle-testbed/**'
   workflow_run:
     workflows: [ "Build-Util", "Build-Base-Entity" ]
     types:

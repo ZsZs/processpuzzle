@@ -3,7 +3,7 @@ on:
   create:
     branches: [ "release/base-entity/*" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
 jobs:
   publish:
     runs-on: ubuntu-latest

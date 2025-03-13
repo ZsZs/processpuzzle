@@ -3,7 +3,7 @@ on:
   create:
     branches: [ "release/util/*" ]
     paths:
-      - libs/util
+      - 'libs/util/**'
 jobs:
   publish:
     runs-on: ubuntu-latest

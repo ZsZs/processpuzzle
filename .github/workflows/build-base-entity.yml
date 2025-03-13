@@ -3,12 +3,12 @@ on:
   push:
     branches: [ "feature/*" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
 
 jobs:
   build:
