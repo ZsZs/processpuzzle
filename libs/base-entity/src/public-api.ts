@@ -1,6 +1,4 @@
-/*
- * Public API Surface of @processpuzzle/base-entity
- */
+// Public API Surface of @processpuzzle/base-entity
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
 export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes';
