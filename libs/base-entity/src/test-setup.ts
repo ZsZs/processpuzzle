@@ -90,7 +90,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   template: ` <div></div>`,
   standalone: true,
 })
-class DummyComponent {}
+export class DummyComponent {}
 
 function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
   const entityDescriptor: BaseEntityDescriptor = {
@@ -112,17 +112,17 @@ export let mockService: Spy<TestEntityService>;
 export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
   mockService = createSpyFromClass<TestEntityService>(TestEntityService);
   if (isApiFailed) {
+    mockService.add.throwWith({ message: 'API Failed' });
     mockService.delete.throwWith({ message: 'API Failed' });
     mockService.deleteAll.throwWith({ message: 'API Failed' });
     mockService.findByQuery.throwWith({ message: 'API Failed' });
-    mockService.add.throwWith({ message: 'API Failed' });
     mockService.update.throwWith({ message: 'API Failed' });
   } else {
+    mockService.add.mockReturnValue(of(newTestEntity));
     mockService.delete.mockReturnValue(of(undefined));
     mockService.deleteAll.mockReturnValue(of(undefined));
     if (payload) mockService.findByQuery.mockReturnValue(of(payload));
     else mockService.findByQuery.mockReturnValue(of(MOCK_API_RESPONSE));
-    mockService.add.mockReturnValue(of(newTestEntity));
     Reflect.set(testEntity_1, 'name', 'changed');
     mockService.update.mockReturnValue(of(testEntity_1));
   }

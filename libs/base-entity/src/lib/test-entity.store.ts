@@ -1,5 +1,5 @@
 import { signalStore } from '@ngrx/signals';
-import { BaseEntityStore } from './base-entity.store';
+import { BaseEntityStore } from './base-entity-store/base-entity.store';
 import { TestEntityService } from './base-entity-service/test-entity.service';
 import { TestEntity } from './test-entity';
 import { BaseFormNavigatorStore } from './base-form-navigator/base-form-navigator.store';
