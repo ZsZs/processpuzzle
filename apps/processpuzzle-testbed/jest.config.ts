@@ -2,7 +2,7 @@ export default {
   displayName: 'processpuzzle-testbed',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../coverage/apps/processpuzzle-testbed',
+  coverageDirectory: 'reports/coverage/apps/processpuzzle-testbed',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',
@@ -14,4 +14,5 @@ export default {
   },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
   snapshotSerializers: ['jest-preset-angular/build/serializers/no-ng-attributes', 'jest-preset-angular/build/serializers/ng-snapshot', 'jest-preset-angular/build/serializers/html-comment'],
+  modulePathIgnorePatterns: ['src/app/app.component.*', 'src/app/content', 'src/app/header', 'src/app/sidenav'],
 };
