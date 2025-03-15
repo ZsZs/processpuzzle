@@ -4,7 +4,8 @@
     "../../.eslintrc.base.json"
   ],
   "ignorePatterns": [
-    "!**/*"
+    "!**/*",
+    "functions/**/*"
   ],
   "overrides": [
     {
