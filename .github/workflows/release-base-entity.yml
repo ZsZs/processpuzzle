@@ -3,7 +3,7 @@ on:
   create:
     branches: [ "release/base-entity/*" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -70,4 +70,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: @processpuzzle/base-entity/${{steps.package-version.outputs.current-version}}
+          title: "@processpuzzle/base-entity/${{steps.package-version.outputs.current-version}}"

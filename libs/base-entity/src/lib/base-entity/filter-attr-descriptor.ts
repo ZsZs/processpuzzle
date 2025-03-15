@@ -7,7 +7,7 @@ export function filterAttributeDescriptors(descriptors: AbstractAttrDescriptor[]
   descriptors.forEach((descriptor) => {
     if (descriptor instanceof BaseEntityAttrDescriptor) attrDescriptors.push(descriptor);
     else if (descriptor instanceof FlexboxDescriptor) {
-      attrDescriptors = attrDescriptors.concat(filterAttributeDescriptors((descriptor as FlexboxDescriptor).attrDescriptors));
+      attrDescriptors = attrDescriptors.concat(filterAttributeDescriptors(descriptor.attrDescriptors));
     }
   });
   return attrDescriptors;

@@ -3,7 +3,7 @@ on:
   create:
     branches: [ "release/testbed/*" ]
     paths:
-      - apps/processpuzzle-testbed
+      - 'apps/processpuzzle-testbed/**'
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -83,4 +83,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: @processpuzzle/testbed/${{steps.package-version.outputs.current-version}}
+          title: "@processpuzzle/testbed/${{steps.package-version.outputs.current-version}}"

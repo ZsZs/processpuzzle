@@ -1,6 +1,9 @@
 name: lint-test-build
 description: Lint test and build the application
 inputs:
+  base_dir:
+    description: Base director of the source code
+    required: true
   nx_project:
     description: Name of the Nx project
     required: true
@@ -29,10 +32,12 @@ runs:
       run: npm run test-${{inputs.nx_project}}
       shell: bash
     - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v4
+      uses: SonarSource/sonarqube-scan-action@v5.0.0
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
+      with:
+        projectBaseDir: ${{inputs.base_dir}}
     - name: Build libs and apps
       run: npm run build-${{inputs.nx_project}} --if-present
       shell: bash

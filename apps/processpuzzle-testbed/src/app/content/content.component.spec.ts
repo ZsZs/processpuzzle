@@ -19,16 +19,12 @@ describe('ContentComponent', () => {
     fixture.detectChanges();
   });
 
-  describe('sanity test', () => {
-    it('Should create component', () => {
-      expect(component).toBeTruthy();
-    });
+  it('Should create component', () => {
+    expect(component).toBeTruthy();
   });
 
-  describe('template structure contains:', () => {
-    it('mat-card', () => {
-      const matCard = fixture.debugElement.query(By.css('mat-card')).nativeElement;
-      expect(matCard).toBeTruthy();
-    });
+  it('template structure contains: mat-card', () => {
+    const matCard = fixture.debugElement.query(By.css('mat-card')).nativeElement;
+    expect(matCard).toBeTruthy();
   });
 });

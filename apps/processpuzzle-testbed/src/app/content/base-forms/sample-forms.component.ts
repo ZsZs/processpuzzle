@@ -32,6 +32,7 @@ import { MarkdownComponent } from 'ngx-markdown';
             <mat-button-toggle routerLink="/base-entity/test-entity" value="test-entity">Test Entity</mat-button-toggle>
             <mat-button-toggle routerLink="/base-entity/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
             <mat-button-toggle routerLink="/base-entity/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
+            <mat-button-toggle routerLink="/base-entity/firestore-doc" value="firestore-doc">Firestore Document</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
         <mat-divider />

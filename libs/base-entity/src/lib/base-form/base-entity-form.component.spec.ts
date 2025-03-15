@@ -97,7 +97,7 @@ describe('GenericEntityFormComponent', () => {
         fixture.detectChanges();
         const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
         jest.spyOn(component, 'onSubmit');
-        jest.spyOn(store, 'save');
+        jest.spyOn(store, 'add');
         jest.spyOn(store, 'setCurrentEntity');
         jest.spyOn(store, 'navigateBack');
 
@@ -106,7 +106,7 @@ describe('GenericEntityFormComponent', () => {
 
         // VERIFY:
         expect(component.onSubmit).toHaveBeenCalled();
-        expect(store.save).toHaveBeenCalledWith({ ...component.entity(), ...component.baseEntityForm.value });
+        expect(store.add).toHaveBeenCalledWith({ ...component.entity(), ...component.baseEntityForm.value });
         expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
         expect(store.navigateBack).toHaveBeenCalled();
       });

@@ -3,12 +3,12 @@ on:
   push:
     branches: [ "feature/*" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
-      - libs/base-entity
+      - 'libs/base-entity/**'
 
 jobs:
   build:
@@ -29,6 +29,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
+          base_dir: 'libs/base-entity'
           nx_project: base-entity
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
