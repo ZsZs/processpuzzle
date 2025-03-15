@@ -22,14 +22,14 @@ done
 
 # Start Firebase emulators
 emulator_cmd="firebase emulators:start --project=${FIREBASE_PROJECT}"
-[[ -n "${DATA_DIRECTORY}" ]] && emulator_cmd+=" --import=./${DATA_DIRECTORY} --export-on-exit=${DATA_DIRECTORY}"
+[[ -n "${DATA_DIRECTORY}" ]] && emulator_cmd+=" --import=./${DATA_DIRECTORY}"
 $emulator_cmd &
 firebase_pid=$!
 
 # Start nginx and npm
-echo "Starting nginx..."
-nginx &
-nginx_pid=$!
+# echo "Starting nginx..."
+# nginx &
+# nginx_pid=$!
 
 cleanup() {
     echo "Stopping services..."
@@ -39,10 +39,10 @@ cleanup() {
         kill -SIGTERM "$firebase_pid" || echo "Failed to terminate Firebase process"
         wait "$firebase_pid" 2>/dev/null
     fi
-    if [[ -n "$nginx_pid" ]]; then
-        kill -SIGTERM "$nginx_pid" || echo "Failed to terminate Nginx process"
-        wait "$nginx_pid" 2>/dev/null
-    fi
+#    if [[ -n "$nginx_pid" ]]; then
+#        kill -SIGTERM "$nginx_pid" || echo "Failed to terminate Nginx process"
+#        wait "$nginx_pid" 2>/dev/null
+#    fi
     if [[ -n "$npm_pid" ]]; then
         kill -SIGTERM "$npm_pid" || echo "Failed to terminate NPM process"
         wait "$npm_pid" 2>/dev/null

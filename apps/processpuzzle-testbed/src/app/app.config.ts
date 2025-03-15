@@ -36,7 +36,7 @@ export const appConfig: ApplicationConfig = {
       const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
       const stage = runtimeConfig.PIPELINE_STAGE;
       const firestore = getFirestore();
-      if (stage === 'DEV' || stage === 'CI') connectFirestoreEmulator(firestore, 'localhost', 8080);
+      if (stage === 'DEV' || stage === 'CI') connectFirestoreEmulator(firestore, 'localhost', 9090);
       return firestore;
     }),
     provideHttpClient(),
