@@ -6,6 +6,7 @@ services:
   processpuzzle-testbed:
     depends_on:
       - json-server
+      - firebase
     build:
       context: ../
       dockerfile: docker/nginx/Dockerfile
@@ -29,7 +30,8 @@ services:
     tty: true
     networks:
       - processpuzzle
-  emulator:
+  firebase:
+    image: firebase
     build:
       context: ../
       dockerfile: docker/firebase/Dockerfile
@@ -38,7 +40,7 @@ services:
     stop_grace_period: 1m
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099"
-      FIRESTORE_EMULATOR_HOST: "localhost:8080"
+      FIRESTORE_EMULATOR_HOST: "localhost:9090"
       PUBSUB_EMULATOR_HOST: "localhost:8085"
       FUNCTIONS_EMULATOR_HOST: "localhost:5001"
       FIREBASE_PROJECT: "processpuzzle-testbed-stage"
@@ -51,7 +53,7 @@ services:
       - "4400:4401" # hub
       - "4600:4601" # logging
       - "5001:5002" # functions
-      - "8080:8081" # firestore
+      - "9090:8080" # firestore
       - "8085:8086" # pubsub
       - "9099:9100" # auth
       - "9199:9200" # Storage
