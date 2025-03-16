@@ -25,7 +25,7 @@ jobs:
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: 'refs/tags/${{ steps.package-version.outputs.current-version}}',
+              ref: 'refs/tags/base-entity-${{ steps.package-version.outputs.current-version}}',
               sha: context.sha
             })
 
