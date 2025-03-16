@@ -73,7 +73,7 @@
     "@angular/fire": "^19.0.0",
     "@angular/language-service": "~19.1.5",
     "@angular/localize": "^19.1.5",
-    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.20.0",
     "@happy-dom/jest-environment": "^17.0.2",
     "@nx/angular": "^20.4.2",
