@@ -1,10 +1,5 @@
 name: Release-Base-Entity
 on:
-  create:
-    branches:
-      - "release/base-entity/*"
-    paths:
-      - 'libs/base-entity/**'
   push:
     branches:
       - "release/base-entity/*"
@@ -70,7 +65,7 @@ jobs:
         run: |
           git config --global user.email "zsolt.zsuffa@gmail.com"
           git config --global user.name "Zsolt Zsuffa"
-          npx nx release publish --projects=base-entity --no-cloud
+          npx nx release publish --projects=base-entity --provenance --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

@@ -1,18 +1,10 @@
 name: Release-Testbed
 on:
-  create:
-    branches:
-      - "release/testbed/*"
-    paths:
-      - 'apps/processpuzzle-testbed/**'
   push:
     branches:
       - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
-permissions:
-  id-token: write
-  contents: read
 jobs:
   publish:
     runs-on: ubuntu-latest
