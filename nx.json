@@ -95,7 +95,7 @@
     }
   ],
   "release": {
-    "projects": ["util", "base-entity"],
+    "projects": ["base-entity", "processpuzzle-testbed", "util"],
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
