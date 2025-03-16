@@ -109,15 +109,41 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "libs/base-entity/src/**/*.ts",
+          "libs/base-entity/src/**/*.spec.ts"
+        ]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
+        "{projectRoot}/reports/coverage"
       ],
       "options": {
         "jestConfig": "apps/processpuzzle-testbed/jest.config.ts"
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true,
+          "coverageDirectory": "{projectRoot}/reports/coverage"
+        }
       }
     },
     "serve-static": {
