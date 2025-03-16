@@ -1,7 +1,8 @@
 name: Build-Testbed
 on:
   push:
-    branches: [ "feature/*" ]
+    branches:
+      - "feature/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
   pull_request:

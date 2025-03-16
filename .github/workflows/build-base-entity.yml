@@ -1,7 +1,9 @@
 name: Build-Base-Entity
 on:
   push:
-    branches: [ "feature/*", "develop" ]
+    branches:
+      - "feature/*"
+      - "develop"
     paths:
       - 'libs/base-entity/**'
   pull_request:
