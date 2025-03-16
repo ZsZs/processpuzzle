@@ -1,7 +1,7 @@
 name: Release-Base-Entity
 on:
   create:
-    branches: [ "release/base-entity/*" ]
+    branches: [ "release/base-entity/**" ]
     paths:
       - 'libs/base-entity/**'
 jobs:

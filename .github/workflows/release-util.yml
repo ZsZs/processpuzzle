@@ -1,7 +1,7 @@
 name: Release-Util
 on:
   create:
-    branches: [ "release/util/*" ]
+    branches: [ "release/util/**" ]
     paths:
       - 'libs/util/**'
 jobs:

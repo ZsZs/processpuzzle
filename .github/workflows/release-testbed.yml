@@ -1,7 +1,7 @@
 name: Release-Testbed
 on:
   create:
-    branches: [ "release/testbed/*" ]
+    branches: [ "release/testbed/**" ]
     paths:
       - 'apps/processpuzzle-testbed/**'
 jobs:
