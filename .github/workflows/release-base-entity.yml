@@ -1,4 +1,4 @@
-name: Release-Util
+name: Release-Base-Entity
 on:
   create:
     branches: [ "release/base-entity/*" ]
