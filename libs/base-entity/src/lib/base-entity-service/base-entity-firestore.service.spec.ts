@@ -55,7 +55,6 @@ describe('BaseEntityFirestoreService', () => {
 
   it.skip('findById returns the entity with given Id', (done) => {
     baseEntityService.findById(testEntity_1.id).subscribe((entity: void | TestEntity) => {
-      console.log(entity);
       expect(entity?.id).toEqual(testEntity_1.id);
       done();
     });
