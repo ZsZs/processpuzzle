@@ -5,6 +5,11 @@ on:
       - "release/base-entity/*"
     paths:
       - 'libs/base-entity/**'
+  push:
+    branches:
+      - "release/base-entity/*"
+    paths:
+      - 'libs/base-entity/**'
 permissions:
   id-token: write
   contents: read

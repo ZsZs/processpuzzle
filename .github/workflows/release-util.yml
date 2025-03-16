@@ -5,6 +5,11 @@ on:
       - "release/util/*"
     paths:
       - 'libs/util/**'
+  push:
+    branches:
+      - "release/util/*"
+    paths:
+      - 'libs/util/**'
 permissions:
   id-token: write
   contents: read

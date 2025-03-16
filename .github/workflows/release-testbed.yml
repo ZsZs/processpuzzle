@@ -5,6 +5,11 @@ on:
       - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
+  push:
+    branches:
+      - "release/testbed/*"
+    paths:
+      - 'apps/processpuzzle-testbed/**'
 permissions:
   id-token: write
   contents: read
