@@ -41,8 +41,6 @@ describe('BaseEntityStore', () => {
 
       expect(mockService.add).toHaveBeenCalledTimes(1);
       const expectedEntities = [...MOCK_API_RESPONSE, ...[newTestEntity]];
-      console.log(store.entities());
-      console.log(expectedEntities);
       expect(store.entities()).toStrictEqual(expectedEntities);
     });
 
