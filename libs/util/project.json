@@ -71,7 +71,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/util"
+        "packageRoot": "{workspaceRoot}/dist/libs/util"
       }
     }
   }

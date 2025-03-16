@@ -1,8 +1,9 @@
 import { TestEntity } from '../test-entity';
-import { BaseEntityAttrDescriptor, FormControlType } from '../base-entity/base-entity-attr.descriptor';
+import { FormControlType } from '../base-entity/abstact-attr.descriptor';
+import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { setupFormComponentTest } from '../../test-setup';
 
-describe('AppComponentHostDirective', () => {
+describe('BaseFormHostDirective', () => {
   const checkboxConfig: BaseEntityAttrDescriptor = new BaseEntityAttrDescriptor('projectApproved', FormControlType.CHECKBOX, 'Is project approved from the business?', undefined, false, {
     inputType: 'text',
   });

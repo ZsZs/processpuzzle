@@ -7,6 +7,7 @@ out-tsc
 
 # generated outputs
 reports
+apps/**/reports
 libs/**/reports
 libs/**/**reports
 
@@ -56,3 +57,11 @@ apps/processpuzzle-testbed/src/run-time-conf/config.custom.json
 
 /docs/Sicherungskopie_von_ProcessPuzzle Testbed.cdr
 /docs/processpuzzle-testbed.ldb
+
+apps/**/firebase-debug.log
+apps/**/firestore-debug.log
+apps/**/pubsub-debug.log
+docker/cache
+docker/**/firebase-debug.log
+docker/**/firestore-debug.log
+docker/**/pubsub-debug.log

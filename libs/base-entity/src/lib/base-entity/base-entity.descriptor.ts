@@ -1,8 +1,8 @@
-import { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
+import { AbstractAttrDescriptor } from './abstact-attr.descriptor';
 
 export interface BaseEntityDescriptor {
   store: any;
-  attrDescriptors: BaseEntityAttrDescriptor[];
+  attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle: string;
 }

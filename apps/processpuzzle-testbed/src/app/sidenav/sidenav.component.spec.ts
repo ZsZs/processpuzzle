@@ -15,7 +15,7 @@ describe('SidenavComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SidenavComponent],
-      providers: [provideRouter([]), { provide: LayoutService, useClass: LayoutService, deps: [BreakpointObserver] }, { provide: BreakpointObserver, useClass: MockBreakpointObserver }],
+      providers: [provideRouter([]), { provide: BreakpointObserver, useClass: MockBreakpointObserver }, { provide: LayoutService, useClass: LayoutService, deps: [BreakpointObserver] }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SidenavComponent);
@@ -26,27 +26,23 @@ describe('SidenavComponent', () => {
     fixture.detectChanges();
   });
 
-  describe('sanity test', () => {
-    it('Should create component', () => {
-      expect(component).toBeTruthy();
-      expect(layoutService).toBeTruthy();
-      expect(breakpointObserver).toBeTruthy();
-    });
+  it('Should create component', () => {
+    expect(component).toBeTruthy();
+    expect(layoutService).toBeTruthy();
+    expect(breakpointObserver).toBeTruthy();
   });
 
-  describe('template structure contains:', () => {
-    it('mat-action-list:', () => {
-      expect(layoutService.isSmallDevice()).toBeFalsy();
-      const matActionList = fixture.debugElement.query(By.css('mat-nav-list')).nativeElement;
-      expect(matActionList).toBeTruthy();
-    });
+  it('template structure contains: mat-action-list:', () => {
+    expect(layoutService.isSmallDevice()).toBeFalsy();
+    const matActionList = fixture.debugElement.query(By.css('mat-nav-list')).nativeElement;
+    expect(matActionList).toBeTruthy();
+  });
 
-    it('empty, if its small device:', () => {
-      breakpointObserver.resize(599);
-      fixture.detectChanges();
-      const matActionList = fixture.debugElement.query(By.css('mat-nav-list'));
-      expect(layoutService.isSmallDevice()).toBeTruthy();
-      expect(matActionList).toBeNull();
-    });
+  it('empty, if its small device', () => {
+    breakpointObserver.resize(599);
+    fixture.detectChanges();
+    const matActionList = fixture.debugElement.query(By.css('mat-nav-list'));
+    expect(layoutService.isSmallDevice()).toBeTruthy();
+    expect(matActionList).toBeNull();
   });
 });

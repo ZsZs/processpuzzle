@@ -1,0 +1,37 @@
+name: Build-Util
+on:
+  push:
+    branches:
+      - "feature/*"
+      - "develop"
+    paths:
+      - 'libs/util/**'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ "develop" ]
+    paths:
+      - 'libs/util/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    outputs:
+      RUNNER: ${{ runner.name }}
+    strategy:
+      matrix:
+        node-version: [ 22.x ]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          base_dir: "libs/util"
+          nx_project: util
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          sonar_token: ${{secrets.SONAR_TOKEN}}

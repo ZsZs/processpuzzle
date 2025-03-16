@@ -1,7 +1,8 @@
 # @processpuzzle/base-entity
 
-![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build.yml/badge.svg)
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=ZsZs_processpuzzle)](https://sonarcloud.io/summary/new_code?id=ZsZs_processpuzzle&branch=develop)
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-entity.yml/badge.svg)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=processpuzzle_base_entity)](https://sonarcloud.io/summary/new_code?id=processpuzzle_base_entity&branch=develop)
+
 ## Introduction
 
 Base-Entity is a run-time form and table generator base on Entity Descriptor and Entity Attribute Descriptor. To make it short:

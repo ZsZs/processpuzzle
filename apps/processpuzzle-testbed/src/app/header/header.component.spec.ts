@@ -17,16 +17,12 @@ describe('HeaderComponent', () => {
     fixture.detectChanges();
   });
 
-  describe('sanity test', () => {
-    it('Should create component', () => {
-      expect(component).toBeTruthy();
-    });
+  it('Should create component', () => {
+    expect(component).toBeTruthy();
   });
 
-  describe('template structure contains:', () => {
-    it('mat-toolbar:', () => {
-      const matToolbar = fixture.debugElement.query(By.css('mat-toolbar')).nativeElement;
-      expect(matToolbar).toBeTruthy();
-    });
+  it('template structure contains: mat-toolbar:', () => {
+    const matToolbar = fixture.debugElement.query(By.css('mat-toolbar')).nativeElement;
+    expect(matToolbar).toBeTruthy();
   });
 });

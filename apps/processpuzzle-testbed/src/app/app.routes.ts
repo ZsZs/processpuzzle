@@ -11,6 +11,9 @@ import { TestEntityComponent } from './content/base-forms/test-entity-component/
 import { TrunkData } from './content/base-forms/trunk-data/trunk-data';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
+import { FirestoreDocStore } from './content/base-forms/firestore/firestore-doc.store';
+import { FirestoreDocService } from './content/base-forms/firestore/firestore-doc.service';
+import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
 
 export const appRoutes: Route[] = [
   { path: 'home', title: 'ProcessPuzzle Testbed - Home', component: ContentComponent, data: { icon: 'home' } },
@@ -55,6 +58,16 @@ export const appRoutes: Route[] = [
           { path: '', redirectTo: 'list', pathMatch: 'full' },
           { path: 'list', component: BaseEntityListComponent<TrunkData> },
           { path: ':entityId/details', component: BaseEntityFormComponent<TrunkData> },
+        ],
+      },
+      {
+        path: 'firestore-doc',
+        loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
+        providers: [FirestoreDocStore, { provide: BASE_ENTITY_SERVICE, useValue: FirestoreDocService }, { provide: BASE_ENTITY_STORE, useValue: FirestoreDocStore, deps: [FirestoreDocStore] }],
+        children: [
+          { path: '', redirectTo: 'list', pathMatch: 'full' },
+          { path: 'list', component: BaseEntityListComponent<FirestoreDoc> },
+          { path: ':entityId/details', component: BaseEntityFormComponent<FirestoreDoc> },
         ],
       },
     ],

@@ -1,4 +1,4 @@
-import { Component, input, Signal } from '@angular/core';
+import { Component, computed, input, Signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
@@ -13,6 +13,7 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   entity: Signal<Entity> = input.required();
   formGroup!: FormGroup;
   store!: any;
+  style = computed<{ [p: string]: any } | null | undefined>(() => this.config().style);
   value: Signal<any> = input.required();
 
   // region Angular lifecycle hooks

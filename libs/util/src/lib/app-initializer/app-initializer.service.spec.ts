@@ -6,7 +6,6 @@ import { TestBed } from '@angular/core/testing';
 describe('AppInitializerService', () => {
   let appInitializer: AppInitializer;
   const initializerOne = jest.fn(() => {
-    console.log('Initializer one, is done.');
     Promise.resolve(true);
   });
   const initializerTwo = jest.fn(() => Promise.resolve('success'));

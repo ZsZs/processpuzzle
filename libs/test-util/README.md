@@ -1,11 +1,4 @@
-# test-util
+# @processpuzzle/test-util
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-test-util.yml/badge.svg)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=processpuzzle_test_util)](https://sonarcloud.io/summary/new_code?id=processpuzzle_test_util&branch=develop)
 
-This library was generated with [Nx](https://nx.dev).
-
-## Building
-
-Run `nx build test-util` to build the library.
-
-## Running unit tests
-
-Run `nx test test-util` to execute the unit tests via [Jest](https://jestjs.io).
