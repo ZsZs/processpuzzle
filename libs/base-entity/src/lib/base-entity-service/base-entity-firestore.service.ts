@@ -19,7 +19,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
   }
 
   // region public accessors and mutators
-  add(entity: Entity, id?: number): Observable<Entity> {
+  add(entity: Entity): Observable<Entity> {
     if (!entity) throw new Error('Entity cant be undefined');
     return from(this.addAsync(entity));
   }
@@ -61,7 +61,7 @@ export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> impl
   // endregion
 
   // protected, private helper methods
-  protected async addAsync(entity: Entity, id?: number): Promise<Entity> {
+  protected async addAsync(entity: Entity): Promise<Entity> {
     const newDoc = doc(this.collection, entity.id);
     await setDoc(newDoc, this.mapEntity(entity));
     return new Promise<Entity>((resolve, reject) => {

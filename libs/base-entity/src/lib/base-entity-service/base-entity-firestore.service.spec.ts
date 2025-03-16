@@ -27,7 +27,7 @@ describe('BaseEntityFirestoreService', () => {
   let firestoreMock: Firestore;
 
   beforeEach(() => {
-    const mockDocumentRef: DocumentReference<TestEntity> = {} as DocumentReference<TestEntity>;
+    //    const mockDocumentRef: DocumentReference<TestEntity> = {} as DocumentReference<TestEntity>;
     const mockDocumentSnapshot: DocumentSnapshot<TestEntity> = {
       // data: jest.fn(() => testEntity_1),
       // exists: jest.fn((): boolean => {
@@ -61,9 +61,9 @@ describe('BaseEntityFirestoreService', () => {
     });
 
     expect(doc).toHaveBeenCalledWith(firestoreMock, 'test-entity', testEntity_1.id);
-    const callArg = new Promise(() => {
-      return { __zone_symbol__state: true, __zone_symbol__value: { id: testEntity_1.id } };
-    });
+    // const callArg = new Promise(() => {
+    //   return { __zone_symbol__state: true, __zone_symbol__value: { id: testEntity_1.id } };
+    // });
     expect(getDoc).toHaveBeenCalled();
   });
 });
