@@ -51,7 +51,7 @@
     "dotenv": "^16.4.7",
     "es6-dynamic-template": "^2.0.0",
     "marked": "^15.0.6",
-    "material-icons": "^1.13.13",
+    "material-icons": "^1.13.14",
     "mermaid": "^11.4.1",
     "ngx-markdown": "^19.1.0",
     "node-fetch": "^3.3.2",
