@@ -16,7 +16,7 @@ export const findByQuery = <Entity extends BaseEntity>(store: any, repository: B
       switchMap((parameters) =>
         repository.findByQuery(parameters).pipe(
           tapResponse({
-            next: (response: BaseEntityLoadResponse<Entity> | Entity[]) => {
+            next: (response: BaseEntityLoadResponse<Entity> | Entity[] | Entity) => {
               if (Object.prototype.hasOwnProperty.call(response, 'content')) {
                 const baseEntityResponse = response as BaseEntityLoadResponse<Entity>;
                 patchState(store, {

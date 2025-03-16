@@ -1,5 +1,5 @@
 import { BaseEntity } from '../base-entity/base-entity';
-import { map, Observable, of } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { inject, Inject } from '@angular/core';
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -37,11 +37,11 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     return this.httpClient.delete(this.resourceUrl, { headers: this.headers });
   }
 
-  findAll(page?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[]> {
+  findAll(page?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity> {
     return this.findByQuery({ page });
   }
 
-  findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[]> {
+  findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity> {
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
@@ -53,7 +53,15 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
   }
 
   findById(id: string): Observable<void | Entity> {
-    return of(undefined);
+    const queryCondition: BaseEntityQueryCondition = { pathParams: new Map<string, string>([['id', id]]) };
+    const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
+    if (fullUrl) {
+      return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
+        map((httpResponse: any) => {
+          return this.mapSimpleResponse(httpResponse) as Entity;
+        }),
+      );
+    } else throw new Error('Could not determine the full url');
   }
 
   add(entity: Entity, id?: number): Observable<Entity> {
@@ -126,7 +134,7 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     };
   }
 
-  private mapSimpleResponse(response: any): Entity[] {
+  private mapSimpleResponse(response: any): Entity[] | Entity {
     if (Object.prototype.toString.call(response) === '[object Array]') {
       return response.map((dto: any, index: number) => {
         return this.entityMapper.fromDto(dto, index);

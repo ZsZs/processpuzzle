@@ -12,11 +12,11 @@ export interface BaseEntityService<Entity extends BaseEntity> {
 
   deleteAll(): Observable<unknown>;
 
-  findAll(page?: number, pageSize?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[]>;
+  findAll(page?: number, pageSize?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity>;
 
   findById(id: string): Observable<Entity | void>;
 
-  findByQuery(condition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[]>;
+  findByQuery(condition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity>;
 
   update(entity: Entity): Observable<Entity>;
 }
