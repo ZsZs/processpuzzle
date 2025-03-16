@@ -1,7 +1,9 @@
 name: Build-Util
 on:
   push:
-    branches: [ "feature/*", "develop" ]
+    branches:
+      - "feature/*"
+      - "develop"
     paths:
       - 'libs/util/**'
   pull_request:

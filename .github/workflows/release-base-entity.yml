@@ -1,11 +1,17 @@
 name: Release-Base-Entity
 on:
-  create:
-    branches: [ "release/base-entity/**" ]
+  push:
+    branches:
+      - "release/base-entity/*"
     paths:
       - 'libs/base-entity/**'
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  repository-projects: write
 jobs:
-  publish:
+  publish-to-npm:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -57,11 +63,15 @@ jobs:
       - name: Build package
         run: npm run build-util
 
-      - name: Publish packages
+      - name: Config Git
+        shell: bash
         run: |
           git config --global user.email "zsolt.zsuffa@gmail.com"
           git config --global user.name "Zsolt Zsuffa"
-          npx nx release publish --projects=base-entity --no-cloud
+
+      - name: Publish packages
+        shell: bash
+        run: npx nx release publish --projects=util --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

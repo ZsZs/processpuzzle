@@ -1,11 +1,12 @@
 name: Release-Testbed
 on:
-  create:
-    branches: [ "release/testbed/**" ]
+  push:
+    branches:
+      - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
 jobs:
-  publish:
+  publish-to-firebase:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
