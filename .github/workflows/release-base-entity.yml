@@ -1,9 +1,13 @@
 name: Release-Base-Entity
 on:
   create:
-    branches: [ "release/base-entity/**" ]
+    branches:
+      - "release/base-entity/*"
     paths:
       - 'libs/base-entity/**'
+permissions:
+  id-token: write
+  contents: read
 jobs:
   publish:
     runs-on: ubuntu-latest

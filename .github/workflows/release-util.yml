@@ -1,9 +1,13 @@
 name: Release-Util
 on:
   create:
-    branches: [ "release/util/**" ]
+    branches:
+      - "release/util/*"
     paths:
       - 'libs/util/**'
+permissions:
+  id-token: write
+  contents: read
 jobs:
   publish:
     runs-on: ubuntu-latest
