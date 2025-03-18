@@ -3,6 +3,7 @@
   "version": "0.2.1",
   "license": "MIT",
   "scripts": {
+    "config-env-processpuzzle-testbed": "ts-node ./apps/processpuzzle-testbed/src/assets/setEnv.ts",
     "copy:config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
     "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 3000",
     "run-http-server": "http-server dist/apps/processpuzzle-testbed --proxy http://localhost:9090",
@@ -44,6 +45,7 @@
     "@ngrx/component-store": "^19.0.1",
     "@ngrx/operators": "^19.0.1",
     "@ngrx/signals": "^19.0.1",
+    "@ngx-env/builder": "^19.0.4",
     "@types/node-fetch": "^2.6.12",
     "@types/uuid": "^10.0.0",
     "build-url-ts": "^6.1.8",
@@ -53,6 +55,7 @@
     "marked": "^15.0.7",
     "material-icons": "^1.13.14",
     "mermaid": "^11.5.0",
+    "ngx-logger": "^5.0.12",
     "ngx-markdown": "^19.1.1",
     "node-fetch": "^3.3.2",
     "prismjs": "^1.30.0",

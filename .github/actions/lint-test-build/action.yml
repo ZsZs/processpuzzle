@@ -13,6 +13,13 @@ inputs:
   sonar_token:
     description: Token to get access to SonarCloud
     required: true
+  firebase_token:
+    description: Firebase key
+    required: true
+  pipeline_stage:
+    description: Actual stage in the CI/CD pipeline
+    required: true
+    default: 'CI'
 runs:
   using: composite
   steps:
@@ -38,6 +45,12 @@ runs:
         SONAR_TOKEN: ${{ inputs.sonar_token }}
       with:
         projectBaseDir: ${{inputs.base_dir}}
+    - name: Generate environment file
+      run: npm run config-env-${{inputs.nx_project}}
+      env:
+        FIREBASE_API_KEY: ${{inputs.firebase_token}}
+        PIPELINE_STAGE: ${{inputs.pipeline_stage}}
+      shell: bash
     - name: Build libs and apps
       run: npm run build-${{inputs.nx_project}} --if-present
       shell: bash

@@ -12,15 +12,16 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimationsAsync(),
     provideAuth(() => {
-      const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
-      const stage = runtimeConfig.PIPELINE_STAGE;
       const auth = getAuth();
-      if (stage === 'DEV' || stage === 'CI') connectAuthEmulator(auth, `http://localhost:9099`);
+      const pipelineStage = environment.PIPELINE_STAGE || 'CI';
+      if (pipelineStage === 'DEV') connectAuthEmulator(auth, `http://localhost:9099`);
+      else if (pipelineStage === 'CI') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
@@ -33,10 +34,10 @@ export const appConfig: ApplicationConfig = {
       deps: [RUNTIME_CONFIGURATION],
     },
     provideFirestore(() => {
-      const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
-      const stage = runtimeConfig.PIPELINE_STAGE;
       const firestore = getFirestore();
-      if (stage === 'DEV' || stage === 'CI') connectFirestoreEmulator(firestore, 'localhost', 9090);
+      const pipelineStage = environment.PIPELINE_STAGE || 'CI';
+      if (pipelineStage === 'DEV') connectFirestoreEmulator(firestore, 'localhost', 8080);
+      else if (pipelineStage === 'CI') connectFirestoreEmulator(firestore, 'firebase', 9090);
       return firestore;
     }),
     provideHttpClient(),
@@ -65,7 +66,17 @@ export const appConfig: ApplicationConfig = {
         log: true,
       },
     },
-    { provide: RUNTIME_CONFIGURATION, useFactory: (configurationService: ConfigurationService<RuntimeConfiguration>) => configurationService.configuration, deps: [ConfigurationService] },
+    {
+      provide: RUNTIME_CONFIGURATION,
+      useFactory: (configurationService: ConfigurationService<RuntimeConfiguration>) => {
+        const config: RuntimeConfiguration = configurationService.configuration;
+        const apiKey = { apiKey: environment.FIREBASE_API_KEY || '' };
+        const firebaseConfig = { ...config.FIREBASE_CONFIG, ...apiKey };
+
+        return { ...config, ...{ FIREBASE_CONFIG: firebaseConfig } };
+      },
+      deps: [ConfigurationService],
+    },
     provideMarkdown({
       loader: HttpClient,
       sanitize: SecurityContext.NONE,

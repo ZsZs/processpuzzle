@@ -18,6 +18,7 @@ export class AppInitializer {
       await Promise.all(promises);
     }
 
+    //    console.log( import.meta.env.NG_APP_PIPELINE_STAGE);
     console.log('Application initialized.');
   }
 }

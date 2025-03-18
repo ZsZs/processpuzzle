@@ -1,0 +1,20 @@
+name: deploy-to-firebase
+description: Deploys the application to Firebase Hosting
+inputs:
+  firebase_service_account:
+    description: This is a service account JSON key.
+  project_id:
+    description: The Firebase project that contains the Hosting site to which you want to deploy. If left blank, you need to check in a .firebaserc file so that the Firebase CLI knows which Firebase project to use.
+    required: true
+  channel_id:
+    description: The ID of the channel to deploy to. If you leave this blank, a preview channel and its ID will be auto-generated per branch or PR. If you set it to live, the action deploys to the live channel of your default Hosting site.
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Deploy App
+      uses: FirebaseExtended/action-hosting-deploy@v0
+      with:
+        firebaseServiceAccount: ${{ inputs.firebase_service_account }}
+        projectId: ${{ inputs.project_id }}
+        channelId: ${{ inputs.channel_id }}
