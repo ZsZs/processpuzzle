@@ -22,7 +22,7 @@ function writeFileUsingFS( targetPath: string, environmentFileContent: string ) 
 
 
 // Providing path to the `environments` directory
-const envDirectory = './apps/processpuzzle-testbed/src/environments';
+const envDirectory = 'apps/processpuzzle-testbed/src/environments';
 
 // creates the `environments` directory if it does not exist
 if ( !existsSync( envDirectory ) ) {
