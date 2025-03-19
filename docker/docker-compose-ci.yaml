@@ -9,13 +9,14 @@ services:
       - firebase
     build:
       context: ../
-      dockerfile: docker/nginx/Dockerfile
+      dockerfile: docker/testbed/Dockerfile
       args:
         CICD_STAGE: ci
     image: processpuzzle-testbed
     container_name: processpuzzle-testbed
     environment:
-      CICD_STAGE: "CI"
+      PIPELINE_STAGE: "CI"
+      FIREBASE_API_KEY: $FIREBASE_API_KEY
     ports:
       - "8080:80"
     tty: true

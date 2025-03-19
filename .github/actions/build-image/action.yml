@@ -8,7 +8,7 @@ inputs:
   cicd_stage:
     description: CI/CD stage name, toward the target environment
     required: true
-    default: staging
+    default: stage
   dockerhub_username:
     description: Username to DockerHub
     required: true
