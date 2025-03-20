@@ -44,7 +44,7 @@ runs:
         context: .
         file: docker/firebase/Dockerfile
         push: true
-        tags: zsuffazs/firebase:${{ inputs.app_version }}, zsuffazs/firebase:latest
+        tags: zsuffazs/firebase-emulator:${{ inputs.app_version }}, zsuffazs/firebase:latest
 
     - name: Build Angular app and push
       uses: docker/build-push-action@v6
