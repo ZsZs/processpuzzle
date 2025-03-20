@@ -5,8 +5,10 @@ networks:
 services:
   processpuzzle-testbed:
     depends_on:
-      - json-server
-      - firebase
+      json-server:
+        condition: service_healthy
+      firebase:
+        condition: service_healthy
     build:
       context: ../
       dockerfile: docker/testbed/Dockerfile
@@ -18,7 +20,7 @@ services:
       PIPELINE_STAGE: "CI"
       FIREBASE_API_KEY: $FIREBASE_API_KEY
     ports:
-      - "8080:80"
+      - "9090:80"
     tty: true
     networks:
       - processpuzzle
@@ -33,8 +35,11 @@ services:
     tty: true
     networks:
       - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/test-entity" ]
   firebase:
-    image: zsuffazs/firebase:latest
+    image: zsuffazs/firebase-emulator:latest
+    container_name: firebase-emulator
     build:
       context: ../
       dockerfile: docker/firebase/Dockerfile
@@ -43,7 +48,7 @@ services:
     stop_grace_period: 1m
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099"
-      FIRESTORE_EMULATOR_HOST: "localhost:9090"
+      FIRESTORE_EMULATOR_HOST: "localhost:8080"
       PUBSUB_EMULATOR_HOST: "localhost:8085"
       FUNCTIONS_EMULATOR_HOST: "localhost:5001"
       FIREBASE_PROJECT: "processpuzzle-testbed-stage"
@@ -52,15 +57,19 @@ services:
       DATA_DIRECTORY: "data"
       CHOKIDAR_USEPOLLING: 'true'
     ports:
-      - "4000:4000" # ui
-      - "4400:4400" # hub
+      - "4000:4001" # ui
+      - "4400:4401" # hub
       - "4600:4601" # logging
-      - "5001:5001" # functions
-      - "9090:9090" # firestore
-      - "8085:8085" # pubsub
-      - "9099:9099" # auth
-      - "9199:9199" # Storage
+      - "5001:5002" # functions
+      - "8080:8081" # firestore
+      - "8085:8086" # pubsub
+      - "9000:9001" # database
+      - "9099:9100" # auth
+      - "9199:9200" # Storage
+      - "6000:6001" # Hosting
     volumes:
       - ./firebase:/srv/firebase:rw
       - ~/.config/:/root/.config
       - ./firebase/data:/srv/firebase/data:rw
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:8080" ]
