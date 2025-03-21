@@ -44,7 +44,6 @@ jobs:
         with:
           firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           project_id: processpuzzle-testbed-stage
-          channel_id: live
           project_root: ./apps/processpuzzle-testbed
 
       - id: integration-test
