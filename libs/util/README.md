@@ -1,6 +1,7 @@
 # @processpuzzle/util
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-util.yml/badge.svg)
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=processpuzzle_util)](https://sonarcloud.io/summary/new_code?id=processpuzzle_util&branch=develop)
+[![Node version](https://img.shields.io/node/v/[%40processpuzzle%2test_util].svg?style=flat)](https://nodejs.org/download/)
 
 Dieses Bibliothek enthelt algemein nützliches Funktionen oder Modulen.
 ## wildcardTextMatcher()
