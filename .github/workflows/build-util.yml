@@ -35,3 +35,4 @@ jobs:
           nx_project: util
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}

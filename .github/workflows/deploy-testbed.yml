@@ -21,12 +21,13 @@ jobs:
           nx_project: testbed
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
 
       - id: build-image
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
         with:
-          cicd_stage: 'staging'
+          cicd_stage: 'stage'
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -36,6 +37,13 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
           aws_access_secret: ${{ secrets.AWS_ACCESS_SECRET }}
+
+      - id: deploy-to-firebase
+        name: Deploy to Firebase host
+        uses: ./.github/actions/deploy-to-firebase
+        with:
+          firebase_service_account: ${{ secrets.FIREBASE_TOKEN }}
+          project_id: processpuzzle-testbed-stage
 
       - id: integration-test
         name: run-integration-tests

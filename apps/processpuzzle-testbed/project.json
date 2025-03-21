@@ -15,14 +15,14 @@
   },
   "targets": {
     "build": {
-      "executor": "@nx/angular:browser-esbuild",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": [
         "{options.outputPath}"
       ],
       "options": {
         "outputPath": "dist/apps/processpuzzle-testbed",
         "index": "apps/processpuzzle-testbed/src/index.html",
-        "main": "apps/processpuzzle-testbed/src/main.ts",
+        "browser": "apps/processpuzzle-testbed/src/main.ts",
         "polyfills": [
           "zone.js"
         ],
