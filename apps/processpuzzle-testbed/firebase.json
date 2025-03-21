@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/apps/processpuzzle-testbed",
+    "public": "./dist/apps/processpuzzle-testbed/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
