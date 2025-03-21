@@ -3,7 +3,10 @@
   "version": "0.2.1",
   "license": "MIT",
   "scripts": {
+    "config-env-base-entity": "echo 'Not applicable'",
     "config-env-testbed": "ts-node apps/processpuzzle-testbed/src/assets/setEnv.ts",
+    "config-env-ui": "echo 'Not applicable'",
+    "config-env-util": "echo 'Not applicable'",
     "copy:config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
     "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 3000",
     "run-http-server": "http-server dist/apps/processpuzzle-testbed/browser --proxy http://localhost:9090",
