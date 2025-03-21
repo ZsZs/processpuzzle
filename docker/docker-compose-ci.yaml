@@ -24,6 +24,8 @@ services:
     tty: true
     networks:
       - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:9090/home" ]
   json-server:
     build:
       context: ../
@@ -36,7 +38,7 @@ services:
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/test-entity" ]
+      test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
   firebase:
     image: zsuffazs/firebase-emulator:latest
     container_name: firebase-emulator
