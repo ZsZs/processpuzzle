@@ -11,7 +11,7 @@ inputs:
     required: true
   channel_id:
     description: The ID of the channel to deploy to. If you leave this blank, a preview channel and its ID will be auto-generated per branch or PR. If you set it to live, the action deploys to the live channel of your default Hosting site.
-    required: false
+    required: true
 runs:
   using: composite
   steps:
@@ -20,5 +20,5 @@ runs:
       with:
         firebaseServiceAccount: ${{ inputs.firebase_service_account }}
         projectId: ${{ inputs.project_id }}
-        #        channelId: ${{ inputs.channel_id }}
+        channelId: ${{ inputs.channel_id }}
         entryPoint: ${{ inputs.project_root }}
