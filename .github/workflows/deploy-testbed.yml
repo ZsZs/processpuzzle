@@ -44,6 +44,7 @@ jobs:
         with:
           firebase_service_account: ${{ secrets.FIREBASE_TOKEN }}
           project_id: processpuzzle-testbed-stage
+          project_root: ./apps/processpuzzle-testbed
 
       - id: integration-test
         name: run-integration-tests
