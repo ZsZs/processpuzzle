@@ -61,7 +61,8 @@ export const appConfig: ApplicationConfig = {
       provide: CONFIGURATION_OPTIONS,
       useValue: {
         urlFactory: () => {
-          return ['environments/config.common.json', `run-time-conf/config.custom.json`];
+          const pipelineStage = environment.PIPELINE_STAGE || 'CI';
+          return ['environments/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
         },
         log: true,
       },
