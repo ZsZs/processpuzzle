@@ -1,7 +1,8 @@
 name: Deploy-Testbed
 on:
   push:
-    branches: [ "develop" ]
+    branches:
+      - "develop"
     paths:
       - 'apps/processpuzzle-testbed/**'
 
