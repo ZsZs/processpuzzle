@@ -78,7 +78,7 @@
     "@angular-eslint/eslint-plugin-template": "^19.2.1",
     "@angular-eslint/template-parser": "^19.2.1",
     "@angular/cli": "~19.2.3",
-    "@angular/compiler-cli": "~19.2.2",
+    "@angular/compiler-cli": "~19.2.4",
     "@angular/fire": "^19.0.0",
     "@angular/language-service": "~19.2.2",
     "@angular/localize": "^19.2.2",
