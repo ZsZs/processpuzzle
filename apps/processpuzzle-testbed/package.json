@@ -1,0 +1,7 @@
+{
+  "name": "@processpuzzle/testbed",
+  "version": "0.9.0",
+  "description": "Test application for @processpuzzle libraries",
+  "dependencies": {
+  }
+}
