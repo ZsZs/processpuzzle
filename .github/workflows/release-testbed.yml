@@ -93,7 +93,9 @@ jobs:
           git config --global user.name "Zsolt Zsuffa"
       - name: Copy package.json
         shell: bash
-        run: cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed
+        run: |
+          cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed
+          cp -R apps/processpuzzle-testbed/README.md dist/apps/processpuzzle-testbed
 
       - name: Publish packages
         shell: bash
