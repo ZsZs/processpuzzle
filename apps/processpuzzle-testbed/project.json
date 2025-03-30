@@ -28,6 +28,7 @@
         ],
         "tsConfig": "apps/processpuzzle-testbed/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
+        "generatePackageJson": true,
         "assets": [
           {
             "glob": "**/*",
