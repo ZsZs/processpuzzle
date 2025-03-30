@@ -94,7 +94,7 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: nx run processpuzzle-testbed:nx-release-publish --access public --no-cloud
+        run: npx nx run processpuzzle-testbed:nx-release-publish --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
