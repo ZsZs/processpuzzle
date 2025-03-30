@@ -30,7 +30,6 @@
         "^production"
       ],
       "options": {
-        "generatePackageJson": true
       }
     },
     "@nx/eslint:lint": {
