@@ -46,7 +46,7 @@ runs:
       with:
         projectBaseDir: ${{inputs.base_dir}}
     - name: Generate environment file
-      run: npm run config-env-${{inputs.nx_project}}
+      run: npm run config-env-${{inputs.nx_project}} --environment=${{inputs.pipeline_stage}}
       env:
         FIREBASE_API_KEY: ${{inputs.firebase_token}}
         PIPELINE_STAGE: ${{inputs.pipeline_stage}}
