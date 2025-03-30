@@ -8,7 +8,7 @@
     "config-env-ui": "echo 'Not applicable'",
     "config-env-util": "echo 'Not applicable'",
     "copy-config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
-    "copy-package-json": "cp -R apps/processpuzzle-testbed/package.json cp -R dist/apps/processpuzzle-testbed/package.json ",
+    "copy-package-json": "cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed",
     "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 3000",
     "run-http-server": "http-server dist/apps/processpuzzle-testbed/browser --proxy http://localhost:9090",
     "run-firebase-emulator": "firebase emulators:start --import apps/processpuzzle-testbed/data",
