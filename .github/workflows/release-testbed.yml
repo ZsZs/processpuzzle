@@ -5,6 +5,11 @@ on:
       - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  repository-projects: write
 jobs:
   publish-to-firebase:
     runs-on: ubuntu-latest
@@ -82,6 +87,19 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           target_environment: 'prod'
+
+      - name: Config Git
+        shell: bash
+        run: |
+          git config --global user.email "zsolt.zsuffa@gmail.com"
+          git config --global user.name "Zsolt Zsuffa"
+
+      - name: Publish packages
+        shell: bash
+        run: nx run processpuzzle-testbed:nx-release-publish --access public --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Create a Release
         uses: elgohr/Github-Release-Action@v5
