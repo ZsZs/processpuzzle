@@ -1,44 +1,42 @@
 /* eslint:disable */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { writeFile, existsSync, mkdirSync } = require( 'fs' );
+const { writeFile, existsSync, mkdirSync } = require('fs');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { argv } = require( 'yargs' );
+const { argv } = require('yargs');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require( 'dotenv' ).config();
+require('dotenv').config();
 const environment = argv.environment;
 
-
-function writeFileUsingFS( targetPath: string, environmentFileContent: string ) {
-  writeFile( targetPath, environmentFileContent, function( err: any ) {
-    if ( err ) {
-      console.log( err );
+function writeFileUsingFS(targetPath: string, environmentFileContent: string) {
+  writeFile(targetPath, environmentFileContent, function (err: any) {
+    if (err) {
+      console.log(err);
     }
-    if ( environmentFileContent !== '' ) {
-      console.log( `write ${environmentFileContent} to ${targetPath}` );
+    if (environmentFileContent !== '') {
+      console.log(`write ${environmentFileContent} to ${targetPath}`);
     }
-  } );
+  });
 }
-
 
 // Providing path to the `environments` directory
 const envDirectory = 'apps/processpuzzle-testbed/src/environments';
 
 // creates the `environments` directory if it does not exist
-if ( !existsSync( envDirectory ) ) {
-  mkdirSync( envDirectory );
+if (!existsSync(envDirectory)) {
+  mkdirSync(envDirectory);
 }
 
 //creates the `environment.prod.ts`, `environment.test.ts` and `environment.ts` file if it does not exist
-writeFileUsingFS( `${envDirectory}/environment.ci.ts`, '' );
-writeFileUsingFS( `${envDirectory}/environment.prod.ts`, '' );
-writeFileUsingFS( `${envDirectory}/environment.stage.ts`, '' );
-writeFileUsingFS( `${envDirectory}/environment.ts`, '' );
+writeFileUsingFS(`${envDirectory}/environment.ci.ts`, '');
+writeFileUsingFS(`${envDirectory}/environment.prod.ts`, '');
+writeFileUsingFS(`${envDirectory}/environment.stage.ts`, '');
+writeFileUsingFS(`${envDirectory}/environment.ts`, '');
 
 // choose the correct targetPath based on the environment chosen
 let targetPath: string;
 
-switch( environment ) {
+switch (environment) {
   case 'ci':
     targetPath = `${envDirectory}/environment.ci.ts`;
     break;
@@ -60,10 +58,11 @@ const environmentFileContent = `
   import { EnvironmentVariables } from './environment-variables';
 
   export const environment: EnvironmentVariables = {
-    FIREBASE_API_KEY: '${process.env[ 'FIREBASE_API_KEY' ]}',
-    PIPELINE_STAGE: '${process.env[ 'PIPELINE_STAGE' ]}'
+    FIREBASE_API_KEY: '${process.env['FIREBASE_API_KEY']}',
+    PIPELINE_STAGE: '${process.env['PIPELINE_STAGE']}'
   };
 
 `;
 
-writeFileUsingFS( targetPath, environmentFileContent ); // appending data into the target file/* eslint:enable */
+writeFileUsingFS(targetPath, environmentFileContent); // appending data into the target file/* eslint:enable */
+writeFileUsingFS(`${envDirectory}/environment.ts`, environmentFileContent);
