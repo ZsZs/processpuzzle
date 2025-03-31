@@ -24,13 +24,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
-          cicd_stage: stage
+          cicd_stage: 'STAGE'
 
       - id: build-image
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
         with:
-          cicd_stage: 'stage'
+          cicd_stage: 'STAGE'
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
