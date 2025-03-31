@@ -91,15 +91,17 @@ jobs:
         run: |
           git config --global user.email "zsolt.zsuffa@gmail.com"
           git config --global user.name "Zsolt Zsuffa"
+
       - name: Copy package.json
         shell: bash
         run: |
           cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed
           cp -R apps/processpuzzle-testbed/README.md dist/apps/processpuzzle-testbed
+          rm dist/apps/processpuzzle-testbed/browser/environments/environment.ts
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=processpuzzle-testbed --first-release --access public --no-cloud
+        run: npx nx release publish --projects=processpuzzle-testbed --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
