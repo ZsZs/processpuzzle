@@ -8,7 +8,7 @@ inputs:
   cicd_stage:
     description: CI/CD stage name, toward the target environment
     required: true
-    default: staging
+    default: stage
   dockerhub_username:
     description: Username to DockerHub
     required: true
@@ -30,15 +30,6 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Angular app and push
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: ./docker/nginx/Dockerfile
-        build-args: CICD_STAGE=${{ inputs.cicd_stage }}
-        push: true
-        tags: zsuffazs/processpuzzle-testbed:${{ inputs.app_version }}, zsuffazs/processpuzzle-testbed:latest
-
     - name: Build json-server and push
       uses: docker/build-push-action@v6
       with:
@@ -46,3 +37,20 @@ runs:
         file: docker/json-server/Dockerfile
         push: true
         tags: zsuffazs/json-server:${{ inputs.app_version }}, zsuffazs/json-server:latest
+
+    - name: Build Firebase and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: docker/firebase/Dockerfile
+        push: true
+        tags: zsuffazs/firebase-emulator:${{ inputs.app_version }}, zsuffazs/firebase:latest
+
+    - name: Build Angular app and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./docker/testbed/Dockerfile
+        build-args: CICD_STAGE=${{ inputs.cicd_stage }}
+        push: true
+        tags: zsuffazs/processpuzzle-testbed:${{ inputs.app_version }}, zsuffazs/processpuzzle-testbed:latest

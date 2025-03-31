@@ -37,6 +37,15 @@ jobs:
           nx_project: testbed
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+
+      - id: build-image
+        name: Build and publish Docker images
+        uses: ./.github/actions/build-image
+        with:
+          cicd_stage: 'ci'
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - id: docker-compose
         name: run-docker-compose

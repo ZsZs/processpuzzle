@@ -9,14 +9,14 @@
   ],
   "targets": {
     "build": {
-      "executor": "@nx/angular:browser-esbuild",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": [
         "{options.outputPath}"
       ],
       "options": {
         "outputPath": "dist/apps/processpuzzle-ui",
         "index": "apps/processpuzzle-ui/src/index.html",
-        "main": "apps/processpuzzle-ui/src/main.ts",
+        "browser": "apps/processpuzzle-ui/src/main.ts",
         "polyfills": [
           "zone.js"
         ],

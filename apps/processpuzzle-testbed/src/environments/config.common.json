@@ -1,10 +1,7 @@
 {
   "PIPELINE_STAGE": "DEV",
-  "ICS_BACKEND_ROOT": "http://localhost:4200/services/ics",
-  "MESSAGE_SERVICE_ROOT": "http://localhost:4200/services/message-service/api/v1",
   "TEST_SERVICE_ROOT": "http://localhost:3000/",
   "FIREBASE_CONFIG": {
-    "apiKey": "${FIREBASE_TOKEN}",
     "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
     "projectId": "processpuzzle-testbed-stage",
     "storageBucket": "processpuzzle-testbed-stage.firebasestorage.app",

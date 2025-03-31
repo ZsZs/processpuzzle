@@ -1,0 +1,12 @@
+{
+  "PIPELINE_STAGE": "PROD",
+  "TEST_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
+  "FIREBASE_CONFIG": {
+    "authDomain": "processpuzzle-testbed.firebaseapp.com",
+    "projectId": "processpuzzle-testbed",
+    "storageBucket": "processpuzzle-testbed.firebasestorage.app",
+    "messagingSenderId": "979907681089",
+    "appId": "1:979907681089:web:d27106edf901e3459b1fc0",
+    "measurementId": "G-3GF77WJTLB"
+  }
+}

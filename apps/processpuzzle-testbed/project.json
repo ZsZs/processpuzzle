@@ -15,14 +15,14 @@
   },
   "targets": {
     "build": {
-      "executor": "@nx/angular:browser-esbuild",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": [
         "{options.outputPath}"
       ],
       "options": {
         "outputPath": "dist/apps/processpuzzle-testbed",
         "index": "apps/processpuzzle-testbed/src/index.html",
-        "main": "apps/processpuzzle-testbed/src/main.ts",
+        "browser": "apps/processpuzzle-testbed/src/main.ts",
         "polyfills": [
           "zone.js"
         ],
@@ -68,12 +68,12 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "2mb",
+              "maximumWarning": "3mb",
               "maximumError": "5mb"
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "8kb",
+              "maximumWarning": "10kb",
               "maximumError": "20kb"
             }
           ],
@@ -153,6 +153,11 @@
         "port": 4200,
         "staticFilePath": "dist/apps/processpuzzle-testbed/browser",
         "spa": true
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-testbed"
       }
     }
   }

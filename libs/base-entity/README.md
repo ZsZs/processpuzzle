@@ -2,6 +2,7 @@
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-entity.yml/badge.svg)
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=processpuzzle_base_entity)](https://sonarcloud.io/summary/new_code?id=processpuzzle_base_entity&branch=develop)
+[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fbase-entity?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-entity)
 
 ## Introduction
  

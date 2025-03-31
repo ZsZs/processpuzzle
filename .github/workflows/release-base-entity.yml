@@ -59,9 +59,7 @@ jobs:
           nx_project: base-entity
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Build package
-        run: npm run build-util
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Config Git
         shell: bash
