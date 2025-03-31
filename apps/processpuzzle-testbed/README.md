@@ -9,5 +9,3 @@ All the source code you can find in the [GitHub repository](https://github.com/Z
 ### Currently the following libraries are available:
 - [@processpuzzle/util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/util)
 - [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/base-entity)
-
-

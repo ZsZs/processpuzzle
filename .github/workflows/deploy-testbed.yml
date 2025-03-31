@@ -30,7 +30,7 @@ jobs:
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
         with:
-          cicd_stage: 'STAGE'
+          cicd_stage: 'stage'
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
