@@ -28,7 +28,9 @@
       "inputs": [
         "production",
         "^production"
-      ]
+      ],
+      "options": {
+      }
     },
     "@nx/eslint:lint": {
       "cache": true,
@@ -63,7 +65,6 @@
     },
     "nx-release-publish": {
       "dependsOn": [
-        "build"
       ],
       "options": {
         "packageRoot": "dist/{projectName}"

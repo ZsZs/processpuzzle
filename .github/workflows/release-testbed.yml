@@ -5,8 +5,14 @@ on:
       - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  repository-projects: write
 jobs:
-  publish-to-firebase:
+  release-to-firebase-prod:
+    environment: PROD
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -17,7 +23,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: libs/util
+          path: apps/processpuzzle-testbed
 
       - name: Create tag
         uses: actions/github-script@v5
@@ -54,12 +60,9 @@ jobs:
           nx_project: testbed
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN_PROD }}
 
-      - name: Build package
-        run: npm run build-testbed
-
-      - id: build-image
+      - id: build-images
         name: Build and publish Docker images
         uses: ./.github/actions/build-image
         with:
@@ -82,6 +85,26 @@ jobs:
         uses: ./.github/actions/e2e-test
         with:
           target_environment: 'prod'
+
+      - name: Config Git
+        shell: bash
+        run: |
+          git config --global user.email "zsolt.zsuffa@gmail.com"
+          git config --global user.name "Zsolt Zsuffa"
+
+      - name: Copy package.json
+        shell: bash
+        run: |
+          cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed
+          cp -R apps/processpuzzle-testbed/README.md dist/apps/processpuzzle-testbed
+          rm dist/apps/processpuzzle-testbed/browser/environments/environment.ts
+
+      - name: Publish packages
+        shell: bash
+        run: npx nx release publish --projects=processpuzzle-testbed --access public --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Create a Release
         uses: elgohr/Github-Release-Action@v5

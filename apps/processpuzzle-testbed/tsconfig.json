@@ -9,8 +9,12 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "files": [],
-  "include": [],
+  "files": [
+    "./package.json"
+  ],
+  "include": [
+    "./package.json"
+  ],
   "exclude": [
     "functions"
   ],
