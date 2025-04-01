@@ -4,11 +4,10 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgOptimizedImage } from '@angular/common';
-import { LayoutService } from '@processpuzzle/util';
+import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { SubstringPipe } from '../substring-pipe';
 
 @Component({
   selector: 'app-header',
