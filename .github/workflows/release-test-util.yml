@@ -1,4 +1,4 @@
-name: Release-Util
+name: Release-Test-Util
 on:
   push:
     branches:

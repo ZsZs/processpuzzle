@@ -1,4 +1,4 @@
-name: Build-Util
+name: Build-Test-Util
 on:
   push:
     branches:

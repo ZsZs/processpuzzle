@@ -5,6 +5,7 @@
   "scripts": {
     "config-env-base-entity": "echo 'Not applicable'",
     "config-env-testbed": "ts-node apps/processpuzzle-testbed/src/assets/setEnv.ts",
+    "config-env-test-util": "echo 'Not applicable'",
     "config-env-ui": "echo 'Not applicable'",
     "config-env-util": "echo 'Not applicable'",
     "copy-config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
