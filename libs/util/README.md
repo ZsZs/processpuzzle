@@ -1,6 +1,6 @@
 # @processpuzzle/util
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-util.yml/badge.svg)
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=processpuzzle_util)](https://sonarcloud.io/summary/new_code?id=processpuzzle_util&branch=develop)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_util&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_util)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Futil?style=flat)](https://www.npmjs.com/package/@processpuzzle/util)
 
 Dieses Bibliothek enthelt algemein nützliches Funktionen oder Modulen.
