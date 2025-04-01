@@ -4,6 +4,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZsZs/processpuzzle.git",
+    "directory": "libs/test-util"
+  },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {},
   "dependencies": {}
 }

@@ -9,6 +9,7 @@
     "url": "git+https://github.com/ZsZs/processpuzzle.git",
     "directory": "libs/util"
   },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
     "@angular/common": "^19.2.0",
     "@angular/core": "^19.2.0"
