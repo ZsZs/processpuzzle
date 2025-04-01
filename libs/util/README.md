@@ -28,6 +28,13 @@ Diese Funktion, abhängig von welche URL wurde die Applikation gestartet, liefer
 
 - http://localhost* => 'local';
 
+## SubstringPipe
+Angular pipe to use in templates. Usefull to manipulate displayed text.
+```html
+<div matListItemTitle>&nbsp;{{ item.title | substring: 0: 10 }}</div>
+```
+The first parameter is the starting positon in text, the second is the ending position.
+
 ## RuntimeConfiguration
 
 Das Modul erlaubt mehrere Konfigurationsdateien zu spezifizieren, die dann bei Applikation-Start (im Browser) wird geladen,

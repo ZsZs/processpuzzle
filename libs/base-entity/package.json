@@ -4,6 +4,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZsZs/processpuzzle.git",
+    "directory": "libs/base-entity"
+  },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
     "@angular/cdk": "^19.0.5",
     "@angular/common": "^19.0.6",
