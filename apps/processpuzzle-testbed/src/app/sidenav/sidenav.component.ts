@@ -1,10 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { MatListItem, MatNavList } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
-import { LayoutService } from '@processpuzzle/util';
+import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { NgClass } from '@angular/common';
 import { appRoutes } from '../app.routes';
-import { SubstringPipe } from '../substring-pipe';
 
 @Component({
   selector: 'app-sidenav',

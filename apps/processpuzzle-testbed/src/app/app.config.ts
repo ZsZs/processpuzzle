@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, inject, provideZoneChangeDetection, SecurityContext } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, inject, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -16,6 +16,7 @@ import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideExperimentalZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideAuth(() => {
       const auth = getAuth();
@@ -42,7 +43,6 @@ export const appConfig: ApplicationConfig = {
     }),
     provideHttpClient(),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideNativeDateAdapter(),
     AppInitializer,
     ConfigurationService,

@@ -6,4 +6,6 @@ export { ConfigurationOptions } from './lib/runtime-configuration/configuration.
 export { ConfigurationService } from './lib/runtime-configuration/configuration.service';
 export { getEnvironment } from './lib/runtime-configuration/get-environment';
 export { LayoutService } from './lib/layout-service/layout.service';
+export { Stack } from './lib/stack';
+export { SubstringPipe } from './lib/substring.pipe';
 export { wildcardTextMatcher } from './lib/wildcard-text-matcher';

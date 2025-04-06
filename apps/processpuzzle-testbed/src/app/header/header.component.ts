@@ -4,15 +4,30 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgOptimizedImage } from '@angular/common';
-import { LayoutService } from '@processpuzzle/util';
+import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { SubstringPipe } from '../substring-pipe';
+import { NavigateBackComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
-  imports: [MatToolbar, MatIcon, MatIconButton, NgOptimizedImage, MatButton, MatMenu, MatMenuTrigger, RouterLink, NgClass, MatMenuItem, MatListItemIcon, MatListItemTitle, SubstringPipe],
+  imports: [
+    MatToolbar,
+    MatIcon,
+    MatIconButton,
+    NgOptimizedImage,
+    MatButton,
+    MatMenu,
+    MatMenuTrigger,
+    RouterLink,
+    NgClass,
+    MatMenuItem,
+    MatListItemIcon,
+    MatListItemTitle,
+    SubstringPipe,
+    NavigateBackComponent,
+  ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
 })

@@ -1,10 +1,10 @@
-name: Release-Util
+name: Release-Widgets
 on:
   push:
     branches:
-      - "release/util/*"
+      - "release/widgets/*"
     paths:
-      - 'libs/util/**'
+      - 'libs/widgets/**'
 permissions:
   id-token: write
   contents: write
@@ -22,7 +22,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: libs/util
+          path: 'libs/widgets'
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -44,8 +44,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/util"
-          nx_project: util
+          base_dir: "libs/widgets"
+          nx_project: 'widgets'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=util --access public --no-cloud
+        run: npx nx release publish --projects=widgets --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
@@ -68,5 +68,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: "@processpuzzle/util/${{steps.package-version.outputs.current-version}}"
-          tag: "util@${{steps.package-version.outputs.current-version}}"
+          title: "@processpuzzle/widgets/${{steps.package-version.outputs.current-version}}"
+          tag: "widgets@${{steps.package-version.outputs.current-version}}"

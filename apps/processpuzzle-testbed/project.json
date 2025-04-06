@@ -24,7 +24,6 @@
         "index": "apps/processpuzzle-testbed/src/index.html",
         "browser": "apps/processpuzzle-testbed/src/main.ts",
         "polyfills": [
-          "zone.js"
         ],
         "tsConfig": "apps/processpuzzle-testbed/tsconfig.app.json",
         "inlineStyleLanguage": "scss",

@@ -25,17 +25,6 @@ jobs:
         with:
           path: apps/processpuzzle-testbed
 
-      - name: Create tag
-        uses: actions/github-script@v5
-        with:
-          script: |
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'refs/tags/testbed-${{ steps.package-version.outputs.current-version }}',
-              sha: context.sha
-            })
-
       - name: Install Node
         uses: actions/setup-node@v4
         with:
@@ -61,6 +50,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_TOKEN_PROD }}
+          cicd_stage: 'prod'
 
       - id: build-images
         name: Build and publish Docker images
@@ -112,3 +102,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           title: "@processpuzzle/testbed/${{steps.package-version.outputs.current-version}}"
+          tag: "testbed@${{steps.package-version.outputs.current-version}}"
