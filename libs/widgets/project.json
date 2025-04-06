@@ -33,7 +33,7 @@
         "{projectRoot}/reports/coverage"
       ],
       "options": {
-        "jestConfig": "libs/util/jest.config.ts",
+        "jestConfig": "libs/widgets/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
