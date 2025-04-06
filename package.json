@@ -23,6 +23,7 @@
     "build-testbed": "nx run processpuzzle-testbed:build --configuration=production --no-cloud",
     "build-test-util": "nx run test-util:build --configuration=production --no-cloud",
     "build-util": "nx run util:build --configuration=production --no-cloud",
+    "build-widgets": "nx run widgets:build --configuration=production --no-cloud",
     "lint-all": "nx run-many -t lint --no-cloud",
     "lint-base-entity": "nx run base-entity:lint --configuration=ci --no-cloud",
     "lint-testbed": "nx run processpuzzle-testbed:lint --configuration=ci --no-cloud",

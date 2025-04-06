@@ -11,6 +11,9 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": [
         "{workspaceRoot}/dist/{projectRoot}"
       ],
@@ -29,6 +32,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
+      "dependsOn": [
+        "build"
+      ],
       "outputs": [
         "{projectRoot}/reports/coverage"
       ],

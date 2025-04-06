@@ -15,8 +15,7 @@
     "@angular/core": "^19.2.0"
   },
   "dependencies": {
-    "tslib": "^2.8.1",
-    "@processpuzzle/util": "0.2.4"
+    "tslib": "^2.8.1"
   },
   "sideEffects": false
 }

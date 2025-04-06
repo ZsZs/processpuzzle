@@ -57,8 +57,7 @@ runs:
 
     - name: Upload Test Report
       uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
       with:
-        name: playwright-report-${{ github.sha }}
+        name: test-coverage-report-${{ github.sha }}
         path: libs/${{inputs.nx_project}}/reports/coverage/lcov-report
         retention-days: 30
