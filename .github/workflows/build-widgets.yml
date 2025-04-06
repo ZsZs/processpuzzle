@@ -8,10 +8,10 @@ on:
       - 'libs/widgets/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
-    branches: [ "develop" ]
+    branches:
+      - "develop"
     paths:
       - 'libs/widgets/**'
-
 jobs:
   build:
     runs-on: ubuntu-latest

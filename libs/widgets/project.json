@@ -6,7 +6,7 @@
   "prefix": "",
   "tags": [
     "scope:shared",
-    "type:util"
+    "type:widgets"
   ],
   "targets": {
     "build": {
