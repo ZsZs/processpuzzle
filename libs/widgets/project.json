@@ -1,0 +1,75 @@
+{
+  "name": "widgets",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/widgets/src",
+  "prefix": "",
+  "tags": [
+    "scope:shared",
+    "type:util"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
+      "options": {
+        "project": "libs/widgets/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/widgets/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/widgets/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{projectRoot}/reports/coverage"
+      ],
+      "options": {
+        "jestConfig": "libs/util/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true,
+          "coverageDirectory": "{projectRoot}/reports/coverage"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "libs/widgets/src/**/*.ts",
+          "libs/widgets/src/**/*.spec.ts"
+        ]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/libs/widgets"
+      }
+    }
+  }
+}

@@ -8,6 +8,7 @@
     "config-env-test-util": "echo 'Not applicable'",
     "config-env-ui": "echo 'Not applicable'",
     "config-env-util": "echo 'Not applicable'",
+    "config-env-widgets": "echo 'Not applicable'",
     "copy-config": "cp -R apps/processpuzzle-testbed/src/run-time-conf/config.local.json cp -R apps/processpuzzle-testbed/src/run-time-conf/config.custom.json ",
     "copy-package-json": "cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed",
     "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 3000",
@@ -27,6 +28,7 @@
     "lint-testbed": "nx run processpuzzle-testbed:lint --configuration=ci --no-cloud",
     "lint-test-util": "nx run test-util:lint --configuration=ci --no-cloud",
     "lint-util": "nx run util:lint --configuration=ci --no-cloud",
+    "lint-widgets": "nx run widgets:lint --configuration=ci --no-cloud",
     "publish-all": "nx release --skip-publish --no-cloud",
     "publish-all-ci": "nx release publish --dry-run --no-cloud",
     "publish-testbed": "npm run copy-package-json && nx run processpuzzle-testbed:nx-release-publish --first-release --exclude=base-entity, test-util, util --access public --no-cloud",
@@ -37,7 +39,8 @@
     "test-base-entity": "nx run base-entity:test --configuration=ci --coverage --no-cloud",
     "test-testbed": "nx run processpuzzle-testbed:test --configuration=ci --coverage --no-cloud",
     "test-test-util": "nx run test-util:test --configuration=ci --coverage --no-cloud",
-    "test-util": "nx run util:test --configuration=ci --coverage --no-cloud"
+    "test-util": "nx run util:test --configuration=ci --coverage --no-cloud",
+    "test-widgets": "nx run widgets:test --configuration=ci --coverage --no-cloud"
   },
   "private": false,
   "dependencies": {
@@ -107,6 +110,10 @@
     "@swc-node/register": "~1.10.10",
     "@swc/core": "~1.11.13",
     "@swc/helpers": "~0.5.15",
+    "@testing-library/angular": "^17.3.7",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
     "@types/json-server": "^0.14.7",
     "@types/node": "22.13.14",
