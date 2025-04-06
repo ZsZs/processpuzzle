@@ -4,6 +4,7 @@
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Futil?style=flat)](https://www.npmjs.com/package/@processpuzzle/util)
 
 Dieses Bibliothek enthelt algemein nützliches Funktionen oder Modulen.
+
 ## wildcardTextMatcher()
 
 Diese Funktion vergleicht ein Text mit ein Vergleicher Text, welch wildcars beinhalten kann.
@@ -27,6 +28,36 @@ const result = matchTextWith( 'Hello World', 'Hello .ld' ); // false
 Diese Funktion, abhängig von welche URL wurde die Applikation gestartet, liefert die (BRZ) Kürzel für die Umgebung.
 
 - http://localhost* => 'local';
+
+## Stack
+Werwendung des Stacks
+```typescript
+const stack = new Stack<number>();
+
+// Elemente zum Stack hinzufügen
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+// Stack-Größe ermitteln
+console.log('Stackgröße:', stack.size()); // Output: 3
+
+// Oberstes Element ansehen
+console.log('Oberstes Element:', stack.peek()); // Output: 30
+
+// Element entfernen
+console.log('Vom Stack entfernt:', stack.pop()); // Output: 30
+
+// Nach dem Entfernen das oberste Element ansehen
+console.log('Oberstes Element:', stack.peek()); // Output: 20
+
+// Prüfen, ob der Stack leer ist
+console.log('Ist der Stack leer?', stack.isEmpty()); // Output: false
+
+// Stack leeren
+stack.clear();
+console.log('Ist der Stack leer nach dem Leeren?', stack.isEmpty()); // Output: true
+```
 
 ## SubstringPipe
 Angular pipe to use in templates. Usefull to manipulate displayed text.
