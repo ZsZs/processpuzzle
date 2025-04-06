@@ -3,51 +3,72 @@
     <em>ProcessPuzzle/... is a set of libraries to easy building of an Angular application. It helps with very low level tasks like application initializing or
       <strong>Low-Code</strong> plattform for generating tables and CRUD forms run-time from entity descriptors.</em>
   </span>
-  <mat-card class="floating-card">
-    <mat-card-header>
-      <mat-card-title>Utils - &#64;processpuzzle/util</mat-card-title>
-      <mat-card-subtitle>Very basic functions and components</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div>
-        This is a collection of functions, services and components useful when building Angular applications. The package contains:
-        <ul>
-          <li>runtime-configuration - reads the application runtime, at app initialisation</li>
-          <li>app-initializer - service which helps by application initialization</li>
-          <li>layout-service - to help by responsive layouts</li>
-        </ul>
-      </div>
-    </mat-card-content>
-    <mat-card-actions routerLink="/util">
-      <button mat-flat-button>See Utils Library...</button>
-    </mat-card-actions>
-  </mat-card>
-  <mat-card class="floating-card">
-    <mat-card-header>
-      <mat-card-title>Base Entity - &#64;processpuzzle/base-entity</mat-card-title>
-      <mat-card-subtitle>Basis Klassen für Reactive Forms und Material Tabellen</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <p>Erleichtert die Erstellung von Forms und Tabellen mit eingebaute Unterstützung für alle übliche Funktionalität.
-        Verbindung zum Datenquelle, State Management, automatische Daten aktualisierung, paging usw.
-      </p>
-    </mat-card-content>
-    <mat-card-actions routerLink="/base-entity">
-      <button mat-flat-button>See Basis Entity Library...</button>
-    </mat-card-actions>
-  </mat-card>
-  <mat-card class="floating-card">
-    <mat-card-header>
-      <mat-card-title>Continuous Delivery</mat-card-title>
-      <mat-card-subtitle>GitHub Actions base continuous delivery process</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <p>This isn't a library, but an end-to-end solutions for continuos delivery pipeline, base on GitHub Actions.
-        It supports multiple quality assurance practices und multiple development stages. At the end delivers increments automatically to production.
-      </p>
-    </mat-card-content>
-    <mat-card-actions routerLink="/ci-cd">
-      <button mat-flat-button>See CI/CD Pipeline...</button>
-    </mat-card-actions>
-  </mat-card>
+  <div [ngClass]="layoutService.layoutClass()">
+    <mat-card class="floating-card">
+      <mat-card-header>
+        <mat-card-title>Utils - &#64;processpuzzle/util</mat-card-title>
+        <mat-card-subtitle>Very basic functions and components</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div>
+          This is a collection of functions, services and components useful when building Angular applications. The package contains:
+          <ul>
+            <li>runtime-configuration - reads the application runtime, at app initialisation</li>
+            <li>app-initializer - service which helps by application initialization</li>
+            <li>layout-service - to help by responsive layouts</li>
+          </ul>
+        </div>
+      </mat-card-content>
+      <mat-card-actions routerLink="/util">
+        <button mat-flat-button>See Utils Library...</button>
+      </mat-card-actions>
+    </mat-card>
+    <mat-card class="floating-card">
+      <mat-card-header>
+        <mat-card-title>Widget - &#64;processpuzzle/widgets</mat-card-title>
+        <mat-card-subtitle>Simple reusable UI components</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div>
+          This is a collection of UI components useful when building Angular UI. The package contains:
+          <ul>
+            <li>Back Button - navigates back to the previous page</li>
+            <li>Like Button - enables to count fans for the page</li>
+            <li>Share Button - facilitates to share a link to the application with others</li>
+          </ul>
+        </div>
+      </mat-card-content>
+      <mat-card-actions routerLink="/widgets">
+        <button mat-flat-button>See Widgets Library...</button>
+      </mat-card-actions>
+    </mat-card>
+    <mat-card class="floating-card">
+      <mat-card-header>
+        <mat-card-title>Base Entity - &#64;processpuzzle/base-entity</mat-card-title>
+        <mat-card-subtitle>Basis Klassen für Reactive Forms und Material Tabellen</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Erleichtert die Erstellung von Forms und Tabellen mit eingebaute Unterstützung für alle übliche Funktionalität.
+          Verbindung zum Datenquelle, State Management, automatische Daten aktualisierung, paging usw.
+        </p>
+      </mat-card-content>
+      <mat-card-actions routerLink="/base-entity">
+        <button mat-flat-button>See Basis Entity Library...</button>
+      </mat-card-actions>
+    </mat-card>
+    <mat-card class="floating-card">
+      <mat-card-header>
+        <mat-card-title>Continuous Delivery</mat-card-title>
+        <mat-card-subtitle>GitHub Actions base continuous delivery process</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>This isn't a library, but an end-to-end solutions for continuos delivery pipeline, base on GitHub Actions.
+          It supports multiple quality assurance practices und multiple development stages. At the end delivers increments automatically to production.
+        </p>
+      </mat-card-content>
+      <mat-card-actions routerLink="/ci-cd">
+        <button mat-flat-button>See CI/CD Pipeline...</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
 </div>

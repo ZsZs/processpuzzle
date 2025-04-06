@@ -20,6 +20,12 @@ export const appRoutes: Route[] = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: 'util', title: 'ProcessPuzzle Testbed - Util', data: { icon: 'service_toolbox' }, loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
   {
+    path: 'widgets',
+    title: 'ProcessPuzzle Testbed - Widgets',
+    data: { icon: 'service_toolbox' },
+    loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
+  },
+  {
     path: 'base-entity',
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook' },
