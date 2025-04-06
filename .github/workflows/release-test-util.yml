@@ -24,17 +24,6 @@ jobs:
         with:
           path: libs/test-util
 
-      - name: Create tag
-        uses: actions/github-script@v5
-        with:
-          script: |
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'refs/tags/test-util-${{ steps.package-version.outputs.current-version}}',
-              sha: context.sha
-            })
-
       - name: Install Node
         uses: actions/setup-node@v4
         with:
@@ -80,3 +69,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           title: "@processpuzzle/test-util/${{steps.package-version.outputs.current-version}}"
+          tag: "test-util@${{steps.package-version.outputs.current-version}}"

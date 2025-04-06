@@ -1,6 +1,7 @@
 <mat-toolbar color="primary" class="app-header">
   @if (!layoutService.isSmallDevice()) {
     <img ngSrc="assets/processpuzzle-logo-with-title.jpg" class="app-logo" priority width="75" height="85" (click)="navigateToHome()" alt="ProcessPuzzle Logo" />
+    <pp-navigate-back/>
     <button mat-icon-button (click)="sidenavToggle()" class="example-icon" aria-label="Example icon-button with menu icon">
       <mat-icon>menu</mat-icon>
     </button>
