@@ -1,0 +1,31 @@
+.web-layout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(min(200px, 100%), 1fr));
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+.tablet-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(min(200px, 100%), 1fr));
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+.handset-layout {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(min(200px, 100%), 1fr));
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+mat-card-title {
+    font-family: "Winky Sans", sans-serif;
+}
+
+mat-card-content {
+    font-family: cursive;
+    font-size: medium;
+    text-align: left;
+    padding-bottom: 10px;
+}
