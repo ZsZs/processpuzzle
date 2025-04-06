@@ -129,7 +129,8 @@
     "projects": [
       "base-entity",
       "processpuzzle-testbed",
-      "util"
+      "util",
+      "widgets"
     ],
     "projectsRelationship": "independent",
     "version": {
