@@ -57,7 +57,6 @@ runs:
 
     - name: Upload Test Report
       uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
       with:
         name: test-coverage-report-${{ github.sha }}
         path: libs/${{inputs.nx_project}}/reports/coverage/lcov-report
