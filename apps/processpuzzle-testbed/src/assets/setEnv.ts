@@ -1,15 +1,11 @@
-/* eslint:disable */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { writeFile, existsSync, mkdirSync } = require('fs');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { argv } = require('yargs');
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
 const environment = argv.environment;
 
 function writeFileUsingFS(targetPath: string, environmentFileContent: string) {
-  writeFile(targetPath, environmentFileContent, function (err: any) {
+  writeFile(targetPath, environmentFileContent, function (err: string) {
     if (err) {
       console.log(err);
     }
