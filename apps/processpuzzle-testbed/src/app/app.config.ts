@@ -20,9 +20,9 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideAuth(() => {
       const auth = getAuth();
-      const pipelineStage = environment.PIPELINE_STAGE || 'CI';
-      if (pipelineStage === 'DEV') connectAuthEmulator(auth, `http://localhost:9099`);
-      else if (pipelineStage === 'CI') connectAuthEmulator(auth, `http://firebase:9099`);
+      const pipelineStage = environment.PIPELINE_STAGE || 'ci';
+      if (pipelineStage === 'dev') connectAuthEmulator(auth, `http://localhost:9099`);
+      else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
@@ -36,9 +36,9 @@ export const appConfig: ApplicationConfig = {
     },
     provideFirestore(() => {
       const firestore = getFirestore();
-      const pipelineStage = environment.PIPELINE_STAGE || 'CI';
-      if (pipelineStage === 'DEV') connectFirestoreEmulator(firestore, 'localhost', 8080);
-      else if (pipelineStage === 'CI') connectFirestoreEmulator(firestore, 'firebase', 9090);
+      const pipelineStage = environment.PIPELINE_STAGE || 'ci';
+      if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
+      else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
       return firestore;
     }),
     provideHttpClient(),
@@ -61,7 +61,7 @@ export const appConfig: ApplicationConfig = {
       provide: CONFIGURATION_OPTIONS,
       useValue: {
         urlFactory: () => {
-          const pipelineStage = environment.PIPELINE_STAGE || 'CI';
+          const pipelineStage = environment.PIPELINE_STAGE || 'ci';
           return ['environments/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
         },
         log: true,
