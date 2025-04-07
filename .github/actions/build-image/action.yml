@@ -1,6 +1,10 @@
 name: build-image
 description: Deploys the application to AWS Elastic Beanstalk
 inputs:
+  app_name:
+    description: Name of the application.
+    required: true
+    default: "testbed"
   app_version:
     description: Version tag of the application.
     required: true
@@ -44,7 +48,7 @@ runs:
         context: .
         file: docker/firebase/Dockerfile
         push: true
-        tags: zsuffazs/firebase-emulator:${{ inputs.app_version }}, zsuffazs/firebase:latest
+        tags: zsuffazs/${{ inputs.app_name }}-firebase:${{ inputs.app_version }}, zsuffazs/${{ inputs.app_name }}-:latest
 
     - name: Build Angular app and push
       uses: docker/build-push-action@v6

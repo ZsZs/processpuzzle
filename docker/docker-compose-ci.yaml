@@ -26,6 +26,9 @@ services:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:9090/home" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
   json-server:
     build:
       context: ../
@@ -40,8 +43,8 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
   firebase:
-    image: zsuffazs/firebase-emulator:latest
-    container_name: firebase-emulator
+    image: zsuffazs/testbed-firebase:latest
+    container_name: testbed-firebase
     build:
       context: ../
       dockerfile: docker/firebase/Dockerfile
@@ -69,9 +72,5 @@ services:
       - "9099:9100" # auth
       - "9199:9200" # Storage
       - "6000:6001" # Hosting
-    volumes:
-      - ./firebase:/srv/firebase:rw
-      - ~/.config/:/root/.config
-      - ./firebase/data:/srv/firebase/data:rw
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080" ]
