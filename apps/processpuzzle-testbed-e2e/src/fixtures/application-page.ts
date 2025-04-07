@@ -8,8 +8,6 @@ export class ApplicationPage {
   readonly appSidenav: Locator;
   readonly navigationList: Locator;
   appContent: Locator | undefined;
-  appUtils: Locator | undefined;
-  baseForms: Locator | undefined;
 
   constructor(page: Page) {
     this.page = page;
@@ -26,24 +24,32 @@ export class ApplicationPage {
     this.appContent = this.page.locator('app-root > mat-sidenav-container > app-content');
   }
 
-  async navigateToUtilsPage() {
-    expect(this.navigationList).toBeTruthy();
-    await this.navigationList.locator(':nth-match(mat-list-item, 2)').click();
-    await this.page.waitForURL('**/util');
-    this.appUtils = this.page.locator('app-root > mat-sidenav-container > app-utils');
+  async navigateBack() {
+    await this.page.getByRole('button', { name: 'Go back' }).click();
   }
 
-  async navigateToBaseFormPage() {
-    expect(this.navigationList).toBeTruthy();
-    await this.navigationList.locator(':nth-match(mat-list-item, 3)').click();
-    await this.page.waitForURL('**/base-entity');
-    this.baseForms = this.page.locator('app-root > mat-sidenav-container > base-entity');
+  async navigateToUtilsPage() {
+    await this.navigateToPage('See Utils Library...', '**/util');
+  }
+
+  async navigateToWidgetsPage() {
+    await this.navigateToPage('See Widgets Library...', '**/widgets');
+  }
+
+  async navigateToBaseEntityPage() {
+    await this.navigateToPage('See Base Entity Library...', '**/base-entity');
   }
 
   async navigateToCiCdPage() {
-    expect(this.navigationList).toBeTruthy();
-    await this.navigationList.locator(':nth-match(mat-list-item, 4)').click();
-    await this.page.waitForURL('**/ci-cd');
-    this.appUtils = this.page.locator('app-root > mat-sidenav-container > app-ci-cd');
+    await this.navigateToPage('See CI/CD Pipeline...', '**/ci-cd');
   }
+
+  // region private helper methods
+  private async navigateToPage(buttonName: string, expectedUrl: string) {
+    expect(this.navigationList).toBeTruthy();
+    await this.page.getByRole('button', { name: buttonName }).click();
+    await this.page.waitForURL(expectedUrl);
+  }
+
+  // endregion
 }

@@ -25,15 +25,19 @@ test.describe('Home page navigation', () => {
     expect(page.url()).toContain('/');
 
     await applicationPage.navigateToUtilsPage();
-    expect(applicationPage.appUtils).toBeTruthy();
-    expect(page.url()).toContain('/util');
+    await expect(page.getByRole('heading', { name: '@processpuzzle/util' })).toBeVisible();
+    await page.getByRole('button', { name: 'Go back' }).click();
 
-    await applicationPage.navigateToBaseFormPage();
-    expect(applicationPage.baseForms).toBeTruthy();
-    expect(page.url()).toContain('/base-entity');
+    await applicationPage.navigateToWidgetsPage();
+    await expect(page.getByRole('heading', { name: '@processpuzzle/widgets' })).toBeVisible();
+    await page.getByRole('button', { name: 'Go back' }).click();
+
+    await applicationPage.navigateToBaseEntityPage();
+    await expect(page.getByRole('heading', { name: '@processpuzzle/base-entity' })).toBeVisible();
+    await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToCiCdPage();
-    expect(applicationPage.baseForms).toBeTruthy();
-    expect(page.url()).toContain('/ci-cd');
+    await expect(page.getByRole('heading', { name: 'ProcessPuzzle Continuous Delivery' })).toBeVisible();
+    await page.getByRole('button', { name: 'Go back' }).click();
   });
 });
