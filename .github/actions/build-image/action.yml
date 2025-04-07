@@ -48,7 +48,7 @@ runs:
         context: .
         file: docker/firebase/Dockerfile
         push: true
-        tags: zsuffazs/${{ inputs.app_name }}-firebase:${{ inputs.app_version }}, zsuffazs/${{ inputs.app_name }}-:latest
+        tags: zsuffazs/${{ inputs.app_name }}-firebase:${{ inputs.app_version }}, zsuffazs/${{ inputs.app_name }}-firebase:latest
 
     - name: Build Angular app and push
       uses: docker/build-push-action@v6
@@ -57,4 +57,4 @@ runs:
         file: ./docker/testbed/Dockerfile
         build-args: CICD_STAGE=${{ inputs.cicd_stage }}
         push: true
-        tags: zsuffazs/processpuzzle-testbed:${{ inputs.app_version }}, zsuffazs/processpuzzle-testbed:latest
+        tags: zsuffazs/processpuzzle-${{ inputs.app_name }}:${{ inputs.app_version }}, zsuffazs/processpuzzle-${{ inputs.app_name }}:latest
