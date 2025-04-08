@@ -19,7 +19,7 @@ inputs:
   cicd_stage:
     description: Actual stage in the CI/CD pipeline
     required: true
-    default: 'CI'
+    default: 'ci'
 runs:
   using: composite
   steps:
