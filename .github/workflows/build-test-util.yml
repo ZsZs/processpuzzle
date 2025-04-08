@@ -2,7 +2,7 @@ name: Build-Test-Util
 on:
   push:
     branches:
-      - "feature/*"
+      - "feature/**"
       - "develop"
     paths:
       - 'libs/test-util/**'

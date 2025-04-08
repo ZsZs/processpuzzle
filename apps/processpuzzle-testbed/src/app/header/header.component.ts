@@ -8,7 +8,7 @@ import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { NavigateBackComponent } from '@processpuzzle/widgets';
+import { LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
@@ -27,9 +27,11 @@ import { NavigateBackComponent } from '@processpuzzle/widgets';
     MatListItemTitle,
     SubstringPipe,
     NavigateBackComponent,
+    LikeButtonComponent,
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
+  providers: [provideAppPropertyStore()],
 })
 export class HeaderComponent {
   readonly layoutService = inject(LayoutService);

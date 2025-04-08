@@ -2,7 +2,7 @@ name: Build-Widgets
 on:
   push:
     branches:
-      - "feature/*"
+      - "feature/**"
       - "develop"
     paths:
       - 'libs/widgets/**'
