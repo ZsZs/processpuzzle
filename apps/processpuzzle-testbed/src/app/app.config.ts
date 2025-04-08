@@ -13,10 +13,11 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
+import { provideAppPropertyStore } from '@processpuzzle/widgets';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideExperimentalZonelessChangeDetection(),
+    provideAppPropertyStore(),
     provideAnimationsAsync(),
     provideAuth(() => {
       const auth = getAuth();
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
       else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
+    provideExperimentalZonelessChangeDetection(),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
     {
       provide: FIREBASE_OPTIONS,
