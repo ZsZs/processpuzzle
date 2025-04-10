@@ -8,7 +8,7 @@ import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore } from '@processpuzzle/widgets';
+import { LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
@@ -28,6 +28,7 @@ import { LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore } f
     SubstringPipe,
     NavigateBackComponent,
     LikeButtonComponent,
+    ShareButtonComponent,
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
