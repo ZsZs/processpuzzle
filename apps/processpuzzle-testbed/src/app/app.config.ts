@@ -14,6 +14,8 @@ import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angul
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
 import { provideAppPropertyStore } from '@processpuzzle/widgets';
+import { provideShareButtonsOptions } from 'ngx-sharebuttons';
+import { shareIcons } from 'ngx-sharebuttons/icons';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -97,5 +99,6 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
+    provideShareButtonsOptions(shareIcons()),
   ],
 };
