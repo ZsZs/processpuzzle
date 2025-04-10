@@ -14,5 +14,5 @@ export default {
   },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
   snapshotSerializers: ['jest-preset-angular/build/serializers/no-ng-attributes', 'jest-preset-angular/build/serializers/ng-snapshot', 'jest-preset-angular/build/serializers/html-comment'],
-  modulePathIgnorePatterns: ['src/app/app.component.*', 'src/app/content', 'src/app/header', 'src/app/sidenav'],
+  modulePathIgnorePatterns: ['src/app/app.component.*', 'src/app/content', 'src/app/navigation/header', 'src/app/navigation/sidenav'],
 };
