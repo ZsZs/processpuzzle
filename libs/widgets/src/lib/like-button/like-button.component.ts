@@ -29,7 +29,7 @@ export class LikeButtonComponent implements OnInit {
 
   // Fetch the likes from the service
   fetchLikes(): void {
-    // TODO: use ApplicationProperties
+    this.store.load({});
   }
 
   // Increment likes and update them via service
