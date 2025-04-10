@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { ApplicationPropertyStore } from '../app-property/app-property.store';
 import { ApplicationProperty } from '../app-property/app-property';
 import { MatIcon } from '@angular/material/icon';
@@ -17,20 +17,10 @@ import { MatIconButton } from '@angular/material/button';
   styleUrls: ['./like-button.component.css'],
   imports: [MatIcon, MatIconButton],
 })
-export class LikeButtonComponent implements OnInit {
+export class LikeButtonComponent {
   private readonly LIKES_PROPERTY = 'likes';
   likesCount = computed(() => this.store.entities().find((property) => property.name === this.LIKES_PROPERTY));
-  liked = false;
   readonly store = inject(ApplicationPropertyStore);
-
-  ngOnInit(): void {
-    this.fetchLikes();
-  }
-
-  // Fetch the likes from the service
-  fetchLikes(): void {
-    // TODO: use ApplicationProperties
-  }
 
   // Increment likes and update them via service
   onLike(): void {

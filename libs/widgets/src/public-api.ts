@@ -7,3 +7,4 @@ export { ApplicationPropertyStore } from './lib/app-property/app-property.store'
 export { LikeButtonComponent } from './lib/like-button/like-button.component';
 export { NavigateBackComponent } from './lib/navigate-back/navigate-back.component';
 export { provideAppPropertyStore } from './lib/app-property/app-property-store.provider';
+export { ShareButtonComponent } from './lib/share-button/share-button.component';

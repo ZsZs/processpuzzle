@@ -7,8 +7,8 @@ export class ApplicationProperty implements BaseEntity {
   private propertyValue: string;
 
   constructor(name?: string, value?: string) {
-    this.propertyName = name || '';
-    this.propertyValue = value || '';
+    this.propertyName = name ?? '';
+    this.propertyValue = value ?? '';
   }
 
   // region properties
