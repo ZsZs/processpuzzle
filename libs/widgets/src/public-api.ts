@@ -4,6 +4,8 @@
 
 export { ApplicationProperty } from './lib/app-property/app-property';
 export { ApplicationPropertyStore } from './lib/app-property/app-property.store';
+export { LanguageSelectorComponent } from './lib/language-selector/language-selector.component';
+export { LanguageSelectorModule } from './lib/language-selector/language-selector.module';
 export { LikeButtonComponent } from './lib/like-button/like-button.component';
 export { NavigateBackComponent } from './lib/navigate-back/navigate-back.component';
 export { provideAppPropertyStore } from './lib/app-property/app-property-store.provider';
