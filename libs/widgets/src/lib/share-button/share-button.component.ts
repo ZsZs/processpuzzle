@@ -7,7 +7,7 @@ import { ShareButtons } from 'ngx-sharebuttons/buttons';
 @Component({
   selector: 'pp-share-button',
   template: `
-    <div class="like-button">
+    <div>
       <button mat-icon-button (click)="onShare()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Share Button">
         <mat-icon>share</mat-icon>
       </button>
@@ -20,7 +20,6 @@ import { ShareButtons } from 'ngx-sharebuttons/buttons';
   `,
   styleUrls: ['./share-button.component.css'],
   imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, ShareButtons],
-  providers: [],
 })
 export class ShareButtonComponent {
   isOpen = false;

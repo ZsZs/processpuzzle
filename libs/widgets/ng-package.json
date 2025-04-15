@@ -3,5 +3,12 @@
   "dest": "../../dist/libs/widgets",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": [
+    {
+      "glob": "**/*",
+      "input": "src/lib/assets",
+      "output": "assets"
+    }
+  ]
 }
