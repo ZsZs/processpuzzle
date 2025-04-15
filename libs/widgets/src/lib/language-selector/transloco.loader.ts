@@ -5,9 +5,12 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TranslocoHttpLoader implements TranslocoLoader {
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   getTranslation(lang: string): Observable<Translation> {
-    return this.http.get<Translation>(`/assets/i18n/${lang}.json`);
+    const isScoped = lang.includes('/');
+    const path = isScoped ? `/assets/i18n/${lang}.json` : `/assets/i18n/${lang}.json`;
+    console.log(`Loading translations from: ${path}`);
+    return this.http.get<Translation>(path);
   }
 }
