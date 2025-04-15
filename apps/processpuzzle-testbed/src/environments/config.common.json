@@ -1,4 +1,22 @@
 {
+  "DEFAULT_LANGUAGE": "en",
+  "AVAILABLE_LANGUAGES": [
+    {
+      "code": "en",
+      "label": "english",
+      "flag": "fi fi-us"
+    },
+    {
+      "code": "de",
+      "label": "german",
+      "flag": "fi fi-de"
+    },
+    {
+      "code": "hu",
+      "label": "hungarian",
+      "flag": "fi fi-hu"
+    }
+  ],
   "PIPELINE_STAGE": "DEV",
   "TEST_SERVICE_ROOT": "http://localhost:3000/",
   "FIREBASE_CONFIG": {
