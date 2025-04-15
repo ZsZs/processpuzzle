@@ -1,25 +1,34 @@
 import { Component, inject } from '@angular/core';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { LanguageConfig } from './language-config';
-import { TranslocoHttpLoader } from './transloco.loader';
-import { TRANSLOCO_LOADER, TranslocoService } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { NgClass, NgForOf } from '@angular/common';
+import { MatListOption, MatSelectionList } from '@angular/material/list';
 
 @Component({
   selector: 'pp-language-selector-list',
   template: `
-    <div class="language-selector">
-      <ul>
-        <li *ngFor="let language of languages" (click)="onLanguageChange(language.code)" [class.active]="selectedLanguage === language.code">
-          <span [ngClass]="language.flag">&nbsp;-&nbsp;</span>
-          <span>{{ language.label }}</span>
-        </li>
-      </ul>
-    </div>
+    <ng-container *transloco="let t; prefix: 'language-selector'">
+      <div class="language-selector">
+        <mat-selection-list #selectionList (selectionChange)="onSelectionChange($event)" [multiple]="false">
+          <mat-list-option
+            *ngFor="let language of languages"
+            [value]="language.code"
+            [selected]="selectedLanguage === language.code"
+            tabindex="0"
+            role="option"
+            [attr.aria-selected]="selectedLanguage === language.code ? 'true' : 'false'"
+          >
+            <span [ngClass]="language.flag">&nbsp;-&nbsp;</span>
+            <span>{{ t(language.label) }}</span>
+          </mat-list-option>
+        </mat-selection-list>
+      </div>
+    </ng-container>
   `,
   styleUrls: ['language-selector-list.component.css'],
-  imports: [NgClass, NgForOf],
-  providers: [{ provide: TRANSLOCO_LOADER, useClass: TranslocoHttpLoader }],
+  imports: [NgClass, NgForOf, TranslocoDirective, MatListOption, MatSelectionList],
+  providers: [provideTranslocoScope('widgets')],
 })
 export class LanguageSelectorListComponent {
   private readonly translocoService = inject(TranslocoService);
@@ -28,9 +37,14 @@ export class LanguageSelectorListComponent {
   selectedLanguage = this.runtimeConfiguration.DEFAULT_LANGUAGE;
 
   // region event handling methods
-  onLanguageChange(languageCode: string) {
-    this.translocoService.setActiveLang(languageCode);
-    this.selectedLanguage = languageCode;
+  onSelectionChange(event: any) {
+    const selectedOption = event.source;
+    const selectedValue = selectedOption.selectedOptions.selected[0]?.value;
+
+    if (this.selectedLanguage !== selectedValue) {
+      this.translocoService.setActiveLang(selectedValue);
+      this.selectedLanguage = selectedValue;
+    }
   }
 
   // endregion

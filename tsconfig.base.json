@@ -10,6 +10,8 @@
     "importHelpers": true,
     "target": "es2022",
     "module": "esnext",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "lib": [
       "es2020",
       "dom"

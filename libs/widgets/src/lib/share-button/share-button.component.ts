@@ -20,7 +20,6 @@ import { ShareButtons } from 'ngx-sharebuttons/buttons';
   `,
   styleUrls: ['./share-button.component.css'],
   imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, ShareButtons],
-  providers: [],
 })
 export class ShareButtonComponent {
   isOpen = false;
