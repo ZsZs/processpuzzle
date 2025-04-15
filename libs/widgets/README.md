@@ -6,4 +6,10 @@
 This library provides a range of small widgets that can be built into an Angular application. These widgets primarily define UI elements 
 but also domain classes or signal stores. Some of them are even persistent, so they need appropriate configuration to access the backend.
 
+## Language Selector
 
+## Like Button
+
+## Navigate Back Button
+
+## Share Button
