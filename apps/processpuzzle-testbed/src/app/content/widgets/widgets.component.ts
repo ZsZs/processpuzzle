@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MarkdownComponent } from 'ngx-markdown';
 
 @Component({
-  selector: 'app-utils',
+  selector: 'app-widgets',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './widgets.component.html',
   styleUrl: './widgets.component.scss',
