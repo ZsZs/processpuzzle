@@ -35,8 +35,8 @@ Add the `LanguageSelector` component to your application:
 | `selectedLanguage` | `string` | The current active language code. This value indicates which language is selected by default. |
 Example Language Configuration:
 
-## Like Button
+## Like Button Component
 
-## Navigate Back Button
+## Navigate Back Button Component
 
-## Share Button
+## Share Button Component
