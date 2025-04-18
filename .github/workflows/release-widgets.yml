@@ -4,7 +4,7 @@ on:
     branches:
       - "release/widgets/*"
     paths:
-      - 'libs/widgets/*'
+      - 'libs/widgets/**'
 permissions:
   id-token: write
   contents: write
