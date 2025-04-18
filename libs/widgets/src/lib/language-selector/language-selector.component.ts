@@ -10,7 +10,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
   template: `
     <ng-container *transloco="let t; prefix: 'language-selector'">
       <div>
-        <button mat-icon-button (click)="onShare()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Share Button">
+        <button mat-icon-button (click)="onSelectLanguage()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Select Language Button">
           <mat-icon>language</mat-icon>
         </button>
       </div>
@@ -33,7 +33,7 @@ export class LanguageSelectorComponent {
     this.isOpen = false;
   }
 
-  onShare(): void {
+  onSelectLanguage(): void {
     this.toggleIsOpen();
   }
 
