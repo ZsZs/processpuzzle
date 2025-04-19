@@ -136,7 +136,7 @@
     "esbuild": "^0.25.2",
     "eslint": "^9.24.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-config-prettier": "^10.1.1",
+    "eslint-config-prettier": "^10.1.2",
     "eslint-formatter-checkstyle": "^8.40.0",
     "eslint-plugin-html": "^8.1.2",
     "eslint-plugin-playwright": "^2.2.0",
