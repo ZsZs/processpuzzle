@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, isDevMode, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -13,23 +13,13 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
-import { provideAppPropertyStore, TranslocoHttpLoader, WidgetsModule } from '@processpuzzle/widgets';
+import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
-import { provideTransloco } from '@jsverse/transloco';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(WidgetsModule),
-    provideTransloco({
-      config: {
-        availableLangs: ['de', 'en', 'es', 'hu'],
-        defaultLang: 'en',
-        reRenderOnLangChange: true,
-        prodMode: !isDevMode(),
-      },
-      loader: TranslocoHttpLoader,
-    }),
     provideAppPropertyStore(),
     provideAnimationsAsync(),
     provideAuth(() => {
@@ -77,7 +67,7 @@ export const appConfig: ApplicationConfig = {
       useValue: {
         urlFactory: () => {
           const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
-          return ['environments/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
+          return ['run-time-conf/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
         },
         log: true,
       },

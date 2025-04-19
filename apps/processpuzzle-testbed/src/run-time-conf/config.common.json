@@ -17,7 +17,7 @@
       "flag": "fi fi-hu"
     }
   ],
-  "PIPELINE_STAGE": "DEV",
+  "PIPELINE_STAGE": "dev",
   "TEST_SERVICE_ROOT": "http://localhost:3000/",
   "FIREBASE_CONFIG": {
     "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
