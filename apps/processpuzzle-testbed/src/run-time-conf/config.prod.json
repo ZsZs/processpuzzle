@@ -1,5 +1,5 @@
 {
-  "PIPELINE_STAGE": "PROD",
+  "PIPELINE_STAGE": "prod",
   "TEST_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
   "FIREBASE_CONFIG": {
     "authDomain": "processpuzzle-testbed.firebaseapp.com",

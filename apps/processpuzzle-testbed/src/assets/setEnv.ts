@@ -24,6 +24,7 @@ if (!existsSync(envDirectory)) {
 }
 
 //creates the `environment.prod.ts`, `environment.test.ts` and `environment.ts` file if it does not exist
+writeFileUsingFS(`${envDirectory}/environment.dev.ts`, '');
 writeFileUsingFS(`${envDirectory}/environment.ci.ts`, '');
 writeFileUsingFS(`${envDirectory}/environment.prod.ts`, '');
 writeFileUsingFS(`${envDirectory}/environment.stage.ts`, '');
@@ -33,6 +34,9 @@ writeFileUsingFS(`${envDirectory}/environment.ts`, '');
 let targetPath: string;
 
 switch (environment) {
+  case 'dev':
+    targetPath = `${envDirectory}/environment.dev.ts`;
+    break;
   case 'ci':
     targetPath = `${envDirectory}/environment.ci.ts`;
     break;

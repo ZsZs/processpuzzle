@@ -3,7 +3,7 @@ import { MatListItem, MatNavList } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
 import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { NgClass } from '@angular/common';
-import { appRoutes } from '../app.routes';
+import { appRoutes } from '../../app.routes';
 
 @Component({
   selector: 'app-sidenav',

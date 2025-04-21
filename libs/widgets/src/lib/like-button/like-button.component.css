@@ -1,0 +1,11 @@
+.like-button {
+    position: relative; /* Make this container the parent for absolute positioning */
+    display: inline-block; /* Ensure it collapses around the image dimensions */
+}
+
+.like-button span {
+    position: absolute; /* Position itself relative to the container */
+    bottom: 0; /* Push it 10px from the bottom */
+    right: 5px; /* Push it 10px from the right */
+    font-size: 10px; /* Adjust font size as needed */
+}

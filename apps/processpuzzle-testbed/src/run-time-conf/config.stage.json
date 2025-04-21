@@ -1,4 +1,4 @@
 {
-  "PIPELINE_STAGE": "STAGE",
+  "PIPELINE_STAGE": "stage",
   "TEST_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api"
 }

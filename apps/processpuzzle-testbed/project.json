@@ -7,12 +7,6 @@
   "tags": [
     "type:app"
   ],
-  "i18n": {
-    "sourceLocale": "en-US",
-    "locales": {
-      "de-DE": "src/locales/messages.de-DE.xlf"
-    }
-  },
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:application",
@@ -32,7 +26,16 @@
             "glob": "**/*",
             "input": "apps/processpuzzle-testbed/public"
           },
-          "apps/processpuzzle-testbed/src/assets",
+          {
+            "glob": "**/*",
+            "input": "apps/processpuzzle-testbed/src/assets",
+            "output": "assets"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/widgets/src/lib/assets/i18n/widgets",
+            "output": "assets/i18n/widgets"
+          },
           "apps/processpuzzle-testbed/src/environments",
           "apps/processpuzzle-testbed/src/run-time-conf"
         ],

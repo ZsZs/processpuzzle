@@ -6,9 +6,9 @@ import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgOptimizedImage } from '@angular/common';
 import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { appRoutes } from '../app.routes';
+import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { NavigateBackComponent } from '@processpuzzle/widgets';
+import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent, WidgetsModule } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
@@ -27,9 +27,14 @@ import { NavigateBackComponent } from '@processpuzzle/widgets';
     MatListItemTitle,
     SubstringPipe,
     NavigateBackComponent,
+    LikeButtonComponent,
+    ShareButtonComponent,
+    LanguageSelectorComponent,
+    WidgetsModule,
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
+  providers: [provideAppPropertyStore()],
 })
 export class HeaderComponent {
   readonly layoutService = inject(LayoutService);

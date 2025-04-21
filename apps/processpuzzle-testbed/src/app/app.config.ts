@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, inject, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -13,18 +13,23 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
+import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
+import { provideShareButtonsOptions } from 'ngx-sharebuttons';
+import { shareIcons } from 'ngx-sharebuttons/icons';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideExperimentalZonelessChangeDetection(),
+    importProvidersFrom(WidgetsModule),
+    provideAppPropertyStore(),
     provideAnimationsAsync(),
     provideAuth(() => {
       const auth = getAuth();
-      const pipelineStage = environment.PIPELINE_STAGE || 'ci';
+      const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
       if (pipelineStage === 'dev') connectAuthEmulator(auth, `http://localhost:9099`);
       else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
+    provideExperimentalZonelessChangeDetection(),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
     {
       provide: FIREBASE_OPTIONS,
@@ -36,7 +41,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideFirestore(() => {
       const firestore = getFirestore();
-      const pipelineStage = environment.PIPELINE_STAGE || 'ci';
+      const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
       if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
       else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
       return firestore;
@@ -61,8 +66,8 @@ export const appConfig: ApplicationConfig = {
       provide: CONFIGURATION_OPTIONS,
       useValue: {
         urlFactory: () => {
-          const pipelineStage = environment.PIPELINE_STAGE || 'ci';
-          return ['environments/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
+          const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
+          return ['run-time-conf/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
         },
         log: true,
       },
@@ -71,7 +76,7 @@ export const appConfig: ApplicationConfig = {
       provide: RUNTIME_CONFIGURATION,
       useFactory: (configurationService: ConfigurationService<RuntimeConfiguration>) => {
         const config: RuntimeConfiguration = configurationService.configuration;
-        const apiKey = { apiKey: environment.FIREBASE_API_KEY || '' };
+        const apiKey = { apiKey: environment.FIREBASE_API_KEY ?? '' };
         const firebaseConfig = { ...config.FIREBASE_CONFIG, ...apiKey };
 
         return { ...config, ...{ FIREBASE_CONFIG: firebaseConfig } };
@@ -95,5 +100,6 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
+    provideShareButtonsOptions(shareIcons()),
   ],
 };
