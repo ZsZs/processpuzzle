@@ -73,11 +73,11 @@ describe('AuthButtonComponent', () => {
 
     // Check that login button has correct route
     const loginButton = screen.getByText('Login').closest('button');
-    expect(loginButton).toHaveAttribute('routerlink', '/auth/login');
+    expect(loginButton).toHaveAttribute('ng-reflect-router-link', 'auth/login');
 
     // Check that register button has correct route
     const registerButton = screen.getByText('Register').closest('button');
-    expect(registerButton).toHaveAttribute('routerlink', '/auth/register');
+    expect(registerButton).toHaveAttribute('ng-reflect-router-link', 'auth/register');
   });
 
   it('should have correct route links for authenticated options', async () => {
@@ -88,11 +88,11 @@ describe('AuthButtonComponent', () => {
 
     // Check that personal data button has correct route
     const personalDataButton = screen.getByText('My profile').closest('button');
-    expect(personalDataButton).toHaveAttribute('routerlink', '/auth/my-profile');
+    expect(personalDataButton).toHaveAttribute('ng-reflect-router-link', 'auth/my-profile');
 
     // Check that logout button has correct route
     const logoutButton = screen.getByText('Logout').closest('button');
-    expect(logoutButton).toHaveAttribute('routerlink', '/auth/logout');
+    expect(logoutButton).toHaveAttribute('ng-reflect-router-link', 'auth/logout');
   });
 
   it('should display the person icon in the button', async () => {
