@@ -1,0 +1,25 @@
+{
+  "name": "@processpuzzle/auth",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZsZs/processpuzzle.git",
+    "directory": "libs/auth"
+  },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
+  "peerDependencies": {
+    "@angular/common": "^19.2.0",
+    "@angular/core": "^19.2.0"
+  },
+  "exports": {
+    "./i18n/*": "./i18n/pp-auth/*"
+  },
+  "files": [
+    "dist/libs/auth/",
+    "i18n/"
+  ],
+  "sideEffects": false
+}

@@ -79,4 +79,5 @@ export const appRoutes: Route[] = [
     ],
   },
   { path: 'ci-cd', title: 'ProcessPuzzle Testbed - CI/CD', data: { icon: 'repartition' }, loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent) },
+  { path: 'auth', loadChildren: () => import('@processpuzzle/auth').then((m) => m.authRoutes) },
 ];
