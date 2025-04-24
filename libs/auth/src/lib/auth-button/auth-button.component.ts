@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../domain/auth.service';
+import { authRoutes } from '../auth.routes';
+import { SubstringPipe } from '@processpuzzle/util';
 
 @Component({
   selector: 'pp-auth-button',
@@ -14,38 +16,24 @@ import { AuthService } from '../domain/auth.service';
         <mat-icon>person</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
-        <ng-container *ngIf="!isAuthenticated()">
-          <button mat-menu-item routerLink="/auth/login">
-            <mat-icon>login</mat-icon>
-            <span>Login</span>
-          </button>
-
-          <button mat-menu-item routerLink="/auth/register">
-            <mat-icon>person_add</mat-icon>
-            <span>Register</span>
-          </button>
-        </ng-container>
-
-        <ng-container *ngIf="isAuthenticated()">
-          <button mat-menu-item routerLink="/auth/my-profile">
-            <mat-icon>person</mat-icon>
-            <span>My profile</span>
-          </button>
-
-          <button mat-menu-item routerLink="/auth/logout">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
-        </ng-container>
+        @for (item of routes; track item) {
+          <ng-container *ngIf="(isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])">
+            <button mat-menu-item [routerLink]="'auth/' + item.path">
+              <mat-icon>{{ item.data?.['icon'] }}</mat-icon>
+              <span>&nbsp;{{ item.title | substring: 0 }}</span>
+            </button>
+          </ng-container>
+        }
       </mat-menu>
     </div>
   `,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger, SubstringPipe],
   styles: [],
 })
 export class AuthButtonComponent {
   private readonly authService = inject(AuthService);
   isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly routes = authRoutes.filter((item) => item.title !== null && item.title !== undefined);
 
   // region event handling methods
   // endregion

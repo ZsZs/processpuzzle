@@ -6,8 +6,8 @@ import { LogoutComponent } from './logout/logout.component';
 
 export const authRoutes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent, title: 'Login' },
-  { path: 'logout', component: LogoutComponent, title: 'Logout' },
-  { path: 'register', component: RegistrationComponent, title: 'Registration' },
-  { path: 'my-profile', component: MyProfileComponent, title: 'My profile' },
+  { path: 'login', component: LoginComponent, title: 'Login', data: { icon: 'login', authToggle: true } },
+  { path: 'logout', component: LogoutComponent, title: 'Logout', data: { icon: 'logout', authToggle: false } },
+  { path: 'register', component: RegistrationComponent, title: 'Registration', data: { icon: 'person_add', authToggle: true } },
+  { path: 'my-profile', component: MyProfileComponent, title: 'My profile', data: { icon: 'person', authToggle: false } },
 ];
