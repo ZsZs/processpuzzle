@@ -4,9 +4,9 @@ import { NavigationEnd, Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class NavigateBackService {
-  private routeHistory = new Stack<string>();
+  private readonly routeHistory = new Stack<string>();
 
-  constructor(private router: Router) {
+  constructor(private readonly router: Router) {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.addRouteToStack(event.urlAfterRedirects); // Add the current route to the stack
@@ -23,7 +23,7 @@ export class NavigateBackService {
         this.router.navigateByUrl(previousRoute); // Navigate to the previous route
       }
     } else {
-      console.warn('No previous routes to navigate back to.');
+      console.log('No previous routes to navigate back to.');
     }
   }
 
