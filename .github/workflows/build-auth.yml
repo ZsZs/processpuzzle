@@ -32,7 +32,7 @@ jobs:
         uses: ./.github/actions/lint-test-build
         with:
           base_dir: "libs/auth"
-          nx_project: widgets
+          nx_project: "auth"
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
