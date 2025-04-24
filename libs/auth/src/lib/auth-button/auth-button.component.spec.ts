@@ -39,14 +39,14 @@ describe('AuthButtonComponent', () => {
     await renderComponent(false);
 
     // Click the auth button to open the menu
-    await fireEvent.click(screen.getByLabelText('Auth Button'));
+    fireEvent.click(screen.getByLabelText('Auth Button'));
 
     // Check that login and register options are displayed
     expect(screen.getByText('Login')).toBeInTheDocument();
     expect(screen.getByText('Register')).toBeInTheDocument();
 
     // Check that authenticated options are not displayed
-    expect(screen.queryByText('Personal Data')).not.toBeInTheDocument();
+    expect(screen.queryByText('My profile')).not.toBeInTheDocument();
     expect(screen.queryByText('Logout')).not.toBeInTheDocument();
   });
 
@@ -54,10 +54,10 @@ describe('AuthButtonComponent', () => {
     await renderComponent(true);
 
     // Click the auth button to open the menu
-    await fireEvent.click(screen.getByLabelText('Auth Button'));
+    fireEvent.click(screen.getByLabelText('Auth Button'));
 
     // Check that authenticated options are displayed
-    expect(screen.getByText('Personal Data')).toBeInTheDocument();
+    expect(screen.getByText('My profile')).toBeInTheDocument();
     expect(screen.getByText('Logout')).toBeInTheDocument();
 
     // Check that non-authenticated options are not displayed
@@ -87,8 +87,8 @@ describe('AuthButtonComponent', () => {
     fireEvent.click(screen.getByLabelText('Auth Button'));
 
     // Check that personal data button has correct route
-    const personalDataButton = screen.getByText('Personal Data').closest('button');
-    expect(personalDataButton).toHaveAttribute('routerlink', '/auth/personal-data');
+    const personalDataButton = screen.getByText('My profile').closest('button');
+    expect(personalDataButton).toHaveAttribute('routerlink', '/auth/my-profile');
 
     // Check that logout button has correct route
     const logoutButton = screen.getByText('Logout').closest('button');

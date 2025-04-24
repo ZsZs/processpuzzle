@@ -27,9 +27,9 @@ import { AuthService } from '../domain/auth.service';
         </ng-container>
 
         <ng-container *ngIf="isAuthenticated()">
-          <button mat-menu-item routerLink="/auth/personal-data">
+          <button mat-menu-item routerLink="/auth/my-profile">
             <mat-icon>person</mat-icon>
-            <span>Personal Data</span>
+            <span>My profile</span>
           </button>
 
           <button mat-menu-item routerLink="/auth/logout">
