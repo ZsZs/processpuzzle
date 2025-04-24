@@ -2,7 +2,6 @@ export default {
   displayName: 'test-util',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageReporters: ['text', ['lcov', { projectRoot: 'libs/test-util' }]],
   coverageDirectory: 'reports/coverage',
   testEnvironment: '@happy-dom/jest-environment',
   transform: {

@@ -2,7 +2,6 @@ export default {
   displayName: '@processpuzzle/widgets',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageReporters: ['text', ['lcov', { projectRoot: 'libs/widgets' }]],
   coverageDirectory: 'reports/coverage',
   testEnvironment: '@happy-dom/jest-environment',
   transform: {
