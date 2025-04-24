@@ -41,7 +41,7 @@ import { AuthService } from '../domain/auth.service';
     </div>
   `,
   imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger],
-  styleUrl: './auth-button.component.css',
+  styles: [],
 })
 export class AuthButtonComponent {
   private readonly authService = inject(AuthService);
