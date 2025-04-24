@@ -7,8 +7,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 })
 export class AuthService {
   private readonly auth: Auth = inject(Auth);
-  private readonly userSignal = toSignal<User | null>(authState(this.auth), { initialValue: null });
-  isAuthenticated: Signal<boolean> = computed(() => !!this.userSignal());
+  readonly user = toSignal<User | null>(authState(this.auth), { initialValue: null });
+  isAuthenticated: Signal<boolean> = computed(() => !!this.user());
 
   async signOut(): Promise<void> {
     return this.auth.signOut();
