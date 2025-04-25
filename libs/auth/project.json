@@ -79,7 +79,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/{projectRoot}"
+        "packageRoot": "{workspaceRoot}/dist/libs/auth"
       }
     }
   }

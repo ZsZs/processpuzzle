@@ -135,11 +135,11 @@
   ],
   "release": {
     "projects": [
+      "auth",
       "base-entity",
       "processpuzzle-testbed",
       "util",
-      "widgets",
-      "@processpuzzle/auth"
+      "widgets"
     ],
     "projectsRelationship": "independent",
     "version": {
