@@ -22,7 +22,7 @@ export class LikeButtonComponent {
   likesCount = computed(() => this.store.entities().find((property) => property.name === this.LIKES_PROPERTY));
   readonly store = inject(ApplicationPropertyStore);
 
-  // Increment likes and update them via service
+  // region event handling methods
   onLike(): void {
     const count = this.likesCount();
     if (count) {
@@ -32,4 +32,6 @@ export class LikeButtonComponent {
       this.store.add(new ApplicationProperty(this.LIKES_PROPERTY, '1'));
     }
   }
+
+  // endregion
 }

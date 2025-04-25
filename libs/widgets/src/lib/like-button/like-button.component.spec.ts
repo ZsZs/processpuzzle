@@ -12,9 +12,6 @@ describe('LikeButtonComponent', () => {
     update: jest.fn(),
     add: jest.fn(),
   };
-  beforeEach(() => {
-    console.log(mockStore.entities());
-  });
 
   it('should render initial likes count', async () => {
     await render(LikeButtonComponent, {

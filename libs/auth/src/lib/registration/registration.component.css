@@ -1,0 +1,28 @@
+.registration-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.server-error {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
