@@ -26,6 +26,12 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
   },
   {
+    path: 'auth',
+    title: 'ProcessPuzzle Testbed - Authentication',
+    data: { icon: 'person_add' },
+    loadComponent: () => import('./content/auth/auth.component').then((comp) => comp.AuthComponent),
+  },
+  {
     path: 'base-entity',
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook' },

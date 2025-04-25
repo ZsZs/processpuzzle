@@ -3,7 +3,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_auth&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_auth)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fauth?style=flat)](https://www.npmjs.com/package/@processpuzzle/auth)
 
-The Auth library provides widgets and services for authentication and authorization. It provides:
+The Auth library provides widgets and services for authentication and authorization. It offers:
 - [authentication menu](#auth-button)
 - [login](#login-component)
 - [logout](#logout-component)
