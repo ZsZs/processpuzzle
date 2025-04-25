@@ -3,7 +3,7 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { LanguageConfig } from './language-config';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { NgClass, NgForOf } from '@angular/common';
-import { MatListOption, MatSelectionList } from '@angular/material/list';
+import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angular/material/list';
 
 @Component({
   selector: 'pp-language-selector-list',
@@ -37,7 +37,7 @@ export class LanguageSelectorListComponent {
   selectedLanguage = this.runtimeConfiguration.DEFAULT_LANGUAGE;
 
   // region event handling methods
-  onSelectionChange(event: any) {
+  onSelectionChange(event: MatSelectionListChange) {
     const selectedOption = event.source;
     const selectedValue = selectedOption.selectedOptions.selected[0]?.value;
 
