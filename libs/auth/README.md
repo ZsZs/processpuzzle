@@ -20,8 +20,8 @@ The `AuthButtonComponent` is a versatile authentication button that displays dif
 
 - Displays a person icon button that opens a dropdown menu
 - Dynamically shows different menu options based on authentication status
-- When not authenticated, shows Login and Register options
-- When authenticated, shows My Profile and Logout options
+- When not authenticated, it shows Login and Register options
+- When authenticated, it shows My Profile and Logout options
 - Integrates with Angular Router for navigation to auth pages
 - Uses Angular Material components for a consistent UI experience
 
