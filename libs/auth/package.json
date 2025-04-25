@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/auth",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -14,12 +14,5 @@
     "@angular/common": "^19.2.0",
     "@angular/core": "^19.2.0"
   },
-  "exports": {
-    "./i18n/*": "./i18n/pp-auth/*"
-  },
-  "files": [
-    "dist/libs/auth/",
-    "i18n/"
-  ],
   "sideEffects": false
 }
