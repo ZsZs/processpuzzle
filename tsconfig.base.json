@@ -12,30 +12,17 @@
     "module": "esnext",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@processpuzzle/base-entity": [
-        "libs/base-entity/src/public-api.ts"
-      ],
-      "@processpuzzle/test-util": [
-        "libs/test-util/src/public-api.ts"
-      ],
-      "@processpuzzle/util": [
-        "libs/util/src/public-api.ts"
-      ],
-      "@processpuzzle/widgets": [
-        "libs/widgets/src/public-api.ts"
-      ]
+      "@processpuzzle/auth": ["libs/auth/src/public-api.ts"],
+      "@processpuzzle/base-entity": ["libs/base-entity/src/public-api.ts"],
+      "@processpuzzle/test-util": ["libs/test-util/src/public-api.ts"],
+      "@processpuzzle/util": ["libs/util/src/public-api.ts"],
+      "@processpuzzle/widgets": ["libs/widgets/src/public-api.ts"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

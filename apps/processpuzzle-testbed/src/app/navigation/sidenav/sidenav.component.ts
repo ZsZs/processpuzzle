@@ -13,7 +13,7 @@ import { appRoutes } from '../../app.routes';
       <mat-nav-list>
         @for (item of routes; track item) {
           <mat-list-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
-            <span matListItemIcon class="material-symbols-outlined">{{ item.data ? item.data['icon'] : '' }}</span>
+            <span matListItemIcon class="material-symbols-outlined">{{ item.data?.['icon'] }}</span>
             <div matListItemTitle>&nbsp;{{ item.title | substring: 24 }}</div>
           </mat-list-item>
         }

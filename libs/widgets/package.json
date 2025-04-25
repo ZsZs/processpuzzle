@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/widgets",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "publishConfig": {
     "access": "public"
   },
@@ -17,12 +17,5 @@
   "dependencies": {
     "tslib": "^2.8.1"
   },
-  "exports": {
-    "./i18n/*": "./i18n/pp-widgets/*"
-  },
-  "files": [
-    "dist/libs/widgets/",
-    "i18n/"
-  ],
   "sideEffects": false
 }

@@ -71,7 +71,7 @@ describe('NavigateBackService', () => {
   });
 
   it('should warn if goBack is called with less than two routes', () => {
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleWarnSpy = jest.spyOn(console, 'log').mockImplementation();
 
     // Emit a single route
     routerEvents$.next(new NavigationEnd(1, '/route1', '/route1'));

@@ -1,9 +1,7 @@
-/* eslint-disable */
 export default {
   displayName: 'base-entity',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageReporters: ['text', ['lcov', { projectRoot: 'libs/base-entity' }]],
   coverageDirectory: 'reports/coverage',
   testEnvironment: '@happy-dom/jest-environment',
   transform: {

@@ -29,8 +29,7 @@
         "production",
         "^production"
       ],
-      "options": {
-      }
+      "options": {}
     },
     "@nx/eslint:lint": {
       "cache": true,
@@ -64,13 +63,22 @@
       ]
     },
     "nx-release-publish": {
-      "dependsOn": [
-      ],
+      "dependsOn": [],
       "options": {
         "packageRoot": "dist/{projectName}"
       }
     },
     "@nx/esbuild:esbuild": {
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
+    },
+    "@nx/angular:package": {
       "cache": true,
       "dependsOn": [
         "^build"
@@ -127,6 +135,7 @@
   ],
   "release": {
     "projects": [
+      "auth",
       "base-entity",
       "processpuzzle-testbed",
       "util",
@@ -134,11 +143,9 @@
     ],
     "projectsRelationship": "independent",
     "version": {
-      "conventionalCommits": true,
       "preVersionCommand": "npm run build-all-ci",
-      "generatorOptions": {
-        "fallbackCurrentVersionResolver": "disk"
-      }
+      "conventionalCommits": true,
+      "generatorOptions": {}
     },
     "conventionalCommits": {
       "types": {
@@ -177,6 +184,10 @@
     },
     "@nx/angular:component": {
       "style": "css"
+    },
+    "@nx/angular:library": {
+      "linter": "eslint",
+      "unitTestRunner": "jest"
     }
   }
 }

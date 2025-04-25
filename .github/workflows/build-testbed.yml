@@ -11,7 +11,7 @@ on:
     paths:
       - 'apps/processpuzzle-testbed/**'
   workflow_run:
-    workflows: [ "Build-Util", "Build-Base-Entity" ]
+    workflows: [ "Build-Auth", "Build-Base-Entity", "Build-Util", "Build-Widgets" ]
     types:
       - completed
 jobs:
