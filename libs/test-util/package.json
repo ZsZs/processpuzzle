@@ -10,6 +10,14 @@
     "directory": "libs/test-util"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
-  "peerDependencies": {},
-  "dependencies": {}
+  "peerDependencies": {
+    "@angular/common": "^19.2.0",
+    "@angular/core": "^19.2.0",
+    "@angular/cdk": "^19.2.0",
+    "rxjs": "~7.8.0"
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
+  },
+  "sideEffects": false
 }
