@@ -48,7 +48,8 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "libs/auth/jest.config.ts"
+        "jestConfig": "libs/auth/jest.config.ts",
+        "codeCoverage": true
       },
       "configurations": {
         "ci": {
