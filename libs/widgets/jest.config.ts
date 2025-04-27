@@ -4,7 +4,7 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   coverageDirectory: 'reports/coverage',
   coverageReporters: [
-    ['lcov', { projectRoot: 'libs/util' }],
+    ['lcov', { projectRoot: 'libs/widgets' }],
     ['text', { skipFull: true }],
   ],
   collectCoverageFrom: ['src/**/*.ts', '!src/main.ts', '!src/public-api.ts', '!src/**/*.module.ts', '!src/**/*.spec.ts', '!src/environments/**/*.ts'],
