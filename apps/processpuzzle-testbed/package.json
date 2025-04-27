@@ -10,5 +10,11 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "dependencies": {
+  },
+  "peerDependencies": {
+    "@processpuzzle/auth": "^0.0.2",
+    "@processpuzzle/base-entity": "^0.3.0",
+    "@processpuzzle/util": "^0.2.4",
+    "@processpuzzle/widgets": "^0.0.8"
   }
 }
