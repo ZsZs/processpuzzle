@@ -4,18 +4,28 @@ import { ApplicationPropertyStore } from '../app-property/app-property.store';
 import { ApplicationProperty } from '../app-property/app-property';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('LikeButtonComponent', () => {
   const properties: Array<ApplicationProperty> = [new ApplicationProperty('likes', '0')];
   const mockStore = {
-    entities: jest.fn().mockReturnValue(properties),
-    update: jest.fn(),
     add: jest.fn(),
+    entities: jest.fn().mockReturnValue(properties),
+    error: jest.fn().mockReturnValue(undefined),
+    update: jest.fn(),
+    resetErrorState: jest.fn(),
+  };
+
+  const mockSnackBar = {
+    open: jest.fn(),
   };
 
   it('should render initial likes count', async () => {
     await render(LikeButtonComponent, {
-      componentProviders: [{ provide: ApplicationPropertyStore, useValue: mockStore }],
+      componentProviders: [
+        { provide: ApplicationPropertyStore, useValue: mockStore },
+        { provide: MatSnackBar, useValue: mockSnackBar }
+      ],
       imports: [MatIconModule, MatButtonModule],
     });
 
@@ -24,7 +34,10 @@ describe('LikeButtonComponent', () => {
 
   it('should increment likes count when like button is clicked', async () => {
     await render(LikeButtonComponent, {
-      componentProviders: [{ provide: ApplicationPropertyStore, useValue: mockStore }],
+      componentProviders: [
+        { provide: ApplicationPropertyStore, useValue: mockStore },
+        { provide: MatSnackBar, useValue: mockSnackBar }
+      ],
       imports: [MatIconModule, MatButtonModule],
     });
 
@@ -44,7 +57,10 @@ describe('LikeButtonComponent', () => {
     mockStore.entities = jest.fn().mockReturnValue([]);
 
     await render(LikeButtonComponent, {
-      componentProviders: [{ provide: ApplicationPropertyStore, useValue: mockStore }],
+      componentProviders: [
+        { provide: ApplicationPropertyStore, useValue: mockStore },
+        { provide: MatSnackBar, useValue: mockSnackBar }
+      ],
       imports: [MatIconModule, MatButtonModule],
     });
 
@@ -54,5 +70,25 @@ describe('LikeButtonComponent', () => {
 
     // Expect the add method to be called with a new ApplicationProperty
     expect(mockStore.add).toHaveBeenCalledWith(expect.objectContaining({ name: 'likes', value: '1' }));
+  });
+
+  it('should display error message when store has an error', async () => {
+    // Set up the error in the store
+    const errorMessage = 'Failed to update likes';
+    mockStore.error = jest.fn().mockReturnValue(errorMessage);
+
+    await render(LikeButtonComponent, {
+      componentProviders: [
+        { provide: ApplicationPropertyStore, useValue: mockStore },
+        { provide: MatSnackBar, useValue: mockSnackBar }
+      ],
+      imports: [MatIconModule, MatButtonModule],
+    });
+
+    // Verify that the snackBar.open was called with the error message
+    expect(mockSnackBar.open).toHaveBeenCalledWith(errorMessage, 'Close', expect.any(Object));
+
+    // Verify that resetErrorState was called
+    expect(mockStore.resetErrorState).toHaveBeenCalled();
   });
 });

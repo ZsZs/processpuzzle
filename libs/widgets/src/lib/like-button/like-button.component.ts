@@ -1,8 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { ApplicationPropertyStore } from '../app-property/app-property.store';
 import { ApplicationProperty } from '../app-property/app-property';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'pp-like-button',
@@ -22,6 +23,10 @@ export class LikeButtonComponent {
   likesCount = computed(() => this.store.entities().find((property) => property.name === this.LIKES_PROPERTY));
   readonly store = inject(ApplicationPropertyStore);
 
+  constructor(private readonly snackBar: MatSnackBar) {
+    this.configureEffects();
+  }
+
   // region event handling methods
   onLike(): void {
     const count = this.likesCount();
@@ -34,4 +39,23 @@ export class LikeButtonComponent {
   }
 
   // endregion
+
+  // region protected, private helper methods
+  private configureEffects() {
+    effect(() => {
+      const currentError = this.store.error();
+
+      if (currentError) {
+        this.showErrorMessage(currentError);
+        this.store.resetErrorState();
+      }
+    });
+  }
+
+  private showErrorMessage(error: string): void {
+    this.snackBar.open(error, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar'],
+    });
+  }
 }
