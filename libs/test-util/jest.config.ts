@@ -3,7 +3,11 @@ export default {
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   coverageDirectory: 'reports/coverage',
-  coverageReporters: ['lcov', 'text-summary'],
+  coverageReporters: [
+    ['lcov', { projectRoot: 'libs/test-util' }],
+    ['text', { skipFull: true }],
+  ],
+  collectCoverageFrom: ['src/**/*.ts', '!src/main.ts', '!src/public-api.ts', '!src/**/*.module.ts', '!src/**/*.spec.ts', '!src/environments/**/*.ts'],
   testEnvironment: '@happy-dom/jest-environment',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
