@@ -38,9 +38,6 @@ runs:
     - name: Test libs and apps
       run: npm run test-${{inputs.nx_project}}
       shell: bash
-    - name: List test reports
-      run: ls libs/${{inputs.nx_project}}/reports/coverage
-      shell: bash
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v5.0.0
       env:
