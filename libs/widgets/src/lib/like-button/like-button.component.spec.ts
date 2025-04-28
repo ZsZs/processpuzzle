@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('LikeButtonComponent', () => {
-  const properties: Array<ApplicationProperty> = [new ApplicationProperty('likes', '0')];
+  const properties: Array<ApplicationProperty> = [new ApplicationProperty(undefined, 'likes', '0')];
   const mockStore = {
     add: jest.fn(),
     entities: jest.fn().mockReturnValue(properties),
@@ -24,7 +24,7 @@ describe('LikeButtonComponent', () => {
     await render(LikeButtonComponent, {
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
-        { provide: MatSnackBar, useValue: mockSnackBar }
+        { provide: MatSnackBar, useValue: mockSnackBar },
       ],
       imports: [MatIconModule, MatButtonModule],
     });
@@ -36,7 +36,7 @@ describe('LikeButtonComponent', () => {
     await render(LikeButtonComponent, {
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
-        { provide: MatSnackBar, useValue: mockSnackBar }
+        { provide: MatSnackBar, useValue: mockSnackBar },
       ],
       imports: [MatIconModule, MatButtonModule],
     });
@@ -59,7 +59,7 @@ describe('LikeButtonComponent', () => {
     await render(LikeButtonComponent, {
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
-        { provide: MatSnackBar, useValue: mockSnackBar }
+        { provide: MatSnackBar, useValue: mockSnackBar },
       ],
       imports: [MatIconModule, MatButtonModule],
     });
@@ -80,7 +80,7 @@ describe('LikeButtonComponent', () => {
     await render(LikeButtonComponent, {
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
-        { provide: MatSnackBar, useValue: mockSnackBar }
+        { provide: MatSnackBar, useValue: mockSnackBar },
       ],
       imports: [MatIconModule, MatButtonModule],
     });

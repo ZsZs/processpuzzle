@@ -34,7 +34,7 @@ export class LikeButtonComponent {
       count.value = (parseInt(count.value, 10) + 1).toString();
       this.store.update(count);
     } else {
-      this.store.add(new ApplicationProperty(this.LIKES_PROPERTY, '1'));
+      this.store.add(new ApplicationProperty(undefined, this.LIKES_PROPERTY, '1'));
     }
   }
 
