@@ -10,6 +10,7 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
 import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent, WidgetsModule } from '@processpuzzle/widgets';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-header',
@@ -27,13 +28,14 @@ import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, 
     MatMenuItem,
     MatListItemIcon,
     MatListItemTitle,
-    SubstringPipe,
     NavigateBackComponent,
     LikeButtonComponent,
     ShareButtonComponent,
     LanguageSelectorComponent,
     WidgetsModule,
     AuthButtonComponent,
+    TranslocoDirective,
+    SubstringPipe,
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',

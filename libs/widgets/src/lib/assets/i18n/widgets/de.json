@@ -1,12 +1,12 @@
 {
-  "language-selector": {
-    "en": "English",
-    "de": "Deutsch",
-    "hu": "Ungarisch",
-    "es": "Spanisch",
-    "english": "English",
-    "german": "Deutsch",
-    "hungarian": "Ungarisch",
-    "spanish": "Spanisch"
-  }
+  "en": "English",
+  "de": "Deutsch",
+  "fr": "Französisch",
+  "hu": "Ungarisch",
+  "es": "Spanisch",
+  "english": "English",
+  "german": "Deutsch",
+  "french": "Französisch",
+  "hungarian": "Ungarisch",
+  "spanish": "Spanisch"
 }

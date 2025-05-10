@@ -4,7 +4,7 @@
     {
       "code": "en",
       "label": "english",
-      "flag": "fi fi-us"
+      "flag": "fi fi-gb"
     },
     {
       "code": "de",
@@ -12,9 +12,19 @@
       "flag": "fi fi-de"
     },
     {
+      "code": "fr",
+      "label": "french",
+      "flag": "fi fi-fr"
+    },
+    {
       "code": "hu",
       "label": "hungarian",
       "flag": "fi fi-hu"
+    },
+    {
+      "code": "es",
+      "label": "spanish",
+      "flag": "fi fi-es"
     }
   ],
   "PIPELINE_STAGE": "dev",
