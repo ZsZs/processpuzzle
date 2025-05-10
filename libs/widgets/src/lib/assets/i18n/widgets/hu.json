@@ -1,12 +1,12 @@
 {
-  "language-selector": {
-    "en": "Angol",
-    "de": "Német",
-    "hu": "Magyar",
-    "es": "Spanyol",
-    "english": "Angol",
-    "german": "Német",
-    "hungarian": "Magyar",
-    "spanish": "Spanyol"
-  }
+  "en": "Angol",
+  "de": "Német",
+  "fr": "Francia",
+  "hu": "Magyar",
+  "es": "Spanyol",
+  "english": "Angol",
+  "german": "Német",
+  "french": "Francia",
+  "hungarian": "Magyar",
+  "spanish": "Spanyol"
 }
