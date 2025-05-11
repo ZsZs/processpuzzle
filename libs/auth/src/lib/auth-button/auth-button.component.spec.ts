@@ -7,6 +7,11 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Signal, signal } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
+import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { getTranslocoModule, mockLanguageConfig } from '@processpuzzle/test-util';
+import authDe from '../assets/i18n/auth/de.json';
+import authEn from '../assets/i18n/auth/en.json';
 
 describe('AuthButtonComponent', () => {
   // Helper function to create a mock AuthService with controlled authentication state
@@ -21,8 +26,8 @@ describe('AuthButtonComponent', () => {
     const mockAuthService = createMockAuthService(isAuthenticated);
 
     return render(AuthButtonComponent, {
-      imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
+      imports: [getTranslocoModule({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
+      providers: [{ provide: AuthService, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
     });
   };
 
@@ -51,14 +56,15 @@ describe('AuthButtonComponent', () => {
   });
 
   it('should display personal data and logout options when authenticated', async () => {
-    await renderComponent(true);
+    const { fixture } = await renderComponent(true);
 
     // Click the auth button to open the menu
     fireEvent.click(screen.getByLabelText('Auth Button'));
+    fixture.detectChanges();
 
     // Check that authenticated options are displayed
-    expect(screen.getByText('My profile')).toBeInTheDocument();
     expect(screen.getByText('Logout')).toBeInTheDocument();
+    expect(screen.getByText('My Profile')).toBeInTheDocument();
 
     // Check that non-authenticated options are not displayed
     expect(screen.queryByText('Login')).not.toBeInTheDocument();
@@ -87,7 +93,7 @@ describe('AuthButtonComponent', () => {
     fireEvent.click(screen.getByLabelText('Auth Button'));
 
     // Check that personal data button has correct route
-    const personalDataButton = screen.getByText('My profile').closest('button');
+    const personalDataButton = screen.getByText('My Profile').closest('button');
     expect(personalDataButton).toHaveAttribute('ng-reflect-router-link', 'auth/my-profile');
 
     // Check that logout button has correct route

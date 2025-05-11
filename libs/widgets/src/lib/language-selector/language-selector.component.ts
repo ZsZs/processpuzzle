@@ -5,11 +5,6 @@ import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
 import { provideTranslocoScope } from '@jsverse/transloco';
 
-const loader = ['de', 'en', 'es', 'fr', 'hu'].reduce((acc: any, lang) => {
-  acc[lang] = () => import(`../assets/i18n/widgets/${lang}.json`);
-  return acc;
-}, {});
-
 @Component({
   selector: 'pp-language-selector',
   template: `
@@ -26,7 +21,7 @@ const loader = ['de', 'en', 'es', 'fr', 'hu'].reduce((acc: any, lang) => {
   `,
   styleUrls: ['./language-selector.component.css'],
   imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, LanguageSelectorListComponent],
-  providers: [provideTranslocoScope({ scope: 'widgets', loader })],
+  providers: [provideTranslocoScope({ scope: 'widgets' })],
 })
 export class LanguageSelectorComponent {
   isOpen = false;

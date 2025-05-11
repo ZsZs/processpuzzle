@@ -1,35 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { LanguageSelectorComponent } from './language-selector.component';
-import { TranslocoTestingModule } from '@jsverse/transloco';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { getTranslocoModule, mockLanguageConfig } from '@processpuzzle/test-util';
+import widgetsDe from '../assets/i18n/widgets/de.json';
+import widgetsEn from '../assets/i18n/widgets/en.json';
 
 describe('LanguageSelectorComponent', () => {
-  const mockLanguageConfig = {
-    AVAILABLE_LANGUAGES: [
-      { code: 'en', flag: 'flag-en', label: 'english' },
-      { code: 'es', flag: 'flag-es', label: 'spanish' },
-      { code: 'de', flag: 'flag-de', label: 'german' },
-    ],
-    DEFAULT_LANGUAGE: 'en',
-  };
-
   async function setup() {
     return render(LanguageSelectorComponent, {
       declarations: [LanguageSelectorListComponent],
-      imports: [
-        TranslocoTestingModule.forRoot({
-          langs: {
-            en: { 'language-selector': { title: 'Language Selector' } },
-          },
-        }),
-        MatIconModule,
-        MatButtonModule,
-        OverlayModule,
-      ],
+      imports: [getTranslocoModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), MatIconModule, MatButtonModule, OverlayModule],
       providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
     });
   }
@@ -51,7 +35,9 @@ describe('LanguageSelectorComponent', () => {
     fireEvent.click(button);
 
     // Verify if content is displayed after clicking
-    expect(screen.getByText('en.language-selector.spanish')).toBeVisible();
+    expect(screen.getByText('English')).toBeVisible();
+    expect(screen.getByText('German')).toBeVisible();
+    expect(screen.getByText('Spanish')).toBeVisible();
   });
 
   it('should close the overlay on backdrop click', async () => {
@@ -62,7 +48,9 @@ describe('LanguageSelectorComponent', () => {
     fireEvent.click(button);
 
     // Verify if the overlay is visible
-    expect(screen.getByText('en.language-selector.spanish')).toBeVisible();
+    expect(screen.getByText('English')).toBeVisible();
+    expect(screen.getByText('German')).toBeVisible();
+    expect(screen.getByText('Spanish')).toBeVisible();
 
     // Close the overlay by simulating a backdrop click
     const backdrop = document.querySelector('.cdk-overlay-backdrop') as HTMLElement;
