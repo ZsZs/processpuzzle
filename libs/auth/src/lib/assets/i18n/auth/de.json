@@ -1,2 +1,6 @@
 {
+  "login": "Anmelden",
+  "logout": "Abmelden",
+  "register": "Registrieren",
+  "my_profile": "Mein Profil"
 }

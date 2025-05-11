@@ -1,2 +1,6 @@
 {
+  "login": "Bejelentkezés",
+  "logout": "Kijelentkezés",
+  "register": "Regisztráció",
+  "my_profile": "Profilom"
 }

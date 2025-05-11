@@ -20,7 +20,7 @@ import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angula
             [attr.aria-selected]="selectedLanguage === language.code ? 'true' : 'false'"
           >
             <span [ngClass]="language.flag">&nbsp;-&nbsp;</span>
-            <span>{{ t(language.label) }}</span>
+            <span>{{ t('widgets.' + language.label) }}</span>
           </mat-list-option>
         </mat-selection-list>
       </div>
