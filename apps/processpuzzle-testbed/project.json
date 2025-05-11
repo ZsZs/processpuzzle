@@ -33,6 +33,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/auth/src/lib/assets/i18n/auth",
+            "output": "assets/i18n/auth"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/widgets/src/lib/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },

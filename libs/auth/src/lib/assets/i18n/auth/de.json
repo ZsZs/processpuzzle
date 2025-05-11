@@ -1,12 +1,6 @@
 {
-  "language-selector": {
-    "en": "English",
-    "de": "Deutsch",
-    "hu": "Ungarisch",
-    "es": "Spanisch",
-    "english": "English",
-    "german": "Deutsch",
-    "hungarian": "Ungarisch",
-    "spanish": "Spanisch"
-  }
+  "login": "Anmelden",
+  "logout": "Abmelden",
+  "register": "Registrieren",
+  "my_profile": "Mein Profil"
 }

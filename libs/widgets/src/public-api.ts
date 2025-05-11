@@ -14,3 +14,4 @@ export { ShareButtonComponent } from './lib/share-button/share-button.component'
 export { ShareButtonModule } from './lib/share-button/share-button.module';
 export { TranslocoHttpLoader } from './lib/language-selector/transloco.loader';
 export { WidgetsModule } from './lib/widgets.module';
+export { widgetsRoutes } from './lib/widgets.routes';

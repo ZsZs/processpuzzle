@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { LanguageConfig } from './language-config';
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { NgClass, NgForOf } from '@angular/common';
 import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angular/material/list';
 
 @Component({
   selector: 'pp-language-selector-list',
   template: `
-    <ng-container *transloco="let t; scope: 'widgets'; prefix: 'language-selector'">
+    <ng-container *transloco="let t">
       <div class="language-selector">
         <mat-selection-list #selectionList (selectionChange)="onSelectionChange($event)" [multiple]="false">
           <mat-list-option
@@ -20,7 +20,7 @@ import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angula
             [attr.aria-selected]="selectedLanguage === language.code ? 'true' : 'false'"
           >
             <span [ngClass]="language.flag">&nbsp;-&nbsp;</span>
-            <span>{{ t(language.label) }}</span>
+            <span>{{ t('widgets.' + language.label) }}</span>
           </mat-list-option>
         </mat-selection-list>
       </div>
@@ -28,13 +28,13 @@ import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angula
   `,
   styleUrls: ['language-selector-list.component.css'],
   imports: [NgClass, NgForOf, TranslocoDirective, MatListOption, MatSelectionList],
-  providers: [],
+  providers: [provideTranslocoScope('widgets')],
 })
 export class LanguageSelectorListComponent {
   private readonly translocoService = inject(TranslocoService);
   private readonly runtimeConfiguration: LanguageConfig = inject(RUNTIME_CONFIGURATION);
   readonly languages = this.runtimeConfiguration.AVAILABLE_LANGUAGES;
-  selectedLanguage = this.runtimeConfiguration.DEFAULT_LANGUAGE;
+  selectedLanguage = this.translocoService.getActiveLang();
 
   // region event handling methods
   onSelectionChange(event: MatSelectionListChange) {

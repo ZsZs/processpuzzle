@@ -3,6 +3,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
+import { provideTranslocoScope } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-language-selector',
@@ -20,6 +21,7 @@ import { LanguageSelectorListComponent } from './language-selector-list.componen
   `,
   styleUrls: ['./language-selector.component.css'],
   imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, LanguageSelectorListComponent],
+  providers: [provideTranslocoScope({ scope: 'widgets' })],
 })
 export class LanguageSelectorComponent {
   isOpen = false;

@@ -19,11 +19,19 @@
     row-gap: 10px;
 }
 
+mat-card {
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(153, 217, 235);
+}
+
 mat-card-title {
     font-family: "Winky Sans", sans-serif;
 }
 
 mat-card-content {
+    flex-grow: 1;
+    overflow: auto;
     font-family: cursive;
     font-size: medium;
     text-align: left;

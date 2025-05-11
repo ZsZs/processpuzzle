@@ -7,28 +7,32 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../domain/auth.service';
 import { authRoutes } from '../auth.routes';
 import { SubstringPipe } from '@processpuzzle/util';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-auth-button',
   template: `
     <div class="auth-button">
-      <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Auth Button">
-        <mat-icon>person</mat-icon>
-      </button>
-      <mat-menu #menu="matMenu">
-        @for (item of routes; track item) {
-          <ng-container *ngIf="(isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])">
-            <button mat-menu-item [routerLink]="'auth/' + item.path">
-              <mat-icon>{{ item.data?.['icon'] }}</mat-icon>
-              <span>&nbsp;{{ item.title | substring: 0 }}</span>
-            </button>
-          </ng-container>
-        }
-      </mat-menu>
+      <ng-container *transloco="let t">
+        <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Auth Button">
+          <mat-icon>person</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (item of routes; track item) {
+            <ng-container *ngIf="(isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])">
+              <button mat-menu-item [routerLink]="'auth/' + item.path">
+                <mat-icon>{{ item.data?.['icon'] }}</mat-icon>
+                <span>&nbsp;{{ t('auth.' + item.title | substring: 0) }}</span>
+              </button>
+            </ng-container>
+          }
+        </mat-menu>
+      </ng-container>
     </div>
   `,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger, SubstringPipe],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger, SubstringPipe, TranslocoDirective],
   styles: [],
+  providers: [provideTranslocoScope('auth')],
 })
 export class AuthButtonComponent {
   private readonly authService = inject(AuthService);
