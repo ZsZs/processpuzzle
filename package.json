@@ -123,7 +123,7 @@
     "@nx/angular": "^20.8.0",
     "@nx/devkit": "20.8.0",
     "@nx/esbuild": "20.8.0",
-    "@nx/eslint": "20.8.0",
+    "@nx/eslint": "21.0.3",
     "@nx/eslint-plugin": "20.8.0",
     "@nx/jest": "20.8.0",
     "@nx/js": "^20.8.0",
