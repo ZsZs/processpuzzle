@@ -112,7 +112,7 @@
     "@jsverse/transloco-keys-manager": "^6.1.0",
     "@nx/angular": "^20.8.0",
     "@nx/devkit": "20.8.0",
-    "@nx/esbuild": "20.8.0",
+    "@nx/esbuild": "21.0.3",
     "@nx/eslint": "20.8.0",
     "@nx/eslint-plugin": "20.8.0",
     "@nx/jest": "20.8.0",
