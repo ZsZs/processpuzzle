@@ -25,7 +25,7 @@
           @for (item of routes; track item) {
             <button mat-menu-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
               <span matListItemIcon class="material-symbols-outlined">{{ item.data?.['icon'] }}</span>
-              <span matListItemTitle>&nbsp;{{ t(item.title | substring: 0) | substring: 24 }}</span>
+              <span matListItemTitle>&nbsp;{{ t(item.data?.['menuTitle'] | substring: 0) | substring: 24 }}</span>
             </button>
           }
         </mat-menu>

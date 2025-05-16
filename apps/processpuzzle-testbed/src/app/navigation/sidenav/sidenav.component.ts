@@ -16,7 +16,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
           @for (item of routes; track item) {
             <mat-list-item [routerLink]="item.path" [ngClass]="layoutService.layoutClass()">
               <span matListItemIcon class="material-symbols-outlined">{{ item.data?.['icon'] }}</span>
-              <div matListItemTitle>&nbsp;{{ t(item.title | substring: 0) | substring: 24 }}</div>
+              <div matListItemTitle>&nbsp;{{ t(item.data?.['menuTitle'] | substring: 0) | substring: 24 }}</div>
             </mat-list-item>
           }
         </mat-nav-list>
