@@ -28,6 +28,10 @@ export class ApplicationPage {
     await this.page.getByRole('button', { name: 'Go back' }).click();
   }
 
+  async navigateToAuthPage() {
+    await this.navigateToPage('See Auth Library...', '**/auth');
+  }
+
   async navigateToUtilsPage() {
     await this.navigateToPage('See Utils Library...', '**/util');
   }

@@ -32,6 +32,10 @@ test.describe('Home page navigation', () => {
     await expect(page.getByRole('heading', { name: '@processpuzzle/widgets' })).toBeVisible();
     await page.getByRole('button', { name: 'Go back' }).click();
 
+    await applicationPage.navigateToAuthPage();
+    await expect(page.getByRole('heading', { name: '@processpuzzle/auth' })).toBeVisible();
+    await page.getByRole('button', { name: 'Go back' }).click();
+
     await applicationPage.navigateToBaseEntityPage();
     await expect(page.getByRole('heading', { name: '@processpuzzle/base-entity' })).toBeVisible();
     await page.getByRole('button', { name: 'Go back' }).click();
