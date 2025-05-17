@@ -11,7 +11,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
     <div class="logout-dialog">
       <ng-container *transloco="let t">
         <h2 mat-dialog-title>{{ t('auth.logout-dialog.title') }}</h2>
-        <mat-dialog-content>{{ t('auth.logout-dialog.title') }}</mat-dialog-content>
+        <mat-dialog-content>{{ t('auth.logout-dialog.content') }}</mat-dialog-content>
         <mat-dialog-actions align="end">
           <button mat-button (click)="onCancel()">{{ t('auth.logout-dialog.cancel_button') }}</button>
           <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('auth.logout-dialog.logout_button') }}</button>

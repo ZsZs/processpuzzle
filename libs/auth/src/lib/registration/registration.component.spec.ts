@@ -8,6 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Auth } from '@angular/fire/auth';
+import { getTranslocoModule } from '@processpuzzle/test-util';
+import authDe from '../assets/i18n/auth/de.json';
+import authEn from '../assets/i18n/auth/en.json';
 
 // Mock Firebase auth
 jest.mock('firebase/auth', () => ({
@@ -25,7 +28,7 @@ describe('RegistrationComponent', () => {
 
   const renderComponent = async () => {
     return render(RegistrationComponent, {
-      imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, BrowserAnimationsModule],
+      imports: [getTranslocoModule({ 'auth/de': authDe, 'auth/en': authEn }), ReactiveFormsModule, MatFormFieldModule, MatInputModule, BrowserAnimationsModule],
       providers: [
         { provide: MatSnackBar, useValue: mockSnackBar },
         { provide: Auth, useValue: mockAuth },
