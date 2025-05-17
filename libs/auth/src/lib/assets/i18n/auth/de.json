@@ -1,6 +1,42 @@
 {
-  "login": "Anmelden",
-  "logout": "Abmelden",
-  "register": "Registrieren",
-  "my_profile": "Mein Profil"
+  "button": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "register": "Registrieren",
+    "my_profile": "Mein Profil"
+  },
+  "login-form": {
+    "title": "Anmelden",
+    "email_label": "E-Mail",
+    "email_err_required": "E-Mail ist erforderlich",
+    "email_err_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "password_label": "Passwort",
+    "password_err_required": "Passwort ist erforderlich",
+    "create_account_button": "Konto erstellen",
+    "sign_in_button": "Anmelden",
+    "signing_in_button": "Anmeldung läuft...",
+    "google_button": "Mit Google anmelden"
+  },
+  "logout-dialog": {
+    "title": "Abmeldung bestätigen",
+    "content": "Sind Sie sicher, dass Sie sich abmelden möchten?",
+    "cancel_button": "Abbrechen",
+    "logout_button": "Abmelden"
+  },
+  "registration-form": {
+    "title": "Konto erstellen",
+    "email_label": "E-Mail",
+    "email_placeholder": "Geben Sie Ihre E-Mail-Adresse ein",
+    "email_err_required": "E-Mail ist erforderlich",
+    "email_err_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "password_label": "Passwort",
+    "password_placeholder": "Geben Sie Ihr Passwort ein",
+    "password_err_required": "Passwort ist erforderlich",
+    "password_err_min_length": "Das Passwort muss mindestens 6 Zeichen lang sein",
+    "password_confirm_label": "Passwort bestätigen",
+    "password_confirm_placeholder": "Bestätigen Sie Ihr Passwort",
+    "password_err_mismatch": "Die Passwörter stimmen nicht überein",
+    "create_button": "Konto erstellen",
+    "sign_in_button": "Haben Sie bereits ein Konto? Anmelden"
+  }
 }

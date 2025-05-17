@@ -1,6 +1,42 @@
 {
-  "login": "Connexion",
-  "logout": "Déconnexion",
-  "register": "S'inscrire",
-  "my_profile": "Mon Profil"
+  "button": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "register": "S'inscrire",
+    "my_profile": "Mon Profil"
+  },
+  "login-form": {
+    "title": "Connexion",
+    "email_label": "Email",
+    "email_err_required": "L'email est requis",
+    "email_err_invalid": "Veuillez entrer un email valide",
+    "password_label": "Mot de passe",
+    "password_err_required": "Le mot de passe est requis",
+    "create_account_button": "Créer un compte",
+    "sign_in_button": "Se connecter",
+    "signing_in_button": "Connexion en cours...",
+    "google_button": "Se connecter avec Google"
+  },
+  "logout-dialog": {
+    "title": "Confirmer la déconnexion",
+    "content": "Êtes-vous sûr de vouloir vous déconnecter?",
+    "cancel_button": "Annuler",
+    "logout_button": "Déconnexion"
+  },
+  "registration-form": {
+    "title": "Créer un compte",
+    "email_label": "Email",
+    "email_placeholder": "Entrez votre email",
+    "email_err_required": "L'email est requis",
+    "email_err_invalid": "Veuillez entrer une adresse email valide",
+    "password_label": "Mot de passe",
+    "password_placeholder": "Entrez votre mot de passe",
+    "password_err_required": "Le mot de passe est requis",
+    "password_err_min_length": "Le mot de passe doit contenir au moins 6 caractères",
+    "password_confirm_label": "Confirmer le mot de passe",
+    "password_confirm_placeholder": "Confirmez votre mot de passe",
+    "password_err_mismatch": "Les mots de passe ne correspondent pas",
+    "create_button": "Créer un compte",
+    "sign_in_button": "Vous avez déjà un compte? Connectez-vous"
+  }
 }

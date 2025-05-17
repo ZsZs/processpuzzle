@@ -1,6 +1,42 @@
 {
-  "login": "Iniciar sesión",
-  "logout": "Cerrar sesión",
-  "register": "Registrarse",
-  "my_profile": "Mi perfil"
+  "button": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "register": "Registrarse",
+    "my_profile": "Mi perfil"
+  },
+  "login-form": {
+    "title": "Iniciar sesión",
+    "email_label": "Correo electrónico",
+    "email_err_required": "El correo electrónico es obligatorio",
+    "email_err_invalid": "Por favor, introduce un correo electrónico válido",
+    "password_label": "Contraseña",
+    "password_err_required": "La contraseña es obligatoria",
+    "create_account_button": "Crear cuenta",
+    "sign_in_button": "Iniciar sesión",
+    "signing_in_button": "Iniciando sesión...",
+    "google_button": "Iniciar sesión con Google"
+  },
+  "logout-dialog": {
+    "title": "Confirmar cierre de sesión",
+    "content": "¿Estás seguro de que quieres cerrar sesión?",
+    "cancel_button": "Cancelar",
+    "logout_button": "Cerrar sesión"
+  },
+  "registration-form": {
+    "title": "Crear cuenta",
+    "email_label": "Correo electrónico",
+    "email_placeholder": "Introduce tu correo electrónico",
+    "email_err_required": "El correo electrónico es obligatorio",
+    "email_err_invalid": "Por favor, introduce un correo electrónico válido",
+    "password_label": "Contraseña",
+    "password_placeholder": "Introduce tu contraseña",
+    "password_err_required": "La contraseña es obligatoria",
+    "password_err_min_length": "La contraseña debe tener al menos 6 caracteres",
+    "password_confirm_label": "Confirmar contraseña",
+    "password_confirm_placeholder": "Confirma tu contraseña",
+    "password_err_mismatch": "Las contraseñas no coinciden",
+    "create_button": "Crear cuenta",
+    "sign_in_button": "¿Ya tienes una cuenta? Inicia sesión"
+  }
 }

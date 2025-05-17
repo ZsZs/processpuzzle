@@ -22,7 +22,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
             <ng-container *ngIf="(isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])">
               <button mat-menu-item [routerLink]="'auth/' + item.path">
                 <mat-icon>{{ item.data?.['icon'] }}</mat-icon>
-                <span>&nbsp;{{ t('auth.' + item.title | substring: 0) }}</span>
+                <span>&nbsp;{{ t('auth.button.' + item.title | substring: 0) }}</span>
               </button>
             </ng-container>
           }

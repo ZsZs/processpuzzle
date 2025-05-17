@@ -3,17 +3,20 @@ import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/mat
 import { MatButton } from '@angular/material/button';
 import { AuthService } from '../domain/auth.service';
 import { NavigateBackService } from '@processpuzzle/widgets';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-logout',
   template: `
     <div class="logout-dialog">
-      <h2 mat-dialog-title>Confirm Logout</h2>
-      <mat-dialog-content> Are you sure you want to log out?</mat-dialog-content>
-      <mat-dialog-actions align="end">
-        <button mat-button (click)="onCancel()">Cancel</button>
-        <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">Logout</button>
-      </mat-dialog-actions>
+      <ng-container *transloco="let t">
+        <h2 mat-dialog-title>{{ t('auth.logout-dialog.title') }}</h2>
+        <mat-dialog-content>{{ t('auth.logout-dialog.title') }}</mat-dialog-content>
+        <mat-dialog-actions align="end">
+          <button mat-button (click)="onCancel()">{{ t('auth.logout-dialog.cancel_button') }}</button>
+          <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('auth.logout-dialog.logout_button') }}</button>
+        </mat-dialog-actions>
+      </ng-container>
     </div>
   `,
   styles: [
@@ -31,7 +34,8 @@ import { NavigateBackService } from '@processpuzzle/widgets';
       }
     `,
   ],
-  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
+  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton, TranslocoDirective],
+  providers: [provideTranslocoScope('auth')],
 })
 export class LogoutComponent {
   private readonly authService = inject(AuthService);

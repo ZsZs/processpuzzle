@@ -10,12 +10,14 @@ import { MatDivider } from '@angular/material/divider';
 import { NgIf } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FirebaseError } from 'firebase-admin/lib/utils/error';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-login',
   templateUrl: 'login.component.html',
   styleUrls: ['login.component.css'],
-  imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, NgIf, RouterLink],
+  imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, NgIf, RouterLink, TranslocoDirective],
+  providers: [provideTranslocoScope('auth')],
 })
 export class LoginComponent {
   private readonly auth: Auth = inject(Auth);

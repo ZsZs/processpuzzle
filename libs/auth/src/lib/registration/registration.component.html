@@ -1,40 +1,42 @@
 <div class="registration-container">
-  <h1>Create Account</h1>
+  <ng-container *transloco="let t;">
+    <h1>{{t('auth.registration-form.title')}}</h1>
 
-  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" aria-label="Registration Form">
-    <mat-progress-bar *ngIf="isLoading()" mode="indeterminate"></mat-progress-bar>
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" aria-label="Registration Form">
+      <mat-progress-bar *ngIf="isLoading()" mode="indeterminate"></mat-progress-bar>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Email</mat-label>
-      <input matInput type="email" formControlName="email" placeholder="Enter your email">
-      <mat-error *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</mat-error>
-      <mat-error *ngIf="registerForm.get('email')?.errors?.['email']">Please enter a valid email address</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{t('auth.registration-form.email_label')}}</mat-label>
+        <input matInput type="email" formControlName="email" [placeholder]="t('auth.registration-form.email_placeholder')">
+        <mat-error *ngIf="registerForm.get('email')?.errors?.['required']">{{t('auth.registration-form.email_err_required')}}</mat-error>
+        <mat-error *ngIf="registerForm.get('email')?.errors?.['email']">{{t('auth.registration-form.email_err_invalid')}}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Password</mat-label>
-      <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" placeholder="Enter your password">
-      <button mat-icon-button type="button" matSuffix (click)="hidePassword = !hidePassword">
-        <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-      </button>
-      <mat-error *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</mat-error>
-      <mat-error *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters long</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{t('auth.registration-form.password_label')}}</mat-label>
+        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" [placeholder]="t('auth.registration-form.password_placeholder')">
+        <button mat-icon-button type="button" matSuffix (click)="hidePassword = !hidePassword">
+          <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('password')?.errors?.['required']">{{t('auth.registration-form.password_err_required')}}</mat-error>
+        <mat-error *ngIf="registerForm.get('password')?.errors?.['minlength']">{{t('auth.registration-form.password_err_min_length')}}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Confirm Password</mat-label>
-      <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" placeholder="Confirm your password">
-      <button mat-icon-button type="button" matSuffix (click)="hideConfirmPassword = !hideConfirmPassword">
-        <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-      </button>
-      <mat-error *ngIf="registerForm.errors?.['passwordMismatch']">Passwords do not match</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{t('auth.registration-form.password_confirm_label')}}</mat-label>
+        <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" [placeholder]="t('auth.registration-form.password_confirm_placeholder')">
+        <button mat-icon-button type="button" matSuffix (click)="hideConfirmPassword = !hideConfirmPassword">
+          <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.errors?.['passwordMismatch']">{{t('auth.registration-form.password_confirm_err_mismatch')}}</mat-error>
+      </mat-form-field>
 
-    <div class="form-actions">
-      <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid || isLoading()">Create Account</button>
-      <button mat-button type="button" routerLink="/auth/login" [disabled]="isLoading()">Already have an account? Sign in</button>
-    </div>
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid || isLoading()">{{t('auth.registration-form.create_button')}}</button>
+        <button mat-button type="button" routerLink="/auth/login" [disabled]="isLoading()">{{t('auth.registration-form.sign_in_button')}}</button>
+      </div>
 
-    <mat-error *ngIf="errorMessage() !== ''" class="server-error">{{ errorMessage() }}</mat-error>
-  </form>
+      <mat-error *ngIf="errorMessage() !== ''" class="server-error">{{ errorMessage() }}</mat-error>
+    </form>
+  </ng-container>
 </div>

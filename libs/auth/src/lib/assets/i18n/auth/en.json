@@ -1,6 +1,42 @@
 {
-  "login": "Login",
-  "logout": "Logout",
-  "register": "Register",
-  "my_profile": "My Profile"
+  "button": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "my_profile": "My Profile"
+  },
+  "login-form": {
+    "title": "Login",
+    "email_label": "Email",
+    "email_err_required": "Email is required",
+    "email_err_invalid": "Please enter a valid email",
+    "password_label": "Password",
+    "password_err_required": "Password is required",
+    "create_account_button": "Create Account",
+    "sign_in_button": "Sign In",
+    "signing_in_button": "Signing in...",
+    "google_button": "Sign in with Google"
+  },
+  "logout-dialog": {
+    "title": "Confirm Logout",
+    "content": " Are you sure you want to log out?",
+    "cancel_button": "Cancel",
+    "logout_button": "Logout"
+  },
+  "registration-form": {
+    "title": "Create Account",
+    "email_label": "Email",
+    "email_placeholder": "Enter your email",
+    "email_err_required": "Email is required",
+    "email_err_invalid": "Please enter a valid email address",
+    "password_label": "Password",
+    "password_placeholder": "Enter your password",
+    "password_err_required": "Password is required",
+    "password_err_min_length": "Password must be at least 6 characters long",
+    "password_confirm_label": "Confirm Password",
+    "password_confirm_placeholder": "Confirm your password",
+    "password_err_mismatch": "Passwords do not match",
+    "create_button": "Create Account",
+    "sign_in_button": "Already have an account? Sign in"
+  }
 }
