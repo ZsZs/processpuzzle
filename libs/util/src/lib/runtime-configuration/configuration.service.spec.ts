@@ -18,6 +18,7 @@ describe('ConfigurationService', () => {
     ICS_BACKEND_ROOT: 'https://t1-ics.brz.gv.at/services/ics',
     MESSAGE_SERVICE_ROOT: 'https://t1-ms.brz.gv.at/services/message-service',
   };
+  const undefinedConfig: TestConfiguration = {};
   const expectedConfig: TestConfiguration = {
     LANGUAGE: 'de',
     ICS_BACKEND_ROOT: 'https://t1-ics.brz.gv.at/services/ics',
@@ -98,13 +99,13 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => ['environments/config.common.json', 'undefined.json'], log: true });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(expectedConfig));
+    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequests1: TestRequest = httpTestingController.expectOne('http://localhost/environments/config.common.json');
     const mockRequests2: TestRequest = httpTestingController.expectOne('http://localhost/undefined.json');
     mockRequests1.flush(commonConfig);
-    mockRequests2.flush(null);
+    mockRequests2.flush(undefinedConfig);
   });
 
   it('init(), if URL starts with / ignores it.', () => {
@@ -136,6 +137,6 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => Promise.resolve(''), log: true });
 
     // EXERCISE, VERIFY
-    configService.init().catch((error) => expect(error).toEqual('Unexpected value returned from ConfigurationUrlFactory'));
+    configService.init().catch((error: Error) => expect(error.message).toContain('Runtime configuration:undefined load failed'));
   });
 });
