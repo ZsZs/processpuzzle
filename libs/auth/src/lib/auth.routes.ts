@@ -5,10 +5,10 @@ import { RegistrationComponent } from './registration/registration.component';
 import { LogoutComponent } from './logout/logout.component';
 import { provideTranslocoScope } from '@jsverse/transloco';
 
-const loader = ['de', 'en', 'es', 'fr', 'hu'].reduce((acc: any, lang) => {
+const loader = ['de', 'en', 'es', 'fr', 'hu'].reduce((acc: Record<string, () => Promise<Record<string, string>>>, lang) => {
   acc[lang] = () => import(`./assets/i18n/auth/${lang}.json`);
   return acc;
-}, {});
+}, {} as Record<string, () => Promise<Record<string, string>>>);
 
 export const authRoutes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
