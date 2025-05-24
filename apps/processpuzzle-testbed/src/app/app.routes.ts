@@ -16,25 +16,30 @@ import { FirestoreDocService } from './content/base-forms/firestore/firestore-do
 import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
 
 export const appRoutes: Route[] = [
-  { path: 'home', title: 'ProcessPuzzle Testbed - Home', component: ContentComponent, data: { icon: 'home' } },
+  { path: 'home', title: 'ProcessPuzzle Testbed - Home', component: ContentComponent, data: { icon: 'home', menuTitle: 'home' } },
   { path: '', pathMatch: 'full', redirectTo: 'home' },
-  { path: 'util', title: 'ProcessPuzzle Testbed - Util', data: { icon: 'service_toolbox' }, loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent) },
+  {
+    path: 'util',
+    title: 'ProcessPuzzle Testbed - Util',
+    data: { icon: 'service_toolbox', menuTitle: 'util' },
+    loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent),
+  },
   {
     path: 'widgets',
     title: 'ProcessPuzzle Testbed - Widgets',
-    data: { icon: 'service_toolbox' },
+    data: { icon: 'service_toolbox', menuTitle: 'widgets' },
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
   },
   {
     path: 'auth',
-    title: 'ProcessPuzzle Testbed - Authentication',
-    data: { icon: 'person_add' },
+    title: 'ProcessPuzzle Testbed - Auth',
+    data: { icon: 'person_add', menuTitle: 'auth' },
     loadComponent: () => import('./content/auth/auth.component').then((comp) => comp.AuthComponent),
   },
   {
     path: 'base-entity',
     title: 'ProcessPuzzle Testbed - Base Entity',
-    data: { icon: 'checkbook' },
+    data: { icon: 'checkbook', menuTitle: 'base-entity' },
     loadComponent: () => import('./content/base-forms/sample-forms.component').then((comp) => comp.SampleFormsComponent),
     providers: [LayoutService],
     children: [
@@ -84,6 +89,12 @@ export const appRoutes: Route[] = [
       },
     ],
   },
-  { path: 'ci-cd', title: 'ProcessPuzzle Testbed - CI/CD', data: { icon: 'repartition' }, loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent) },
+  {
+    path: 'ci-cd',
+    title: 'ProcessPuzzle Testbed - CI/CD',
+    data: { icon: 'repartition', menuTitle: 'ci-cd' },
+    loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent),
+  },
   { path: 'auth', loadChildren: () => import('@processpuzzle/auth').then((m) => m.authRoutes) },
+  { path: 'widgets', loadChildren: () => import('@processpuzzle/widgets').then((m) => m.widgetsRoutes) },
 ];

@@ -3,31 +3,20 @@ import { LanguageSelectorListComponent } from './language-selector-list.componen
 import { NgClass, NgForOf } from '@angular/common';
 import userEvent from '@testing-library/user-event';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { getTranslocoModule } from './transloco-testing.module';
+import { getTranslocoModule, mockLanguageConfig, mockTranslocoService } from '@processpuzzle/test-util';
 import { translate, TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { MatListOption, MatSelectionList } from '@angular/material/list';
+import widgetsDe from '../assets/i18n/widgets/de.json';
+import widgetsEn from '../assets/i18n/widgets/en.json';
 
 describe('LanguageSelectorListComponent', () => {
   let fixture: ComponentFixture<LanguageSelectorListComponent>;
   let translocoService: TranslocoService;
 
-  const mockTranslocoService = {
-    load: jest.fn(),
-    setActiveLang: jest.fn(),
-  };
-  const mockLanguageConfig = {
-    AVAILABLE_LANGUAGES: [
-      { code: 'en', flag: 'flag-en', label: 'english' },
-      { code: 'es', flag: 'flag-es', label: 'spanish' },
-      { code: 'de', flag: 'flag-de', label: 'german' },
-    ],
-    DEFAULT_LANGUAGE: 'en',
-  };
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [getTranslocoModule(), LanguageSelectorListComponent, MatListOption, MatSelectionList, NgClass, NgForOf],
+      imports: [getTranslocoModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), LanguageSelectorListComponent, MatListOption, MatSelectionList, NgClass, NgForOf],
       providers: [TranslocoService, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
     }).compileComponents();
 
@@ -38,7 +27,7 @@ describe('LanguageSelectorListComponent', () => {
 
   it('should render the list of languages correctly', () => {
     mockLanguageConfig.AVAILABLE_LANGUAGES?.forEach((language) => {
-      const text = translate('language-selector.' + language.label);
+      const text = translate('widgets.' + language.label);
       expect(screen.getByText(text)).toBeInTheDocument();
     });
   });

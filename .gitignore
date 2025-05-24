@@ -77,3 +77,5 @@ docker/cache
 docker/**/firebase-debug.log
 docker/**/firestore-debug.log
 docker/**/pubsub-debug.log
+/unused-dependencies-report.md
+!/find-unused-dependencies.js

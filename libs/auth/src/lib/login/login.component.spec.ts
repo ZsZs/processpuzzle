@@ -11,6 +11,9 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TestBed } from '@angular/core/testing';
 import { Auth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from '@angular/fire/auth';
+import { getTranslocoModule } from '@processpuzzle/test-util';
+import authDe from '../assets/i18n/auth/de.json';
+import authEn from '../assets/i18n/auth/en.json';
 
 // Mock Firebase auth
 jest.mock('@angular/fire/auth', () => {
@@ -30,7 +33,19 @@ describe('LoginComponent', () => {
 
   const renderComponent = async () => {
     return render(LoginComponent, {
-      imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, BrowserAnimationsModule, RouterTestingModule.withRoutes([])],
+      imports: [
+        getTranslocoModule({
+          'auth/de': authDe,
+          'auth/en': authEn,
+        }),
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatIconModule,
+        MatButtonModule,
+        BrowserAnimationsModule,
+        RouterTestingModule.withRoutes([]),
+      ],
       providers: [{ provide: Auth, useValue: mockAuth }],
     });
   };

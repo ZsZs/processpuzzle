@@ -1,12 +1,42 @@
 {
-  "language-selector": {
-    "en": "Angol",
-    "de": "Német",
-    "hu": "Magyar",
-    "es": "Spanyol",
-    "english": "Angol",
-    "german": "Német",
-    "hungarian": "Magyar",
-    "spanish": "Spanyol"
+  "button": {
+    "login": "Bejelentkezés",
+    "logout": "Kijelentkezés",
+    "register": "Regisztráció",
+    "my_profile": "Profilom"
+  },
+  "login-form": {
+    "title": "Bejelentkezés",
+    "email_label": "Email",
+    "email_err_required": "Az email megadása kötelező",
+    "email_err_invalid": "Kérjük, adjon meg egy érvényes email címet",
+    "password_label": "Jelszó",
+    "password_err_required": "A jelszó megadása kötelező",
+    "create_account_button": "Fiók létrehozása",
+    "sign_in_button": "Bejelentkezés",
+    "signing_in_button": "Bejelentkezés folyamatban...",
+    "google_button": "Bejelentkezés Google-lal"
+  },
+  "logout-dialog": {
+    "title": "Kijelentkezés megerősítése",
+    "content": "Biztosan ki szeretne jelentkezni?",
+    "cancel_button": "Mégsem",
+    "logout_button": "Kijelentkezés"
+  },
+  "registration-form": {
+    "title": "Fiók létrehozása",
+    "email_label": "Email",
+    "email_placeholder": "Adja meg az email címét",
+    "email_err_required": "Az email megadása kötelező",
+    "email_err_invalid": "Kérjük, adjon meg egy érvényes email címet",
+    "password_label": "Jelszó",
+    "password_placeholder": "Adja meg a jelszavát",
+    "password_err_required": "A jelszó megadása kötelező",
+    "password_err_min_length": "A jelszónak legalább 6 karakter hosszúnak kell lennie",
+    "password_confirm_label": "Jelszó megerősítése",
+    "password_confirm_placeholder": "Erősítse meg a jelszavát",
+    "password_err_mismatch": "A jelszavak nem egyeznek",
+    "create_button": "Fiók létrehozása",
+    "sign_in_button": "Már van fiókja? Jelentkezzen be"
   }
 }

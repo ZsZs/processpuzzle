@@ -138,14 +138,14 @@
       "auth",
       "base-entity",
       "processpuzzle-testbed",
+      "test-util",
       "util",
       "widgets"
     ],
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npm run build-all-ci",
-      "conventionalCommits": true,
-      "generatorOptions": {}
+      "conventionalCommits": true
     },
     "conventionalCommits": {
       "types": {

@@ -3,27 +3,25 @@ import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { provideTranslocoScope } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-language-selector',
   template: `
-    <ng-container *transloco="let t; prefix: 'language-selector'">
-      <div>
-        <button mat-icon-button (click)="onSelectLanguage()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Select Language Button">
-          <mat-icon>language</mat-icon>
-        </button>
+    <div>
+      <button mat-icon-button (click)="onSelectLanguage()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Select Language Button">
+        <mat-icon>language</mat-icon>
+      </button>
+    </div>
+    <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="trigger" [cdkConnectedOverlayOpen]="isOpen" [cdkConnectedOverlayHasBackdrop]="true" (backdropClick)="onClose()">
+      <div class="language-selector-container">
+        <pp-language-selector-list />
       </div>
-      <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="trigger" [cdkConnectedOverlayOpen]="isOpen" [cdkConnectedOverlayHasBackdrop]="true" (backdropClick)="onClose()">
-        <div class="language-selector-container">
-          <pp-language-selector-list />
-        </div>
-      </ng-template>
-    </ng-container>
+    </ng-template>
   `,
   styleUrls: ['./language-selector.component.css'],
-  imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, LanguageSelectorListComponent, TranslocoDirective],
-  providers: [provideTranslocoScope('widgets')],
+  imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, LanguageSelectorListComponent],
+  providers: [provideTranslocoScope({ scope: 'widgets' })],
 })
 export class LanguageSelectorComponent {
   isOpen = false;

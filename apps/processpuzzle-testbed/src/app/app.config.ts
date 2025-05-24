@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -14,12 +14,14 @@ import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angul
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
 import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
-import { provideShareButtonsOptions } from 'ngx-sharebuttons';
-import { shareIcons } from 'ngx-sharebuttons/icons';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(WidgetsModule),
+    provideAppInitializer(() => {
+      const initializer = inject(AppInitializer);
+      return initializer.init();
+    }),
     provideAppPropertyStore(),
     provideAnimationsAsync(),
     provideAuth(() => {
@@ -52,14 +54,6 @@ export const appConfig: ApplicationConfig = {
     AppInitializer,
     ConfigurationService,
     LayoutService,
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      useFactory: (initializer: AppInitializer) => {
-        return async () => await initializer.init().then();
-      },
-      deps: [AppInitializer],
-    },
     { provide: CONFIGURATION_TYPE, useValue: RuntimeConfiguration },
     { provide: CONFIGURATION_APP_INITIALIZER, useValue: [] },
     {
@@ -100,6 +94,5 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    provideShareButtonsOptions(shareIcons()),
   ],
 };

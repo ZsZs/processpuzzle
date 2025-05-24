@@ -2,11 +2,12 @@ import { BaseEntity } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ApplicationProperty implements BaseEntity {
-  readonly id: string = uuidv4();
+  readonly id: string;
   private readonly propertyName: string;
   private propertyValue: string;
 
-  constructor(name?: string, value?: string) {
+  constructor(id?: string, name?: string, value?: string) {
+    this.id = id ?? uuidv4();
     this.propertyName = name ?? '';
     this.propertyValue = value ?? '';
   }

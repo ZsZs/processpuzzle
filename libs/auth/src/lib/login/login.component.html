@@ -1,26 +1,27 @@
 <div class="login-container">
-  <h2>Login</h2>
+  <ng-container *transloco="let t;">
+  <h2>{{t('auth.login-form.title')}}</h2>
 
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" aria-label="Login Form">
     <mat-form-field appearance="outline">
-      <mat-label>Email</mat-label>
+      <mat-label>{{t('auth.login-form.email_label')}}</mat-label>
       <input matInput type="email" formControlName="email" placeholder="Enter your email">
-      <mat-error *ngIf="loginForm.get('email')?.hasError('required')">Email is required</mat-error>
-      <mat-error *ngIf="loginForm.get('email')?.hasError('email')">Please enter a valid email</mat-error>
+      <mat-error *ngIf="loginForm.get('email')?.hasError('required')">{{t('auth.login-form.email_err_required')}}</mat-error>
+      <mat-error *ngIf="loginForm.get('email')?.hasError('email')">{{t('auth.login-form.email_err_invalid')}}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Password</mat-label>
+      <mat-label>{{t('auth.login-form.password_label')}}</mat-label>
       <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password">
       <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" aria-label="Toggle Password Visibility">
         <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
       </button>
-      <mat-error *ngIf="loginForm.get('password')?.hasError('required')">Password is required</mat-error>
+      <mat-error *ngIf="loginForm.get('password')?.hasError('required')">{{t('auth.login-form.password_err_required')}}</mat-error>
     </mat-form-field>
 
     <div class="actions">
-      <button mat-raised-button color="secondary" routerLink="/auth/register">Create Account</button>
-      <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading()">{{ isLoading() ? 'Signing in...' : 'Sign In' }}</button>
+      <button mat-raised-button color="secondary" routerLink="/auth/register">{{t('auth.login-form.create_account_button')}}</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading()">{{ isLoading() ? t('auth.login-form.signing_in_button') : t('auth.login-form.sign_in_button') }}</button>
     </div>
   </form>
 
@@ -33,8 +34,8 @@
       <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36	c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
       <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571	c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
     </svg>
-    Sign in with Google
+    {{t('auth.login-form.google_button')}}
   </button>
-
   <div class="error-message" *ngIf="errorMessage">{{ errorMessage() }}</div>
+  </ng-container>
 </div>

@@ -11,12 +11,14 @@ import { MatIcon } from '@angular/material/icon';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FirebaseError } from 'firebase-admin/lib/utils/error';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'pp-registration',
   templateUrl: 'registration.component.html',
   styleUrls: ['registration.component.css'],
-  imports: [ReactiveFormsModule, MatProgressBar, MatFormField, MatInput, NgIf, MatIconButton, MatIcon, MatLabel, MatButton, RouterLink, MatError],
+  imports: [ReactiveFormsModule, MatProgressBar, MatFormField, MatInput, NgIf, MatIconButton, MatIcon, MatLabel, MatButton, RouterLink, MatError, TranslocoDirective],
+  providers: [provideTranslocoScope('auth')],
 })
 export class RegistrationComponent {
   private readonly auth = inject(Auth);
