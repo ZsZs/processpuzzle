@@ -1,11 +1,11 @@
 import { render } from '@testing-library/angular';
 import '@testing-library/jest-dom';
-import { UtilsComponent } from './util.component';
+import { TestUtilsComponent } from './test-util.component';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { SecurityContext } from '@angular/core';
 
-describe('UtilsComponent', () => {
+describe('TestUtilsComponent', () => {
   const providers = [
     provideHttpClient(),
     provideMarkdown({
@@ -27,14 +27,14 @@ describe('UtilsComponent', () => {
     }),
   ];
   it('should create the component', async () => {
-    const { fixture } = await render(UtilsComponent, { providers });
+    const { fixture } = await render(TestUtilsComponent, { providers });
     const componentInstance = fixture.componentInstance;
 
     expect(componentInstance).toBeTruthy();
   });
 
   it('should call the onLoad method when triggered', async () => {
-    const { fixture } = await render(UtilsComponent, { providers });
+    const { fixture } = await render(TestUtilsComponent, { providers });
     const componentInstance = fixture.componentInstance;
     const onLoadSpy = jest.spyOn(componentInstance, 'onLoad');
 
@@ -45,7 +45,7 @@ describe('UtilsComponent', () => {
   });
 
   it('should call the onError method when triggered', async () => {
-    const { fixture } = await render(UtilsComponent, { providers });
+    const { fixture } = await render(TestUtilsComponent, { providers });
     const componentInstance = fixture.componentInstance;
     const onErrorSpy = jest.spyOn(componentInstance, 'onError');
 
