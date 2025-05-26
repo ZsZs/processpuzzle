@@ -59,7 +59,7 @@
     "@angular/forms": "~19.2.11",
     "@angular/material": "^19.2.16",
     "@angular/platform-browser": "~19.2.11",
-    "@angular/platform-browser-dynamic": "~19.2.11",
+    "@angular/platform-browser-dynamic": "~19.2.13",
     "@angular/router": "~19.2.11",
     "@fortawesome/angular-fontawesome": "^1.0.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
