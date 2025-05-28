@@ -50,5 +50,11 @@
     "ci-cd_card_content_2": "Prend en charge le déploiement sur AWS ou Firebase",
     "ci-cd_card_content_3": "Prend en charge la publication sur le registre NPM",
     "ci-cd_card_button": "Voir le pipeline CI/CD..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Aperçu",
+    "samples_tab_label": "Exemples",
+    "samples_desc_1": "Les entités d'exemple, pour démontrer la fonctionnalité de cette bibliothèque sont les suivantes:",
+    "samples_desc_2": "Les tableaux et formulaires ci-dessous sont générés à partir des entités et de leurs descripteurs d'attributs, en temps réel."
   }
 }

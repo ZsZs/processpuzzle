@@ -50,5 +50,11 @@
     "ci-cd_card_content_2": "Soporta despliegue en AWS o Firebase",
     "ci-cd_card_content_3": "Soporta publicación en el registro NPM",
     "ci-cd_card_button": "Ver Pipeline de CI/CD..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Visión general",
+    "samples_tab_label": "Ejemplos",
+    "samples_desc_1": "Las entidades de ejemplo, para demostrar la funcionalidad de esta biblioteca son las siguientes:",
+    "samples_desc_2": "Las tablas y formularios a continuación se generan a partir de las entidades y sus descriptores de atributos, en tiempo de ejecución."
   }
 }
