@@ -50,5 +50,11 @@
     "ci-cd_card_content_2": "Unterstützt die Bereitstellung auf AWS oder Firebase",
     "ci-cd_card_content_3": "Unterstützt die Veröffentlichung in der NPM-Registry",
     "ci-cd_card_button": "Siehe CI/CD-Pipeline..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Übersicht",
+    "samples_tab_label": "Beispiele",
+    "samples_desc_1": "Die Beispielentitäten zur Demonstration der Funktionalität dieser Bibliothek sind wie folgt:",
+    "samples_desc_2": "Die unten stehenden Tabellen und Formulare werden zur Laufzeit aus den Entitäten und ihren Attributbeschreibungen generiert."
   }
 }

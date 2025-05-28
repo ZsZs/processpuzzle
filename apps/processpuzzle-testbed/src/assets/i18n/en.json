@@ -50,5 +50,11 @@
     "ci-cd_card_content_2": "Supports deploy to AWS or Firebase",
     "ci-cd_card_content_3": "Supports to publish to NPM registry",
     "ci-cd_card_button": "See CI/CD Pipeline..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Overview",
+    "samples_tab_label": "Samples",
+    "samples_desc_1": "The sample entities, to demonstrate the functionality this library are as follows:",
+    "samples_desc_2": "The tables and forms below are generated from the entities end their attribute descriptors, run-time."
   }
 }

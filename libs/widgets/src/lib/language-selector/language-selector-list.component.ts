@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { LanguageConfig } from './language-config';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -34,6 +34,7 @@ export class LanguageSelectorListComponent {
   private readonly translocoService = inject(TranslocoService);
   private readonly runtimeConfiguration: LanguageConfig = inject(RUNTIME_CONFIGURATION);
   readonly languages = this.runtimeConfiguration.AVAILABLE_LANGUAGES;
+  languageSelected = output<void>();
   selectedLanguage = this.translocoService.getActiveLang();
 
   // region event handling methods
@@ -44,6 +45,7 @@ export class LanguageSelectorListComponent {
     if (this.selectedLanguage !== selectedValue) {
       this.translocoService.setActiveLang(selectedValue);
       this.selectedLanguage = selectedValue;
+      this.languageSelected.emit();
     }
   }
 
