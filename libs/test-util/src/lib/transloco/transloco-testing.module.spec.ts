@@ -1,5 +1,5 @@
 import { HashMap, Translation, TranslocoTestingModule } from '@jsverse/transloco';
-import { mockTranslocoService, mockLanguageConfig, getTranslocoModule } from './transloco-testing.module';
+import { getTranslocoTestingModule, mockLanguageConfig, mockTranslocoService } from './transloco-testing.module';
 
 describe('transloco-testing.module', () => {
   describe('mockTranslocoService', () => {
@@ -28,7 +28,7 @@ describe('transloco-testing.module', () => {
       expect(mockLanguageConfig.AVAILABLE_LANGUAGES[0]).toEqual({
         code: 'en',
         flag: 'flag-en',
-        label: 'english'
+        label: 'english',
       });
     });
 
@@ -36,7 +36,7 @@ describe('transloco-testing.module', () => {
       expect(mockLanguageConfig.AVAILABLE_LANGUAGES[1]).toEqual({
         code: 'es',
         flag: 'flag-es',
-        label: 'spanish'
+        label: 'spanish',
       });
     });
 
@@ -44,7 +44,7 @@ describe('transloco-testing.module', () => {
       expect(mockLanguageConfig.AVAILABLE_LANGUAGES[2]).toEqual({
         code: 'de',
         flag: 'flag-de',
-        label: 'german'
+        label: 'german',
       });
     });
 
@@ -55,88 +55,98 @@ describe('transloco-testing.module', () => {
 
   describe('getTranslocoModule', () => {
     let mockLanguages: HashMap<Translation>;
-    
+
     beforeEach(() => {
       mockLanguages = {
         en: { TEST: 'Test' },
-        es: { TEST: 'Prueba' }
+        es: { TEST: 'Prueba' },
       };
     });
 
     it('should return TranslocoTestingModule', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
-      
-      const result = getTranslocoModule(mockLanguages);
-      
+
+      const result = getTranslocoTestingModule(mockLanguages);
+
       expect(spy).toHaveBeenCalled();
       expect(result).toBeDefined();
-      
+
       spy.mockRestore();
     });
 
     it('should configure module with provided languages', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
-      
-      getTranslocoModule(mockLanguages);
-      
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        langs: mockLanguages
-      }));
-      
+
+      getTranslocoTestingModule(mockLanguages);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          langs: mockLanguages,
+        }),
+      );
+
       spy.mockRestore();
     });
 
     it('should configure module with language codes from mockLanguageConfig', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
-      
-      getTranslocoModule(mockLanguages);
-      
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        translocoConfig: expect.objectContaining({
-          availableLangs: ['en', 'es', 'de']
-        })
-      }));
-      
+
+      getTranslocoTestingModule(mockLanguages);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          translocoConfig: expect.objectContaining({
+            availableLangs: ['en', 'es', 'de'],
+          }),
+        }),
+      );
+
       spy.mockRestore();
     });
 
     it('should configure module with default language from mockLanguageConfig', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
-      
-      getTranslocoModule(mockLanguages);
-      
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        translocoConfig: expect.objectContaining({
-          defaultLang: 'en'
-        })
-      }));
-      
+
+      getTranslocoTestingModule(mockLanguages);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          translocoConfig: expect.objectContaining({
+            defaultLang: 'en',
+          }),
+        }),
+      );
+
       spy.mockRestore();
     });
 
     it('should set preloadLangs to true by default', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
-      
-      getTranslocoModule(mockLanguages);
-      
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        preloadLangs: true
-      }));
-      
+
+      getTranslocoTestingModule(mockLanguages);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloadLangs: true,
+        }),
+      );
+
       spy.mockRestore();
     });
 
     it('should override default options with provided options', () => {
       const spy = jest.spyOn(TranslocoTestingModule, 'forRoot');
       const customOptions = { preloadLangs: false, fallbackLang: 'es' };
-      
-      getTranslocoModule(mockLanguages, customOptions);
-      
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        preloadLangs: false,
-        fallbackLang: 'es'
-      }));
-      
+
+      getTranslocoTestingModule(mockLanguages, customOptions);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preloadLangs: false,
+          fallbackLang: 'es',
+        }),
+      );
+
       spy.mockRestore();
     });
   });

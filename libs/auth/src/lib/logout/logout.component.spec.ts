@@ -4,7 +4,7 @@ import { AuthService } from '../domain/auth.service';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
-import { getTranslocoModule } from '@processpuzzle/test-util';
+import { getTranslocoTestingModule } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
@@ -20,7 +20,7 @@ describe('LogoutComponent', () => {
 
   const renderComponent = async () => {
     return render(LogoutComponent, {
-      imports: [getTranslocoModule({ 'auth/de': authDe, 'auth/en': authEn }), MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
+      imports: [getTranslocoTestingModule({ 'auth/de': authDe, 'auth/en': authEn }), MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
         { provide: NavigateBackService, useValue: navigateBackServiceMock },
