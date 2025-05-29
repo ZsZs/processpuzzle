@@ -8,7 +8,7 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets/mat
   selector: 'app-content',
   templateUrl: './content.component.html',
   imports: [NgClass, TranslocoDirective, MatCardsGridComponent],
-  styleUrls: ['./content.component.scss', './mat-card-grid.scss'],
+  styleUrls: ['./content.component.scss', './mat-card-grid.css'],
 })
 export class ContentComponent {
   readonly layoutService = inject(LayoutService);

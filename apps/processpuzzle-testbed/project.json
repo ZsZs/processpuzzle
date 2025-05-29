@@ -38,7 +38,7 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/widgets/src/lib/assets/i18n/widgets",
+            "input": "libs/widgets/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },
           "apps/processpuzzle-testbed/src/environments",
@@ -47,7 +47,6 @@
         "styles": [
           "apps/processpuzzle-testbed/src/custom-theme.scss",
           "apps/processpuzzle-testbed/src/styles.scss",
-          "apps/processpuzzle-testbed/src/mat-card-grid.scss",
           "node_modules/prismjs/themes/prism-okaidia.css",
           "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
           "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.css",
