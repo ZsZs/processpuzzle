@@ -25,9 +25,15 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/util/util.component').then((comp) => comp.UtilsComponent),
   },
   {
+    path: 'test-util',
+    title: 'ProcessPuzzle Testbed - Test Util',
+    data: { icon: 'check_circle', menuTitle: 'test-util' },
+    loadComponent: () => import('./content/test-util/test-util.component').then((comp) => comp.TestUtilsComponent),
+  },
+  {
     path: 'widgets',
     title: 'ProcessPuzzle Testbed - Widgets',
-    data: { icon: 'service_toolbox', menuTitle: 'widgets' },
+    data: { icon: 'web_asset', menuTitle: 'widgets' },
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
   },
   {

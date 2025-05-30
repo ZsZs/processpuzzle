@@ -6,39 +6,44 @@ import { MatDivider } from '@angular/material/divider';
 import { filter, startWith } from 'rxjs';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { MarkdownComponent } from 'ngx-markdown';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'base-entity',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab],
+  imports: [CommonModule, RouterLink, RouterOutlet, MatButtonToggleGroup, MatButtonToggle, MatDivider, MarkdownComponent, MatTabGroup, MatTab, TranslocoDirective],
   template: `
-    <mat-tab-group>
-      <mat-tab label="Overview">
-        <markdown
-          clipboard
-          mermaid
-          [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/README.md'"
-          (load)="onLoad($event)"
-          (error)="onError($event)"
-          ngPreserveWhitespaces
-        ></markdown>
-      </mat-tab>
-      <mat-tab label="Samples">
-        <div style="margin-bottom: 20px">The sample entities, to demonstrate the functionality this library are as follows:</div>
-        <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" width="600px" alt="Sample Entities" />
-        <div><strong>The tables and forms below are generated from the entities end their attribute descriptors, run-time.</strong></div>
-        <div style="margin-top: 20px">
-          <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
-            <mat-button-toggle routerLink="/base-entity/test-entity" value="test-entity">Test Entity</mat-button-toggle>
-            <mat-button-toggle routerLink="/base-entity/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
-            <mat-button-toggle routerLink="/base-entity/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
-            <mat-button-toggle routerLink="/base-entity/firestore-doc" value="firestore-doc">Firestore Document</mat-button-toggle>
-          </mat-button-toggle-group>
-        </div>
-        <mat-divider />
-        <router-outlet></router-outlet>
-      </mat-tab>
-    </mat-tab-group>
+    <ng-container *transloco="let t; prefix: 'base-entity'">
+      <mat-tab-group>
+        <mat-tab [label]="t('overview_tab_label')">
+          <markdown
+            clipboard
+            mermaid
+            [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/base-entity/README.md'"
+            (load)="onLoad($event)"
+            (error)="onError($event)"
+            ngPreserveWhitespaces
+          ></markdown>
+        </mat-tab>
+        <mat-tab [label]="t('samples_tab_label')">
+          <div style="margin-bottom: 20px">{{ t('samples_desc_1') }}</div>
+          <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" width="600px" alt="Sample Entities" />
+          <div>
+            <strong>{{ t('samples_desc_1') }}</strong>
+          </div>
+          <div style="margin-top: 20px">
+            <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
+              <mat-button-toggle routerLink="/base-entity/test-entity" value="test-entity">Test Entity</mat-button-toggle>
+              <mat-button-toggle routerLink="/base-entity/test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
+              <mat-button-toggle routerLink="/base-entity/trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
+              <mat-button-toggle routerLink="/base-entity/firestore-doc" value="firestore-doc">Firestore Document</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+          <mat-divider />
+          <router-outlet></router-outlet>
+        </mat-tab>
+      </mat-tab-group>
+    </ng-container>
   `,
   styles: ``,
 })

@@ -2,6 +2,7 @@
   "navigation": {
     "home": "ProcessPuzzle Tesztpad - Kezdőlap",
     "util": "ProcessPuzzle Tesztpad - Segédeszközök",
+    "test-util": "ProcessPuzzle Tesztpad - Teszt Segédeszközök",
     "widgets": "ProcessPuzzle Tesztpad - Widgetek",
     "auth": "ProcessPuzzle Tesztpad - Hitelesítés",
     "base-entity": "ProcessPuzzle Tesztpad - Alap Entitás",
@@ -37,11 +38,23 @@
     "base-entity_card_content_2": "Teljes értékű reaktív űrlap generálása ellenőrzésekkel és hibaüzenetekkel",
     "base-entity_card_content_3": "Állapotfüggő fejléc generálása a táblázat és az űrlap közötti navigációhoz",
     "base-entity_card_button": "Lásd a Base Entity könyvtárat...",
+    "test-utils_card_subtitle": "Segédeszközök egység- és integrációs teszteléshez",
+    "test-utils_card_content": "Ez egy gyűjtemény olyan funkciókból és szolgáltatásokból, amelyek megkönnyítik az egység- és integrációs tesztelést.",
+    "test-utils_card_content_1": "mock-breakpoint-observer - segít a reszponzív oldalak tesztelésében. Utánozza egy oldal átméretezését.",
+    "test-utils_card_content_2": "transloco-testing-module - beállítja a Transloco-t i18n képességekkel rendelkező komponensek teszteléséhez.",
+    "test-utils_card_content_3": "layout-service - segít a reszponzív elrendezésekben",
+    "test-utils_card_button": "Lásd a Test Utils könyvtárat...",
     "ci-cd_card_subtitle": "GitHub Actions alapú folyamatos szállítási folyamat",
     "ci-cd_card_content": "Ez nem egy könyvtár, hanem egy végponttól végpontig terjedő megoldás a folyamatos szállítási folyamathoz, GitHub Actions alapon. Támogatja a többféle minőségbiztosítási gyakorlatot és a többszörös fejlesztési szakaszokat. Végül automatikusan szállítja a növekményeket a produkcióba.",
     "ci-cd_card_content_1": "Támogatja a lint, teszt és build folyamatokat",
     "ci-cd_card_content_2": "Támogatja az AWS-re vagy Firebase-re történő telepítést",
     "ci-cd_card_content_3": "Támogatja az NPM regisztrációba történő publikálást",
     "ci-cd_card_button": "Lásd a CI/CD folyamatot..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Áttekintés",
+    "samples_tab_label": "Példák",
+    "samples_desc_1": "Az alábbi példa entitások a könyvtár funkcionalitásának bemutatására szolgálnak:",
+    "samples_desc_2": "Az alábbi táblázatok és űrlapok az entitásokból és azok attribútum leíróiból generálódnak futásidőben."
   }
 }

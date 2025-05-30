@@ -15,7 +15,7 @@ import { provideTranslocoScope } from '@jsverse/transloco';
     </div>
     <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="trigger" [cdkConnectedOverlayOpen]="isOpen" [cdkConnectedOverlayHasBackdrop]="true" (backdropClick)="onClose()">
       <div class="language-selector-container">
-        <pp-language-selector-list />
+        <pp-language-selector-list (languageSelected)="onClose()" />
       </div>
     </ng-template>
   `,

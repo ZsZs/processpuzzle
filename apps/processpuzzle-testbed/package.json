@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/testbed",
-  "version": "0.9.6",
+  "version": "1.0.0",
   "description": "Test application for @processpuzzle libraries",
   "private": false,
   "repository": {

@@ -9,7 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Signal, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { getTranslocoModule, mockLanguageConfig } from '@processpuzzle/test-util';
+import { getTranslocoTestingModule, mockLanguageConfig } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
@@ -26,7 +26,7 @@ describe('AuthButtonComponent', () => {
     const mockAuthService = createMockAuthService(isAuthenticated);
 
     return render(AuthButtonComponent, {
-      imports: [getTranslocoModule({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
+      imports: [getTranslocoTestingModule({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
       providers: [{ provide: AuthService, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
     });
   };

@@ -2,6 +2,7 @@
   "navigation": {
     "home": "ProcessPuzzle Testbed - Home",
     "util": "ProcessPuzzle Testbed - Util",
+    "test-util": "ProcessPuzzle Testbed - Test Util",
     "widgets": "ProcessPuzzle Testbed - Widgets",
     "auth": "ProcessPuzzle Testbed - Authentication",
     "base-entity": "ProcessPuzzle Testbed - Base Entity",
@@ -37,11 +38,23 @@
     "base-entity_card_content_2": "Generate full flagged reactive form with checks and error messages",
     "base-entity_card_content_3": "Generate state dependent header to navigate from table to form and back",
     "base-entity_card_button": "See Base Entity Library...",
+    "test-utils_card_subtitle": "Utilities for unit- and integration testing",
+    "test-utils_card_content": "This is a collection of functions and services to easy unit- and integration testing.",
+    "test-utils_card_content_1": "mock-breakpoint-observer - help to test responsive pages. Imitates resizing of a page.",
+    "test-utils_card_content_2": "transloco-testing-module - sets up Transloco for testing Component with i18n capabilities.",
+    "test-utils_card_content_3": "layout-service - to help by responsive layouts",
+    "test-utils_card_button": "See Test Utils Library...",
     "ci-cd_card_subtitle": "GitHub Actions base continuous delivery process",
     "ci-cd_card_content": "This isn't a library, but an end-to-end solutions for continuos delivery pipeline, base on GitHub Actions.\n            It supports multiple quality assurance practices und multiple development stages. At the end delivers increments automatically to production.",
     "ci-cd_card_content_1": "Supports lint, test and build",
     "ci-cd_card_content_2": "Supports deploy to AWS or Firebase",
     "ci-cd_card_content_3": "Supports to publish to NPM registry",
     "ci-cd_card_button": "See CI/CD Pipeline..."
+  },
+  "base-entity": {
+    "overview_tab_label": "Overview",
+    "samples_tab_label": "Samples",
+    "samples_desc_1": "The sample entities, to demonstrate the functionality this library are as follows:",
+    "samples_desc_2": "The tables and forms below are generated from the entities end their attribute descriptors, run-time."
   }
 }

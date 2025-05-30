@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TestBed } from '@angular/core/testing';
 import { Auth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from '@angular/fire/auth';
-import { getTranslocoModule } from '@processpuzzle/test-util';
+import { getTranslocoTestingModule } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
@@ -34,7 +34,7 @@ describe('LoginComponent', () => {
   const renderComponent = async () => {
     return render(LoginComponent, {
       imports: [
-        getTranslocoModule({
+        getTranslocoTestingModule({
           'auth/de': authDe,
           'auth/en': authEn,
         }),
