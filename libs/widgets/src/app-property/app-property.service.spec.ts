@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ApplicationPropertyService } from './app-property.service';
 import { ApplicationPropertyMapper } from './app-property.mapper';
-import { collection, doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
+import { doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
 import { ApplicationProperty } from './app-property';
 import { InjectionToken } from '@angular/core';
 
@@ -45,7 +45,7 @@ describe('ApplicationPropertyService', () => {
       data: jest.fn().mockReturnValue({ id: '123', name: 'testProperty', value: 'testValue' }),
       exists: true,
       id: '123',
-      ref: {} as DocumentReference
+      ref: {} as DocumentReference,
     } as unknown as DocumentSnapshot<ApplicationProperty>;
 
     (doc as jest.Mock).mockReturnValue({} as DocumentReference);
@@ -59,11 +59,11 @@ describe('ApplicationPropertyService', () => {
       providers: [
         { provide: Firestore, useValue: {} },
         { provide: ENTITY_MAPPER_TOKEN, useValue: mapper },
-        { 
-          provide: ApplicationPropertyService, 
-          useFactory: () => new MockApplicationPropertyService(mapper)
-        }
-      ]
+        {
+          provide: ApplicationPropertyService,
+          useFactory: () => new MockApplicationPropertyService(mapper),
+        },
+      ],
     });
 
     // Get instances from TestBed
