@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { getTranslocoModule, mockLanguageConfig } from '@processpuzzle/test-util';
+import { getTranslocoTestingModule, mockLanguageConfig } from '@processpuzzle/test-util';
 import widgetsDe from '../assets/i18n/widgets/de.json';
 import widgetsEn from '../assets/i18n/widgets/en.json';
 
@@ -13,7 +13,7 @@ describe('LanguageSelectorComponent', () => {
   async function setup() {
     return render(LanguageSelectorComponent, {
       declarations: [LanguageSelectorListComponent],
-      imports: [getTranslocoModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), MatIconModule, MatButtonModule, OverlayModule],
+      imports: [getTranslocoTestingModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), MatIconModule, MatButtonModule, OverlayModule],
       providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
     });
   }

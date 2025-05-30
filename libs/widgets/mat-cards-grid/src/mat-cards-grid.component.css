@@ -19,7 +19,7 @@
     row-gap: 10px;
 }
 
-mat-card {
+.default-mat-card {
     display: flex;
     flex-direction: column;
     background-color: rgb(153, 217, 235);
@@ -37,3 +37,4 @@ mat-card-content {
     text-align: left;
     padding-bottom: 10px;
 }
+

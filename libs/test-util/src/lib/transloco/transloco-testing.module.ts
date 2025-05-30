@@ -15,7 +15,7 @@ export const mockLanguageConfig = {
   DEFAULT_LANGUAGE: 'en',
 };
 
-export function getTranslocoModule(languages: HashMap<Translation>, options: TranslocoTestingOptions = {}) {
+export function getTranslocoTestingModule(languages: HashMap<Translation>, options: TranslocoTestingOptions = {}) {
   return TranslocoTestingModule.forRoot({
     langs: languages,
     translocoConfig: {

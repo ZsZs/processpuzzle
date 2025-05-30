@@ -3,7 +3,7 @@ import { LanguageSelectorListComponent } from './language-selector-list.componen
 import { NgClass, NgForOf } from '@angular/common';
 import userEvent from '@testing-library/user-event';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { getTranslocoModule, mockLanguageConfig, mockTranslocoService } from '@processpuzzle/test-util';
+import { getTranslocoTestingModule, mockLanguageConfig, mockTranslocoService } from '@processpuzzle/test-util';
 import { translate, TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { MatListOption, MatSelectionList } from '@angular/material/list';
@@ -16,7 +16,7 @@ describe('LanguageSelectorListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [getTranslocoModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), LanguageSelectorListComponent, MatListOption, MatSelectionList, NgClass, NgForOf],
+      imports: [getTranslocoTestingModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), LanguageSelectorListComponent, MatListOption, MatSelectionList, NgClass, NgForOf],
       providers: [TranslocoService, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
     }).compileComponents();
 
