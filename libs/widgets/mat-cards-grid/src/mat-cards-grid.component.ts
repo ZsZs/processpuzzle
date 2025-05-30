@@ -1,42 +1,46 @@
-import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CardsGridSpec } from './cards-spec';
+import { LayoutService } from '@processpuzzle/util';
 
-@Component({
+@Component( {
   selector: 'mat-cards-grid',
   standalone: true,
-  imports: [MatCardModule, MatButtonModule, NgFor, NgIf, RouterLink, TranslocoDirective],
+  imports: [ MatCardModule, MatButtonModule, NgFor, NgIf, RouterLink, TranslocoDirective, NgClass ],
   template: `
-    <ng-container *ngFor="let card of cards">
-      <ng-container *transloco="let t; prefix: card.translocoPrefix">
-        <mat-card class="default-mat-card">
-          <mat-card-header>
-            <mat-card-title>{{ card.title }}</mat-card-title>
-            <mat-card-subtitle>{{ t(card.subtitle) }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <div>
-              {{ t(card.content[0]) }}
-              <ul *ngIf="card.content.length > 1">
-                <li *ngFor="let item of card.content.slice(1)">{{ t(item) }}</li>
-              </ul>
-            </div>
-          </mat-card-content>
-          <mat-card-actions *ngIf="card.actions && card.actions.length > 0">
-            <ng-container *ngFor="let action of card.actions">
-              <button [color]="action.colour" mat-flat-button [routerLink]="action.link">{{ t(action.caption) }}</button>
-            </ng-container>
-          </mat-card-actions>
-        </mat-card>
+    <div [ngClass]="layoutService.layoutClass()">
+      <ng-container *ngFor="let card of cards">
+        <ng-container *transloco="let t; prefix: card.translocoPrefix">
+          <mat-card class="default-mat-card">
+            <mat-card-header>
+              <mat-card-title>{{ card.title }}</mat-card-title>
+              <mat-card-subtitle>{{ t(card.subtitle) }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div>
+                {{ t(card.content[0]) }}
+                <ul *ngIf="card.content.length > 1">
+                  <li *ngFor="let item of card.content.slice(1)">{{ t(item) }}</li>
+                </ul>
+              </div>
+            </mat-card-content>
+            <mat-card-actions *ngIf="card.actions && card.actions.length > 0">
+              <ng-container *ngFor="let action of card.actions">
+                <button [color]="action.colour" mat-flat-button [routerLink]="action.link">{{ t(action.caption) }}</button>
+              </ng-container>
+            </mat-card-actions>
+          </mat-card>
+        </ng-container>
       </ng-container>
-    </ng-container>
+    </div>
   `,
-  encapsulation: ViewEncapsulation.None,
-})
+  styleUrls: [ './mat-cards-grid.component.css' ]
+} )
 export class MatCardsGridComponent {
   @Input() cards: CardsGridSpec[] = [];
+  readonly layoutService = inject( LayoutService );
 }

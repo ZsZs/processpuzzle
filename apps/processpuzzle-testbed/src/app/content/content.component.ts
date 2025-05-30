@@ -1,18 +1,14 @@
-import { Component, inject } from '@angular/core';
-import { LayoutService } from '@processpuzzle/util';
-import { NgClass } from '@angular/common';
+import { Component } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets/mat-cards-grid';
 
 @Component({
   selector: 'app-content',
   templateUrl: './content.component.html',
-  imports: [NgClass, TranslocoDirective, MatCardsGridComponent],
-  styleUrls: ['./content.component.scss', './mat-card-grid.css'],
+  imports: [TranslocoDirective, MatCardsGridComponent],
+  styleUrls: ['./content.component.scss'],
 })
 export class ContentComponent {
-  readonly layoutService = inject(LayoutService);
-
   readonly cards: CardsGridSpec[] = [
     {
       title: 'Utils - @processpuzzle/util',
