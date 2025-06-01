@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { LikeButtonComponent } from './like-button.component';
-import { ApplicationPropertyStore } from '../app-property/app-property.store';
-import { ApplicationProperty } from '../app-property/app-property';
+import { ApplicationPropertyStore } from '../../app-property/src/app-property.store';
+import { ApplicationProperty } from '../../app-property/src/app-property';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';

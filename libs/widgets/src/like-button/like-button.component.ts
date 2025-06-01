@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
-import { ApplicationPropertyStore } from '../app-property/app-property.store';
-import { ApplicationProperty } from '../app-property/app-property';
+import { ApplicationPropertyStore } from '../../app-property/src/app-property.store';
+import { ApplicationProperty } from '../../app-property/src/app-property';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';

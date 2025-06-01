@@ -22,6 +22,7 @@
       "@processpuzzle/test-util": ["libs/test-util/src/public-api.ts"],
       "@processpuzzle/util": ["libs/util/src/public-api.ts"],
       "@processpuzzle/widgets": ["libs/widgets/src/public-api.ts"],
+      "@processpuzzle/widgets/app-property": ["libs/widgets/app-property/public-api.ts"],
       "@processpuzzle/widgets/mat-cards-grid": ["libs/widgets/mat-cards-grid/public-api.ts"]
     }
   },

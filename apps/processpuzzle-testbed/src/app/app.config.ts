@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -13,7 +13,8 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
-import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
+import { provideAppPropertyStore } from '@processpuzzle/widgets/app-property';
+import { WidgetsModule } from '@processpuzzle/widgets';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,7 +32,7 @@ export const appConfig: ApplicationConfig = {
       else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
-    provideExperimentalZonelessChangeDetection(),
+    provideZonelessChangeDetection(),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
     {
       provide: FIREBASE_OPTIONS,
