@@ -16,7 +16,6 @@
         "*.jsx"
       ],
       "rules": {
-        "@angular-eslint/prefer-signals": "error",
         "@nx/enforce-module-boundaries": [
           "error",
           {

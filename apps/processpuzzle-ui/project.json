@@ -17,9 +17,7 @@
         "outputPath": "dist/apps/processpuzzle-ui",
         "index": "apps/processpuzzle-ui/src/index.html",
         "browser": "apps/processpuzzle-ui/src/main.ts",
-        "polyfills": [
-          "zone.js"
-        ],
+        "polyfills": [],
         "tsConfig": "apps/processpuzzle-ui/tsconfig.app.json",
         "assets": [
           {
