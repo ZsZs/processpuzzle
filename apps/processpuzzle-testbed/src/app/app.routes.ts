@@ -102,5 +102,4 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent),
   },
   { path: 'auth', loadChildren: () => import('@processpuzzle/auth').then((m) => m.authRoutes) },
-  { path: 'widgets', loadChildren: () => import('@processpuzzle/widgets').then((m) => m.widgetsRoutes) },
 ];
