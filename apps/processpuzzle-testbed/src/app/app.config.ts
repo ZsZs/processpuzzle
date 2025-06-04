@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideExperimentalZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -31,7 +31,7 @@ export const appConfig: ApplicationConfig = {
       else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
       return auth;
     }),
-    provideExperimentalZonelessChangeDetection(),
+    provideZonelessChangeDetection(),
     provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
     {
       provide: FIREBASE_OPTIONS,

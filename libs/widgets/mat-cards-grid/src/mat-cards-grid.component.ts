@@ -42,8 +42,7 @@ import { LayoutService } from '@processpuzzle/util';
               <mat-card-actions>
                 @for (action of card.actions; track $index) {
                   <ng-container>
-                    <!-- <button [matButton]="action.buttonType ?? 'elevated'" [routerLink]="action.link">{{ t(action.caption) }}</button> -->
-                    <button mat-flat-button [color]="action.colour ?? 'primary'" [routerLink]="action.link">{{ t(action.caption) }}</button>
+                    <button [matButton]="action.buttonType ?? 'elevated'" [routerLink]="action.link">{{ t(action.caption) }}</button>
                   </ng-container>
                 }
               </mat-card-actions>
