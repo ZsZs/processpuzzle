@@ -6,11 +6,11 @@ import { TestEntityStore } from '../test-entity.store';
 import { provideRouter } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
-import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, mockService, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
+import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 
 describe('BaseEntityStore', () => {
   function setup({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
-    setupMockService({ isApiFailed, payload });
+    const mockService = setupMockService({ isApiFailed, payload });
     TestBed.configureTestingModule({
       imports: [DummyComponent],
       providers: [provideHttpClient(), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],
@@ -49,7 +49,7 @@ describe('BaseEntityStore', () => {
 
       store.add(newTestEntity);
 
-      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
+      expect(mockService.add).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
     });
 
