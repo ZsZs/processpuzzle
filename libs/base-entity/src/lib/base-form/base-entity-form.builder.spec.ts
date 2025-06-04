@@ -11,8 +11,8 @@ import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { TestEntityService } from '../base-entity-service/test-entity.service';
-import { mockService } from '../../test-setup';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
+import { setupMockService } from '../../test-setup';
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -55,6 +55,7 @@ describe('BaseEntityFormBuilder', () => {
   let formBuilder: BaseEntityFormBuilder<TestEntity>;
 
   beforeEach(() => {
+    const mockService = setupMockService();
     TestBed.configureTestingModule({
       imports: [BaseFormHostDirective, MockFormContainerComponent],
       providers: [BaseEntityFormBuilder, provideHttpClient(), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],

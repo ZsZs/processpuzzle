@@ -1,5 +1,5 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
-import { Spy } from 'jest-auto-spies/src/jest-auto-spies.types';
+import { setupZonelessTestEnv } from 'jest-preset-angular/setup-env/zoneless';
+import '@testing-library/jest-dom';
 import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -31,9 +31,12 @@ import { createSpyFromClass } from 'jest-auto-spies';
 import { of } from 'rxjs';
 import { MockBreakpointObserver } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
+import { Spy } from 'jest-auto-spies/src/jest-auto-spies.types';
 
-// @ts-expect-error - configure test environment
-setupZoneTestEnv({ testEnvironment: '@happy-dom/jest-environment' });
+setupZonelessTestEnv({
+  errorOnUnknownElements: true,
+  errorOnUnknownProperties: true,
+});
 
 @Component({
   selector: 'mock-control-container',
@@ -107,10 +110,15 @@ export const testEntity_2 = new TestEntity('2', 'bella', 'something', true, 200,
 export const newTestEntity = new TestEntity('3', 'new', 'new description', true, 300, new Date('2024-02-18T20:02:27.000Z'), TestEnum.VALUE_THREE);
 export const MOCK_API_RESPONSE: TestEntity[] = [testEntity_1, testEntity_2];
 export const MOCK_PAGED_RESPONSE: BaseEntityLoadResponse<TestEntity> = { page: 33, pageSize: 2, totalPageCount: 333, content: MOCK_API_RESPONSE };
-export let mockService: Spy<TestEntityService>;
 
-export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
-  mockService = createSpyFromClass<TestEntityService>(TestEntityService);
+export function setupMockService({
+  isApiFailed = false,
+  payload = MOCK_API_RESPONSE,
+}: {
+  isApiFailed?: boolean;
+  payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity>;
+} = {}): Spy<TestEntityService> {
+  const mockService = createSpyFromClass<TestEntityService>(TestEntityService);
   if (isApiFailed) {
     mockService.add.throwWith({ message: 'API Failed' });
     mockService.delete.throwWith({ message: 'API Failed' });
@@ -126,6 +134,7 @@ export function setupMockService({ isApiFailed = false, payload = MOCK_API_RESPO
     Reflect.set(testEntity_1, 'name', 'changed');
     mockService.update.mockReturnValue(of(testEntity_1));
   }
+  return mockService;
 }
 
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
@@ -244,7 +253,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   };
   const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' };
 
-  setupMockService();
+  const mockService = setupMockService();
 
   await TestBed.configureTestingModule({
     imports: [componentType, NoopAnimationsModule],
