@@ -11,16 +11,16 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/cdk": "^19.2.0",
-    "@angular/common": "^19.2.0",
-    "@angular/core": "^19.2.0",
-    "@angular/forms": "^19.2.0",
-    "@angular/material": "^19.2.0",
-    "@angular/platform-browser": "^19.2.0",
-    "@angular/router": "^19.2.0",
+    "@angular/cdk": "^19.2.16",
+    "@angular/common": "~19.2.11",
+    "@angular/core": "~19.2.11",
+    "@angular/forms": "~19.2.11",
+    "@angular/material": "^19.2.16",
+    "@angular/platform-browser": "~19.2.11",
+    "@angular/router": "~19.2.11",
     "@angular/fire": "^19.1.0",
-    "@ngrx/operators": "^19.1.0",
-    "@ngrx/signals": "^19.1.0",
+    "@ngrx/operators": "^19.2.0",
+    "@ngrx/signals": "^19.2.0",
     "@processpuzzle/util": "^0.2.1",
     "build-url-ts": "^6.1.8",
     "rxjs": "~7.8.2",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "jest-auto-spies": "^3.0.0",
-    "jest-preset-angular": "~14.5.5"
+    "jest-preset-angular": "~14.6.0"
   },
   "sideEffects": false
 }

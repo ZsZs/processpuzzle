@@ -11,16 +11,16 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/common": "^19.2.0",
-    "@angular/core": "^19.2.0",
-    "@angular/forms": "^19.2.0",
-    "@angular/router": "^19.2.0",
-    "@angular/material": "^19.2.0",
-    "@angular/cdk": "^19.2.0",
+    "@angular/common": "~19.2.11",
+    "@angular/core": "~19.2.11",
+    "@angular/forms": "~19.2.11",
+    "@angular/router": "~19.2.11",
+    "@angular/material": "^19.2.16",
+    "@angular/cdk": "^19.2.16",
     "@angular/fire": "^19.1.0",
     "@processpuzzle/util": "^0.0.1",
-    "firebase-admin": "^13.2.0",
-    "rxjs": "~7.8.0"
+    "firebase-admin": "^13.4.0",
+    "rxjs": "~7.8.2"
   },
   "dependencies": {
     "tslib": "^2.8.1"
