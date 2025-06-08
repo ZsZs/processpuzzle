@@ -7,7 +7,7 @@
   "assets": [
     {
       "glob": "**/*",
-      "input": "src/lib/assets",
+      "input": "src/assets",
       "output": "assets"
     }
   ]
