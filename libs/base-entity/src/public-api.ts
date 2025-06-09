@@ -19,3 +19,4 @@ export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive'
 export { BaseFormNavigatorStore } from './lib/base-form-navigator/base-form-navigator.store';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
+export { Entity, EntityOptions, getEntityOptions } from './lib/base-entity/decorators/entity.decorator';
