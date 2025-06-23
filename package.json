@@ -58,7 +58,7 @@
     "@angular/core": "~20.0.0",
     "@angular/forms": "~20.0.3",
     "@angular/material": "^20.0.1",
-    "@angular/platform-browser": "~20.0.0",
+    "@angular/platform-browser": "~20.0.4",
     "@angular/platform-browser-dynamic": "~20.0.2",
     "@angular/router": "~20.0.0",
     "@fortawesome/angular-fontawesome": "^2.0.1",
