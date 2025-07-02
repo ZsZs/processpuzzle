@@ -132,7 +132,7 @@
     "@types/json-server": "^0.14.8",
     "@types/node": "22.15.29",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
-    "@typescript-eslint/parser": "^8.33.1",
+    "@typescript-eslint/parser": "^8.35.0",
     "@typescript-eslint/utils": "^8.33.1",
     "angular-eslint": "^20.0.0",
     "autoprefixer": "^10.4.21",
