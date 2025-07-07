@@ -108,7 +108,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
     "@happy-dom/jest-environment": "^17.6.3",
-    "@jsverse/transloco-keys-manager": "^6.1.0",
+    "@jsverse/transloco-keys-manager": "^7.0.0",
     "@nx/angular": "^21.1.2",
     "@nx/devkit": "21.1.2",
     "@nx/esbuild": "21.1.2",
