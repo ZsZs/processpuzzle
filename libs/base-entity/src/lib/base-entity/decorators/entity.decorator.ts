@@ -12,10 +12,14 @@ export interface EntityOptions {
   modelName: string;
   pluralName: string;
   uriName: string;
+  transform?: IEntityTransformer;
 }
 
 // Symbol to store entity options on instance
 const ENTITY_OPTIONS_KEY = Symbol('entityOptions');
+
+// Metadata key for storing ID properties
+const ENTITY_ID_PROPERTIES_KEY = 'entity:idProperties';
 
 /**
  * Class decorator for entity classes
@@ -58,4 +62,42 @@ export function getEntityOptions(instance: any): EntityOptions | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * Property decorator for marking entity properties as ID fields
+ * @returns PropertyDecorator function
+ */
+export function Id(): PropertyDecorator {
+  return function(target: object, propertyKey: string | symbol) {
+    // Get the constructor of the class
+    const constructor = target.constructor;
+    
+    // Get existing ID properties or initialize empty array
+    const existingIdProps: string[] = Reflect.getMetadata(ENTITY_ID_PROPERTIES_KEY, constructor) || [];
+    
+    // Add the current property to the list if it's not already there
+    if (!existingIdProps.includes(propertyKey.toString())) {
+      existingIdProps.push(propertyKey.toString());
+    }
+    
+    // Update the metadata with the new list
+    Reflect.defineMetadata(ENTITY_ID_PROPERTIES_KEY, existingIdProps, constructor);
+  };
+}
+
+/**
+ * Gets all property names marked with @Id decorator from an entity instance
+ * @param instance An instance of a class with properties decorated with @Id
+ * @returns Array of property names marked as IDs or empty array if none found
+ */
+export function getEntityIds(instance: any): string[] {
+  if (!instance) return [];
+
+  // Get the constructor from the instance
+  const constructor = Object.getPrototypeOf(instance)?.constructor;
+  if (!constructor) return [];
+  
+  // Return the ID properties from metadata or empty array if none found
+  return Reflect.getMetadata(ENTITY_ID_PROPERTIES_KEY, constructor) || [];
 }
