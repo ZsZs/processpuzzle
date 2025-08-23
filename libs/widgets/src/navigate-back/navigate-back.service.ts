@@ -1,12 +1,13 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Stack } from '@processpuzzle/util';
 import { NavigationEnd, Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class NavigateBackService {
   private readonly routeHistory = new Stack<string>();
+  private readonly router = inject<Router>(Router);
 
-  constructor(private readonly router: Router) {
+  constructor() {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.addRouteToStack(event.urlAfterRedirects); // Add the current route to the stack

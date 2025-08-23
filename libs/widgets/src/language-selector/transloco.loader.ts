@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TranslocoHttpLoader implements TranslocoLoader {
+  // eslint-disable-next-line @angular-eslint/prefer-inject
   constructor(private readonly http: HttpClient) {}
 
   getTranslation(lang: string): Observable<Translation> {
