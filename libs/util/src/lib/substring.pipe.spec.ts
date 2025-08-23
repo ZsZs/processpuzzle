@@ -31,7 +31,7 @@ describe('SubstringPipe', () => {
 
   it('should handle invalid values gracefully', () => {
     const input: any = null;
-    expect(() => pipe.transform(input)).toThrowError(TypeError);
+    expect(() => pipe.transform(input)).toThrow(TypeError);
   });
 
   it('should return the original string if start index is not provided', () => {
