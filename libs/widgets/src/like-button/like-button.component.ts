@@ -20,10 +20,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class LikeButtonComponent {
   private readonly LIKES_PROPERTY = 'likes';
+  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
   likesCount = computed(() => this.store.entities().find((property) => property.name === this.LIKES_PROPERTY));
   readonly store = inject(ApplicationPropertyStore);
 
-  constructor(private readonly snackBar: MatSnackBar) {
+  constructor() {
     this.configureEffects();
   }
 

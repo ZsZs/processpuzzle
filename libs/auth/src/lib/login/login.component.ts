@@ -23,13 +23,13 @@ export class LoginComponent {
   private readonly auth: Auth = inject(Auth);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-
+  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
   loginForm: FormGroup;
   isLoading = signal(false);
   errorMessage = signal('');
   hidePassword = true;
 
-  constructor(private readonly snackBar: MatSnackBar) {
+  constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],

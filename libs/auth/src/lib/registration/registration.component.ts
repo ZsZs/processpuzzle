@@ -24,14 +24,14 @@ export class RegistrationComponent {
   private readonly auth = inject(Auth);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly navigateBack = inject(NavigateBackService);
-
+  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
   protected registerForm: FormGroup;
   protected isLoading = signal<boolean>(false);
   protected errorMessage = signal<string>('');
   protected hidePassword = true;
   protected hideConfirmPassword = true;
 
-  constructor(private readonly snackBar: MatSnackBar) {
+  constructor() {
     this.registerForm = this.fb.group(
       {
         email: ['', [Validators.required, Validators.email]],
