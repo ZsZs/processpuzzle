@@ -11,9 +11,9 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/common": "~20.0.0",
-    "@angular/core": "~20.0.0",
-    "@angular/cdk": "^20.0.1",
+    "@angular/cdk": "^20.2.10",
+    "@angular/common": "~20.3.9",
+    "@angular/core": "~20.3.9",
     "rxjs": "~7.8.2"
   },
   "dependencies": {
