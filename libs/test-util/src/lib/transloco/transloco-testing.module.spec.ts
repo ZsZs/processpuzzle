@@ -1,4 +1,4 @@
-import { HashMap, Translation, TranslocoTestingModule } from '@jsverse/transloco';
+import { Translation, TranslocoTestingModule } from '@jsverse/transloco';
 import { getTranslocoTestingModule, mockLanguageConfig, mockTranslocoService } from './transloco-testing.module';
 
 describe('transloco-testing.module', () => {
@@ -54,7 +54,7 @@ describe('transloco-testing.module', () => {
   });
 
   describe('getTranslocoModule', () => {
-    let mockLanguages: HashMap<Translation>;
+    let mockLanguages: Record<string, Translation>;
 
     beforeEach(() => {
       mockLanguages = {

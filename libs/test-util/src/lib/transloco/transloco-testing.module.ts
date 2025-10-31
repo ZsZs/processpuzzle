@@ -1,4 +1,4 @@
-import { HashMap, Translation, TranslocoTestingModule, TranslocoTestingOptions } from '@jsverse/transloco';
+import { Translation, TranslocoTestingModule, TranslocoTestingOptions } from '@jsverse/transloco';
 
 /// <reference types="jest" />
 export const mockTranslocoService = {
@@ -15,7 +15,7 @@ export const mockLanguageConfig = {
   DEFAULT_LANGUAGE: 'en',
 };
 
-export function getTranslocoTestingModule(languages: HashMap<Translation>, options: TranslocoTestingOptions = {}) {
+export function getTranslocoTestingModule(languages: Record<string, Translation>, options: TranslocoTestingOptions = {}) {
   return TranslocoTestingModule.forRoot({
     langs: languages,
     translocoConfig: {
