@@ -1,7 +1,3 @@
-import * as path from 'node:path';
-
-const projectRoot = path.resolve(__dirname, '../../');
-
 export default {
   displayName: '@processpuzzle/auth',
   preset: '../../jest.preset.cjs',
@@ -19,5 +15,4 @@ export default {
   transformIgnorePatterns: [String.raw`node_modules/(?!(.*\.mjs$|@jsverse/.*|@angular/.*|rxjs/.*|tslib/.*|uuid/.*))`],
   snapshotSerializers: ['jest-preset-angular/build/serializers/no-ng-attributes', 'jest-preset-angular/build/serializers/ng-snapshot', 'jest-preset-angular/build/serializers/html-comment'],
   moduleDirectories: ['node_modules'],
-  resolver: path.join(projectRoot, 'node_modules/@nx/jest/plugins/resolver.js'),
 };
