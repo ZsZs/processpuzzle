@@ -1,6 +1,11 @@
 {
   "name": "@processpuzzle/base-entity",
-  "version": "0.3.1",
+  "version": "0.3.3",
+  "license": "MIT",
+  "author": {
+    "name": "Zsolt Zsuffa",
+    "email": "zsolt.zsuffa@gmailmcom"
+  },
   "publishConfig": {
     "access": "public"
   },
