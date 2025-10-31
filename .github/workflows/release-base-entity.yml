@@ -58,7 +58,7 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=util --access public --no-cloud
+        run: npx nx release publish --projects=base-entity --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
