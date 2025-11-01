@@ -1,6 +1,11 @@
 {
   "name": "@processpuzzle/util",
-  "version": "0.2.5",
+  "version": "0.2.6",
+  "license": "MIT",
+  "author": {
+    "name": "Zsolt Zsuffa",
+    "email": "zsolt.zsuffa@gmail.com"
+  },
   "publishConfig": {
     "access": "public"
   },
