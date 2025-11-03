@@ -136,7 +136,7 @@
     "@typescript-eslint/utils": "^8.46.2",
     "angular-eslint": "^20.5.0",
     "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.11",
+    "esbuild": "^0.25.12",
     "eslint": "^9.38.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
