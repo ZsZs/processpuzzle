@@ -80,7 +80,7 @@
     "firebase-admin": "^13.5.0",
     "firebase-functions": "^6.6.0",
     "flag-icons": "^7.5.0",
-    "marked": "^16.4.1",
+    "marked": "^17.0.0",
     "material-icons": "^1.13.14",
     "mermaid": "^11.12.1",
     "ngx-logger": "^5.0.12",
