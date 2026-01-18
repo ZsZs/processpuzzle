@@ -16,8 +16,7 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Methods': 'GET, HEAD, PUT, PATCH, POST, DELETE',
     'Access-Control-Allow-Origin-Credentials': 'true',
-    'Access-Control-Allow-Headers': 'Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, X-BRZ-User-ID',
-    'X-BRZ-User-ID': 'zsolt.zsuffa@extern.brz.gv.at',
+    'Access-Control-Allow-Headers': 'Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers',
   });
 
   protected constructor(
@@ -25,7 +24,8 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     protected urlProperty: string,
     protected resourceUrl: string,
   ) {
-    this.baseUrl = Reflect.get(this.runtimeConfiguration, urlProperty);
+    const baseConf = Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION');
+    this.baseUrl = Reflect.get(baseConf, urlProperty);
   }
 
   // region public accessor and mutator methods

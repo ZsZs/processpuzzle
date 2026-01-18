@@ -5,6 +5,8 @@
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
+    "module": "es2022",
+    "moduleResolution": "bundler",
     "types": []
   },
   "exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],

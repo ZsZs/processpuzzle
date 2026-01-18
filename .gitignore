@@ -79,3 +79,4 @@ docker/**/firestore-debug.log
 docker/**/pubsub-debug.log
 /unused-dependencies-report.md
 !/find-unused-dependencies.js
+/docker/postgresql/data/

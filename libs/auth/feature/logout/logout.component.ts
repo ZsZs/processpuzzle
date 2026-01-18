@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
-import { AuthService } from '../domain/auth.service';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 @Component({
   selector: 'pp-logout',
@@ -38,7 +39,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
   providers: [provideTranslocoScope('auth')],
 })
 export class LogoutComponent {
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(AUTHENTICATION_SERVICE);
   private readonly navigateBackService = inject(NavigateBackService);
   protected isLoading = signal(false);
 
@@ -49,7 +50,8 @@ export class LogoutComponent {
   async onLogout(): Promise<void> {
     try {
       this.isLoading.set(true);
-      await this.authService.signOut();
+      this.navigateBackService.getRouteStack().pop();
+      await this.authService.logout(this.navigateBackService.getRouteStack().pop());
       this.navigateBackService.goBack();
     } catch (error) {
       console.error('Error during logout:', error);

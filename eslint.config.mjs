@@ -14,7 +14,7 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?js$'],
+          allow: [String.raw`^.*/eslint(\.base)?\.config\.[cm]?js$`],
           depConstraints: [
             {
               sourceTag: '*',

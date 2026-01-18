@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { LogoutComponent } from './logout.component';
-import { AuthService } from '../domain/auth.service';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AuthService } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';

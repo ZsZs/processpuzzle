@@ -1,6 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Auth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from '@angular/fire/auth';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatError, MatFormField, MatSuffix } from '@angular/material/form-field';
 import { MatInput, MatLabel } from '@angular/material/input';
@@ -9,8 +8,10 @@ import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
 import { NgIf } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { FirebaseError } from 'firebase-admin/lib/utils/error';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
+import { NavigateBackService } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'pp-login',
@@ -19,53 +20,53 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
   imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, NgIf, RouterLink, TranslocoDirective],
   providers: [provideTranslocoScope('auth')],
 })
-export class LoginComponent {
-  private readonly auth: Auth = inject(Auth);
-  private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
-  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
-  loginForm: FormGroup;
-  isLoading = signal(false);
+export class LoginComponent implements OnInit {
   errorMessage = signal('');
   hidePassword = true;
+  isLoading = signal(false);
+  loginForm!: FormGroup;
+  private readonly authService: AuthService = inject(AUTHENTICATION_SERVICE);
+  private readonly fb = inject(FormBuilder);
+  private readonly navigateBackService = inject(NavigateBackService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
 
-  constructor() {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
-    });
+  // region public event handlers
+  ngOnInit(): void {
+    const user = this.route.snapshot.data['signedInUser'];
+    if (!user) {
+      this.loginForm = this.buildLoginForm();
+    }
   }
 
   async onSubmit() {
     if (this.loginForm.invalid) return;
-
     this.isLoading.set(true);
 
     try {
       const { email, password } = this.loginForm.value;
-      await signInWithEmailAndPassword(this.auth, email, password);
+      await this.authService.login(this.navigateBackService.getRouteStack().pop(), email, password);
       await this.router.navigate(['/']);
     } catch (error: unknown) {
-      this.snackBar.open(this.getErrorMessage((error as FirebaseError).code), 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      this.snackBar.open(this.getErrorMessage((error as Error).message), 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
     } finally {
       this.isLoading.set(false);
       this.errorMessage.set('');
     }
   }
 
-  async signInWithGoogle() {
-    this.isLoading.set(true);
+  protected signInWithGoogle() {
+    throw new Error('Method not implemented.');
+  }
+  // endregion
 
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(this.auth, provider);
-      await this.router.navigate(['/']); // Navigate to home page after successful login
-    } catch (error: unknown) {
-      this.snackBar.open(this.getErrorMessage((error as FirebaseError).code), 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
-    } finally {
-      this.isLoading.set(false);
-      this.errorMessage.set('');
-    }
+  // region protected, private helper methods
+  private buildLoginForm() {
+    return this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required],
+    });
   }
 
   private getErrorMessage(errorCode: string): string {
@@ -84,4 +85,5 @@ export class LoginComponent {
         return 'An error occurred during sign in';
     }
   }
+  // endregion
 }

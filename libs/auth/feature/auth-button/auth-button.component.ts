@@ -4,10 +4,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../domain/auth.service';
 import { authRoutes } from '../auth.routes';
 import { SubstringPipe } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 @Component({
   selector: 'pp-auth-button',
@@ -35,7 +36,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
   providers: [provideTranslocoScope('auth')],
 })
 export class AuthButtonComponent {
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(AUTHENTICATION_SERVICE);
   isAuthenticated = computed(() => this.authService.isAuthenticated());
   readonly routes = authRoutes.filter((item) => item.title !== null && item.title !== undefined);
 

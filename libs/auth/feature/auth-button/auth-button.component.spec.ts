@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { AuthButtonComponent } from './auth-button.component';
-import { AuthService } from '../domain/auth.service';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AuthService } from '@processpuzzle/auth/domain';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';

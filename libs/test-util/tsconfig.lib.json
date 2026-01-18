@@ -3,6 +3,10 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "module": "es2022",
+    "moduleResolution": "bundler",
     "types": ["jest", "node"]
   },
   "include": ["src/**/*.ts"],

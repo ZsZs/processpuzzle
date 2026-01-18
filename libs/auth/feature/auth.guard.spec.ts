@@ -1,5 +1,6 @@
 import { Router } from '@angular/router';
-import { AuthService } from './auth.service';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AuthService } from '@processpuzzle/auth/domain';
 import { authGuard } from './auth.guard';
 import { inject, Signal } from '@angular/core';
 import { User } from '@angular/fire/auth';

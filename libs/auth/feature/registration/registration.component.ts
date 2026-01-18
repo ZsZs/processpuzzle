@@ -10,7 +10,6 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { FirebaseError } from 'firebase-admin/lib/utils/error';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -65,7 +64,7 @@ export class RegistrationComponent {
       const { email, password } = this.registerForm.value;
       await createUserWithEmailAndPassword(this.auth, email, password);
     } catch (error: unknown) {
-      this.snackBar.open(this.getErrorMessage((error as FirebaseError).code), 'Close', {
+      this.snackBar.open(this.getErrorMessage((error as Error).message), 'Close', {
         duration: 5000,
         panelClass: ['error-snackbar'],
       });

@@ -20,10 +20,16 @@
     "@angular/fire": "^20.0.1",
     "@processpuzzle/util": "^0.2.4",
     "firebase-admin": "^13.5.0",
-    "rxjs": "~7.8.2"
+    "rxjs": "~7.8.2",
+    "keycloak-js": "^26.2.1"
   },
   "dependencies": {
     "tslib": "^2.8.1"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "ngPackage": {
+    "lib": {
+      "entryFile": "public-api.ts"
+    }
+  }
 }

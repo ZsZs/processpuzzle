@@ -1,0 +1,53 @@
+{
+  "BASE_CONFIGURATION": {
+    "PIPELINE_STAGE": "dev",
+    "BACKEND_SERVICE_PROVIDER": "rest",
+    "BACKEND_SERVICE_ROOT": "http://localhost:3000/",
+    "FIREBASE_CONFIGURATION": {
+      "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
+      "projectId": "processpuzzle-testbed-stage",
+      "storageBucket": "processpuzzle-testbed-stage.firebasestorage.app",
+      "messagingSenderId": "86206865743",
+      "appId": "1:86206865743:web:89f5140e6e0f63db68253a"
+    }
+  },
+  "LANGUAGE_CONFIGURATION": {
+    "DEFAULT_LANGUAGE": "en",
+    "AVAILABLE_LANGUAGES": [
+      {
+        "code": "en",
+        "label": "english",
+        "flag": "fi fi-gb"
+      },
+      {
+        "code": "de",
+        "label": "german",
+        "flag": "fi fi-de"
+      },
+      {
+        "code": "fr",
+        "label": "french",
+        "flag": "fi fi-fr"
+      },
+      {
+        "code": "hu",
+        "label": "hungarian",
+        "flag": "fi fi-hu"
+      },
+      {
+        "code": "es",
+        "label": "spanish",
+        "flag": "fi fi-es"
+      }
+    ]
+  },
+  "AUTHENTICATION_CONFIGURATION": {
+    "AUTHENTICATION_PROVIDER": "keycloak",
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070",
+    "AUTH_SERVICE_CONFIG": {
+      "realm": "master",
+      "clientId": "processpuzzle-testbed",
+      "authServerUrl": "http://localhost:7070"
+    }
+  }
+}

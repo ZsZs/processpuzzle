@@ -74,3 +74,65 @@ services:
       - "6000:6001" # Hosting
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080" ]
+
+  keycloak:
+    build:
+      context: ../
+      dockerfile: docker/keycloak/Dockerfile
+      args:
+        CICD_STAGE: ci
+    container_name: testbed-keycloak
+    image: zsuffazs/testbed-keycloak:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "7070:8080"
+    environment:
+      # Database connection
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password123
+
+      # Admin Credentials (Initial setup only)
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin_password
+
+      # Production settings
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: "edge"
+    networks:
+      - processpuzzle
+    healthcheck:
+      # Keycloak 26+ uses port 9000 for management/health by default
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    build:
+      context: ../
+      dockerfile: docker/postgresql/Dockerfile
+    image: zsuffazs/testbed-postgres:latest
+    container_name: testbed-postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password123 # Use a secret in production
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

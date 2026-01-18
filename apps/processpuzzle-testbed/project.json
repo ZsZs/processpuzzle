@@ -4,21 +4,16 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/processpuzzle-testbed/src",
-  "tags": [
-    "type:app"
-  ],
+  "tags": ["type:app"],
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:application",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/processpuzzle-testbed",
         "index": "apps/processpuzzle-testbed/src/index.html",
         "browser": "apps/processpuzzle-testbed/src/main.ts",
-        "polyfills": [
-        ],
+        "polyfills": [],
         "tsConfig": "apps/processpuzzle-testbed/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -33,7 +28,12 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/auth/src/lib/assets/i18n/auth",
+            "input": "libs/auth/feature/assets/auth",
+            "output": "assets/auth"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/auth/feature/assets/i18n/auth",
             "output": "assets/i18n/auth"
           },
           {
@@ -64,10 +64,7 @@
           "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.js",
           "node_modules/prismjs/plugins/command-line/prism-command-line.js"
         ],
-        "allowedCommonJsDependencies": [
-          "prismjs",
-          "build-url-ts"
-        ]
+        "allowedCommonJsDependencies": ["prismjs", "build-url-ts"]
       },
       "configurations": {
         "production": {
@@ -117,14 +114,9 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/base-entity/src/**/*.ts",
-          "libs/base-entity/src/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/base-entity/src/**/*.ts", "libs/base-entity/src/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {
@@ -139,9 +131,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{projectRoot}/reports/coverage"
-      ],
+      "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "jestConfig": "apps/processpuzzle-testbed/jest.config.ts"
       },
