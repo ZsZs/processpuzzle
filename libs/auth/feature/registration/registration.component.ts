@@ -63,8 +63,8 @@ export class RegistrationComponent {
     try {
       const { email, password } = this.registerForm.value;
       await createUserWithEmailAndPassword(this.auth, email, password);
-    } catch (error: unknown) {
-      this.snackBar.open(this.getErrorMessage((error as Error).message), 'Close', {
+    } catch (error: any) {
+      this.snackBar.open(this.getErrorMessage(error.code || error.message), 'Close', {
         duration: 5000,
         panelClass: ['error-snackbar'],
       });

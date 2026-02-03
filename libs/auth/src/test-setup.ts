@@ -5,3 +5,8 @@ setupZonelessTestEnv({
   errorOnUnknownElements: true,
   errorOnUnknownProperties: true,
 });
+
+jest.mock('keycloak-js', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));

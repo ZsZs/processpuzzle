@@ -1,3 +1,5 @@
 export class TestConfiguration {
-  readonly TEST_SERVICE_ROOT?: string;
+  readonly BASE_CONFIGURATION?: {
+    readonly BACKEND_SERVICE_ROOT?: string;
+  };
 }

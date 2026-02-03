@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { AuthButtonComponent } from './auth-button.component';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { AuthService } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -13,6 +12,11 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { getTranslocoTestingModule, mockLanguageConfig } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
+
+jest.mock('keycloak-js', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
 
 describe('AuthButtonComponent', () => {
   // Helper function to create a mock AuthService with controlled authentication state
@@ -28,7 +32,7 @@ describe('AuthButtonComponent', () => {
 
     return render(AuthButtonComponent, {
       imports: [getTranslocoTestingModule({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
-      providers: [{ provide: AuthService, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
+      providers: [{ provide: AUTHENTICATION_SERVICE, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
     });
   };
 

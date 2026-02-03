@@ -1,39 +1,31 @@
-import { Router } from '@angular/router';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { AuthService } from '@processpuzzle/auth/domain';
+// Mock the domain module before any imports to avoid keycloak dependencies
+jest.mock('@processpuzzle/auth/domain', () => {
+  const actual = jest.requireActual('@angular/core');
+  return {
+    AUTHENTICATION_SERVICE: new actual.InjectionToken('AUTHENTICATION_SERVICE'),
+  };
+});
+
+// Mock the inject function
+jest.mock('@angular/core', () => {
+  const actual = jest.requireActual('@angular/core');
+  return {
+    ...actual,
+    inject: jest.fn(),
+  };
+});
+
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { authGuard } from './auth.guard';
-import { inject, Signal } from '@angular/core';
-import { User } from '@angular/fire/auth';
-
-// Mock the inject function and other Angular dependencies
-jest.mock('@angular/core', () => ({
-  inject: jest.fn(),
-  Signal: jest.fn(),
-  Injectable: () => () => ({}),
-  computed: jest.fn(),
-}));
-
-// Mock the Angular router
-jest.mock('@angular/router', () => ({
-  Router: jest.fn(),
-}));
-
-// Mock the Angular fire auth
-jest.mock('@angular/fire/auth', () => ({
-  User: jest.fn(),
-  Auth: jest.fn(),
-  authState: jest.fn(),
-}));
-
-// Mock the rxjs-interop
-jest.mock('@angular/core/rxjs-interop', () => ({
-  toSignal: jest.fn(),
-}));
+import { inject } from '@angular/core';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 describe('authGuard', () => {
   let mockRouter: jest.Mocked<Router>;
-  let mockAuthService: Partial<AuthService>;
-  let userValue: unknown = null;
+  let mockAuthService: any;
+  let mockSnackBar: jest.Mocked<MatSnackBar>;
+  let mockRoute: ActivatedRouteSnapshot;
 
   beforeEach(() => {
     mockRouter = {
@@ -41,29 +33,41 @@ describe('authGuard', () => {
     } as unknown as jest.Mocked<Router>;
 
     mockAuthService = {
-      user: Object.assign(() => userValue, { set: jest.fn(), update: jest.fn(), asReadonly: jest.fn() }) as unknown as Signal<User | null>,
+      authenticate: jest.fn().mockResolvedValue(true),
+      isAuthenticated: jest.fn(),
     };
+
+    mockSnackBar = {
+      open: jest.fn(),
+    } as unknown as jest.Mocked<MatSnackBar>;
+
+    mockRoute = {
+      routeConfig: { path: '' },
+    } as unknown as ActivatedRouteSnapshot;
 
     (inject as jest.Mock).mockImplementation((token) => {
       if (token === Router) return mockRouter;
-      if (token === AuthService) return mockAuthService;
+      if (token === AUTHENTICATION_SERVICE) return mockAuthService;
+      if (token === MatSnackBar) return mockSnackBar;
       return null;
     });
 
     jest.clearAllMocks();
   });
 
-  it('should return true when user is authenticated', async () => {
-    userValue = { uid: '123' };
-    const result = await authGuard();
+  it('should return true when user is authenticated for protected routes', async () => {
+    mockAuthService.isAuthenticated.mockReturnValue(true);
+    const result = await authGuard(mockRoute);
     expect(result).toBe(true);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
 
   it('should navigate to login and return false when user is not authenticated', async () => {
-    userValue = null;
-    const result = await authGuard();
+    mockAuthService.isAuthenticated.mockReturnValue(false);
+    const result = await authGuard(mockRoute);
     expect(result).toBe(false);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
   });
 });

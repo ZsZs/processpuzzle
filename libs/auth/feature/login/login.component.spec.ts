@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TestBed } from '@angular/core/testing';
 import { Auth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from '@angular/fire/auth';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { getTranslocoTestingModule } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
@@ -32,6 +33,12 @@ describe('LoginComponent', () => {
   const mockAuth = {};
 
   const renderComponent = async () => {
+    const mockAuthService = {
+      login: jest.fn().mockImplementation((url, email, password) => {
+        return signInWithEmailAndPassword(mockAuth as Auth, email, password);
+      }),
+    };
+
     return render(LoginComponent, {
       imports: [
         getTranslocoTestingModule({
@@ -46,7 +53,10 @@ describe('LoginComponent', () => {
         BrowserAnimationsModule,
         RouterTestingModule.withRoutes([]),
       ],
-      providers: [{ provide: Auth, useValue: mockAuth }],
+      providers: [
+        { provide: Auth, useValue: mockAuth },
+        { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
+      ],
     });
   };
 

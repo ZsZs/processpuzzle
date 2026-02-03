@@ -1,7 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 export const authGuard = async (route: ActivatedRouteSnapshot) => {
@@ -22,19 +21,18 @@ export const authGuard = async (route: ActivatedRouteSnapshot) => {
       return true; // If not logged in, allow access to login page
     }
   } else if (isLogoutRoute) {
-    if (!authService.isAuthenticated()) {
+    if (authService.isAuthenticated()) {
+      return true; // If logged in, allow access to logout page
+    } else {
       snackBar.open('You are not already logged in', 'Close', { duration: 3000 });
       await router.navigate(['/']);
       return false;
-    } else {
-      return true; // If logged in, allow access to logout page
     }
-  } else {
+  } else if (authService.isAuthenticated()) {
     // For protected routes, check if user is logged in
-    if (authService.isAuthenticated()) return true;
-    else {
-      await router.navigate(['/auth/login']);
-      return false;
-    }
+    return true;
+  } else {
+    await router.navigate(['/auth/login']);
+    return false;
   }
 };

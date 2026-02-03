@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { LogoutComponent } from './logout.component';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { AuthService } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
@@ -12,18 +11,19 @@ import authEn from '../assets/i18n/auth/en.json';
 describe('LogoutComponent', () => {
   // Create mocks for the injected services
   const authServiceMock = {
-    signOut: jest.fn().mockResolvedValue(undefined),
+    logout: jest.fn().mockResolvedValue(undefined),
   };
 
   const navigateBackServiceMock = {
     goBack: jest.fn(),
+    getRouteStack: jest.fn().mockReturnValue({ pop: jest.fn() }),
   };
 
   const renderComponent = async () => {
     return render(LogoutComponent, {
       imports: [getTranslocoTestingModule({ 'auth/de': authDe, 'auth/en': authEn }), MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
       providers: [
-        { provide: AuthService, useValue: authServiceMock },
+        { provide: AUTHENTICATION_SERVICE, useValue: authServiceMock },
         { provide: NavigateBackService, useValue: navigateBackServiceMock },
       ],
     });
@@ -49,7 +49,7 @@ describe('LogoutComponent', () => {
     fireEvent.click(cancelButton);
 
     expect(navigateBackServiceMock.goBack).toHaveBeenCalledTimes(1);
-    expect(authServiceMock.signOut).not.toHaveBeenCalled();
+    expect(authServiceMock.logout).not.toHaveBeenCalled();
   });
 
   it('should call authService.signOut and navigateBackService.goBack when Logout button is clicked', async () => {
@@ -59,12 +59,12 @@ describe('LogoutComponent', () => {
     fireEvent.click(logoutButton);
     await new Promise(process.nextTick);
 
-    expect(authServiceMock.signOut).toHaveBeenCalledTimes(1);
+    expect(authServiceMock.logout).toHaveBeenCalledTimes(1);
     expect(navigateBackServiceMock.goBack).toHaveBeenCalledTimes(1);
   });
 
   it('should disable the Logout button while logging out', async () => {
-    authServiceMock.signOut.mockImplementationOnce(() => {
+    authServiceMock.logout.mockImplementationOnce(() => {
       return new Promise((resolve) => {
         setTimeout(() => resolve(undefined), 100);
       });
@@ -88,7 +88,7 @@ describe('LogoutComponent', () => {
   it('should handle errors during logout', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     const error = new Error('Logout failed');
-    authServiceMock.signOut.mockRejectedValueOnce(error);
+    authServiceMock.logout.mockRejectedValueOnce(error);
     await renderComponent();
     const logoutButton = screen.getByRole('button', { name: /logout/i });
     fireEvent.click(logoutButton);

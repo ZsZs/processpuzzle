@@ -24,15 +24,15 @@ export class KeycloakAuthService extends AuthService {
 
   async login(redirectUrl?: string): Promise<User> {
     await this.ensureInitialized();
-    if (this.isAuthenticated()) return new Promise(this.user);
+    if (this.isAuthenticated()) return this.user() as User;
     else {
-      await this.keycloak.login({ redirectUri: window.location.origin + '/' + redirectUrl });
+      await this.keycloak.login({ redirectUri: globalThis.location.origin + '/' + redirectUrl });
       return this.getCurrentUser() as User;
     }
   }
 
   override async logout(redirectUrl?: string): Promise<void> {
-    await this.keycloak.logout({ redirectUri: window.location.origin + '/' + redirectUrl });
+    await this.keycloak.logout({ redirectUri: globalThis.location.origin + '/' + redirectUrl });
     this._user.set(undefined);
   }
 
@@ -68,12 +68,7 @@ export class KeycloakAuthService extends AuthService {
       const profile = await this.keycloak.loadUserProfile();
 
       // Map to your User domain model
-      const user: User = {
-        uid: profile.id || '',
-        displayName: `${profile.firstName} ${profile.lastName}`,
-        email: profile.email || '',
-        // Add other fields as required by your User interface
-      } as unknown as User;
+      const user = new User(profile.email || '', profile.id || '', profile.firstName || '', profile.lastName || '');
 
       this._user.set(user);
     } else {
