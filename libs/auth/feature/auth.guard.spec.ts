@@ -54,4 +54,42 @@ describe('authGuard', () => {
     expect(mockAuthService.authenticate).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
   });
+
+  it('should allow access to login page when user is not authenticated', async () => {
+    const loginRoute = { routeConfig: { path: 'login' } } as unknown as ActivatedRouteSnapshot;
+    mockAuthService.isAuthenticated.mockReturnValue(false);
+    const result = await TestBed.runInInjectionContext(() => authGuard(loginRoute));
+    expect(result).toBe(true);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should show snackbar and redirect to home when accessing login page while already authenticated', async () => {
+    const loginRoute = { routeConfig: { path: 'login' } } as unknown as ActivatedRouteSnapshot;
+    mockAuthService.isAuthenticated.mockReturnValue(true);
+    const result = await TestBed.runInInjectionContext(() => authGuard(loginRoute));
+    expect(result).toBe(false);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
+    expect(mockSnackBar.open).toHaveBeenCalledWith('You are already logged in', 'Close', { duration: 3000 });
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+  });
+
+  it('should allow access to logout page when user is authenticated', async () => {
+    const logoutRoute = { routeConfig: { path: 'logout' } } as unknown as ActivatedRouteSnapshot;
+    mockAuthService.isAuthenticated.mockReturnValue(true);
+    const result = await TestBed.runInInjectionContext(() => authGuard(logoutRoute));
+    expect(result).toBe(true);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should show snackbar and redirect to home when accessing logout page while not authenticated', async () => {
+    const logoutRoute = { routeConfig: { path: 'logout' } } as unknown as ActivatedRouteSnapshot;
+    mockAuthService.isAuthenticated.mockReturnValue(false);
+    const result = await TestBed.runInInjectionContext(() => authGuard(logoutRoute));
+    expect(result).toBe(false);
+    expect(mockAuthService.authenticate).toHaveBeenCalled();
+    expect(mockSnackBar.open).toHaveBeenCalledWith('You are not already logged in', 'Close', { duration: 3000 });
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+  });
 });
