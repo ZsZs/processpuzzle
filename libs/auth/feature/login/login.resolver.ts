@@ -1,6 +1,5 @@
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, AuthenticationConfiguration, User } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 
