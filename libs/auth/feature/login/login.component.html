@@ -6,8 +6,12 @@
     <mat-form-field appearance="outline">
       <mat-label>{{t('auth.login-form.email_label')}}</mat-label>
       <input matInput type="email" formControlName="email" placeholder="Enter your email">
-      <mat-error *ngIf="loginForm.get('email')?.hasError('required')">{{t('auth.login-form.email_err_required')}}</mat-error>
-      <mat-error *ngIf="loginForm.get('email')?.hasError('email')">{{t('auth.login-form.email_err_invalid')}}</mat-error>
+      @if (loginForm.get('email')?.hasError('required')) {
+        <mat-error>{{t('auth.login-form.email_err_required')}}</mat-error>
+      }
+      @if (loginForm.get('email')?.hasError('email')) {
+        <mat-error>{{t('auth.login-form.email_err_invalid')}}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -16,7 +20,9 @@
       <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" aria-label="Toggle Password Visibility">
         <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
       </button>
-      <mat-error *ngIf="loginForm.get('password')?.hasError('required')">{{t('auth.login-form.password_err_required')}}</mat-error>
+      @if (loginForm.get('password')?.hasError('required')) {
+        <mat-error>{{t('auth.login-form.password_err_required')}}</mat-error>
+      }
     </mat-form-field>
 
     <div class="actions">
@@ -36,6 +42,8 @@
     </svg>
     {{t('auth.login-form.google_button')}}
   </button>
-  <div class="error-message" *ngIf="errorMessage">{{ errorMessage() }}</div>
+  @if (errorMessage()) {
+    <div class="error-message">{{ errorMessage() }}</div>
+  }
   </ng-container>
 </div>
