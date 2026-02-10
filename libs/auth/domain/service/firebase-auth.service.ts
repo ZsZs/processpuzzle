@@ -1,11 +1,8 @@
 import { AuthService } from './auth.service';
 import { Auth, signInWithEmailAndPassword } from '@angular/fire/auth';
 import { User } from '../user/user';
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 export class FirebaseAuthService extends AuthService {
-  private readonly router = inject(Router);
   private readonly auth: Auth;
 
   constructor(auth: Auth) {
@@ -23,8 +20,8 @@ export class FirebaseAuthService extends AuthService {
       const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
       const user = new User(userCredential.user.email, userCredential.user.uid, userCredential.user.displayName);
       this._user.set(user);
-      return Promise.resolve(user);
-    } else return Promise.resolve(undefined);
+      return user;
+    } else return undefined;
   }
 
   override logout(): Promise<void> {
