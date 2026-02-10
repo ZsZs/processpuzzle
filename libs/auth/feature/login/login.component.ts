@@ -6,11 +6,8 @@ import { MatInput, MatLabel } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
-import { NgIf } from '@angular/common';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 
@@ -18,7 +15,7 @@ import { NavigateBackService } from '@processpuzzle/widgets';
   selector: 'pp-login',
   templateUrl: 'login.component.html',
   styleUrls: ['login.component.css'],
-  imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, NgIf, RouterLink, TranslocoDirective],
+  imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, RouterLink, TranslocoDirective],
   providers: [provideTranslocoScope('auth')],
 })
 export class LoginComponent implements OnInit {
@@ -32,7 +29,6 @@ export class LoginComponent implements OnInit {
   private readonly navigateBackService = inject(NavigateBackService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
 
   // region public event handlers
   ngOnInit(): void {
@@ -51,8 +47,8 @@ export class LoginComponent implements OnInit {
       const { email, password } = this.loginForm.value;
       await this.authService.login(this.navigateBackService.getRouteStack().pop(), email, password);
       await this.router.navigate(['/']);
-    } catch (error: any) {
-      const message = this.getErrorMessage(error.code || error.message);
+    } catch (error: unknown) {
+      const message = this.getErrorMessage((error as { code?: string; message?: string }).code || (error as { code?: string; message?: string }).message || '');
       this.errorMessage.set(message);
     } finally {
       this.isLoading.set(false);
@@ -65,8 +61,8 @@ export class LoginComponent implements OnInit {
     try {
       await signInWithPopup(this.auth, new GoogleAuthProvider());
       await this.router.navigate(['/']);
-    } catch (error: any) {
-      this.errorMessage.set(this.getErrorMessage(error.code || error.message));
+    } catch (error: unknown) {
+      this.errorMessage.set(this.getErrorMessage((error as { code?: string; message?: string }).code || (error as { code?: string; message?: string }).message || ''));
     } finally {
       this.isLoading.set(false);
     }

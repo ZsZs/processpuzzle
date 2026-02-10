@@ -5,7 +5,6 @@ import { RouterLink } from '@angular/router';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatError, MatFormField } from '@angular/material/form-field';
 import { MatInput, MatLabel } from '@angular/material/input';
-import { NgIf } from '@angular/common';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NavigateBackService } from '@processpuzzle/widgets';
@@ -16,7 +15,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
   selector: 'pp-registration',
   templateUrl: 'registration.component.html',
   styleUrls: ['registration.component.css'],
-  imports: [ReactiveFormsModule, MatProgressBar, MatFormField, MatInput, NgIf, MatIconButton, MatIcon, MatLabel, MatButton, RouterLink, MatError, TranslocoDirective],
+  imports: [ReactiveFormsModule, MatProgressBar, MatFormField, MatInput, MatIconButton, MatIcon, MatLabel, MatButton, RouterLink, MatError, TranslocoDirective],
   providers: [provideTranslocoScope('auth')],
 })
 export class RegistrationComponent {
@@ -63,8 +62,9 @@ export class RegistrationComponent {
     try {
       const { email, password } = this.registerForm.value;
       await createUserWithEmailAndPassword(this.auth, email, password);
-    } catch (error: any) {
-      this.snackBar.open(this.getErrorMessage(error.code || error.message), 'Close', {
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string; message?: string }).code || (error as { code?: string; message?: string }).message || 'unknown';
+      this.snackBar.open(this.getErrorMessage(errorCode), 'Close', {
         duration: 5000,
         panelClass: ['error-snackbar'],
       });
