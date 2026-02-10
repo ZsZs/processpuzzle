@@ -6,7 +6,6 @@ import { RouterLink } from '@angular/router';
 import { authRoutes } from '../auth.routes';
 import { SubstringPipe } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 @Component({

@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { authGuard } from './auth.guard';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
 
 describe('authGuard', () => {
   let mockRouter: jest.Mocked<Router>;
-  let mockAuthService: any;
+  let mockAuthService: jest.Mocked<AuthService>;
   let mockSnackBar: jest.Mocked<MatSnackBar>;
   let mockRoute: ActivatedRouteSnapshot;
 
@@ -18,7 +18,7 @@ describe('authGuard', () => {
     mockAuthService = {
       authenticate: jest.fn().mockResolvedValue(true),
       isAuthenticated: jest.fn(),
-    };
+    } as unknown as jest.Mocked<AuthService>;
 
     mockSnackBar = {
       open: jest.fn(),
