@@ -1,9 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { Stack } from '@processpuzzle/util';
 import { NavigationEnd, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class NavigateBackService {
+  public noRouteAvailable = new BehaviorSubject<string>('');
   private readonly routeHistory = new Stack<string>();
   private readonly router = inject<Router>(Router);
 
@@ -25,6 +27,7 @@ export class NavigateBackService {
       }
     } else {
       console.log('No previous routes to navigate back to.');
+      this.noRouteAvailable.next('No previous routes to navigate back to.');
     }
   }
 

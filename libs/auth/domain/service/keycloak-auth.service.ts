@@ -61,8 +61,6 @@ export class KeycloakAuthService extends AuthService {
       silentCheckSsoRedirectUri: 'http://localhost:4200/assets/auth/silent-check-sso.html',
     });
 
-    console.log('Keycloak initialized');
-
     // Check if authenticated using the keycloak-js instance directly
     if (this.keycloak.authenticated) {
       const profile = await this.keycloak.loadUserProfile();

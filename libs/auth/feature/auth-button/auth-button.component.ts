@@ -1,5 +1,4 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -20,18 +19,18 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
         </button>
         <mat-menu #menu="matMenu">
           @for (item of routes; track item) {
-            <ng-container *ngIf="(isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])">
+            @if ((isAuthenticated() && !item.data?.['authToggle']) || (!isAuthenticated() && item.data?.['authToggle'])) {
               <button mat-menu-item [routerLink]="'auth/' + item.path">
                 <mat-icon>{{ item.data?.['icon'] }}</mat-icon>
                 <span>&nbsp;{{ t('auth.button.' + item.title | substring: 0) }}</span>
               </button>
-            </ng-container>
+            }
           }
         </mat-menu>
       </ng-container>
     </div>
   `,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger, SubstringPipe, TranslocoDirective],
+  imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, RouterLink, MatMenuTrigger, SubstringPipe, TranslocoDirective],
   styles: [],
   providers: [provideTranslocoScope('auth')],
 })

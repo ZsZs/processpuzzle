@@ -9,6 +9,6 @@
     "moduleResolution": "bundler",
     "types": []
   },
-  "exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
-  "include": ["src/**/*.ts"]
+  "exclude": ["**/*.spec.ts", "domain/test-setup.ts", "feature/test-setup.ts", "jest.config.ts", "**/*.test.ts"],
+  "include": ["**/*.ts"]
 }

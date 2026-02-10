@@ -1,24 +1,7 @@
-// Mock the domain module before any imports to avoid keycloak dependencies
-jest.mock('@processpuzzle/auth/domain', () => {
-  const actual = jest.requireActual('@angular/core');
-  return {
-    AUTHENTICATION_SERVICE: new actual.InjectionToken('AUTHENTICATION_SERVICE'),
-  };
-});
-
-// Mock the inject function
-jest.mock('@angular/core', () => {
-  const actual = jest.requireActual('@angular/core');
-  return {
-    ...actual,
-    inject: jest.fn(),
-  };
-});
-
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { authGuard } from './auth.guard';
-import { inject } from '@angular/core';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 describe('authGuard', () => {
@@ -45,11 +28,12 @@ describe('authGuard', () => {
       routeConfig: { path: '' },
     } as unknown as ActivatedRouteSnapshot;
 
-    (inject as jest.Mock).mockImplementation((token) => {
-      if (token === Router) return mockRouter;
-      if (token === AUTHENTICATION_SERVICE) return mockAuthService;
-      if (token === MatSnackBar) return mockSnackBar;
-      return null;
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Router, useValue: mockRouter },
+        { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
+        { provide: MatSnackBar, useValue: mockSnackBar },
+      ],
     });
 
     jest.clearAllMocks();
@@ -57,7 +41,7 @@ describe('authGuard', () => {
 
   it('should return true when user is authenticated for protected routes', async () => {
     mockAuthService.isAuthenticated.mockReturnValue(true);
-    const result = await authGuard(mockRoute);
+    const result = await TestBed.runInInjectionContext(() => authGuard(mockRoute));
     expect(result).toBe(true);
     expect(mockAuthService.authenticate).toHaveBeenCalled();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
@@ -65,7 +49,7 @@ describe('authGuard', () => {
 
   it('should navigate to login and return false when user is not authenticated', async () => {
     mockAuthService.isAuthenticated.mockReturnValue(false);
-    const result = await authGuard(mockRoute);
+    const result = await TestBed.runInInjectionContext(() => authGuard(mockRoute));
     expect(result).toBe(false);
     expect(mockAuthService.authenticate).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
