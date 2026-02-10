@@ -82,7 +82,7 @@
     "firebase-admin": "^13.5.0",
     "firebase-functions": "^6.6.0",
     "flag-icons": "^7.5.0",
-    "keycloak-js": "^26.2.2",
+    "keycloak-js": "^26.2.3",
     "marked": "^16.4.1",
     "material-icons": "^1.13.14",
     "mermaid": "^11.12.1",
