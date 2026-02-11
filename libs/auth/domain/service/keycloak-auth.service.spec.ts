@@ -2,6 +2,12 @@ import { KeycloakAuthService } from './keycloak-auth.service';
 import Keycloak from 'keycloak-js';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
 
+type MockedKeycloak = jest.Mocked<Keycloak> & {
+  authenticated: boolean;
+  profile?: { username?: string };
+  realmAccess?: { roles: string[] };
+};
+
 jest.mock('keycloak-js', () => {
   return jest.fn().mockImplementation(() => {
     return {
@@ -23,7 +29,7 @@ jest.mock('keycloak-js', () => {
 
 describe('KeycloakAuthService', () => {
   let service: KeycloakAuthService;
-  let mockKeycloakInstance: any;
+  let mockKeycloakInstance: MockedKeycloak;
   const config: KeycloakAuthConfig = {
     realm: 'test-realm',
     clientId: 'test-client',
@@ -32,7 +38,7 @@ describe('KeycloakAuthService', () => {
 
   beforeEach(() => {
     service = new KeycloakAuthService(config);
-    mockKeycloakInstance = service.keycloak;
+    mockKeycloakInstance = service.keycloak as MockedKeycloak;
 
     // Mock window.location.origin
     Object.defineProperty(window, 'location', {
