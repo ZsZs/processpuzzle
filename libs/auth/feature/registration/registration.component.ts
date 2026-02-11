@@ -23,11 +23,11 @@ export class RegistrationComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly navigateBack = inject(NavigateBackService);
   private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
-  protected registerForm: FormGroup;
-  protected isLoading = signal<boolean>(false);
-  protected errorMessage = signal<string>('');
-  protected hidePassword = true;
-  protected hideConfirmPassword = true;
+  public registerForm: FormGroup;
+  public isLoading = signal<boolean>(false);
+  public errorMessage = signal<string>('');
+  public hidePassword = true;
+  public hideConfirmPassword = true;
 
   constructor() {
     this.registerForm = this.fb.group(
