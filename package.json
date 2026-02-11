@@ -133,7 +133,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
     "@types/json-server": "^0.14.8",
-    "@types/node": "24.9.2",
+    "@types/node": "24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/utils": "^8.46.2",
