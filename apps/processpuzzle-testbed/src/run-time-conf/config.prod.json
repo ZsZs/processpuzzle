@@ -1,6 +1,8 @@
 {
   "PIPELINE_STAGE": "prod",
-  "TEST_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
+  "AUTHENTICATION_PROVIDER": "firebase-auth",
+  "BACKEND_SERVICE_PROVIDER": "firestore",
+  "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
   "FIREBASE_CONFIG": {
     "authDomain": "processpuzzle-testbed.firebaseapp.com",
     "projectId": "processpuzzle-testbed",

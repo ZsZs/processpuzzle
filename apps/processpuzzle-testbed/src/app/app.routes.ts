@@ -14,10 +14,24 @@ import { ContentComponent } from './content/content.component';
 import { FirestoreDocStore } from './content/base-forms/firestore/firestore-doc.store';
 import { FirestoreDocService } from './content/base-forms/firestore/firestore-doc.service';
 import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
+import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
+import { inject } from '@angular/core';
 
 export const appRoutes: Route[] = [
-  { path: 'home', title: 'ProcessPuzzle Testbed - Home', component: ContentComponent, data: { icon: 'home', menuTitle: 'home' } },
-  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  {
+    path: 'home',
+    title: 'ProcessPuzzle Testbed - Home',
+    resolve: {
+      auth: () => inject(AUTHENTICATION_SERVICE).authenticate(),
+    },
+    component: ContentComponent,
+    data: { icon: 'home', menuTitle: 'home' },
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: 'home',
+  },
   {
     path: 'util',
     title: 'ProcessPuzzle Testbed - Util',
@@ -37,7 +51,7 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
   },
   {
-    path: 'auth',
+    path: 'auth-lib',
     title: 'ProcessPuzzle Testbed - Auth',
     data: { icon: 'person_add', menuTitle: 'auth' },
     loadComponent: () => import('./content/auth/auth.component').then((comp) => comp.AuthComponent),
@@ -101,5 +115,9 @@ export const appRoutes: Route[] = [
     data: { icon: 'repartition', menuTitle: 'ci-cd' },
     loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent),
   },
-  { path: 'auth', loadChildren: () => import('@processpuzzle/auth').then((m) => m.authRoutes) },
+  // Custom matcher route for any URL containing 'auth'
+  {
+    matcher: authMatcher,
+    loadChildren: () => import('@processpuzzle/auth/feature').then((r) => r.authRoutes),
+  },
 ];

@@ -6,6 +6,6 @@ import { TrunkData } from './trunk-data';
 @Injectable({ providedIn: 'root' })
 export class TrunkDataService extends BaseEntityRestService<TrunkData> {
   constructor(protected override entityMapper: TrunkDataMapper) {
-    super(entityMapper, 'TEST_SERVICE_ROOT', 'trunk-data');
+    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'trunk-data');
   }
 }

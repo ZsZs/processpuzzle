@@ -1,9 +1,9 @@
-import { LanguageConfig, LanguageDefinition } from '@processpuzzle/widgets';
+import { LanguageConfig } from '@processpuzzle/widgets';
+import { AuthenticationConfiguration } from '@processpuzzle/auth';
+import { BaseConfiguration } from '@processpuzzle/util';
 
-export class RuntimeConfiguration implements LanguageConfig{
-  DEFAULT_LANGUAGE?: string;
-  AVAILABLE_LANGUAGES?: LanguageDefinition[];
-  readonly PIPELINE_STAGE?: 'dev' | 'ci' | 'stage' | 'prod';
-  readonly TEST_SERVICE_ROOT?: string;
-  readonly FIREBASE_CONFIG?: object;
+export interface RuntimeConfiguration extends BaseConfiguration, LanguageConfig, AuthenticationConfiguration {
+  BASE_CONFIGURATION: BaseConfiguration;
+  LANGUAGE_CONFIGURATION: LanguageConfig;
+  AUTHENTICATION_CONFIGURATION: AuthenticationConfiguration;
 }

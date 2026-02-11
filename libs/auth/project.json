@@ -3,10 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/auth/src",
   "prefix": "pp",
-  "tags": [
-    "scope:shared",
-    "type:auth"
-  ],
+  "tags": ["scope:shared", "type:auth"],
   "projectType": "library",
   "release": {
     "version": {
@@ -20,12 +17,8 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/{projectRoot}"
-      ],
-      "dependsOn": [
-        "^build"
-      ],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "dependsOn": ["^build"],
       "options": {
         "project": "libs/auth/ng-package.json"
       },
@@ -41,12 +34,8 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "dependsOn": [
-        "build"
-      ],
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "dependsOn": ["build"],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/auth/jest.config.ts",
         "codeCoverage": true
@@ -61,14 +50,9 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/auth/src/**/*.ts",
-          "libs/auth/src/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/auth/domain/**/*.ts", "libs/auth/feature/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

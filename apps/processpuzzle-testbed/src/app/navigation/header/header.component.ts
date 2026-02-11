@@ -4,13 +4,13 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgOptimizedImage } from '@angular/common';
-import { AuthButtonComponent } from '@processpuzzle/auth';
-import { LayoutService, SubstringPipe } from '@processpuzzle/util';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
-import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent, WidgetsModule } from '@processpuzzle/widgets';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { AuthButtonComponent } from '@processpuzzle/auth';
+import { LayoutService, SubstringPipe } from '@processpuzzle/util';
+import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
@@ -32,8 +32,6 @@ import { TranslocoDirective } from '@jsverse/transloco';
     LikeButtonComponent,
     ShareButtonComponent,
     LanguageSelectorComponent,
-    WidgetsModule,
-    AuthButtonComponent,
     TranslocoDirective,
     SubstringPipe,
   ],

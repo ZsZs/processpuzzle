@@ -13,7 +13,7 @@ export class ConfigurationService<TConfiguration> {
 
   // region public accessors and mutators
   public get configuration(): TConfiguration {
-    if (this.config == null) throw Error("Configuration hasn't been initialized");
+    if (this.config == null) throw new Error("Configuration hasn't been initialized");
     return this.config;
   }
 
@@ -21,7 +21,7 @@ export class ConfigurationService<TConfiguration> {
     try {
       await this.initInternal();
     } catch (error: any) {
-      throw Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`);
+      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`);
     }
   }
 
@@ -70,7 +70,7 @@ export class ConfigurationService<TConfiguration> {
 
     if (url.startsWith('/')) url = url.substring(1);
 
-    const baseHref = window.location.origin;
+    const baseHref = globalThis.location.origin;
     return `${baseHref}/${url}`;
   }
 

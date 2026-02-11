@@ -6,6 +6,6 @@ import { TestEntityMapper } from '../test-entity.mapper';
 @Injectable({ providedIn: 'root' })
 export class TestEntityService extends BaseEntityRestService<TestEntity> {
   constructor(protected mapper: TestEntityMapper) {
-    super(mapper, 'TEST_SERVICE_ROOT', 'message/%{messageId}/node');
+    super(mapper, 'BACKEND_SERVICE_ROOT', 'message/%{messageId}/node');
   }
 }

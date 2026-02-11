@@ -18,10 +18,10 @@ describe('BaseEntityService', () => {
   const payload = { id: '1', name: 'hello', description: 'anything', boolean: false, number: 100, date: '2024-01-18T20:02:27.000Z', enumValue: 3 };
   let baseEntityService: TestEntityService;
   let controller: HttpTestingController;
-  let runtimeConfigMock!: { TEST_SERVICE_ROOT: string };
+  let runtimeConfigMock!: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: string } };
 
   beforeEach(() => {
-    runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' };
+    runtimeConfigMock = { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' } };
 
     TestBed.configureTestingModule({
       imports: [],

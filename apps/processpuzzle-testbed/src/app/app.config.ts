@@ -1,9 +1,18 @@
 import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection, SecurityContext } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
-import { AppInitializer, CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import {
+  AppInitializer,
+  BaseConfiguration,
+  CONFIGURATION_APP_INITIALIZER,
+  CONFIGURATION_OPTIONS,
+  ConfigurationService,
+  FirebaseConfig,
+  LayoutService,
+  RUNTIME_CONFIGURATION,
+} from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
@@ -11,9 +20,9 @@ import { initializeApp } from 'firebase/app';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
-import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
 import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
+import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,38 +32,7 @@ export const appConfig: ApplicationConfig = {
       return initializer.init();
     }),
     provideAppPropertyStore(),
-    provideAnimationsAsync(),
-    provideAuth(() => {
-      const auth = getAuth();
-      const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
-      if (pipelineStage === 'dev') connectAuthEmulator(auth, `http://localhost:9099`);
-      else if (pipelineStage === 'ci') connectAuthEmulator(auth, `http://firebase:9099`);
-      return auth;
-    }),
-    provideZonelessChangeDetection(),
-    provideFirebaseApp(() => initializeApp(inject(FIREBASE_OPTIONS)), [FIREBASE_OPTIONS]),
-    {
-      provide: FIREBASE_OPTIONS,
-      useFactory: () => {
-        const runtimeConfig: RuntimeConfiguration = inject(RUNTIME_CONFIGURATION);
-        return runtimeConfig.FIREBASE_CONFIG;
-      },
-      deps: [RUNTIME_CONFIGURATION],
-    },
-    provideFirestore(() => {
-      const firestore = getFirestore();
-      const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
-      if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
-      else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
-      return firestore;
-    }),
-    provideHttpClient(),
-    provideRouter(appRoutes, withComponentInputBinding()),
-    provideNativeDateAdapter(),
-    AppInitializer,
-    ConfigurationService,
-    LayoutService,
-    { provide: CONFIGURATION_TYPE, useValue: RuntimeConfiguration },
+    provideAnimations(),
     { provide: CONFIGURATION_APP_INITIALIZER, useValue: [] },
     {
       provide: CONFIGURATION_OPTIONS,
@@ -66,17 +44,53 @@ export const appConfig: ApplicationConfig = {
         log: true,
       },
     },
+    ConfigurationService,
     {
       provide: RUNTIME_CONFIGURATION,
       useFactory: (configurationService: ConfigurationService<RuntimeConfiguration>) => {
         const config: RuntimeConfiguration = configurationService.configuration;
+        let baseConfig: BaseConfiguration = config.BASE_CONFIGURATION;
         const apiKey = { apiKey: environment.FIREBASE_API_KEY ?? '' };
-        const firebaseConfig = { ...config.FIREBASE_CONFIG, ...apiKey };
-
-        return { ...config, ...{ FIREBASE_CONFIG: firebaseConfig } };
+        const firebaseConfig: FirebaseConfig = { ...baseConfig.FIREBASE_CONFIGURATION, ...apiKey };
+        baseConfig = { ...baseConfig, ...{ FIREBASE_CONFIGURATION: firebaseConfig } };
+        return { ...config, ...{ BASE_CONFIGURATION: baseConfig } };
       },
       deps: [ConfigurationService],
     },
+    {
+      provide: AUTHENTICATION_CONFIGURATION,
+      useFactory: () => {
+        const runtimeConfiguration: RuntimeConfiguration = inject<RuntimeConfiguration>(RUNTIME_CONFIGURATION);
+        return runtimeConfiguration.AUTHENTICATION_CONFIGURATION;
+      },
+      deps: [RUNTIME_CONFIGURATION],
+    },
+    provideAuthenticationService(),
+    provideZonelessChangeDetection(),
+    {
+      provide: FIREBASE_OPTIONS,
+      useFactory: () => {
+        const runtimeConfig: RuntimeConfiguration = inject<RuntimeConfiguration>(RUNTIME_CONFIGURATION);
+        return runtimeConfig.BASE_CONFIGURATION.FIREBASE_CONFIGURATION;
+      },
+      deps: [RUNTIME_CONFIGURATION],
+    },
+    provideFirebaseApp(() => {
+      const firebaseConfig: FirebaseConfig = inject(FIREBASE_OPTIONS);
+      return initializeApp(firebaseConfig);
+    }, [FIREBASE_OPTIONS]),
+    provideFirestore(() => {
+      const firestore = getFirestore();
+      const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
+      if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
+      else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
+      return firestore;
+    }),
+    provideHttpClient(),
+    provideRouter(appRoutes, withComponentInputBinding()),
+    provideNativeDateAdapter(),
+    AppInitializer,
+    LayoutService,
     provideMarkdown({
       loader: HttpClient,
       sanitize: SecurityContext.NONE,

@@ -19,6 +19,7 @@ export interface NavigationState {
 const INITIAL_NAVIGATION_STATE: NavigationState = {
   activeRouteSegment: RouteSegments.LIST_ROUTE,
   entityName: '',
+  navigationError: undefined,
   navigateTo: '',
   returnTo: '',
 };
@@ -96,8 +97,11 @@ export function BaseFormNavigatorStore(entityName: string) {
       }
 
       async function navigateToUrl(url: string, returnTo?: string) {
-        if (!returnTo) patchState(store, { returnTo: router.url });
-        else patchState(store, { returnTo });
+        if (returnTo) {
+          patchState(store, { returnTo });
+        } else {
+          patchState(store, { returnTo: router.url });
+        }
         patchState(store, { navigateTo: url });
         await router
           .navigateByUrl(url)
