@@ -30,7 +30,7 @@ runs:
         cache: 'npm'
         cache-dependency-path: package-lock.json
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash
     - name: Lint libs and apps
       run: npm run lint-${{inputs.nx_project}}
