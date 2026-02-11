@@ -1,5 +1,5 @@
 import { FirebaseAuthService } from './firebase-auth.service';
-import { Auth, signInWithEmailAndPassword } from '@angular/fire/auth';
+import { Auth, signInWithEmailAndPassword, User as FirebaseUser } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { User } from '../user/user';
 import { TestBed } from '@angular/core/testing';
@@ -10,14 +10,14 @@ jest.mock('@angular/fire/auth', () => ({
 
 describe('FirebaseAuthService', () => {
   let service: FirebaseAuthService;
-  let authMock: Partial<Auth>;
+  let authMock: jest.Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
   let routerMock: Partial<Router>;
 
   beforeEach(() => {
     authMock = {
       currentUser: null,
       signOut: jest.fn().mockResolvedValue(undefined),
-    };
+    } as jest.Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
 
     routerMock = {
       navigate: jest.fn(),
@@ -41,13 +41,13 @@ describe('FirebaseAuthService', () => {
 
   describe('authenticate', () => {
     it('should return true if currentUser is not null', async () => {
-      (authMock as any).currentUser = { uid: '123' };
+      authMock.currentUser = { uid: '123' } as FirebaseUser;
       const result = await service.authenticate();
       expect(result).toBe(true);
     });
 
     it('should return false if currentUser is null', async () => {
-      (authMock as any).currentUser = null;
+      authMock.currentUser = null;
       const result = await service.authenticate();
       expect(result).toBe(false);
     });
@@ -69,7 +69,7 @@ describe('FirebaseAuthService', () => {
       (signInWithEmailAndPassword as jest.Mock).mockResolvedValue(mockUserCredential);
 
       // Update authMock to simulate successful login impact on getCurrentUser
-      (authMock as any).currentUser = mockUserCredential.user;
+      authMock.currentUser = mockUserCredential.user as FirebaseUser;
 
       const result = await service.login('url', 'test@example.com', 'password');
 
@@ -96,11 +96,11 @@ describe('FirebaseAuthService', () => {
 
   describe('getCurrentUser', () => {
     it('should return User object based on auth.currentUser', () => {
-      (authMock as any).currentUser = {
+      authMock.currentUser = {
         email: 'test@example.com',
         uid: 'uid123',
         displayName: 'Test User',
-      };
+      } as FirebaseUser;
 
       const result = service.getCurrentUser();
       expect(result).toBeInstanceOf(User);
@@ -109,7 +109,7 @@ describe('FirebaseAuthService', () => {
     });
 
     it('should return User with empty/undefined fields if auth.currentUser is null', () => {
-      (authMock as any).currentUser = null;
+      authMock.currentUser = null;
       const result = service.getCurrentUser();
       expect(result).toBeInstanceOf(User);
       expect(result?.email).toBeUndefined();
