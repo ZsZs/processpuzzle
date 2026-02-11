@@ -28,7 +28,9 @@ runs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: package-lock.json
+        cache-dependency-path: |
+          package.json
+          package-lock.json
     - name: Install dependencies
       run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash

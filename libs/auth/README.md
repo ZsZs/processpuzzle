@@ -138,7 +138,6 @@ Or create a link in your template:
 - `getErrorMessage(errorCode: string)` - Converts Firebase error codes to user-friendly messages
 
 ### Styling
-
 The component uses Angular Material styling with custom CSS for layout. You can target the component with CSS using the `.login-container` class:
 
 ```css
