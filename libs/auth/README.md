@@ -13,11 +13,9 @@ The Auth library provides widgets and services for authentication and authorizat
 - [auth guard](#authentication-guard)
 
 ## Auth Button
-
 The `AuthButtonComponent` is a versatile authentication button that displays different options based on the user's authentication status. It provides a clean, intuitive interface for users to access authentication-related features.
 
 ### Features
-
 - Displays a person icon button that opens a dropdown menu
 - Dynamically shows different menu options based on authentication status
 - When not authenticated, it shows Login and Register options
@@ -26,7 +24,6 @@ The `AuthButtonComponent` is a versatile authentication button that displays dif
 - Uses Angular Material components for a consistent UI experience
 
 ### Usage
-
 Simply add the component to your template:
 
 ```html
@@ -36,7 +33,6 @@ Simply add the component to your template:
 The component automatically detects the user's authentication status using the `AuthService` and displays the appropriate menu options.
 
 #### Example: Adding to a toolbar
-
 ```html
 <mat-toolbar>
   <span>My App</span>
@@ -60,7 +56,6 @@ The component automatically detects the user's authentication status using the `
 - `routes` - The filtered list of authentication routes with titles
 
 ### Styling
-
 The component uses Angular Material styling by default. You can target the component with CSS using the `.auth-button` class:
 
 ```css
@@ -70,7 +65,6 @@ The component uses Angular Material styling by default. You can target the compo
 ```
 
 ### Customization
-
 The component uses routes defined in `authRoutes` from the auth library. Each route can have the following properties:
 
 - `path` - The route path
@@ -81,11 +75,9 @@ The component uses routes defined in `authRoutes` from the auth library. Each ro
 
 
 ## Login Component
-
 The `LoginComponent` provides a user-friendly interface for authentication, allowing users to sign in with their email and password or through Google authentication. It includes form validation, error handling, and visual feedback during the authentication process.
 
 ### Features
-
 - Clean, responsive login form with Material Design styling
 - Email and password authentication with Firebase
 - Google sign-in integration
