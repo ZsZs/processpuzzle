@@ -36,6 +36,16 @@ describe('RegistrationComponent', () => {
     });
   };
 
+  const fillRegistrationForm = async (email: string, password: string, confirmPassword: string) => {
+    await userEvent.type(screen.getByLabelText(/email/i), email);
+    await userEvent.type(screen.getByLabelText(/^password$/i), password);
+    await userEvent.type(screen.getByLabelText(/confirm password/i), confirmPassword);
+  };
+
+  const submitRegistrationForm = async () => {
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -75,10 +85,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockCreateUser).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Password123!');
   });
@@ -91,10 +99,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockSnackBar.open).toHaveBeenCalledWith('This email address is already registered', 'Close', expect.any(Object));
   });
@@ -107,9 +113,7 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'weakpass');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'weakpass');
+    await fillRegistrationForm('test@example.com', 'weakpass', 'weakpass');
 
     const form = screen.getByRole('form', { name: 'Registration Form' });
     await fireEvent.submit(form);
@@ -125,10 +129,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockSnackBar.open).toHaveBeenCalledWith('An error occurred during registration. Please try again.', 'Close', expect.any(Object));
   });
@@ -151,10 +153,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockSnackBar.open).toHaveBeenCalledWith('Please enter a valid email address', 'Close', expect.any(Object));
   });
@@ -167,10 +167,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockSnackBar.open).toHaveBeenCalledWith('Email/password registration is not enabled', 'Close', expect.any(Object));
   });
@@ -183,10 +181,8 @@ describe('RegistrationComponent', () => {
 
     await renderComponent();
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(mockSnackBar.open).toHaveBeenCalledWith('An error occurred during registration. Please try again.', 'Close', expect.any(Object));
   });
@@ -232,9 +228,7 @@ describe('RegistrationComponent', () => {
 
     expect(component.isLoading()).toBe(false);
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
 
     const submitPromise = userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
@@ -252,10 +246,8 @@ describe('RegistrationComponent', () => {
     const { fixture } = await renderComponent();
     const component = fixture.componentInstance;
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(component.isLoading()).toBe(false);
   });
@@ -269,10 +261,8 @@ describe('RegistrationComponent', () => {
     const { fixture } = await renderComponent();
     const component = fixture.componentInstance;
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/^password$/i), 'Password123!');
-    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+    await submitRegistrationForm();
 
     expect(component.isLoading()).toBe(false);
   });
