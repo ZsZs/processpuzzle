@@ -81,3 +81,5 @@ docker/**/pubsub-debug.log
 !/find-unused-dependencies.js
 /docker/postgresql/data/
 /.output.txt
+/.opencode/
+/.gemini/
