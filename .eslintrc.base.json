@@ -22,15 +22,15 @@
               },
               {
                 "sourceTag": "type:app",
-                "onlyDependOnLibsWithTags": ["scope:*", "type:auth", "type:feature", "type:util", "type:widget"]
+                "onlyDependOnLibsWithTags": ["scope:*", "type:auth", "type:feature", "type:util", "type:test-util", "type:widget"]
               },
               {
                 "sourceTag": "type:domain",
-                "onlyDependOnLibsWithTags": ["type:domain", "type:util"]
+                "onlyDependOnLibsWithTags": ["type:domain", "type:util", "type:test-util"]
               },
               {
                 "sourceTag": "type:feature",
-                "onlyDependOnLibsWithTags": ["type:domain", "type:util"]
+                "onlyDependOnLibsWithTags": ["type:domain", "type:util", "type:test-util", "type:test-util"]
               },
               {
                 "sourceTag": "type:usecase",
@@ -38,7 +38,7 @@
               },
               {
                 "sourceTag": "type:util",
-                "onlyDependOnLibsWithTags": ["type:util"]
+                "onlyDependOnLibsWithTags": ["type:util", "type:test-util"]
               }
             ]
           }

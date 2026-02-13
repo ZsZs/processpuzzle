@@ -3,16 +3,11 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/test-util/src",
   "projectType": "library",
-  "tags": [
-    "scope:shared",
-    "type:util"
-  ],
+  "tags": ["scope:shared", "type:test-util"],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/test-util/ng-package.json"
       },
@@ -28,9 +23,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{projectRoot}/reports/coverage"
-      ],
+      "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "jestConfig": "libs/test-util/jest.config.ts",
         "passWithNoTests": true,
@@ -46,14 +39,9 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/test-util/src/**/*.ts",
-          "libs/test-util/src/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/test-util/src/**/*.ts", "libs/test-util/src/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

@@ -1,5 +1,5 @@
-import { BehaviorSubject, Observable, skip } from 'rxjs';
-import { Breakpoints, BreakpointState } from '@angular/cdk/layout';
+import { Observable, Subject } from 'rxjs';
+import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 
 export enum DeviceTypes {
   HANDSET,
@@ -7,56 +7,87 @@ export enum DeviceTypes {
   WEB,
 }
 
-export class MockBreakpointObserver {
-  private state: BehaviorSubject<BreakpointState> = new BehaviorSubject({ matches: true, breakpoints: { [Breakpoints.Web]: true } } as BreakpointState);
+export class MockBreakpointObserver implements Partial<BreakpointObserver> {
+  private readonly state$ = new Subject<BreakpointState>();
 
+  /** Simulate a viewport width and device type */
   resize(width: number, deviceType?: DeviceTypes) {
-    let breakpoints;
+    const breakpoints: Record<string, boolean> = {};
+
+    // Determine size breakpoint
     if (width < 600) {
-      breakpoints = { [Breakpoints.XSmall]: true };
-      if (deviceType === DeviceTypes.HANDSET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetPortrait]: true };
+      // XSmall
+      breakpoints[Breakpoints.XSmall] = true;
+      breakpoints['(max-width: 599.98px)'] = true;
+    } else if (width < 960) {
+      // Small
+      breakpoints[Breakpoints.Small] = true;
+      breakpoints['(min-width: 600px) and (max-width: 959.98px)'] = true;
+    } else if (width < 1280) {
+      // Medium
+      breakpoints[Breakpoints.Medium] = true;
+      breakpoints['(min-width: 960px) and (max-width: 1279.98px)'] = true;
+    } else if (width < 1920) {
+      // Large
+      breakpoints[Breakpoints.Large] = true;
+      breakpoints['(min-width: 1280px) and (max-width: 1919.98px)'] = true;
+    } else {
+      // XLarge
+      breakpoints[Breakpoints.XLarge] = true;
+      breakpoints['(min-width: 1920px)'] = true;
+    }
+
+    // Determine device type and orientation breakpoints
+    if (width < 600) {
+      // XSmall - Handset Portrait
+      if (deviceType === DeviceTypes.HANDSET || deviceType === undefined) {
+        breakpoints[Breakpoints.Handset] = true;
+        breakpoints[Breakpoints.HandsetPortrait] = true;
+        breakpoints['(max-width: 599.98px) and (orientation: portrait)'] = true;
       }
-      if (deviceType == undefined) {
-        breakpoints = { ...breakpoints, [Breakpoints.HandsetPortrait]: true };
-      }
-    } else if (width >= 600 && width < 840) {
-      breakpoints = { [Breakpoints.Small]: true };
-      if (deviceType === DeviceTypes.HANDSET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetLandscape]: true };
+    } else if (width < 840) {
+      // Small (600-839)
+      if (deviceType === DeviceTypes.HANDSET || deviceType === undefined) {
+        // Handset Landscape
+        breakpoints[Breakpoints.Handset] = true;
+        breakpoints[Breakpoints.HandsetLandscape] = true;
+        breakpoints['(max-width: 959.98px) and (orientation: landscape)'] = true;
       } else if (deviceType === DeviceTypes.TABLET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletPortrait]: true };
-      } else if (deviceType == undefined) {
-        breakpoints = { ...breakpoints, [Breakpoints.HandsetLandscape]: true };
+        // Tablet Portrait
+        breakpoints[Breakpoints.Tablet] = true;
+        breakpoints[Breakpoints.TabletPortrait] = true;
+        breakpoints['(min-width: 600px) and (max-width: 839.98px) and (orientation: portrait)'] = true;
       }
-    } else if (width >= 840 && width < 960) {
-      breakpoints = { [Breakpoints.Small]: true };
-      if (deviceType === DeviceTypes.HANDSET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Handset]: true, [Breakpoints.HandsetLandscape]: true };
-      } else if (deviceType === DeviceTypes.TABLET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletLandscape]: true };
-      } else if (deviceType === DeviceTypes.WEB || deviceType === undefined) {
-        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebPortrait]: true };
-      }
-    } else if (width >= 960 && width < 1280) {
-      breakpoints = { [Breakpoints.Medium]: true };
+    } else if (width < 960) {
+      // Small (840-959) - Web Portrait
+      breakpoints[Breakpoints.Web] = true;
+      breakpoints[Breakpoints.WebPortrait] = true;
+      breakpoints['(min-width: 840px) and (orientation: portrait)'] = true;
+    } else if (width < 1280) {
+      // Medium
       if (deviceType === DeviceTypes.TABLET) {
-        breakpoints = { ...breakpoints, [Breakpoints.Tablet]: true, [Breakpoints.TabletLandscape]: true };
-      } else if (deviceType === DeviceTypes.WEB || deviceType === undefined) {
-        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebPortrait]: true };
-      }
-    } else if (width >= 1280 && width < 1920) {
-      breakpoints = { [Breakpoints.Large]: true };
-      if (deviceType === DeviceTypes.WEB || deviceType === undefined) {
-        breakpoints = { ...breakpoints, [Breakpoints.Web]: true, [Breakpoints.WebLandscape]: true };
+        // Tablet Landscape
+        breakpoints[Breakpoints.Tablet] = true;
+        breakpoints[Breakpoints.TabletLandscape] = true;
+        breakpoints['(min-width: 960px) and (max-width: 1279.98px) and (orientation: landscape)'] = true;
+      } else {
+        // Web Portrait
+        breakpoints[Breakpoints.Web] = true;
+        breakpoints[Breakpoints.WebPortrait] = true;
+        breakpoints['(min-width: 840px) and (orientation: portrait)'] = true;
       }
     } else {
-      breakpoints = { [Breakpoints.XLarge]: true, [Breakpoints.Web]: true, [Breakpoints.WebLandscape]: true };
+      // Large and XLarge - Web Landscape
+      breakpoints[Breakpoints.Web] = true;
+      breakpoints[Breakpoints.WebLandscape] = true;
+      breakpoints['(min-width: 1280px) and (orientation: landscape)'] = true;
     }
-    this.state.next({ matches: true, breakpoints } as BreakpointState);
+
+    this.state$.next({ matches: Object.values(breakpoints).some(Boolean), breakpoints });
   }
 
+  /** Mock of BreakpointObserver.observe() */
   observe(): Observable<BreakpointState> {
-    return this.state.asObservable().pipe(skip(1));
+    return this.state$.asObservable();
   }
 }
