@@ -83,7 +83,7 @@
     "firebase-functions": "^7.0.5",
     "flag-icons": "^7.5.0",
     "keycloak-js": "^25.0.1",
-    "marked": "^17.0.1",
+    "marked": "^17.0.2",
     "material-icons": "^1.13.14",
     "mermaid": "^11.12.2",
     "ngx-logger": "^5.0.12",
