@@ -1,5 +1,5 @@
 import { render } from '@testing-library/angular';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { AuthComponent } from './auth.component';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -10,7 +10,7 @@ describe('AuthComponent', () => {
     provideHttpClient(),
     provideMarkdown({
       loader: HttpClient,
-      sanitize: SecurityContext.NONE,
+      sanitize: SecurityContext.NONE as any,
       mermaidOptions: {
         provide: MERMAID_OPTIONS,
         useValue: {
@@ -36,7 +36,7 @@ describe('AuthComponent', () => {
   it('should call the onLoad method when triggered', async () => {
     const { fixture } = await render(AuthComponent, { providers });
     const componentInstance = fixture.componentInstance;
-    const onLoadSpy = jest.spyOn(componentInstance, 'onLoad');
+    const onLoadSpy = vi.spyOn(componentInstance, 'onLoad');
 
     const mockEvent = 'Sample load event';
     componentInstance.onLoad(mockEvent);
@@ -47,7 +47,7 @@ describe('AuthComponent', () => {
   it('should call the onError method when triggered', async () => {
     const { fixture } = await render(AuthComponent, { providers });
     const componentInstance = fixture.componentInstance;
-    const onErrorSpy = jest.spyOn(componentInstance, 'onError');
+    const onErrorSpy = vi.spyOn(componentInstance, 'onError');
 
     const mockErrorEvent = new Error('Sample error');
     componentInstance.onError(mockErrorEvent);

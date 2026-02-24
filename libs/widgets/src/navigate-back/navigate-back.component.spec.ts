@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 
 // Create a mock NavigationBackService
 const navigateBackServiceMock = {
-  goBack: jest.fn(), // Mock the goBack method
+  goBack: vi.fn(), // Mock the goBack method
 };
 
 describe('NavigateBackComponent', () => {

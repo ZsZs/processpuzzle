@@ -32,6 +32,13 @@ describe('ConfigurationService', () => {
   };
 
   beforeEach(() => {
+    // Mock globalThis.location.origin for tests
+    Object.defineProperty(globalThis, 'location', {
+      value: { origin: 'http://localhost' },
+      writable: true,
+      configurable: true,
+    });
+
     TestBed.configureTestingModule({
       imports: [],
       providers: [

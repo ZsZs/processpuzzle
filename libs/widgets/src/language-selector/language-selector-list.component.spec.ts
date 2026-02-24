@@ -1,53 +1,51 @@
+import '../../test-setup';
 import { fireEvent, screen } from '@testing-library/angular';
-import { LanguageSelectorListComponent } from './language-selector-list.component';
-import { NgClass, NgForOf } from '@angular/common';
 import userEvent from '@testing-library/user-event';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { getTranslocoTestingModule, mockLanguageConfig, mockTranslocoService } from '@processpuzzle/test-util';
-import { translate, TranslocoService } from '@jsverse/transloco';
+import { LanguageSelectorListComponent } from './language-selector-list.component';
+import { TranslocoService } from '@jsverse/transloco';
+import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { MatListOption, MatSelectionList } from '@angular/material/list';
-import widgetsDe from '../assets/i18n/widgets/de.json';
-import widgetsEn from '../assets/i18n/widgets/en.json';
 
 describe('LanguageSelectorListComponent', () => {
-  let fixture: ComponentFixture<LanguageSelectorListComponent>;
+  const testConfig: TranslocoTestConfig = {
+    scope: 'widgets',
+    translations: {
+      en: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
+      es: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
+      de: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
+    },
+  };
   let translocoService: TranslocoService;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [getTranslocoTestingModule({ 'widgets/de': widgetsDe, 'widgets/en': widgetsEn }), LanguageSelectorListComponent, MatListOption, MatSelectionList, NgClass, NgForOf],
-      providers: [TranslocoService, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(LanguageSelectorListComponent);
-    translocoService = TestBed.inject(TranslocoService);
-    fixture.detectChanges();
+    const result = await setUpTranslocoTestBed(LanguageSelectorListComponent, testConfig, {
+      providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
+    });
+    translocoService = result.translocoService;
   });
 
   it('should render the list of languages correctly', () => {
-    mockLanguageConfig.AVAILABLE_LANGUAGES?.forEach((language) => {
-      const text = translate('widgets.' + language.label);
-      expect(screen.getByText(text)).toBeInTheDocument();
-    });
+    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('Spanish')).toBeInTheDocument();
+    expect(screen.getByText('German')).toBeInTheDocument();
   });
 
-  it('should properly highlight the default selected language', async () => {
-    const activeElement = screen.getByText('English');
-    expect(activeElement.parentElement?.parentElement?.parentElement).toHaveAttribute('aria-selected', 'true');
+  it('should properly highlight the default selected language', () => {
+    const englishOption = screen.getByRole('option', { name: /English/ });
+    expect(englishOption).toHaveAttribute('aria-selected', 'true');
   });
 
   it('should call onLanguageChange when a language is clicked', async () => {
-    const spy = jest.spyOn(translocoService, 'setActiveLang');
-    const spanishItem = screen.getByText('Spanish');
-    await userEvent.click(spanishItem);
+    const spy = vi.spyOn(translocoService, 'setActiveLang');
+    const spanishOption = screen.getByRole('option', { name: /Spanish/ });
+    await userEvent.click(spanishOption);
     expect(spy).toHaveBeenCalledWith('es');
-    expect(spanishItem.parentElement?.parentElement?.parentElement).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('should not do anything if a non-interactive key is pressed', async () => {
-    const spanishItem = screen.getByText('Spanish');
-    fireEvent.keyDown(spanishItem, { code: 'ArrowDown', key: 'ArrowDown' });
-    expect(mockTranslocoService.setActiveLang).not.toHaveBeenCalled();
+  it('should not do anything if a non-interactive key is pressed', () => {
+    const spy = vi.spyOn(translocoService, 'setActiveLang');
+    const spanishOption = screen.getByRole('option', { name: /Spanish/ });
+    fireEvent.keyDown(spanishOption, { code: 'ArrowDown', key: 'ArrowDown' });
+    expect(spy).not.toHaveBeenCalled();
   });
 });

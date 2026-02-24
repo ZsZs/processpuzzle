@@ -4,7 +4,7 @@ import { MatCardsGridComponent } from './mat-cards-grid.component';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { getTranslocoTestingModule } from '@processpuzzle/test-util';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 
 // Create a test host component to test the component with inputs
 @Component({
@@ -56,7 +56,7 @@ describe('MatCardsGridComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, NoopAnimationsModule, getTranslocoTestingModule(compilations)],
+      imports: [TestHostComponent, NoopAnimationsModule, provideTranslocoTesting(compilations)],
       providers: [provideRouter([])],
     }).compileComponents();
 

@@ -4,19 +4,12 @@
   "projectType": "library",
   "sourceRoot": "libs/base-entity/src",
   "prefix": "",
-  "tags": [
-    "scope:base-entity",
-    "type:domain"
-  ],
+  "tags": ["scope:base-entity", "type:domain"],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/{projectRoot}"
-      ],
-      "dependsOn": [
-        "^build"
-      ],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "dependsOn": ["^build"],
       "options": {
         "project": "libs/base-entity/ng-package.json"
       },
@@ -31,12 +24,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/reports/coverage/{projectRoot}"
-      ],
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/base-entity/jest.config.ts",
+        "config": "libs/base-entity/vitest.config.ts",
         "passWithNoTests": true,
         "codeCoverage": true
       },
@@ -50,14 +41,9 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/base-entity/src/**/*.ts",
-          "libs/base-entity/src/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/base-entity/src/**/*.ts", "libs/base-entity/src/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

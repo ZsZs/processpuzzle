@@ -1,8 +1,8 @@
 import { ApplicationProperty } from './app-property';
 
 // Mock the uuid generation to produce a predictable result for testing
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mocked-uuid'),
+vi.mock('uuid', () => ({
+  v4: vi.fn(() => 'mocked-uuid'),
 }));
 
 describe('ApplicationProperty', () => {

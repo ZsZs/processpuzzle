@@ -1,7 +1,5 @@
-import { setupZonelessTestEnv } from 'jest-preset-angular/setup-env/zoneless';
-import '@testing-library/jest-dom';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 
-setupZonelessTestEnv({
-  errorOnUnknownElements: true,
-  errorOnUnknownProperties: true,
+setupTestBed({
+  zoneless: true,
 });

@@ -130,10 +130,10 @@
       }
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vitest:test",
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "jestConfig": "apps/processpuzzle-testbed/jest.config.ts"
+        "config": "apps/processpuzzle-testbed/vitest.config.ts"
       },
       "configurations": {
         "ci": {

@@ -3,26 +3,28 @@ import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { authGuard } from './auth.guard';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
+ 
+import { Mocked } from 'vitest';
 
 describe('authGuard', () => {
-  let mockRouter: jest.Mocked<Router>;
-  let mockAuthService: jest.Mocked<AuthService>;
-  let mockSnackBar: jest.Mocked<MatSnackBar>;
+  let mockRouter: Mocked<Router>;
+  let mockAuthService: Mocked<AuthService>;
+  let mockSnackBar: Mocked<MatSnackBar>;
   let mockRoute: ActivatedRouteSnapshot;
 
   beforeEach(() => {
     mockRouter = {
-      navigate: jest.fn().mockResolvedValue(true),
-    } as unknown as jest.Mocked<Router>;
+      navigate: vi.fn().mockResolvedValue(true),
+    } as unknown as Mocked<Router>;
 
     mockAuthService = {
-      authenticate: jest.fn().mockResolvedValue(true),
-      isAuthenticated: jest.fn(),
-    } as unknown as jest.Mocked<AuthService>;
+      authenticate: vi.fn().mockResolvedValue(true),
+      isAuthenticated: vi.fn(),
+    } as unknown as Mocked<AuthService>;
 
     mockSnackBar = {
-      open: jest.fn(),
-    } as unknown as jest.Mocked<MatSnackBar>;
+      open: vi.fn(),
+    } as unknown as Mocked<MatSnackBar>;
 
     mockRoute = {
       routeConfig: { path: '' },
@@ -36,7 +38,7 @@ describe('authGuard', () => {
       ],
     });
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return true when user is authenticated for protected routes', async () => {

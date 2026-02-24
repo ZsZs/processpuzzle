@@ -13,7 +13,7 @@
     "./package.json"
   ],
   "exclude": [
-    "jest.config.ts",
+    "vitest.config.ts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
   ]

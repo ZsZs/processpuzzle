@@ -3,20 +3,21 @@ import { AUTHENTICATION_SERVICE, AuthenticationConfiguration, provideAuthenticat
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { KeycloakAuthService } from './keycloak-auth.service';
 import { provideFirebaseAuthService } from './provide-firebase-auth-service';
+import { Mocked } from 'vitest';
 
-jest.mock('keycloak-js', () => ({
+vi.mock('keycloak-js', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
-jest.mock('./keycloak-auth.service');
-jest.mock('./provide-firebase-auth-service');
+vi.mock('./keycloak-auth.service');
+vi.mock('./provide-firebase-auth-service');
 
 describe('provideAuthenticationService', () => {
   const mockBaseConfig = { PIPELINE_STAGE: 'prod' };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function setupTestBed(runtimeConfig: any) {
@@ -50,7 +51,7 @@ describe('provideAuthenticationService', () => {
       AUTHENTICATION_PROVIDER: 'firebase-auth',
     };
     const mockFirebaseService = { name: 'firebase' };
-    (provideFirebaseAuthService as jest.Mock).mockReturnValue(mockFirebaseService);
+    (provideFirebaseAuthService as Mocked<any>).mockReturnValue(mockFirebaseService);
 
     setupTestBed({
       BASE_CONFIGURATION: mockBaseConfig,

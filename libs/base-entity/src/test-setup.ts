@@ -1,5 +1,4 @@
-import { setupZonelessTestEnv } from 'jest-preset-angular/setup-env/zoneless';
-import '@testing-library/jest-dom';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -27,15 +26,14 @@ import { TestEntityService } from './lib/base-entity-service/test-entity.service
 import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { TestConfiguration } from './lib/test-configuration';
 import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.component';
-import { createSpyFromClass } from 'jest-auto-spies';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { MockBreakpointObserver } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
-import { Spy } from 'jest-auto-spies/src/jest-auto-spies.types';
+import { Mocked, vi } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 
-setupZonelessTestEnv({
-  errorOnUnknownElements: true,
-  errorOnUnknownProperties: true,
+setupTestBed({
+  zoneless: true,
 });
 
 @Component({
@@ -117,14 +115,14 @@ export function setupMockService({
 }: {
   isApiFailed?: boolean;
   payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity>;
-} = {}): Spy<TestEntityService> {
-  const mockService = createSpyFromClass<TestEntityService>(TestEntityService);
+} = {}): Mocked<TestEntityService> {
+  const mockService = mock<TestEntityService>();
   if (isApiFailed) {
-    mockService.add.throwWith({ message: 'API Failed' });
-    mockService.delete.throwWith({ message: 'API Failed' });
-    mockService.deleteAll.throwWith({ message: 'API Failed' });
-    mockService.findByQuery.throwWith({ message: 'API Failed' });
-    mockService.update.throwWith({ message: 'API Failed' });
+    mockService.add.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
+    mockService.delete.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
+    mockService.deleteAll.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
+    mockService.findByQuery.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
+    mockService.update.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
   } else {
     mockService.add.mockReturnValue(of(newTestEntity));
     mockService.delete.mockReturnValue(of(undefined));
@@ -139,7 +137,7 @@ export function setupMockService({
 
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
-  const mockService = createSpyFromClass(TestEntityService);
+  const mockService = mock<TestEntityService>();
   mockService.findByQuery.mockReturnValue(of(entities));
 
   await TestBed.configureTestingModule({
@@ -180,7 +178,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   const fixture = TestBed.createComponent(BaseEntityListComponent<TestEntity>);
   const component = fixture.componentInstance;
   const store = entityDescriptor.store;
-  jest.spyOn(store, 'load');
+  vi.spyOn(store, 'load');
   fixture.detectChanges();
   TestBed.flushEffects();
 

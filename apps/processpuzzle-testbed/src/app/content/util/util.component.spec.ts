@@ -1,5 +1,5 @@
 import { render } from '@testing-library/angular';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { UtilsComponent } from './util.component';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -36,7 +36,7 @@ describe('UtilsComponent', () => {
   it('should call the onLoad method when triggered', async () => {
     const { fixture } = await render(UtilsComponent, { providers });
     const componentInstance = fixture.componentInstance;
-    const onLoadSpy = jest.spyOn(componentInstance, 'onLoad');
+    const onLoadSpy = vi.spyOn(componentInstance, 'onLoad');
 
     const mockEvent = 'Sample load event';
     componentInstance.onLoad(mockEvent);
@@ -47,7 +47,7 @@ describe('UtilsComponent', () => {
   it('should call the onError method when triggered', async () => {
     const { fixture } = await render(UtilsComponent, { providers });
     const componentInstance = fixture.componentInstance;
-    const onErrorSpy = jest.spyOn(componentInstance, 'onError');
+    const onErrorSpy = vi.spyOn(componentInstance, 'onError');
 
     const mockErrorEvent = new Error('Sample error');
     componentInstance.onError(mockErrorEvent);

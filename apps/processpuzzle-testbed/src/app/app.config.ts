@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection, SecurityContext } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -22,7 +22,7 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { environment } from '../environments/environment';
 import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth';
+import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -93,7 +93,6 @@ export const appConfig: ApplicationConfig = {
     LayoutService,
     provideMarkdown({
       loader: HttpClient,
-      sanitize: SecurityContext.NONE,
       mermaidOptions: {
         provide: MERMAID_OPTIONS,
         useValue: {

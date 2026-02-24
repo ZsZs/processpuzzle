@@ -62,10 +62,10 @@ describe('EntityListComponent', () => {
     it('onChangeSelection(), sets/clears store.currentEntity() and adds/removes store.selectedEntities()', async () => {
       // SETUP:
       const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
-      jest.spyOn(store, 'selectEntity');
-      jest.spyOn(store, 'deselectEntity');
-      jest.spyOn(store, 'setCurrentEntity');
-      jest.spyOn(store, 'clearCurrentEntity');
+      vi.spyOn(store, 'selectEntity');
+      vi.spyOn(store, 'deselectEntity');
+      vi.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(store, 'clearCurrentEntity');
 
       // EXERCISE:
       component.selection.select(testEntity_1);
@@ -95,8 +95,8 @@ describe('EntityListComponent', () => {
 
     it('navigateToDetails() calls store to navigate and set current entity.', async () => {
       const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
-      jest.spyOn(store, 'navigateToDetails');
-      jest.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(store, 'navigateToDetails');
+      vi.spyOn(store, 'setCurrentEntity');
 
       component.onNavigateToDetails(testEntity_2);
 
@@ -106,7 +106,7 @@ describe('EntityListComponent', () => {
 
     it('navigateToRelated() calls store to navigate to.', async () => {
       const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
-      jest.spyOn(store, 'navigateToRelated');
+      vi.spyOn(store, 'navigateToRelated');
 
       component.onNavigateToRelated(labelConfig, testEntity_2);
 
@@ -115,7 +115,7 @@ describe('EntityListComponent', () => {
 
     it('onRowClick() ', async () => {
       const { component } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
-      jest.spyOn(component, 'onChangeSelection');
+      vi.spyOn(component, 'onChangeSelection');
 
       component.onRowClick(testEntity_2);
 
@@ -126,8 +126,8 @@ describe('EntityListComponent', () => {
     it('onToggleAllRows() ', async () => {
       // SETUP:
       const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
-      jest.spyOn(store, 'selectEntity');
-      jest.spyOn(store, 'deselectAll');
+      vi.spyOn(store, 'selectEntity');
+      vi.spyOn(store, 'deselectAll');
 
       // EXERCISE:
       component.onToggleAllRows();

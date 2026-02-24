@@ -3,24 +3,26 @@ import { Auth, signInWithEmailAndPassword, User as FirebaseUser } from '@angular
 import { Router } from '@angular/router';
 import { User } from '../user/user';
 import { TestBed } from '@angular/core/testing';
+ 
+import { Mocked } from 'vitest';
 
-jest.mock('@angular/fire/auth', () => ({
-  signInWithEmailAndPassword: jest.fn(),
+vi.mock('@angular/fire/auth', () => ({
+  signInWithEmailAndPassword: vi.fn(),
 }));
 
 describe('FirebaseAuthService', () => {
   let service: FirebaseAuthService;
-  let authMock: jest.Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
+  let authMock: Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
   let routerMock: Partial<Router>;
 
   beforeEach(() => {
     authMock = {
       currentUser: null,
-      signOut: jest.fn().mockResolvedValue(undefined),
-    } as jest.Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
+      signOut: vi.fn().mockResolvedValue(undefined),
+    } as Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
 
     routerMock = {
-      navigate: jest.fn(),
+      navigate: vi.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -55,7 +57,7 @@ describe('FirebaseAuthService', () => {
 
   describe('login', () => {
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should call signInWithEmailAndPassword and return user when email and password are provided', async () => {
@@ -66,7 +68,7 @@ describe('FirebaseAuthService', () => {
           displayName: 'Test User',
         },
       };
-      (signInWithEmailAndPassword as jest.Mock).mockResolvedValue(mockUserCredential);
+      (signInWithEmailAndPassword as Mocked<any>).mockResolvedValue(mockUserCredential);
 
       // Update authMock to simulate successful login impact on getCurrentUser
       authMock.currentUser = mockUserCredential.user as FirebaseUser;

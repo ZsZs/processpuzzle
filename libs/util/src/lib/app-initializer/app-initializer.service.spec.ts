@@ -5,12 +5,12 @@ import { TestBed } from '@angular/core/testing';
 
 describe('AppInitializerService', () => {
   let appInitializer: AppInitializer;
-  const initializerOne = jest.fn(() => {
+  const initializerOne = vi.fn(() => {
     Promise.resolve(true);
   });
-  const initializerTwo = jest.fn(() => Promise.resolve('success'));
+  const initializerTwo = vi.fn(() => Promise.resolve('success'));
   const configServiceMock = {
-    init: jest.fn(() => Promise.resolve()),
+    init: vi.fn(() => Promise.resolve()),
   };
 
   beforeEach(() => {

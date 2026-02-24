@@ -22,10 +22,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vitest:test",
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "jestConfig": "libs/test-util/jest.config.ts",
+        "config": "libs/test-util/vitest.config.ts",
         "passWithNoTests": true,
         "codeCoverage": true
       },

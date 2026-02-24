@@ -47,7 +47,7 @@ describe('GenericEntityFormComponent', () => {
     it('onCancel()', async () => {
       // SETUP:
       const { fixture, component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
-      jest.spyOn(component, 'onCancel');
+      vi.spyOn(component, 'onCancel');
       const cancelButton = fixture.debugElement.query(By.css('mat-card-actions > button#cancel')).nativeElement;
 
       // EXERCISE:
@@ -68,10 +68,10 @@ describe('GenericEntityFormComponent', () => {
         checkbox.dispatchEvent(new Event('input'));
         fixture.detectChanges();
         const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
-        jest.spyOn(component, 'onSubmit');
-        jest.spyOn(store, 'update');
-        jest.spyOn(store, 'setCurrentEntity');
-        jest.spyOn(store, 'navigateBack');
+        vi.spyOn(component, 'onSubmit');
+        vi.spyOn(store, 'update');
+        vi.spyOn(store, 'setCurrentEntity');
+        vi.spyOn(store, 'navigateBack');
 
         // EXERCISE:
         submitButton.click();
@@ -96,10 +96,10 @@ describe('GenericEntityFormComponent', () => {
         checkbox.dispatchEvent(new Event('input'));
         fixture.detectChanges();
         const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
-        jest.spyOn(component, 'onSubmit');
-        jest.spyOn(store, 'add');
-        jest.spyOn(store, 'setCurrentEntity');
-        jest.spyOn(store, 'navigateBack');
+        vi.spyOn(component, 'onSubmit');
+        vi.spyOn(store, 'add');
+        vi.spyOn(store, 'setCurrentEntity');
+        vi.spyOn(store, 'navigateBack');
 
         // EXERCISE:
         submitButton.click();

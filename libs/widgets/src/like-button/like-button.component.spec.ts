@@ -5,23 +5,25 @@ import { ApplicationProperty } from '../app-property/app-property';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { provideRouter } from '@angular/router';
 
 describe('LikeButtonComponent', () => {
   const properties: Array<ApplicationProperty> = [new ApplicationProperty(undefined, 'likes', '0')];
   const mockStore = {
-    add: jest.fn(),
-    entities: jest.fn().mockReturnValue(properties),
-    error: jest.fn().mockReturnValue(undefined),
-    update: jest.fn(),
-    resetErrorState: jest.fn(),
+    add: vi.fn(),
+    entities: vi.fn().mockReturnValue(properties),
+    error: vi.fn().mockReturnValue(undefined),
+    update: vi.fn(),
+    resetErrorState: vi.fn(),
   };
 
   const mockSnackBar = {
-    open: jest.fn(),
+    open: vi.fn(),
   };
 
   it('should render initial likes count', async () => {
     await render(LikeButtonComponent, {
+      providers: [provideRouter([])],
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
         { provide: MatSnackBar, useValue: mockSnackBar },
@@ -34,6 +36,7 @@ describe('LikeButtonComponent', () => {
 
   it('should increment likes count when like button is clicked', async () => {
     await render(LikeButtonComponent, {
+      providers: [provideRouter([])],
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
         { provide: MatSnackBar, useValue: mockSnackBar },
@@ -54,9 +57,10 @@ describe('LikeButtonComponent', () => {
 
   it('should add a new likes property if not found', async () => {
     // Modify the mock to return no entities initially
-    mockStore.entities = jest.fn().mockReturnValue([]);
+    mockStore.entities = vi.fn().mockReturnValue([]);
 
     await render(LikeButtonComponent, {
+      providers: [provideRouter([])],
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
         { provide: MatSnackBar, useValue: mockSnackBar },
@@ -75,9 +79,10 @@ describe('LikeButtonComponent', () => {
   it('should display error message when store has an error', async () => {
     // Set up the error in the store
     const errorMessage = 'Failed to update likes';
-    mockStore.error = jest.fn().mockReturnValue(errorMessage);
+    mockStore.error = vi.fn().mockReturnValue(errorMessage);
 
     await render(LikeButtonComponent, {
+      providers: [provideRouter([])],
       componentProviders: [
         { provide: ApplicationPropertyStore, useValue: mockStore },
         { provide: MatSnackBar, useValue: mockSnackBar },

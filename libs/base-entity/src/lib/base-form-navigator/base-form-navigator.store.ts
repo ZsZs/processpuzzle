@@ -64,7 +64,7 @@ export function BaseFormNavigatorStore(entityName: string) {
         const goTo = store.returnTo() ? store.returnTo() : defaultUrl;
         patchState(store, { returnTo: '' });
         if (goTo) {
-          router
+          await router
             .navigateByUrl(goTo)
             .then()
             .catch((error) => patchState(store, { navigationError: error.message }));

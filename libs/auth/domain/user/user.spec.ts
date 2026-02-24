@@ -1,16 +1,18 @@
 import { User } from './user';
 import { v4 as uuidv4 } from 'uuid';
+ 
+import { Mocked } from 'vitest';
 
 // Mock uuid to have deterministic IDs in tests
-jest.mock('uuid', () => ({
-  v4: jest.fn()
+vi.mock('uuid', () => ({
+  v4: vi.fn(),
 }));
 
 describe('User', () => {
   beforeEach(() => {
     // Reset the mock before each test
-    (uuidv4 as jest.Mock).mockReset();
-    (uuidv4 as jest.Mock).mockReturnValue('mocked-uuid');
+    (uuidv4 as Mocked<any>).mockReset();
+    (uuidv4 as Mocked<any>).mockReturnValue('mocked-uuid');
   });
 
   describe('constructor', () => {
@@ -25,13 +27,7 @@ describe('User', () => {
     });
 
     it('should create a user with all properties', () => {
-      const user = new User(
-        'test@example.com',
-        'custom-id',
-        'John',
-        'Doe',
-        'https://example.com/photo.jpg'
-      );
+      const user = new User('test@example.com', 'custom-id', 'John', 'Doe', 'https://example.com/photo.jpg');
 
       expect(user.email).toBe('test@example.com');
       expect(user.id).toBe('custom-id');

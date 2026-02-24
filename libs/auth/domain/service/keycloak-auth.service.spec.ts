@@ -1,31 +1,37 @@
 import { KeycloakAuthService } from './keycloak-auth.service';
 import Keycloak from 'keycloak-js';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
+import { Mocked } from 'vitest';
 
-type MockedKeycloak = jest.Mocked<Keycloak> & {
+type MockedKeycloak = Mocked<Keycloak> & {
   authenticated: boolean;
   profile?: { username?: string };
   realmAccess?: { roles: string[] };
 };
 
-jest.mock('keycloak-js', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      init: jest.fn().mockResolvedValue(true),
-      login: jest.fn().mockResolvedValue(undefined),
-      logout: jest.fn().mockResolvedValue(undefined),
-      loadUserProfile: jest.fn().mockResolvedValue({
-        id: '123',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-      }),
-      authenticated: false,
-      profile: { username: 'johndoe' },
-      realmAccess: { roles: ['user', 'admin'] },
-    };
+vi.mock('keycloak-js', () => {
+  const MockKeycloak = vi.fn(function (this: any) {
+    this.init = vi.fn().mockResolvedValue(true);
+    this.login = vi.fn().mockResolvedValue(undefined);
+    this.logout = vi.fn().mockResolvedValue(undefined);
+    this.loadUserProfile = vi.fn().mockResolvedValue({
+      id: '123',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+    });
+    this.authenticated = false;
+    this.profile = { username: 'johndoe' };
+    this.realmAccess = { roles: ['user', 'admin'] };
   });
+
+  return {
+    default: MockKeycloak,
+  };
 });
+
+// Save original location
+const originalLocation = globalThis.location;
 
 describe('KeycloakAuthService', () => {
   let service: KeycloakAuthService;
@@ -37,22 +43,16 @@ describe('KeycloakAuthService', () => {
   };
 
   beforeEach(() => {
+    // Use happy-dom-compatible location mocking
+    (globalThis as any).location = new URL('http://localhost:4200');
+
     service = new KeycloakAuthService(config);
     mockKeycloakInstance = service.keycloak as MockedKeycloak;
-
-    // Mock window.location.origin
-    Object.defineProperty(window, 'location', {
-      value: {
-        origin: 'http://localhost:4200',
-        href: 'http://localhost:4200/',
-      },
-      writable: true,
-    });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
-    // Reset location if needed, though jsdom usually handles it
+    vi.clearAllMocks();
+    (globalThis as any).location = originalLocation;
   });
 
   it('should be created', () => {
@@ -85,7 +85,7 @@ describe('KeycloakAuthService', () => {
       mockKeycloakInstance.authenticated = false;
       await service.login('dashboard');
       expect(mockKeycloakInstance.login).toHaveBeenCalledWith({
-        redirectUri: 'http://localhost:4200/dashboard',
+        redirectUri: (globalThis.location as any).origin + '/dashboard',
       });
     });
 
@@ -94,7 +94,7 @@ describe('KeycloakAuthService', () => {
       mockKeycloakInstance.authenticated = true;
       await service.authenticate(); // This will set the user signal
 
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       // The login method does: if (this.isAuthenticated()) return new Promise(this.user);
       // We need to bypass the promise which uses a signal as an executor if that's what's happening
@@ -113,7 +113,7 @@ describe('KeycloakAuthService', () => {
     it('should call keycloak.logout and clear user signal', async () => {
       await service.logout('home');
       expect(mockKeycloakInstance.logout).toHaveBeenCalledWith({
-        redirectUri: 'http://localhost:4200/home',
+        redirectUri: (globalThis.location as any).origin + '/home',
       });
       expect(service.getCurrentUser()).toBeUndefined();
     });

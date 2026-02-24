@@ -3,7 +3,6 @@ import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/mat
 import { MatButton } from '@angular/material/button';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 
 @Component({
@@ -11,11 +10,11 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
   template: `
     <div class="logout-dialog">
       <ng-container *transloco="let t">
-        <h2 mat-dialog-title>{{ t('auth.logout-dialog.title') }}</h2>
-        <mat-dialog-content>{{ t('auth.logout-dialog.content') }}</mat-dialog-content>
+        <h2 mat-dialog-title>{{ t('logout-dialog.title') }}</h2>
+        <mat-dialog-content>{{ t('logout-dialog.content') }}</mat-dialog-content>
         <mat-dialog-actions align="end">
-          <button mat-button (click)="onCancel()">{{ t('auth.logout-dialog.cancel_button') }}</button>
-          <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('auth.logout-dialog.logout_button') }}</button>
+          <button mat-button (click)="onCancel()">{{ t('logout-dialog.cancel_button') }}</button>
+          <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('logout-dialog.logout_button') }}</button>
         </mat-dialog-actions>
       </ng-container>
     </div>

@@ -2,13 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "target": "es2016",
-    "types": ["jest", "node"],
+    "types": ["vitest/globals", "node", "@testing-library/jest-dom"],
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "isolatedModules": true
   },
   "files": ["test-setup.ts"],
-  "include": ["jest.config.ts", "domain/**/*.test.ts", "feature/**/*.test.ts", "domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"]
+  "include": ["vitest.config.ts", "domain/**/*.test.ts", "feature/**/*.test.ts", "domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"]
 }

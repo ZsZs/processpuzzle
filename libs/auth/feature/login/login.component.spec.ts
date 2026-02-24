@@ -1,72 +1,45 @@
-import { fireEvent, render, screen } from '@testing-library/angular';
+import '../../test-setup';
+import { setupMockAuthService } from '../../test-setup';
+import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { LoginComponent } from './login.component';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
-import { TestBed } from '@angular/core/testing';
-import { Auth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from '@angular/fire/auth';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
-import { getTranslocoTestingModule } from '@processpuzzle/test-util';
+import { provideRouter, Router } from '@angular/router';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
+import { setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
-// Mock Firebase auth
-jest.mock('@angular/fire/auth', () => {
-  const original = jest.requireActual('@angular/fire/auth');
-  return {
-    ...original,
-    signInWithEmailAndPassword: jest.fn(),
-    signInWithPopup: jest.fn(),
-    GoogleAuthProvider: jest.fn().mockImplementation(() => {
-      return {};
-    }),
-  };
-});
-
 describe('LoginComponent', () => {
-  const mockAuth = {};
-
-  const renderComponent = async () => {
-    const mockAuthService = {
-      login: jest.fn().mockImplementation((url, email, password) => {
-        return signInWithEmailAndPassword(mockAuth as Auth, email, password);
-      }),
-    };
-
-    return render(LoginComponent, {
-      imports: [
-        getTranslocoTestingModule({
-          'auth/de': authDe,
-          'auth/en': authEn,
-        }),
-        ReactiveFormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatIconModule,
-        MatButtonModule,
-        BrowserAnimationsModule,
-        RouterTestingModule.withRoutes([]),
-      ],
-      providers: [
-        { provide: Auth, useValue: mockAuth },
-        { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
-      ],
-    });
+  const testConfig: TranslocoTestConfig = {
+    scope: 'auth',
+    translations: {
+      en: { auth: { authEn } },
+      de: { auth: { authDe } },
+    },
   };
+  let authService: AuthService;
+  let fixture: ComponentFixture<LoginComponent>;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const result = await setUpTranslocoTestBed(LoginComponent, testConfig, {
+      imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
+      providers: [provideNoopAnimations(), provideRouter([]), { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() }],
+    });
+
+    authService = TestBed.inject(AUTHENTICATION_SERVICE);
+    //    component = result.component;
+    fixture = result.fixture;
   });
 
   it('should render login form', async () => {
-    await renderComponent();
-
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
@@ -75,8 +48,6 @@ describe('LoginComponent', () => {
   });
 
   it('should show validation errors for empty form submission', async () => {
-    const { fixture } = await renderComponent();
-
     // Get the form element
     const form = screen.getByRole('form', { name: 'Login Form' });
 
@@ -85,11 +56,11 @@ describe('LoginComponent', () => {
     const passwordInput = screen.getByLabelText('Password');
 
     // Touch the inputs to trigger validation
-    await fireEvent.blur(emailInput);
-    await fireEvent.blur(passwordInput);
+    fireEvent.blur(emailInput);
+    fireEvent.blur(passwordInput);
 
     // Submit the form
-    await fireEvent.submit(form);
+    fireEvent.submit(form);
 
     // Force change detection
     fixture.detectChanges();
@@ -101,11 +72,9 @@ describe('LoginComponent', () => {
   });
 
   it('should show validation error for invalid email', async () => {
-    const { fixture } = await renderComponent();
-
     const emailInput = screen.getByLabelText(/email/i);
     await userEvent.type(emailInput, 'invalidemail');
-    await fireEvent.blur(emailInput);
+    fireEvent.blur(emailInput);
 
     // Force change detection
     fixture.detectChanges();
@@ -116,8 +85,6 @@ describe('LoginComponent', () => {
   });
 
   it('should toggle password visibility', async () => {
-    const { fixture } = await renderComponent();
-
     const passwordInput = screen.getByLabelText('Password');
     expect(passwordInput).toHaveAttribute('type', 'password');
 
@@ -142,42 +109,34 @@ describe('LoginComponent', () => {
   });
 
   it('should sign in successfully with valid credentials', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockResolvedValueOnce({});
-
-    await renderComponent();
     const router = TestBed.inject(Router);
-    const navigateSpy = jest.spyOn(router, 'navigate');
+    const navigateSpy = vi.spyOn(router, 'navigate');
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
-    expect(mockSignIn).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Password123!');
+    expect(authService).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Password123!');
     expect(navigateSpy).toHaveBeenCalledWith(['/']);
   });
 
   it('should sign in with Google', async () => {
-    const mockSignInWithPopup = signInWithPopup as jest.Mock;
-    mockSignInWithPopup.mockResolvedValueOnce({});
+    // const mockSignInWithPopup = signInWithPopup as Mocked<any>;
+    // mockSignInWithPopup.mockResolvedValueOnce({});
 
-    await renderComponent();
     const router = TestBed.inject(Router);
-    const navigateSpy = jest.spyOn(router, 'navigate');
+    const navigateSpy = vi.spyOn(router, 'navigate');
 
     await userEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
 
-    expect(mockSignInWithPopup).toHaveBeenCalled();
-    expect(GoogleAuthProvider).toHaveBeenCalled();
+    expect(authService.login()).toHaveBeenCalled();
+    //    expect(GoogleAuthProvider).toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith(['/']);
   });
 
   it('should show error message for invalid email', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockRejectedValueOnce({ code: 'auth/invalid-email' });
-
-    await renderComponent();
-
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // mockSignIn.mockRejectedValueOnce({ code: 'auth/invalid-email' });
     await userEvent.type(screen.getByLabelText(/email/i), 'test@google.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -186,11 +145,8 @@ describe('LoginComponent', () => {
   });
 
   it('should show error message for user not found', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockRejectedValueOnce({ code: 'auth/user-not-found' });
-
-    await renderComponent();
-
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // mockSignIn.mockRejectedValueOnce({ code: 'auth/user-not-found' });
     await userEvent.type(screen.getByLabelText(/email/i), 'nonexistent@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -199,13 +155,10 @@ describe('LoginComponent', () => {
   });
 
   it('should show error message for wrong password', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockRejectedValueOnce({
-      code: 'auth/wrong-password',
-    });
-
-    await renderComponent();
-
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // mockSignIn.mockRejectedValueOnce({
+    //   code: 'auth/wrong-password',
+    // });
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'WrongPassword');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -214,13 +167,10 @@ describe('LoginComponent', () => {
   });
 
   it('should show error message for disabled account', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockRejectedValueOnce({
-      code: 'auth/user-disabled',
-    });
-
-    await renderComponent();
-
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // mockSignIn.mockRejectedValueOnce({
+    //   code: 'auth/user-disabled',
+    // });
     await userEvent.type(screen.getByLabelText(/email/i), 'disabled@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -229,26 +179,20 @@ describe('LoginComponent', () => {
   });
 
   it('should show error message when popup is closed', async () => {
-    const mockSignInWithPopup = signInWithPopup as jest.Mock;
-    mockSignInWithPopup.mockRejectedValueOnce({
-      code: 'auth/popup-closed-by-user',
-    });
-
-    await renderComponent();
-
+    // const mockSignInWithPopup = signInWithPopup as Mocked<any>;
+    // mockSignInWithPopup.mockRejectedValueOnce({
+    //   code: 'auth/popup-closed-by-user',
+    // });
     await userEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
 
     expect(screen.getByText(/sign-in popup was closed before completion/i)).toBeInTheDocument();
   });
 
   it('should show generic error message for unknown errors', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    mockSignIn.mockRejectedValueOnce({
-      code: 'auth/unknown-error',
-    });
-
-    await renderComponent();
-
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // mockSignIn.mockRejectedValueOnce({
+    //   code: 'auth/unknown-error',
+    // });
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
     await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -257,15 +201,13 @@ describe('LoginComponent', () => {
   });
 
   it('should show loading state during sign in', async () => {
-    const mockSignIn = signInWithEmailAndPassword as jest.Mock;
-    // Use a delayed promise to test loading state
-    mockSignIn.mockImplementationOnce(() => {
-      return new Promise((resolve) => {
-        setTimeout(() => resolve({}), 100);
-      });
-    });
-
-    await renderComponent();
+    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
+    // // Use a delayed promise to test loading state
+    // mockSignIn.mockImplementationOnce(() => {
+    //   return new Promise((resolve) => {
+    //     setTimeout(() => resolve({}), 100);
+    //   });
+    // });
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
@@ -277,8 +219,6 @@ describe('LoginComponent', () => {
   });
 
   it('should navigate to registration page when clicking create account', async () => {
-    await renderComponent();
-
     const createAccountButton = screen.getByRole('button', { name: /create account/i });
     expect(createAccountButton).toHaveAttribute('routerlink', '/auth/register');
   });

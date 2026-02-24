@@ -9,13 +9,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Signal, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { getTranslocoTestingModule, mockLanguageConfig } from '@processpuzzle/test-util';
+import { mockLanguageConfig, provideTranslocoTesting } from '@processpuzzle/test-util';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
-jest.mock('keycloak-js', () => ({
+vi.mock('keycloak-js', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
 describe('AuthButtonComponent', () => {
@@ -31,13 +31,13 @@ describe('AuthButtonComponent', () => {
     const mockAuthService = createMockAuthService(isAuthenticated);
 
     return render(AuthButtonComponent, {
-      imports: [getTranslocoTestingModule({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
+      imports: [provideTranslocoTesting({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
       providers: [{ provide: AUTHENTICATION_SERVICE, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
     });
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should create', async () => {

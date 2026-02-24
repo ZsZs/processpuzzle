@@ -1,4 +1,4 @@
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
@@ -16,6 +16,7 @@ describe('BaseFormNavigatorStore', () => {
 
   const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
   let route: ActivatedRoute;
+  let router: Router;
   let store: any;
 
   beforeEach(async () => {
@@ -36,6 +37,7 @@ describe('BaseFormNavigatorStore', () => {
     await RouterTestingHarness.create('home');
     store = TestBed.inject(NavigatorStore);
     route = TestBed.inject(ActivatedRoute);
+    router = TestBed.inject(Router);
   });
 
   it('should be created', () => {
@@ -51,7 +53,7 @@ describe('BaseFormNavigatorStore', () => {
   it('navigateBack(), navigates to store.returnTo() url.', async () => {
     await store.navigateToUrl('test-entity/list', 'home');
     await store.navigateBack();
-    expect(Reflect.get(route, '_routerState').snapshot.url).toEqual('/home');
+    expect(router.url).toEqual('/home');
   });
 
   it('navigateToDetails() navigates from current route to Details route.', async () => {
