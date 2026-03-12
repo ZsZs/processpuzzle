@@ -1,6 +1,7 @@
 import { BaseEntityTabsComponent } from './base-entity-tabs.component';
 import { setupContainerComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('BaseEntityTabsComponent', () => {
   describe('component sanity', () => {
@@ -34,7 +35,7 @@ describe('BaseEntityTabsComponent', () => {
     it('onDestroy() deregisters tabs in store', async () => {
       // SETUP:
       const { component } = await setupContainerComponentTest(BaseEntityTabsComponent);
-      jest.spyOn(component.store, 'tabIsInactive');
+      vi.spyOn(component.store, 'tabIsInactive');
 
       // EXERCISE:
       (component as BaseEntityTabsComponent).ngOnDestroy();
@@ -53,7 +54,7 @@ describe('BaseEntityTabsComponent', () => {
     it('onShowDetails()', async () => {
       // SETUP:
       const { component } = await setupContainerComponentTest(BaseEntityTabsComponent);
-      jest.spyOn(component.store, 'navigateToDetails');
+      vi.spyOn(component.store, 'navigateToDetails');
 
       // EXERCISE:
       await (component as BaseEntityTabsComponent).onShowDetails();
@@ -67,7 +68,7 @@ describe('BaseEntityTabsComponent', () => {
       const { fixture, component } = await setupContainerComponentTest(BaseEntityTabsComponent);
       await component.store.navigateToDetails('1');
       fixture.detectChanges();
-      jest.spyOn(component.store, 'navigateToList');
+      vi.spyOn(component.store, 'navigateToList');
 
       // EXERCISE:
       await (component as BaseEntityTabsComponent).onShowList();

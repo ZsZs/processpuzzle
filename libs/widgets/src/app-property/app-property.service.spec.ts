@@ -1,31 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { ApplicationPropertyService } from './app-property.service';
 import { ApplicationPropertyMapper } from './app-property.mapper';
-import { doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
 import { ApplicationProperty } from './app-property';
 import { InjectionToken } from '@angular/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
 
 // Create a token for the mapper
 const ENTITY_MAPPER_TOKEN = new InjectionToken<ApplicationPropertyMapper>('entityMapper');
-
-// Mock Firestore methods
-jest.mock('@angular/fire/firestore', () => {
-  return {
-    addDoc: jest.fn(),
-    collection: jest.fn(() => ({})),
-    deleteDoc: jest.fn(),
-    doc: jest.fn(),
-    Firestore: jest.fn(),
-    getDoc: jest.fn(),
-    getDocs: jest.fn(),
-    limit: jest.fn(),
-    orderBy: jest.fn(),
-    query: jest.fn(),
-    setDoc: jest.fn(),
-    updateDoc: jest.fn(),
-    where: jest.fn(),
-  };
-});
 
 // Create a mock implementation of ApplicationPropertyService
 class MockApplicationPropertyService extends ApplicationPropertyService {
@@ -34,22 +16,40 @@ class MockApplicationPropertyService extends ApplicationPropertyService {
   }
 }
 
+// Mock Firestore methods
+vi.mock('@angular/fire/firestore', () => {
+  return {
+    addDoc: vi.fn(),
+    collection: vi.fn(),
+    collectionData: vi.fn(),
+    deleteDoc: vi.fn(),
+    doc: vi.fn(),
+    Firestore: vi.fn(),
+    getDoc: vi.fn(),
+  };
+});
+
+const mockDoc = vi.mocked(doc);
+const mockGetDoc = vi.mocked(getDoc);
+
 describe('ApplicationPropertyService', () => {
   let service: ApplicationPropertyService;
   let firestoreMock: Firestore;
   let mapper: ApplicationPropertyMapper;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
     // Create a proper mock document snapshot with a data method
     const mockDocumentSnapshot = {
-      data: jest.fn().mockReturnValue({ id: '123', name: 'testProperty', value: 'testValue' }),
+      data: vi.fn().mockReturnValue({ id: '123', name: 'testProperty', value: 'testValue' }),
       exists: true,
       id: '123',
       ref: {} as DocumentReference,
     } as unknown as DocumentSnapshot<ApplicationProperty>;
 
-    (doc as jest.Mock).mockReturnValue({} as DocumentReference);
-    (getDoc as jest.Mock).mockResolvedValue(mockDocumentSnapshot);
+    mockDoc.mockReturnValue({} as DocumentReference);
+    mockGetDoc.mockResolvedValue(mockDocumentSnapshot);
 
     // Create instances
     mapper = new ApplicationPropertyMapper();
@@ -59,10 +59,7 @@ describe('ApplicationPropertyService', () => {
       providers: [
         { provide: Firestore, useValue: {} },
         { provide: ENTITY_MAPPER_TOKEN, useValue: mapper },
-        {
-          provide: ApplicationPropertyService,
-          useFactory: () => new MockApplicationPropertyService(mapper),
-        },
+        { provide: ApplicationPropertyService, useFactory: () => new MockApplicationPropertyService(mapper) },
       ],
     });
 
@@ -76,16 +73,15 @@ describe('ApplicationPropertyService', () => {
   });
 
   it('should use the correct collection name', () => {
-    // We can test that the service was initialized with the correct collection name
-    // by spying on the doc function when calling a method like findById
     const testId = '123';
-    service.findById(testId);
-    expect(doc).toHaveBeenCalledWith(firestoreMock, 'application-properties', testId);
+    service.findById(testId).subscribe(() => {
+      expect(doc).toHaveBeenCalledWith(firestoreMock, 'application-properties', testId);
+    });
   });
 
   it('should use the mapper to convert DTOs to entities', () => {
     // Create a spy on the mapper's fromDto method
-    const fromDtoSpy = jest.spyOn(mapper, 'fromDto');
+    const fromDtoSpy = vi.spyOn(mapper, 'fromDto');
 
     // Create a mock DTO
     const mockDto = { id: '123', name: 'testProperty', value: 'testValue' };
@@ -99,7 +95,7 @@ describe('ApplicationPropertyService', () => {
 
   it('should use the mapper to convert entities to DTOs', () => {
     // Create a spy on the mapper's toDto method
-    const toDtoSpy = jest.spyOn(mapper, 'toDto');
+    const toDtoSpy = vi.spyOn(mapper, 'toDto');
 
     // Create a mock entity
     const mockEntity = new ApplicationProperty('123', 'testProperty', 'testValue');

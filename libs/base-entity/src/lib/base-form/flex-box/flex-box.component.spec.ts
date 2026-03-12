@@ -2,6 +2,7 @@ import { FlexBoxComponent } from './flex-box.component';
 import { TestEntity } from '../../test-entity';
 import { FlexboxDescriptor, FlexDirection } from '../../base-entity/flexboxDescriptor';
 import { setupFormControlTest } from '../../../test-setup';
+import { describe, expect, it } from 'vitest';
 
 describe('FlexControlComponent', () => {
   const flexBoxConfig = new FlexboxDescriptor([], FlexDirection.CONTAINER);

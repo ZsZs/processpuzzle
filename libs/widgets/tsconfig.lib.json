@@ -1,23 +1,8 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "declaration": true,
-    "declarationMap": true,
-    "inlineSources": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "types": []
+    "outDir": "../../dist/out-tsc"
   },
-  "exclude": [
-    "**/*.spec.ts",
-    "test-setup.ts",
-    "jest.config.ts",
-    "**/*.test.ts"
-  ],
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "mat-cards-grid/src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "mat-cards-grid/src/**/*.spec.ts"]
 }

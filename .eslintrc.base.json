@@ -10,7 +10,20 @@
           "error",
           {
             "enforceBuildableLibDependency": true,
-            "allow": ["@angular/**", "@basis-gui/**", "@ngrx", "build-url-ts", "eslint", "jest-preset-angular/**", "rxjs", "uuid", "@processpuzzle/auth/domain", "@processpuzzle/auth/feature"],
+            "allow": [
+              "@angular/**",
+              "@basis-gui/**",
+              "@ngrx",
+              "build-url-ts",
+              "eslint",
+              "rxjs",
+              "uuid",
+              "@processpuzzle/auth/domain",
+              "@processpuzzle/auth/feature",
+              "@analogjs/*",
+              "@analogjs/vitest-angular",
+              "@analogjs/vite-plugin-angular"
+            ],
             "depConstraints": [
               {
                 "sourceTag": "scope:shared",
@@ -59,10 +72,24 @@
     },
     {
       "files": ["*.spec.ts", "*.spec.tsx", "*.spec.js", "*.spec.jsx"],
-      "env": {
-        "jest": true
+      "globals": {
+        "vi": "readonly",
+        "describe": "readonly",
+        "it": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly",
+        "test": "readonly"
       },
       "rules": {}
+    },
+    {
+      "files": ["**/test-setup.ts", "**/vitest.config.ts", "**/vitest.config.mts"],
+      "rules": {
+        "@nx/enforce-module-boundaries": "off"
+      }
     }
   ]
 }

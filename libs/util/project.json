@@ -3,22 +3,15 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/util/src",
-  "prefix": "",
-  "tags": [
-    "scope:shared",
-    "type:util"
-  ],
+  "prefix": "pp",
+  "tags": ["scope:shared", "type:util"],
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/{projectRoot}"
-      ],
-      "dependsOn": [
-        "^build"
-      ],
+      "executor": "@angular/build:ng-packagr",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/util/ng-package.json"
+        "project": "libs/util/ng-package.json",
+        "tsConfig": "libs/util/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
@@ -31,33 +24,25 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{projectRoot}/reports/coverage"
-      ],
+      "executor": "@nx/angular:unit-test",
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "dependsOn": ["^build"],
       "options": {
-        "jestConfig": "libs/util/jest.config.ts",
-        "passWithNoTests": true,
-        "codeCoverage": true
+        "coverage": true,
+        "tsConfig": "libs/util/tsconfig.spec.json"
       },
       "configurations": {
         "ci": {
-          "ci": true,
           "coverage": true,
-          "coverageDirectory": "{projectRoot}/reports/coverage"
+          "coverageReporters": ["lcov", "json-summary"]
         }
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/util/src/**/*.ts",
-          "libs/util/src/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/util/src/**/*.ts", "libs/util/src/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

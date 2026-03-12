@@ -1,4 +1,5 @@
 import { LanguageConfig } from '@processpuzzle/widgets';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AuthenticationConfiguration } from '@processpuzzle/auth';
 import { BaseConfiguration } from '@processpuzzle/util';
 

@@ -2,6 +2,7 @@ import { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { FlexboxDescriptor, FlexDirection } from './flexboxDescriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
 import { FormControlType } from './abstact-attr.descriptor';
+import { describe, expect, it } from 'vitest';
 
 describe('filterAttributeDescriptors()', () => {
   const row1 = new FlexboxDescriptor([new BaseEntityAttrDescriptor('attr1', FormControlType.TEXT_BOX), new BaseEntityAttrDescriptor('attr2', FormControlType.TEXT_BOX)], FlexDirection.ROW);

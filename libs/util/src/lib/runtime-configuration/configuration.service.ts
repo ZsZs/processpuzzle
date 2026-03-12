@@ -21,7 +21,7 @@ export class ConfigurationService<TConfiguration> {
     try {
       await this.initInternal();
     } catch (error: any) {
-      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`);
+      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`, { cause: error });
     }
   }
 
@@ -54,8 +54,20 @@ export class ConfigurationService<TConfiguration> {
       const config$ = this.loadConfig(url);
       configs$.push(config$);
     });
-    const results = await Promise.all(configs$.map((config) => config.catch((e) => e)));
-    return results.filter((result) => !(result instanceof HttpErrorResponse));
+    const results: TConfiguration[] = [];
+    for (const configPromise of configs$) {
+      try {
+        const config = await configPromise;
+        results.push(config);
+      } catch (error) {
+        if (error instanceof HttpErrorResponse) {
+          // Handle HttpErrorResponse - skip this config
+          continue;
+        }
+        throw error;
+      }
+    }
+    return results;
   }
 
   private determineConfigUrls() {

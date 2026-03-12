@@ -7,6 +7,7 @@ import { TestEntity, TestEnum } from '../test-entity';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition } from './base-entity-load-response';
 import { TestConfiguration } from '../test-configuration';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('BaseEntityService', () => {
   const pathParams = new Map<string, string>([['messageId', '123']]);
@@ -84,9 +85,9 @@ describe('BaseEntityService', () => {
     let actualError: HttpErrorResponse | undefined;
 
     baseEntityService.findByQuery(queryCondition).subscribe(
-      () => fail('next handler must be called'),
+      () => expect.fail('next handler must be called'),
       (error) => (actualError = error),
-      () => fail('complete handler must be called'),
+      () => expect.fail('complete handler must be called'),
     );
     const request = controller.expectOne(expectedUrl);
     request.error(errorEvent, { status, statusText });

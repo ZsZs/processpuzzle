@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BaseEntityTabsStore } from './base-entity-tabs.store';
 import { signalStore } from '@ngrx/signals';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('BaseEntityTabsStore', () => {
   const TabsStore = signalStore({ providedIn: 'root' }, BaseEntityTabsStore());

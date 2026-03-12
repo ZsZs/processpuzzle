@@ -4,21 +4,15 @@
   "projectType": "library",
   "sourceRoot": "libs/widgets",
   "prefix": "pp",
-  "tags": [
-    "scope:shared",
-    "type:widgets"
-  ],
+  "tags": ["scope:shared", "type:widgets"],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "{workspaceRoot}/dist/{projectRoot}"
-      ],
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/widgets/ng-package.json"
+        "project": "libs/widgets/ng-package.json",
+        "tsConfig": "libs/widgets/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
@@ -31,36 +25,26 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "dependsOn": [
-        "build"
-      ],
-      "outputs": [
-        "{projectRoot}/reports/coverage"
-      ],
+      "executor": "@nx/angular:unit-test",
+      "dependsOn": ["build"],
+      "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "jestConfig": "libs/widgets/jest.config.ts",
-        "passWithNoTests": true,
-        "codeCoverage": true
+        "runner": "vitest",
+        "tsConfig": "libs/widgets/tsconfig.spec.json",
+        "setupFiles": ["libs/widgets/test-setup.ts"],
+        "coverage": true
       },
       "configurations": {
         "ci": {
-          "ci": true,
-          "coverage": true,
-          "coverageDirectory": "{projectRoot}/reports/coverage"
+          "coverage": true
         }
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/widgets/**/*.ts",
-          "libs/widgets/**/*.spec.ts"
-        ]
+        "lintFilePatterns": ["libs/widgets/**/*.ts", "libs/widgets/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

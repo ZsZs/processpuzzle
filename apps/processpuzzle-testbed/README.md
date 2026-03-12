@@ -6,10 +6,10 @@
 This is a test application for the libraries under the @processpuzzle organization. For more explanation see the [live demo app](https://testbed.processpuzzle.de/home).
 All the source code you can find in the [GitHub repository](https://github.com/ZsZs/processpuzzle).
 
-### Currently the following libraries are available:
+### Currently the following libraries are demonstrated:
 - [@processpuzzle/util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/util)
+- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/base-entity)
 - [@processpuzzle/widgets](https://github.com/ZsZs/processpuzzle/tree/develop/libs/widgets)
 - [@processpuzzle/auth](https://github.com/ZsZs/processpuzzle/tree/develop/libs/auth)
-- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/base-entity)
 
 

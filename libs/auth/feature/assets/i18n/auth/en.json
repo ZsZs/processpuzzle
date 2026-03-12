@@ -5,7 +5,7 @@
     "register": "Register",
     "my_profile": "My Profile"
   },
-  "login-form": {
+  "login_form": {
     "title": "Login",
     "email_label": "Email",
     "email_err_required": "Email is required",
@@ -17,13 +17,13 @@
     "signing_in_button": "Signing in...",
     "google_button": "Sign in with Google"
   },
-  "logout-dialog": {
+  "logout_dialog": {
     "title": "Confirm Logout",
     "content": " Are you sure you want to log out?",
     "cancel_button": "Cancel",
     "logout_button": "Logout"
   },
-  "registration-form": {
+  "registration_form": {
     "title": "Create Account",
     "email_label": "Email",
     "email_placeholder": "Enter your email",

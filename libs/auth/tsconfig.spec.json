@@ -2,13 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "target": "es2016",
-    "types": ["jest", "node"],
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "types": ["node", "@testing-library/jest-dom"]
   },
-  "files": ["test-setup.ts"],
-  "include": ["jest.config.ts", "domain/**/*.test.ts", "feature/**/*.test.ts", "domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"]
+  "include": ["domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"],
+  "exclude": ["test-setup.ts", "feature/assets/**"]
 }

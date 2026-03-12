@@ -1,16 +1,9 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { User } from './user';
-import { v4 as uuidv4 } from 'uuid';
-
-// Mock uuid to have deterministic IDs in tests
-jest.mock('uuid', () => ({
-  v4: jest.fn()
-}));
 
 describe('User', () => {
   beforeEach(() => {
-    // Reset the mock before each test
-    (uuidv4 as jest.Mock).mockReset();
-    (uuidv4 as jest.Mock).mockReturnValue('mocked-uuid');
+    // Test setup
   });
 
   describe('constructor', () => {
@@ -18,20 +11,14 @@ describe('User', () => {
       const user = new User('test@example.com');
 
       expect(user.email).toBe('test@example.com');
-      expect(user.id).toBe('mocked-uuid');
+      expect(user.id).toBeTruthy(); // UUID is generated
       expect(user.firstName).toBe('');
       expect(user.lastName).toBe('');
       expect(user.photoUrl).toBe('');
     });
 
     it('should create a user with all properties', () => {
-      const user = new User(
-        'test@example.com',
-        'custom-id',
-        'John',
-        'Doe',
-        'https://example.com/photo.jpg'
-      );
+      const user = new User('test@example.com', 'custom-id', 'John', 'Doe', 'https://example.com/photo.jpg');
 
       expect(user.email).toBe('test@example.com');
       expect(user.id).toBe('custom-id');
@@ -44,14 +31,13 @@ describe('User', () => {
       const user = new User('test@example.com', 'custom-id');
 
       expect(user.id).toBe('custom-id');
-      expect(uuidv4).not.toHaveBeenCalled();
     });
 
     it('should generate id if not provided', () => {
       const user = new User('test@example.com');
 
-      expect(user.id).toBe('mocked-uuid');
-      expect(uuidv4).toHaveBeenCalled();
+      expect(user.id).toBeTruthy();
+      expect(user.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
   });
 

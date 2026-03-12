@@ -4,7 +4,7 @@
 
 export { ApplicationProperty } from './app-property/app-property';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
-export { LanguageConfig, LanguageDefinition } from './language-selector/language-config';
+export type { LanguageConfig, LanguageDefinition } from './language-selector/language-config';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
 export { NavigateBackComponent } from './navigate-back/navigate-back.component';

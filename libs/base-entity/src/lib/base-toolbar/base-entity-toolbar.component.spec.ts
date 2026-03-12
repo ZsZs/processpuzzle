@@ -3,6 +3,7 @@ import { setupContainerComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { TestEntity } from '../test-entity';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('BaseEntityToolbarComponent', () => {
   describe('sanity tests', () => {
@@ -55,7 +56,7 @@ describe('BaseEntityToolbarComponent', () => {
   describe('component actions:', () => {
     it('onAddEntity() calls store.navigateToDetails() with id=new', async () => {
       const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
-      jest.spyOn(component.store, 'navigateToDetails');
+      vi.spyOn(component.store, 'navigateToDetails');
 
       (component as BaseEntityToolbarComponent<TestEntity>).onAddEntity();
 
@@ -67,7 +68,7 @@ describe('BaseEntityToolbarComponent', () => {
       const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent);
       component.store.selectEntity('1');
       component.store.selectEntity('2');
-      jest.spyOn(component.store, 'delete');
+      vi.spyOn(component.store, 'delete');
       fixture.detectChanges();
 
       // EXERCISE:
@@ -81,7 +82,7 @@ describe('BaseEntityToolbarComponent', () => {
     it('onDoFilter()', async () => {
       // SETUP:
       const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent);
-      jest.spyOn(component.store, 'doFilter');
+      vi.spyOn(component.store, 'doFilter');
 
       //EXERCISE:
       const filterInput = fixture.debugElement.query(By.css('input[test-id=filter-input]')).nativeElement;

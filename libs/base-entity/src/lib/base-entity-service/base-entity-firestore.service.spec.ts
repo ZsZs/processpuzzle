@@ -3,21 +3,22 @@ import { TestEntityMapper } from '../test-entity.mapper';
 import { TestEntityFirestoreService } from './test-entity-firestore.service';
 import { doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
 import { TestEntity } from '../test-entity';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
-jest.mock('@angular/fire/firestore', () => {
+vi.mock('@angular/fire/firestore', () => {
   return {
-    addDoc: jest.fn(),
-    collection: jest.fn(),
-    deleteDoc: jest.fn(),
-    doc: jest.fn(),
-    Firestore: jest.fn(),
-    getDoc: jest.fn(),
-    getDocs: jest.fn(),
-    limit: jest.fn(),
-    orderBy: jest.fn(),
-    query: jest.fn(),
-    updateDoc: jest.fn(),
-    where: jest.fn(),
+    addDoc: vi.fn(),
+    collection: vi.fn(),
+    deleteDoc: vi.fn(),
+    doc: vi.fn(),
+    Firestore: vi.fn(),
+    getDoc: vi.fn(),
+    getDocs: vi.fn(),
+    limit: vi.fn(),
+    orderBy: vi.fn(),
+    query: vi.fn(),
+    updateDoc: vi.fn(),
+    where: vi.fn(),
   };
 });
 
@@ -26,8 +27,8 @@ describe('BaseEntityFirestoreService', () => {
 
   beforeEach(() => {
     const mockDocumentSnapshot: DocumentSnapshot<TestEntity> = {} as DocumentSnapshot<TestEntity>;
-    (doc as jest.Mock).mockResolvedValue({} as DocumentReference);
-    (getDoc as jest.Mock).mockResolvedValue(new Promise(() => mockDocumentSnapshot));
+    (doc as Mocked<any>).mockResolvedValue({} as DocumentReference);
+    (getDoc as Mocked<any>).mockResolvedValue(new Promise(() => mockDocumentSnapshot));
 
     TestBed.configureTestingModule({
       imports: [],

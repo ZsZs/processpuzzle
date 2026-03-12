@@ -6,8 +6,7 @@ import { MatInput, MatLabel } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 
@@ -16,7 +15,7 @@ import { NavigateBackService } from '@processpuzzle/widgets';
   templateUrl: 'login.component.html',
   styleUrls: ['login.component.css'],
   imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, RouterLink, TranslocoDirective],
-  providers: [provideTranslocoScope('auth')],
+  providers: [],
 })
 export class LoginComponent implements OnInit {
   errorMessage = signal('');
@@ -24,7 +23,6 @@ export class LoginComponent implements OnInit {
   isLoading = signal(false);
   loginForm!: FormGroup;
   private readonly authService: AuthService = inject(AUTHENTICATION_SERVICE);
-  private readonly auth = inject(Auth);
   private readonly fb = inject(FormBuilder);
   private readonly navigateBackService = inject(NavigateBackService);
   private readonly route = inject(ActivatedRoute);
@@ -59,7 +57,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage.set('');
     this.isLoading.set(true);
     try {
-      await signInWithPopup(this.auth, new GoogleAuthProvider());
+      //      await signInWithPopup(this.authService, new GoogleAuthProvider());
       await this.router.navigate(['/']);
     } catch (error: unknown) {
       this.errorMessage.set(this.getErrorMessage((error as { code?: string; message?: string }).code || (error as { code?: string; message?: string }).message || ''));

@@ -3,6 +3,7 @@ import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { setupFormControlTest } from '../../../test-setup';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
+import { describe, expect, it } from 'vitest';
 
 describe('TextareaComponent', () => {
   const textareaConfig = new BaseEntityAttrDescriptor('projectFeedback', FormControlType.TEXTAREA, 'Project feedback', undefined, false, { inputType: 'text' });

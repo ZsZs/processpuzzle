@@ -1,15 +1,17 @@
 {
   "name": "test-util",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/test-util/src",
   "projectType": "library",
+  "sourceRoot": "libs/test-util/src",
   "tags": ["scope:shared", "type:test-util"],
+  "prefix": "pp",
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
+      "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/test-util/ng-package.json"
+        "project": "libs/test-util/ng-package.json",
+        "tsConfig": "libs/test-util/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
@@ -22,18 +24,17 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/angular:unit-test",
+      "dependsOn": ["build"],
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "jestConfig": "libs/test-util/jest.config.ts",
-        "passWithNoTests": true,
-        "codeCoverage": true
+        "runner": "vitest",
+        "tsConfig": "libs/test-util/tsconfig.spec.json",
+        "coverage": true
       },
       "configurations": {
         "ci": {
-          "ci": true,
-          "coverage": true,
-          "coverageDirectory": "{projectRoot}/reports/coverage"
+          "coverage": true
         }
       }
     },

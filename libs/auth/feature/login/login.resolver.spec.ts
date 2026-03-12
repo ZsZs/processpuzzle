@@ -3,26 +3,18 @@ import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from '@angular
 import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, AuthenticationConfiguration, User } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { loginResolver } from './login.resolver';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('loginResolver', () => {
-  let mockAuthService: { login: jest.Mock };
-  let mockNavigateBackService: { getRouteStack: jest.Mock };
+  let mockAuthService: { login: ReturnType<typeof vi.fn> };
+  let mockNavigateBackService: { getRouteStack: ReturnType<typeof vi.fn> };
   let mockAuthConfig: AuthenticationConfiguration;
-
   const executeResolver: ResolveFn<User | undefined> = (...resolverParameters) => TestBed.runInInjectionContext(() => loginResolver(...resolverParameters));
 
   beforeEach(() => {
-    mockAuthService = {
-      login: jest.fn(),
-    };
-
-    mockNavigateBackService = {
-      getRouteStack: jest.fn(),
-    };
-
-    mockAuthConfig = {
-      AUTHENTICATION_PROVIDER: 'local-auth',
-    } as AuthenticationConfiguration;
+    mockAuthConfig = { AUTHENTICATION_PROVIDER: 'local-auth' } as AuthenticationConfiguration;
+    mockAuthService = { login: vi.fn().mockResolvedValue(undefined) };
+    mockNavigateBackService = { getRouteStack: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -34,7 +26,7 @@ describe('loginResolver', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return undefined when authentication provider is firebase-auth', async () => {

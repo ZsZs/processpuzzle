@@ -4,6 +4,7 @@ import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.des
 import { setupFormControlTest } from '../../../test-setup';
 import { By } from '@angular/platform-browser';
 import { LabelComponent } from './label.component';
+import { describe, expect, it } from 'vitest';
 
 describe('LabelComponent', () => {
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);

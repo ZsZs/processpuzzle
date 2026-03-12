@@ -2,10 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, Router } from '@angular/router';
 import { NavigateBackService } from './navigate-back.service';
 import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('NavigateBackService', () => {
   let navigateBackService: NavigateBackService;
-  let router: jest.Mocked<Router>;
+  let router: Mocked<Router>;
   let routerEvents$: Subject<unknown>;
 
   beforeEach(() => {
@@ -13,8 +14,8 @@ describe('NavigateBackService', () => {
     routerEvents$ = new Subject<unknown>();
     router = {
       events: routerEvents$.asObservable(),
-      navigateByUrl: jest.fn(),
-    } as unknown as jest.Mocked<Router>;
+      navigateByUrl: vi.fn(),
+    } as unknown as Mocked<Router>;
 
     // TestBed Configuration
     TestBed.configureTestingModule({
@@ -26,7 +27,7 @@ describe('NavigateBackService', () => {
 
   afterEach(() => {
     routerEvents$.complete(); // Clean up the event subject
-    jest.clearAllMocks(); // Clear mocks between tests
+    vi.clearAllMocks(); // Clear mocks between tests
   });
 
   it('should initialize with an empty route history', () => {
@@ -71,14 +72,16 @@ describe('NavigateBackService', () => {
   });
 
   it('should warn if goBack is called with less than two routes', () => {
-    const consoleWarnSpy = jest.spyOn(console, 'log').mockImplementation();
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      /* empty */
+    });
 
     // Emit a single route
     routerEvents$.next(new NavigationEnd(1, '/route1', '/route1'));
 
     navigateBackService.goBack(); // Attempt to go back with insufficient routes
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith('No previous routes to navigate back to.'); // Correct warning should be issued
+    expect(consoleLogSpy).toHaveBeenCalledWith('No previous routes to navigate back to.'); // Correct warning should be issued
     expect(router.navigateByUrl).not.toHaveBeenCalled(); // No navigation should occur
   });
 

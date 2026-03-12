@@ -83,3 +83,6 @@ docker/**/pubsub-debug.log
 /.output.txt
 /.opencode/
 /.gemini/
+!/.claude/settings.local.json
+
+.nx/polygraph

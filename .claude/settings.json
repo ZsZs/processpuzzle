@@ -1,0 +1,16 @@
+{
+  "extraKnownMarketplaces": {
+    "nx-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "nrwl/nx-ai-agents-config"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "nx@nx-claude-plugins": true
+  },
+  "permissions": {
+    "deny": ["Bash(**/.env)", "Read(**/.env)", "Write(**/.env)"]
+  }
+}

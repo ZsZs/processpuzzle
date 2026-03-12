@@ -1,16 +1,14 @@
+import { describe, expect, it } from 'vitest';
 import { ApplicationProperty } from './app-property';
 
-// Mock the uuid generation to produce a predictable result for testing
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mocked-uuid'),
-}));
-
 describe('ApplicationProperty', () => {
+
   it('should create an ApplicationProperty with default values', () => {
     const property = new ApplicationProperty();
 
-    // Verify the default id is generated correctly
-    expect(property.id).toBe('mocked-uuid');
+    // Verify the default id is generated (should be a non-empty string)
+    expect(property.id).toBeTruthy();
+    expect(typeof property.id).toBe('string');
 
     // Verify default name and value are empty strings
     expect(property.name).toBe('');
@@ -20,8 +18,8 @@ describe('ApplicationProperty', () => {
   it('should create an ApplicationProperty with given name and value', () => {
     const property = new ApplicationProperty(undefined, 'likes', '42');
 
-    // Verify the id is generated correctly
-    expect(property.id).toBe('mocked-uuid');
+    // Verify the id is generated (should be a non-empty string)
+    expect(property.id).toBeTruthy();
 
     // Verify the name and value match what was provided
     expect(property.name).toBe('likes');

@@ -2,15 +2,16 @@ import { AppInitializer } from './app-initializer.service';
 import { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS } from '../runtime-configuration/configuration.injection-tokens';
 import { ConfigurationService } from '../runtime-configuration/configuration.service';
 import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AppInitializerService', () => {
   let appInitializer: AppInitializer;
-  const initializerOne = jest.fn(() => {
+  const initializerOne = vi.fn(() => {
     Promise.resolve(true);
   });
-  const initializerTwo = jest.fn(() => Promise.resolve('success'));
+  const initializerTwo = vi.fn(() => Promise.resolve('success'));
   const configServiceMock = {
-    init: jest.fn(() => Promise.resolve()),
+    init: vi.fn(() => Promise.resolve()),
   };
 
   beforeEach(() => {

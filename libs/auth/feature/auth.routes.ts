@@ -5,9 +5,10 @@ import { RegistrationComponent } from './registration/registration.component';
 import { LogoutComponent } from './logout/logout.component';
 import { authGuard } from './auth.guard';
 import { loginResolver } from './login/login.resolver';
+import { provideTranslocoScope } from '@jsverse/transloco';
 
 export const authRoutes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', redirectTo: 'login', pathMatch: 'full', providers: [provideTranslocoScope('auth')] },
   { path: 'login', component: LoginComponent, title: 'login', data: { icon: 'login', authToggle: true }, resolve: { signedInUser: loginResolver }, canActivate: [authGuard] },
   { path: 'logout', component: LogoutComponent, title: 'logout', data: { icon: 'logout', authToggle: false }, canActivate: [authGuard] },
   { path: 'register', component: RegistrationComponent, title: 'register', data: { icon: 'person_add', authToggle: true } },

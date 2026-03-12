@@ -1,14 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "declaration": true,
-    "declarationMap": true,
-    "inlineSources": true,
-    "module": "es2022",
-    "moduleResolution": "bundler",
-    "types": []
+    "outDir": "../../dist/out-tsc"
   },
-  "exclude": ["**/*.spec.ts", "domain/test-setup.ts", "feature/test-setup.ts", "jest.config.ts", "**/*.test.ts"],
-  "include": ["**/*.ts"]
+  "include": ["domain/**/*.ts", "feature/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "test-setup.ts"]
 }
