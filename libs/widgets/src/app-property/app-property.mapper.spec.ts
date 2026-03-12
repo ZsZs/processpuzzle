@@ -1,5 +1,6 @@
 import { ApplicationPropertyMapper } from './app-property.mapper';
 import { ApplicationProperty } from './app-property';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('ApplicationPropertyMapper', () => {
   let mapper: ApplicationPropertyMapper;
@@ -14,7 +15,7 @@ describe('ApplicationPropertyMapper', () => {
       const dto = {
         id: '123',
         name: 'testProperty',
-        value: 'testValue'
+        value: 'testValue',
       };
 
       // Act
@@ -30,7 +31,7 @@ describe('ApplicationPropertyMapper', () => {
     it('should handle a DTO with missing properties', () => {
       // Arrange
       const dto = {
-        id: '123'
+        id: '123',
       };
 
       // Act
@@ -56,7 +57,7 @@ describe('ApplicationPropertyMapper', () => {
       expect(result).toEqual({
         id: '123',
         name: 'testProperty',
-        value: 'testValue'
+        value: 'testValue',
       });
     });
 
@@ -71,7 +72,7 @@ describe('ApplicationPropertyMapper', () => {
       expect(result).toEqual({
         id: '123',
         name: '',
-        value: ''
+        value: '',
       });
     });
   });

@@ -3,8 +3,7 @@ import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { authGuard } from './auth.guard';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
- 
-import { Mocked } from 'vitest';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('authGuard', () => {
   let mockRouter: Mocked<Router>;

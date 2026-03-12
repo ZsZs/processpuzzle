@@ -1,5 +1,6 @@
 import { Breakpoints } from '@angular/cdk/layout';
 import { DeviceTypes, MockBreakpointObserver } from './mock-breakpoint-observer.service';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('MockBreakpointObserver', () => {
   let service: MockBreakpointObserver;
@@ -11,7 +12,7 @@ describe('MockBreakpointObserver', () => {
   describe('initial state', () => {
     it('should have initial state with Web breakpoint', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
           expect(state.breakpoints[Breakpoints.WebLandscape]).toBe(true);
@@ -30,7 +31,7 @@ describe('MockBreakpointObserver', () => {
   describe('resize method', () => {
     it('should set XSmall breakpoint for width < 600', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.XSmall]).toBe(true);
           expect(state.breakpoints[Breakpoints.HandsetPortrait]).toBe(true);
@@ -46,7 +47,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Small breakpoint for width between 600 and 840', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.Small]).toBe(true);
           expect(state.breakpoints[Breakpoints.HandsetLandscape]).toBe(true);
@@ -62,7 +63,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Small breakpoint for width between 840 and 960', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.Small]).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
@@ -79,7 +80,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Medium breakpoint for width between 960 and 1280', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.Medium]).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
@@ -96,7 +97,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Large breakpoint for width between 1280 and 1920', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.Large]).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
@@ -113,7 +114,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set XLarge breakpoint for width >= 1920', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.matches).toBe(true);
           expect(state.breakpoints[Breakpoints.XLarge]).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
@@ -132,7 +133,7 @@ describe('MockBreakpointObserver', () => {
   describe('resize method with device types', () => {
     it('should set Handset breakpoints for XSmall with HANDSET device type', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.breakpoints[Breakpoints.XSmall]).toBe(true);
           expect(state.breakpoints[Breakpoints.Handset]).toBe(true);
           expect(state.breakpoints[Breakpoints.HandsetPortrait]).toBe(true);
@@ -148,7 +149,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Handset breakpoints for Small with HANDSET device type', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.breakpoints[Breakpoints.Small]).toBe(true);
           expect(state.breakpoints[Breakpoints.Handset]).toBe(true);
           expect(state.breakpoints[Breakpoints.HandsetLandscape]).toBe(true);
@@ -164,7 +165,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Tablet breakpoints for Small with TABLET device type', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.breakpoints[Breakpoints.Small]).toBe(true);
           expect(state.breakpoints[Breakpoints.Tablet]).toBe(true);
           expect(state.breakpoints[Breakpoints.TabletPortrait]).toBe(true);
@@ -180,7 +181,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Tablet breakpoints for Medium with TABLET device type', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.breakpoints[Breakpoints.Medium]).toBe(true);
           expect(state.breakpoints[Breakpoints.Tablet]).toBe(true);
           expect(state.breakpoints[Breakpoints.TabletLandscape]).toBe(true);
@@ -196,7 +197,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should set Web breakpoints for Medium with WEB device type', () => {
       return new Promise<void>((resolve) => {
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           expect(state.breakpoints[Breakpoints.Medium]).toBe(true);
           expect(state.breakpoints[Breakpoints.Web]).toBe(true);
           expect(state.breakpoints[Breakpoints.WebPortrait]).toBe(true);
@@ -215,7 +216,7 @@ describe('MockBreakpointObserver', () => {
     it('should emit when resize is called', () => {
       return new Promise<void>((resolve) => {
         const emittedValues: any[] = [];
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           emittedValues.push(state);
 
           // Check if we've received all 3 emissions
@@ -238,7 +239,7 @@ describe('MockBreakpointObserver', () => {
     it('should skip the initial value', () => {
       return new Promise<void>((resolve) => {
         const emittedValues: any[] = [];
-        const subscription = service.observe().subscribe(state => {
+        const subscription = service.observe().subscribe((state) => {
           emittedValues.push(state);
         });
 

@@ -11,7 +11,8 @@
       "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/widgets/ng-package.json"
+        "project": "libs/widgets/ng-package.json",
+        "tsConfig": "libs/widgets/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
@@ -24,19 +25,18 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/vitest:test",
+      "executor": "@nx/angular:unit-test",
       "dependsOn": ["build"],
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "config": "libs/widgets/vitest.config.ts",
-        "passWithNoTests": true,
-        "codeCoverage": true
+        "runner": "vitest",
+        "tsConfig": "libs/widgets/tsconfig.spec.json",
+        "setupFiles": ["libs/widgets/test-setup.ts"],
+        "coverage": true
       },
       "configurations": {
         "ci": {
-          "ci": true,
-          "coverage": true,
-          "coverageDirectory": "{projectRoot}/reports/coverage"
+          "coverage": true
         }
       }
     },

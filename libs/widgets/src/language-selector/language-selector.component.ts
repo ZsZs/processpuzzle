@@ -1,46 +1,31 @@
 import { Component } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { MatMenu, MatMenuTrigger } from '@angular/material/menu';
 
 @Component({
   selector: 'pp-language-selector',
   template: `
-    <div>
-      <button mat-icon-button (click)="onSelectLanguage()" cdkOverlayOrigin #trigger="cdkOverlayOrigin" aria-label="Select Language Button">
+    <div class="language-selector-container">
+      <button mat-icon-button [matMenuTriggerFor]="langMenu" aria-label="Select Language Button">
         <mat-icon>language</mat-icon>
       </button>
+      <mat-menu #langMenu="matMenu">
+        <ng-container (click)="$event.stopPropagation()">
+          <pp-language-selector-list (languageSelected)="langMenu.closed.emit()" />
+        </ng-container>
+      </mat-menu>
     </div>
-    <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="trigger" [cdkConnectedOverlayOpen]="isOpen" [cdkConnectedOverlayHasBackdrop]="true" (backdropClick)="onClose()">
-      <div class="language-selector-container">
-        <pp-language-selector-list (languageSelected)="onClose()" />
-      </div>
-    </ng-template>
   `,
   styleUrls: ['./language-selector.component.css'],
-  imports: [CdkOverlayOrigin, CdkConnectedOverlay, MatIcon, MatIconButton, LanguageSelectorListComponent],
+  imports: [MatIcon, MatIconButton, LanguageSelectorListComponent, MatMenuTrigger, MatMenu],
   providers: [provideTranslocoScope({ scope: 'widgets' })],
 })
 export class LanguageSelectorComponent {
-  isOpen = false;
-
   // region Event handler methods
-  onClose(): void {
-    this.isOpen = false;
-  }
-
-  onSelectLanguage(): void {
-    this.toggleIsOpen();
-  }
-
   // endregion
-
   // region protected, private helper methods
-  private toggleIsOpen(): void {
-    this.isOpen = !this.isOpen;
-  }
-
   // endregion
 }

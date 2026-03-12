@@ -130,10 +130,12 @@
       }
     },
     "test": {
-      "executor": "@nx/vitest:test",
+      "executor": "@nx/angular:unit-test",
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "config": "apps/processpuzzle-testbed/vitest.config.ts"
+        "runner": "vitest",
+        "tsConfig": "apps/processpuzzle-testbed/tsconfig.spec.json",
+        "coverage": true
       },
       "configurations": {
         "ci": {

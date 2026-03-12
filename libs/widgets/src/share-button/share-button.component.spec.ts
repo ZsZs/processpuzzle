@@ -7,6 +7,7 @@ import { MatIconButton } from '@angular/material/button';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ShareButtons } from 'ngx-sharebuttons/buttons';
 import { By } from '@angular/platform-browser';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 const toggleOverlay = (fixture: ComponentFixture<ShareButtonComponent>) => {
   const button = fixture.debugElement.query(By.css('button[aria-label="Share Button"]')).nativeElement;

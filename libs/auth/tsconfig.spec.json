@@ -2,10 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": ["vitest/globals", "node", "@testing-library/jest-dom"],
-    "esModuleInterop": true,
-    "isolatedModules": true
+    "types": ["node", "@testing-library/jest-dom"]
   },
-  "files": ["test-setup.ts"],
-  "include": ["vitest.config.ts", "domain/**/*.test.ts", "feature/**/*.test.ts", "domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"]
+  "include": ["domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"],
+  "exclude": ["test-setup.ts", "feature/assets/**"]
 }

@@ -23,6 +23,7 @@ import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angul
 import { environment } from '../environments/environment';
 import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
+import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppPropertyStore(),
     provideAnimations(),
+    { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
     { provide: CONFIGURATION_APP_INITIALIZER, useValue: [] },
     {
       provide: CONFIGURATION_OPTIONS,

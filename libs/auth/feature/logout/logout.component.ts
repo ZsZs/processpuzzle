@@ -10,11 +10,11 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
   template: `
     <div class="logout-dialog">
       <ng-container *transloco="let t">
-        <h2 mat-dialog-title>{{ t('logout-dialog.title') }}</h2>
-        <mat-dialog-content>{{ t('logout-dialog.content') }}</mat-dialog-content>
+        <h2 mat-dialog-title>{{ t('logout_dialog.title') }}</h2>
+        <mat-dialog-content>{{ t('logout_dialog.content') }}</mat-dialog-content>
         <mat-dialog-actions align="end">
-          <button mat-button (click)="onCancel()">{{ t('logout-dialog.cancel_button') }}</button>
-          <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('logout-dialog.logout_button') }}</button>
+          <button mat-button (click)="onCancel()">{{ t('logout_dialog.cancel_button') }}</button>
+          <button mat-raised-button color="primary" (click)="onLogout()" [disabled]="isLoading()">{{ t('logout_dialog.logout_button') }}</button>
         </mat-dialog-actions>
       </ng-container>
     </div>

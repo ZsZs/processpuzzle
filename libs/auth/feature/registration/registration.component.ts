@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { AbstractControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatError, MatFormField } from '@angular/material/form-field';
@@ -13,14 +13,14 @@ import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain'
 
 @Component({
   selector: 'pp-registration',
-  templateUrl: 'registration.component.html',
-  styleUrls: ['registration.component.css'],
+  templateUrl: './registration.component.html',
+  styleUrls: ['./registration.component.css'],
   imports: [ReactiveFormsModule, MatProgressBar, MatFormField, MatInput, MatIconButton, MatIcon, MatLabel, MatButton, RouterLink, MatError, TranslocoDirective],
-  providers: [provideTranslocoScope('auth')],
+  providers: [provideTranslocoScope({ scope: 'auth' })],
 })
 export class RegistrationComponent {
   private readonly authService: AuthService = inject(AUTHENTICATION_SERVICE);
-  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly fb = inject(FormBuilder);
   private readonly navigateBack = inject(NavigateBackService);
   private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
   public registerForm: FormGroup;

@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { signalStore } from '@ngrx/signals';
 import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
 import { Component } from '@angular/core';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('BaseFormNavigatorStore', () => {
   @Component({

@@ -6,7 +6,7 @@ import { MatInput, MatLabel } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
 import { NavigateBackService } from '@processpuzzle/widgets';
 
@@ -15,7 +15,7 @@ import { NavigateBackService } from '@processpuzzle/widgets';
   templateUrl: 'login.component.html',
   styleUrls: ['login.component.css'],
   imports: [MatButton, MatDivider, MatError, MatFormField, MatIcon, MatIconButton, MatInput, MatLabel, MatSuffix, ReactiveFormsModule, RouterLink, TranslocoDirective],
-  providers: [provideTranslocoScope('auth')],
+  providers: [],
 })
 export class LoginComponent implements OnInit {
   errorMessage = signal('');

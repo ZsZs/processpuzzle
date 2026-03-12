@@ -1,4 +1,5 @@
 import { wildcardTextMatcher } from './wildcard-text-matcher';
+import { describe, expect, it } from 'vitest';
 
 describe('wildcardTextMatcher', () => {
   it('should return true if query string matches with subject', () => {

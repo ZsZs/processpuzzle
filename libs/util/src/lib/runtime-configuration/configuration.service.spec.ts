@@ -5,6 +5,7 @@ import { CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, RUNTIME_CONFIGURATION } from
 import { ConfigurationService } from '../runtime-configuration/configuration.service';
 import { ConfigurationOptions } from '../runtime-configuration/configuration.options';
 import { TestConfiguration } from './test-configuration';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('ConfigurationService', () => {
   let configService: ConfigurationService<TestConfiguration>;

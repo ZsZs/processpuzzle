@@ -1,4 +1,5 @@
 import { Stack } from './stack'; // Import the Stack class
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('Stack', () => {
   let stack: Stack<number>;
@@ -7,12 +8,12 @@ describe('Stack', () => {
     stack = new Stack<number>(); // Create a new stack before each test
   });
 
-  test('should initialize as an empty stack', () => {
+  it('should initialize as an empty stack', () => {
     expect(stack.isEmpty()).toBe(true);
     expect(stack.size()).toBe(0);
   });
 
-  test('should allow pushing elements onto the stack', () => {
+  it('should allow pushing elements onto the stack', () => {
     stack.push(10);
     stack.push(20);
 
@@ -21,7 +22,7 @@ describe('Stack', () => {
     expect(stack.peek()).toBe(20); // The last pushed item should be on top
   });
 
-  test('should pop elements off the stack', () => {
+  it('should pop elements off the stack', () => {
     stack.push(10);
     stack.push(20);
     stack.push(30);
@@ -32,13 +33,13 @@ describe('Stack', () => {
     expect(stack.peek()).toBe(20); // The next item on top after popping
   });
 
-  test('should return undefined when popping from an empty stack', () => {
+  it('should return undefined when popping from an empty stack', () => {
     const popped = stack.pop();
     expect(popped).toBeUndefined(); // Should return undefined
     expect(stack.isEmpty()).toBe(true);
   });
 
-  test('should peek the top element without removing it', () => {
+  it('should peek the top element without removing it', () => {
     stack.push(10);
     stack.push(20);
 
@@ -47,12 +48,12 @@ describe('Stack', () => {
     expect(stack.size()).toBe(2); // The size should remain the same
   });
 
-  test('should return undefined when peeking an empty stack', () => {
+  it('should return undefined when peeking an empty stack', () => {
     const peeked = stack.peek();
     expect(peeked).toBeUndefined(); // Should return undefined
   });
 
-  test('should correctly report if the stack is empty', () => {
+  it('should correctly report if the stack is empty', () => {
     expect(stack.isEmpty()).toBe(true);
 
     stack.push(10);
@@ -62,7 +63,7 @@ describe('Stack', () => {
     expect(stack.isEmpty()).toBe(true);
   });
 
-  test('should clear all elements from the stack', () => {
+  it('should clear all elements from the stack', () => {
     stack.push(10);
     stack.push(20);
     stack.push(30);

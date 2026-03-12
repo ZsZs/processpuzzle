@@ -1,28 +1,43 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { provideFirebaseAuthService } from './provide-firebase-auth-service';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { BaseConfiguration } from '@processpuzzle/util';
 import { AuthenticationConfiguration } from './provide-authentication.service';
-import * as firebaseAuth from '@angular/fire/auth';
-import { vi } from 'vitest';
+import { Auth } from '@angular/fire/auth';
+
+const mockAuth = { name: 'mockAuth' } as Auth;
+
+vi.mock('@angular/fire/auth', () => {
+  return {
+    default: {},
+    Auth: vi.fn(),
+    getAuth: vi.fn(() => mockAuth),
+    connectAuthEmulator: vi.fn(),
+    signInWithEmailAndPassword: vi.fn(),
+  };
+});
 
 describe('provideFirebaseAuthService', () => {
   let routerMock: Partial<Router>;
-  const mockAuth = { name: 'mockAuth' };
+  let getAuthMock: ReturnType<typeof vi.fn>;
+  let connectAuthEmulatorMock: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const firebaseAuthModule = await import('@angular/fire/auth');
+    getAuthMock = vi.mocked(firebaseAuthModule.getAuth);
+    connectAuthEmulatorMock = vi.mocked(firebaseAuthModule.connectAuthEmulator);
 
-    routerMock = {
-      navigate: vi.fn(),
-    };
+    routerMock = { navigate: vi.fn() };
 
     TestBed.configureTestingModule({
-      providers: [{ provide: Router, useValue: routerMock }],
+      providers: [
+        { provide: Auth, useValue: mockAuth },
+        { provide: Router, useValue: routerMock },
+      ],
     });
-
-    (firebaseAuth.getAuth as any).mockReturnValue(mockAuth);
   });
 
   it('should return a FirebaseAuthService instance', () => {
@@ -35,7 +50,7 @@ describe('provideFirebaseAuthService', () => {
     });
 
     expect(service).toBeInstanceOf(FirebaseAuthService);
-    expect(firebaseAuth.getAuth).toHaveBeenCalled();
+    expect(getAuthMock).toHaveBeenCalled();
   });
 
   it('should connect to emulator when stage is dev and AUTHENTICATION_SERVICE_ROOT is provided', () => {
@@ -46,7 +61,7 @@ describe('provideFirebaseAuthService', () => {
       provideFirebaseAuthService(baseConfig, authConfig);
     });
 
-    expect(firebaseAuth.connectAuthEmulator).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
+    expect(connectAuthEmulatorMock).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
   });
 
   it('should connect to emulator when stage is ci and AUTHENTICATION_SERVICE_ROOT is provided', () => {
@@ -57,7 +72,7 @@ describe('provideFirebaseAuthService', () => {
       provideFirebaseAuthService(baseConfig, authConfig);
     });
 
-    expect(firebaseAuth.connectAuthEmulator).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
+    expect(connectAuthEmulatorMock).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
   });
 
   it('should connect to emulator when stage is missing (defaults to ci) and AUTHENTICATION_SERVICE_ROOT is provided', () => {
@@ -68,7 +83,7 @@ describe('provideFirebaseAuthService', () => {
       provideFirebaseAuthService(baseConfig, authConfig);
     });
 
-    expect(firebaseAuth.connectAuthEmulator).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
+    expect(connectAuthEmulatorMock).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
   });
 
   it('should NOT connect to emulator when stage is prod', () => {
@@ -79,7 +94,7 @@ describe('provideFirebaseAuthService', () => {
       provideFirebaseAuthService(baseConfig, authConfig);
     });
 
-    expect(firebaseAuth.connectAuthEmulator).not.toHaveBeenCalled();
+    expect(connectAuthEmulatorMock).not.toHaveBeenCalled();
   });
 
   it('should NOT connect to emulator when AUTHENTICATION_SERVICE_ROOT is missing', () => {
@@ -90,6 +105,6 @@ describe('provideFirebaseAuthService', () => {
       provideFirebaseAuthService(baseConfig, authConfig);
     });
 
-    expect(firebaseAuth.connectAuthEmulator).not.toHaveBeenCalled();
+    expect(connectAuthEmulatorMock).not.toHaveBeenCalled();
   });
 });

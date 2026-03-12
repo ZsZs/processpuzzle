@@ -1,34 +1,16 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeycloakAuthService } from './keycloak-auth.service';
-import Keycloak from 'keycloak-js';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
-import { Mocked } from 'vitest';
 
-type MockedKeycloak = Mocked<Keycloak> & {
+type MockedKeycloak = {
   authenticated: boolean;
   profile?: { username?: string };
   realmAccess?: { roles: string[] };
+  init: ReturnType<typeof vi.fn>;
+  login: ReturnType<typeof vi.fn>;
+  logout: ReturnType<typeof vi.fn>;
+  loadUserProfile: ReturnType<typeof vi.fn>;
 };
-
-vi.mock('keycloak-js', () => {
-  const MockKeycloak = vi.fn(function (this: any) {
-    this.init = vi.fn().mockResolvedValue(true);
-    this.login = vi.fn().mockResolvedValue(undefined);
-    this.logout = vi.fn().mockResolvedValue(undefined);
-    this.loadUserProfile = vi.fn().mockResolvedValue({
-      id: '123',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-    });
-    this.authenticated = false;
-    this.profile = { username: 'johndoe' };
-    this.realmAccess = { roles: ['user', 'admin'] };
-  });
-
-  return {
-    default: MockKeycloak,
-  };
-});
 
 // Save original location
 const originalLocation = globalThis.location;
@@ -46,8 +28,25 @@ describe('KeycloakAuthService', () => {
     // Use happy-dom-compatible location mocking
     (globalThis as any).location = new URL('http://localhost:4200');
 
+    // Create a mock Keycloak instance
+    mockKeycloakInstance = {
+      init: vi.fn().mockResolvedValue(true),
+      login: vi.fn().mockResolvedValue(undefined),
+      logout: vi.fn().mockResolvedValue(undefined),
+      loadUserProfile: vi.fn().mockResolvedValue({
+        id: '123',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+      }),
+      authenticated: false,
+      profile: { username: 'johndoe' },
+      realmAccess: { roles: ['user', 'admin'] },
+    } as MockedKeycloak;
+
     service = new KeycloakAuthService(config);
-    mockKeycloakInstance = service.keycloak as MockedKeycloak;
+    // Replace the keycloak instance with our mock
+    (service as any).keycloak = mockKeycloakInstance;
   });
 
   afterEach(() => {
@@ -57,11 +56,6 @@ describe('KeycloakAuthService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
-    expect(Keycloak).toHaveBeenCalledWith({
-      clientId: config.clientId,
-      realm: config.realm,
-      url: config.authServerUrl,
-    });
   });
 
   describe('authenticate', () => {

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, Router } from '@angular/router';
 import { NavigateBackService } from './navigate-back.service';
 import { Subject } from 'rxjs';
-import { Mocked } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 describe('NavigateBackService', () => {
   let navigateBackService: NavigateBackService;

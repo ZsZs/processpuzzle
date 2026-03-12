@@ -2,10 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": ["vitest/globals", "node", "@testing-library/jest-dom"],
-    "esModuleInterop": true,
-    "isolatedModules": true
+    "types": ["node", "@testing-library/jest-dom"]
   },
-  "files": ["test-setup.ts"],
-  "include": ["vitest.config.ts", "**/*.test.ts", "**/*.spec.ts", "**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "mat-cards-grid/src/**/*.ts", "mat-cards-grid/src/**/*.d.ts", "test-setup.ts"]
 }

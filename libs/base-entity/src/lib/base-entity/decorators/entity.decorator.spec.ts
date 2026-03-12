@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { EntityOptions, getEntityIds, getEntityOptions, IEntityTransformer } from './entity.decorator';
 import { TestEntity } from './test-entity';
+import { describe, expect, it } from 'vitest';
 
 describe('Entity Decorator', () => {
-
   it('should store modelName, pluralName, and uriName as metadata on the class', () => {
     // Get the metadata from the decorated class
     const metadata = Reflect.getMetadata('entity:options', TestEntity) as EntityOptions;
@@ -76,39 +76,39 @@ describe('Entity Decorator', () => {
     it('should mark properties as ID fields', () => {
       // Create an instance of the decorated class
       const instance = new TestEntity();
-      
+
       // Get the ID properties using the utility function
       const idProperties = getEntityIds(instance);
-      
+
       // Verify that the ID properties exist
       expect(idProperties).toBeDefined();
       expect(Array.isArray(idProperties)).toBe(true);
-      
+
       // Verify that both properties are correctly marked as IDs
       expect(idProperties).toContain('id');
       expect(idProperties).toContain('alternateId');
-      
+
       // Verify that the total count is correct (2 properties)
       expect(idProperties.length).toBe(2);
     });
-    
+
     it('should handle multiple ID properties correctly', () => {
       // Create an instance of the decorated class
       const instance = new TestEntity();
       instance.id = 'primary-id';
       instance.alternateId = 'secondary-id';
-      
+
       // Get the ID properties using the utility function
       const idProperties = getEntityIds(instance);
-      
+
       // Verify that both properties are included in the result
       expect(idProperties).toEqual(['id', 'alternateId']);
     });
-    
+
     it('should return an empty array for null or undefined instances', () => {
       // Test with null
       expect(getEntityIds(null)).toEqual([]);
-      
+
       // Test with undefined
       expect(getEntityIds(undefined)).toEqual([]);
     });

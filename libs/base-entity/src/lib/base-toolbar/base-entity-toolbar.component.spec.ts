@@ -3,6 +3,7 @@ import { setupContainerComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { TestEntity } from '../test-entity';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('BaseEntityToolbarComponent', () => {
   describe('sanity tests', () => {

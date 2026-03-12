@@ -1,3 +1,7 @@
+We are building a platform described in @README.md and the referenced documents. Read that file for general architecture tasks or to double-check the exact technology stack.
+
+Keep your replies concise and focus on conveying the key information. No unnecessary fluff, no long code snippets.
+
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 

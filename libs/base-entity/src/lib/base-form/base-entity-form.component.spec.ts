@@ -4,6 +4,7 @@ import { TestEntity } from '../test-entity';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { setupFormComponentTest } from '../../test-setup';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('GenericEntityFormComponent', () => {
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);

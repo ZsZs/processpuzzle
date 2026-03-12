@@ -1,18 +1,22 @@
-import '../../test-setup';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { LanguageSelectorListComponent } from './language-selector-list.component';
 import { TranslocoService } from '@jsverse/transloco';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import widgetsDe from '../assets/i18n/widgets/de.json';
+import widgetsEn from '../assets/i18n/widgets/en.json';
+import widgetsEs from '../assets/i18n/widgets/es.json';
 
 describe('LanguageSelectorListComponent', () => {
   const testConfig: TranslocoTestConfig = {
     scope: 'widgets',
     translations: {
-      en: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
-      es: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
-      de: { widgets: { english: 'English', spanish: 'Spanish', german: 'German' } },
+      'widgets/de': widgetsDe,
+      'widgets/en': widgetsEn,
+      'widgets/es': widgetsEs,
     },
   };
   let translocoService: TranslocoService;

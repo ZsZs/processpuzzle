@@ -1,14 +1,19 @@
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { Auth, signInWithEmailAndPassword, User as FirebaseUser } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { User } from '../user/user';
 import { TestBed } from '@angular/core/testing';
- 
-import { Mocked } from 'vitest';
 
-vi.mock('@angular/fire/auth', () => ({
-  signInWithEmailAndPassword: vi.fn(),
-}));
+vi.mock('@angular/fire/auth', async () => {
+  return {
+    default: {},
+    Auth: vi.fn(),
+    getAuth: vi.fn(),
+    connectAuthEmulator: vi.fn(),
+    signInWithEmailAndPassword: vi.fn(),
+  };
+});
 
 describe('FirebaseAuthService', () => {
   let service: FirebaseAuthService;
@@ -21,9 +26,7 @@ describe('FirebaseAuthService', () => {
       signOut: vi.fn().mockResolvedValue(undefined),
     } as Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
 
-    routerMock = {
-      navigate: vi.fn(),
-    };
+    routerMock = { navigate: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [

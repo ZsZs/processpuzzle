@@ -1,19 +1,10 @@
 {
   "name": "auth",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/auth/src",
-  "prefix": "pp",
-  "tags": ["scope:shared", "type:auth"],
   "projectType": "library",
-  "release": {
-    "version": {
-      "generatorOptions": {
-        "packageRoot": "dist/{projectRoot}",
-        "currentVersionResolver": "git-tag",
-        "fallbackCurrentVersionResolver": "disk"
-      }
-    }
-  },
+  "sourceRoot": "libs/auth",
+  "tags": ["scope:shared", "type:auth"],
+  "prefix": "pp",
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
@@ -33,18 +24,18 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/vitest:test",
+      "executor": "@nx/angular:unit-test",
       "dependsOn": ["build"],
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "config": "libs/auth/vitest.config.ts",
-        "codeCoverage": true
+        "runner": "vitest",
+        "tsConfig": "libs/auth/tsconfig.spec.json",
+        "setupFiles": ["libs/auth/test-setup.ts"],
+        "coverage": true
       },
       "configurations": {
         "ci": {
-          "ci": true,
-          "coverage": true,
-          "coverageDirectory": "{projectRoot}/reports/coverage"
+          "coverage": true
         }
       }
     },
@@ -52,7 +43,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/auth/domain/**/*.ts", "libs/auth/feature/**/*.spec.ts"]
+        "lintFilePatterns": ["libs/auth/src/**/*.ts", "libs/auth/domain/**/*.ts", "libs/auth/feature/**/*.ts"]
       },
       "configurations": {
         "ci": {

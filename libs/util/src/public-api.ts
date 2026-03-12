@@ -1,9 +1,9 @@
 // Public API Surface of @processpuzzle/util
 
 export { AppInitializer } from './lib/app-initializer/app-initializer.service';
-export { BaseConfiguration, FirebaseConfig } from './lib/runtime-configuration/base-configuration';
+export type { BaseConfiguration, FirebaseConfig } from './lib/runtime-configuration/base-configuration';
 export { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, RUNTIME_CONFIGURATION } from './lib/runtime-configuration/configuration.injection-tokens';
-export { ConfigurationOptions } from './lib/runtime-configuration/configuration.options';
+export type { ConfigurationOptions } from './lib/runtime-configuration/configuration.options';
 export { ConfigurationService } from './lib/runtime-configuration/configuration.service';
 export { getEnvironment } from './lib/runtime-configuration/get-environment';
 export { LayoutService } from './lib/layout-service/layout.service';

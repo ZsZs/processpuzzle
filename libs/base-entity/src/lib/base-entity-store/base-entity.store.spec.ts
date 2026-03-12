@@ -7,6 +7,7 @@ import { provideRouter } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
+import { describe, expect, it } from 'vitest';
 
 describe('BaseEntityStore', () => {
   function setup({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {

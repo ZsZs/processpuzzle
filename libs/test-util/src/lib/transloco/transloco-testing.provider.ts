@@ -1,21 +1,18 @@
-import { provideTransloco, Translation, TRANSLOCO_LOADER, TranslocoLoader, TranslocoLoaderData, TranslocoService, TranslocoTestingOptions } from '@jsverse/transloco';
+import { provideTransloco, Translation, TRANSLOCO_LOADER, TranslocoLoader, TranslocoLoaderData, TranslocoService, TranslocoTestingModule, TranslocoTestingOptions } from '@jsverse/transloco';
 import { Observable, of } from 'rxjs';
 import { EnvironmentProviders, inject, Injectable, InjectionToken, makeEnvironmentProviders } from '@angular/core';
 import { ComponentType } from '@angular/cdk/portal';
 import { TestBed } from '@angular/core/testing';
 
-export const mockTranslocoService = {
-  load: vi.fn(),
-  setActiveLang: vi.fn(),
-};
-
 export const mockLanguageConfig = {
-  AVAILABLE_LANGUAGES: [
-    { code: 'en', flag: 'flag-en', label: 'english' },
-    { code: 'es', flag: 'flag-es', label: 'spanish' },
-    { code: 'de', flag: 'flag-de', label: 'german' },
-  ],
-  DEFAULT_LANGUAGE: 'en',
+  LANGUAGE_CONFIGURATION: {
+    AVAILABLE_LANGUAGES: [
+      { code: 'en', flag: 'flag-en', label: 'english' },
+      { code: 'es', flag: 'flag-es', label: 'spanish' },
+      { code: 'de', flag: 'flag-de', label: 'german' },
+    ],
+    DEFAULT_LANGUAGE: 'en',
+  },
 };
 
 export type TranslationsMap = { [lang: string]: Record<string, any> | { [scope: string]: Record<string, any> } };
@@ -51,6 +48,7 @@ export class TestTranslocoLoader implements TranslocoLoader {
     const langEntry = this.translations[lang];
     if (langEntry && typeof langEntry === 'object' && this.scope) {
       const scoped = (langEntry as Translation)[this.scope];
+      console.log(scoped);
       return of(scoped ?? {});
     }
     if (langEntry && typeof langEntry === 'object' && !this.scope) {
@@ -70,8 +68,8 @@ export function provideTranslocoTesting(testConfig: TranslocoTestConfig, options
     { provide: TRANSLOCO_TEST_CONFIG, useValue: testConfig },
     provideTransloco({
       config: {
-        availableLangs: mockLanguageConfig.AVAILABLE_LANGUAGES.map((lang) => lang.code),
-        defaultLang: mockLanguageConfig.DEFAULT_LANGUAGE,
+        availableLangs: mockLanguageConfig.LANGUAGE_CONFIGURATION.AVAILABLE_LANGUAGES.map((lang) => lang.code),
+        defaultLang: mockLanguageConfig.LANGUAGE_CONFIGURATION.DEFAULT_LANGUAGE,
         reRenderOnLangChange: false,
       },
       preloadLangs: true,
@@ -90,30 +88,33 @@ export async function setUpTranslocoTestBed<T>(
   } = {},
 ) {
   await TestBed.configureTestingModule({
-    imports: [componentType, ...(opts.imports ?? [])],
-    providers: [provideTranslocoTesting(testConfig), ...(opts.providers ?? [])],
+    imports: [
+      componentType,
+      TranslocoTestingModule.forRoot({
+        langs: testConfig.translations,
+        translocoConfig: { availableLangs: ['en', 'de'], defaultLang: 'en' },
+        preloadLangs: true,
+      }),
+      ...(opts.imports ?? []),
+    ],
+    providers: [...(opts.providers ?? [])],
   }).compileComponents();
 
   const translocoService = TestBed.inject(TranslocoService);
-  await translocoService.load('en').toPromise?.(); // ensure default language loaded
-
-  const result = await TestBed.runInInjectionContext(async () => {
-    const fixture = TestBed.createComponent(componentType);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    const component = fixture.componentInstance;
-    return { fixture, component };
-  });
+  const fixture = TestBed.createComponent(componentType);
+  fixture.detectChanges();
+  await fixture.whenStable();
+  const component = fixture.componentInstance;
 
   return {
-    component: result.component,
-    fixture: result.fixture,
+    component: component,
+    fixture: fixture,
     translocoService,
     setActiveLang: async (lang: string) => {
       await translocoService.load(lang).toPromise?.();
       translocoService.setActiveLang(lang);
-      result.fixture.detectChanges();
-      await result.fixture.whenStable();
+      fixture.detectChanges();
+      await fixture.whenStable();
     },
   };
 }

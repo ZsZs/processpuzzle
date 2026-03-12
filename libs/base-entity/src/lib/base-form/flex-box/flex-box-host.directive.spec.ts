@@ -1,6 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { FlexBoxHostDirective } from './flex-box-host.directive';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 @Component({
   selector: 'mock-component',

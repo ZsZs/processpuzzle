@@ -2,6 +2,7 @@ import { AppInitializer } from './app-initializer.service';
 import { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS } from '../runtime-configuration/configuration.injection-tokens';
 import { ConfigurationService } from '../runtime-configuration/configuration.service';
 import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AppInitializerService', () => {
   let appInitializer: AppInitializer;

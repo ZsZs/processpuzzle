@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter } from '@angular/router';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('LikeButtonComponent', () => {
   const properties: Array<ApplicationProperty> = [new ApplicationProperty(undefined, 'likes', '0')];

@@ -21,7 +21,7 @@ export class ConfigurationService<TConfiguration> {
     try {
       await this.initInternal();
     } catch (error: any) {
-      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`);
+      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`, { cause: error });
     }
   }
 

@@ -3,6 +3,7 @@ import { TestEntityMapper } from '../test-entity.mapper';
 import { TestEntityFirestoreService } from './test-entity-firestore.service';
 import { doc, DocumentReference, DocumentSnapshot, Firestore, getDoc } from '@angular/fire/firestore';
 import { TestEntity } from '../test-entity';
+import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
 vi.mock('@angular/fire/firestore', () => {
   return {
@@ -26,8 +27,8 @@ describe('BaseEntityFirestoreService', () => {
 
   beforeEach(() => {
     const mockDocumentSnapshot: DocumentSnapshot<TestEntity> = {} as DocumentSnapshot<TestEntity>;
-    (doc as vi.mock).mockResolvedValue({} as DocumentReference);
-    (getDoc as vi.mock).mockResolvedValue(new Promise(() => mockDocumentSnapshot));
+    (doc as Mocked<any>).mockResolvedValue({} as DocumentReference);
+    (getDoc as Mocked<any>).mockResolvedValue(new Promise(() => mockDocumentSnapshot));
 
     TestBed.configureTestingModule({
       imports: [],

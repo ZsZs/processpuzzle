@@ -1,6 +1,7 @@
 import { BaseEntityTabsComponent } from './base-entity-tabs.component';
 import { setupContainerComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('BaseEntityTabsComponent', () => {
   describe('component sanity', () => {

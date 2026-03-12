@@ -1,10 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { CardsGridSpec } from './cards-spec';
 import { MatCardsGridComponent } from './mat-cards-grid.component';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideTranslocoTesting } from '@processpuzzle/test-util';
+import { setUpTranslocoTestBed } from '@processpuzzle/test-util';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 // Create a test host component to test the component with inputs
 @Component({
@@ -31,7 +31,7 @@ class TestHostComponent {
   ];
 }
 
-describe('MatCardsGridComponent', () => {
+describe.only('MatCardsGridComponent', () => {
   let hostComponent: TestHostComponent;
   let hostFixture: ComponentFixture<TestHostComponent>;
   const compilations = {
@@ -55,14 +55,9 @@ describe('MatCardsGridComponent', () => {
   };
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestHostComponent, NoopAnimationsModule, provideTranslocoTesting(compilations)],
-      providers: [provideRouter([])],
-    }).compileComponents();
-
-    hostFixture = TestBed.createComponent(TestHostComponent);
-    hostComponent = hostFixture.componentInstance;
-    hostFixture.detectChanges();
+    const testVars = await setUpTranslocoTestBed(TestHostComponent, { translations: compilations }, { providers: [provideRouter([])] });
+    hostFixture = testVars.fixture;
+    hostComponent = testVars.component;
   });
 
   it('should create', () => {

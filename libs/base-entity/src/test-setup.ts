@@ -1,4 +1,3 @@
-import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -31,10 +30,6 @@ import { MockBreakpointObserver } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
-
-setupTestBed({
-  zoneless: true,
-});
 
 @Component({
   selector: 'mock-control-container',

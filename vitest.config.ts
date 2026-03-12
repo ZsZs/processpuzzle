@@ -1,13 +1,17 @@
 import { defineConfig } from 'vitest/config';
-import angular from '@analogjs/vite-plugin-angular';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
-  plugins: [angular()],
+  plugins: [nxViteTsPaths()],
   test: {
-    globals: true, // This allows 'describe', 'it', 'expect' without imports
+    globals: false,
     environment: 'jsdom',
-    include: ['**/*.spec.ts'],
-    // This solves the Keycloak/ESM nightmare automatically:
+    reporters: ['default'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      reportsDirectory: './reports/coverage',
+    },
     server: {
       deps: {
         inline: ['@angular/core', 'keycloak-js'],

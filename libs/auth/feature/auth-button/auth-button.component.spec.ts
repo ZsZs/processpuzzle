@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/angular';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { fireEvent, screen } from '@testing-library/angular';
 import { AuthButtonComponent } from './auth-button.component';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,14 +11,18 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Signal, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { mockLanguageConfig, provideTranslocoTesting } from '@processpuzzle/test-util';
+import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
+import { provideRouter } from '@angular/router';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
-vi.mock('keycloak-js', () => ({
-  __esModule: true,
-  default: vi.fn(),
-}));
+const testConfig: TranslocoTestConfig = {
+  scope: 'auth',
+  translations: {
+    'auth/en': authEn,
+    'auth/de': authDe,
+  },
+};
 
 describe('AuthButtonComponent', () => {
   // Helper function to create a mock AuthService with controlled authentication state
@@ -30,13 +36,18 @@ describe('AuthButtonComponent', () => {
   const renderComponent = async (isAuthenticated: boolean) => {
     const mockAuthService = createMockAuthService(isAuthenticated);
 
-    return render(AuthButtonComponent, {
-      imports: [provideTranslocoTesting({ 'auth/de': authDe, 'auth/en': authEn }), MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
-      providers: [{ provide: AUTHENTICATION_SERVICE, useValue: mockAuthService }, { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }, TranslocoService],
+    return await setUpTranslocoTestBed(AuthButtonComponent, testConfig, {
+      imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
+      providers: [
+        { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
+        { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
+        TranslocoService,
+        provideRouter([])
+      ],
     });
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
   });
 

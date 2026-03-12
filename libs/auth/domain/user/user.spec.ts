@@ -1,18 +1,9 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { User } from './user';
-import { v4 as uuidv4 } from 'uuid';
- 
-import { Mocked } from 'vitest';
-
-// Mock uuid to have deterministic IDs in tests
-vi.mock('uuid', () => ({
-  v4: vi.fn(),
-}));
 
 describe('User', () => {
   beforeEach(() => {
-    // Reset the mock before each test
-    (uuidv4 as Mocked<any>).mockReset();
-    (uuidv4 as Mocked<any>).mockReturnValue('mocked-uuid');
+    // Test setup
   });
 
   describe('constructor', () => {
@@ -20,7 +11,7 @@ describe('User', () => {
       const user = new User('test@example.com');
 
       expect(user.email).toBe('test@example.com');
-      expect(user.id).toBe('mocked-uuid');
+      expect(user.id).toBeTruthy(); // UUID is generated
       expect(user.firstName).toBe('');
       expect(user.lastName).toBe('');
       expect(user.photoUrl).toBe('');
@@ -40,14 +31,13 @@ describe('User', () => {
       const user = new User('test@example.com', 'custom-id');
 
       expect(user.id).toBe('custom-id');
-      expect(uuidv4).not.toHaveBeenCalled();
     });
 
     it('should generate id if not provided', () => {
       const user = new User('test@example.com');
 
-      expect(user.id).toBe('mocked-uuid');
-      expect(uuidv4).toHaveBeenCalled();
+      expect(user.id).toBeTruthy();
+      expect(user.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
   });
 

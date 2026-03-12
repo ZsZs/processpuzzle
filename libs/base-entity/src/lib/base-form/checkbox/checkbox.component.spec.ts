@@ -3,6 +3,7 @@ import { TestEntity } from '../../test-entity';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { setupFormControlTest } from '../../../test-setup';
+import { describe, expect, it } from 'vitest';
 
 describe('CheckboxComponent', () => {
   const checkboxConfig: BaseEntityAttrDescriptor = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Is project approved from the business?');

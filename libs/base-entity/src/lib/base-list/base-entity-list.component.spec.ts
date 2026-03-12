@@ -5,6 +5,7 @@ import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { MatTableDataSource } from '@angular/material/table';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');

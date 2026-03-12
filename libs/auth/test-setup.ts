@@ -1,21 +1,5 @@
-import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import { vi } from 'vitest';
-
-vi.mock('keycloak-js', () => {
-  return {
-    __esModule: true,
-    default: vi.fn(),
-  };
-});
-
-vi.mock('@angular/fire/auth', () => ({
-  getAuth: vi.fn(),
-  connectAuthEmulator: vi.fn(),
-}));
-
-setupTestBed({
-  zoneless: true,
-});
+import '@testing-library/jest-dom/vitest';
 
 export const mockAuthService = {
   _user: { set: vi.fn() },
