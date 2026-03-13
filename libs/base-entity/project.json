@@ -10,8 +10,7 @@
       "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/base-entity/ng-package.json",
-        "tsConfig": "libs/base-entity/tsconfig.lib.json"
+        "project": "libs/base-entity/ng-package.json"
       },
       "configurations": {
         "production": {
