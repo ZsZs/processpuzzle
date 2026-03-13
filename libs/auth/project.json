@@ -7,9 +7,9 @@
   "prefix": "pp",
   "targets": {
     "build": {
-      "executor": "@angular/build:ng-packagr",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "executor": "@nx/angular:package",
       "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/auth/ng-package.json"
       },
