@@ -31,7 +31,7 @@ class TestHostComponent {
   ];
 }
 
-describe.only('MatCardsGridComponent', () => {
+describe('MatCardsGridComponent', () => {
   let hostComponent: TestHostComponent;
   let hostFixture: ComponentFixture<TestHostComponent>;
   const compilations = {
