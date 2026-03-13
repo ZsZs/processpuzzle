@@ -29,6 +29,7 @@
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "libs/test-util/vitest.config.ts",
         "tsConfig": "libs/test-util/tsconfig.spec.json",
         "coverage": true
       },

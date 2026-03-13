@@ -3,7 +3,7 @@ import { setUpTranslocoTestBed, TranslocoTestConfig } from './transloco-testing.
 import { TranslocoTestComponent } from './transloco-test.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { screen } from '@testing-library/angular';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('transloco-testing.provider', () => {
   const config: TranslocoTestConfig = {
@@ -57,6 +57,10 @@ describe('transloco-testing.provider', () => {
       transloco = TestBed.inject(TranslocoService);
     });
 
+    afterEach(() => {
+      TestBed.resetTestingModule();
+    });
+
     it('should instantiate TranslocoService in the background', () => {
       expect(transloco).toBeTruthy();
     });
@@ -86,6 +90,10 @@ describe('transloco-testing.provider', () => {
       fixture = TestBed.createComponent(TranslocoTestComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
+    });
+
+    afterEach(() => {
+      TestBed.resetTestingModule();
     });
 
     it('should render translated text', async () => {
