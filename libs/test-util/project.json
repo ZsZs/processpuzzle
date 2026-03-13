@@ -7,7 +7,7 @@
   "prefix": "pp",
   "targets": {
     "build": {
-      "executor": "@ng/angular:package",
+      "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/test-util/ng-package.json",
