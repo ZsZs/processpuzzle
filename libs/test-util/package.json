@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/test-util",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publishConfig": {
     "access": "public"
   },
@@ -11,11 +11,14 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/cdk": "^20.2.10",
-    "@angular/common": "~20.3.9",
-    "@angular/core": "~20.3.9",
-    "@jsverse/transloco": "8.1.0",
-    "rxjs": "~7.8.2"
+    "@angular/cdk": "^21.2.2",
+    "@angular/common": "~21.2.3",
+    "@angular/core": "~21.2.3",
+    "@angular/material": "^21.2.2",
+    "@jsverse/transloco": "8.2.1",
+    "@testing-library/angular": "^19.1.1",
+    "rxjs": "~7.8.2",
+    "vitest": "^4.0.18"
   },
   "sideEffects": false
 }

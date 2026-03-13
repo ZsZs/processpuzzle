@@ -28,6 +28,7 @@
       "outputs": ["{projectRoot}/reports/coverage"],
       "dependsOn": ["^build"],
       "options": {
+        "runner": "vitest",
         "coverage": true,
         "tsConfig": "libs/util/tsconfig.spec.json"
       },
