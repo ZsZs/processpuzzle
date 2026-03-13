@@ -7,7 +7,7 @@
   "prefix": "pp",
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
+      "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "dependsOn": ["^build"],
       "options": {

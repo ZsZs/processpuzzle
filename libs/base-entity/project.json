@@ -7,7 +7,7 @@
   "tags": ["scope:base-entity", "type:domain"],
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
+      "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/base-entity/ng-package.json",
