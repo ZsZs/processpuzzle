@@ -3,7 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "sourceMap": true,
-    "declaration": false,
+    "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
     "moduleResolution": "bundler",

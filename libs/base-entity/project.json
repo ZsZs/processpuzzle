@@ -10,8 +10,7 @@
       "executor": "@angular/build:ng-packagr",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/base-entity/ng-package.json",
-        "tsConfig": "libs/base-entity/tsconfig.lib.json"
+        "project": "libs/base-entity/ng-package.json"
       },
       "configurations": {
         "production": {
@@ -28,7 +27,6 @@
       "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
       "options": {
-        "runner": "vitest",
         "tsConfig": "libs/base-entity/tsconfig.spec.json",
         "coverage": true
       },
