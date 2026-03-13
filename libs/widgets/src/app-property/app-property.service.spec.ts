@@ -16,23 +16,22 @@ class MockApplicationPropertyService extends ApplicationPropertyService {
   }
 }
 
-// Mock Firestore methods
-vi.mock('@angular/fire/firestore', () => {
-  return {
-    addDoc: vi.fn(),
-    collection: vi.fn(),
-    collectionData: vi.fn(),
-    deleteDoc: vi.fn(),
-    doc: vi.fn(),
-    Firestore: vi.fn(),
-    getDoc: vi.fn(),
-  };
-});
-
 const mockDoc = vi.mocked(doc);
 const mockGetDoc = vi.mocked(getDoc);
 
 describe.skip('ApplicationPropertyService', () => {
+  // Mock Firestore methods
+  vi.mock('@angular/fire/firestore', () => {
+    return {
+      addDoc: vi.fn(),
+      collection: vi.fn(),
+      collectionData: vi.fn(),
+      deleteDoc: vi.fn(),
+      doc: vi.fn(),
+      Firestore: vi.fn(),
+      getDoc: vi.fn(),
+    };
+  });
   let service: ApplicationPropertyService;
   let firestoreMock: Firestore;
   let mapper: ApplicationPropertyMapper;
