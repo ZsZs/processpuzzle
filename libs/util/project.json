@@ -8,6 +8,7 @@
   "targets": {
     "build": {
       "executor": "@angular/build:ng-packagr",
+      "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/util/ng-package.json",

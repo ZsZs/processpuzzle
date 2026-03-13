@@ -1,7 +1,9 @@
 // Public API Surface of @processpuzzle/base-entity
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
-export { BaseEntityContainerStore } from './lib/base-entity-container.store';
+export { BaseEntityContainerComponent } from './lib/base-entity-container.component';
+export { BaseEntityContainerStore } from './lib/base-entity-container.store';   // With @angular/build:ng-packagr executor causes a problem
+export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service';   // With @angular/build:ng-packagr executor causes a problem
 export type { BaseEntity } from './lib/base-entity/base-entity';
 export { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
@@ -18,4 +20,4 @@ export { BaseFormNavigatorStore, RouteSegments, type NavigationState } from './l
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
-export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes';
+export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes';   // With @angular/build:ng-packagr executor causes a problem
