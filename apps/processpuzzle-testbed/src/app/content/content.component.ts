@@ -11,6 +11,7 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
 export class ContentComponent {
   readonly cards: CardsGridSpec[] = [
     {
+      icon: 'service_toolbox',
       title: 'utils_card_title',
       subtitle: 'utils_card_subtitle',
       content: ['utils_card_content', 'utils_card_content_1', 'utils_card_content_2', 'utils_card_content_3'],
@@ -19,6 +20,7 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'check_circle',
       title: 'test-utils_card_title',
       subtitle: 'test-utils_card_subtitle',
       content: ['test-utils_card_content', 'test-utils_card_content_1', 'test-utils_card_content_2'],
@@ -27,6 +29,7 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'web_asset',
       title: 'widgets_card_title',
       subtitle: 'widgets_card_subtitle',
       content: ['widgets_card_content', 'widgets_card_content_1', 'widgets_card_content_2', 'widgets_card_content_3'],
@@ -35,6 +38,7 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'person_add',
       title: 'auth_card_title',
       subtitle: 'auth_card_subtitle',
       content: ['auth_card_content', 'auth_card_content_1', 'auth_card_content_2', 'auth_card_content_3', 'auth_card_content_4', 'auth_card_content_5', 'auth_card_content_6', 'auth_card_content_7'],
@@ -43,6 +47,7 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'checkbook',
       title: 'base-entity_card_title',
       subtitle: 'base-entity_card_subtitle',
       content: ['base-entity_card_content', 'base-entity_card_content_1', 'base-entity_card_content_2', 'base-entity_card_content_3'],
@@ -51,6 +56,7 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'repartition',
       title: 'ci-cd_card_title',
       subtitle: 'ci-cd_card_subtitle',
       content: ['ci-cd_card_content', 'ci-cd_card_content_1', 'ci-cd_card_content_2', 'ci-cd_card_content_3'],

@@ -6,11 +6,12 @@ import { RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CardsGridSpec } from './cards-spec';
 import { LayoutService } from '@processpuzzle/util';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
   selector: 'mat-cards-grid',
   standalone: true,
-  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass],
+  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon],
   template: `
     <div [ngClass]="layoutService.layoutClass()">
       @for (card of cards; track $index) {
@@ -22,6 +23,12 @@ import { LayoutService } from '@processpuzzle/util';
               }
               @if (hasValue(card.subtitle)) {
                 <mat-card-subtitle>{{ t(card.subtitle) }}</mat-card-subtitle>
+              }
+              @if (card.icon) {
+                <span class="toolbar-spacer"></span>
+                <button mat-icon-button>
+                  <mat-icon class="icon-large material-symbols-outlined">{{ card.icon }}</mat-icon>
+                </button>
               }
             </mat-card-header>
             @if (hasValue(card.content)) {

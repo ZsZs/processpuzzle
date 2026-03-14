@@ -87,6 +87,7 @@
     "keycloak-js": "^26.2.3",
     "marked": "^17.0.4",
     "material-icons": "^1.13.14",
+    "material-symbols": "^0.40.2",
     "mermaid": "^11.13.0",
     "ngx-logger": "^5.0.12",
     "ngx-markdown": "^21.1.0",
