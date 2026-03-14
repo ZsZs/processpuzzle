@@ -112,8 +112,8 @@ export const appRoutes: Route[] = [
   {
     path: 'ci-cd',
     title: 'ProcessPuzzle Testbed - CI/CD',
-    data: { icon: 'repartition', menuTitle: 'ci-cd' },
-    loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent),
+    data: { icon: 'repartition', menuTitle: 'ci-cd', markdownSrc: 'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/.github/README.md' },
+    loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
   },
   // Custom matcher route for any URL containing 'auth'
   {
