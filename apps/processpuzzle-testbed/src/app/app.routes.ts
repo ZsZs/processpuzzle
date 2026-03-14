@@ -14,6 +14,7 @@ import { ContentComponent } from './content/content.component';
 import { FirestoreDocStore } from './content/base-forms/firestore/firestore-doc.store';
 import { FirestoreDocService } from './content/base-forms/firestore/firestore-doc.service';
 import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
 

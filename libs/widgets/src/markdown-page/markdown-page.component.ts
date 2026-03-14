@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
 import { MarkdownComponent } from 'ngx-markdown';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -12,7 +11,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class MarkdownPageComponent {
   private snackBar = inject(MatSnackBar);
-  private route = inject(ActivatedRoute);
   markdownSrcInput = input<string>('');
   markdownSrc = input<string>();
   src = computed(() => this.markdownSrcInput() || this.markdownSrc() || '');
