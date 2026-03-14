@@ -1,6 +1,6 @@
 <div class="registration-container">
   <ng-container *transloco="let t;">
-    <h1>{{t('registration_form.title')}}</h1>
+    <h1>{{t('auth.registration_form.title')}}</h1>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" aria-label="Registration Form">
       @if (isLoading()) {
@@ -8,44 +8,44 @@
       }
 
       <mat-form-field appearance="outline">
-        <mat-label>{{t('registration_form.email_label')}}</mat-label>
-        <input matInput type="email" formControlName="email" [placeholder]="t('registration_form.email_placeholder')">
+        <mat-label>{{t('auth.registration_form.email_label')}}</mat-label>
+        <input matInput type="email" formControlName="email" [placeholder]="t('auth.registration_form.email_placeholder')">
         @if (registerForm.get('email')?.errors?.['required']) {
-          <mat-error>{{t('registration_form.email_err_required')}}</mat-error>
+          <mat-error>{{t('auth.registration_form.email_err_required')}}</mat-error>
         }
         @if (registerForm.get('email')?.errors?.['email']) {
-          <mat-error>{{t('registration_form.email_err_invalid')}}</mat-error>
+          <mat-error>{{t('auth.registration_form.email_err_invalid')}}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>{{t('registration_form.password_label')}}</mat-label>
-        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" [placeholder]="t('registration_form.password_placeholder')">
+        <mat-label>{{t('auth.registration_form.password_label')}}</mat-label>
+        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" [placeholder]="t('auth.registration_form.password_placeholder')">
         <button mat-icon-button type="button" matSuffix (click)="hidePassword = !hidePassword">
           <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
         </button>
         @if (registerForm.get('password')?.errors?.['required']) {
-          <mat-error>{{t('registration_form.password_err_required')}}</mat-error>
+          <mat-error>{{t('auth.registration_form.password_err_required')}}</mat-error>
         }
         @if (registerForm.get('password')?.errors?.['minlength']) {
-          <mat-error>{{t('registration_form.password_err_min_length')}}</mat-error>
+          <mat-error>{{t('auth.registration_form.password_err_min_length')}}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>{{t('registration_form.password_confirm_label')}}</mat-label>
-        <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" [placeholder]="t('registration_form.password_confirm_placeholder')">
+        <mat-label>{{t('auth.registration_form.password_confirm_label')}}</mat-label>
+        <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" [placeholder]="t('auth.registration_form.password_confirm_placeholder')">
         <button mat-icon-button type="button" matSuffix (click)="hideConfirmPassword = !hideConfirmPassword">
           <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
         </button>
         @if (registerForm.errors?.['passwordMismatch']) {
-          <mat-error>{{t('registration_form.password_confirm_err_mismatch')}}</mat-error>
+          <mat-error>{{t('auth.registration_form.password_confirm_err_mismatch')}}</mat-error>
         }
       </mat-form-field>
 
       <div class="form-actions">
-        <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid || isLoading()">{{t('registration_form.create_button')}}</button>
-        <button mat-button type="button" routerLink="/auth/login" [disabled]="isLoading()">{{t('registration_form.sign_in_button')}}</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid || isLoading()">{{t('auth.registration_form.create_button')}}</button>
+        <button mat-button type="button" routerLink="/auth/login" [disabled]="isLoading()">{{t('auth.registration_form.sign_in_button')}}</button>
       </div>
 
       @if (errorMessage() !== '') {
