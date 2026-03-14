@@ -4,6 +4,7 @@ import { HeaderComponent } from './navigation/header/header.component';
 import { SidenavComponent } from './navigation/sidenav/sidenav.component';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { FooterComponent } from './navigation/footer/footer.component';
+import { MatIconRegistry } from '@angular/material/icon';
 
 @Component({
   imports: [RouterModule, HeaderComponent, SidenavComponent, MatSidenav, MatSidenavContent, MatSidenavContainer, FooterComponent],
@@ -13,4 +14,8 @@ import { FooterComponent } from './navigation/footer/footer.component';
 })
 export class AppComponent {
   title = 'processpuzzle-testbed';
+
+  constructor(iconRegistry: MatIconRegistry) {
+    iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+  }
 }

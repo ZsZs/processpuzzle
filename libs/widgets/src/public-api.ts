@@ -4,9 +4,11 @@
 
 export { ApplicationProperty } from './app-property/app-property';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
+export { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { LanguageConfig, LanguageDefinition } from './language-selector/language-config';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
+export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 export { NavigateBackComponent } from './navigate-back/navigate-back.component';
 export { NavigateBackService } from './navigate-back/navigate-back.service';
 export { provideAppPropertyStore } from './app-property/app-property-store.provider';

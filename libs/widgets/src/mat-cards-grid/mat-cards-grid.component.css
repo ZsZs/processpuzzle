@@ -38,3 +38,10 @@ mat-card-content {
     padding-bottom: 10px;
 }
 
+.icon-large {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    margin-top: -10px;
+    margin-right: 10px;
+}
