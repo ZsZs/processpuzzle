@@ -27,8 +27,8 @@ export class BaseEntityStatusbarComponent implements OnInit {
 
   // protected, private helper methods
   private evaluateEntityTitle(title: string): string {
-    const fn = new Function('return ' + title);
-    return fn();
+    const fn = new Function('ctx', 'return ' + title.replace(/this\./g, 'ctx.'));
+    return fn(this);
   }
 
   // endregion
