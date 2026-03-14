@@ -8,6 +8,7 @@ export { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { LanguageConfig, LanguageDefinition } from './language-selector/language-config';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
+export { MarkdownPageComponent } from './markdown-page/markdown-page.component';
 export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 export { NavigateBackComponent } from './navigate-back/navigate-back.component';
 export { NavigateBackService } from './navigate-back/navigate-back.service';

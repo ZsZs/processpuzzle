@@ -14,6 +14,7 @@ import { ContentComponent } from './content/content.component';
 import { FirestoreDocStore } from './content/base-forms/firestore/firestore-doc.store';
 import { FirestoreDocService } from './content/base-forms/firestore/firestore-doc.service';
 import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
 
@@ -112,8 +113,8 @@ export const appRoutes: Route[] = [
   {
     path: 'ci-cd',
     title: 'ProcessPuzzle Testbed - CI/CD',
-    data: { icon: 'repartition', menuTitle: 'ci-cd' },
-    loadComponent: () => import('./content/ci-cd/ci-cd.component').then((comp) => comp.CiCdComponent),
+    data: { icon: 'repartition', menuTitle: 'ci-cd', markdownSrc: 'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/.github/README.md' },
+    loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
   },
   // Custom matcher route for any URL containing 'auth'
   {
