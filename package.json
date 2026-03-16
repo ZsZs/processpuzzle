@@ -159,7 +159,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-checkstyle": "^9.0.1",
     "eslint-plugin-html": "^8.1.4",
-    "eslint-plugin-playwright": "^2.9.0",
+    "eslint-plugin-playwright": "^2.10.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-vitest": "^0.5.4",
     "firebase-functions-test": "^3.4.1",
