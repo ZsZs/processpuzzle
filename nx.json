@@ -41,7 +41,7 @@
           "functions": 80,
           "lines": 80
         },
-        "reportsDirectory": "{workspaceRoot}/coverage/{projectRoot}"
+        "reportsDirectory": "{projectRoot}/coverage/{projectRoot}"
       },
       "configurations": {
         "ci": {
