@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
 
 @Component({

@@ -21,6 +21,7 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { environment } from '../environments/environment';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideAppPropertyStore, WidgetsModule } from '@processpuzzle/widgets';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
