@@ -166,7 +166,7 @@
     "globals": "^17.4.0",
     "happy-dom": "^20.8.4",
     "http-server": "^14.1.1",
-    "jsdom": "^28.1.0",
+    "jsdom": "^29.0.0",
     "json-server": "^0.17.4",
     "jsonc-eslint-parser": "^3.1.0",
     "ng-packagr": "^21.2.0",
