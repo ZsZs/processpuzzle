@@ -15,7 +15,7 @@
   <ng-container *ngFor="let colDescriptor of columnDescriptors(); index as i" [matColumnDef]="colDescriptor.attrName">
     <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</th>
     <!-- //NOSONAR --><td (click)="onRowClick(element)" *matCellDef="let element" mat-cell>
-      @if (colDescriptor.isLinkToDetails === true) {
+      @if (colDescriptor.isLinkToDetails) {
         <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
       } @else if (colDescriptor.linkedEntityType !== undefined ) {
         <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>

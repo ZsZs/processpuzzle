@@ -9,6 +9,7 @@ import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MatButton } from '@angular/material/button';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { BaseEntityFormBuilder } from './base-entity-form.builder';
+import { NGXLogger } from 'ngx-logging-kit';
 
 @Component({
   selector: 'base-form',
@@ -27,6 +28,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);
   private readonly isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
+  private readonly logger = inject(NGXLogger);
 
   constructor() {
     this.registerEffects();
@@ -36,6 +38,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   ngOnInit(): void {
     this.store().determineActiveRouteSegment();
     this.baseEntityForm = this.formBuilder.group({});
+    this.logger.info('BaseEntityFormComponent initialized with:', { entityDescriptor: this.baseEntityListOptions() });
   }
 
   // endregion

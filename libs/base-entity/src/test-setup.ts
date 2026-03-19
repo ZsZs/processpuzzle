@@ -30,6 +30,7 @@ import { MockBreakpointObserver } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
+import { TestEnvironmentVariables } from './lib/test-environment-variables';
 
 @Component({
   selector: 'mock-control-container',
@@ -132,6 +133,7 @@ export function setupMockService({
 
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
+  const envVars = { PIPELINE_STAGE: 'dev', CONFIGURATION_OVERRIDES: ['environments/config.common.json', 'environments/config.t1.json'] } as TestEnvironmentVariables;
   const mockService = mock<TestEntityService>();
   mockService.findByQuery.mockReturnValue(of(entities));
 
@@ -160,8 +162,8 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
       },
       {
         provide: RUNTIME_CONFIGURATION,
-        useFactory: async (configurationService: ConfigurationService<TestConfiguration>) => {
-          await configurationService.init();
+        useFactory: async (configurationService: ConfigurationService<TestEnvironmentVariables, TestConfiguration>) => {
+          await configurationService.init(envVars);
           return configurationService.configuration;
         },
         deps: [ConfigurationService],
