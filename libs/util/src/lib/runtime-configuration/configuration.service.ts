@@ -43,10 +43,10 @@ export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE:
     try {
       const response = await fetch(url);
       if (!response.ok) console.log(`Failed to load configuration from ${url}`);
-      config = response.json() as unknown as TConfiguration;
+      config = (await response.json()) as unknown as TConfiguration;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        // Handle HttpErrorResponse - skip this config
+        console.log(`Error: ${error} while fetching from:  ${url}`);
       }
       throw error;
     }
