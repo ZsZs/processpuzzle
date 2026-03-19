@@ -44,5 +44,9 @@
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "firebase-auth",
     "AUTHENTICATION_SERVICE_ROOT": "http://localhost:9099/"
+  },
+  "LOGGING_CONFIGURATION": {
+    "level": "info",
+    "serverLogLevel": "none"
   }
 }

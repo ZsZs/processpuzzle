@@ -1,4 +1,4 @@
-import { EnvironmentProviders, inject, InjectionToken, makeEnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
 import { AuthService } from './auth.service';
 import { FirebaseAuthConfig } from './firebase-auth.config';
@@ -15,14 +15,13 @@ export interface AuthenticationConfiguration {
   readonly AUTH_SERVICE_CONFIG?: KeycloakAuthConfig | FirebaseAuthConfig;
 }
 
-export function provideAuthenticationService(): EnvironmentProviders {
+export function provideAuthenticationService(runtimeConfig: { BASE_CONFIGURATION: BaseConfiguration; AUTHENTICATION_CONFIGURATION: AuthenticationConfiguration }): EnvironmentProviders {
   return makeEnvironmentProviders([
     {
       provide: AUTHENTICATION_SERVICE,
       useFactory: () => {
-        const runtimeConfig = inject(RUNTIME_CONFIGURATION);
-        const baseConfig: BaseConfiguration = runtimeConfig['BASE_CONFIGURATION' as keyof typeof runtimeConfig];
-        const authConfig: AuthenticationConfiguration = runtimeConfig['AUTHENTICATION_CONFIGURATION' as keyof typeof runtimeConfig];
+        const baseConfig: BaseConfiguration = runtimeConfig.BASE_CONFIGURATION;
+        const authConfig: AuthenticationConfiguration = runtimeConfig.AUTHENTICATION_CONFIGURATION;
         if (authConfig.AUTHENTICATION_PROVIDER === 'keycloak' && authConfig.AUTH_SERVICE_CONFIG) {
           return new KeycloakAuthService(authConfig.AUTH_SERVICE_CONFIG as KeycloakAuthConfig);
         } else if (authConfig.AUTHENTICATION_PROVIDER === 'firebase-auth') {

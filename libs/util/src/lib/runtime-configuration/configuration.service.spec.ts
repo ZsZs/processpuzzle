@@ -6,10 +6,15 @@ import { ConfigurationService } from '../runtime-configuration/configuration.ser
 import { ConfigurationOptions } from '../runtime-configuration/configuration.options';
 import { TestConfiguration } from './test-configuration';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TestEnvironmentVariables } from './test-environment-variables';
 
 describe('ConfigurationService', () => {
-  let configService: ConfigurationService<TestConfiguration>;
+  let configService: ConfigurationService<TestEnvironmentVariables, TestConfiguration>;
   let httpTestingController: HttpTestingController;
+  const environment: TestEnvironmentVariables = {
+    PIPELINE_STAGE: 'dev',
+    CONFIGURATION_OVERRIDES: ['environments/config.common.json', 'environments/config.t1.json'],
+  };
   const commonConfig: TestConfiguration = {
     LANGUAGE: 'de',
     ICS_BACKEND_ROOT: 'http://localhost:8080/services/ics',
@@ -46,7 +51,11 @@ describe('ConfigurationService', () => {
         ConfigurationService,
         { provide: CONFIGURATION_TYPE, useValue: TestConfiguration },
         { provide: CONFIGURATION_OPTIONS, useValue: { urlFactory: () => ['environments/config.common.json', 'environments/config.t1.json'], log: true } },
-        { provide: RUNTIME_CONFIGURATION, useFactory: (configurationService: ConfigurationService<TestConfiguration>) => configurationService.configuration, deps: [ConfigurationService] },
+        {
+          provide: RUNTIME_CONFIGURATION,
+          useFactory: (configurationService: ConfigurationService<TestEnvironmentVariables, TestConfiguration>) => configurationService.configuration,
+          deps: [ConfigurationService],
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -68,7 +77,7 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: undefined, log: false });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequest: TestRequest = httpTestingController.expectOne({ method: 'GET', url: 'http://localhost/config.common.json' });
@@ -80,7 +89,7 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => ['environments/config.common.json'], log: false });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequest: TestRequest = httpTestingController.expectOne({ method: 'GET', url: 'http://localhost/environments/config.common.json' });
@@ -93,7 +102,7 @@ describe('ConfigurationService', () => {
     httpTestingController = TestBed.inject(HttpTestingController);
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(expectedConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(expectedConfig));
 
     // VERIFY
     const mockRequests1: TestRequest = httpTestingController.expectOne('http://localhost/environments/config.common.json');
@@ -107,7 +116,7 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => ['environments/config.common.json', 'undefined.json'], log: true });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequests1: TestRequest = httpTestingController.expectOne('http://localhost/environments/config.common.json');
@@ -121,7 +130,7 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => ['/environments/config.common.json'], log: false });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequest: TestRequest = httpTestingController.expectOne({ method: 'GET', url: 'http://localhost/environments/config.common.json' });
@@ -133,7 +142,7 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => ['https://config.common.json'], log: false });
 
     // EXERCISE
-    configService.init().then(() => expect(configService.configuration).toEqual(commonConfig));
+    configService.init(environment).then(() => expect(configService.configuration).toEqual(commonConfig));
 
     // VERIFY
     const mockRequest: TestRequest = httpTestingController.expectOne({ method: 'GET', url: 'https://config.common.json' });
@@ -145,6 +154,6 @@ describe('ConfigurationService', () => {
     setUpConfigurationOptions({ urlFactory: () => Promise.resolve(''), log: true });
 
     // EXERCISE, VERIFY
-    configService.init().catch((error: Error) => expect(error.message).toContain('Runtime configuration:undefined load failed'));
+    configService.init(environment).catch((error: Error) => expect(error.message).toContain('Runtime configuration:undefined load failed'));
   });
 });

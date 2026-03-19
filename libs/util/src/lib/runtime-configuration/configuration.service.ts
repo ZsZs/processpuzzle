@@ -1,15 +1,11 @@
-import { inject, Injectable, Injector } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { CONFIGURATION_OPTIONS } from './configuration.injection-tokens';
-import { lastValueFrom } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
-export class ConfigurationService<TConfiguration> {
+export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE: 'dev' | 'ci' | 'stage' | 'prod'; CONFIGURATION_OVERRIDES?: string[] }, TConfiguration> {
   private config?: TConfiguration;
+  private environment: TEnvironmentVariable | undefined;
   private currentConfigUrl: string | undefined;
-  private readonly httpClient = inject(HttpClient);
-  private readonly injector = inject(Injector);
-  private readonly configurationOptions = inject(CONFIGURATION_OPTIONS);
 
   // region public accessors and mutators
   public get configuration(): TConfiguration {
@@ -17,14 +13,15 @@ export class ConfigurationService<TConfiguration> {
     return this.config;
   }
 
-  public async init(): Promise<void> {
+  public async init(environment: TEnvironmentVariable): Promise<TConfiguration> {
+    this.environment = environment;
     try {
       await this.initInternal();
     } catch (error: any) {
       throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`, { cause: error });
     }
+    return this.configuration;
   }
-
   // endregion
 
   // region protected, private helper methods
@@ -33,19 +30,27 @@ export class ConfigurationService<TConfiguration> {
     const configs = await this.loadConfigs(externalUrls);
     this.config = this.mergeConfigs(configs);
 
-    if (this.configurationOptions?.log === true) {
-      console.log('Configuration loaded', this.config);
-    }
+    console.log('Configuration loaded', this.config);
   }
 
   private mergeConfigs(configs: TConfiguration[]): TConfiguration {
     return { ...configs[0], ...configs[1] };
   }
 
-  private loadConfig(url: string): Promise<TConfiguration> {
+  private async loadConfig(url: string): Promise<TConfiguration> {
     this.currentConfigUrl = url;
-    const config$ = this.httpClient.get<TConfiguration>(url);
-    return lastValueFrom(config$);
+    let config: TConfiguration;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) console.log(`Failed to load configuration from ${url}`);
+      config = response.json() as unknown as TConfiguration;
+    } catch (error) {
+      if (error instanceof HttpErrorResponse) {
+        // Handle HttpErrorResponse - skip this config
+      }
+      throw error;
+    }
+    return config;
   }
 
   private async loadConfigs(configUrls: string[]): Promise<TConfiguration[]> {
@@ -56,16 +61,8 @@ export class ConfigurationService<TConfiguration> {
     });
     const results: TConfiguration[] = [];
     for (const configPromise of configs$) {
-      try {
-        const config = await configPromise;
-        results.push(config);
-      } catch (error) {
-        if (error instanceof HttpErrorResponse) {
-          // Handle HttpErrorResponse - skip this config
-          continue;
-        }
-        throw error;
-      }
+      const config = await configPromise;
+      results.push(config);
     }
     return results;
   }
@@ -87,13 +84,10 @@ export class ConfigurationService<TConfiguration> {
   }
 
   private getUrls(): string[] {
-    if (this.configurationOptions?.urlFactory == null) return ['config.common.json'];
-
-    const result = this.configurationOptions.urlFactory(this.injector);
-    if (typeof result === 'string') return [result];
-    if (Array.isArray(result)) return result;
-    throw new Error('Unexpected value returned from ConfigurationUrlFactory');
+    const pipelineStage = this.environment?.PIPELINE_STAGE ?? 'ci';
+    const defaultUrls = ['run-time-conf/config.common.json', `run-time-conf/config.${pipelineStage.toLocaleLowerCase()}.json`];
+    const overrides = this.environment?.CONFIGURATION_OVERRIDES ?? [];
+    return [...defaultUrls, ...overrides];
   }
-
   // endregion
 }

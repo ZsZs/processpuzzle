@@ -12,6 +12,7 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { SelectionModel } from '@angular/cdk/collections';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import { FilterCondition } from '../base-entity-service/base-entity-load-response';
+import { NGXLogger } from 'ngx-logging-kit';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -43,6 +44,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
   selection = new SelectionModel<Entity>(true, []);
   private readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
+  private readonly logger = inject(NGXLogger);
   columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => {
     return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
   });
@@ -71,6 +73,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
 
   ngOnInit(): void {
     this.store.determineActiveRouteSegment();
+    this.logger.info('BaseEntityListComponent initialized with:', { columnDescriptors: this.columnDescriptors() });
   }
 
   // endregion

@@ -1,1 +1,7 @@
-{}
+{
+  "LOGGING_CONFIGURATION": {
+    "level": "debug",
+    "serverLogLevel": "none",
+    "serverLoggingUrl": "http://localhost:9099/logs"
+  }
+}
