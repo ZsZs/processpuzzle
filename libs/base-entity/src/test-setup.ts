@@ -31,6 +31,8 @@ import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { TestEnvironmentVariables } from './lib/test-environment-variables';
+import { LoggerTestingModule } from 'ngx-logger/testing';
+import { provideLogger } from 'ngx-logging-kit';
 
 @Component({
   selector: 'mock-control-container',
@@ -140,6 +142,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   await TestBed.configureTestingModule({
     imports: [BaseEntityListComponent, NoopAnimationsModule],
     providers: [
+      provideLogger({ level: 7 }),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([
@@ -187,8 +190,9 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
   const runtimeConfigMock = { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' } };
 
   await TestBed.configureTestingModule({
-    imports: [BaseEntityFormComponent, BaseFormHostDirective],
+    imports: [BaseEntityFormComponent, BaseFormHostDirective, LoggerTestingModule],
     providers: [
+      provideLogger({ level: 7 }),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([]),
