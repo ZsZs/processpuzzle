@@ -29,9 +29,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: FIREBASE_OPTIONS, useValue: runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION },
       provideAuthenticationService(runtimeConfiguration),
       provideZonelessChangeDetection(),
-      provideFirebaseApp(() => {
-        return initializeApp(runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION);
-      }, [FIREBASE_OPTIONS]),
+      provideFirebaseApp(() => initializeApp(runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION), [FIREBASE_OPTIONS]),
       provideFirestore(() => {
         const firestore = getFirestore();
         const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
