@@ -28,7 +28,6 @@
     "@processpuzzle/base-entity": "^0.3.6",
     "@processpuzzle/test-util": "^0.2.2",
     "@processpuzzle/util": "^0.2.5",
-    "ngx-logger": "^5.0.12",
     "ngx-markdown": "^21.1.0",
     "ngx-sharebuttons": "^17.0.0",
     "rxjs": "~7.8.2"
