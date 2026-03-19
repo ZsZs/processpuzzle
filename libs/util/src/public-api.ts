@@ -6,7 +6,7 @@ export type { ConfigurationOptions } from './lib/runtime-configuration/configura
 export { ConfigurationService } from './lib/runtime-configuration/configuration.service';
 export { getEnvironment } from './lib/runtime-configuration/get-environment';
 export { LayoutService } from './lib/layout-service/layout.service';
-export { LoggingConfiguration } from './lib/logging/logging.service';
+export type { LoggingConfiguration } from './lib/logging/logging.service';
 export { provideLoggingService } from './lib/logging/provide-logging.service';
 export { Stack } from './lib/stack';
 export { SubstringPipe } from './lib/substring.pipe';
