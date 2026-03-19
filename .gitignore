@@ -86,3 +86,5 @@ docker/**/pubsub-debug.log
 !/.claude/settings.local.json
 
 .nx/polygraph
+.claude/worktrees
+.claude/settings.local.json
