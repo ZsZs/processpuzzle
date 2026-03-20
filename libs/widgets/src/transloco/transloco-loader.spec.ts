@@ -1,4 +1,4 @@
-import { TranslocoHttpLoader } from 'libs/widgets/src/transloco/transloco.loader';
+import { TranslocoHttpLoader } from './transloco.loader';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';

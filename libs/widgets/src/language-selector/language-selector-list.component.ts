@@ -3,7 +3,7 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { NgClass } from '@angular/common';
 import { MatListOption, MatSelectionList, MatSelectionListChange } from '@angular/material/list';
-import { LanguageConfig } from 'libs/widgets/src/transloco/language-config';
+import { LanguageConfig } from '../transloco/language-config';
 
 @Component({
   selector: 'pp-language-selector-list',
