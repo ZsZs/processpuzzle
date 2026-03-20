@@ -23,7 +23,7 @@ describe('provideAuthenticationService', () => {
 
   function setupTestBed(runtimeConfig: any) {
     TestBed.configureTestingModule({
-      providers: [{ provide: RUNTIME_CONFIGURATION, useValue: runtimeConfig }, provideAuthenticationService()],
+      providers: [{ provide: RUNTIME_CONFIGURATION, useValue: runtimeConfig }, provideAuthenticationService(runtimeConfig)],
     });
   }
 
