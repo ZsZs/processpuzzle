@@ -31,7 +31,6 @@ import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { TestEnvironmentVariables } from './lib/test-environment-variables';
-import { LoggerTestingModule } from 'ngx-logger/testing';
 import { provideLogger } from 'ngx-logging-kit';
 
 @Component({
@@ -190,7 +189,7 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
   const runtimeConfigMock = { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' } };
 
   await TestBed.configureTestingModule({
-    imports: [BaseEntityFormComponent, BaseFormHostDirective, LoggerTestingModule],
+    imports: [BaseEntityFormComponent, BaseFormHostDirective],
     providers: [
       provideLogger({ level: 7 }),
       provideHttpClient(),
@@ -274,7 +273,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   const component = fixture.componentInstance;
   entityDescriptor.store = store;
   store.load({});
-  component.baseEntityListOptions = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
+  component.baseEntityDescriptor = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
   breakpointObserver.resize(1280);
   fixture.detectChanges();
 
