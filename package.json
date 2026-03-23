@@ -73,7 +73,7 @@
     "@ngrx/operators": "^21.0.1",
     "@ngrx/signals": "^21.0.1",
     "@ngx-env/builder": "^21.0.1",
-    "@nx/vite": "^22.6.0",
+    "@nx/vite": "^22.6.1",
     "@types/node-fetch": "^2.6.13",
     "@types/uuid": "^11.0.0",
     "angular-auth-oidc-client": "^21.0.1",
