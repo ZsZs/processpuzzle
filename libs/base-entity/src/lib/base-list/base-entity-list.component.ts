@@ -3,7 +3,6 @@ import { BaseEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { NgForOf } from '@angular/common';
 import { Router, ROUTER_OUTLET_DATA } from '@angular/router';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -28,7 +27,6 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatRow,
     MatCell,
     MatColumnDef,
-    NgForOf,
     MatHeaderCellDef,
     MatCellDef,
     MatHeaderRowDef,

@@ -10,12 +10,12 @@ import { BaseEntityDescriptor } from './base-entity/base-entity.descriptor';
   imports: [CommonModule, BaseEntityTabsComponent],
   template: `
     <div>
-      <base-entity-tabs [baseEntityListOptions]="baseEntityListOptions()"></base-entity-tabs>
+      <base-entity-tabs [baseEntityDescriptor]="baseEntityDescriptor()"></base-entity-tabs>
     </div>
   `,
 })
 export class BaseEntityContainerComponent implements OnDestroy, OnInit {
-  baseEntityListOptions = input.required<BaseEntityDescriptor>();
+  baseEntityDescriptor = input.required<BaseEntityDescriptor>();
   protected snackBar = inject<MatSnackBar>(MatSnackBar);
   store: any;
 
@@ -29,7 +29,7 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store = this.baseEntityListOptions().store;
+    this.store = this.baseEntityDescriptor().store;
   }
 
   // endregion

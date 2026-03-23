@@ -12,14 +12,25 @@ import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-stat
   selector: 'base-entity-tabs',
   standalone: true,
   imports: [CommonModule, MatTabNav, MatTabLink, MatTabNavPanel, RouterOutlet, BaseEntityToolbarComponent, BaseEntityStatusbarComponent],
-  templateUrl: './base-entity-tabs.component.html',
+  template: `
+    <nav mat-tab-nav-bar [tabPanel]="tabPanel">
+      <a mat-tab-link (click)="onShowList()" [active]="store.currentTab() === listTabName()">{{ listTabName() }}</a>
+      <a mat-tab-link [disabled]="store.currentEntity() === undefined" (click)="onShowDetails()" [active]="store.currentTab() === detailsTabName()">{{ detailsTabName() }}</a>
+    </nav>
+
+    <mat-tab-nav-panel #tabPanel>
+      <base-entity-statusbar [baseEntityDescriptor]="baseEntityDescriptor()" />
+      <base-entity-toolbar [baseEntityDescriptor]="baseEntityDescriptor()" />
+      <router-outlet [routerOutletData]="baseEntityDescriptor()" />
+    </mat-tab-nav-panel>
+  `,
 })
 export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   store: any;
-  baseEntityListOptions = input.required<BaseEntityDescriptor>();
+  baseEntityDescriptor = input.required<BaseEntityDescriptor>();
   selectedEntityId: Signal<string | undefined> = computed(() => (this.store.currentId() ? this.store.currentId() : BaseUrlSegments.NewEntity));
-  detailsTabName: Signal<string> = computed(() => this.baseEntityListOptions().entityName + ' - details');
-  listTabName: Signal<string> = computed(() => this.baseEntityListOptions().entityName + ' - list');
+  detailsTabName: Signal<string> = computed(() => this.baseEntityDescriptor().entityName + ' - details');
+  listTabName: Signal<string> = computed(() => this.baseEntityDescriptor().entityName + ' - list');
 
   constructor() {
     this.registerEffects();
@@ -32,7 +43,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store = this.baseEntityListOptions().store;
+    this.store = this.baseEntityDescriptor().store;
   }
   // endregion
 
@@ -47,7 +58,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
 
   async onShowList() {
     if (this.store.activeRouteSegment() != RouteSegments.LIST_ROUTE) {
-      await this.store.navigateToList(this.baseEntityListOptions().entityName);
+      await this.store.navigateToList(this.baseEntityDescriptor().entityName);
       this.store.tabIsActive(this.listTabName());
     }
   }

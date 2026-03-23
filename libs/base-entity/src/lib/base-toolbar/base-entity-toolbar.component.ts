@@ -19,13 +19,13 @@ import { LayoutService } from '@processpuzzle/util';
   templateUrl: './base-entity-toolbar.component.html',
 })
 export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements OnInit {
-  baseEntityListOptions = input.required<BaseEntityDescriptor>();
+  baseEntityDescriptor = input.required<BaseEntityDescriptor>();
   readonly layoutService = inject(LayoutService);
   store: any;
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
-    this.store = this.baseEntityListOptions().store;
+    this.store = this.baseEntityDescriptor().store;
   }
 
   // endregion

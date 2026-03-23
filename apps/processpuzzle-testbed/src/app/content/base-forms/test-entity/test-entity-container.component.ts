@@ -9,17 +9,39 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'test-entity-container',
   standalone: true,
   imports: [CommonModule, BaseEntityContainerComponent, MarkdownComponent],
-  templateUrl: 'test-entity-container.component.html',
+  template: `
+    <markdown clipboard mermaid ngPreserveWhitespaces>
+\`\`\`typescript
+const selectables = Object.keys(TestEnum)
+  .filter((key: any) => parseInt(key) >= 0)
+  .map((key: string) => ({ key: key, value: TestEnum[key as keyof typeof TestEnum] }));
+
+const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
+const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Boolean');
+const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, { inputType: 'number' });
+const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
+const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
+
+const column_1 = new FlexboxContainer([nameAttr, descriptionAttr, booleanAttr], FlexDirection.COLUMN);
+const column_2 = new FlexboxContainer([numberAttr, dateAttr, enumAttr], FlexDirection.COLUMN);
+const flexBoxContainer = new FlexboxContainer([column_1, column_2], FlexDirection.CONTAINER);
+flexBoxContainer.style = { 'column-gap': '20px' };
+export const testEntityDescriptors: AbstractAttrDescriptor[] = [flexBoxContainer];
+\`\`\`
+    </markdown>
+    <base-entity-container [baseEntityDescriptor]="baseEntityDescriptor"></base-entity-container>
+  `,
   styles: ``,
 })
 export class TestEntityContainerComponent implements OnDestroy {
   private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   private store = inject(TestEntityStore);
-  baseEntityListOptions: BaseEntityDescriptor;
+  baseEntityDescriptor: BaseEntityDescriptor;
 
   constructor() {
-    this.baseEntityListOptions = {
+    this.baseEntityDescriptor = {
       entityName: 'Test Entity',
       store: this.store,
       attrDescriptors: testEntityDescriptors,
