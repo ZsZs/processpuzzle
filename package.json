@@ -128,7 +128,7 @@
     "@nx/devkit": "22.6.0",
     "@nx/esbuild": "22.6.0",
     "@nx/eslint": "22.6.0",
-    "@nx/eslint-plugin": "22.6.0",
+    "@nx/eslint-plugin": "22.6.1",
     "@nx/js": "^22.6.0",
     "@nx/playwright": "^22.6.0",
     "@nx/web": "22.6.0",
