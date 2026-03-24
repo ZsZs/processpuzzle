@@ -206,14 +206,14 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
   }).compileComponents();
 
   const fixture = TestBed.createComponent(BaseEntityFormComponent<TestEntity>);
-  const component = fixture.componentInstance;
+  const component = fixture.componentInstance as BaseEntityFormComponent<TestEntity>;
   const store = TestBed.inject(TestEntityStore);
   entityDescriptor.store = store;
   const testEntity = isEntityNew ? new TestEntity() : entity;
   const id = isEntityNew ? BaseUrlSegments.NewEntity : testEntity.id;
   component.entity = signal<TestEntity>(testEntity);
   component.entityId = signal<string>(id);
-  component.baseEntityListOptions = signal<BaseEntityDescriptor>(entityDescriptor);
+  component.entityDescriptor = signal<BaseEntityDescriptor>(entityDescriptor);
   fixture.detectChanges();
   TestBed.flushEffects();
 
@@ -273,7 +273,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   const component = fixture.componentInstance;
   entityDescriptor.store = store;
   store.load({});
-  component.baseEntityDescriptor = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
+  component.entityDescriptor = signal<BaseEntityDescriptor>(entityDescriptor) as unknown as InputSignal<BaseEntityDescriptor>;
   breakpointObserver.resize(1280);
   fixture.detectChanges();
 

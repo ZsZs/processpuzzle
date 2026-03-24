@@ -20,11 +20,11 @@ import { NGXLogger } from 'ngx-logging-kit';
 })
 export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit {
   baseEntityForm!: FormGroup;
-  baseEntityListOptions = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
+  entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
   entityId: Signal<string> = input.required<string>();
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
-  store: Signal<any> = computed(() => this.baseEntityListOptions().store);
+  store: Signal<any> = computed(() => this.entityDescriptor().store);
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);
   private readonly isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
@@ -38,7 +38,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   ngOnInit(): void {
     this.store().determineActiveRouteSegment();
     this.baseEntityForm = this.formBuilder.group({});
-    this.logger.info('BaseEntityFormComponent initialized with:', { entityDescriptor: this.baseEntityListOptions() });
+    this.logger.info('BaseEntityFormComponent initialized with:', { entityDescriptor: this.entityDescriptor() });
   }
 
   // endregion
@@ -65,9 +65,9 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // region protected, private helper methods
   private registerEffects(): void {
     effect(() => {
-      if (this.entityId() && this.baseEntityListOptions() && this.entity())
+      if (this.entityId() && this.entityDescriptor() && this.entity())
         untracked(() => {
-          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.baseEntityListOptions().attrDescriptors, this.entity);
+          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.entityDescriptor().attrDescriptors, this.entity);
         });
     });
 

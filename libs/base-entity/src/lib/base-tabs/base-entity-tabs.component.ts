@@ -19,18 +19,18 @@ import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-stat
     </nav>
 
     <mat-tab-nav-panel #tabPanel>
-      <base-entity-statusbar [baseEntityDescriptor]="baseEntityDescriptor()" />
-      <base-entity-toolbar [baseEntityDescriptor]="baseEntityDescriptor()" />
-      <router-outlet [routerOutletData]="baseEntityDescriptor()" />
+      <base-entity-statusbar [entityDescriptor]="entityDescriptor()" />
+      <base-entity-toolbar [entityDescriptor]="entityDescriptor()" />
+      <router-outlet [routerOutletData]="entityDescriptor()" />
     </mat-tab-nav-panel>
   `,
 })
 export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   store: any;
-  baseEntityDescriptor = input.required<BaseEntityDescriptor>();
+  entityDescriptor = input.required<BaseEntityDescriptor>();
   selectedEntityId: Signal<string | undefined> = computed(() => (this.store.currentId() ? this.store.currentId() : BaseUrlSegments.NewEntity));
-  detailsTabName: Signal<string> = computed(() => this.baseEntityDescriptor().entityName + ' - details');
-  listTabName: Signal<string> = computed(() => this.baseEntityDescriptor().entityName + ' - list');
+  detailsTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - details');
+  listTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - list');
 
   constructor() {
     this.registerEffects();
@@ -43,7 +43,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store = this.baseEntityDescriptor().store;
+    this.store = this.entityDescriptor().store;
   }
   // endregion
 
@@ -58,7 +58,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
 
   async onShowList() {
     if (this.store.activeRouteSegment() != RouteSegments.LIST_ROUTE) {
-      await this.store.navigateToList(this.baseEntityDescriptor().entityName);
+      await this.store.navigateToList(this.entityDescriptor().entityName);
       this.store.tabIsActive(this.listTabName());
     }
   }

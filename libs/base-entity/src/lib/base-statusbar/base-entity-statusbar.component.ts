@@ -11,13 +11,13 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 })
 export class BaseEntityStatusbarComponent implements OnInit {
   store: any;
-  baseEntityDescriptor = input.required<BaseEntityDescriptor>();
-  entityTitle: Signal<string> = computed<string>(() => this.evaluateEntityTitle(this.baseEntityDescriptor().entityTitle));
+  entityDescriptor = input.required<BaseEntityDescriptor>();
+  entityTitle: Signal<string> = computed<string>(() => this.evaluateEntityTitle(this.entityDescriptor().entityTitle));
   isVisible: Signal<boolean> = computed(() => this.store.currentEntity() != undefined || this.store.selectedEntities().length == 1);
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
-    this.store = this.baseEntityDescriptor().store;
+    this.store = this.entityDescriptor().store;
   }
 
   // endregion
