@@ -19,8 +19,8 @@ import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-stat
     </nav>
 
     <mat-tab-nav-panel #tabPanel>
-      <base-entity-statusbar [baseEntityDescriptor]="entityDescriptor()" />
-      <base-entity-toolbar [baseEntityDescriptor]="entityDescriptor()" />
+      <base-entity-statusbar [entityDescriptor]="entityDescriptor()" />
+      <base-entity-toolbar [entityDescriptor]="entityDescriptor()" />
       <router-outlet [routerOutletData]="entityDescriptor()" />
     </mat-tab-nav-panel>
   `,

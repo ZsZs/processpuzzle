@@ -14,6 +14,7 @@ import { TestEntityService } from '../base-entity-service/test-entity.service';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { provideLogger } from 'ngx-logging-kit';
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -59,7 +60,7 @@ describe('BaseEntityFormBuilder', () => {
     const mockService = setupMockService();
     TestBed.configureTestingModule({
       imports: [BaseFormHostDirective, MockFormContainerComponent],
-      providers: [BaseEntityFormBuilder, provideHttpClient(), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],
+      providers: [BaseEntityFormBuilder, provideHttpClient(), provideLogger({ level: 7 }), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MockFormContainerComponent);
