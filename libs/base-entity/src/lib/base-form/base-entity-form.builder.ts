@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal, Type, ViewContainerRef } from '@angular/core';
+import { inject, Injectable, Signal, signal, Type, ViewContainerRef } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
@@ -14,13 +14,18 @@ import { TextareaComponent } from './textarea/textarea.component';
 import { FlexBoxComponent } from './flex-box/flex-box.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
+import { NGXLogger } from 'ngx-logging-kit';
 
 @Injectable({ providedIn: 'root' })
 export class BaseEntityFormBuilder<Entity extends BaseEntity> {
+  private readonly logger = inject(NGXLogger);
+
   // region public methods
   public buildForm(viewContainerRef: ViewContainerRef, baseEntityForm: FormGroup, store: any, attrDescriptors: AbstractAttrDescriptor[], entity: Signal<Entity>): void {
+    this.logger.trace(`Starting to build form for: ${attrDescriptors}`);
     viewContainerRef.clear();
     attrDescriptors.forEach((column: AbstractAttrDescriptor) => {
+      this.logger.debug(`Processing column: ${column.attrName}`);
       const formControlType = this.createFormControl(column);
       if (formControlType) {
         const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);

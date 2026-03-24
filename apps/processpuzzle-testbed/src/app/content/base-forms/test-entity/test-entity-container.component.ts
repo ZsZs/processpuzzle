@@ -20,7 +20,7 @@ import { MarkdownComponent } from 'ngx-markdown';
       const flexBoxContainer = new FlexboxContainer([column_1, column_2], FlexDirection.CONTAINER); flexBoxContainer.style = &#123; 'column-gap': '20px' &#123;; export const testEntityDescriptors:
       AbstractAttrDescriptor[] = [flexBoxContainer]; \`\`\`
     </markdown>
-    <base-entity-container [baseEntityDescriptor]="baseEntityDescriptor"></base-entity-container>
+    <base-entity-container [entityDescriptor]="baseEntityDescriptor"></base-entity-container>
   `,
   styles: ``,
 })
