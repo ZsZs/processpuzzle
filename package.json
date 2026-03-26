@@ -147,9 +147,9 @@
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "@typescript-eslint/utils": "^8.57.1",
-    "@vitest/browser": "^4.1.0",
-    "@vitest/coverage-v8": "^4.1.0",
-    "@vitest/ui": "^4.1.0",
+    "@vitest/browser": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/ui": "^4.1.2",
     "angular-eslint": "^21.3.1",
     "autoprefixer": "^10.4.27",
     "baseline-browser-mapping": "^2.10.10",
@@ -181,7 +181,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.1",
     "verdaccio": "^6.3.2",
-    "vitest": "^4.1.0",
+    "vitest": "^4.1.2",
     "vitest-mock-extended": "^3.1.0"
   },
   "overrides": {
