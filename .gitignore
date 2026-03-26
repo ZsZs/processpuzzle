@@ -7,12 +7,14 @@ out-tsc
 
 # generated outputs
 reports
+apps/**/target/
 apps/**/reports
 libs/**/reports
-libs/**/**reports
+libs/**/target/
 
 # dependencies
 node_modules
+/**/node_modules/
 
 # IDEs and editors
 /.idea
@@ -33,6 +35,7 @@ node_modules
 # Logs
 logs
 *.log
+/**/logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -40,6 +43,19 @@ firebase-debug.log*
 firebase-debug.*.log*
 firestore-debug.log
 pubsub-debug.log*
+
+#MAVEN
+/**/pom.xml.tag
+/**/pom.xml.releaseBackup
+/**/pom.xml.versionsBackup
+/**/pom.xml.next
+/**/release.properties
+/**/dependency-reduced-pom.xml
+/**/buildNumber.properties
+/**/.mvn/timing.properties
+/**/.classpath
+/**/.project
+/**/.settings
 
 # misc
 /.sass-cache
@@ -88,3 +104,4 @@ docker/**/pubsub-debug.log
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+/apps/processpuzzle-backend/target/
