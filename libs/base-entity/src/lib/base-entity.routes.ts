@@ -4,6 +4,6 @@ import { BaseEntityListComponent } from './base-list/base-entity-list.component'
 
 export const BASE_ENTITY_ROUTES: Routes = [
   { path: '', redirectTo: 'list', pathMatch: 'full' },
-  { path: ':id/details', component: BaseEntityFormComponent },
+  { path: ':entityId/details', component: BaseEntityFormComponent },
   { path: 'list', component: BaseEntityListComponent },
 ];
