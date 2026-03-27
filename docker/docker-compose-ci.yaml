@@ -55,7 +55,7 @@ services:
     stop_grace_period: 1m
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099"
-      FIRESTORE_EMULATOR_HOST: "localhost:8080"
+      FIRESTORE_EMULATOR_HOST: "localhost:8081"
       PUBSUB_EMULATOR_HOST: "localhost:8085"
       FUNCTIONS_EMULATOR_HOST: "localhost:5001"
       FIREBASE_PROJECT: "processpuzzle-testbed-stage"
@@ -68,14 +68,14 @@ services:
       - "4400:4401" # hub
       - "4600:4601" # logging
       - "5001:5002" # functions
-      - "8080:8081" # firestore
+      - "8081:8081" # firestore
       - "8085:8086" # pubsub
       - "9000:9001" # database
       - "9099:9100" # auth
       - "9199:9200" # Storage
       - "6000:6001" # Hosting
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:8080" ]
+      test: [ "CMD", "curl", "http://localhost:8081" ]
 
   keycloak:
     build:

@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Object Store API
+  description: API for storing and retrieving binary objects in buckets.
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api/v1'
+paths:
+  /objects:
+    post:
+      summary: Upload binary data with metadata
+      operationId: uploadObject
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The binary file content.
+                name:
+                  type: string
+                  description: The name of the file.
+                mimeType:
+                  type: string
+                  description: The MIME type of the file.
+              required:
+                - file
+                - name
+                - mimeType
+      responses:
+        '201':
+          description: File uploaded successfully
+          headers:
+            Location:
+              description: ID of the uploaded file.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objectID:
+                    type: string
+        '400':
+          description: Invalid request data
+  /objects/{objectID}:
+    get:
+      summary: Retrieve binary data and metadata by ID
+      description: Use the object's ID as a path parameter.
+      operationId: getObjectByID
+      parameters:
+        - name: objectID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mimeType
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Binary file and metadata
+          headers:
+            X-Object-Name:
+              description: Name of the file
+              schema:
+                type: string
+            X-Object-Bucket:
+              description: Name of the bucket
+              schema:
+                type: string
+            Content-Type:
+              description: MIME type of the file
+              schema:
+                type: string
+          content:
+            multipart/mixed:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  file:
+                    type: string
+                    format: binary
+        '404':
+          description: Object not found
+    delete:
+      summary: Delete a stored binary object by ID
+      operationId: deleteObjectByID
+      parameters:
+        - name: objectID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Object deleted successfully
+        '404':
+          description: Object not found
+  /objects/{objectID}/uri:
+    get:
+      summary: Get signed, short term URI for downloading the object.
+      operationId: getObjectUriByID
+      parameters:
+        - name: objectID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mimeType
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signed URI for object download.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+        '404':
+          description: Object not found
+components:
+  schemas:
+    Bucket:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+  

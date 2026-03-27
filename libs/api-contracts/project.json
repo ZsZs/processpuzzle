@@ -1,0 +1,15 @@
+{
+  "name": "api-contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/api-contracts/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/maven:build"
+    },
+    "test": {
+      "executor": "@nx/maven:test"
+    }
+  },
+  "tags": []
+}

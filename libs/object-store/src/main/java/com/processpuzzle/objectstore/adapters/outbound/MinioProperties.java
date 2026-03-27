@@ -1,0 +1,21 @@
+package com.processpuzzle.objectstore.adapters.outbound;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+@Setter
+@Getter
+@Component
+@ConfigurationProperties(prefix = "minio")
+public class MinioProperties {
+    private String endpoint;
+    private String accessKey;
+    private String secretKey;
+    private Map<String, String> buckets;
+    private Map<String, String> mimeTypes;
+
+}
