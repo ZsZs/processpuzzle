@@ -33,7 +33,7 @@ class UploadObjectTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        uploadObject = new UploadObject(fileStorageService, minioProperties, createBucket, bucketNameFinder);
+        uploadObject = new UploadObject(fileStorageService, createBucket, bucketNameFinder);
 
         when(bucketNameFinder.findBucketName("application/json")).thenReturn("config-bucket");
         when(bucketNameFinder.findBucketName("application/pdf")).thenReturn("test-bucket");

@@ -1,6 +1,5 @@
 package com.processpuzzle.objectstore.usecases.inbound;
 
-import com.processpuzzle.objectstore.adapters.outbound.MinioProperties;
 import com.processpuzzle.objectstore.usecases.outbound.FileStorageService;
 import com.processpuzzle.objectstore.usecases.outbound.StoredObject;
 import org.springframework.stereotype.Service;
@@ -10,7 +9,7 @@ public class GetObject {
     private final FileStorageService fileStorageService;
     private final BucketNameFinder bucketNameFinder;
 
-    public GetObject(FileStorageService fileStorageService, MinioProperties minioProperties, BucketNameFinder bucketNameFinder) {
+    public GetObject(FileStorageService fileStorageService, BucketNameFinder bucketNameFinder) {
         this.fileStorageService = fileStorageService;
         this.bucketNameFinder = bucketNameFinder;
     }

@@ -1,6 +1,5 @@
 package com.processpuzzle.objectstore.usecases.inbound;
 
-import com.processpuzzle.objectstore.adapters.outbound.MinioProperties;
 import com.processpuzzle.objectstore.usecases.outbound.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,9 +13,6 @@ class GetObjectUriTest {
 
     @Mock
     private FileStorageService fileStorageService;
-
-    @Mock
-    private MinioProperties minioProperties;
 
     @Mock
     private BucketNameFinder bucketNameFinder;

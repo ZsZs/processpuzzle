@@ -1,8 +1,8 @@
 package com.processpuzzle.objectstore.usecases.inbound;
 
-import com.processpuzzle.objectstore.adapters.outbound.MinioProperties;
 import com.processpuzzle.objectstore.usecases.outbound.FileStorageService;
 import org.springframework.stereotype.Service;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ public class UploadObject {
     private final CreateBucket createBucket;
     private final BucketNameFinder bucketNameFinder;
 
-    public UploadObject(FileStorageService fileStorageService, MinioProperties minioProperties, CreateBucket createBucket, BucketNameFinder bucketNameFinder) {
+    public UploadObject(FileStorageService fileStorageService, CreateBucket createBucket, BucketNameFinder bucketNameFinder) {
         this.fileStorageService = fileStorageService;
         this.createBucket = createBucket;
         this.bucketNameFinder = bucketNameFinder;

@@ -75,7 +75,7 @@ class MinioFileStorageServiceTest {
         List<String> buckets = fileStorageService.listBuckets();
 
         assertEquals(1, buckets.size());
-        assertEquals("test-bucket", buckets.get(0));
+        assertEquals("test-bucket", buckets.getFirst());
     }
 
     @Test

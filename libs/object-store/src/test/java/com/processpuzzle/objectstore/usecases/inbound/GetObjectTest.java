@@ -31,7 +31,7 @@ class GetObjectTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getObject = new GetObject(fileStorageService, minioProperties, bucketNameFinder);
+        getObject = new GetObject(fileStorageService, bucketNameFinder);
 
         when(bucketNameFinder.findBucketName("application/pdf")).thenReturn("test-bucket");
     }
