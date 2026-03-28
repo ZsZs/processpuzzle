@@ -14,26 +14,21 @@ class GetObjectUriTest {
     @Mock
     private FileStorageService fileStorageService;
 
-    @Mock
-    private BucketNameFinder bucketNameFinder;
-
     private GetObjectUri getObjectUri;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getObjectUri = new GetObjectUri(fileStorageService, bucketNameFinder);
-
-        when(bucketNameFinder.findBucketName("text/plain")).thenReturn("test-bucket");
+        getObjectUri = new GetObjectUri(fileStorageService);
     }
 
     @Test
     void execute_shouldReturnUriFromFileStorageService() {
-        String objectID = "test-object-id";
+        String objectID = "test-bucket/test-object-id";
         String expectedUri = "http://localhost:9000/test-bucket/test-object-id?signed=true";
         when(fileStorageService.getObjectUri("test-bucket", objectID)).thenReturn(expectedUri);
 
-        String actualUri = getObjectUri.execute(objectID, "text/plain");
+        String actualUri = getObjectUri.execute("test-bucket", objectID );
 
         assertEquals(expectedUri, actualUri);
     }

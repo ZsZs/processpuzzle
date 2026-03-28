@@ -1,7 +1,6 @@
 package com.processpuzzle.objectstore.adapters.inbound;
 
 import com.processpuzzle.objectstore.api.DefaultApi;
-import com.processpuzzle.objectstore.model.GetObjectByID200Response;
 import com.processpuzzle.objectstore.model.GetObjectUriByID200Response;
 import com.processpuzzle.objectstore.model.UploadObject201Response;
 import com.processpuzzle.objectstore.usecases.inbound.DeleteObject;
@@ -35,18 +34,15 @@ public class ObjectEndpoint implements DefaultApi {
     }
 
     @Override
-    public ResponseEntity<Void> deleteObjectByID(String objectID) {
-        deleteObject.execute(objectID);
+    public ResponseEntity<Void> deleteObjectByID(String bucketName, String objectID) {
+        deleteObject.execute(bucketName, objectID);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @Override
-    public ResponseEntity<GetObjectByID200Response> getObjectByID(String objectID, String mimeType) {
-        StoredObject storedObject = getObject.execute(objectID, mimeType);
+    public ResponseEntity<Resource> getObjectByID(String bucketName, String objectID) {
+        StoredObject storedObject = getObject.execute(bucketName, objectID);
         Resource resource = new InputStreamResource(storedObject.inputStream());
-        GetObjectByID200Response response = new GetObjectByID200Response();
-        response.setMetadata(storedObject.metadata());
-        response.setFile(resource);
 
         Map<String, String> metadata = storedObject.metadata();
         HttpHeaders headers = new HttpHeaders();
@@ -57,26 +53,28 @@ public class ObjectEndpoint implements DefaultApi {
             headers.add("X-Object-Bucket", metadata.get("X-Object-Bucket"));
         }
         if (metadata.containsKey("Content-Type")) {
-            headers.add("Content-Type", metadata.get("Content-Type"));
+            headers.setContentType(org.springframework.http.MediaType.valueOf(metadata.get("Content-Type")));
         }
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(resource, headers, HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<GetObjectUriByID200Response> getObjectUriByID(String objectID, String mimeType) {
-        String uri = getObjectUri.execute(objectID, mimeType);
+    public ResponseEntity<GetObjectUriByID200Response> getObjectUriByID(String bucketName, String objectID) {
+        String uri = getObjectUri.execute(bucketName, objectID);
         GetObjectUriByID200Response response = new GetObjectUriByID200Response();
         response.setUri(uri);
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<UploadObject201Response> uploadObject(MultipartFile file, String name, String mimeType) {
+    public ResponseEntity<UploadObject201Response> uploadObject(MultipartFile file, String fileName, String mimeType) {
         try {
-            uploadObject.execute(name, file.getInputStream(), mimeType);
+            String objectID = uploadObject.execute(fileName, file.getInputStream(), mimeType);
             UploadObject201Response response = new UploadObject201Response();
-            response.setObjectID(name);
+            response.setObjectID(objectID);
+            response.setFileName(fileName);
+            response.setMimeType(mimeType);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

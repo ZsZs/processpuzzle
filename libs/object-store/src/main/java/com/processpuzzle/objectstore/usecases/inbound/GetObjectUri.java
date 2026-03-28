@@ -6,15 +6,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class GetObjectUri {
     private final FileStorageService fileStorageService;
-    private final BucketNameFinder bucketNameFinder;
 
-    public GetObjectUri(FileStorageService fileStorageService, BucketNameFinder bucketNameFinder) {
+    public GetObjectUri(FileStorageService fileStorageService) {
         this.fileStorageService = fileStorageService;
-        this.bucketNameFinder = bucketNameFinder;
     }
 
-    public String execute(String objectID, String mimeType) {
-        String bucketName = bucketNameFinder.findBucketName(mimeType);
+    public String execute(String bucketName, String objectID) {
         return fileStorageService.getObjectUri(bucketName, objectID);
     }
 }

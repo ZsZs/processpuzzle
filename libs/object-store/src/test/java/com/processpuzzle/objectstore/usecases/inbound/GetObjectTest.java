@@ -23,29 +23,23 @@ class GetObjectTest {
     @Mock
     private MinioProperties minioProperties;
 
-    @Mock
-    private BucketNameFinder bucketNameFinder;
-
     private GetObject getObject;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getObject = new GetObject(fileStorageService, bucketNameFinder);
-
-        when(bucketNameFinder.findBucketName("application/pdf")).thenReturn("test-bucket");
+        getObject = new GetObject(fileStorageService);
     }
 
     @Test
     void execute_shouldReturnStoredObjectFromFileStorageService() {
         String objectID = "test-object-id";
-        String mimeType = "application/pdf";
         InputStream expectedInputStream = new ByteArrayInputStream("test content".getBytes());
         Map<String, String> expectedMetadata = Map.of("key", "value");
         StoredObject expectedStoredObject = new StoredObject(expectedInputStream, expectedMetadata);
         when(fileStorageService.getObject("test-bucket", objectID)).thenReturn(expectedStoredObject);
 
-        StoredObject actualStoredObject = getObject.execute(objectID, mimeType);
+        StoredObject actualStoredObject = getObject.execute("test-bucket", objectID);
 
         assertEquals(expectedStoredObject, actualStoredObject);
     }

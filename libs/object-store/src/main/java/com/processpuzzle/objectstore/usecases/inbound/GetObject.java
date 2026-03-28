@@ -7,15 +7,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class GetObject {
     private final FileStorageService fileStorageService;
-    private final BucketNameFinder bucketNameFinder;
 
-    public GetObject(FileStorageService fileStorageService, BucketNameFinder bucketNameFinder) {
+    public GetObject(FileStorageService fileStorageService) {
         this.fileStorageService = fileStorageService;
-        this.bucketNameFinder = bucketNameFinder;
     }
 
-    public StoredObject execute(String objectID, String mimeType) {
-        String bucketName = bucketNameFinder.findBucketName(mimeType);
+    public StoredObject execute(String bucketName, String objectID) {
         return fileStorageService.getObject(bucketName, objectID);
     }
 }

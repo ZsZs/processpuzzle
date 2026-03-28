@@ -36,7 +36,7 @@ paths:
           description: File uploaded successfully
           headers:
             Location:
-              description: ID of the uploaded file.
+              description: Bucket name / ID of the uploaded file.
               schema:
                 type: string
           content:
@@ -46,21 +46,25 @@ paths:
                 properties:
                   objectID:
                     type: string
+                  fileName:
+                    type: string
+                  mimeType:
+                    type: string
         '400':
           description: Invalid request data
-  /objects/{objectID}:
+  /objects/{bucketName}/{objectID}:
     get:
       summary: Retrieve binary data and metadata by ID
       description: Use the object's ID as a path parameter.
       operationId: getObjectByID
       parameters:
-        - name: objectID
+        - name: bucketName
           in: path
           required: true
           schema:
             type: string
-        - name: mimeType
-          in: query
+        - name: objectID
+          in: path
           required: true
           schema:
             type: string
@@ -76,28 +80,22 @@ paths:
               description: Name of the bucket
               schema:
                 type: string
-            Content-Type:
-              description: MIME type of the file
+          content:
+            '*/*':
               schema:
                 type: string
-          content:
-            multipart/mixed:
-              schema:
-                type: object
-                properties:
-                  metadata:
-                    type: object
-                    additionalProperties:
-                      type: string
-                  file:
-                    type: string
-                    format: binary
+                format: binary
         '404':
           description: Object not found
     delete:
       summary: Delete a stored binary object by ID
       operationId: deleteObjectByID
       parameters:
+        - name: bucketName
+          in: path
+          required: true
+          schema:
+            type: string
         - name: objectID
           in: path
           required: true
@@ -108,18 +106,18 @@ paths:
           description: Object deleted successfully
         '404':
           description: Object not found
-  /objects/{objectID}/uri:
+  /objects/{bucketName}/{objectID}/uri:
     get:
       summary: Get signed, short term URI for downloading the object.
       operationId: getObjectUriByID
       parameters:
-        - name: objectID
+        - name: bucketName
           in: path
           required: true
           schema:
             type: string
-        - name: mimeType
-          in: query
+        - name: objectID
+          in: path
           required: true
           schema:
             type: string

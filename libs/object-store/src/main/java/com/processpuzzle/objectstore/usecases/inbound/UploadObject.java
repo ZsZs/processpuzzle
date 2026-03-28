@@ -20,15 +20,17 @@ public class UploadObject {
         this.bucketNameFinder = bucketNameFinder;
     }
 
-    public void execute(String name, InputStream inputStream, String mimeType) {
+    public String execute(String fileName, InputStream inputStream, String mimeType) {
         String bucketName = bucketNameFinder.findBucketName(mimeType);
         if (!fileStorageService.bucketExists(bucketName)) {
             createBucket.execute(bucketName);
         }
         String objectID = UUID.randomUUID().toString();
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("name", name);
+        metadata.put("bucket", bucketName);
+        metadata.put("name", fileName);
         metadata.put("mimeType", mimeType);
         fileStorageService.uploadObject(bucketName, objectID, inputStream, mimeType, metadata);
+        return bucketName + "/" + objectID;
     }
 }
