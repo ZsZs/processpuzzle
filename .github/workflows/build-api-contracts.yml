@@ -24,6 +24,7 @@ jobs:
     strategy:
       matrix:
         node-version: [ 24.x ]
+        java-version: [ 25 ]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -39,3 +40,4 @@ jobs:
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          java-version: ${{ matrix.java-version }}

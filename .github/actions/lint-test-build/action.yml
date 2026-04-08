@@ -20,6 +20,10 @@ inputs:
     description: Actual stage in the CI/CD pipeline
     required: true
     default: 'ci'
+  java-version:
+    description: Java version to use
+    required: false
+    default: '25'
 runs:
   using: composite
   steps:
@@ -31,9 +35,19 @@ runs:
         cache-dependency-path: |
           package.json
           package-lock.json
-    - name: Install dependencies
-      run: npm inst all --legacy-peer-deps --ignore-scripts
+    - name: Install JavaScript dependencies
+      run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ inputs.java-version }}
+        cache: 'maven'
+    - name: Setup Maven 3.9.14
+      uses: stCarolas/setup-maven@v4
+      with:
+        maven-version: '3.9.14'
     - name: Lint libs and apps
       run: npm run lint-${{inputs.nx_project}}
       shell: bash
