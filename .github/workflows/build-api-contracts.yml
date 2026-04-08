@@ -1,23 +1,24 @@
-name: Build-Auth
+name: Build-API-Contracts
 on:
   push:
     branches:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/auth/**'
+      - 'libs/api-contracts/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
-      - 'libs/auth/**'
+      - 'libs/api-contracts/**'
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONATYPE_TOKEN: ${{ secrets.SONATYPE_TOKEN }}
     outputs:
       RUNNER: ${{ runner.name }}
     strategy:

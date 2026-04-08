@@ -5,10 +5,42 @@
   "sourceRoot": "libs/api-contracts/src",
   "targets": {
     "build": {
-      "executor": "@nx/maven:build"
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml install"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml clean validate"
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
     },
     "test": {
-      "executor": "@nx/maven:test"
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml test"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{projectRoot}"
+      }
     }
   },
   "tags": []
