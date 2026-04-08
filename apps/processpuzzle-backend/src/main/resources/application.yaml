@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: processpuzzle-backend
+
+minio:
+  endpoint: http://localhost:7000
+  access-key: minioadmin
+  secret-key: minioadmin
+  buckets:
+    configuration: configuration
+    text: text
+    images: images
+    documents: documents
+    audio: audio
+    video: video
+    archives: archives
+    logs: logs
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    path: /api-docs

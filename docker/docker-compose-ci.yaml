@@ -29,11 +29,12 @@ services:
       retries: 3
       timeout: 5s
       interval: 20s
+
   json-server:
     build:
       context: ../
       dockerfile: docker/json-server/Dockerfile
-    image: zsuffa/json-server:latest
+    image: zsuffazs/json-server:latest
     container_name: json-server
     ports:
       - "3000:3000"
@@ -42,6 +43,7 @@ services:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
+
   firebase:
     image: zsuffazs/testbed-firebase:latest
     container_name: testbed-firebase
@@ -53,7 +55,7 @@ services:
     stop_grace_period: 1m
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099"
-      FIRESTORE_EMULATOR_HOST: "localhost:8080"
+      FIRESTORE_EMULATOR_HOST: "localhost:8081"
       PUBSUB_EMULATOR_HOST: "localhost:8085"
       FUNCTIONS_EMULATOR_HOST: "localhost:5001"
       FIREBASE_PROJECT: "processpuzzle-testbed-stage"
@@ -66,14 +68,14 @@ services:
       - "4400:4401" # hub
       - "4600:4601" # logging
       - "5001:5002" # functions
-      - "8080:8081" # firestore
+      - "8081:8081" # firestore
       - "8085:8086" # pubsub
       - "9000:9001" # database
       - "9099:9100" # auth
       - "9199:9200" # Storage
       - "6000:6001" # Hosting
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:8080" ]
+      test: [ "CMD", "curl", "http://localhost:8081" ]
 
   keycloak:
     build:
@@ -134,5 +136,34 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    build:
+      context: ../
+      dockerfile: docker/minio/Dockerfile
+    image: zsuffazs/testbed-minio:latest
+    container_name: testbed-minio
+    ports:
+      - "7000:9000"             # S3 API
+      - "7001:9001"             # Web Console
+    environment:
+      # Root credentials (admin)
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+
+      # Spring Boot service account credentials
+      MINIO_SERVICE_USER: springboot
+      MINIO_SERVICE_PASSWORD: springboot123
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:7000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
 volumes:
+  minio-data:
+    driver: local
   postgres_data:

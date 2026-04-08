@@ -1,6 +1,6 @@
 import { BaseEntity } from '../base-entity/base-entity';
-import { patchState, signalStoreFeature, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
-import { computed, inject, InjectionToken, ProviderToken } from '@angular/core';
+import { patchState, signalStoreFeature, watchState, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { computed, inject, InjectionToken, isDevMode, ProviderToken } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { addEntity } from './addEntity';
@@ -78,6 +78,11 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
     withHooks((store) => ({
       onInit: () => {
         store.load({});
+        if (isDevMode()) {
+          watchState(store, (state) => {
+            console.log('[TodoStore] state changed:', state);
+          });
+        }
       },
     })),
     withComputed((store) => ({

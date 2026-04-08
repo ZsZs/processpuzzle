@@ -1,0 +1,36 @@
+minio:
+  mime-types:
+    "application/json": logs
+    "application/xml": configuration
+    "application/yaml": configuration
+    "application/x-yaml": configuration
+    "audio/mpeg": audio
+    "audio/wav": audio
+    "audio/ogg": audio
+    "image/png": images
+    "image/jpeg": images
+    "image/gif": images
+    "image/svg+xml": images
+    "image/webp": images
+    "image/x-icon": images
+    "application/javascript": text
+    "application/msword": documents
+    "application/pdf": documents
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": documents
+    "application/vnd.ms-excel": documents
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": documents
+    "application/vnd.ms-powerpoint": documents
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": documents
+    "application/x-tar": archives
+    "application/x-rar-compressed": archives
+    "application/x-7z-compressed": archives
+    "application/x-log": logs
+    "application/zip": archives
+    "video/mp4": video
+    "video/mpeg": video
+    "video/quicktime": video
+    "text/css": text
+    "text/plain": documents
+    "text/markdown": text
+    "text/html": text
+    "text/x-log": logs

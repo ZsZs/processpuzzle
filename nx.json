@@ -100,7 +100,7 @@
     }
   ],
   "release": {
-    "projects": ["auth", "base-entity", "processpuzzle-testbed", "test-util", "util", "widgets"],
+    "projects": ["api-contracts", "auth", "base-entity", "processpuzzle-testbed", "test-util", "util", "widgets"],
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npm run build-all-ci",

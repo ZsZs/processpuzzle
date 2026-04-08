@@ -114,7 +114,8 @@ function hasStateChanged() {
   if (prevCipeStatus && cipeStatus !== prevCipeStatus) return true;
   if (prevShStatus && selfHealingStatus !== prevShStatus) return true;
   if (prevVerificationStatus && verificationStatus !== prevVerificationStatus) return true;
-  return prevFailureClassification && failureClassification !== prevFailureClassification;
+  if (prevFailureClassification && failureClassification !== prevFailureClassification) return true;
+  return false;
 }
 
 function isTimedOut() {
