@@ -118,6 +118,7 @@
                     </executions>
                 </plugin>
 
+                <!-- Compiler plugin for Java compilation -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -131,6 +132,7 @@
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
+
                 <!-- Sources JAR — required by Maven Central -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
