@@ -3,9 +3,11 @@
   "version": "0.2.1",
   "license": "MIT",
   "scripts": {
-    "config-env-base-entity": "echo 'Not applicable'",
-    "config-env-testbed": "ts-node apps/processpuzzle-testbed/src/assets/setEnv.ts",
+    "config-env-api-contracts": "echo 'Not applicable'",
     "config-env-auth": "echo 'Not applicable'",
+    "config-env-base-entity": "echo 'Not applicable'",
+    "config-env-object-store": "echo 'Not applicable'",
+    "config-env-testbed": "ts-node apps/processpuzzle-testbed/src/assets/setEnv.ts",
     "config-env-test-util": "echo 'Not applicable'",
     "config-env-ui": "echo 'Not applicable'",
     "config-env-util": "echo 'Not applicable'",
