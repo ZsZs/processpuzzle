@@ -38,7 +38,7 @@ runs:
     - name: Install JavaScript dependencies
       run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash
-    - name: Setup Java
+    - name: Setup Java ${{ inputs.java-version }}
       uses: actions/setup-java@v4.8.0
       with:
         distribution: 'temurin'

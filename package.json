@@ -47,7 +47,7 @@
     "release": "ts-node tools/scripts/release.ts",
     "release:dry": "DRY_RUN=true ts-node tools/scripts/release.ts",
     "test-all": "nx run-many -t test --exclude=processpuzzle-testbed --configuration=ci --no-cloud",
-    "test-api-contracts": "nx run api-contracts:test --configuration=ci --coverage --no-cloud",
+    "test-api-contracts": "nx run api-contracts:test --configuration=ci --no-cloud",
     "test-auth": "nx run auth:test --configuration=ci --coverage --no-cloud",
     "test-base-entity": "nx run base-entity:test --configuration=ci --coverage --no-cloud",
     "test-testbed": "nx run processpuzzle-testbed:test --configuration=ci --coverage --no-cloud",
