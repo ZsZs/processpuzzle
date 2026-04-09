@@ -105,3 +105,4 @@ docker/**/pubsub-debug.log
 .claude/worktrees
 .claude/settings.local.json
 /apps/processpuzzle-backend/target/
+/**/.flattened-pom.xml
