@@ -5,13 +5,35 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>processpuzzle-api</artifactId>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
+    <url>https://github.com/ZsZs/processpuzzle</url>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>zsuffazs</id>
+            <name>Zsolt Zsuffa</name>
+            <email>zsolt.zsuffa@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
+        <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
+        <url>https://github.com/ZsZs/processpuzzle</url>
+    </scm>
 
     <dependencies>
         <dependency>
@@ -34,6 +56,7 @@
 
     <build>
         <plugins>
+            <!-- OpenAPI Generator plugin for generating API contracts -->
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -61,9 +84,42 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Checkstyle plugin for code quality checks -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+
+            <!-- Sources JAR — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <!-- Javadoc JAR — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+
+            <!-- GPG signing — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+            </plugin>
+
+            <!-- Central Publishing Plugin — replaces legacy OSSRH -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.7.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>maven-central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>published</waitUntil>
+                </configuration>
             </plugin>
         </plugins>
     </build>

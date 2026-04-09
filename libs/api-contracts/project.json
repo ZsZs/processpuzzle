@@ -16,14 +16,8 @@
         "command": "mvn -f {projectRoot}/pom.xml clean validate"
       },
       "configurations": {
-        "ci": {
-          "format": "json",
-          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
-        },
-        "dev": {
-          "format": "html",
-          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
-        }
+        "ci": {},
+        "dev": {}
       }
     },
     "test": {
@@ -32,9 +26,7 @@
         "command": "mvn -f {projectRoot}/pom.xml test"
       },
       "configurations": {
-        "ci": {
-          "coverage": true
-        }
+        "ci": {}
       }
     },
     "nx-release-publish": {

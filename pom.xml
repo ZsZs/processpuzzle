@@ -14,10 +14,11 @@
 
     <groupId>com.processpuzzle</groupId>
     <artifactId>processpuzzle-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>ProcessPuzzle :: Backend :: Parent</name>
     <description>ProcessPuzzle platform libraries</description>
+    <url>https://github.com/ZsZs/processpuzzle</url>
 
     <licenses>
         <license>
@@ -92,13 +93,18 @@
     <build>
         <pluginManagement>
             <plugins>
+                <!-- Checkstyle plugin -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
                     <configuration>
+                        <!-- checkstyle rules -->
                         <configLocation>google_checks.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
+                        <!-- Generate XML report -->
+                        <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                        <outputFileFormat>xml</outputFileFormat>
                         <failsOnError>true</failsOnError>
                         <linkXRef>false</linkXRef>
                     </configuration>
@@ -113,6 +119,7 @@
                     </executions>
                 </plugin>
 
+                <!-- Compiler plugin for Java compilation -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -126,6 +133,7 @@
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
+
                 <!-- Sources JAR — required by Maven Central -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -154,6 +162,7 @@
                     </executions>
                 </plugin>
 
+                <!-- Jacoco MAVEN plugin -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
@@ -175,6 +184,7 @@
                     </executions>
                 </plugin>
 
+                <!-- Jacoco to LCOV conversion plugin -->
                 <plugin>
                     <groupId>com.github.pknidhu</groupId>
                     <artifactId>jacoco-to-lcov-maven-plugin</artifactId>
@@ -189,16 +199,20 @@
                         </execution>
                     </executions>
                 </plugin>
-                
+
                 <!-- GPG signing — required by Maven Central -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
                     <version>3.2.7</version>
+                    <configuration>
+                        <keyname>zsolt.zsuffa@gmail.com</keyname>
+                        <passphraseServerId>gpg</passphraseServerId>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>sign-artifacts</id>
-                            <phase>verify</phase>
+                            <phase>deploy</phase>
                             <goals>
                                 <goal>sign</goal>
                             </goals>
@@ -213,12 +227,39 @@
                     <version>0.7.0</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <publishingServerId>central</publishingServerId>
+                        <publishingServerId>maven-central</publishingServerId>
                         <autoPublish>true</autoPublish>
                         <waitUntil>published</waitUntil>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>ossrh</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
