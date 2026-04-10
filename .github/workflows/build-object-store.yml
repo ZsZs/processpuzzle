@@ -1,4 +1,4 @@
-name: Build-API-Contracts
+name: Build-Object-Store
 on:
   push:
     branches:
