@@ -10,9 +10,10 @@
     </parent>
 
     <artifactId>processpuzzle-api</artifactId>
+    <version>1.0.1</version>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
-    <url>https://github.com/ZsZs/processpuzzle</url>
+    <url>https://github.com/ZsZs/processpuzzle/libs/api-contracts</url>
 
     <licenses>
         <license>
@@ -116,7 +117,7 @@
                 <version>0.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <publishingServerId>maven-central</publishingServerId>
+                    <publishingServerId>central</publishingServerId>
                     <autoPublish>true</autoPublish>
                     <waitUntil>published</waitUntil>
                 </configuration>

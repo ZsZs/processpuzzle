@@ -11,7 +11,7 @@
         <version>4.0.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
+    
     <groupId>com.processpuzzle</groupId>
     <artifactId>processpuzzle-parent</artifactId>
     <version>1.0.0</version>
@@ -48,6 +48,7 @@
     </modules>
 
     <properties>
+        <revision>1.0.0</revision>
         <java.version>25</java.version>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
