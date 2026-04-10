@@ -13,9 +13,21 @@ inputs:
   sonar_token:
     description: Token to get access to SonarCloud
     required: true
+  gpg_private_key:
+    description: GPG private key for signing artifacts
+    required: true
+  gpg_passphrase:
+    description: GPG passphrase for signing artifacts
+    required: true
+  central_token_username:
+    description: Username for Maven Central token
+    required: true
+  central_token_password:
+    description: Password for Maven Central token
+    required: true
   cicd_stage:
     description: Actual stage in the CI/CD pipeline
-    required: true
+    required: false
     default: 'ci'
   node-version:
     description: NodeJS version to use
@@ -58,7 +70,7 @@ runs:
     - name: Import GPG key
       shell: bash
       run: |
-        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        echo "${{ inputs.gpg_private_key }}" | gpg --batch --import
         gpg --list-secret-keys
 
     - name: Read POM version
@@ -67,21 +79,21 @@ runs:
       run: |
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-      working-directory: ${{env.BASE_DIR}}
+      working-directory: ${{inputs.base_dir}}
 
     - name: Publish to Maven Central
       run: mvn --batch-mode --settings ./settings.xml deploy -Prelease
       working-directory: ${{ inputs.base_dir }}
       env:
-        MAVEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
-        MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        MAVEN_USERNAME: ${{ inputs.central_token_username }}
+        MAVEN_PASSWORD: ${{ inputs.central_token_password }}
+        GPG_PASSPHRASE: ${{ inputs.gpg_passphrase }}
       shell: bash
 
     - name: Create GitHub Release
       uses: elgohr/Github-Release-Action@v5
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ inputs.github_token }}
       with:
         title: "@processpuzzle/${{inputs.nx_project}}/${{steps.version.outputs.VERSION}}"
         tag: "${{inputs.nx_project}}@${{steps.version.outputs.VERSION}}"

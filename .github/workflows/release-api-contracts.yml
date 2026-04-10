@@ -41,3 +41,7 @@ jobs:
           sonar_token: ${{secrets.SONAR_TOKEN}}
           node-version: "24.x"
           java-version: "25.x"
+          central_token_password: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          central_token_username: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
