@@ -2,6 +2,7 @@
   "name": "api-contracts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "tags": ["backend", "java", "springboot", "library"],
   "sourceRoot": "libs/api-contracts/src",
   "targets": {
     "build": {
@@ -34,6 +35,5 @@
         "packageRoot": "{projectRoot}"
       }
     }
-  },
-  "tags": []
+  }
 }

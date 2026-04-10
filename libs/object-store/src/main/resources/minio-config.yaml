@@ -1,4 +1,16 @@
 minio:
+  endpoint: http://localhost:7000
+  access-key: minioadmin
+  secret-key: minioadmin
+  buckets:
+    configuration: configuration
+    text: text
+    images: images
+    documents: documents
+    audio: audio
+    video: video
+    archives: archives
+    logs: logs
   mime-types:
     "application/json": logs
     "application/xml": configuration
