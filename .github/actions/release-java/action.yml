@@ -83,7 +83,7 @@ runs:
       working-directory: ${{inputs.base_dir}}
 
     - name: Publish to Maven Central
-      run: mvn --batch-mode --settings ./settings.xml deploy -Prelease
+      run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml deploy -Prelease
       working-directory: ${{ inputs.base_dir }}
       env:
         MAVEN_USERNAME: ${{ inputs.central_token_username }}
