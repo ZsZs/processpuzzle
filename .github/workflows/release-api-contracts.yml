@@ -29,7 +29,7 @@ jobs:
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
-          java-version: ${{ matrix.java-version }}
+          java-version: '25.x'
 
       - id: release-java
         name: Release the Java library to Maven Central
