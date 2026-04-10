@@ -36,6 +36,7 @@
     "lint-api-contracts": "nx run api-contracts:lint --configuration=ci --no-cloud",
     "lint-auth": "nx run auth:lint --configuration=ci --no-cloud",
     "lint-base-entity": "nx run base-entity:lint --configuration=ci --no-cloud",
+    "lint-object-store": "nx run object-store:lint --configuration=ci --no-cloud",
     "lint-testbed": "nx run processpuzzle-testbed:lint --configuration=ci --no-cloud",
     "lint-test-util": "nx run test-util:lint --configuration=ci --no-cloud",
     "lint-util": "nx run util:lint --configuration=ci --no-cloud",
