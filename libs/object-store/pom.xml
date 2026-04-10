@@ -5,20 +5,43 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>object-store</artifactId>
+    <version>1.0.1</version>
     <name>ProcessPuzzle :: Object Store</name>
     <description>ProcessPuzzle Object Store Library</description>
+    <url>https://github.com/ZsZs/processpuzzle/libs/object-store</url>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>zsuffazs</id>
+            <name>Zsolt Zsuffa</name>
+            <email>zsolt.zsuffa@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
+        <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
+        <url>https://github.com/ZsZs/processpuzzle</url>
+    </scm>
 
     <dependencies>
         <!-- Project dependencies -->
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>processpuzzle-api</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.1</version>
         </dependency>
 
         <!-- Spring Boot dependencies -->
@@ -38,6 +61,11 @@
             <artifactId>minio</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -45,4 +73,53 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Checkstyle plugin for code quality checks -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+
+            <!-- Jacoco MAVEN plugin -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Jacoco to LCOV conversion plugin -->
+
+            <!-- Sources JAR — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <!-- Javadoc JAR — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+
+            <!-- GPG signing — required by Maven Central -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+            </plugin>
+
+            <!-- Central Publishing Plugin — replaces legacy OSSRH -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.7.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>validated</waitUntil>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
