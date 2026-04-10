@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>object-store</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>ProcessPuzzle :: Object Store</name>
     <description>ProcessPuzzle Object Store Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/object-store</url>
@@ -117,7 +117,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <autoPublish>true</autoPublish>
-                    <waitUntil>published</waitUntil>
+                    <waitUntil>publishing</waitUntil>
                 </configuration>
             </plugin>
         </plugins>
