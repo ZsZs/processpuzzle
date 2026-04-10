@@ -12,7 +12,7 @@
     <artifactId>processpuzzle-api</artifactId>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
-    <url>https://github.com/ZsZs/processpuzzle</url>
+    <url>https://github.com/ZsZs/processpuzzle/libs/api-contracts</url>
 
     <licenses>
         <license>
