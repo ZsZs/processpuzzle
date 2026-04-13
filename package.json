@@ -91,7 +91,7 @@
     "dotenv": "^17.4.1",
     "es6-dynamic-template": "^2.0.0",
     "eslint-plugin-import": "^2.32.0",
-    "firebase-admin": "^13.7.0",
+    "firebase-admin": "^13.8.0",
     "firebase-functions": "^7.2.3",
     "flag-icons": "^7.5.0",
     "keycloak-js": "^26.2.3",
