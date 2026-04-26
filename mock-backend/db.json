@@ -7,7 +7,9 @@
       "boolean": true,
       "number": 100,
       "date": "2024-01-18T20:02:27",
-      "enumValue": 3
+      "enumValue": 3,
+      "tags": ["tag1", "tag2"],
+      "artifacts": [{ "bucket": "documents", "objectId": "4d13d64c-832c-48f6-8a7d-8f1cc01296ea", "name": "ef-generic-message", "mimeType": "application/zip" }]
     },
     {
       "id": "2",
@@ -16,7 +18,9 @@
       "boolean": true,
       "number": 200,
       "date": "2024-02-18T20:02:27",
-      "enumValue": 0
+      "enumValue": 0,
+      "tags": ["tag3"],
+      "artifacts": [{ "bucket": "documents", "objectId": "a593b288-8f39-468d-80c4-3cea3006e6a7", "name": "db_ticket", "mimeType": "application/pdf" }]
     },
     {
       "id": "3",
@@ -25,7 +29,8 @@
       "boolean": true,
       "number": 300,
       "date": "2024-03-21T23:00:00.000Z",
-      "enumValue": 0
+      "enumValue": 0,
+      "artifacts": [{ "bucket": "images", "objectId": "e6debdb4-d727-456a-bac3-53d597206544", "name": "screenshot", "mimeType": "image/png" }]
     },
     {
       "id": "4",
@@ -34,7 +39,8 @@
       "boolean": false,
       "number": 400,
       "date": "2024-04-18T20:02:27",
-      "enumValue": 0
+      "enumValue": 0,
+      "tags": ["tag1", "tag2"]
     },
     {
       "id": "5",

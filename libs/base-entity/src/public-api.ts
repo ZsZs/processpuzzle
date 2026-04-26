@@ -1,6 +1,7 @@
 // Public API Surface of @processpuzzle/base-entity
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
+export { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
 export { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 export { BaseEntityContainerStore } from './lib/base-entity-container.store';   // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service';   // With @angular/build:ng-packagr executor causes a problem

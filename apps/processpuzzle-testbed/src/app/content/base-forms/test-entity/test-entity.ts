@@ -1,4 +1,4 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum TestEnum {
@@ -17,8 +17,10 @@ export class TestEntity implements BaseEntity {
   private number;
   private date;
   private enumValue: TestEnum;
+  private artifacts?: Array<ArtifactAttr> | undefined;
+  private tags: Array<string> | undefined;
 
-  constructor(id?: string, name?: string, description?: string, boolean?: boolean, number?: number, date?: Date, enumValue?: TestEnum) {
+  constructor(id?: string, name?: string, description?: string, boolean?: boolean, number?: number, date?: Date, enumValue?: TestEnum, artifacts?: Array<ArtifactAttr>, tags?: Array<string>) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'TestEntity';
     this.description = description != undefined ? description : '';
@@ -26,5 +28,7 @@ export class TestEntity implements BaseEntity {
     this.number = number != undefined ? number : 1;
     this.date = date != undefined ? date : new Date();
     this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
+    this.artifacts = artifacts;
+    this.tags = tags;
   }
 }

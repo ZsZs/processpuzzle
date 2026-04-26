@@ -1,4 +1,5 @@
 export enum FormControlType {
+  ARTIFACT = 'ARTIFACT',
   CHECKBOX = 'CHECKBOX',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
@@ -6,6 +7,7 @@ export enum FormControlType {
   FOREIGN_KEY = 'FOREIGN_KEY',
   LABEL = 'LABEL',
   RADIO = 'RADIO',
+  TAGS = 'TAGS',
   TITLE = 'TITLE',
   TEXT_BOX = 'TEXT_BOX',
   TEXTAREA = 'TEXTAREA',

@@ -1,32 +1,40 @@
 @if (store.isLoading()) {
   <mat-progress-bar mode="query"></mat-progress-bar>
 }
-<table mat-table [dataSource]="dataSource" class="mat-elevation-z8 demo-table" matSort aria-describedby="base-entity-list">
-  <!-- Checkbox Column -->
-  <ng-container matColumnDef="select">
-    <th mat-header-cell *matHeaderCellDef>
-      <mat-checkbox (change)="$event ? onToggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()" [indeterminate]="selection.hasValue() && !isAllSelected()"> </mat-checkbox>
-    </th>
-    <td mat-cell *matCellDef="let row">
-      <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null; onChangeSelection(row)" [checked]="selection.isSelected(row)"></mat-checkbox>
-    </td>
-  </ng-container>
-
-  @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
-    <ng-container [matColumnDef]="colDescriptor.attrName">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</th>
-      <!-- //NOSONAR --><td (click)="onRowClick(element)" *matCellDef="let element" mat-cell>
-        @if (colDescriptor.isLinkToDetails) {
-          <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
-        } @else if (colDescriptor.linkedEntityType !== undefined ) {
-          <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
-        } @else {
-          {{ element[colDescriptor.attrName] }}
-        }
-      </td>
+<div class="base-entity-list mat-elevation-z8">
+  <mat-table [dataSource]="dataSource" matSort aria-describedby="base-entity-list">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef>
+        <mat-checkbox (change)="$event ? onToggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()" [indeterminate]="selection.hasValue() && !isAllSelected()"> </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null; onChangeSelection(row)" [checked]="selection.isSelected(row)"></mat-checkbox>
+      </mat-cell>
     </ng-container>
-  }
-  <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
-</table>
-<mat-paginator [pageSizeOptions]="[3, 5, 8]" showFirstLastButtons></mat-paginator>
+
+    @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
+      <ng-container [matColumnDef]="colDescriptor.attrName">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</mat-header-cell>
+        <mat-cell (click)="onRowClick(element)" *matCellDef="let element">
+          @if (colDescriptor.isLinkToDetails) {
+            <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
+          } @else if (colDescriptor.linkedEntityType !== undefined ) {
+            <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
+          } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined ) {
+            @for (artifact of element[colDescriptor.attrName]; track $index; let isLast = $last) {
+              <a (click)="onDownloadObject(artifact, $event)">{{ artifact.name ?? artifact.fileName ?? artifact.objectID ?? artifact.objectId ?? artifact.id }}</a>@if (!isLast) {, }
+            }
+          } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined ) {
+            {{ element[colDescriptor.attrName].join(', ') }}
+          } @else {
+            {{ element[colDescriptor.attrName] }}
+          }
+        </mat-cell>
+      </ng-container>
+    }
+    <mat-header-row *matHeaderRowDef="displayedColumns()"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns()"></mat-row>
+  </mat-table>
+  <mat-paginator [pageSizeOptions]="[3, 5, 8]" showFirstLastButtons></mat-paginator>
+</div>
