@@ -30,8 +30,13 @@ import { MockBreakpointObserver } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
-import { TestEnvironmentVariables } from './lib/test-environment-variables';
-import { provideLogger } from 'ngx-logging-kit';
+import { NgxLoggerLevel, provideLogger } from 'ngx-logging-kit';
+
+const LOGGING_CONFIGURATION = {
+  level: NgxLoggerLevel.OFF,
+  serverLogLevel: NgxLoggerLevel.OFF,
+  disableConsoleLogging: true,
+};
 
 @Component({
   selector: 'mock-control-container',
@@ -134,14 +139,17 @@ export function setupMockService({
 
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
-  const envVars = { PIPELINE_STAGE: 'dev', CONFIGURATION_OVERRIDES: ['environments/config.common.json', 'environments/config.t1.json'] } as TestEnvironmentVariables;
+  const runtimeConfigMock = {
+    BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
+    LOGGING_CONFIGURATION,
+  };
   const mockService = mock<TestEntityService>();
   mockService.findByQuery.mockReturnValue(of(entities));
 
   await TestBed.configureTestingModule({
     imports: [BaseEntityListComponent, NoopAnimationsModule],
     providers: [
-      provideLogger({ level: 7 }),
+      provideLogger(LOGGING_CONFIGURATION),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([
@@ -162,14 +170,8 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
         },
         deps: [TestEntityStore],
       },
-      {
-        provide: RUNTIME_CONFIGURATION,
-        useFactory: async (configurationService: ConfigurationService<TestEnvironmentVariables, TestConfiguration>) => {
-          await configurationService.init(envVars);
-          return configurationService.configuration;
-        },
-        deps: [ConfigurationService],
-      },
+      { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
+      { provide: TestConfiguration, useValue: runtimeConfigMock },
     ],
   }).compileComponents();
 
@@ -186,12 +188,15 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
 
 export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
-  const runtimeConfigMock = { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' } };
+  const runtimeConfigMock = {
+    BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
+    LOGGING_CONFIGURATION,
+  };
 
   await TestBed.configureTestingModule({
     imports: [BaseEntityFormComponent, BaseFormHostDirective],
     providers: [
-      provideLogger({ level: 7 }),
+      provideLogger(LOGGING_CONFIGURATION),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([]),
@@ -245,7 +250,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
   };
-  const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' };
+  const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1', LOGGING_CONFIGURATION };
 
   const mockService = setupMockService();
 
@@ -254,6 +259,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
+      provideLogger(LOGGING_CONFIGURATION),
       provideRouter([
         { path: 'test-entity/:id/details', component: DummyComponent },
         { path: 'test-entity/list', component: DummyComponent },

@@ -4,7 +4,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatHeaderCell, MatTable, MatTableDataSource } from '@angular/material/table';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('EntityListComponent', () => {
@@ -26,13 +26,13 @@ describe('EntityListComponent', () => {
   describe('template structure contains:', () => {
     it('table element', async () => {
       const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
-      const table = fixture.debugElement.query(By.css('table')).nativeElement;
+      const table = fixture.debugElement.query(By.directive(MatTable));
       expect(table).toBeTruthy();
     });
 
     it('table header element', async () => {
       const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
-      const tableHeader = fixture.debugElement.query(By.css('table th')).nativeElement;
+      const tableHeader = fixture.debugElement.query(By.directive(MatHeaderCell));
       expect(tableHeader).toBeTruthy();
     });
 

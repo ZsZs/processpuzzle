@@ -80,7 +80,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
         store.load({});
         if (isDevMode()) {
           watchState(store, (state) => {
-            console.log('[TodoStore] state changed:', state);
+            //            console.log('[Base Entity Store] state changed:', state);
           });
         }
       },
