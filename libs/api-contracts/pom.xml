@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>processpuzzle-api</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/api-contracts</url>
