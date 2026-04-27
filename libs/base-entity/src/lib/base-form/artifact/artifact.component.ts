@@ -5,25 +5,27 @@ import { BaseEntity } from '../../base-entity/base-entity';
 import { NgStyle } from '@angular/common';
 import { ObjectStoreService } from '../../object-store/object-store.service';
 import { ArtifactAttr } from './artifact-attr';
+import { ArtifactSelectorComponent } from './artifact-selector.component';
 
 @Component({
   selector: 'app-artifact',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, NgStyle],
+  imports: [FormsModule, ReactiveFormsModule, NgStyle, ArtifactSelectorComponent],
   template: `
     @if (config().visible) {
       @if (config().isHeading) {
         <h3 [id]="config().attrName">{{ value() }}</h3>
       } @else {
-        @if (value()?.length) {
+        @if (artifacts().length) {
           <ul [id]="config().attrName" [ngStyle]="config().style">
-            @for (artifact of value(); track artifact.objectId) {
+            @for (artifact of artifacts(); track artifact.objectId) {
               <li>
                 <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
               </li>
             }
           </ul>
         }
+        <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
       }
     }
   `,
@@ -31,6 +33,11 @@ import { ArtifactAttr } from './artifact-attr';
 })
 export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   private readonly objectStoreService = inject(ObjectStoreService);
+
+  artifacts(): ArtifactAttr[] {
+    const value = this.formGroup.get(this.config().attrName)?.value;
+    return Array.isArray(value) ? value : [];
+  }
 
   openArtifact(event: Event, artifact: ArtifactAttr): void {
     event.preventDefault();
@@ -42,5 +49,12 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
         }
       },
     });
+  }
+
+  onArtifactUploaded(artifact: ArtifactAttr): void {
+    const control = this.formGroup.get(this.config().attrName);
+    control?.setValue([...this.artifacts(), artifact]);
+    control?.markAsDirty();
+    control?.markAsTouched();
   }
 }

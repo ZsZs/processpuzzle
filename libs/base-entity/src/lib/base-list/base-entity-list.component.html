@@ -23,10 +23,10 @@
             <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined ) {
             @for (artifact of element[colDescriptor.attrName]; track $index; let isLast = $last) {
-              <a (click)="onDownloadObject(artifact, $event)">{{ artifact.name ?? artifact.fileName ?? artifact.objectID ?? artifact.objectId ?? artifact.id }}</a>@if (!isLast) {, }
+              <a (click)="onDownloadObject(artifact, $event)">{{ ((artifact.name ?? artifact.fileName ?? artifact.objectID ?? artifact.objectId ?? artifact.id ?? '') | slice:0:20) + ((artifact.name ?? artifact.fileName ?? artifact.objectID ?? artifact.objectId ?? artifact.id ?? '').length > 20 ? '...' : '') }}</a>@if (!isLast) {, }
             }
           } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined ) {
-            {{ element[colDescriptor.attrName].join(', ') }}
+            {{ (element[colDescriptor.attrName].join(', ') | slice:0:20) + (element[colDescriptor.attrName].join(', ').length > 20 ? '...' : '') }}
           } @else {
             {{ element[colDescriptor.attrName] }}
           }

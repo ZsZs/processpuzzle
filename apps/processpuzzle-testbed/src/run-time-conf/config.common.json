@@ -3,7 +3,7 @@
     "PIPELINE_STAGE": "dev",
     "BACKEND_SERVICE_PROVIDER": "rest",
     "BACKEND_SERVICE_ROOT": "http://localhost:3000/",
-    "OBJECT_STORE_SERVICE_ROOT": "http://localhost:7000",
+    "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
     "FIREBASE_CONFIGURATION": {
       "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
       "projectId": "processpuzzle-testbed-stage",

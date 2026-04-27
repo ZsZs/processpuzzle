@@ -13,6 +13,7 @@ import { filterAttributeDescriptors } from '../base-entity/filter-attr-descripto
 import { FilterCondition } from '../base-entity-service/base-entity-load-response';
 import { NGXLogger } from 'ngx-logging-kit';
 import { ObjectStoreService } from '../object-store/object-store.service';
+import { SlicePipe } from '@angular/common';
 
 interface ArtifactReference {
   objectID?: string;
@@ -45,6 +46,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatSortHeader,
     MatProgressBar,
     MatCheckbox,
+    SlicePipe,
   ],
   templateUrl: 'base-entity-list.component.html',
   styleUrl: 'base-entity-list.component.css',

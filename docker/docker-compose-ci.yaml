@@ -4,6 +4,7 @@ networks:
 
 services:
   processpuzzle-testbed:
+    pull_policy: build
     depends_on:
       json-server:
         condition: service_healthy
@@ -31,6 +32,7 @@ services:
       interval: 20s
 
   json-server:
+    pull_policy: build
     build:
       context: ../
       dockerfile: docker/json-server/Dockerfile
