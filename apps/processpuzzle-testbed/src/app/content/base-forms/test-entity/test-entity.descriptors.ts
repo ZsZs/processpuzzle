@@ -11,10 +11,10 @@ const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHEC
 const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, { inputType: 'number' });
 const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
 const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
-const artifactsAttr = new BaseEntityAttrDescriptor('artifacts', FormControlType.ARTIFACT, 'Artifact');
+const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
 const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
 
-const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactsAttr], FlexDirection.COLUMN);
+const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);
 const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, enumAttr, tagsAttr], FlexDirection.COLUMN);
 const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
 flexBoxContainer.style = { 'column-gap': '20px' };

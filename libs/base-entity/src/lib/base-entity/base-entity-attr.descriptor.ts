@@ -8,6 +8,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   isLinkToDetails?: boolean;
   selectables?: Array<{ key: string; value: any }>;
   visible = true;
+  hideInTable?: boolean = false;
   isHeading?: boolean;
   placeholder?: string;
   lines?: number;

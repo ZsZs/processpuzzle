@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
   fromDto(dto: any): TestEntity {
-    return new TestEntity(dto.id, dto.name, dto.description, dto.boolean, dto.number, dto.date, getEnumKeyByEnumValue<TestEnum>(TestEnum, dto.enumValue), dto.artifacts, dto.tags);
+    return new TestEntity(dto.id, dto.name, dto.description, dto.boolean, dto.number, dto.date, getEnumKeyByEnumValue<TestEnum>(TestEnum, dto.enumValue), dto.artifact, dto.tags);
   }
 
   toDto(entity: TestEntity): any {

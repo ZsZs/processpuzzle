@@ -16,13 +16,11 @@ import { ArtifactSelectorComponent } from './artifact-selector.component';
       @if (config().isHeading) {
         <h3 [id]="config().attrName">{{ value() }}</h3>
       } @else {
-        @if (artifacts().length) {
+        @if (artifact(); as artifact) {
           <ul [id]="config().attrName" [ngStyle]="config().style">
-            @for (artifact of artifacts(); track artifact.objectId) {
-              <li>
-                <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
-              </li>
-            }
+            <li>
+              <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
+            </li>
           </ul>
         }
         <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
@@ -34,9 +32,8 @@ import { ArtifactSelectorComponent } from './artifact-selector.component';
 export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   private readonly objectStoreService = inject(ObjectStoreService);
 
-  artifacts(): ArtifactAttr[] {
-    const value = this.formGroup.get(this.config().attrName)?.value;
-    return Array.isArray(value) ? value : [];
+  artifact(): ArtifactAttr | null {
+    return this.formGroup.get(this.config().attrName)?.value ?? null;
   }
 
   openArtifact(event: Event, artifact: ArtifactAttr): void {
@@ -53,7 +50,7 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
 
   onArtifactUploaded(artifact: ArtifactAttr): void {
     const control = this.formGroup.get(this.config().attrName);
-    control?.setValue([...this.artifacts(), artifact]);
+    control?.setValue(artifact);
     control?.markAsDirty();
     control?.markAsTouched();
   }
