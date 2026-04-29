@@ -17,10 +17,10 @@ export class TestEntity implements BaseEntity {
   private number;
   private date;
   private enumValue: TestEnum;
-  private artifacts?: Array<ArtifactAttr> | undefined;
+  private artifact?: ArtifactAttr | undefined;
   private tags: Array<string> | undefined;
 
-  constructor(id?: string, name?: string, description?: string, boolean?: boolean, number?: number, date?: Date, enumValue?: TestEnum, artifacts?: Array<ArtifactAttr>, tags?: Array<string>) {
+  constructor(id?: string, name?: string, description?: string, boolean?: boolean, number?: number, date?: Date, enumValue?: TestEnum, artifact?: ArtifactAttr, tags?: Array<string>) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'TestEntity';
     this.description = description != undefined ? description : '';
@@ -28,7 +28,7 @@ export class TestEntity implements BaseEntity {
     this.number = number != undefined ? number : 1;
     this.date = date != undefined ? date : new Date();
     this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
-    this.artifacts = artifacts;
+    this.artifact = artifact;
     this.tags = tags;
   }
 }

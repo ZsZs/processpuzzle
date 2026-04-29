@@ -9,7 +9,7 @@
       "date": "2024-01-18T20:02:27",
       "enumValue": 3,
       "tags": ["tag1", "tag2"],
-      "artifacts": [{ "bucket": "archives", "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9", "name": "ef-generic-message", "mimeType": "application/zip" }]
+      "artifact": { "bucket": "archives", "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9", "name": "ef-generic-message", "mimeType": "application/zip" }
     },
     {
       "id": "2",
@@ -20,7 +20,7 @@
       "date": "2024-02-18T20:02:27",
       "enumValue": 0,
       "tags": ["tag3"],
-      "artifacts": [{ "bucket": "documents", "objectId": "0517891f-2e3c-44db-8fcd-5c6b2998421d", "name": "db_ticket", "mimeType": "application/pdf" }]
+      "artifact": { "bucket": "documents", "objectId": "0517891f-2e3c-44db-8fcd-5c6b2998421d", "name": "db_ticket", "mimeType": "application/pdf" }
     },
     {
       "id": "3",
@@ -30,7 +30,7 @@
       "number": 300,
       "date": "2024-03-21T23:00:00.000Z",
       "enumValue": 0,
-      "artifacts": [{ "bucket": "documents", "objectId": "ce4861b7-0602-48e4-8f84-102e62976d38", "name": "logo", "mimeType": "image/jpg" }]
+      "artifact": { "bucket": "documents", "objectId": "ce4861b7-0602-48e4-8f84-102e62976d38", "name": "logo", "mimeType": "image/jpg" }
     },
     {
       "id": "4",

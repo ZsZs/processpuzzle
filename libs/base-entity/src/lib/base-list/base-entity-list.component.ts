@@ -14,16 +14,7 @@ import { FilterCondition } from '../base-entity-service/base-entity-load-respons
 import { NGXLogger } from 'ngx-logging-kit';
 import { ObjectStoreService } from '../object-store/object-store.service';
 import { SlicePipe } from '@angular/common';
-
-interface ArtifactReference {
-  objectID?: string;
-  objectId?: string;
-  id?: string;
-  bucketName?: string;
-  bucket?: string;
-  name?: string;
-  fileName?: string;
-}
+import { ArtifactAttr } from '../base-form/artifact/artifact-attr';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -61,7 +52,9 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
   });
   displayedColumns: Signal<string[]> = computed(() => {
-    const columns = this.columnDescriptors().map((column) => column.attrName);
+    const columns = this.columnDescriptors()
+      .filter((column) => column.hideInTable !== true)
+      .map((column) => column.attrName);
     columns.unshift('select');
     return columns;
   });
@@ -113,12 +106,12 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.onChangeSelection(entity);
   }
 
-  onDownloadObject(artifact: ArtifactReference, event?: MouseEvent): void {
+  onDownloadObject(artifact: ArtifactAttr, event?: MouseEvent): void {
     event?.stopPropagation();
     event?.preventDefault();
 
-    const bucketName = artifact.bucketName ?? artifact.bucket;
-    const objectID = artifact.objectID ?? artifact.objectId ?? artifact.id;
+    const bucketName = artifact.bucket ?? artifact.bucket;
+    const objectID = artifact.objectId ?? artifact.objectId;
     if (!bucketName || !objectID) {
       this.logger.warn('Cannot download artifact: missing bucketName or objectID', { artifact });
       return;
