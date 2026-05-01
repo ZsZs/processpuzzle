@@ -87,6 +87,14 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.activeRouteSegment()).toEqual(RouteSegments.DETAILS_ROUTE);
   });
 
+  it('navigateToRelatedList() navigates to related entities List route.', async () => {
+    await store.navigateToRelatedList('TestEntityComponent', 'home');
+    expect(store.determineCurrentUrl()).toEqual('/test-entity-component/list');
+    expect(store.navigateTo()).toEqual('/test-entity-component/list');
+    expect(store.returnTo()).toEqual('home');
+    expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
   it('navigateToUrl() navigates to url from store.', async () => {
     await store.navigateToUrl('test-entity/list', 'home');
     expect(store.navigateTo()).toEqual('test-entity/list');

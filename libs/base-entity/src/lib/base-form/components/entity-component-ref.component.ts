@@ -1,22 +1,41 @@
 import { Component, input, InputSignal } from '@angular/core';
+import { FormGroup } from '@angular/forms';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 import { BaseEntity } from '../../base-entity/base-entity';
+
+export interface ComponentNameAttr {
+  attrName: string;
+  name: string;
+}
+
+interface EntityComponentRefStore {
+  determineCurrentUrl(): unknown;
+  navigateToRelated(entityType: string, entityId: string, currentUrl: unknown): void;
+}
 
 @Component({
   selector: 'app-entity-component-ref',
   standalone: true,
+  imports: [MatIconButton, MatIcon],
   template: `
     <a href="" (click)="navigateToRelated($event)">{{ componentName() }}</a>
+    <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete component reference" (click)="removeComponent()">
+      <mat-icon>cancel</mat-icon>
+    </button>
   `,
-  styles: ``,
+  styleUrls: ['../base-entity-form.css'],
 })
-export class EntityComponentRefComponent<ComponentEntity extends BaseEntity> {
+export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEntity extends BaseEntity> {
+  entity: InputSignal<Entity> = input.required<Entity>();
   component: InputSignal<ComponentEntity> = input.required<ComponentEntity>();
-  componentNameAttr: InputSignal<string> = input.required<string>();
+  componentNameAttr: InputSignal<ComponentNameAttr> = input.required<ComponentNameAttr>();
+  formGroup: InputSignal<FormGroup> = input.required<FormGroup>();
   linkedEntityType: InputSignal<string> = input.required<string>();
-  store: InputSignal<any> = input.required<any>();
+  store: InputSignal<EntityComponentRefStore> = input.required<EntityComponentRefStore>();
 
   componentName(): string {
-    const attrName = this.componentNameAttr();
+    const attrName = this.componentNameAttr().attrName;
     const component = this.component();
     const componentName = attrName ? (component as Record<string, unknown>)[attrName] : undefined;
 
@@ -26,5 +45,23 @@ export class EntityComponentRefComponent<ComponentEntity extends BaseEntity> {
   navigateToRelated(event: Event): void {
     event.preventDefault();
     this.store().navigateToRelated(this.linkedEntityType(), this.component().id, this.store().determineCurrentUrl());
+  }
+
+  removeComponent(): void {
+    const componentsAttrName = this.componentNameAttr().name;
+    const entity = this.entity() as Record<string, unknown>;
+    const components = entity[componentsAttrName];
+
+    if (!Array.isArray(components)) {
+      return;
+    }
+
+    const remainingComponents = components.filter((component) => (component as BaseEntity).id !== this.component().id);
+    entity[componentsAttrName] = remainingComponents;
+
+    const control = this.formGroup().get(componentsAttrName);
+    control?.setValue(remainingComponents);
+    control?.markAsDirty();
+    control?.markAsTouched();
   }
 }

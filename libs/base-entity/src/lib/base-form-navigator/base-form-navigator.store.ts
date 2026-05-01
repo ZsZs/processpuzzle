@@ -100,6 +100,14 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       await navigateToUrl(detailsFormPath, returnTo);
     }
 
+    async function navigateToRelatedList(relatedTypeName: string, returnTo?: string) {
+      patchState(store, { entityName: relatedTypeName });
+      const snakeCaseEntityName = snakeCaseName(relatedTypeName);
+      const baseUrl = determineBaseUrl();
+      const listPath = baseUrl + '/' + snakeCaseEntityName + '/list';
+      await navigateToUrl(listPath, returnTo);
+    }
+
     function setEntityName(entityName: string): void {
       patchState(store, { entityName });
     }
@@ -117,7 +125,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
         .catch((error) => patchState(store, { navigationError: error.message }));
     }
 
-    return { determineCurrentUrl, determineActiveRouteSegment, navigateBack, navigateToDetails, navigateToList, navigateToRelated, navigateToUrl, setEntityName };
+    return { determineCurrentUrl, determineActiveRouteSegment, navigateBack, navigateToDetails, navigateToList, navigateToRelated, navigateToRelatedList, navigateToUrl, setEntityName };
   }),
   withHooks((store) => ({
     onInit: () => {
@@ -142,6 +150,7 @@ export function BaseFormNavigatorStore(entityName: string) {
         navigateToDetails: (id: string, returnTo?: string) => navigatorStore.navigateToDetails(entityName, id, returnTo),
         navigateToList: (returnTo?: string) => navigatorStore.navigateToList(entityName, returnTo),
         navigateToRelated: navigatorStore.navigateToRelated,
+        navigateToRelatedList: navigatorStore.navigateToRelatedList,
         navigateToUrl: navigatorStore.navigateToUrl,
       };
     }),

@@ -2,14 +2,16 @@ import { Component, computed, inject } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { NgClass, NgStyle } from '@angular/common';
-import { EntityComponentRefComponent } from './entity-component-ref.component';
+import { ComponentNameAttr, EntityComponentRefComponent } from './entity-component-ref.component';
 import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
 import { NGXLogger } from 'ngx-logging-kit';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
   selector: 'app-component-list',
   standalone: true,
-  imports: [NgClass, NgStyle, EntityComponentRefComponent],
+  imports: [NgClass, NgStyle, EntityComponentRefComponent, MatButton, MatIcon],
   template: `
     @if (config().visible) {
       <div class="row">
@@ -18,10 +20,21 @@ import { NGXLogger } from 'ngx-logging-kit';
           <ul [id]="config().attrName" class="base-entity-form-list">
             @for (component of components(); track component.id) {
               <li>
-                <app-entity-component-ref [component]="component" [componentNameAttr]="componentNameAttr()" [linkedEntityType]="linkedEntityType().entityName" [store]="store" />
+                <app-entity-component-ref
+                  [entity]="entity()"
+                  [component]="component"
+                  [componentNameAttr]="componentNameAttr()"
+                  [formGroup]="formGroup"
+                  [linkedEntityType]="linkedEntityType().entityName"
+                  [store]="store"
+                />
               </li>
             }
           </ul>
+          <button type="button" mat-button [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
+            <mat-icon>add</mat-icon>
+            {{ addComponentTitle() }}
+          </button>
         </fieldset>
       </div>
     }
@@ -41,12 +54,23 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     return linkedEntityType;
   });
 
-  componentNameAttr(): string {
-    return this.linkedEntityType().componentIdentification();
+  componentNameAttr(): ComponentNameAttr {
+    return {
+      attrName: this.linkedEntityType().componentIdentification(),
+      name: this.config().attrName,
+    };
   }
 
   components(): BaseEntity[] {
     const value = this.formGroup.get(this.config().attrName)?.value ?? this.value();
     return Array.isArray(value) ? value : [];
+  }
+
+  addComponentTitle(): string {
+    return 'Add ' + this.linkedEntityType().entityName;
+  }
+
+  navigateToRelatedList(): void {
+    this.store.navigateToRelatedList(this.linkedEntityType().entityName, this.store.determineCurrentUrl());
   }
 }
