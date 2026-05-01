@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { TestEntityComponentStore } from './test-entity-component.store';
 import { MarkdownComponent } from 'ngx-markdown';
-import { testEntityComponentDescriptor } from './test-entity-component.descriptors';
+import { createTestEntityComponentDescriptor } from './test-entity-component.descriptors';
+import { createTestEntityDescriptor } from '../test-entity/test-entity.descriptors';
 
 @Component({
   selector: 'test-entity-component',
@@ -16,16 +17,13 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
   private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   private store = inject(TestEntityComponentStore);
-  baseEntityListOptions: BaseEntityDescriptor;
+  entityDescriptor: BaseEntityDescriptor;
 
   constructor() {
-    this.baseEntityListOptions = {
-      ...testEntityComponentDescriptor(),
-      ...{
-        store: this.store,
-        entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
-      },
-    };
+    this.entityDescriptor = createTestEntityComponentDescriptor();
+    this.entityDescriptor.store = this.store;
+    this.entityDescriptor.entityTitle = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
+    this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', createTestEntityDescriptor());
   }
 
   // region Angular lifecycle hooks

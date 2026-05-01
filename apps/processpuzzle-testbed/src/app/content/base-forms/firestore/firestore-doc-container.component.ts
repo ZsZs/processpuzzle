@@ -19,12 +19,12 @@ export class FirestoreDocContainerComponent implements OnDestroy {
   baseEntityListOptions: BaseEntityDescriptor;
 
   constructor() {
-    this.baseEntityListOptions = {
+    this.baseEntityListOptions = new BaseEntityDescriptor({
       entityName: 'Firestore Doc',
       store: this.store,
       attrDescriptors: firestoreDocDescriptors,
       entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
-    };
+    });
   }
 
   // region Angular lifecycle hooks

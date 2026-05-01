@@ -98,7 +98,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: Entity) {
-    this.store.navigateToRelated(config.linkedEntityType, this.getPropertyValue(entity, config.attrName));
+    this.store.navigateToRelated(config.linkedEntityType?.entityName, this.getPropertyValue(entity, config.attrName));
   }
 
   onRowClick(entity: Entity) {

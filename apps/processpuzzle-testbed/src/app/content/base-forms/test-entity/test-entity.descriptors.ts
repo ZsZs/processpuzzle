@@ -1,6 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { TestEnum } from './test-entity';
-import { testEntityComponentDescriptor } from '../test-entity-component/test-entity-component.descriptors';
+import { createTestEntityComponentDescriptor } from '../test-entity-component/test-entity-component.descriptors';
 
 const selectables = Object.keys(TestEnum)
   .filter((key: any) => parseInt(key) >= 0)
@@ -17,7 +17,7 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
   componentsAttr.disabled = true;
-  componentsAttr.linkedEntityType = testEntityComponentDescriptor();
+  componentsAttr.linkedEntityType = createTestEntityComponentDescriptor();
 
   const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);
   const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, enumAttr, tagsAttr, componentsAttr], FlexDirection.COLUMN);
@@ -27,8 +27,8 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
 }
 
 export function createTestEntityDescriptor(): BaseEntityDescriptor {
-  return {
+  return new BaseEntityDescriptor({
     entityName: 'Test Entity',
     attrDescriptors: createTestEntityAttrDescriptors(),
-  } as BaseEntityDescriptor;
+  });
 }

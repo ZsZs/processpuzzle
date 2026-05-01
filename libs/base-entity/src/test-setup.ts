@@ -96,12 +96,12 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
 export class DummyComponent {}
 
 function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
-  const entityDescriptor: BaseEntityDescriptor = {
+  const entityDescriptor = new BaseEntityDescriptor({
     store: TestEntityStore,
     attrDescriptors: attrDescriptors,
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
-  };
+  });
   return entityDescriptor;
 }
 
@@ -244,12 +244,12 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 export async function setupContainerComponentTest(componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
-  const entityDescriptor: BaseEntityDescriptor = {
+  const entityDescriptor = new BaseEntityDescriptor({
     store: TestEntityStore,
     attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
-  };
+  });
   const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1', LOGGING_CONFIGURATION };
 
   const mockService = setupMockService();

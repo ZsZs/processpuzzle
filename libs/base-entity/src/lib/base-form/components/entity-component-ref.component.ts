@@ -25,6 +25,6 @@ export class EntityComponentRefComponent<ComponentEntity extends BaseEntity> {
 
   navigateToRelated(event: Event): void {
     event.preventDefault();
-    this.store().navigateToRelated(this.linkedEntityType(), this.component().id);
+    this.store().navigateToRelated(this.linkedEntityType(), this.component().id, this.store().determineCurrentUrl());
   }
 }

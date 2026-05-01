@@ -10,9 +10,9 @@ function createTestEntityComponentAttrDescriptors(): BaseEntityAttrDescriptor[] 
   return [column_1, column_2, column_3];
 }
 
-export function testEntityComponentDescriptor(): BaseEntityDescriptor {
-  return {
+export function createTestEntityComponentDescriptor(): BaseEntityDescriptor {
+  return new BaseEntityDescriptor({
     entityName: 'Test Entity Component',
     attrDescriptors: createTestEntityComponentAttrDescriptors(),
-  } as unknown as BaseEntityDescriptor;
+  });
 }

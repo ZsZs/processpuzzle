@@ -8,7 +8,7 @@ export { BaseEntityRestService } from './lib/base-entity-service/base-entity-res
 export type { BaseEntity } from './lib/base-entity/base-entity';
 export { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
-export { componentIdentification, type BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
+export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/base-entity/base-entity.descriptor';
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
 export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
 export { OrderByDirection } from './lib/base-entity-service/base-entity-load-response';

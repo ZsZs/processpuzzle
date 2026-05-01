@@ -1,6 +1,7 @@
 import { TestEntity, TestEnum } from '../test-entity';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
@@ -10,7 +11,12 @@ import { describe, expect, it, vi } from 'vitest';
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
   const labelConfig = new BaseEntityAttrDescriptor('number', FormControlType.LABEL);
-  labelConfig.linkedEntityType = 'TestEntityComponent';
+  labelConfig.linkedEntityType = new BaseEntityDescriptor({
+    attrDescriptors: [],
+    entityName: 'TestEntityComponent',
+    entityTitle: 'Test Entity Component',
+    store: {},
+  });
   const textareaConfig = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Project feedback', undefined, false, { inputType: 'text' });
   const testEntity_1 = new TestEntity('1', 'hello', 'anything', false, 100, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_ONE);
   const testEntity_2 = new TestEntity('2', 'bella', 'something', true, 200, new Date('2023-02-18T20:02:27.000Z'), TestEnum.VALUE_TWO);

@@ -3,7 +3,7 @@ import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { NgClass, NgStyle } from '@angular/common';
 import { EntityComponentRefComponent } from './entity-component-ref.component';
-import { BaseEntityDescriptor, componentIdentification } from '../../base-entity/base-entity.descriptor';
+import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
 import { NGXLogger } from 'ngx-logging-kit';
 
 @Component({
@@ -26,7 +26,7 @@ import { NGXLogger } from 'ngx-logging-kit';
       </div>
     }
   `,
-  styleUrls: ['../base-entit-form.css'],
+  styleUrls: ['../base-entity-form.css'],
 })
 export class EntityComponentsListComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   private readonly logger = inject(NGXLogger);
@@ -42,7 +42,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
   });
 
   componentNameAttr(): string {
-    return componentIdentification(this.linkedEntityType());
+    return this.linkedEntityType().componentIdentification();
   }
 
   components(): BaseEntity[] {

@@ -16,9 +16,11 @@ describe('BaseFormNavigatorStore', () => {
   class DummyComponent {}
 
   const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
+  const OtherNavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('ApplicationProperty'));
   let route: ActivatedRoute;
   let router: Router;
   let store: any;
+  let otherStore: any;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -29,14 +31,18 @@ describe('BaseFormNavigatorStore', () => {
           { path: 'home', component: DummyComponent },
           { path: 'test-entity/:id/details', component: DummyComponent },
           { path: 'test-entity/list', component: DummyComponent },
+          { path: 'application-property/:id/details', component: DummyComponent },
+          { path: 'application-property/list', component: DummyComponent },
           { path: 'test-entity-component/:id/details', component: DummyComponent },
           { path: 'test-entity-component/list', component: DummyComponent },
         ]),
         NavigatorStore,
+        OtherNavigatorStore,
       ],
     }).compileComponents();
     await RouterTestingHarness.create('home');
     store = TestBed.inject(NavigatorStore);
+    otherStore = TestBed.inject(OtherNavigatorStore);
     route = TestBed.inject(ActivatedRoute);
     router = TestBed.inject(Router);
   });
@@ -86,5 +92,23 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.navigateTo()).toEqual('test-entity/list');
     expect(store.returnTo()).toEqual('home');
     expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('shares navigator state with other stores using the same feature.', async () => {
+    await store.navigateToUrl('test-entity/list', 'home');
+
+    expect(otherStore.navigateTo()).toEqual('test-entity/list');
+    expect(otherStore.returnTo()).toEqual('home');
+    expect(otherStore.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('uses each store entity name while delegating to the singleton navigator.', async () => {
+    await otherStore.navigateToDetails('1', 'home');
+
+    expect(otherStore.determineCurrentUrl()).toEqual('/application-property/1/details');
+    expect(store.determineCurrentUrl()).toEqual('/application-property/1/details');
+    expect(otherStore.navigateTo()).toEqual('/application-property/1/details');
+    expect(store.navigateTo()).toEqual('/application-property/1/details');
+    expect(otherStore.entityName()).toEqual('ApplicationProperty');
   });
 });

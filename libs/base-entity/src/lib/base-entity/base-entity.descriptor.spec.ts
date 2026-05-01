@@ -1,6 +1,6 @@
 import { FormControlType } from './abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
-import { componentIdentification, type BaseEntityDescriptor } from './base-entity.descriptor';
+import { BaseEntityDescriptor } from './base-entity.descriptor';
 import { FlexboxDescriptor, FlexDirection } from './flexboxDescriptor';
 import { describe, expect, it } from 'vitest';
 
@@ -25,26 +25,46 @@ describe('componentIdentification()', () => {
       ],
       FlexDirection.COLUMN,
     );
-    const entityDescriptor: BaseEntityDescriptor = {
+    const entityDescriptor = new BaseEntityDescriptor({
       attrDescriptors: [firstBranch, secondBranch],
       entityName: 'testEntity',
       entityTitle: 'Test Entity',
       store: {},
-    };
+    });
 
-    expect(componentIdentification(entityDescriptor)).toBe('detailsLink');
+    expect(entityDescriptor.componentIdentification()).toBe('detailsLink');
   });
 
   it('returns an empty string when no detail link descriptor exists', () => {
-    const entityDescriptor: BaseEntityDescriptor = {
+    const entityDescriptor = new BaseEntityDescriptor({
       attrDescriptors: [
         new FlexboxDescriptor([new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX)], FlexDirection.ROW),
       ],
       entityName: 'testEntity',
       entityTitle: 'Test Entity',
       store: {},
-    };
+    });
 
-    expect(componentIdentification(entityDescriptor)).toBe('');
+    expect(entityDescriptor.componentIdentification()).toBe('');
+  });
+
+  it('overwrites the linked entity descriptor for a named attribute', () => {
+    const componentAttr = new BaseEntityAttrDescriptor('component', FormControlType.COMPONENTS);
+    const linkedEntityDescriptor = new BaseEntityDescriptor({
+      attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX)],
+      entityName: 'linkedEntity',
+      entityTitle: 'Linked Entity',
+      store: {},
+    });
+    const entityDescriptor = new BaseEntityDescriptor({
+      attrDescriptors: [componentAttr],
+      entityName: 'testEntity',
+      entityTitle: 'Test Entity',
+      store: {},
+    });
+
+    entityDescriptor.overwriteLinkedEntityAttr('component', linkedEntityDescriptor);
+
+    expect(componentAttr.linkedEntityType).toBe(linkedEntityDescriptor);
   });
 });

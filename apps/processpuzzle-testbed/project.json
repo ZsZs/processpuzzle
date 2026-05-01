@@ -38,6 +38,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/base-entity/src/assets/i18n/base-entity",
+            "output": "assets/i18n/base-entity"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/widgets/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },
