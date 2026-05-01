@@ -1,5 +1,5 @@
 import { BaseEntity } from '../base-entity/base-entity';
-import { Component, computed, effect, inject, input, OnInit, Signal, untracked, ViewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, InputSignal, OnInit, Signal, untracked, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -22,7 +22,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   baseEntityForm!: FormGroup;
   entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
-  entityId: Signal<string> = input.required<string>();
+  entityId: InputSignal<string> = input.required<string>();
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   store: Signal<any> = computed(() => this.entityDescriptor().store);
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
@@ -38,7 +38,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   ngOnInit(): void {
     this.store().determineActiveRouteSegment();
     this.baseEntityForm = this.formBuilder.group({});
-    this.logger.info('BaseEntityFormComponent initialized with:', { entityDescriptor: this.entityDescriptor() });
+    this.logger.info('BaseEntityFormComponent initialized with: ', { entityDescriptor: this.entityDescriptor() });
   }
 
   // endregion

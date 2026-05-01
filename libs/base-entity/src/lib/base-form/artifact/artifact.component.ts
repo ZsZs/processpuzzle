@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
-import { NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { ObjectStoreService } from '../../object-store/object-store.service';
 import { ArtifactAttr } from './artifact-attr';
 import { ArtifactSelectorComponent } from './artifact-selector.component';
@@ -10,24 +10,29 @@ import { ArtifactSelectorComponent } from './artifact-selector.component';
 @Component({
   selector: 'app-artifact',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, NgStyle, ArtifactSelectorComponent],
+  imports: [FormsModule, ReactiveFormsModule, NgClass, NgStyle, ArtifactSelectorComponent],
   template: `
     @if (config().visible) {
       @if (config().isHeading) {
         <h3 [id]="config().attrName">{{ value() }}</h3>
       } @else {
-        @if (artifact(); as artifact) {
-          <ul [id]="config().attrName" [ngStyle]="config().style">
-            <li>
-              <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
-            </li>
-          </ul>
-        }
-        <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
+        <div class="row">
+          <fieldset class="base-entity-form-field" [ngClass]="config().styleClass" [ngStyle]="config().style">
+            <legend [ngClass]="config().labelClass">{{ config().label }}</legend>
+            <ul [id]="config().attrName" class="base-entity-form-list">
+              @if (artifact(); as artifact) {
+                <li>
+                  <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
+                </li>
+              }
+            </ul>
+            <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
+          </fieldset>
+        </div>
       }
     }
   `,
-  styles: ``,
+  styleUrls: ['../base-entit-form.css'],
 })
 export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   private readonly objectStoreService = inject(ObjectStoreService);

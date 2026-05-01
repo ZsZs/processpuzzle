@@ -1,9 +1,9 @@
 import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
-import { testEntityComponentDescriptors } from './test-entity-component.descriptors';
 import { TestEntityComponentStore } from './test-entity-component.store';
 import { MarkdownComponent } from 'ngx-markdown';
+import { testEntityComponentDescriptor } from './test-entity-component.descriptors';
 
 @Component({
   selector: 'test-entity-component',
@@ -20,10 +20,11 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
 
   constructor() {
     this.baseEntityListOptions = {
-      entityName: 'Test Entity Component',
-      store: this.store,
-      attrDescriptors: testEntityComponentDescriptors,
-      entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
+      ...testEntityComponentDescriptor(),
+      ...{
+        store: this.store,
+        entityTitle: "this.store.currentEntity() ? this.store.currentEntity().name : ''",
+      },
     };
   }
 

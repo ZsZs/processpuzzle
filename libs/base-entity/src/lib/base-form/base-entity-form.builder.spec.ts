@@ -46,6 +46,7 @@ describe('BaseEntityFormBuilder', () => {
         new BaseEntityAttrDescriptor('date', FormControlType.DATE),
         new BaseEntityAttrDescriptor('selectable', FormControlType.RADIO),
         new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN),
+        new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS),
       ],
       FlexDirection.CONTAINER,
     ),
@@ -84,6 +85,7 @@ describe('BaseEntityFormBuilder', () => {
     expect(fixture.debugElement.query(By.css('flex-box base-datepicker')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box base-radio')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box base-dropdown')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-component-list')).nativeElement).toBeTruthy();
   });
 
   it('buildForm() adds created controls to the FormGroup', () => {
@@ -94,6 +96,7 @@ describe('BaseEntityFormBuilder', () => {
     expect(component.form.controls['date']).toBeTruthy();
     expect(component.form.controls['selectable']).toBeTruthy();
     expect(component.form.controls['enumValue']).toBeTruthy();
+    expect(component.form.controls['components']).toBeTruthy();
   });
 
   it('buildForm() throws Error if a descriptor class is unknown.', () => {

@@ -26,6 +26,7 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
 
 function snakeCaseName(entityName: string) {
   return entityName
+    .replace(/\s+/g, '')
     .split(/(?=[A-Z])/)
     .join('-')
     .toLowerCase();

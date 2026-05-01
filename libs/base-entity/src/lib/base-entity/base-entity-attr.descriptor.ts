@@ -1,4 +1,5 @@
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
+import { BaseEntityDescriptor } from './base-entity.descriptor';
 
 export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   description?: string;
@@ -14,11 +15,10 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   lines?: number;
   options: { inputType: 'text' };
   private _label?: string;
-  private _linkedEntityType?: string;
+  private _linkedEntityType?: BaseEntityDescriptor;
 
   constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
     super(attrName, formControlType);
-    this.attrName = attrName;
     this._label = label;
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
@@ -34,11 +34,11 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
     this._label = label;
   }
 
-  get linkedEntityType(): any {
+  get linkedEntityType(): BaseEntityDescriptor | undefined {
     return this._linkedEntityType;
   }
 
-  set linkedEntityType(linkedEntityType: string) {
+  set linkedEntityType(linkedEntityType: BaseEntityDescriptor) {
     this._linkedEntityType = linkedEntityType;
   }
 
