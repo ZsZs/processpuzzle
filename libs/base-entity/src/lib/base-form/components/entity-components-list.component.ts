@@ -25,16 +25,19 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
                   [entity]="entity()"
                   [component]="component"
                   [componentNameAttr]="componentNameAttr()"
+                  [disabled]="config().disabled"
                   [formGroup]="formGroup"
                   [linkedEntityType]="linkedEntityType().entityName"
                 />
               </li>
             }
           </ul>
-          <button type="button" mat-button [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
-            <mat-icon>add</mat-icon>
-            {{ addComponentTitle() }}
-          </button>
+          @if (!config().disabled) {
+            <button type="button" mat-button [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
+              <mat-icon>add</mat-icon>
+              {{ addComponentTitle() }}
+            </button>
+          }
         </fieldset>
       </div>
     }
@@ -75,12 +78,20 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
   }
 
   navigateToRelatedList(): void {
+    if (this.config().disabled) {
+      return;
+    }
+
     this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
     });
   }
 
   private addSelectedComponentFromNavigatorResponse(): void {
+    if (this.config().disabled) {
+      return;
+    }
+
     const responsePayload = this.formNavigator.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE);
     if (!responsePayload?.payload) {
       return;
@@ -92,8 +103,37 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     entity[attrName] = components;
 
     const control = this.formGroup.get(attrName);
-    control?.setValue(components);
-    control?.markAsDirty();
-    control?.markAsTouched();
+    if (!control) {
+      this.logger.warn('Unable to add selected component to form control because the control is missing.', this.describeFormState(attrName));
+      return;
+    }
+
+    control.setValue(components);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.formGroup.markAsDirty();
+    this.formGroup.markAsTouched();
+    this.logger.info('Added selected component from navigator response.', this.describeFormState(attrName));
+  }
+
+  private describeFormState(attrName: string): Record<string, unknown> {
+    const controls = Object.entries(this.formGroup.controls).map(([name, control]) => ({
+      name,
+      dirty: control.dirty,
+      disabled: control.disabled,
+      errors: control.errors,
+      invalid: control.invalid,
+      status: control.status,
+      touched: control.touched,
+    }));
+
+    return {
+      attrName,
+      formDirty: this.formGroup.dirty,
+      formInvalid: this.formGroup.invalid,
+      formStatus: this.formGroup.status,
+      targetControl: controls.find((control) => control.name === attrName),
+      invalidControls: controls.filter((control) => control.invalid),
+    };
   }
 }

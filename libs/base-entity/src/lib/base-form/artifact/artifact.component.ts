@@ -28,13 +28,17 @@ import { DeleteArtifactConfirmationDialog, DeleteArtifactConfirmationDialogData 
               @if (artifact(); as artifact) {
                 <li>
                   <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
-                  <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete artifact reference" (click)="deleteArtifact()">
-                    <mat-icon>cancel</mat-icon>
-                  </button>
+                  @if (!config().disabled) {
+                    <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete artifact reference" (click)="deleteArtifact()">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  }
                 </li>
               }
             </ul>
-            <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
+            @if (!config().disabled) {
+              <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
+            }
           </fieldset>
         </div>
       }
@@ -63,6 +67,10 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
   }
 
   onArtifactUploaded(artifact: ArtifactAttr): void {
+    if (this.config().disabled) {
+      return;
+    }
+
     const control = this.formGroup.get(this.config().attrName);
     control?.setValue(artifact);
     control?.markAsDirty();
@@ -70,6 +78,10 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
   }
 
   deleteArtifact(): void {
+    if (this.config().disabled) {
+      return;
+    }
+
     const artifact = this.artifact();
     if (!artifact) {
       return;

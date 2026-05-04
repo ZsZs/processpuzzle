@@ -16,9 +16,11 @@ export interface ComponentNameAttr {
   imports: [MatIconButton, MatIcon],
   template: `
     <a href="" (click)="navigateToRelated($event)">{{ componentName() }}</a>
-    <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete component reference" (click)="removeComponent()">
-      <mat-icon>cancel</mat-icon>
-    </button>
+    @if (!disabled()) {
+      <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete component reference" (click)="removeComponent()">
+        <mat-icon>cancel</mat-icon>
+      </button>
+    }
   `,
   styleUrls: ['../base-entity-form.css'],
 })
@@ -26,6 +28,7 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
   entity: InputSignal<Entity> = input.required<Entity>();
   component: InputSignal<ComponentEntity> = input.required<ComponentEntity>();
   componentNameAttr: InputSignal<ComponentNameAttr> = input.required<ComponentNameAttr>();
+  disabled: InputSignal<boolean> = input(false);
   formGroup: InputSignal<FormGroup> = input.required<FormGroup>();
   linkedEntityType: InputSignal<string> = input.required<string>();
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
@@ -44,6 +47,10 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
   }
 
   removeComponent(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     const componentsAttrName = this.componentNameAttr().name;
     const entity = this.entity() as Record<string, unknown>;
     const components = entity[componentsAttrName];

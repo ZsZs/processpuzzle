@@ -2,6 +2,7 @@ import { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from 
 
 function createTestEntityComponentAttrDescriptors(): BaseEntityAttrDescriptor[] {
   const column_1 = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+  column_1.required = true;
   const column_2 = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
   const column_3 = new BaseEntityAttrDescriptor('testEntityId', FormControlType.FOREIGN_KEY, 'Test Entity');
   column_3.disabled = true;

@@ -8,6 +8,7 @@ const selectables = Object.keys(TestEnum)
 
 function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+  nameAttr.required = true;
   const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
   const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Boolean');
   const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, { inputType: 'number' });
@@ -16,7 +17,7 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
-  componentsAttr.disabled = true;
+  componentsAttr.disabled = false;
   componentsAttr.linkedEntityType = createTestEntityComponentDescriptor();
 
   const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);

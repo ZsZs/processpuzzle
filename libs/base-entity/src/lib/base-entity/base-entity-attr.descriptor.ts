@@ -14,6 +14,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   placeholder?: string;
   lines?: number;
   options: { inputType: 'text' };
+  required = false;
   private _label?: string;
   private _linkedEntityType?: BaseEntityDescriptor;
 

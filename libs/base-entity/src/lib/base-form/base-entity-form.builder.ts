@@ -31,17 +31,23 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       this.logger.trace('Processing column: ', column.attrName);
       const formControlType = this.createFormControl(column);
       if (formControlType) {
-        const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
-        componentRef.setInput('config', column as BaseEntityAttrDescriptor);
-        componentRef.setInput('entity', entity());
-        componentRef.instance.formGroup = baseEntityForm;
-        componentRef.instance.store = store;
         if (column instanceof BaseEntityAttrDescriptor) {
           const currentAttrValue = Reflect.get(entity(), column.attrName);
-          componentRef.setInput('value', currentAttrValue);
-          const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, Validators.required);
+          const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
           baseEntityForm.addControl(column.attrName, formControl);
+
+          const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
+          componentRef.setInput('config', column);
+          componentRef.setInput('entity', entity());
+          componentRef.setInput('value', currentAttrValue);
+          componentRef.instance.formGroup = baseEntityForm;
+          componentRef.instance.store = store;
         } else if (column instanceof FlexboxDescriptor) {
+          const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
+          componentRef.setInput('config', column as unknown as BaseEntityAttrDescriptor);
+          componentRef.setInput('entity', entity());
+          componentRef.instance.formGroup = baseEntityForm;
+          componentRef.instance.store = store;
           this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity);
         } else throw Error('Undefined subclass of AbstractAttrDescriptor');
       }
