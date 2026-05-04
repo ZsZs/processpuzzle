@@ -16,6 +16,7 @@ import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -68,15 +69,24 @@ describe('BaseEntityFormBuilder', () => {
     const mockService = setupMockService();
     TestBed.configureTestingModule({
       imports: [BaseFormHostDirective, MockFormContainerComponent],
-      providers: [BaseEntityFormBuilder, provideHttpClient(), provideLogger({ level: 7 }), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],
+      providers: [
+        BaseEntityFormBuilder,
+        provideHttpClient(),
+        provideLogger({ level: 7 }),
+        provideNativeDateAdapter(),
+        provideRouter([]),
+        TestEntityStore,
+        { provide: TestEntityService, useValue: mockService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MockFormContainerComponent);
     component = fixture.componentInstance;
-    formBuilder = TestBed.inject(BaseEntityFormBuilder);
+    formBuilder = TestBed.inject(BaseEntityFormBuilder) as unknown as BaseEntityFormBuilder<TestEntity>;
     store = TestBed.inject(TestEntityStore);
 
     formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, descriptors, testEntity);
+    fixture.detectChanges();
   });
 
   it('should create', () => {

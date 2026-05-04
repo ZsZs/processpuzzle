@@ -22,6 +22,13 @@ describe('Stack', () => {
     expect(stack.peek()).toBe(20); // The last pushed item should be on top
   });
 
+  it('should initialize with given items', () => {
+    stack = new Stack<number>([10, 20]);
+
+    expect(stack.size()).toBe(2);
+    expect(stack.peek()).toBe(20);
+  });
+
   it('should pop elements off the stack', () => {
     stack.push(10);
     stack.push(20);
@@ -73,5 +80,16 @@ describe('Stack', () => {
     expect(stack.isEmpty()).toBe(true);
     expect(stack.size()).toBe(0);
     expect(stack.peek()).toBeUndefined();
+  });
+
+  it('should return items as an array copy', () => {
+    stack.push(10);
+    stack.push(20);
+
+    const items = stack.toArray();
+    items.push(30);
+
+    expect(items).toEqual([10, 20, 30]);
+    expect(stack.toArray()).toEqual([10, 20]);
   });
 });

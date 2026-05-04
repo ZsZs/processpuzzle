@@ -31,6 +31,8 @@ import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { NgxLoggerLevel, provideLogger } from 'ngx-logging-kit';
+import type { NavigationPayload } from './lib/base-form-navigator/navigation-payload';
+import { BaseFormNavigatorSingletonStore } from './lib/base-form-navigator/base-form-navigator.store';
 
 const LOGGING_CONFIGURATION = {
   level: NgxLoggerLevel.OFF,
@@ -78,9 +80,9 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.componentHost.viewContainerRef.clear();
     this.componentRef = this.componentHost.viewContainerRef.createComponent<C>(this.componentType());
     this.componentRef.instance.formGroup = this.baseEntityForm;
-    this.componentRef.instance.config = this.config;
-    this.componentRef.instance.entity = this.entity;
-    this.componentRef.instance.value = signal(currentAttrValue);
+    this.componentRef.instance.config = this.config as unknown as InputSignal<BaseEntityAttrDescriptor>;
+    this.componentRef.instance.entity = this.entity as unknown as InputSignal<TestEntity>;
+    this.componentRef.instance.value = signal(currentAttrValue) as unknown as InputSignal<any>;
     const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, Validators.required);
     this.baseEntityForm.addControl(this.config().attrName, formControl);
   }
@@ -137,7 +139,7 @@ export function setupMockService({
   return mockService;
 }
 
-export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[]) {
+export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[], requestPayload?: NavigationPayload) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const runtimeConfigMock = {
     BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
@@ -176,14 +178,17 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   }).compileComponents();
 
   await RouterTestingHarness.create('test-entity/list');
+  const store = TestBed.inject(TestEntityStore);
+  const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
+  entityDescriptor.store = store;
+  if (requestPayload) await formNavigator.navigateToList('TestEntity', 'home', requestPayload);
   const fixture = TestBed.createComponent(BaseEntityListComponent<TestEntity>);
   const component = fixture.componentInstance;
-  const store = entityDescriptor.store;
   vi.spyOn(store, 'load');
   fixture.detectChanges();
   TestBed.flushEffects();
 
-  return { fixture, component, store };
+  return { fixture, component, store, formNavigator };
 }
 
 export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
@@ -213,21 +218,23 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
   const fixture = TestBed.createComponent(BaseEntityFormComponent<TestEntity>);
   const component = fixture.componentInstance as BaseEntityFormComponent<TestEntity>;
   const store = TestBed.inject(TestEntityStore);
+  const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
   entityDescriptor.store = store;
   const testEntity = isEntityNew ? new TestEntity() : entity;
   const id = isEntityNew ? BaseUrlSegments.NewEntity : testEntity.id;
   component.entity = signal<TestEntity>(testEntity);
-  component.entityId = signal<string>(id);
+  component.entityId = signal<string>(id) as unknown as InputSignal<string>;
   component.entityDescriptor = signal<BaseEntityDescriptor>(entityDescriptor);
   fixture.detectChanges();
   TestBed.flushEffects();
 
-  return { fixture, component, store };
+  return { fixture, component, store, formNavigator };
 }
 
 export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: FlexboxDescriptor | BaseEntityAttrDescriptor, entity: TestEntity) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
+    providers: [provideRouter([])],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);
@@ -275,6 +282,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   const router = await RouterTestingHarness.create('test-entity/list');
   const fixture = TestBed.createComponent(componentType);
   const store = TestBed.inject(TestEntityStore);
+  const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
   const breakpointObserver = TestBed.inject(BreakpointObserver) as unknown as MockBreakpointObserver;
   const component = fixture.componentInstance;
   entityDescriptor.store = store;
@@ -283,5 +291,5 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
   breakpointObserver.resize(1280);
   fixture.detectChanges();
 
-  return { fixture, component, store, router, breakpointObserver };
+  return { fixture, component, store, router, breakpointObserver, formNavigator };
 }

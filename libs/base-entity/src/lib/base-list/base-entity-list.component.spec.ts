@@ -7,6 +7,7 @@ import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { MatHeaderCell, MatTable, MatTableDataSource } from '@angular/material/table';
 import { describe, expect, it, vi } from 'vitest';
+import { NavigatorCommand, type NavigationPayload } from '../base-form-navigator/navigation-payload';
 
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
@@ -51,8 +52,8 @@ describe('EntityListComponent', () => {
 
   describe('angular lifecycle hooks:', () => {
     it('onInit() determines active route segment', async () => {
-      const { store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
-      expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+      const { formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      expect(formNavigator.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
     });
 
     it('onAfterViewInit() connects data source and loads data', async () => {
@@ -100,24 +101,24 @@ describe('EntityListComponent', () => {
       expect(store.setCurrentEntity).toHaveBeenNthCalledWith(2, testEntity_2.id);
     });
 
-    it('navigateToDetails() calls store to navigate and set current entity.', async () => {
-      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
-      vi.spyOn(store, 'navigateToDetails');
+    it('navigateToDetails() calls form navigator and sets current entity.', async () => {
+      const { component, store, formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      vi.spyOn(formNavigator, 'navigateToDetails');
       vi.spyOn(store, 'setCurrentEntity');
 
       component.onNavigateToDetails(testEntity_2);
 
-      expect(store.navigateToDetails).toHaveBeenCalledWith(testEntity_2.id);
+      expect(formNavigator.navigateToDetails).toHaveBeenCalledWith('TestEntity', testEntity_2.id);
       expect(store.setCurrentEntity).toHaveBeenCalledWith(testEntity_2.id);
     });
 
-    it('navigateToRelated() calls store to navigate to.', async () => {
-      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
-      vi.spyOn(store, 'navigateToRelated');
+    it('navigateToRelated() calls form navigator to navigate to.', async () => {
+      const { component, formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
+      vi.spyOn(formNavigator, 'navigateToRelated');
 
       component.onNavigateToRelated(labelConfig, testEntity_2);
 
-      expect(store.navigateToRelated).toHaveBeenCalledWith('TestEntityComponent', testEntity_2.number);
+      expect(formNavigator.navigateToRelated).toHaveBeenCalledWith('TestEntityComponent', testEntity_2.number);
     });
 
     it('onRowClick() ', async () => {
@@ -152,6 +153,35 @@ describe('EntityListComponent', () => {
       expect(component.selection.isSelected(testEntity_1)).toBeFalsy();
       expect(component.selection.isSelected(testEntity_2)).toBeFalsy();
       expect(store.deselectAll).toHaveBeenNthCalledWith(1);
+    });
+
+    it('shows Select and Cancel actions for SELECT_OR_CREATE requests and enables Select for one selected entity.', async () => {
+      const requestPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+      const { fixture, component } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE, requestPayload);
+
+      const cancelButton = fixture.debugElement.query(By.css('button#cancel')).nativeElement as HTMLButtonElement;
+      const selectButton = fixture.debugElement.query(By.css('button#select')).nativeElement as HTMLButtonElement;
+
+      expect(cancelButton).toBeTruthy();
+      expect(selectButton).toBeTruthy();
+      expect(selectButton.disabled).toBeTruthy();
+
+      component.selection.select(testEntity_1);
+      fixture.detectChanges();
+
+      expect(selectButton.disabled).toBeFalsy();
+    });
+
+    it('onSelectEntity() pushes the selected entity as SELECT_OR_CREATE response payload.', async () => {
+      const requestPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+      const { component, formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE, requestPayload);
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+
+      component.selection.select(testEntity_2);
+      await component.onSelectEntity();
+
+      expect(formNavigator.responsePayloads().peek()).toEqual({ command: NavigatorCommand.SELECT_OR_CREATE, payload: testEntity_2 });
+      expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
   });
 

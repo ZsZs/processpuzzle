@@ -1,5 +1,9 @@
 export class Stack<T> {
-  private items: T[] = []; // Array zur Speicherung der Elemente
+  private items: T[]; // Array zur Speicherung der Elemente
+
+  constructor(items: T[] = []) {
+    this.items = [...items];
+  }
 
   // Element zum Stack hinzufügen
   push(element: T): void {
@@ -35,5 +39,9 @@ export class Stack<T> {
   // Stack leeren
   clear(): void {
     this.items = [];
+  }
+
+  toArray(): T[] {
+    return [...this.items];
   }
 }

@@ -6,6 +6,7 @@ import { signalStore } from '@ngrx/signals';
 import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
 import { Component } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { NavigatorCommand, type NavigationPayload } from './navigation-payload';
 
 describe('BaseFormNavigatorStore', () => {
   @Component({
@@ -93,6 +94,52 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.navigateTo()).toEqual('/test-entity-component/list');
     expect(store.returnTo()).toEqual('home');
     expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('navigation methods add given payloads to the navigator payload stack.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const listPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    await store.navigateToRelatedList('TestEntityComponent', 'home', listPayload);
+
+    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload, listPayload]);
+  });
+
+  it('navigateBack() removes the latest navigator payload from the stack.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const relatedPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntityComponent' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    await store.navigateToRelated('TestEntityComponent', '2', 'home', relatedPayload);
+    await store.navigateBack();
+
+    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload]);
+  });
+
+  it('direct router navigation clears request and response payload stacks.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const responsePayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    store.pushResponsePayload(responsePayload);
+    await router.navigateByUrl('/home');
+
+    expect(store.requestPayloads().toArray()).toEqual([]);
+    expect(store.responsePayloads().toArray()).toEqual([]);
+  });
+
+  it('popResponsePayload() removes and returns the latest matching response payload.', () => {
+    const editPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const firstSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
+    const secondSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '3' } };
+
+    store.pushResponsePayload(editPayload);
+    store.pushResponsePayload(firstSelectPayload);
+    store.pushResponsePayload(secondSelectPayload);
+
+    expect(store.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE)).toEqual(secondSelectPayload);
+    expect(store.responsePayloads().toArray()).toEqual([editPayload, firstSelectPayload]);
   });
 
   it('navigateToUrl() navigates to url from store.', async () => {

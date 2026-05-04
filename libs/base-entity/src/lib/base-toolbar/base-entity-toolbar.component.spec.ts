@@ -38,8 +38,8 @@ describe('BaseEntityToolbarComponent', () => {
     });
 
     it('when activated route aint RouteSegments.LIST_ROUTE toolbar is not displayed', async () => {
-      const { fixture, store } = await setupContainerComponentTest(BaseEntityToolbarComponent);
-      await store.navigateToDetails('1');
+      const { fixture, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+      await formNavigator.navigateToDetails('TestEntity', '1');
       fixture.detectChanges();
       const matToolbar = fixture.debugElement.query(By.css('mat-toolbar'));
       expect(matToolbar).toBeFalsy();
@@ -54,13 +54,13 @@ describe('BaseEntityToolbarComponent', () => {
   });
 
   describe('component actions:', () => {
-    it('onAddEntity() calls store.navigateToDetails() with id=new', async () => {
-      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
-      vi.spyOn(component.store, 'navigateToDetails');
+    it('onAddEntity() calls form navigator with id=new', async () => {
+      const { component, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      vi.spyOn(formNavigator, 'navigateToDetails');
 
       (component as BaseEntityToolbarComponent<TestEntity>).onAddEntity();
 
-      expect(component.store.navigateToDetails).toHaveBeenCalledWith(BaseUrlSegments.NewEntity);
+      expect(formNavigator.navigateToDetails).toHaveBeenCalledWith('TestEntity', BaseUrlSegments.NewEntity);
     });
 
     it('onDeleteEntities()', async () => {

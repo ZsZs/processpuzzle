@@ -3,7 +3,7 @@ import { BaseEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { Router, ROUTER_OUTLET_DATA } from '@angular/router';
+import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -15,6 +15,9 @@ import { NGXLogger } from 'ngx-logging-kit';
 import { ObjectStoreService } from '../object-store/object-store.service';
 import { SlicePipe } from '@angular/common';
 import { ArtifactAttr } from '../base-form/artifact/artifact-attr';
+import { MatButton } from '@angular/material/button';
+import { NavigatorCommand } from '../base-form-navigator/navigation-payload';
+import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -38,6 +41,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatProgressBar,
     MatCheckbox,
     SlicePipe,
+    MatButton,
   ],
   templateUrl: 'base-entity-list.component.html',
   styleUrl: 'base-entity-list.component.css',
@@ -47,6 +51,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   selection = new SelectionModel<Entity>(true, []);
   private readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   private readonly logger = inject(NGXLogger);
+  private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly objectStoreService = inject(ObjectStoreService);
   columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => {
     return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
@@ -61,7 +66,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   @ViewChild(MatSort) sort = {} as MatSort;
   @ViewChild(MatPaginator) paginator = {} as MatPaginator;
   store: any;
-  router = inject(Router);
+  protected selectOrCreateMode = false;
 
   constructor() {
     this.store = this.entityDescriptor().store;
@@ -77,7 +82,10 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   ngOnInit(): void {
-    this.store.determineActiveRouteSegment();
+    this.formNavigator.setEntityName(this.entityDescriptor().entityName);
+    this.formNavigator.determineActiveRouteSegment();
+    const requestPayload = this.formNavigator.popRequestPayload();
+    this.selectOrCreateMode = requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE;
     this.logger.info('BaseEntityListComponent initialized with:', { columnDescriptors: this.columnDescriptors() });
   }
 
@@ -93,12 +101,15 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   onNavigateToDetails(entity: Entity): void {
-    this.store.navigateToDetails(entity.id);
+    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entity.id);
     this.store.setCurrentEntity(entity.id);
   }
 
   onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: Entity) {
-    this.store.navigateToRelated(config.linkedEntityType?.entityName, this.getPropertyValue(entity, config.attrName));
+    const relatedEntityName = config.linkedEntityType?.entityName;
+    if (!relatedEntityName) return;
+
+    this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName));
   }
 
   onRowClick(entity: Entity) {
@@ -138,6 +149,18 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
         this.store.selectEntity(entity.id);
       });
     }
+  }
+
+  async onCancelSelectOrCreate(): Promise<void> {
+    this.cancelSelections();
+    await this.formNavigator.navigateBack();
+  }
+
+  async onSelectEntity(): Promise<void> {
+    if (!this.canSelectEntity()) return;
+
+    this.formNavigator.pushResponsePayload({ command: NavigatorCommand.SELECT_OR_CREATE, payload: this.selection.selected[0] });
+    await this.formNavigator.navigateBack();
   }
 
   // endregion
@@ -180,6 +203,10 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
 
   isSelected(row: Entity) {
     return this.selection.isSelected(row);
+  }
+
+  canSelectEntity(): boolean {
+    return this.selection.selected.length === 1;
   }
 
   // endregion

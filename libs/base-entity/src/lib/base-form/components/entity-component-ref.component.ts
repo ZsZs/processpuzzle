@@ -1,17 +1,13 @@
-import { Component, input, InputSignal } from '@angular/core';
+import { Component, inject, input, InputSignal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseEntity } from '../../base-entity/base-entity';
+import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 
 export interface ComponentNameAttr {
   attrName: string;
   name: string;
-}
-
-interface EntityComponentRefStore {
-  determineCurrentUrl(): unknown;
-  navigateToRelated(entityType: string, entityId: string, currentUrl: unknown): void;
 }
 
 @Component({
@@ -32,7 +28,7 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
   componentNameAttr: InputSignal<ComponentNameAttr> = input.required<ComponentNameAttr>();
   formGroup: InputSignal<FormGroup> = input.required<FormGroup>();
   linkedEntityType: InputSignal<string> = input.required<string>();
-  store: InputSignal<EntityComponentRefStore> = input.required<EntityComponentRefStore>();
+  private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
 
   componentName(): string {
     const attrName = this.componentNameAttr().attrName;
@@ -44,7 +40,7 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
 
   navigateToRelated(event: Event): void {
     event.preventDefault();
-    this.store().navigateToRelated(this.linkedEntityType(), this.component().id, this.store().determineCurrentUrl());
+    this.formNavigator.navigateToRelated(this.linkedEntityType(), this.component().id, this.formNavigator.determineCurrentUrl());
   }
 
   removeComponent(): void {

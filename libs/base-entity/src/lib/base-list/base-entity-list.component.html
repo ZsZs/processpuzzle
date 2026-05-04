@@ -37,3 +37,9 @@
   </mat-table>
   <mat-paginator [pageSizeOptions]="[3, 5, 8]" showFirstLastButtons></mat-paginator>
 </div>
+@if (selectOrCreateMode) {
+  <div class="base-entity-list-actions">
+    <button id="cancel" type="button" mat-raised-button color="secondary" (click)="onCancelSelectOrCreate()">Cancel</button>
+    <button id="select" type="button" mat-raised-button color="primary" [disabled]="!canSelectEntity()" (click)="onSelectEntity()">Select</button>
+  </div>
+}

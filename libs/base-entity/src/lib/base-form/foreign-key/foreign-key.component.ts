@@ -16,7 +16,10 @@ import { MatIcon } from '@angular/material/icon';
 export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   // region event handling methods
   navigateToRelated() {
-    this.store.navigateToRelated(this.config().linkedEntityType?.entityName, this.value());
+    const relatedEntityName = this.config().linkedEntityType?.entityName;
+    if (!relatedEntityName) return;
+
+    this.formNavigator.navigateToRelated(relatedEntityName, this.value());
   }
   // endregion
 }

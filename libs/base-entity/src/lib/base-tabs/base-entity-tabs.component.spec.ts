@@ -53,28 +53,28 @@ describe('BaseEntityTabsComponent', () => {
   describe('component actions:', () => {
     it('onShowDetails()', async () => {
       // SETUP:
-      const { component } = await setupContainerComponentTest(BaseEntityTabsComponent);
-      vi.spyOn(component.store, 'navigateToDetails');
+      const { component, formNavigator } = await setupContainerComponentTest(BaseEntityTabsComponent);
+      vi.spyOn(formNavigator, 'navigateToDetails');
 
       // EXERCISE:
       await (component as BaseEntityTabsComponent).onShowDetails();
 
       // VERIFY:
-      expect(component.store.navigateToDetails).toHaveBeenCalled();
+      expect(formNavigator.navigateToDetails).toHaveBeenCalled();
     });
 
     it('onShowList()', async () => {
       // SETUP:
-      const { fixture, component } = await setupContainerComponentTest(BaseEntityTabsComponent);
-      await component.store.navigateToDetails('1');
+      const { fixture, component, formNavigator } = await setupContainerComponentTest(BaseEntityTabsComponent);
+      await formNavigator.navigateToDetails('TestEntity', '1');
       fixture.detectChanges();
-      vi.spyOn(component.store, 'navigateToList');
+      vi.spyOn(formNavigator, 'navigateToList');
 
       // EXERCISE:
       await (component as BaseEntityTabsComponent).onShowList();
 
       // VERIFY:
-      expect(component.store.navigateToList).toHaveBeenCalled();
+      expect(formNavigator.navigateToList).toHaveBeenCalled();
     });
   });
 });

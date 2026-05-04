@@ -10,6 +10,7 @@ import { MatButton } from '@angular/material/button';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { BaseEntityFormBuilder } from './base-entity-form.builder';
 import { NGXLogger } from 'ngx-logging-kit';
+import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 
 @Component({
   selector: 'base-form',
@@ -27,6 +28,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   store: Signal<any> = computed(() => this.entityDescriptor().store);
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);
+  protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   private readonly logger = inject(NGXLogger);
 
@@ -36,7 +38,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
 
   // region angular lifecycle hooks
   ngOnInit(): void {
-    this.store().determineActiveRouteSegment();
+    this.formNavigator.setEntityName(this.entityDescriptor().entityName);
+    this.formNavigator.determineActiveRouteSegment();
     this.baseEntityForm = this.formBuilder.group({});
     this.logger.info('BaseEntityFormComponent initialized with: ', { entityDescriptor: this.entityDescriptor() });
   }
@@ -46,7 +49,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // region event handlers
   async onCancel() {
     this.store().setCurrentEntity(undefined);
-    await this.store().navigateBack();
+    await this.formNavigator.navigateBack();
   }
 
   async onSubmit() {
@@ -57,7 +60,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
       this.store().update(objectToSave, objectToSave.id);
     }
     this.store().setCurrentEntity(undefined);
-    await this.store().navigateBack();
+    await this.formNavigator.navigateBack();
   }
 
   // endregion

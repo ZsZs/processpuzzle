@@ -17,7 +17,7 @@ export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
 export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.service';
 export { BASE_ENTITY_STORE, BaseEntityStore } from './lib/base-entity-store/base-entity.store';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
-export { BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
+export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
