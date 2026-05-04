@@ -142,7 +142,7 @@
     "@nx/web": "22.7.0",
     "@nx/workspace": "22.7.0",
     "@playwright/test": "^1.59.1",
-    "@schematics/angular": "~21.2.8",
+    "@schematics/angular": "~21.2.9",
     "@swc-node/register": "~1.11.1",
     "@swc/core": "1.15.30",
     "@swc/helpers": "~0.5.21",
