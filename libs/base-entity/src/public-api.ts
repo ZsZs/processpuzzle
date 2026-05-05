@@ -12,7 +12,7 @@ export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/ba
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
 export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
 export { OrderByDirection } from './lib/base-entity-service/base-entity-load-response';
-export { BaseEntityMapper, getEnumKeyByValue } from './lib/base-entity.mapper';
+export { BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from './lib/base-entity.mapper';
 export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
 export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.service';
 export { BASE_ENTITY_STORE, BaseEntityStore } from './lib/base-entity-store/base-entity.store';

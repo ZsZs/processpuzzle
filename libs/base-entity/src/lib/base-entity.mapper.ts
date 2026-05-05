@@ -11,3 +11,7 @@ export interface BaseEntityMapper<Entity extends BaseEntity> {
 export function getEnumKeyByValue<E>(myEnum: { [key: number]: string }, enumValue: any): E | undefined {
   return Object.values(myEnum)[enumValue] as E;
 }
+
+export function getEnumValueByKey<E>(myEnum: { [key: string]: E | string }, enumKey: string): E | undefined {
+  return myEnum[enumKey] as E | undefined;
+}

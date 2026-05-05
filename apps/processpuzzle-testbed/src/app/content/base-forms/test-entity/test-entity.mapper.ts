@@ -1,4 +1,4 @@
-import { BaseEntityMapper, getEnumKeyByValue } from '@processpuzzle/base-entity';
+import { BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
 import { TestEntity, TestEnum } from './test-entity';
 import { inject, Injectable } from '@angular/core';
 import { TestEntityComponentMapper } from '../test-entity-component/test-entity-component.mapper';
@@ -23,6 +23,8 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
   }
 
   toDto(entity: TestEntity): any {
-    return entity;
+    const dto = { ...entity } as any;
+
+    return { ...dto, enumValue: getEnumValueByKey<TestEnum>(TestEnum, dto.enumValue) };
   }
 }
