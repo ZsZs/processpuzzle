@@ -1,9 +1,19 @@
-import { BaseEntityAttrDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from '@processpuzzle/base-entity';
 
-const column_1 = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
-const column_2 = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
-const column_3 = new BaseEntityAttrDescriptor('testEntityId', FormControlType.FOREIGN_KEY, 'Test Entity');
-column_3.disabled = true;
-column_3.linkedEntityType = 'TestEntity';
+function createTestEntityComponentAttrDescriptors(): BaseEntityAttrDescriptor[] {
+  const column_1 = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+  column_1.required = true;
+  const column_2 = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
+  const column_3 = new BaseEntityAttrDescriptor('testEntityId', FormControlType.FOREIGN_KEY, 'Test Entity');
+  column_3.disabled = true;
+  //  column_3.linkedEntityType = testEntityDescriptor;
 
-export const testEntityComponentDescriptors: BaseEntityAttrDescriptor[] = [column_1, column_2, column_3];
+  return [column_1, column_2, column_3];
+}
+
+export function createTestEntityComponentDescriptor(): BaseEntityDescriptor {
+  return new BaseEntityDescriptor({
+    entityName: 'Test Entity Component',
+    attrDescriptors: createTestEntityComponentAttrDescriptors(),
+  });
+}

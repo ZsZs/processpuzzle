@@ -1,4 +1,4 @@
-<mat-toolbar *ngIf="store.activeRouteSegment() === RouteSegments.LIST_ROUTE">
+<mat-toolbar *ngIf="formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE">
   <div class="dense-3" [ngStyle]="{'padding-top': '12px' }">
     <mat-form-field>
       <input test-id="filter-input" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">

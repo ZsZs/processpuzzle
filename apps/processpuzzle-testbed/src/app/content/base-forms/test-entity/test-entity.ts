@@ -1,5 +1,6 @@
 import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
+import { TestEntityComponent } from '../test-entity-component/test-entity-component';
 
 export enum TestEnum {
   VALUE_ONE,
@@ -19,8 +20,20 @@ export class TestEntity implements BaseEntity {
   private enumValue: TestEnum;
   private artifact?: ArtifactAttr | undefined;
   private tags: Array<string> | undefined;
+  private components: Array<TestEntityComponent> | undefined;
 
-  constructor(id?: string, name?: string, description?: string, boolean?: boolean, number?: number, date?: Date, enumValue?: TestEnum, artifact?: ArtifactAttr, tags?: Array<string>) {
+  constructor(
+    id?: string,
+    name?: string,
+    description?: string,
+    boolean?: boolean,
+    number?: number,
+    date?: Date,
+    enumValue?: TestEnum,
+    artifact?: ArtifactAttr,
+    tags?: Array<string>,
+    components?: Array<TestEntityComponent>,
+  ) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'TestEntity';
     this.description = description != undefined ? description : '';
@@ -30,5 +43,6 @@ export class TestEntity implements BaseEntity {
     this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
     this.artifact = artifact;
     this.tags = tags;
+    this.components = components;
   }
 }

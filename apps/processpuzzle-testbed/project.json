@@ -38,6 +38,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/base-entity/src/assets/i18n/base-entity",
+            "output": "assets/i18n/base-entity"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/widgets/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },
@@ -73,7 +78,7 @@
             {
               "type": "initial",
               "maximumWarning": "3mb",
-              "maximumError": "5mb"
+              "maximumError": "6mb"
             },
             {
               "type": "anyComponentStyle",

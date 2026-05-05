@@ -1,5 +1,6 @@
 import { BaseEntity } from '../base-entity/base-entity';
 import { patchState, signalStoreFeature, watchState, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { computed, inject, InjectionToken, isDevMode, ProviderToken } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
@@ -36,6 +37,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       error: undefined,
       selectedEntities: [],
     }),
+    withDevtools('base-entity'),
     withMethods((store, repository = inject(repositoryType)) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),

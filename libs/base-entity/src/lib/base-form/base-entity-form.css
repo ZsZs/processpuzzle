@@ -1,0 +1,52 @@
+:host {
+    display: block;
+}
+
+.base-entity-form-field {
+    box-sizing: border-box;
+    min-width: 0;
+    margin: 0 0 16px;
+    padding: 0 12px 8px;
+    border: var(--mat-form-field-outlined-outline-width, 1px) solid var(--mat-form-field-outlined-outline-color, rgba(0, 0, 0, 0.38));
+    border-radius: var(--mat-form-field-outlined-container-shape, 4px);
+    color: var(--mat-form-field-outlined-input-text-color, rgba(0, 0, 0, 0.87));
+    font-family: var(--mat-form-field-container-text-font, Roboto, "Helvetica Neue", sans-serif);
+    font-size: var(--mat-form-field-container-text-size, 16px);
+    font-weight: var(--mat-form-field-container-text-weight, 400);
+    line-height: var(--mat-form-field-container-text-line-height, 24px);
+}
+
+.base-entity-form-field:hover {
+    border-color: var(--mat-form-field-outlined-hover-outline-color, rgba(0, 0, 0, 0.87));
+}
+
+.base-entity-form-field legend {
+    padding: 0 4px;
+    color: var(--mat-form-field-outlined-label-text-color, rgba(0, 0, 0, 0.54));
+    font-family: var(--mat-form-field-outlined-label-text-font, Roboto, "Helvetica Neue", sans-serif);
+    font-size: var(--mat-form-field-outlined-label-text-size, 12px);
+    font-weight: var(--mat-form-field-outlined-label-text-weight, 400);
+    line-height: 1;
+}
+
+.base-entity-form-list {
+    min-height: 24px;
+    margin: 4px 0 0;
+    padding-left: 20px;
+}
+
+.base-entity-form-delete-button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-left: 4px;
+    line-height: 24px;
+    vertical-align: middle;
+}
+
+.base-entity-form-delete-button mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+}

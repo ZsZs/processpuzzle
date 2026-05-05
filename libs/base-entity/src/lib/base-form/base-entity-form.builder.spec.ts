@@ -15,6 +15,8 @@ import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescript
 import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
+import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -36,6 +38,12 @@ describe('BaseEntityFormBuilder', () => {
     }
   }
 
+  const componentDescriptor = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS);
+  componentDescriptor.linkedEntityType = new BaseEntityDescriptor({
+    attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, undefined, undefined, true)],
+    entityName: 'TestEntityComponent',
+  });
+
   const descriptors: AbstractAttrDescriptor[] = [
     new FlexboxDescriptor(
       [
@@ -46,6 +54,7 @@ describe('BaseEntityFormBuilder', () => {
         new BaseEntityAttrDescriptor('date', FormControlType.DATE),
         new BaseEntityAttrDescriptor('selectable', FormControlType.RADIO),
         new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN),
+        componentDescriptor,
       ],
       FlexDirection.CONTAINER,
     ),
@@ -60,15 +69,24 @@ describe('BaseEntityFormBuilder', () => {
     const mockService = setupMockService();
     TestBed.configureTestingModule({
       imports: [BaseFormHostDirective, MockFormContainerComponent],
-      providers: [BaseEntityFormBuilder, provideHttpClient(), provideLogger({ level: 7 }), provideRouter([]), TestEntityStore, { provide: TestEntityService, useValue: mockService }],
+      providers: [
+        BaseEntityFormBuilder,
+        provideHttpClient(),
+        provideLogger({ level: 7 }),
+        provideNativeDateAdapter(),
+        provideRouter([]),
+        TestEntityStore,
+        { provide: TestEntityService, useValue: mockService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MockFormContainerComponent);
     component = fixture.componentInstance;
-    formBuilder = TestBed.inject(BaseEntityFormBuilder);
+    formBuilder = TestBed.inject(BaseEntityFormBuilder) as unknown as BaseEntityFormBuilder<TestEntity>;
     store = TestBed.inject(TestEntityStore);
 
     formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, descriptors, testEntity);
+    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -84,6 +102,8 @@ describe('BaseEntityFormBuilder', () => {
     expect(fixture.debugElement.query(By.css('flex-box base-datepicker')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box base-radio')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box base-dropdown')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-component-list')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-component-list button[title="Add TestEntityComponent"]')).nativeElement).toBeTruthy();
   });
 
   it('buildForm() adds created controls to the FormGroup', () => {
@@ -94,6 +114,7 @@ describe('BaseEntityFormBuilder', () => {
     expect(component.form.controls['date']).toBeTruthy();
     expect(component.form.controls['selectable']).toBeTruthy();
     expect(component.form.controls['enumValue']).toBeTruthy();
+    expect(component.form.controls['components']).toBeTruthy();
   });
 
   it('buildForm() throws Error if a descriptor class is unknown.', () => {

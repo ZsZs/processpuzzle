@@ -6,6 +6,7 @@ import { signalStore } from '@ngrx/signals';
 import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
 import { Component } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { NavigatorCommand, type NavigationPayload } from './navigation-payload';
 
 describe('BaseFormNavigatorStore', () => {
   @Component({
@@ -16,9 +17,11 @@ describe('BaseFormNavigatorStore', () => {
   class DummyComponent {}
 
   const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
+  const OtherNavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('ApplicationProperty'));
   let route: ActivatedRoute;
   let router: Router;
   let store: any;
+  let otherStore: any;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -29,14 +32,18 @@ describe('BaseFormNavigatorStore', () => {
           { path: 'home', component: DummyComponent },
           { path: 'test-entity/:id/details', component: DummyComponent },
           { path: 'test-entity/list', component: DummyComponent },
+          { path: 'application-property/:id/details', component: DummyComponent },
+          { path: 'application-property/list', component: DummyComponent },
           { path: 'test-entity-component/:id/details', component: DummyComponent },
           { path: 'test-entity-component/list', component: DummyComponent },
         ]),
         NavigatorStore,
+        OtherNavigatorStore,
       ],
     }).compileComponents();
     await RouterTestingHarness.create('home');
     store = TestBed.inject(NavigatorStore);
+    otherStore = TestBed.inject(OtherNavigatorStore);
     route = TestBed.inject(ActivatedRoute);
     router = TestBed.inject(Router);
   });
@@ -81,10 +88,82 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.activeRouteSegment()).toEqual(RouteSegments.DETAILS_ROUTE);
   });
 
+  it('navigateToRelatedList() navigates to related entities List route.', async () => {
+    await store.navigateToRelatedList('TestEntityComponent', 'home');
+    expect(store.determineCurrentUrl()).toEqual('/test-entity-component/list');
+    expect(store.navigateTo()).toEqual('/test-entity-component/list');
+    expect(store.returnTo()).toEqual('home');
+    expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('navigation methods add given payloads to the navigator payload stack.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const listPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    await store.navigateToRelatedList('TestEntityComponent', 'home', listPayload);
+
+    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload, listPayload]);
+  });
+
+  it('navigateBack() removes the latest navigator payload from the stack.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const relatedPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntityComponent' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    await store.navigateToRelated('TestEntityComponent', '2', 'home', relatedPayload);
+    await store.navigateBack();
+
+    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload]);
+  });
+
+  it('direct router navigation clears request and response payload stacks.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const responsePayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    store.pushResponsePayload(responsePayload);
+    await router.navigateByUrl('/home');
+
+    expect(store.requestPayloads().toArray()).toEqual([]);
+    expect(store.responsePayloads().toArray()).toEqual([]);
+  });
+
+  it('popResponsePayload() removes and returns the latest matching response payload.', () => {
+    const editPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
+    const firstSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
+    const secondSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '3' } };
+
+    store.pushResponsePayload(editPayload);
+    store.pushResponsePayload(firstSelectPayload);
+    store.pushResponsePayload(secondSelectPayload);
+
+    expect(store.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE)).toEqual(secondSelectPayload);
+    expect(store.responsePayloads().toArray()).toEqual([editPayload, firstSelectPayload]);
+  });
+
   it('navigateToUrl() navigates to url from store.', async () => {
     await store.navigateToUrl('test-entity/list', 'home');
     expect(store.navigateTo()).toEqual('test-entity/list');
     expect(store.returnTo()).toEqual('home');
     expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('shares navigator state with other stores using the same feature.', async () => {
+    await store.navigateToUrl('test-entity/list', 'home');
+
+    expect(otherStore.navigateTo()).toEqual('test-entity/list');
+    expect(otherStore.returnTo()).toEqual('home');
+    expect(otherStore.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
+  });
+
+  it('uses each store entity name while delegating to the singleton navigator.', async () => {
+    await otherStore.navigateToDetails('1', 'home');
+
+    expect(otherStore.determineCurrentUrl()).toEqual('/application-property/1/details');
+    expect(store.determineCurrentUrl()).toEqual('/application-property/1/details');
+    expect(otherStore.navigateTo()).toEqual('/application-property/1/details');
+    expect(store.navigateTo()).toEqual('/application-property/1/details');
+    expect(otherStore.entityName()).toEqual('ApplicationProperty');
   });
 });

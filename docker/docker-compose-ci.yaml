@@ -3,6 +3,31 @@ networks:
     driver: bridge
 
 services:
+  processpuzzle-backend:
+    pull_policy: build
+    depends_on:
+      minio:
+        condition: service_healthy
+    build:
+      context: ../
+      dockerfile: docker/backend/Dockerfile
+    image: zsuffazs/processpuzzle-backend:latest
+    container_name: processpuzzle-backend
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: springboot
+      MINIO_SECRET_KEY: springboot123
+    ports:
+      - "8080:8080"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+
   processpuzzle-testbed:
     pull_policy: build
     depends_on:
@@ -157,8 +182,10 @@ services:
       MINIO_SERVICE_PASSWORD: springboot123
     volumes:
       - minio-data:/data
+    networks:
+      - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:7000/minio/health/live" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 5

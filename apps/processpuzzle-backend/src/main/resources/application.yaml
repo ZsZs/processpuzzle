@@ -2,6 +2,41 @@ spring:
   application:
     name: processpuzzle-backend
 
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: ProcessPuzzle Backend Application
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    path: /api-docs
+
 minio:
   endpoint: http://localhost:7000
   access-key: minioadmin
@@ -15,12 +50,3 @@ minio:
     video: video
     archives: archives
     logs: logs
-
-server:
-  port: 8080
-
-springdoc:
-  swagger-ui:
-    enabled: true
-  api-docs:
-    path: /api-docs

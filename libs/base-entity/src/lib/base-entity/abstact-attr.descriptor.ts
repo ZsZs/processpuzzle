@@ -1,6 +1,7 @@
 export enum FormControlType {
   ARTIFACT = 'ARTIFACT',
   CHECKBOX = 'CHECKBOX',
+  COMPONENTS = 'COMPONENTS',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
   FLEX_BOX = 'FLEX_BOX',

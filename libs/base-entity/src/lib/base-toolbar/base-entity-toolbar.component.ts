@@ -8,7 +8,7 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
+import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { LayoutService } from '@processpuzzle/util';
 
@@ -21,18 +21,20 @@ import { LayoutService } from '@processpuzzle/util';
 export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements OnInit {
   entityDescriptor = input.required<BaseEntityDescriptor>();
   readonly layoutService = inject(LayoutService);
+  protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   store: any;
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
     this.store = this.entityDescriptor().store;
+    this.formNavigator.setEntityName(this.entityDescriptor().entityName);
   }
 
   // endregion
 
   // event handling methods
   onAddEntity() {
-    this.store.navigateToDetails(BaseUrlSegments.NewEntity);
+    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, BaseUrlSegments.NewEntity);
   }
 
   onDeleteEntities() {
