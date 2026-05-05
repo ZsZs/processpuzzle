@@ -83,7 +83,7 @@
     "@ngrx/operators": "^21.1.0",
     "@ngrx/signals": "^21.1.0",
     "@ngx-env/builder": "^21.0.1",
-    "@nx/vite": "^22.7.0",
+    "@nx/vite": "^22.7.1",
     "@types/node-fetch": "^2.6.13",
     "angular-auth-oidc-client": "^21.0.1",
     "build-url-ts": "^6.2.0",
