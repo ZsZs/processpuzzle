@@ -2,8 +2,8 @@ import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { HttpClient, provideHttpClient } from '@angular/common/http';
-import { LayoutService, provideLoggingService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { centralHttpErrorInterceptor, LayoutService, provideCentralErrorHandler, provideLoggingService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
@@ -38,8 +38,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
         else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
         return firestore;
       }),
-      provideHttpClient(),
+      provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
+      provideCentralErrorHandler(),
       provideRouter(appRoutes, withComponentInputBinding()),
       provideNativeDateAdapter(),
       provideShareButtonsOptions(shareIcons()),
