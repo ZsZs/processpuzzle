@@ -18,3 +18,6 @@ export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { TranslocoHttpLoader } from './transloco/transloco.loader';
 export { widgetsRoutes } from './widgets.routes';
+
+export * from './error-snackbar/error-snackbar.component';
+export { ErrorSnackbarService, provideErrorSnackbar } from './error-snackbar/error-snackbar.service';
