@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { NGXLogger } from 'ngx-logging-kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CentralErrorHandler } from './central-error-handler';
+import { ERROR_MESSAGE_REPORTER, ErrorMessageReporter } from './error-message-reporter';
 import { provideCentralErrorHandler } from './provide-central-error-handler';
 
 describe('CentralErrorHandler', () => {
@@ -49,6 +50,39 @@ describe('CentralErrorHandler', () => {
     errorHandler.handleError(error);
 
     expect(logger.error).toHaveBeenCalledWith('HTTP 503 Service Unavailable /api/processes', error);
+  });
+
+  it('shows Error messages through the optional error message reporter', () => {
+    const reporter: ErrorMessageReporter = { showErrorMessage: vi.fn() };
+    const error = new Error('Unexpected failure');
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [CentralErrorHandler, { provide: NGXLogger, useValue: logger }, { provide: ERROR_MESSAGE_REPORTER, useValue: reporter }],
+    });
+
+    TestBed.inject(CentralErrorHandler).handleError(error);
+
+    expect(reporter.showErrorMessage).toHaveBeenCalledWith('Unexpected failure', error);
+  });
+
+  it('shows HTTP response body messages when available', () => {
+    const reporter: ErrorMessageReporter = { showErrorMessage: vi.fn() };
+    const error = new HttpErrorResponse({
+      error: { message: 'Backend validation failed' },
+      status: 400,
+      statusText: 'Bad Request',
+      url: '/api/processes',
+    });
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [CentralErrorHandler, { provide: NGXLogger, useValue: logger }, { provide: ERROR_MESSAGE_REPORTER, useValue: reporter }],
+    });
+
+    TestBed.inject(CentralErrorHandler).handleError(error);
+
+    expect(reporter.showErrorMessage).toHaveBeenCalledWith('Backend validation failed', error);
   });
 
   it('falls back to a generic fatal log for non-error values', () => {

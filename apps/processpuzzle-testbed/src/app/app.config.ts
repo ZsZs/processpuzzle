@@ -13,7 +13,7 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { environment } from '../environments/environment';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { provideAppPropertyStore, provideTranslocoService } from '@processpuzzle/widgets';
+import { provideAppPropertyStore, provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/widgets';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
@@ -41,6 +41,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
       provideCentralErrorHandler(),
+      provideErrorSnackbar(),
       provideRouter(appRoutes, withComponentInputBinding()),
       provideNativeDateAdapter(),
       provideShareButtonsOptions(shareIcons()),
