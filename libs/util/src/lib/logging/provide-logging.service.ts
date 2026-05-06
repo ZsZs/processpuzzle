@@ -1,8 +1,10 @@
 import { EnvironmentProviders } from '@angular/core';
-import { provideLogger } from 'ngx-logging-kit';
+import { type INGXLoggerConfig, provideLogger } from 'ngx-logging-kit';
 import { LoggingConfiguration } from './logging.service';
 
-function mapLoggerLevel(level: 'none' | 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error' | 'fatal'): any {
+type LoggingLevel = LoggingConfiguration['level'];
+
+function mapLoggerLevel(level: LoggingLevel): INGXLoggerConfig['level'] {
   switch (level) {
     case 'none':
       return 7; // OFF
@@ -24,9 +26,13 @@ function mapLoggerLevel(level: 'none' | 'trace' | 'debug' | 'info' | 'log' | 'wa
 }
 
 export function provideLoggingService(config: LoggingConfiguration): EnvironmentProviders {
+  const sourceDetailsEnabled = config.level === 'trace' || config.serverLogLevel === 'trace';
+
   return provideLogger({
     level: mapLoggerLevel(config.level),
     disableConsoleLogging: false,
+    disableFileDetails: false,
+    enableSourceMaps: sourceDetailsEnabled,
     serverLogLevel: mapLoggerLevel(config.serverLogLevel),
     serverLoggingUrl: config.serverLogLevel !== 'none' ? config.serverLoggingUrl : undefined,
   });
