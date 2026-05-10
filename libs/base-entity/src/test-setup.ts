@@ -9,7 +9,7 @@ import { BaseEntityToolbarComponent } from './lib/base-toolbar/base-entity-toolb
 import { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
-import { Component, ComponentRef, inject, input, InputSignal, OnInit, Signal, signal, Type, ViewChild } from '@angular/core';
+import { Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
@@ -231,10 +231,15 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
   return { fixture, component, store, formNavigator };
 }
 
-export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(controlType: Type<C>, config: FlexboxDescriptor | BaseEntityAttrDescriptor, entity: TestEntity) {
+export async function setupFormControlTest<C extends BaseFormControlComponent<TestEntity>>(
+  controlType: Type<C>,
+  config: FlexboxDescriptor | BaseEntityAttrDescriptor,
+  entity: TestEntity,
+  providers: Provider[] = [],
+) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
-    providers: [provideRouter([])],
+    providers: [provideRouter([]), ...providers],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);

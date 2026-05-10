@@ -8,8 +8,16 @@
       "number": 100,
       "date": "2024-01-18T20:02:27",
       "enumValue": 3,
-      "tags": ["tag1", "tag2"],
-      "artifact": { "bucket": "archives", "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9", "name": "ef-generic-message", "mimeType": "application/zip" },
+      "tags": [
+        "tag1",
+        "tag2"
+      ],
+      "artifact": {
+        "bucket": "archives",
+        "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9",
+        "name": "ef-generic-message",
+        "mimeType": "application/zip"
+      },
       "components": [
         {
           "id": "1",
@@ -39,8 +47,15 @@
       "number": 200,
       "date": "2024-02-18T20:02:27",
       "enumValue": 0,
-      "tags": ["tag3"],
-      "artifact": { "bucket": "documents", "objectId": "a0dfb8a9-bbf0-4664-b705-cf4ecb450d66", "name": "HUK24_Versicherungsschein", "mimeType": "application/pdf" },
+      "tags": [
+        "tag3"
+      ],
+      "artifact": {
+        "bucket": "documents",
+        "objectId": "a0dfb8a9-bbf0-4664-b705-cf4ecb450d66",
+        "name": "HUK24_Versicherungsschein",
+        "mimeType": "application/pdf"
+      },
       "components": [
         {
           "id": "4",
@@ -64,7 +79,12 @@
       "number": 300,
       "date": "2024-03-21T23:00:00.000Z",
       "enumValue": 0,
-      "artifact": { "bucket": "documents", "objectId": "dafda75e-73f7-41ab-a351-14a0a7c851af", "name": "Befund", "mimeType": "application/pdf" }
+      "artifact": {
+        "bucket": "documents",
+        "objectId": "dafda75e-73f7-41ab-a351-14a0a7c851af",
+        "name": "Befund",
+        "mimeType": "application/pdf"
+      }
     },
     {
       "id": "4",
@@ -74,7 +94,10 @@
       "number": 400,
       "date": "2024-04-18T20:02:27",
       "enumValue": 0,
-      "tags": ["tag1", "tag2"]
+      "tags": [
+        "tag1",
+        "tag2"
+      ]
     },
     {
       "id": "5",
@@ -100,7 +123,7 @@
       "id": "1",
       "name": "component_1",
       "description": "component one",
-      "testEntityId": "3"
+      "testEntityId": "4b8fbe5f-a2ce-436c-a2fc-7d19d9f212ad"
     },
     {
       "id": "2",

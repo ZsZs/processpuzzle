@@ -12,6 +12,10 @@ import { findByQuery } from './findByQuery';
 
 export const BASE_ENTITY_STORE = new InjectionToken<any>('BASE_ENTITY_STORE');
 
+export function entityNameFromType<Entity extends BaseEntity>(entityType: new () => Entity): string {
+  return (entityType as { name?: string }).name ?? 'base-entity';
+}
+
 export interface EntityStoreState<Entity extends BaseEntity> {
   entities: Entity[];
   page: number;
@@ -37,7 +41,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       error: undefined,
       selectedEntities: [],
     }),
-    withDevtools('base-entity'),
+    withDevtools(entityNameFromType(entityType)),
     withMethods((store, repository = inject(repositoryType)) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
