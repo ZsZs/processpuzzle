@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { TestEnum } from './test-entity';
 import { createTestEntityComponentDescriptor } from '../test-entity-component/test-entity-component.descriptors';
+import { createTrunkDataDescriptor } from '../trunk-data/trunk-data.descriptors';
 
 const selectables = Object.keys(TestEnum)
   .filter((key: any) => parseInt(key) >= 0)
@@ -13,15 +14,16 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Boolean');
   const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, { inputType: 'number' });
   const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
+  const lookupAttr = new BaseEntityAttrDescriptor('lookup', FormControlType.LOOKUP, 'Lookup', undefined, false);
   const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
   const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
-  componentsAttr.disabled = false;
+  lookupAttr.linkedEntityType = createTrunkDataDescriptor();
   componentsAttr.linkedEntityType = createTestEntityComponentDescriptor();
 
   const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);
-  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, enumAttr, tagsAttr, componentsAttr], FlexDirection.COLUMN);
+  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr], FlexDirection.COLUMN);
   const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
   flexBoxContainer.style = { 'column-gap': '20px' };
   return [flexBoxContainer];

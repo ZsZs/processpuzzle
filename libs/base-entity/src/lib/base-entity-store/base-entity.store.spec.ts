@@ -8,6 +8,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 import { describe, expect, it } from 'vitest';
+import { entityNameFromType } from './base-entity.store';
 
 describe('BaseEntityStore', () => {
   function setup({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
@@ -21,6 +22,10 @@ describe('BaseEntityStore', () => {
     fixture.detectChanges();
     return { mockService, store };
   }
+
+  it('derives the entity name from the entity type', () => {
+    expect(entityNameFromType(TestEntity)).toEqual('TestEntity');
+  });
 
   it('createEntity() instantiate a new Object from the the given entityType argument', () => {
     const { store } = setup();

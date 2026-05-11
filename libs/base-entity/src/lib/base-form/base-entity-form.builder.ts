@@ -18,6 +18,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { EntityComponentsListComponent } from './components/entity-components-list.component';
 import { NGXLogger } from 'ngx-logging-kit';
+import { LookupComponent } from './lookup/lookup.component';
 
 @Injectable({ providedIn: 'root' })
 export class BaseEntityFormBuilder<Entity extends BaseEntity> {
@@ -70,6 +71,8 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       return DropdownComponent<Entity>;
     } else if (column.formControlType === FormControlType.LABEL) {
       return LabelComponent<Entity>;
+    } else if (column.formControlType === FormControlType.LOOKUP) {
+      return LookupComponent<Entity>;
     } else if (column.formControlType === FormControlType.RADIO) {
       return RadioComponent<Entity>;
     } else if (column.formControlType === FormControlType.TEXTAREA) {

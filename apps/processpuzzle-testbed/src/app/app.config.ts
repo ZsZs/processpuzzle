@@ -18,11 +18,23 @@ import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@pro
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
+import { BASE_ENTITY_STORE_REGISTRY } from '@processpuzzle/base-entity';
+import { TestEntityStore } from './content/base-forms/test-entity/test-entity.store';
+import { TestEntityComponentStore } from './content/base-forms/test-entity-component/test-entity-component.store';
+import { TrunkDataStore } from './content/base-forms/trunk-data/trunk-data.store';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
       provideAppPropertyStore(),
+      {
+        provide: BASE_ENTITY_STORE_REGISTRY,
+        useValue: {
+          'Trunk Data': TrunkDataStore,
+          'Test Entity': TestEntityStore,
+          'Test Entity Component': TestEntityComponentStore,
+        },
+      },
       provideAnimations(),
       { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },

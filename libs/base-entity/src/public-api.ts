@@ -16,9 +16,11 @@ export { BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from './lib/ba
 export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
 export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.service';
 export { BASE_ENTITY_STORE, BaseEntityStore } from './lib/base-entity-store/base-entity.store';
+export { BASE_ENTITY_STORE_REGISTRY, type BaseEntityStoreRegistry } from './lib/base-entity-store/base-entity-store-registry';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
+export { LookupTable } from './lib/base-form/lookup/lookup-table';
