@@ -7,17 +7,18 @@
       "boolean": true,
       "number": 100,
       "date": "2024-01-18T20:02:27",
+      "lookup": "schlüssel_4",
       "enumValue": 3,
-      "tags": [
-        "tag1",
-        "tag2"
-      ],
       "artifact": {
         "bucket": "archives",
         "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9",
         "name": "ef-generic-message",
         "mimeType": "application/zip"
       },
+      "tags": [
+        "tag1",
+        "tag2"
+      ],
       "components": [
         {
           "id": "1",
@@ -46,6 +47,7 @@
       "boolean": true,
       "number": 200,
       "date": "2024-02-18T20:02:27",
+      "lookup": "schlüssel_2",
       "enumValue": 0,
       "tags": [
         "tag3"
@@ -78,6 +80,7 @@
       "boolean": true,
       "number": 300,
       "date": "2024-03-21T23:00:00.000Z",
+      "lookup": "schlüssel_3",
       "enumValue": 0,
       "artifact": {
         "bucket": "documents",
@@ -153,25 +156,25 @@
   "trunk-data": [
     {
       "id": "1",
-      "name": "schlüssel_1",
+      "key": "schlüssel_1",
       "description": "einfache Benutzer Rolle",
       "value": "Wert 1"
     },
     {
       "id": "2",
-      "name": "schlüssel_2",
+      "key": "schlüssel_2",
       "description": "Trainer Rolle",
       "value": "Wert 2"
     },
     {
       "id": "3",
-      "name": "schlüssel_3",
+      "key": "schlüssel_3",
       "description": "Administrator Rolle",
       "value": "Wert 3"
     },
     {
       "id": "4",
-      "name": "schlüssel_4",
+      "key": "schlüssel_4",
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }

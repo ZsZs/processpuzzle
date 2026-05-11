@@ -7,6 +7,7 @@ export enum FormControlType {
   FLEX_BOX = 'FLEX_BOX',
   FOREIGN_KEY = 'FOREIGN_KEY',
   LABEL = 'LABEL',
+  LOOKUP = 'LOOKUP',
   RADIO = 'RADIO',
   TAGS = 'TAGS',
   TITLE = 'TITLE',

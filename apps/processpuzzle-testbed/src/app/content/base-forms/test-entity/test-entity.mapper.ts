@@ -15,6 +15,7 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
       dto.boolean,
       dto.number,
       dto.date,
+      dto.lookup,
       getEnumKeyByValue<TestEnum>(TestEnum, dto.enumValue),
       dto.artifact,
       dto.tags,

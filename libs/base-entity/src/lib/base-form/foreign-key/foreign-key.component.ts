@@ -1,4 +1,4 @@
-import { Component, inject, Injector, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
@@ -7,7 +7,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
-import { BASE_ENTITY_STORE_REGISTRY } from '../../base-entity-store/base-entity-store-registry';
+
+interface RelatedEntityStore {
+  entities?: () => BaseEntity[];
+  loadById?: (id: string) => BaseEntity | undefined;
+}
 
 @Component({
   selector: 'base-foreign-key',
@@ -84,8 +88,6 @@ import { BASE_ENTITY_STORE_REGISTRY } from '../../base-entity-store/base-entity-
 })
 export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   hasFocus = signal(false);
-  private readonly injector = inject(Injector);
-  private readonly storeRegistry = inject(BASE_ENTITY_STORE_REGISTRY);
   private readonly selectedEntity = signal<BaseEntity | undefined>(undefined);
 
   ngOnInit(): void {
@@ -180,7 +182,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
 
   private relatedEntityFromLinkedStore(): BaseEntity | undefined {
     const id = this.foreignKeyId();
-    const linkedStore = this.resolveLinkedStore();
+    const linkedStore = this.resolveRelatedEntityStore<RelatedEntityStore>();
     if (!id || !linkedStore) {
       return undefined;
     }
@@ -194,28 +196,5 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     }
 
     return undefined;
-  }
-
-  private resolveLinkedStore(): any {
-    const entityName = this.config().linkedEntityType?.entityName;
-    const registryStoreToken = entityName ? this.storeRegistry[entityName] : undefined;
-    if (registryStoreToken) {
-      return this.injector.get(registryStoreToken, undefined);
-    }
-
-    const store = this.config().linkedEntityType?.store;
-    if (!store) {
-      return undefined;
-    }
-
-    if (typeof store.loadById === 'function' || typeof store.entities === 'function') {
-      return store;
-    }
-
-    try {
-      return this.injector.get(store);
-    } catch {
-      return undefined;
-    }
   }
 }

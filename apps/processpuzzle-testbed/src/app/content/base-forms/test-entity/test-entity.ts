@@ -17,6 +17,7 @@ export class TestEntity implements BaseEntity {
   private boolean;
   private number;
   private date;
+  private lookup: string;
   private enumValue: TestEnum;
   private artifact?: ArtifactAttr | undefined;
   private tags: Array<string> | undefined;
@@ -29,6 +30,7 @@ export class TestEntity implements BaseEntity {
     boolean?: boolean,
     number?: number,
     date?: Date,
+    lookup?: string,
     enumValue?: TestEnum,
     artifact?: ArtifactAttr,
     tags?: Array<string>,
@@ -40,6 +42,7 @@ export class TestEntity implements BaseEntity {
     this.boolean = boolean != undefined ? boolean : true;
     this.number = number != undefined ? number : 1;
     this.date = date != undefined ? date : new Date();
+    this.lookup = lookup != undefined ? lookup : '';
     this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
     this.artifact = artifact;
     this.tags = tags;
