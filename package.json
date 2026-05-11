@@ -123,7 +123,7 @@
     "@angular/core": "~21.2.11",
     "@angular/forms": "~21.2.11",
     "@angular/language-service": "~21.2.11",
-    "@angular/localize": "^21.2.11",
+    "@angular/localize": "^21.2.12",
     "@angular/material": "^21.2.9",
     "@angular/router": "~21.2.11",
     "@eslint/compat": "^2.0.5",
