@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(\"deleted\")",
+      "PowerShell(npx nx run-many -t build -p base-entity widgets --skip-nx-cache 2>&1)",
+      "PowerShell(npx nx build processpuzzle-testbed --configuration=development --skip-nx-cache 2>&1)",
+      "PowerShell(npx nx test base-entity --skip-nx-cache 2>&1)"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
-import { BASE_ENTITY_STORE_REGISTRY } from '../base-entity-store/base-entity-store-registry';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 
 @Component({
   standalone: true,
@@ -19,16 +19,17 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   value: InputSignal<any> = input.required();
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly injector = inject(Injector);
-  private readonly storeRegistry = inject(BASE_ENTITY_STORE_REGISTRY);
+  private readonly facadeRegistry = inject(BASE_ENTITY_FACADE_REGISTRY);
 
   // region Angular lifecycle hooks
   // endregion
 
   protected resolveRelatedEntityStore<Store extends object>(): Store | undefined {
     const entityName = this.config().linkedEntityType?.entityName;
-    const registryStoreToken = entityName ? this.storeRegistry[entityName] : undefined;
-    if (registryStoreToken) {
-      return this.injector.get(registryStoreToken, undefined) as Store | undefined;
+    const facadeToken = entityName ? this.facadeRegistry[entityName] : undefined;
+    if (facadeToken) {
+      const facade = this.injector.get(facadeToken, undefined);
+      return facade?.store as Store | undefined;
     }
 
     const store = this.config().linkedEntityType?.store;

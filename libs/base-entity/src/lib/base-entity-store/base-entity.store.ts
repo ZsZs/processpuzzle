@@ -1,7 +1,7 @@
 import { BaseEntity } from '../base-entity/base-entity';
 import { patchState, signalStoreFeature, watchState, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
-import { computed, inject, InjectionToken, isDevMode, ProviderToken } from '@angular/core';
+import { computed, InjectionToken, isDevMode } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { addEntity } from './addEntity';
@@ -28,7 +28,7 @@ export interface EntityStoreState<Entity extends BaseEntity> {
   selectedEntities: Array<Entity>;
 }
 
-export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, repositoryType: ProviderToken<BaseEntityService<Entity>>) {
+export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, getRepository: () => BaseEntityService<Entity>) {
   return signalStoreFeature(
     withState<EntityStoreState<Entity>>({
       entities: [],
@@ -42,7 +42,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       selectedEntities: [],
     }),
     withDevtools(entityNameFromType(entityType)),
-    withMethods((store, repository = inject(repositoryType)) => ({
+    withMethods((store, repository = getRepository()) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
       add: addEntity(store, repository),

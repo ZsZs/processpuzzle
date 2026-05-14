@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
-import { BASE_ENTITY_STORE_REGISTRY } from '../../base-entity-store/base-entity-store-registry';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
@@ -45,7 +45,16 @@ describe('LookupComponent', () => {
 
     const { fixture } = await setupFormControlTest(LookupComponent, config, entity, [
       { provide: lookupStoreToken, useValue: lookupStore },
-      { provide: BASE_ENTITY_STORE_REGISTRY, useValue: { ProjectStatus: lookupStoreToken } },
+      {
+        provide: BASE_ENTITY_FACADE_REGISTRY,
+        useValue: {
+          ProjectStatus: new BaseEntityDescriptor({
+            entityName: 'ProjectStatus',
+            attrDescriptors: [],
+            store: lookupStoreToken,
+          }),
+        },
+      },
     ]);
 
     expect(lookupStore.load).toHaveBeenCalledWith({});
@@ -60,7 +69,16 @@ describe('LookupComponent', () => {
 
     const { component } = await setupFormControlTest(LookupComponent, config, entity, [
       { provide: lookupStoreToken, useValue: lookupStore },
-      { provide: BASE_ENTITY_STORE_REGISTRY, useValue: { ProjectStatus: lookupStoreToken } },
+      {
+        provide: BASE_ENTITY_FACADE_REGISTRY,
+        useValue: {
+          ProjectStatus: new BaseEntityDescriptor({
+            entityName: 'ProjectStatus',
+            attrDescriptors: [],
+            store: lookupStoreToken,
+          }),
+        },
+      },
     ]);
     const lookupComponent = component as LookupComponent<TestEntity>;
 
@@ -77,7 +95,16 @@ describe('LookupComponent', () => {
 
     const { component } = await setupFormControlTest(LookupComponent, config, entity, [
       { provide: lookupStoreToken, useValue: lookupStore },
-      { provide: BASE_ENTITY_STORE_REGISTRY, useValue: { ProjectStatus: lookupStoreToken } },
+      {
+        provide: BASE_ENTITY_FACADE_REGISTRY,
+        useValue: {
+          ProjectStatus: new BaseEntityDescriptor({
+            entityName: 'ProjectStatus',
+            attrDescriptors: [],
+            store: lookupStoreToken,
+          }),
+        },
+      },
     ]);
     const lookupComponent = component as LookupComponent<TestEntity>;
 
@@ -97,7 +124,16 @@ describe('LookupComponent', () => {
 
     const { component } = await setupFormControlTest(LookupComponent, config, entity, [
       { provide: lookupStoreToken, useValue: lookupStore },
-      { provide: BASE_ENTITY_STORE_REGISTRY, useValue: { ProjectStatus: lookupStoreToken } },
+      {
+        provide: BASE_ENTITY_FACADE_REGISTRY,
+        useValue: {
+          ProjectStatus: new BaseEntityDescriptor({
+            entityName: 'ProjectStatus',
+            attrDescriptors: [],
+            store: lookupStoreToken,
+          }),
+        },
+      },
     ]);
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
     vi.spyOn(formNavigator, 'determineCurrentUrl').mockReturnValue('/test-entity/source-id/details');
