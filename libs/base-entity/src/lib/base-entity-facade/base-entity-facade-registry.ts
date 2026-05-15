@@ -1,4 +1,4 @@
-import { Component, computed, inject, Injector, InjectionToken, type ProviderToken, signal } from '@angular/core';
+import { Component, computed, inject, InjectionToken, Injector, type ProviderToken, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
@@ -12,7 +12,7 @@ export const BASE_ENTITY_FACADE_REGISTRY = new InjectionToken<BaseEntityFacadeRe
 
 @Component({
   selector: 'pp-entity-registry',
-  template: '<pre>{{ json() }}</pre>',
+  template: ` <pre>{{ registryJson() }}</pre> `,
 })
 export class EntityRegistryComponent {
   private registry = inject(BASE_ENTITY_FACADE_REGISTRY);
@@ -21,9 +21,9 @@ export class EntityRegistryComponent {
 
   private descriptors = signal(this.buildDescriptors());
 
-  protected json = computed(() => {
+  protected registryJson = computed(() => {
     const minified = this.queryParams()?.get('minified') === 'yes';
-    return minified ? JSON.stringify(this.descriptors()) : JSON.stringify(this.descriptors(), null, 2);
+    return minified ? JSON.stringify(this.descriptors(), null, 2) : JSON.stringify(this.descriptors(), null, 2);
   });
 
   private buildDescriptors() {
