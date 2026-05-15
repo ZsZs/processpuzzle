@@ -187,9 +187,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
 
   protected registerEffects(): void {
     effect(() => (this.dataSource.data = this.store.entities()));
-    effect(() => {
-      if (this.store.filterKey()) this.doFilter(this.store.filterKey());
-    });
+    effect(() => this.doFilter(this.store.filterKey() ?? ''));
   }
 
   // endregion
