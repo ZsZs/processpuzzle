@@ -44,17 +44,23 @@ describe('BaseEntityFormBuilder', () => {
     entityName: 'TestEntityComponent',
   });
 
+  const foreignKeyDescriptor = new BaseEntityAttrDescriptor('id', FormControlType.FOREIGN_KEY);
+  foreignKeyDescriptor.linkedEntityType = new BaseEntityDescriptor({ attrDescriptors: [], entityName: 'TestEntityComponent' });
+
+  const lookupDescriptor = new BaseEntityAttrDescriptor('lookupValue', FormControlType.LOOKUP);
+  lookupDescriptor.linkedEntityType = new BaseEntityDescriptor({ attrDescriptors: [], entityName: 'TestEntityLookup' });
+
   const descriptors: AbstractAttrDescriptor[] = [
     new FlexboxDescriptor(
       [
-        new BaseEntityAttrDescriptor('id', FormControlType.FOREIGN_KEY),
+        foreignKeyDescriptor,
         new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX),
         new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA),
         new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX),
         new BaseEntityAttrDescriptor('date', FormControlType.DATE),
         new BaseEntityAttrDescriptor('selectable', FormControlType.RADIO),
         new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN),
-        new BaseEntityAttrDescriptor('lookupValue', FormControlType.LOOKUP),
+        lookupDescriptor,
         componentDescriptor,
       ],
       FlexDirection.CONTAINER,

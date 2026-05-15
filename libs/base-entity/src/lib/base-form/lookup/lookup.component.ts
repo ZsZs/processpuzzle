@@ -1,7 +1,7 @@
 import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { BaseEntity } from '../../base-entity/base-entity';
@@ -29,7 +29,7 @@ interface LookupStore {
           <button type="button" mat-icon-button matSuffix [disabled]="!canNavigateToRelated()" (click)="navigateToRelated()" aria-label="Related entity">
             <mat-icon>link</mat-icon>
           </button>
-          <mat-autocomplete #lookupOptions="matAutocomplete" (optionSelected)="selectLookupItem($event)">
+          <mat-autocomplete #lookupOptions="matAutocomplete" (optionSelected)="selectLookupItem($any($event).option.value)">
             @for (lookupItem of filteredLookupItems(); track lookupItem.key) {
               <mat-option [value]="lookupItem.key">{{ lookupDisplayValue(lookupItem) }}</mat-option>
             }
@@ -87,8 +87,8 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
     });
   }
 
-  selectLookupItem(event: MatAutocompleteSelectedEvent): void {
-    this.setLookupKey(String(event.option.value ?? ''));
+  selectLookupItem(selectedValue: unknown): void {
+    this.setLookupKey(String(selectedValue ?? ''));
     this.restoreSelectedValue();
   }
 
@@ -100,17 +100,16 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
   }
 
   navigateToRelated(): void {
-    const relatedEntityName = this.config().linkedEntityType?.entityName;
     const relatedEntityId = this.selectedLookupItem()?.id ?? this.lookupKey();
-    if (!relatedEntityName || !relatedEntityId) {
+    if (!relatedEntityId) {
       return;
     }
 
-    this.formNavigator.navigateToRelated(relatedEntityName, relatedEntityId, this.formNavigator.determineCurrentUrl());
+    this.formNavigator.navigateToRelated(this.linkedEntityType().entityName, relatedEntityId, this.formNavigator.determineCurrentUrl());
   }
 
   canNavigateToRelated(): boolean {
-    return !!this.config().linkedEntityType?.entityName && !!(this.selectedLookupItem()?.id ?? this.lookupKey());
+    return !!(this.selectedLookupItem()?.id ?? this.lookupKey());
   }
 
   lookupDisplayValue(lookupItem: LookupTable): string {

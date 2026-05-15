@@ -102,34 +102,30 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
   }
 
   navigateToRelated() {
-    const relatedEntityName = this.config().linkedEntityType?.entityName;
-    if (!relatedEntityName) return;
-
-    this.formNavigator.navigateToRelated(relatedEntityName, this.foreignKeyId(), this.formNavigator.determineCurrentUrl());
+    this.formNavigator.navigateToRelated(this.linkedEntityType().entityName, this.foreignKeyId(), this.formNavigator.determineCurrentUrl());
   }
 
   navigateToRelatedList(): void {
-    const relatedEntityName = this.config().linkedEntityType?.entityName;
-    if (this.config().disabled || !relatedEntityName) {
+    if (this.config().disabled) {
       return;
     }
 
-    this.formNavigator.navigateToRelatedList(relatedEntityName, this.formNavigator.determineCurrentUrl(), {
+    this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
     });
   }
   // endregion
 
   selectEntityTitle(): string {
-    return 'Select ' + (this.config().linkedEntityType?.entityName ?? 'Entity');
+    return 'Select ' + this.linkedEntityType().entityName;
   }
 
   foreignKeyLabel(): string {
-    return this.config().linkedEntityType?.entityName ?? this.config().label;
+    return this.linkedEntityType().entityName;
   }
 
   showSelectEntityButton(): boolean {
-    return !this.config().disabled && this.hasFocus() && this.config().linkedEntityType !== undefined;
+    return !this.config().disabled && this.hasFocus();
   }
 
   foreignKeyDisplayName(): string {
@@ -138,8 +134,8 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
       return this.foreignKeyId();
     }
 
-    const attrName = this.config().linkedEntityType?.componentIdentification();
-    const componentName = attrName ? (relatedEntity as unknown as Record<string, unknown>)[attrName] : undefined;
+    const attrName = this.linkedEntityType().componentIdentification();
+    const componentName = (relatedEntity as unknown as Record<string, unknown>)[attrName];
 
     return componentName === undefined || componentName === null ? relatedEntity.id : String(componentName);
   }

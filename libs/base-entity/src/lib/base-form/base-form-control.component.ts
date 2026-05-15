@@ -1,7 +1,9 @@
 import { Component, computed, inject, Injector, input, InputSignal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { NGXLogger } from 'ngx-logging-kit';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 
@@ -16,7 +18,16 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   formGroup!: FormGroup;
   store!: any;
   style = computed<{ [p: string]: any } | null | undefined>(() => this.config().style);
+  linkedEntityType = computed<BaseEntityDescriptor>(() => {
+    const linkedEntityType = this.config().linkedEntityType;
+    if (linkedEntityType === undefined) {
+      this.logger.error(`linkedEntityType should be defined for '${this.config().attrName}'.`);
+      throw new Error(`linkedEntityType should be defined for '${this.config().attrName}'.`);
+    }
+    return linkedEntityType;
+  });
   value: InputSignal<any> = input.required();
+  protected readonly logger = inject(NGXLogger);
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly injector = inject(Injector);
   private readonly facadeRegistry = inject(BASE_ENTITY_FACADE_REGISTRY);
@@ -49,10 +60,6 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   }
 
   private isStoreInstance(store: unknown): boolean {
-    return (
-      !!store &&
-      (typeof store === 'object' || typeof store === 'function') &&
-      ('load' in store || 'loadById' in store || 'entities' in store)
-    );
+    return !!store && (typeof store === 'object' || typeof store === 'function') && ('load' in store || 'loadById' in store || 'entities' in store);
   }
 }

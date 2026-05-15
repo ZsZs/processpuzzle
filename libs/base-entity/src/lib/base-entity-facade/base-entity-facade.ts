@@ -19,7 +19,7 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   abstract readonly entityName: string;
   abstract readonly attrDescriptors: AbstractAttrDescriptor[];
 
-  protected readonly entityTitle?: string;
+  protected readonly entityTitle? = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
   protected readonly serviceKind: EntityServiceKind = 'rest';
   protected readonly endpoint?: string;
   protected readonly backendRoot?: string;

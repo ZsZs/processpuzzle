@@ -15,10 +15,7 @@
         "name": "ef-generic-message",
         "mimeType": "application/zip"
       },
-      "tags": [
-        "tag1",
-        "tag2"
-      ],
+      "tags": ["tag1", "tag2"],
       "components": [
         {
           "id": "1",
@@ -49,9 +46,7 @@
       "date": "2024-02-18T20:02:27",
       "lookup": "schlüssel_2",
       "enumValue": 0,
-      "tags": [
-        "tag3"
-      ],
+      "tags": ["tag3"],
       "artifact": {
         "bucket": "documents",
         "objectId": "a0dfb8a9-bbf0-4664-b705-cf4ecb450d66",
@@ -97,10 +92,7 @@
       "number": 400,
       "date": "2024-04-18T20:02:27",
       "enumValue": 0,
-      "tags": [
-        "tag1",
-        "tag2"
-      ]
+      "tags": ["tag1", "tag2"]
     },
     {
       "id": "5",
@@ -110,15 +102,6 @@
       "number": 500,
       "date": "2024-05-18T20:02:27",
       "enumValue": 4
-    },
-    {
-      "id": "4b8fbe5f-a2ce-436c-a2fc-7d19d9f212ad",
-      "name": "Hello",
-      "description": "this is a new entity",
-      "boolean": false,
-      "number": 1,
-      "date": "2024-10-30T17:24:11.050Z",
-      "enumValue": 2
     }
   ],
   "test-entity-component": [
@@ -126,7 +109,7 @@
       "id": "1",
       "name": "component_1",
       "description": "component one",
-      "testEntityId": "4b8fbe5f-a2ce-436c-a2fc-7d19d9f212ad"
+      "testEntityId": "1"
     },
     {
       "id": "2",
@@ -173,8 +156,8 @@
       "value": "Wert 3"
     },
     {
-      "id": "4",
       "key": "schlüssel_4",
+      "id": "4",
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }

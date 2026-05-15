@@ -1,10 +1,8 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { NgClass, NgStyle } from '@angular/common';
 import { ComponentNameAttr, EntityComponentRefComponent } from './entity-component-ref.component';
-import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
-import { NGXLogger } from 'ngx-logging-kit';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
@@ -45,18 +43,6 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
   styleUrls: ['../base-entity-form.css'],
 })
 export class EntityComponentsListComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
-  private readonly logger = inject(NGXLogger);
-
-  linkedEntityType = computed<BaseEntityDescriptor>(() => {
-    this.logger.debug('config(): ', this.config());
-    const linkedEntityType = this.config().linkedEntityType;
-    if (linkedEntityType === undefined) {
-      throw new Error('linkedEntityType should be defined for EntityComponentsListComponent.');
-    }
-
-    return linkedEntityType;
-  });
-
   ngOnInit(): void {
     this.addSelectedComponentFromNavigatorResponse();
   }

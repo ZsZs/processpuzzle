@@ -2,6 +2,7 @@ import { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from 
 
 const column_1 = new BaseEntityAttrDescriptor('key', FormControlType.TEXT_BOX, 'Key', undefined, false);
 column_1.required = true;
+column_1.isLinkToDetails = true;
 const column_2 = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
 column_2.required = true;
 const column_3 = new BaseEntityAttrDescriptor('value', FormControlType.TEXT_BOX, 'Value');

@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
-import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
@@ -19,15 +18,6 @@ describe('LookupComponent', () => {
     { id: '3', key: 'on-hold', value: 'On Hold' },
   ];
 
-  function createLookupConfig(): BaseEntityAttrDescriptor {
-    const config = new BaseEntityAttrDescriptor('selectable', FormControlType.LOOKUP, 'Project Status');
-    config.linkedEntityType = new BaseEntityDescriptor({
-      attrDescriptors: [],
-      entityName: 'ProjectStatus',
-    });
-    return config;
-  }
-
   function createLookupStore() {
     return {
       entities: signal(lookupItems),
@@ -36,50 +26,36 @@ describe('LookupComponent', () => {
     };
   }
 
+  function createLookupConfig(lookupStoreToken: InjectionToken<ReturnType<typeof createLookupStore>>): BaseEntityAttrDescriptor {
+    const config = new BaseEntityAttrDescriptor('selectable', FormControlType.LOOKUP, 'Project Status');
+    config.linkedEntityType = new BaseEntityDescriptor({
+      attrDescriptors: [],
+      entityName: 'ProjectStatus',
+      store: lookupStoreToken,
+    });
+    return config;
+  }
+
   it('loads the lookup table and displays the value for the current key.', async () => {
-    const config = createLookupConfig();
+    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
+    const config = createLookupConfig(lookupStoreToken);
     const entity = new TestEntity('source-id', 'Source entity');
     Reflect.set(entity, 'selectable', 'in-progress');
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
     const lookupStore = createLookupStore();
 
-    const { fixture } = await setupFormControlTest(LookupComponent, config, entity, [
-      { provide: lookupStoreToken, useValue: lookupStore },
-      {
-        provide: BASE_ENTITY_FACADE_REGISTRY,
-        useValue: {
-          ProjectStatus: new BaseEntityDescriptor({
-            entityName: 'ProjectStatus',
-            attrDescriptors: [],
-            store: lookupStoreToken,
-          }),
-        },
-      },
-    ]);
+    const { fixture } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
 
     expect(lookupStore.load).toHaveBeenCalledWith({});
     expect((fixture.debugElement.query(By.css('input[matInput]')).nativeElement as HTMLInputElement).value).toEqual('In Progress');
   });
 
   it('filters lookup items by typed text.', async () => {
-    const config = createLookupConfig();
-    const entity = new TestEntity('source-id', 'Source entity');
     const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
+    const config = createLookupConfig(lookupStoreToken);
+    const entity = new TestEntity('source-id', 'Source entity');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [
-      { provide: lookupStoreToken, useValue: lookupStore },
-      {
-        provide: BASE_ENTITY_FACADE_REGISTRY,
-        useValue: {
-          ProjectStatus: new BaseEntityDescriptor({
-            entityName: 'ProjectStatus',
-            attrDescriptors: [],
-            store: lookupStoreToken,
-          }),
-        },
-      },
-    ]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
     const lookupComponent = component as LookupComponent<TestEntity>;
 
     lookupComponent.displayControl.setValue('hold');
@@ -88,24 +64,12 @@ describe('LookupComponent', () => {
   });
 
   it('saves the selected lookup key to the form control and entity.', async () => {
-    const config = createLookupConfig();
-    const entity = new TestEntity('source-id', 'Source entity');
     const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
+    const config = createLookupConfig(lookupStoreToken);
+    const entity = new TestEntity('source-id', 'Source entity');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [
-      { provide: lookupStoreToken, useValue: lookupStore },
-      {
-        provide: BASE_ENTITY_FACADE_REGISTRY,
-        useValue: {
-          ProjectStatus: new BaseEntityDescriptor({
-            entityName: 'ProjectStatus',
-            attrDescriptors: [],
-            store: lookupStoreToken,
-          }),
-        },
-      },
-    ]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
     const lookupComponent = component as LookupComponent<TestEntity>;
 
     lookupComponent.selectLookupItem({ option: { value: 'on-hold' } } as never);
@@ -116,25 +80,13 @@ describe('LookupComponent', () => {
   });
 
   it('navigates to the referenced lookup entity without selection mode.', async () => {
-    const config = createLookupConfig();
+    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
+    const config = createLookupConfig(lookupStoreToken);
     const entity = new TestEntity('source-id', 'Source entity');
     Reflect.set(entity, 'selectable', 'in-progress');
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [
-      { provide: lookupStoreToken, useValue: lookupStore },
-      {
-        provide: BASE_ENTITY_FACADE_REGISTRY,
-        useValue: {
-          ProjectStatus: new BaseEntityDescriptor({
-            entityName: 'ProjectStatus',
-            attrDescriptors: [],
-            store: lookupStoreToken,
-          }),
-        },
-      },
-    ]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
     vi.spyOn(formNavigator, 'determineCurrentUrl').mockReturnValue('/test-entity/source-id/details');
     vi.spyOn(formNavigator, 'navigateToRelated').mockResolvedValue(undefined);

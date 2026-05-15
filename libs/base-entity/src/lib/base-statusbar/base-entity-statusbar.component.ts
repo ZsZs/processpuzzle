@@ -7,7 +7,13 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
   selector: 'base-entity-statusbar',
   standalone: true,
   imports: [CommonModule, MatToolbar],
-  templateUrl: './base-entity-statusbar.component.html',
+  template: `
+    <mat-toolbar *ngIf="isVisible()">
+      <div>
+        <span>{{ entityTitle() }}</span>
+      </div>
+    </mat-toolbar>
+  `,
 })
 export class BaseEntityStatusbarComponent implements OnInit {
   store: any;
