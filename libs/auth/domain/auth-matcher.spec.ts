@@ -84,4 +84,12 @@ describe('authMatcher', () => {
     expect(result?.consumed[0].path).toBe('prefix');
     expect(result?.consumed[1].path).toBe('auth');
   });
+
+  it('should return null if segment is "auth-lib"', () => {
+    const segments = [{ path: 'auth-lib', parameters: {} }] as UrlSegment[];
+
+    const result = authMatcher(segments);
+
+    expect(result).toBeNull();
+  });
 });
