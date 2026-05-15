@@ -39,7 +39,7 @@
 </div>
 @if (selectOrCreateMode) {
   <div class="base-entity-list-actions">
-    <button id="cancel" type="button" mat-raised-button color="secondary" (click)="onCancelSelectOrCreate()">Cancel</button>
-    <button id="select" type="button" mat-raised-button color="primary" [disabled]="!canSelectEntity()" (click)="onSelectEntity()">Select</button>
+    <button id="cancel" [attr.data-testid]="entityDescriptor().entityName + '-cancel'" type="button" mat-raised-button color="secondary" (click)="onCancelSelectOrCreate()">Cancel</button>
+    <button id="select" [attr.data-testid]="entityDescriptor().entityName + '-select'" type="button" mat-raised-button color="primary" [disabled]="!canSelectEntity()" (click)="onSelectEntity()">Select</button>
   </div>
 }
