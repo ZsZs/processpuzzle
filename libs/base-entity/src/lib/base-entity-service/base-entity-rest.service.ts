@@ -30,7 +30,11 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
 
   // region public accessor and mutator methods
   delete(id: string): Observable<unknown> {
-    return this.httpClient.delete(this.resourceUrl + `/${id}`, { headers: this.headers });
+    const pathParams = new Map<string, string>([['id', String(id)]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', { pathParams });
+    if (fullUrl) {
+      return this.httpClient.delete(fullUrl, { headers: this.headers });
+    } else throw new Error('Could not determine the full url');
   }
 
   deleteAll(): Observable<any> {

@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test } from '../fixtures/application-page.fixture';
+import { test } from 'apps/processpuzzle-testbed-e2e/src/fixtures/application-page.fixture';
 
 test.describe('Home page structure', () => {
   test('Home page', async ({ page, applicationPage }) => {

@@ -4,7 +4,25 @@
       "PowerShell(\"deleted\")",
       "PowerShell(npx nx run-many -t build -p base-entity widgets --skip-nx-cache 2>&1)",
       "PowerShell(npx nx build processpuzzle-testbed --configuration=development --skip-nx-cache 2>&1)",
-      "PowerShell(npx nx test base-entity --skip-nx-cache 2>&1)"
+      "PowerShell(npx nx test base-entity --skip-nx-cache 2>&1)",
+      "PowerShell(pnpm nx test base-entity --testPathPattern=lookup.component.spec.ts 2>&1)",
+      "PowerShell(npm exec nx test base-entity -- --testPathPattern=lookup.component.spec.ts 2>&1)",
+      "PowerShell(npm exec nx test base-entity -- --test-file=base-form/lookup/lookup.component 2>&1)",
+      "PowerShell(npm exec nx -- run base-entity:test --help 2>&1)",
+      "PowerShell(pnpm nx test base-entity --testFile=lookup.component.spec.ts --testFile=foreign-key.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test base-entity 2>&1)",
+      "PowerShell(pnpm nx test base-entity --testPathPattern=\"base-entity-toolbar\" 2>&1)",
+      "PowerShell(npx nx test base-entity --testPathPattern=\"base-entity-toolbar\" 2>&1)",
+      "PowerShell(pnpm nx run base-entity:lint --quiet 2>&1)",
+      "PowerShell(npm exec nx run base-entity:lint 2>&1)",
+      "PowerShell(npm exec nx run base-entity:test 2>&1)",
+      "PowerShell(pnpm nx test base-entity --skip-nx-cache 2>&1)",
+      "PowerShell(Get-Command npm,pnpm,npx,yarn -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command pnpm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npx -ErrorAction SilentlyContinue)",
+      "PowerShell(npx nx test base-entity --skip-nx-cache --no-cloud 2>&1)",
+      "PowerShell(npx nx test base-entity --skip-nx-cache --no-cloud -- --testPathPattern=base-entity.store.spec 2>&1)"
     ]
   }
 }

@@ -9,12 +9,9 @@ import { deleteEntity } from './deleteEntity';
 import { deleteAllEntities } from './deleteAllEntities';
 import { updateEntity } from './updateEntity';
 import { findByQuery } from './findByQuery';
+import { entityNameFromType } from '../base-entity/base-entity-utility';
 
 export const BASE_ENTITY_STORE = new InjectionToken<any>('BASE_ENTITY_STORE');
-
-export function entityNameFromType<Entity extends BaseEntity>(entityType: new () => Entity): string {
-  return (entityType as { name?: string }).name ?? 'base-entity';
-}
 
 export interface EntityStoreState<Entity extends BaseEntity> {
   entities: Entity[];

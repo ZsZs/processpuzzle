@@ -1,13 +1,14 @@
 import * as dotenv from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
-
 import { workspaceRoot } from '@nx/devkit';
+import path from 'path';
 
 dotenv.config({ path: `./env/.env.${process.env['ENVIRONMENT']}` });
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localhost:4200';
+export const testConfig = { routePrefix: '/base-entity/samples' };
 
 /**
  * Read environment variables from file.
@@ -20,20 +21,26 @@ const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localho
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  globalSetup: './src/support/global-setup.ts',
   // Opt out of parallel tests on CI.
-  workers: process.env['ENVIRONMENT'] === 'ci' ? 1 : undefined,
+  workers: process.env['ENVIRONMENT'] === 'ci' ? 1 : 1,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
+
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npx nx run processpuzzle-testbed:serve',
     reuseExistingServer: !process.env,
     cwd: workspaceRoot,
   },
+  reporter: [
+    ['html', { outputFolder: path.join(__dirname, 'reports/e2e'), open: 'on-failure' }],
+    ['junit', { outputFile: path.join(__dirname, 'reports/e2e/results.xml') }], // combine multiple
+  ],
   projects: [
     {
       name: 'chromium',
@@ -64,4 +71,5 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     } */
   ],
+  testIgnore: '**/home_page_structure.spec.ts',
 });

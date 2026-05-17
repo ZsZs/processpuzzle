@@ -72,7 +72,7 @@ describe('LookupComponent', () => {
     const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
     const lookupComponent = component as LookupComponent<TestEntity>;
 
-    lookupComponent.selectLookupItem({ option: { value: 'on-hold' } } as never);
+    lookupComponent.selectLookupItem('on-hold');
 
     expect(lookupComponent.formGroup.get(config.attrName)?.value).toEqual('on-hold');
     expect(Reflect.get(entity, config.attrName)).toEqual('on-hold');

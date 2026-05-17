@@ -1,27 +1,25 @@
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
-import { tapResponse } from '@ngrx/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export const deleteEntity = <Entity extends BaseEntity>(store: any, repository: BaseEntityService<Entity>) => {
-  return rxMethod<string>(
-    pipe(
-      tap(() => patchState(store, { isLoading: true, error: undefined })),
-      switchMap((id: string) => {
-        return repository.delete(id).pipe(
-          tapResponse({
-            next: () => {
-              const remainingEntities = store.entities().filter((entity: Entity) => entity.id !== id);
-              patchState(store, { entities: remainingEntities, isLoading: false });
-            },
-            error: (error: HttpErrorResponse) => patchState(store, { error: error.message }),
-            finalize: () => patchState(store, { isLoading: false }),
-          }),
-        );
-      }),
-    ),
-  );
+  return async (id: string): Promise<void> => {
+    patchState(store, { isLoading: true, error: undefined });
+    try {
+      await firstValueFrom(repository.delete(id));
+      const remainingEntities = store.entities().filter((entity: Entity) => entity.id !== id);
+      const remainingSelectedEntities = store.selectedEntities().filter((entity: Entity) => entity.id !== id);
+      patchState(store, {
+        currentEntity: undefined,
+        currentId: undefined,
+        entities: remainingEntities,
+        selectedEntities: remainingSelectedEntities,
+        isLoading: false,
+      });
+    } catch (error) {
+      patchState(store, { error: (error as HttpErrorResponse).message, isLoading: false });
+    }
+  };
 };

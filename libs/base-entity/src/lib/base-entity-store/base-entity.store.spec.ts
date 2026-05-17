@@ -8,7 +8,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 import { describe, expect, it } from 'vitest';
-import { entityNameFromType } from './base-entity.store';
+import { entityNameFromType } from '../base-entity/base-entity-utility';
 
 describe('BaseEntityStore', () => {
   function setup({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
@@ -41,36 +41,36 @@ describe('BaseEntityStore', () => {
   });
 
   describe('delete(), load(), save(), update()', () => {
-    it('add() will call API and adds entity to entities[]', () => {
+    it('add() will call API and adds entity to entities[]', async () => {
       const { store, mockService } = setup();
-      store.add(newTestEntity);
+      await store.add(newTestEntity);
 
       expect(mockService.add).toHaveBeenCalledTimes(1);
       const expectedEntities = [...MOCK_API_RESPONSE, ...[newTestEntity]];
       expect(store.entities()).toStrictEqual(expectedEntities);
     });
 
-    it('add() will verify if API is failed', () => {
+    it('add() will verify if API is failed', async () => {
       const { store, mockService } = setup({ isApiFailed: true });
 
-      store.add(newTestEntity);
+      await store.add(newTestEntity);
 
       expect(mockService.add).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
     });
 
-    it('delete() calls service and removes the entity from entities[].', () => {
+    it('delete() calls service and removes the entity from entities[].', async () => {
       const { store, mockService } = setup();
 
-      store.delete('1');
+      await store.delete('1');
       expect(mockService.delete).toHaveBeenCalledTimes(1);
       expect(store.entities()).toStrictEqual([testEntity_2]);
     });
 
-    it('delete() will verify if API is failed', () => {
+    it('delete() will verify if API is failed', async () => {
       const { store, mockService } = setup({ isApiFailed: true });
 
-      store.delete('2');
+      await store.delete('2');
       expect(mockService.delete).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
     });
@@ -114,20 +114,20 @@ describe('BaseEntityStore', () => {
       expect(store.error()).toStrictEqual('API Failed');
     });
 
-    it('update() will call API and updates entity in entities[]', () => {
+    it('update() will call API and updates entity in entities[]', async () => {
       const { store, mockService } = setup();
       Reflect.set(testEntity_1, 'name', 'changed');
 
-      store.update(testEntity_1);
+      await store.update(testEntity_1);
 
       expect(mockService.update).toHaveBeenCalledTimes(1);
       expect(store.loadById('1')).toStrictEqual(testEntity_1);
     });
 
-    it('update() will verify if API is failed', () => {
+    it('update() will verify if API is failed', async () => {
       const { store, mockService } = setup({ isApiFailed: true });
 
-      store.update(testEntity_1);
+      await store.update(testEntity_1);
 
       expect(mockService.update).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');

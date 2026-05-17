@@ -197,6 +197,7 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
     BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
     LOGGING_CONFIGURATION,
   };
+  const mockService = setupMockService();
 
   await TestBed.configureTestingModule({
     imports: [BaseEntityFormComponent, BaseFormHostDirective],
@@ -206,7 +207,8 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
       provideHttpClientTesting(),
       provideRouter([]),
       ConfigurationService,
-      TestEntityStore,
+      { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
+      { provide: TestEntityService, useValue: mockService },
       { provide: ROUTER_OUTLET_DATA, useValue: signal(entityDescriptor) },
       { provide: 'BASE_ENTITY_SERVICE', useValue: TestEntityService },
       { provide: CONFIGURATION_OPTIONS, useValue: { urlFactory: () => ['environments/config.common.json'], log: true } },
@@ -239,7 +241,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 ) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
-    providers: [provideRouter([]), ...providers],
+    providers: [provideLogger(LOGGING_CONFIGURATION), provideRouter([]), ...providers],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);

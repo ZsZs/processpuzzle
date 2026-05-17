@@ -38,7 +38,12 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   }
 
   onDeleteEntities() {
-    this.store.selectedEntities().forEach((entity: Entity) => this.store.delete(entity.id));
+    this.store.selectedEntities().forEach((entity: Entity) => void this.store.delete(entity.id));
+  }
+
+  onEditEntity() {
+    const entityId = this.store.currentEntity().id;
+    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entityId);
   }
 
   onDoFilter($event: KeyboardEvent) {

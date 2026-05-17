@@ -4,9 +4,9 @@ import { NGXLogger } from 'ngx-logging-kit';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
-import { entityNameFromType } from '../base-entity-store/base-entity.store';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
+import { createTestId } from '../base-entity/base-entity-utility';
 
 @Component({
   standalone: true,
@@ -34,8 +34,7 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
     const attrName = this.config()?.attrName;
     const entity = this.entity();
     if (!attrName || !entity) return null;
-    const entityName = entityNameFromType(entity.constructor as new () => Entity);
-    return `${entityName}-${attrName}`;
+    return createTestId(entity.constructor as new () => Entity, attrName);
   }
 
   protected readonly logger = inject(NGXLogger);

@@ -19,18 +19,26 @@ import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
 import { BASE_ENTITY_FACADE_REGISTRY } from '@processpuzzle/base-entity';
+import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
+import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
+import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
+import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
       provideAppPropertyStore(),
+      TestEntityFacade,
+      TestEntityComponentFacade,
+      TrunkDataFacade,
+      FirestoreDocFacade,
       {
         provide: BASE_ENTITY_FACADE_REGISTRY,
         useValue: {
-          // TODO Phase 2: repopulate with facade tokens once per-entity facades land
-          // 'Trunk Data': TrunkDataFacade,
-          // 'Test Entity': TestEntityFacade,
-          // 'Test Entity Component': TestEntityComponentFacade,
+          'Test Entity': TestEntityFacade,
+          'Test Entity Component': TestEntityComponentFacade,
+          'Trunk Data': TrunkDataFacade,
+          'Firestore Doc': FirestoreDocFacade,
         },
       },
       provideAnimations(),

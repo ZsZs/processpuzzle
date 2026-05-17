@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityFacade } from './base-entity-facade';
+import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 
 export type BaseEntityFacadeRegistry = Record<string, ProviderToken<BaseEntityFacade<any>>>;
 
@@ -30,10 +31,11 @@ export class EntityRegistryComponent {
     return Object.entries(this.registry).map(([, facadeToken]) => {
       const facade = this.injector.get(facadeToken);
       const descriptor = facade.descriptor;
+      const attrDescriptors = filterAttributeDescriptors(facade.descriptor.attrDescriptors);
       return {
         entityName: descriptor.entityName,
         entityTitle: descriptor.entityTitle,
-        attrDescriptors: descriptor.attrDescriptors.map((attr) => this.serializeAttr(attr)),
+        attrDescriptors: attrDescriptors.map((attr) => this.serializeAttr(attr)),
       };
     });
   }
@@ -60,7 +62,7 @@ export class EntityRegistryComponent {
         lines: attr.lines,
         options: attr.options,
         required: attr.required,
-        linkedEntityType: attr.linkedEntityType ? { entityName: attr.linkedEntityType.entityName } : undefined,
+        //        linkedEntityType: attr.linkedEntityType,
       }),
     };
   }
