@@ -1,22 +1,29 @@
 <mat-toolbar *ngIf="formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE">
   <div class="dense-3" [ngStyle]="{'padding-top': '12px' }">
     <mat-form-field>
-      <input test-id="filter-input" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
+      <input #filterInput [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
+      @if (filterInput.value) {
+        <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
+          <mat-icon>cancel</mat-icon>
+        </button>
+      }
     </mat-form-field>
   </div>
   <span class="toolbar-spacer"></span>
   @if(isSmallDevice()) {
     <div [ngClass]="layoutService.layoutClass()">
       <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu"><mat-icon>menu</mat-icon> Choose action</button>
-      <mat-menu test-id="menu" #beforeMenu="matMenu" xPosition="before">
-        <button test-id="add" mat-menu-item (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-        <button test-id="delete" mat-menu-item [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+      <mat-menu #beforeMenu="matMenu" xPosition="before">
+        <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="store.selectedEntities().length != 1" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
       </mat-menu>
     </div>
   } @else {
     <div [ngClass]="layoutService.layoutClass()">
-      <button test-id="add" mat-button (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-      <button test-id="delete" mat-button [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="store.selectedEntities().length != 1" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
     </div>
   }
 </mat-toolbar>

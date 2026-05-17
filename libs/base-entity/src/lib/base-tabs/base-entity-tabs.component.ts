@@ -14,8 +14,15 @@ import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-stat
   imports: [CommonModule, MatTabNav, MatTabLink, MatTabNavPanel, RouterOutlet, BaseEntityToolbarComponent, BaseEntityStatusbarComponent],
   template: `
     <nav mat-tab-nav-bar [tabPanel]="tabPanel">
-      <a mat-tab-link (click)="onShowList()" [active]="store.currentTab() === listTabName()">{{ listTabName() }}</a>
-      <a mat-tab-link [disabled]="store.currentEntity() === undefined" (click)="onShowDetails()" [active]="store.currentTab() === detailsTabName()">{{ detailsTabName() }}</a>
+      <a mat-tab-link [attr.data-testid]="entityDescriptor().createTestId('show-list')" (click)="onShowList()" [active]="store.currentTab() === listTabName()">{{ listTabName() }}</a>
+      <a
+        mat-tab-link
+        [attr.data-testid]="entityDescriptor().createTestId('show-details')"
+        [disabled]="store.currentEntity() === undefined"
+        (click)="onShowDetails()"
+        [active]="store.currentTab() === detailsTabName()"
+        >{{ detailsTabName() }}</a
+      >
     </nav>
 
     <mat-tab-nav-panel #tabPanel>

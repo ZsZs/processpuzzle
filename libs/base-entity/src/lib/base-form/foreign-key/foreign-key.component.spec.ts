@@ -10,7 +10,7 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
 import { ForeignKeyComponent } from './foreign-key.component';
-import { BASE_ENTITY_STORE_REGISTRY } from '../../base-entity-store/base-entity-store-registry';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 
 describe('ForeignKeyComponent', () => {
   const testEntity = new TestEntity('1', 'Test entity', 'Description', true, 100);
@@ -87,18 +87,19 @@ describe('ForeignKeyComponent', () => {
     expect((fixture.debugElement.query(By.css('mat-form-field input')).nativeElement as HTMLInputElement).value).toEqual('Selected entity');
   });
 
-  it('resolves the referenced entity display name from the store registry.', async () => {
+  it('resolves the referenced entity display name from the facade registry.', async () => {
     const config = createForeignKeyConfig();
     const entity = new TestEntity('source-id', 'Source entity', 'Description', true, 100);
     const linkedEntity = new TestEntity('100', 'Registry entity');
-    const linkedStoreToken = new InjectionToken<any>('LINKED_STORE');
+    const linkedFacadeToken = new InjectionToken<any>('LINKED_FACADE');
     const linkedStore = {
       loadById: vi.fn().mockReturnValue(linkedEntity),
     };
+    const linkedFacade = { store: linkedStore };
 
     const { fixture } = await setupFormControlTest(ForeignKeyComponent, config, entity, [
-      { provide: linkedStoreToken, useValue: linkedStore },
-      { provide: BASE_ENTITY_STORE_REGISTRY, useValue: { TestEntityComponent: linkedStoreToken } },
+      { provide: linkedFacadeToken, useValue: linkedFacade },
+      { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { TestEntityComponent: linkedFacadeToken } },
     ]);
 
     expect((fixture.debugElement.query(By.css('mat-form-field input')).nativeElement as HTMLInputElement).value).toEqual('Registry entity');

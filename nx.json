@@ -70,6 +70,11 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "plugins": [
@@ -87,7 +92,7 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["libs/test-util/*"],
+      "include": ["libs/test-util/*", "libs/e2e-testing/*"],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -100,7 +105,7 @@
     }
   ],
   "release": {
-    "projects": ["api-contracts", "auth", "base-entity", "processpuzzle-testbed", "test-util", "util", "widgets"],
+    "projects": ["api-contracts", "auth", "base-entity", "processpuzzle-testbed", "test-util", "util", "widgets", "e2e-testing"],
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npm run build-all-ci",

@@ -49,7 +49,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
 export class BaseEntityListComponent<Entity extends BaseEntity> implements AfterViewInit, OnInit {
   dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
   selection = new SelectionModel<Entity>(true, []);
-  private readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
+  protected readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   private readonly logger = inject(NGXLogger);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly objectStoreService = inject(ObjectStoreService);
@@ -187,9 +187,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
 
   protected registerEffects(): void {
     effect(() => (this.dataSource.data = this.store.entities()));
-    effect(() => {
-      if (this.store.filterKey()) this.doFilter(this.store.filterKey());
-    });
+    effect(() => this.doFilter(this.store.filterKey() ?? ''));
   }
 
   // endregion

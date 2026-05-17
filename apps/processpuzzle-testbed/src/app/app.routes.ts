@@ -1,19 +1,12 @@
 import { Route } from '@angular/router';
-import { BASE_ENTITY_SERVICE, BASE_ENTITY_STORE, BaseEntityFormComponent, BaseEntityListComponent } from '@processpuzzle/base-entity';
-import { TestEntityStore } from './content/base-forms/test-entity/test-entity.store';
-import { TestEntityService } from './content/base-forms/test-entity/test-entity.service';
-import { TestEntityComponentStore } from './content/base-forms/test-entity-component/test-entity-component.store';
-import { TestEntityComponentService } from './content/base-forms/test-entity-component/test-entity-component.service';
-import { TrunkDataStore } from './content/base-forms/trunk-data/trunk-data.store';
-import { TrunkDataService } from './content/base-forms/trunk-data/trunk-data.service';
-import { TestEntity } from './content/base-forms/test-entity/test-entity';
-import { TestEntityComponent } from './content/base-forms/test-entity-component/test-entity-component';
-import { TrunkData } from './content/base-forms/trunk-data/trunk-data';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { ACTIVE_ENTITY_FACADE, BASE_ENTITY_ROUTES } from '@processpuzzle/base-entity';
+import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
+import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
+import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
-import { FirestoreDocStore } from './content/base-forms/firestore/firestore-doc.store';
-import { FirestoreDocService } from './content/base-forms/firestore/firestore-doc.service';
-import { FirestoreDoc } from './content/base-forms/firestore/firestore-doc';
+import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -61,51 +54,46 @@ export const appRoutes: Route[] = [
     path: 'base-entity',
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook', menuTitle: 'base-entity' },
-    loadComponent: () => import('./content/base-forms/sample-forms.component').then((comp) => comp.SampleFormsComponent),
-    providers: [LayoutService],
+    loadComponent: () => import('./content/base-forms/base-forms.component').then((comp) => comp.BaseFormsComponent),
+    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade],
     children: [
       {
-        path: 'test-entity',
-        loadComponent: () => import('./content/base-forms/test-entity/test-entity-container.component').then((comp) => comp.TestEntityContainerComponent),
-        providers: [TestEntityStore, { provide: BASE_ENTITY_SERVICE, useValue: TestEntityService }, { provide: BASE_ENTITY_STORE, useValue: TestEntityStore, deps: [TestEntityStore] }],
-        children: [
-          { path: '', redirectTo: 'list', pathMatch: 'full' },
-          { path: 'list', component: BaseEntityListComponent<TestEntity> },
-          { path: ':entityId/details', component: BaseEntityFormComponent<TestEntity> },
-        ],
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
       },
       {
-        path: 'test-entity-component',
-        loadComponent: () => import('./content/base-forms/test-entity-component/test-entity-component-container.component').then((comp) => comp.TestEntityComponentContainerComponent),
-        providers: [
-          TestEntityComponentStore,
-          { provide: BASE_ENTITY_SERVICE, useValue: TestEntityComponentService },
-          { provide: BASE_ENTITY_STORE, useValue: TestEntityComponentStore, deps: [TestEntityComponentStore] },
-        ],
-        children: [
-          { path: '', redirectTo: 'list', pathMatch: 'full' },
-          { path: 'list', component: BaseEntityListComponent<TestEntityComponent> },
-          { path: ':entityId/details', component: BaseEntityFormComponent<TestEntityComponent> },
-        ],
+        path: 'overview',
+        loadComponent: () => import('./content/base-forms/overview.component').then((comp) => comp.OverviewComponent),
       },
       {
-        path: 'trunk-data',
-        loadComponent: () => import('./content/base-forms/trunk-data/trunk-data-container.component').then((comp) => comp.TrunkDataContainerComponent),
-        providers: [TrunkDataStore, { provide: BASE_ENTITY_SERVICE, useValue: TrunkDataService }, { provide: BASE_ENTITY_STORE, useValue: TrunkDataStore, deps: [TrunkDataStore] }],
+        path: 'samples',
+        loadComponent: () => import('./content/base-forms/samples.component').then((comp) => comp.SamplesComponent),
         children: [
-          { path: '', redirectTo: 'list', pathMatch: 'full' },
-          { path: 'list', component: BaseEntityListComponent<TrunkData> },
-          { path: ':entityId/details', component: BaseEntityFormComponent<TrunkData> },
-        ],
-      },
-      {
-        path: 'firestore-doc',
-        loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
-        providers: [FirestoreDocStore, { provide: BASE_ENTITY_SERVICE, useValue: FirestoreDocService }, { provide: BASE_ENTITY_STORE, useValue: FirestoreDocStore, deps: [FirestoreDocStore] }],
-        children: [
-          { path: '', redirectTo: 'list', pathMatch: 'full' },
-          { path: 'list', component: BaseEntityListComponent<FirestoreDoc> },
-          { path: ':entityId/details', component: BaseEntityFormComponent<FirestoreDoc> },
+          {
+            path: 'test-entity',
+            loadComponent: () => import('./content/base-forms/test-entity/test-entity-container.component').then((comp) => comp.TestEntityContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
+          {
+            path: 'test-entity-component',
+            loadComponent: () => import('./content/base-forms/test-entity-component/test-entity-component-container.component').then((comp) => comp.TestEntityComponentContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityComponentFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
+          {
+            path: 'trunk-data',
+            loadComponent: () => import('./content/base-forms/trunk-data/trunk-data-container.component').then((comp) => comp.TrunkDataContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TrunkDataFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
+          {
+            path: 'firestore-doc',
+            loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: FirestoreDocFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
         ],
       },
     ],
@@ -115,6 +103,10 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - CI/CD',
     data: { icon: 'repartition', menuTitle: 'ci-cd', markdownSrc: 'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/.github/README.md' },
     loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
+  },
+  {
+    path: 'entity-registry',
+    loadComponent: () => import('@processpuzzle/base-entity').then((comp) => comp.EntityRegistryComponent),
   },
   // Custom matcher route for any URL containing 'auth'
   {

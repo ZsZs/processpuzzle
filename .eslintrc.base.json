@@ -27,7 +27,7 @@
             "depConstraints": [
               {
                 "sourceTag": "scope:shared",
-                "onlyDependOnLibsWithTags": ["scope:shared"]
+                "onlyDependOnLibsWithTags": ["scope:shared", "scope:base-entity"]
               },
               {
                 "sourceTag": "scope:base-entity",

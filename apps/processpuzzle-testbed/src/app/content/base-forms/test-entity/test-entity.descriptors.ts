@@ -29,9 +29,11 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
+let cachedDescriptor: BaseEntityDescriptor | undefined;
+
 export function createTestEntityDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({
-    entityName: 'Test Entity',
-    attrDescriptors: createTestEntityAttrDescriptors(),
-  });
+  if (cachedDescriptor) return cachedDescriptor;
+  cachedDescriptor = new BaseEntityDescriptor({ entityName: 'Test Entity', attrDescriptors: [] });
+  cachedDescriptor.attrDescriptors = createTestEntityAttrDescriptors();
+  return cachedDescriptor;
 }

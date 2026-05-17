@@ -61,56 +61,58 @@ describe('GenericEntityFormComponent', () => {
 
     it('onSubmit(), when its an existing object updates it in store.', async () => {
       // SETUP:
-        const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       fixture.detectChanges();
-      await fixture.whenStable().then(() => {
-        const checkbox = fixture.debugElement.query(By.css('form input[type=checkbox]')).nativeElement;
-        checkbox.click(); // trigger form changes (dirty)
-        checkbox.dispatchEvent(new Event('input'));
-        fixture.detectChanges();
-        const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
-        vi.spyOn(component, 'onSubmit');
-        vi.spyOn(store, 'update');
-        vi.spyOn(store, 'setCurrentEntity');
-        vi.spyOn(formNavigator, 'navigateBack');
+      await fixture.whenStable();
+      const checkbox = fixture.debugElement.query(By.css('form input[type=checkbox]')).nativeElement;
+      checkbox.click(); // trigger form changes (dirty)
+      checkbox.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
+      vi.spyOn(component, 'onSubmit');
+      vi.spyOn(store, 'update');
+      vi.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(formNavigator, 'navigateBack');
 
-        // EXERCISE:
-        submitButton.click();
+      // EXERCISE:
+      submitButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
 
-        // VERIFY:
-        expect(component.onSubmit).toHaveBeenCalled();
-        expect(store.update).toHaveBeenCalledWith({ ...testEntity, ...component.baseEntityForm.value }, testEntity.id);
-        expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
-        expect(formNavigator.navigateBack).toHaveBeenCalled();
-      });
+      // VERIFY:
+      expect(component.onSubmit).toHaveBeenCalled();
+      expect(store.update).toHaveBeenCalledWith({ ...testEntity, ...component.baseEntityForm.value });
+      expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
+      expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
 
     it('onSubmit(), when its new object saves it in store.', async () => {
       // SETUP:
-        const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], undefined, true);
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], undefined, true);
       TestBed.flushEffects();
       fixture.detectChanges();
-      await fixture.whenStable().then(() => {
-        const checkbox = fixture.debugElement.query(By.css('form input[type=checkbox]')).nativeElement;
-        checkbox.click(); // trigger form changes (dirty)
-        component.baseEntityForm.get('description')?.setValue('hello world');
-        checkbox.dispatchEvent(new Event('input'));
-        fixture.detectChanges();
-        const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
-        vi.spyOn(component, 'onSubmit');
-        vi.spyOn(store, 'add');
-        vi.spyOn(store, 'setCurrentEntity');
-        vi.spyOn(formNavigator, 'navigateBack');
+      await fixture.whenStable();
+      const checkbox = fixture.debugElement.query(By.css('form input[type=checkbox]')).nativeElement;
+      checkbox.click(); // trigger form changes (dirty)
+      component.baseEntityForm.get('description')?.setValue('hello world');
+      checkbox.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      const submitButton = fixture.debugElement.query(By.css('mat-card-actions > button#submit')).nativeElement;
+      vi.spyOn(component, 'onSubmit');
+      vi.spyOn(store, 'add');
+      vi.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(formNavigator, 'navigateBack');
 
-        // EXERCISE:
-        submitButton.click();
+      // EXERCISE:
+      submitButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
 
-        // VERIFY:
-        expect(component.onSubmit).toHaveBeenCalled();
-        expect(store.add).toHaveBeenCalledWith({ ...component.entity(), ...component.baseEntityForm.value });
-        expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
-        expect(formNavigator.navigateBack).toHaveBeenCalled();
-      });
+      // VERIFY:
+      expect(component.onSubmit).toHaveBeenCalled();
+      expect(store.add).toHaveBeenCalledWith({ ...component.entity(), ...component.baseEntityForm.value });
+      expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
+      expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
   });
 });

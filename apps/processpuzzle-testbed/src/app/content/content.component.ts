@@ -40,7 +40,7 @@ export class ContentComponent {
       title: 'auth_card_title',
       subtitle: 'auth_card_subtitle',
       content: ['auth_card_content', 'auth_card_content_1', 'auth_card_content_2', 'auth_card_content_3', 'auth_card_content_4', 'auth_card_content_5', 'auth_card_content_6', 'auth_card_content_7'],
-      actions: [{ link: '/auth', caption: 'auth_card_button', colour: 'primary' }],
+      actions: [{ link: '/auth-lib', caption: 'auth_card_button', colour: 'primary' }],
       translocoPrefix: 'home',
     },
     {

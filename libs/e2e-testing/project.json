@@ -1,0 +1,48 @@
+{
+  "name": "e2e-testing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/e2e-testing/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": ["scope:shared", "type:e2e-util"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/e2e-testing",
+        "main": "libs/e2e-testing/src/public-api.ts",
+        "tsConfig": "libs/e2e-testing/tsconfig.lib.json",
+        "assets": ["libs/e2e-testing/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/e2e-testing/src/**/*.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}

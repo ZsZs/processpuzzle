@@ -96,7 +96,7 @@ To be able to use it, you just have to define your own signal store, with the us
 ```typescript
 export const TestEntityStore = signalStore(
   { providedIn: 'root' },
-  BaseEntityStore<TestEntity>(TestEntity, TestEntityService),
+  BaseEntityStore<TestEntity>(TestEntity, () => inject(TestEntityService)),
   BaseFormNavigatorStore<TestEntity>(TestEntity),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),

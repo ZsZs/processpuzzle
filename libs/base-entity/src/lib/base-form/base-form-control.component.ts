@@ -1,9 +1,12 @@
-import { Component, computed, inject, Injector, input, InputSignal } from '@angular/core';
+import { Component, computed, HostBinding, inject, Injector, input, InputSignal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { NGXLogger } from 'ngx-logging-kit';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
-import { BASE_ENTITY_STORE_REGISTRY } from '../base-entity-store/base-entity-store-registry';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
+import { createTestId } from '../base-entity/base-entity-utility';
 
 @Component({
   standalone: true,
@@ -16,19 +19,38 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   formGroup!: FormGroup;
   store!: any;
   style = computed<{ [p: string]: any } | null | undefined>(() => this.config().style);
+  linkedEntityType = computed<BaseEntityDescriptor>(() => {
+    const linkedEntityType = this.config().linkedEntityType;
+    if (linkedEntityType === undefined) {
+      this.logger.error(`linkedEntityType should be defined for '${this.config().attrName}'.`);
+      throw new Error(`linkedEntityType should be defined for '${this.config().attrName}'.`);
+    }
+    return linkedEntityType;
+  });
   value: InputSignal<any> = input.required();
+
+  @HostBinding('attr.data-testid')
+  get testId(): string | null {
+    const attrName = this.config()?.attrName;
+    const entity = this.entity();
+    if (!attrName || !entity) return null;
+    return createTestId(entity.constructor as new () => Entity, attrName);
+  }
+
+  protected readonly logger = inject(NGXLogger);
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly injector = inject(Injector);
-  private readonly storeRegistry = inject(BASE_ENTITY_STORE_REGISTRY);
+  private readonly facadeRegistry = inject(BASE_ENTITY_FACADE_REGISTRY);
 
   // region Angular lifecycle hooks
   // endregion
 
   protected resolveRelatedEntityStore<Store extends object>(): Store | undefined {
     const entityName = this.config().linkedEntityType?.entityName;
-    const registryStoreToken = entityName ? this.storeRegistry[entityName] : undefined;
-    if (registryStoreToken) {
-      return this.injector.get(registryStoreToken, undefined) as Store | undefined;
+    const facadeToken = entityName ? this.facadeRegistry[entityName] : undefined;
+    if (facadeToken) {
+      const facade = this.injector.get(facadeToken, undefined);
+      return facade?.store as Store | undefined;
     }
 
     const store = this.config().linkedEntityType?.store;
@@ -48,10 +70,6 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   }
 
   private isStoreInstance(store: unknown): boolean {
-    return (
-      !!store &&
-      (typeof store === 'object' || typeof store === 'function') &&
-      ('load' in store || 'loadById' in store || 'entities' in store)
-    );
+    return !!store && (typeof store === 'object' || typeof store === 'function') && ('load' in store || 'loadById' in store || 'entities' in store);
   }
 }

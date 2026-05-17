@@ -19,9 +19,9 @@ describe('BaseEntityToolbarComponent', () => {
       const matToolbar = fixture.debugElement.query(By.css('mat-toolbar')).nativeElement;
       expect(matToolbar).toBeTruthy();
 
-      let addButton = fixture.debugElement.query(By.css('mat-toolbar button[test-id=add]')).nativeElement;
+      let addButton = fixture.debugElement.query(By.css('mat-toolbar button[data-testid="testEntity-new"]')).nativeElement;
       expect(addButton).toBeTruthy();
-      let deleteButton = fixture.debugElement.query(By.css('mat-toolbar button[test-id=delete]')).nativeElement;
+      let deleteButton = fixture.debugElement.query(By.css('mat-toolbar button[data-testid="testEntity-delete"]')).nativeElement;
       expect(deleteButton).toBeTruthy();
 
       breakpointObserver.resize(599);
@@ -31,9 +31,9 @@ describe('BaseEntityToolbarComponent', () => {
 
       const menuButton = fixture.debugElement.query(By.css('button[test-id=menu-button]')).nativeElement;
       menuButton.click(); // make menu list visible
-      addButton = fixture.debugElement.query(By.css('button[test-id=add]')).nativeElement;
+      addButton = fixture.debugElement.query(By.css('button[data-testid="testEntity-new"]')).nativeElement;
       expect(addButton).toBeTruthy();
-      deleteButton = fixture.debugElement.query(By.css('button[test-id=delete]')).nativeElement;
+      deleteButton = fixture.debugElement.query(By.css('button[data-testid="testEntity-delete"]')).nativeElement;
       expect(deleteButton).toBeTruthy();
     });
 
@@ -85,7 +85,7 @@ describe('BaseEntityToolbarComponent', () => {
       vi.spyOn(component.store, 'doFilter');
 
       //EXERCISE:
-      const filterInput = fixture.debugElement.query(By.css('input[test-id=filter-input]')).nativeElement;
+      const filterInput = fixture.debugElement.query(By.css('input[data-testid="testEntity-filter"]')).nativeElement;
       filterInput.value = 'A';
       filterInput.dispatchEvent(new KeyboardEvent('keyup', { code: 'A' }));
       fixture.detectChanges();

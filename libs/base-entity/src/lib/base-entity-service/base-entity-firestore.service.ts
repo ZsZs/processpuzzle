@@ -7,11 +7,11 @@ import { collection, deleteDoc, doc, Firestore, getDoc, getDocs, limit, orderBy,
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/firestore';
 
-export abstract class BaseEntityFirestoreService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
+export class BaseEntityFirestoreService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   protected collection;
   protected readonly firestore = inject(Firestore);
 
-  protected constructor(
+  constructor(
     @Inject('entityMapper') protected entityMapper: BaseEntityMapper<Entity>,
     protected collectionName: string,
   ) {

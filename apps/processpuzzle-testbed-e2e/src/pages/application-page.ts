@@ -29,29 +29,29 @@ export class ApplicationPage {
   }
 
   async navigateToAuthPage() {
-    await this.navigateToPage('See Auth Library...', '**/auth');
+    await this.navigateToPage('See Auth Library', '**/auth-lib');
   }
 
   async navigateToUtilsPage() {
-    await this.navigateToPage('See Utils Library...', '**/util');
+    await this.navigateToPage('See Utils Library', '**/util');
   }
 
   async navigateToWidgetsPage() {
-    await this.navigateToPage('See Widgets Library...', '**/widgets');
+    await this.navigateToPage('See Widgets Library', '**/widgets');
   }
 
   async navigateToBaseEntityPage() {
-    await this.navigateToPage('See Base Entity Library...', '**/base-entity');
+    await this.navigateToPage('See Base Entity Library', '**/base-entity');
   }
 
   async navigateToCiCdPage() {
-    await this.navigateToPage('See CI/CD Pipeline...', '**/ci-cd');
+    await this.navigateToPage('See CI/CD Pipeline', '**/ci-cd');
   }
 
   // region private helper methods
   private async navigateToPage(buttonName: string, expectedUrl: string) {
     expect(this.navigationList).toBeTruthy();
-    await this.page.getByRole('button', { name: buttonName }).click();
+    await this.page.getByRole('button', { name: buttonName, exact: false }).click();
     await this.page.waitForURL(expectedUrl);
   }
 

@@ -1,5 +1,6 @@
 import type { AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
+import { createTestId } from './base-entity-utility';
 
 export interface BaseEntityDescriptorOptions {
   store?: any;
@@ -21,18 +22,18 @@ export class BaseEntityDescriptor {
     this.entityTitle = entityTitle ?? '';
   }
 
+  public createTestId(suffix: string): string {
+    return createTestId(this.entityName, suffix);
+  }
+
   componentIdentification(): string {
-    const attrDescriptor = filterAttributeDescriptors(this.attrDescriptors).find(
-      (attrDescriptor) => attrDescriptor.isLinkToDetails === true,
-    );
+    const attrDescriptor = filterAttributeDescriptors(this.attrDescriptors).find((attrDescriptor) => attrDescriptor.isLinkToDetails === true);
 
     return attrDescriptor?.attrName ?? '';
   }
 
   public overwriteLinkedEntityAttr(attrName: string, linkedEntityDescr: BaseEntityDescriptor): void {
-    const attrDescriptor = filterAttributeDescriptors(this.attrDescriptors).find(
-      (attrDescriptor) => attrDescriptor.attrName === attrName,
-    );
+    const attrDescriptor = filterAttributeDescriptors(this.attrDescriptors).find((attrDescriptor) => attrDescriptor.attrName === attrName);
 
     if (attrDescriptor) {
       attrDescriptor.linkedEntityType = linkedEntityDescr;

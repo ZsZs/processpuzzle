@@ -8,7 +8,7 @@ import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { BaseEntityService } from './base-entity.service';
 
-export abstract class BaseEntityRestService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
+export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   private readonly runtimeConfiguration = inject(RUNTIME_CONFIGURATION);
   private readonly baseUrl: string;
   protected httpClient = inject(HttpClient);
@@ -19,7 +19,7 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
     'Access-Control-Allow-Headers': 'Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers',
   });
 
-  protected constructor(
+  constructor(
     @Inject('entityMapper') protected entityMapper: BaseEntityMapper<Entity>,
     protected urlProperty: string,
     protected resourceUrl: string,
@@ -30,7 +30,11 @@ export abstract class BaseEntityRestService<Entity extends BaseEntity> implement
 
   // region public accessor and mutator methods
   delete(id: string): Observable<unknown> {
-    return this.httpClient.delete(this.resourceUrl + `/${id}`, { headers: this.headers });
+    const pathParams = new Map<string, string>([['id', String(id)]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', { pathParams });
+    if (fullUrl) {
+      return this.httpClient.delete(fullUrl, { headers: this.headers });
+    } else throw new Error('Could not determine the full url');
   }
 
   deleteAll(): Observable<any> {

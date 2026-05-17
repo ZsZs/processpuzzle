@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { ApplicationPage } from './application-page';
+import { ApplicationPage } from '../pages/application-page';
 
 export const test = base.extend<{ applicationPage: ApplicationPage }>({
   applicationPage: async ({ page }, use) => {
