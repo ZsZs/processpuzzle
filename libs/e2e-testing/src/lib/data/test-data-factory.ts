@@ -1,31 +1,32 @@
-// src/support/test-data-factory.ts
-import { AttrDescriptor, EntityDescriptor } from '../types/entity-descriptor.types';
+import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
 
 // TODO: handle ARTIFACT / LOOKUP / COMPONENTS — depends on linked-entity resolution
-const DEFERRED_TYPES = new Set(['ARTIFACT', 'LOOKUP', 'COMPONENTS']);
+const DEFERRED_TYPES = new Set<string>(['ARTIFACT', 'LOOKUP', 'COMPONENTS']);
 
 /** Layout containers and non-input types — never fill these */
-const SKIP_TYPES = new Set(['FLEX_BOX', ...DEFERRED_TYPES]);
+const SKIP_TYPES = new Set<string>(['FLEX_BOX', ...DEFERRED_TYPES]);
 
 const INITIAL_DATE = '2026-01-15';
 const UPDATED_DATE = '2026-02-20';
 
 /** Returns only attrs that represent actual form inputs */
-export function inputAttrs(descriptor: EntityDescriptor): AttrDescriptor[] {
-  return descriptor.attrDescriptors.filter((attr) => !SKIP_TYPES.has(attr.formControlType) && attr.visible !== false);
+export function inputAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
+  return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).filter(
+    (attr) => !SKIP_TYPES.has(attr.formControlType) && attr.visible !== false,
+  );
 }
 
 /** Returns the identification attr (isLinkToDetails === true) */
-export function identificationAttr(descriptor: EntityDescriptor): AttrDescriptor | undefined {
+export function identificationAttr(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor | undefined {
   return inputAttrs(descriptor).find((attr) => attr.isLinkToDetails === true);
 }
 
 /** Builds a valid data payload for CREATE */
-export function buildCreateData(descriptor: EntityDescriptor, resolvedForeignKeys: Record<string, string> = {}): Record<string, string> {
+export function buildCreateData(descriptor: BaseEntityDescriptor, resolvedForeignKeys: Record<string, string> = {}): Record<string, string> {
   const data: Record<string, string> = {};
 
   for (const attr of inputAttrs(descriptor)) {
-    switch (attr.formControlType) {
+    switch (attr.formControlType as string) {
       case 'TEXT_BOX':
         data[attr.attrName] = `Test ${attr.label ?? attr.attrName}`;
         break;
@@ -39,13 +40,12 @@ export function buildCreateData(descriptor: EntityDescriptor, resolvedForeignKey
         data[attr.attrName] = INITIAL_DATE;
         break;
       case 'DROPDOWN':
-        data[attr.attrName] = attr.selectables?.[0]?.value ?? '';
+        data[attr.attrName] = String(attr.selectables?.[0]?.value ?? '');
         break;
       case 'TAGS':
         data[attr.attrName] = 'alpha,beta';
         break;
-      case 'FOREIGN_KEY': // resolved from a previously created linked entity
-      {
+      case 'FOREIGN_KEY': {
         const linked = attr.linkedEntityType?.entityName;
         data[attr.attrName] = linked ? (resolvedForeignKeys[linked] ?? '') : '';
         break;
@@ -57,10 +57,10 @@ export function buildCreateData(descriptor: EntityDescriptor, resolvedForeignKey
 }
 
 /** Builds an updated payload */
-export function buildUpdateData(descriptor: EntityDescriptor, original: Record<string, string>): Record<string, string> {
+export function buildUpdateData(descriptor: BaseEntityDescriptor, original: Record<string, string>): Record<string, string> {
   const updated = { ...original };
   for (const attr of inputAttrs(descriptor)) {
-    switch (attr.formControlType) {
+    switch (attr.formControlType as string) {
       case 'TEXT_BOX':
       case 'TEXTAREA':
         updated[attr.attrName] = `Updated ${original[attr.attrName] ?? attr.attrName}`;
@@ -72,7 +72,7 @@ export function buildUpdateData(descriptor: EntityDescriptor, original: Record<s
         updated[attr.attrName] = UPDATED_DATE;
         break;
       case 'DROPDOWN':
-        updated[attr.attrName] = attr.selectables?.[1]?.value ?? original[attr.attrName] ?? '';
+        updated[attr.attrName] = String(attr.selectables?.[1]?.value ?? original[attr.attrName] ?? '');
         break;
       case 'TAGS':
         updated[attr.attrName] = `${original[attr.attrName] ?? ''},gamma`;

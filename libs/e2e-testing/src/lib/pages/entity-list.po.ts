@@ -1,19 +1,20 @@
-import { expect, Locator, Page } from '@playwright/test';
-import { EntityDescriptor } from '../types/entity-descriptor.types';
-import { buttonTestId, toTestId } from '../support/selector.builder';
-import { identificationAttr } from '../support/test-data-factory';
-import { listRoute } from '../support/route.resolver';
+import { expect, type Locator, type Page } from '@playwright/test';
+import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import { buttonTestId, toTestId } from '../selectors/selector.builder';
+import { identificationAttr } from '../data/test-data-factory';
+import { RouteResolver } from '../routing/route.resolver';
 
 export class EntityListPO {
   constructor(
     private page: Page,
-    private descriptor: EntityDescriptor,
+    private descriptor: BaseEntityDescriptor,
+    private routes: RouteResolver,
   ) {}
 
   // ── Navigation ──────────────────────────────────────────────────
 
   async navigateTo() {
-    await this.page.goto(listRoute(this.descriptor.entityName));
+    await this.page.goto(this.routes.listRoute(this.descriptor.entityName));
     await this.page.waitForURL(/\/list$/);
   }
 

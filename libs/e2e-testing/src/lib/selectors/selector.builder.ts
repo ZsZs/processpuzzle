@@ -1,4 +1,4 @@
-import { FormControlType } from '../types/entity-descriptor.types';
+import type { FormControlType } from '@processpuzzle/base-entity';
 
 /** "Test Entity Component" → "testEntityComponent" */
 export function toTestId(entityName: string): string {
@@ -28,7 +28,7 @@ export function formControlSelector(entityName: string, attrName: string): strin
 }
 
 export function formControlLocator(type: FormControlType): string {
-  switch (type) {
+  switch (type as string) {
     case 'TEXT_BOX':
     case 'TEXTAREA':
       return 'input, textarea';

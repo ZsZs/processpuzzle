@@ -1,13 +1,13 @@
-import { expect, Locator, Page } from '@playwright/test';
-import { AttrDescriptor, EntityDescriptor } from '../types/entity-descriptor.types';
-import { attrSelector, buttonTestId, formControlLocator, formControlSelector } from '../support/selector.builder';
-import { inputAttrs } from '../support/test-data-factory';
-import { detailRoute } from '../support/route.resolver';
+import { expect, type Locator, type Page } from '@playwright/test';
+import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import { attrSelector, buttonTestId, formControlLocator, formControlSelector } from '../selectors/selector.builder';
+import { inputAttrs } from '../data/test-data-factory';
+import { RouteResolver } from '../routing/route.resolver';
 
-const TEXT_TYPES = new Set(['TEXT_BOX', 'TEXTAREA']);
-const READONLY_TYPES = new Set(['FOREIGN_KEY']);
+const TEXT_TYPES = new Set<string>(['TEXT_BOX', 'TEXTAREA']);
+const READONLY_TYPES = new Set<string>(['FOREIGN_KEY']);
 // TODO: ARTIFACT / LOOKUP / COMPONENTS — deferred, depends on linked-entity resolution
-const DEFERRED_TYPES = new Set(['ARTIFACT', 'LOOKUP', 'COMPONENTS']);
+const DEFERRED_TYPES = new Set<string>(['ARTIFACT', 'LOOKUP', 'COMPONENTS']);
 
 /** Compare two date strings by y/m/d, ignoring formatting differences (ISO vs locale-formatted). */
 function sameCalendarDay(a: string, b: string): boolean {
@@ -20,13 +20,14 @@ function sameCalendarDay(a: string, b: string): boolean {
 export class EntityFormPO {
   constructor(
     private page: Page,
-    private descriptor: EntityDescriptor,
+    private descriptor: BaseEntityDescriptor,
+    private routes: RouteResolver,
   ) {}
 
   // ── Navigation ──────────────────────────────────────────────────
 
   async navigateToDetail(entityId: string) {
-    await this.page.goto(detailRoute(this.descriptor.entityName, entityId));
+    await this.page.goto(this.routes.detailRoute(this.descriptor.entityName, entityId));
     await this.page.waitForURL(/\/details$/);
   }
 
@@ -39,11 +40,11 @@ export class EntityFormPO {
     }
   }
 
-  private async fillControl(attr: AttrDescriptor, value: string) {
+  private async fillControl(attr: BaseEntityAttrDescriptor, value: string) {
     const control = this.page.getByTestId(formControlSelector(this.descriptor.entityName, attr.attrName));
     const inner = control.locator(formControlLocator(attr.formControlType)).first();
 
-    switch (attr.formControlType) {
+    switch (attr.formControlType as string) {
       case 'TEXT_BOX':
       case 'TEXTAREA':
         await inner.fill('');
@@ -103,7 +104,7 @@ export class EntityFormPO {
     }
   }
 
-  private async assertControlValue(attr: AttrDescriptor, value: string) {
+  private async assertControlValue(attr: BaseEntityAttrDescriptor, value: string) {
     const control: Locator = this.page.locator(attrSelector(this.descriptor.entityName, attr.attrName));
 
     if (TEXT_TYPES.has(attr.formControlType)) {
@@ -111,9 +112,9 @@ export class EntityFormPO {
       return;
     }
 
-    switch (attr.formControlType) {
+    switch (attr.formControlType as string) {
       case 'DATE': {
-        const input = control.locator(formControlLocator('DATE')).first();
+        const input = control.locator(formControlLocator(attr.formControlType)).first();
         await expect(input).not.toHaveValue('');
         const actual = await input.inputValue();
         expect(sameCalendarDay(actual, value), `DATE ${attr.attrName}: expected ${value}, got "${actual}"`).toBe(true);
@@ -141,7 +142,6 @@ export class EntityFormPO {
         if (READONLY_TYPES.has(attr.formControlType)) {
           await expect(control).toBeVisible();
         }
-        // DEFERRED_TYPES intentionally skipped
         if (DEFERRED_TYPES.has(attr.formControlType)) return;
         break;
     }
