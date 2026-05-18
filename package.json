@@ -138,7 +138,7 @@
     "@ngrx/operators": "^21.1.0",
     "@ngrx/signals": "^21.1.0",
     "@nx/angular": "^22.7.1",
-    "@nx/devkit": "22.7.1",
+    "@nx/devkit": "22.7.2",
     "@nx/esbuild": "22.7.1",
     "@nx/eslint": "22.7.1",
     "@nx/eslint-plugin": "22.7.1",
