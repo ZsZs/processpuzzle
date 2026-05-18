@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/e2e-testing",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
   "author": {
     "name": "Zsolt Zsuffa",
@@ -20,7 +20,7 @@
   "types": "./src/public-api.d.ts",
   "peerDependencies": {
     "@playwright/test": "*",
-    "@processpuzzle/base-entity": "^0.6.0"
+    "@processpuzzle/base-entity": "^0.7.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
