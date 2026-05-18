@@ -62,7 +62,7 @@ export class EntityRegistryComponent {
         lines: attr.lines,
         options: attr.options,
         required: attr.required,
-        //        linkedEntityType: attr.linkedEntityType,
+        linkedEntityType: attr.linkedEntityType ? { entityName: attr.linkedEntityType.entityName } : undefined,
       }),
     };
   }
