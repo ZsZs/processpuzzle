@@ -82,6 +82,16 @@ export class EntityListPO {
     await this.page.getByTestId(listSelectButtonTestId(this.descriptor.entityName)).click();
   }
 
+  async deleteByIdentification(identificationValue: string) {
+    await this.navigateTo();
+    await this.selectRowByIdentification(identificationValue);
+
+    const deleteButton = this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'delete'));
+    await expect(deleteButton).toBeEnabled();
+    await deleteButton.click();
+    await this.assertNotInList(identificationValue);
+  }
+
   /** Click the `{entityName}-cancel` button. */
   async clickCancelButton() {
     await this.page.getByTestId(listCancelButtonTestId(this.descriptor.entityName)).click();

@@ -1,133 +1,90 @@
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import {
+  type ControlDataContext,
+  controlTestersFor,
+  identificationAttrFromTesters,
+  linkedFixtureAttrKey,
+} from '../controls/control-tester';
 
-// TODO: handle ARTIFACT / COMPONENTS — depends on linked-entity resolution
-const DEFERRED_TYPES = new Set<string>(['ARTIFACT', 'COMPONENTS']);
-
-/** Control types whose value identifies another entity (drives form-fill via selection / autocomplete). */
-const LINKED_TYPES = new Set<string>(['FOREIGN_KEY', 'LOOKUP']);
-
-/** Layout containers and non-input types — never fill these */
-const SKIP_TYPES = new Set<string>(['FLEX_BOX', ...DEFERRED_TYPES]);
-
-const INITIAL_DATE = '2026-01-15';
-const UPDATED_DATE = '2026-02-20';
-
-/** Returns only attrs that represent actual form inputs */
+/** Returns only attrs that represent actual form inputs. */
 export function inputAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
-  return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).filter(
-    (attr) => !SKIP_TYPES.has(attr.formControlType) && attr.visible !== false,
-  );
+  return controlTestersFor(descriptor).map((tester) => tester.attr);
 }
 
-/** Returns the identification attr (isLinkToDetails === true) */
+/** Returns the identification attr (isLinkToDetails === true). */
 export function identificationAttr(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor | undefined {
-  return inputAttrs(descriptor).find((attr) => attr.isLinkToDetails === true);
+  return identificationAttrFromTesters(descriptor);
 }
 
-/** Builds a valid data payload for CREATE */
+export function createControlDataContext(
+  descriptor: BaseEntityDescriptor,
+  descriptorMap: Map<string, BaseEntityDescriptor> = new Map(),
+  createdIdsByEntity: Record<string, string> = {},
+  createdDataByEntity: Record<string, Record<string, string>> = {},
+  uniqueSuffix = '',
+): ControlDataContext {
+  return {
+    descriptor,
+    descriptorMap,
+    createdIdsByEntity,
+    createdDataByEntity,
+    uniqueSuffix,
+  };
+}
+
+/** Builds a valid data payload for CREATE. */
 export function buildCreateData(descriptor: BaseEntityDescriptor, resolvedForeignKeys: Record<string, string> = {}, uniqueSuffix = ''): Record<string, string> {
+  return buildCreateDataForContext(createControlDataContext(descriptor, new Map(), resolvedForeignKeys, {}, uniqueSuffix));
+}
+
+export function buildCreateDataForContext(context: ControlDataContext): Record<string, string> {
   const data: Record<string, string> = {};
-  const suffix = uniqueSuffix ? ` ${uniqueSuffix}` : '';
-
-  for (const attr of inputAttrs(descriptor)) {
-    switch (attr.formControlType as string) {
-      case 'TEXT_BOX':
-        data[attr.attrName] = `Test ${attr.label ?? attr.attrName}${suffix}`;
-        break;
-      case 'TEXTAREA':
-        data[attr.attrName] = `Description for ${descriptor.entityName}${suffix}`;
-        break;
-      case 'CHECKBOX':
-        data[attr.attrName] = 'true';
-        break;
-      case 'DATE':
-        data[attr.attrName] = INITIAL_DATE;
-        break;
-      case 'DROPDOWN':
-        data[attr.attrName] = String(attr.selectables?.[0]?.value ?? '');
-        break;
-      case 'TAGS':
-        data[attr.attrName] = 'alpha,beta';
-        break;
-      case 'FOREIGN_KEY': {
-        const linked = attr.linkedEntityType?.entityName;
-        data[attr.attrName] = linked ? (resolvedForeignKeys[linked] ?? '') : '';
-        break;
-      }
-      // LOOKUP stores the linked entity's `key` field, but we drive selection from the form PO
-      // via the linked identification map — leave the data slot empty here.
-      case 'LOOKUP':
-        data[attr.attrName] = '';
-        break;
-    }
+  for (const tester of controlTestersFor(context.descriptor)) {
+    data[tester.attr.attrName] = tester.createValue(context);
   }
-
   return data;
 }
 
 /**
  * For each linked-entity attr (FOREIGN_KEY, LOOKUP) on `descriptor`, returns the linked entity's
- * identification value — i.e. the text the autocomplete or readonly input displays.
- * Linked entities must already be in `createdData`.
+ * identification value, i.e. the text the autocomplete or readonly input displays.
  */
 export function buildLinkedIdentifications(
   descriptor: BaseEntityDescriptor,
   descriptorMap: Map<string, BaseEntityDescriptor>,
   createdData: Record<string, Record<string, string>>,
 ): Record<string, string> {
+  const createdIdsByEntity = Object.fromEntries(Object.keys(createdData).map((entityName) => [entityName, '']));
+  return buildLinkedIdentificationsForContext({
+    descriptor,
+    descriptorMap,
+    createdDataByEntity: createdData,
+    createdIdsByEntity,
+  });
+}
+
+export function buildLinkedIdentificationsForContext(context: ControlDataContext): Record<string, string> {
   const result: Record<string, string> = {};
-
-  for (const attr of inputAttrs(descriptor)) {
-    if (!LINKED_TYPES.has(attr.formControlType as string)) continue;
-    const linkedName = attr.linkedEntityType?.entityName;
-    if (!linkedName) continue;
-
-    const linkedRow = createdData[linkedName];
-    if (!linkedRow) continue;
-
-    if (attr.formControlType === 'LOOKUP') {
-      // LOOKUP options render the linked LookupTable row's `value` attribute.
-      result[attr.attrName] = linkedRow['value'] ?? '';
-      continue;
-    }
-
-    // FOREIGN_KEY shows the linked entity's identification attribute.
-    const linkedDescriptor = descriptorMap.get(linkedName);
-    const linkedIdAttr = linkedDescriptor ? identificationAttr(linkedDescriptor) : undefined;
-    if (!linkedIdAttr) continue;
-
-    result[attr.attrName] = linkedRow[linkedIdAttr.attrName] ?? '';
+  for (const tester of controlTestersFor(context.descriptor)) {
+    if (!tester.isLinked) continue;
+    const value = tester.createValue(context);
+    result[tester.attr.attrName] = tester.displayValue(context, value);
   }
-
   return result;
 }
 
-/** Builds an updated payload */
+/** Builds an updated payload. */
 export function buildUpdateData(descriptor: BaseEntityDescriptor, original: Record<string, string>): Record<string, string> {
-  const updated = { ...original };
-  for (const attr of inputAttrs(descriptor)) {
-    if (attr.isLinkToDetails) {
-      continue;
-    }
+  return buildUpdateDataForContext(createControlDataContext(descriptor), original);
+}
 
-    switch (attr.formControlType as string) {
-      case 'TEXT_BOX':
-      case 'TEXTAREA':
-        updated[attr.attrName] = `Updated ${original[attr.attrName] ?? attr.attrName}`;
-        break;
-      case 'CHECKBOX':
-        updated[attr.attrName] = original[attr.attrName] === 'true' ? 'false' : 'true';
-        break;
-      case 'DATE':
-        updated[attr.attrName] = UPDATED_DATE;
-        break;
-      case 'DROPDOWN':
-        updated[attr.attrName] = String(attr.selectables?.[1]?.value ?? original[attr.attrName] ?? '');
-        break;
-      case 'TAGS':
-        updated[attr.attrName] = `${original[attr.attrName] ?? ''},gamma`;
-        break;
-    }
+export function buildUpdateDataForContext(context: ControlDataContext, original: Record<string, string>): Record<string, string> {
+  const updated = { ...original };
+  for (const tester of controlTestersFor(context.descriptor)) {
+    if (tester.attr.isLinkToDetails) continue;
+    updated[tester.attr.attrName] = tester.updateValue(context, original);
   }
   return updated;
 }
+
+export { linkedFixtureAttrKey };

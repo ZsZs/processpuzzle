@@ -4,9 +4,11 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 import path from 'path';
 
-dotenv.config({ path: `./env/.env.${process.env['ENVIRONMENT']}` });
-
 // For CI, you may want to set BASE_URL to the deployed application.
+const environment = process.env['ENVIRONMENT'] || 'dev';
+if (process.env['ENVIRONMENT']) {
+  dotenv.config({ path: `./env/.env.${process.env['ENVIRONMENT']}` });
+}
 const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localhost:4200';
 export const testConfig = { routePrefix: '/base-entity/samples' };
 
@@ -34,8 +36,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npx nx run processpuzzle-testbed:serve',
-    reuseExistingServer: !process.env,
+    command: 'npm run serve-processpuzzle-testbed',
+    url: baseURL,
+    reuseExistingServer: (() => {
+      if (environment === 'dev') return true;
+      return environment !== 'ci';
+    })(),
     cwd: workspaceRoot,
   },
   reporter: [
@@ -72,5 +78,5 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     } */
   ],
-  testIgnore: '',
+  testIgnore: [],
 });

@@ -1,17 +1,26 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "../../dist/out-tsc"
   },
-  "files": [
-    "src/main.ts"
-  ],
-  "include": [
-    "src/**/*.d.ts",
-    "./package.json"
-  ],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts"
+  "files": ["src/main.ts"],
+  "include": ["src/**/*.d.ts", "./package.json"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"],
+  "references": [
+    {
+      "path": "../../libs/test-util"
+    },
+    {
+      "path": "../../libs/base-entity"
+    },
+    {
+      "path": "../../libs/auth"
+    },
+    {
+      "path": "../../libs/widgets"
+    },
+    {
+      "path": "../../libs/util"
+    }
   ]
 }
