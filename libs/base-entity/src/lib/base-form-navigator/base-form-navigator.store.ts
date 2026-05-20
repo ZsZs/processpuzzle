@@ -3,7 +3,8 @@ import { inject } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Stack } from '@processpuzzle/util';
 import { BaseUrlSegments } from './base-url-segments';
-import { NavigatorCommand, type NavigationPayload } from './navigation-payload';
+import { type NavigationPayload, NavigatorCommand } from './navigation-payload';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 
 export enum RouteSegments {
   LIST_ROUTE = 'LIST_ROUTE',
@@ -41,6 +42,7 @@ function snakeCaseName(entityName: string) {
 export const BaseFormNavigatorSingletonStore = signalStore(
   { providedIn: 'root' },
   withState<NavigationState>(INITIAL_NAVIGATION_STATE),
+  withDevtools('Base Form Navigator'),
   withMethods((store, router = inject(Router), route = inject(ActivatedRoute)) => {
     let pendingNavigatorUrl: string | undefined;
     let routerEventsSubscription: { unsubscribe(): void } | undefined;
@@ -95,6 +97,15 @@ export const BaseFormNavigatorSingletonStore = signalStore(
         if (!(event instanceof NavigationEnd)) {
           return;
         }
+
+        // eslint-disable-next-line no-console
+        console.debug('[FormNavigator] NavigationEnd', {
+          url: event.url,
+          urlAfterRedirects: event.urlAfterRedirects,
+          pendingNavigatorUrl,
+          isPending: isPendingNavigatorUrl(event),
+          requestPayloads: store.requestPayloads().toArray(),
+        });
 
         if (isPendingNavigatorUrl(event)) {
           pendingNavigatorUrl = undefined;
@@ -165,6 +176,8 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       const snakeCaseEntityName = snakeCaseName(relatedTypeName);
       const baseUrl = determineBaseUrl();
       const listPath = baseUrl + '/' + snakeCaseEntityName + '/list';
+      // eslint-disable-next-line no-console
+      console.debug('[FormNavigator] navigateToRelatedList', { relatedTypeName, listPath, payload, requestPayloadsAfterPush: store.requestPayloads().toArray() });
       await navigateToUrl(listPath, returnTo);
     }
 
@@ -189,8 +202,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     function popResponsePayload(command?: NavigatorCommand): NavigationPayload | undefined {
       const responsePayloadArray = store.responsePayloads().toArray();
-      const payloadIndex =
-        command === undefined ? responsePayloadArray.length - 1 : responsePayloadArray.map((payload) => payload.command).lastIndexOf(command);
+      const payloadIndex = command === undefined ? responsePayloadArray.length - 1 : responsePayloadArray.map((payload) => payload.command).lastIndexOf(command);
 
       if (payloadIndex < 0) {
         return undefined;

@@ -79,6 +79,26 @@ describe('LookupComponent', () => {
     expect(lookupComponent.displayControl.value).toEqual('On Hold');
   });
 
+  it('replaces an existing lookup key and marks the form dirty.', async () => {
+    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
+    const config = createLookupConfig(lookupStoreToken);
+    const entity = new TestEntity('source-id', 'Source entity');
+    Reflect.set(entity, 'selectable', 'in-progress');
+    const lookupStore = createLookupStore();
+
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const lookupComponent = component as LookupComponent<TestEntity>;
+
+    lookupComponent.displayControl.setValue('hold');
+    lookupComponent.selectLookupItem('on-hold');
+
+    expect(lookupComponent.formGroup.get(config.attrName)?.value).toEqual('on-hold');
+    expect(Reflect.get(entity, config.attrName)).toEqual('on-hold');
+    expect(lookupComponent.displayControl.value).toEqual('On Hold');
+    expect(lookupComponent.formGroup.dirty).toBe(true);
+    expect(lookupComponent.formGroup.get(config.attrName)?.dirty).toBe(true);
+  });
+
   it('navigates to the referenced lookup entity without selection mode.', async () => {
     const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
     const config = createLookupConfig(lookupStoreToken);

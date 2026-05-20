@@ -11,6 +11,6 @@ export class TestEntityComponent implements BaseEntity {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'TestEntityComponent';
     this.description = description != undefined ? description : '';
-    this.testEntityId = testEntityId != undefined ? testEntityId : uuidv4();
+    this.testEntityId = testEntityId ?? '';
   }
 }

@@ -41,7 +41,7 @@ export class ApplicationPage {
   }
 
   async navigateToBaseEntityPage() {
-    await this.navigateToPage('See Base Entity Library', '**/base-entity');
+    await this.navigateToPage('See Base Entity Library', '**/base-entity/overview');
   }
 
   async navigateToCiCdPage() {

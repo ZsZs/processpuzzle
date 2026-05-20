@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, signal, ViewChild } from '@angular/core';
 import { BaseEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
@@ -66,7 +66,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   @ViewChild(MatSort) sort = {} as MatSort;
   @ViewChild(MatPaginator) paginator = {} as MatPaginator;
   store: any;
-  protected selectOrCreateMode = false;
+  protected selectOrCreateMode = signal(false);
 
   constructor() {
     this.store = this.entityDescriptor().store;
@@ -85,7 +85,9 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.formNavigator.setEntityName(this.entityDescriptor().entityName);
     this.formNavigator.determineActiveRouteSegment();
     const requestPayload = this.formNavigator.popRequestPayload();
-    this.selectOrCreateMode = requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE;
+    this.selectOrCreateMode.set(requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE);
+    // eslint-disable-next-line no-console
+    console.debug('[BaseEntityListComponent] ngOnInit', { entityName: this.entityDescriptor().entityName, requestPayload, selectOrCreateMode: this.selectOrCreateMode() });
     this.logger.info('BaseEntityListComponent initialized with:', { columnDescriptors: this.columnDescriptors() });
   }
 

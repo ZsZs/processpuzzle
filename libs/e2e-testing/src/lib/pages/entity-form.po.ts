@@ -1,13 +1,13 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { attrSelector, buttonTestId, formControlLocator, formControlSelector } from '../selectors/selector.builder';
+import { attrSelector, buttonTestId, formControlLocator, formControlSelector, selectButtonAriaLabel } from '../selectors/selector.builder';
 import { inputAttrs } from '../data/test-data-factory';
 import { RouteResolver } from '../routing/route.resolver';
+import { EntityListPO } from './entity-list.po';
 
 const TEXT_TYPES = new Set<string>(['TEXT_BOX', 'TEXTAREA']);
-const READONLY_TYPES = new Set<string>(['FOREIGN_KEY']);
-// TODO: ARTIFACT / LOOKUP / COMPONENTS — deferred, depends on linked-entity resolution
-const DEFERRED_TYPES = new Set<string>(['ARTIFACT', 'LOOKUP', 'COMPONENTS']);
+// TODO: ARTIFACT / COMPONENTS — deferred, depends on linked-entity resolution
+const DEFERRED_TYPES = new Set<string>(['ARTIFACT', 'COMPONENTS']);
 
 /** Compare two date strings by y/m/d, ignoring formatting differences (ISO vs locale-formatted). */
 function sameCalendarDay(a: string, b: string): boolean {
@@ -17,11 +17,17 @@ function sameCalendarDay(a: string, b: string): boolean {
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
 }
 
+export interface FillFormOptions {
+  /** Skip linked-entity controls (FOREIGN_KEY, LOOKUP) — UPDATE flow preserves existing selection. */
+  skipLinked?: boolean;
+}
+
 export class EntityFormPO {
   constructor(
     private page: Page,
     private descriptor: BaseEntityDescriptor,
     private routes: RouteResolver,
+    private descriptorMap: Map<string, BaseEntityDescriptor> = new Map(),
   ) {}
 
   // ── Navigation ──────────────────────────────────────────────────
@@ -33,14 +39,23 @@ export class EntityFormPO {
 
   // ── Form interactions ───────────────────────────────────────────
 
-  async fillForm(data: Record<string, string>) {
-    for (const attr of inputAttrs(this.descriptor)) {
+  async fillForm(data: Record<string, string>, linkedIdentifications: Record<string, string> = {}, options: FillFormOptions = {}) {
+    // FOREIGN_KEY round-trips navigate away and back, resetting the form — fill them first
+    // so values typed afterwards survive until Save.
+    const attrs = inputAttrs(this.descriptor);
+    const orderedAttrs = [...attrs.filter((a) => a.formControlType === 'FOREIGN_KEY'), ...attrs.filter((a) => a.formControlType !== 'FOREIGN_KEY')];
+    for (const attr of orderedAttrs) {
       const value = data[attr.attrName] ?? '';
-      await this.fillControl(attr, value);
+      await this.fillControl(attr, value, linkedIdentifications, options);
     }
   }
 
-  private async fillControl(attr: BaseEntityAttrDescriptor, value: string) {
+  private async fillControl(
+    attr: BaseEntityAttrDescriptor,
+    value: string,
+    linkedIdentifications: Record<string, string>,
+    options: FillFormOptions,
+  ) {
     const control = this.page.getByTestId(formControlSelector(this.descriptor.entityName, attr.attrName));
     const inner = control.locator(formControlLocator(attr.formControlType)).first();
 
@@ -72,11 +87,60 @@ export class EntityFormPO {
         }
         break;
       }
-      // FOREIGN_KEY: read-only in the form
-      // ARTIFACT / LOOKUP / COMPONENTS: deferred
+      case 'FOREIGN_KEY': {
+        if (options.skipLinked) break;
+        const identificationValue = linkedIdentifications[attr.attrName];
+        if (!identificationValue) break;
+        await this.selectForeignKey(attr, identificationValue);
+        break;
+      }
+      case 'LOOKUP': {
+        if (options.skipLinked) break;
+        const identificationValue = linkedIdentifications[attr.attrName];
+        if (!identificationValue) break;
+        await this.selectLookup(inner, identificationValue);
+        break;
+      }
+      // ARTIFACT / COMPONENTS: deferred
       default:
         break;
     }
+  }
+
+  /**
+   * Drive the SELECT_OR_CREATE round-trip for a FOREIGN_KEY control:
+   * focus → click "Select <LinkedEntity>" → tick row → click select → return to form.
+   */
+  private async selectForeignKey(attr: BaseEntityAttrDescriptor, identificationValue: string) {
+    const linkedName = attr.linkedEntityType?.entityName;
+    if (!linkedName) return;
+    const linkedDescriptor = this.descriptorMap.get(linkedName);
+    if (!linkedDescriptor) return;
+
+    const originUrl = this.page.url();
+    const control = this.page.getByTestId(formControlSelector(this.descriptor.entityName, attr.attrName));
+    const input = control.locator('input[matInput]').first();
+
+    // Trigger (focusin) so the "Select" button renders.
+    await input.click();
+
+    await this.page.getByRole('button', { name: selectButtonAriaLabel(linkedName) }).click();
+    await this.page.waitForURL(/\/list(\?|$)/);
+
+    const linkedList = new EntityListPO(this.page, linkedDescriptor, this.routes);
+    await linkedList.selectRowByIdentification(identificationValue);
+    await linkedList.clickSelectButton();
+
+    await this.page.waitForURL(originUrl);
+  }
+
+  /**
+   * Drive the mat-autocomplete flow for a LOOKUP control:
+   * click input → autocomplete shows every linked row's `value` → click the matching option.
+   */
+  private async selectLookup(input: Locator, displayValue: string) {
+    await input.click();
+    await this.page.getByRole('option', { name: displayValue, exact: true }).first().click();
   }
 
   /** Save navigates back to the list. */
@@ -97,14 +161,14 @@ export class EntityFormPO {
 
   // ── Assertions ──────────────────────────────────────────────────
 
-  async assertFieldValues(data: Record<string, string>) {
+  async assertFieldValues(data: Record<string, string>, linkedIdentifications: Record<string, string> = {}) {
     for (const attr of inputAttrs(this.descriptor)) {
       const value = data[attr.attrName] ?? '';
-      await this.assertControlValue(attr, value);
+      await this.assertControlValue(attr, value, linkedIdentifications);
     }
   }
 
-  private async assertControlValue(attr: BaseEntityAttrDescriptor, value: string) {
+  private async assertControlValue(attr: BaseEntityAttrDescriptor, value: string, linkedIdentifications: Record<string, string>) {
     const control: Locator = this.page.locator(attrSelector(this.descriptor.entityName, attr.attrName));
 
     if (TEXT_TYPES.has(attr.formControlType)) {
@@ -138,10 +202,13 @@ export class EntityFormPO {
         }
         break;
       }
+      case 'FOREIGN_KEY':
+      case 'LOOKUP': {
+        const expected = linkedIdentifications[attr.attrName] ?? '';
+        await expect(control.locator('input[matInput]').first()).toHaveValue(expected);
+        break;
+      }
       default:
-        if (READONLY_TYPES.has(attr.formControlType)) {
-          await expect(control).toBeVisible();
-        }
         if (DEFERRED_TYPES.has(attr.formControlType)) return;
         break;
     }

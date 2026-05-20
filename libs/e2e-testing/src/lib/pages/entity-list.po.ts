@@ -1,8 +1,12 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { buttonTestId, toTestId } from '../selectors/selector.builder';
+import { buttonTestId, listCancelButtonTestId, listSelectButtonTestId, toTestId } from '../selectors/selector.builder';
 import { identificationAttr } from '../data/test-data-factory';
 import { RouteResolver } from '../routing/route.resolver';
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export class EntityListPO {
   constructor(
@@ -26,6 +30,7 @@ export class EntityListPO {
   async filter(value: string) {
     const input = this.page.getByTestId(`${toTestId(this.descriptor.entityName)}-filter`);
     await input.fill(value);
+    await input.dispatchEvent('keyup');
   }
 
   // ── Locators ────────────────────────────────────────────────────
@@ -36,7 +41,7 @@ export class EntityListPO {
 
   /** Anchor in the identification column (the only `<a>` Material renders per row). */
   private identificationLink(identificationValue: string): Locator {
-    return this.page.locator('mat-row a').filter({ hasText: identificationValue });
+    return this.page.locator('mat-row a').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) });
   }
 
   findRowByIdentification(identificationValue: string): Locator {
@@ -52,10 +57,34 @@ export class EntityListPO {
    * wait for the details URL, and return the captured entity id.
    */
   async openDetailsByIdentification(identificationValue: string): Promise<string> {
+    await this.filter(identificationValue);
     await this.identificationLink(identificationValue).first().click();
     await this.page.waitForURL(/\/details$/);
     const segments = new URL(this.page.url()).pathname.split('/');
     return segments[segments.length - 2];
+  }
+
+  /**
+   * Toggle the mat-checkbox on the row whose identification cell matches.
+   * Select-mode list (entered via SELECT_OR_CREATE) renders the identification
+   * column as plain text, not an `<a>`, so we match by cell content.
+   */
+  async selectRowByIdentification(identificationValue: string) {
+    await this.filter(identificationValue);
+    const row = this.rows()
+      .filter({ has: this.page.locator('mat-cell').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) }) })
+      .first();
+    await row.locator('mat-checkbox input[type="checkbox"]').first().check();
+  }
+
+  /** Click the `{entityName}-select` button (SELECT_OR_CREATE round-trip). */
+  async clickSelectButton() {
+    await this.page.getByTestId(listSelectButtonTestId(this.descriptor.entityName)).click();
+  }
+
+  /** Click the `{entityName}-cancel` button. */
+  async clickCancelButton() {
+    await this.page.getByTestId(listCancelButtonTestId(this.descriptor.entityName)).click();
   }
 
   // ── Assertions ──────────────────────────────────────────────────
@@ -74,11 +103,13 @@ export class EntityListPO {
 
   async assertInList(identificationValue: string) {
     if (!identificationAttr(this.descriptor)) return;
+    await this.filter(identificationValue);
     await expect(this.identificationLink(identificationValue).first()).toBeVisible();
   }
 
   async assertNotInList(identificationValue: string) {
     if (!identificationAttr(this.descriptor)) return;
+    await this.filter(identificationValue);
     await expect(this.identificationLink(identificationValue)).toHaveCount(0);
   }
 }

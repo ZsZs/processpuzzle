@@ -23,9 +23,11 @@ interface RelatedEntityStore {
           <mat-form-field class="foreign-key-field">
             <mat-label>{{ foreignKeyLabel() }}</mat-label>
             <input matInput [value]="foreignKeyDisplayName()" [disabled]="config().disabled" readonly />
-            <button type="button" mat-icon-button matSuffix (click)="navigateToRelated()" aria-label="Related entity">
-              <mat-icon>link</mat-icon>
-            </button>
+            @if (hasForeignKeyValue()) {
+              <button type="button" mat-icon-button matSuffix (click)="navigateToRelated()" aria-label="Related entity">
+                <mat-icon>link</mat-icon>
+              </button>
+            }
           </mat-form-field>
           @if (showSelectEntityButton()) {
             <div class="foreign-key-select-row">
@@ -126,6 +128,10 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
 
   showSelectEntityButton(): boolean {
     return !this.config().disabled && this.hasFocus();
+  }
+
+  hasForeignKeyValue(): boolean {
+    return this.foreignKeyId() !== '';
   }
 
   foreignKeyDisplayName(): string {
