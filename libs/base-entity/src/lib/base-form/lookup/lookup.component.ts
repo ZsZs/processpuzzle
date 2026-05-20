@@ -25,11 +25,16 @@ interface LookupStore {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
           <mat-label>{{ config().label }}</mat-label>
-          <input type="text" matInput [formControl]="displayControl" [matAutocomplete]="lookupOptions" (blur)="restoreSelectedValue()" />
+          <input type="text" matInput [formControl]="displayControl" [matAutocomplete]="lookupOptions" />
           <button type="button" mat-icon-button matSuffix [disabled]="!canNavigateToRelated()" (click)="navigateToRelated()" aria-label="Related entity">
             <mat-icon>link</mat-icon>
           </button>
-          <mat-autocomplete #lookupOptions="matAutocomplete" (optionSelected)="selectLookupItem($any($event).option.value)">
+          <mat-autocomplete
+            #lookupOptions="matAutocomplete"
+            [autoActiveFirstOption]="true"
+            (optionSelected)="selectLookupItem($any($event).option.value)"
+            (closed)="restoreSelectedValue()"
+          >
             @for (lookupItem of filteredLookupItems(); track lookupItem.key) {
               <mat-option [value]="lookupItem.key">{{ lookupDisplayValue(lookupItem) }}</mat-option>
             }

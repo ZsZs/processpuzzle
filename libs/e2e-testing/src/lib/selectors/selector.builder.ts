@@ -40,8 +40,24 @@ export function formControlLocator(type: FormControlType): string {
       return 'mat-select';
     case 'TAGS':
       return 'mat-chip-grid input';
+    case 'FOREIGN_KEY':
+    case 'LOOKUP':
+      return 'input[matInput]';
     // TODO: ARTIFACT / LOOKUP / COMPONENTS — deferred, depends on linked-entity resolution
     default:
       return '';
   }
+}
+
+/** aria-label of the "Select <EntityName>" button in the FK control. */
+export function selectButtonAriaLabel(linkedEntityName: string): string {
+  return `Select ${linkedEntityName}`;
+}
+
+export function listSelectButtonTestId(linkedEntityName: string): string {
+  return `${toTestId(linkedEntityName)}-select`;
+}
+
+export function listCancelButtonTestId(linkedEntityName: string): string {
+  return `${toTestId(linkedEntityName)}-cancel`;
 }
