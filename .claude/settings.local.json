@@ -1,4 +1,7 @@
 {
+  "env": {
+    "PATH": "C:\\DevEnv\\Git\\cmd;C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Program Files\\PowerShell\\7;C:\\Users\\zsolt\\AppData\\Local\\JetBrains\\IntelliJIdea2026.1\\acp-agents\\.runtimes\\node\\24.13.0\\npm-cache\\_npx\\286fc3b7ffd18687\\node_modules\\.bin;C:\\Projects\\ProcessPuzzle\\processpuzzle\\node_modules\\.bin;C:\\Projects\\ProcessPuzzle\\node_modules\\.bin;C:\\Projects\\node_modules\\.bin;C:\\node_modules\\.bin;C:\\Users\\zsolt\\AppData\\Local\\JetBrains\\IntelliJIdea2026.1\\acp-agents\\.runtimes\\node\\24.13.0\\bin\\node_modules\\npm\\node_modules\\@npmcli\\run-script\\lib\\node-gyp-bin;C:\\Users\\zsolt\\AppData\\Local\\JetBrains\\IntelliJIdea2026.1\\acp-agents\\.runtimes\\node\\24.13.0\\bin"
+  },
   "permissions": {
     "allow": [
       "PowerShell(\"deleted\")",
@@ -22,7 +25,27 @@
       "PowerShell(Get-Command pnpm -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Command npx -ErrorAction SilentlyContinue)",
       "PowerShell(npx nx test base-entity --skip-nx-cache --no-cloud 2>&1)",
-      "PowerShell(npx nx test base-entity --skip-nx-cache --no-cloud -- --testPathPattern=base-entity.store.spec 2>&1)"
+      "PowerShell(npx nx test base-entity --skip-nx-cache --no-cloud -- --testPathPattern=base-entity.store.spec 2>&1)",
+      "PowerShell(npm exec nx run e2e-testing:lint 2>&1)",
+      "PowerShell(cmd /c \"where git\" 2>&1)",
+      "PowerShell(Get-ChildItem \"C:\\\\\" -Directory | Select-Object -ExpandProperty FullName; $env:PATH -split ';' | Where-Object { $_ -match 'git' })",
+      "PowerShell(Get-ChildItem \"C:\\\\DevEnv\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'git|Git' } | Select-Object FullName; Get-ChildItem \"C:\\\\Program Files\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'git|Git' } | Select-Object FullName)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" show --stat c4d0524e 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" log --oneline c4d0524e..HEAD -- libs/base-entity/src/lib/base-list/ libs/base-entity/src/lib/base-form-navigator/ libs/base-entity/src/lib/base-form/lookup/ libs/base-entity/src/lib/base-form/foreign-key/ 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" diff --stat c4d0524e -- libs/base-entity/src/lib/base-list/ libs/base-entity/src/lib/base-form-navigator/ libs/base-entity/src/lib/base-form/lookup/ libs/base-entity/src/lib/base-form/foreign-key/ 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" diff --stat c4d0524e -- libs/base-entity/src/lib/base-form-navigator/ 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" ls-tree c4d0524e -- libs/base-entity/src/lib/base-form-navigator/ 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" diff c4d0524e -- libs/base-entity/src/lib/base-form-navigator/base-form-navigator.store.ts 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" diff c4d0524e -- libs/base-entity/src/lib/base-list/base-entity-list.component.ts libs/base-entity/src/lib/base-list/base-entity-list.component.html 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\Git\\\\bin\\\\git.exe\" diff c4d0524e -- libs/base-entity/src/lib/base-form/lookup/lookup.component.ts libs/base-entity/src/lib/base-form/foreign-key/foreign-key.component.ts 2>&1)",
+      "PowerShell(Get-Command git -ErrorAction SilentlyContinue | Format-List Name, Source, Version; Write-Host \"---\"; $env:PATH -split ';' | Where-Object { $_ -match 'git' -or $_ -match 'Git' })",
+      "PowerShell(@\\('C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe','C:\\\\Program Files\\\\Git\\\\bin\\\\git.exe','C:\\\\Program Files \\(x86\\)\\\\Git\\\\cmd\\\\git.exe','C:\\\\Users\\\\zsolt\\\\AppData\\\\Local\\\\Programs\\\\Git\\\\cmd\\\\git.exe'\\) | ForEach-Object { if \\(Test-Path $_\\) { \"FOUND: $_\" } else { \"missing: $_\" } })",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "PowerShell(pnpm nx show projects --projects=tag:type:e2e 2>&1)",
+      "PowerShell(pnpm nx test base-entity --testPathPattern=lookup 2>&1)",
+      "PowerShell(npm exec nx test base-entity -- --testPathPattern=lookup 2>&1)",
+      "PowerShell(npm exec nx test base-entity -- --testNamePattern=\"LookupComponent\" 2>&1)"
     ]
   }
 }
