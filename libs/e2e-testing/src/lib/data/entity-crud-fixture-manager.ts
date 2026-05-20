@@ -77,19 +77,20 @@ export class EntityCrudFixtureManager {
     await form.save();
 
     const displayValue = data[idAttr.attrName];
-    await list.assertInList(displayValue);
-
-    const entityId = await list.openDetailsByIdentification(displayValue);
     const fixture: EntityFixture = {
       entityName: descriptor.entityName,
       descriptor,
-      id: entityId,
+      id: '',
       data,
       displayValue,
       deleted: false,
     };
 
     this.registerFixture(fixture);
+    await list.assertInList(displayValue);
+
+    fixture.id = await list.openDetailsByIdentification(displayValue);
+    this.updateRegisteredFixture(fixture);
     await form.assertFieldValues(data, linkedIdentifications, this.contextOptions(suffix));
 
     return fixture;
@@ -165,31 +166,48 @@ export class EntityCrudFixtureManager {
     await form.save();
 
     const displayValue = data[idAttr.attrName];
-    await list.assertInList(displayValue);
-
-    const entityId = await list.openDetailsByIdentification(displayValue);
     const fixture: EntityFixture = {
       entityName: descriptor.entityName,
       descriptor,
-      id: entityId,
+      id: '',
       data,
       displayValue,
       deleted: false,
     };
 
     this.registerFixture(fixture);
+    await list.assertInList(displayValue);
+
+    fixture.id = await list.openDetailsByIdentification(displayValue);
+    this.updateRegisteredFixture(fixture);
     return fixture;
   }
 
   private async deleteFixture(page: Page, fixture: EntityFixture): Promise<void> {
+    const list = new EntityListPO(page, fixture.descriptor, this.routes);
+
+    if (!fixture.id) {
+      await list.deleteByIdentification(fixture.displayValue);
+      fixture.deleted = true;
+      return;
+    }
+
     const form = new EntityFormPO(page, fixture.descriptor, this.routes, this.descriptorMap);
-    await form.navigateToDetail(fixture.id);
-    await form.delete();
+    try {
+      await form.navigateToDetail(fixture.id);
+      await form.delete();
+    } catch {
+      await list.deleteByIdentification(fixture.displayValue);
+    }
     fixture.deleted = true;
   }
 
   private registerFixture(fixture: EntityFixture): void {
     this.fixtures.push(fixture);
+    this.updateRegisteredFixture(fixture);
+  }
+
+  private updateRegisteredFixture(fixture: EntityFixture): void {
     this.createdIdsByEntity[fixture.entityName] = fixture.id;
     this.createdDataByEntity[fixture.entityName] = fixture.data;
   }
