@@ -9,17 +9,7 @@
     "experimentalDecorators": true,
     "importHelpers": true
   },
-  "references": [
-    {
-      "path": "./tsconfig.editor.json"
-    },
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
+  "references": [],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,

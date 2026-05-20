@@ -1,7 +1,5 @@
-import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
-
-/** Control types whose value points at another entity and therefore induces a creation-order dependency. */
-const LINKED_TYPES = new Set<string>(['FOREIGN_KEY', 'LOOKUP']);
+import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import { controlTestersFor } from '../controls/control-tester';
 
 /** Topological sort — entities with no linked-entity deps come first */
 export function resolveDependencyOrder(entities: BaseEntityDescriptor[]): BaseEntityDescriptor[] {
@@ -13,9 +11,10 @@ export function resolveDependencyOrder(entities: BaseEntityDescriptor[]): BaseEn
     if (visited.has(entity.entityName)) return;
     visited.add(entity.entityName);
 
-    for (const attr of entity.attrDescriptors as BaseEntityAttrDescriptor[]) {
-      if (LINKED_TYPES.has(attr.formControlType as string) && attr.linkedEntityType) {
-        const dep = nameMap.get(attr.linkedEntityType.entityName);
+    for (const tester of controlTestersFor(entity)) {
+      const linkedName = tester.linkedEntityName();
+      if (tester.isLinked && linkedName) {
+        const dep = nameMap.get(linkedName);
         if (dep) visit(dep);
       }
     }

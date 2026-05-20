@@ -4,11 +4,35 @@
 // In switch statements over `formControlType`, use string literals matching the enum values.
 export type { BaseEntityDescriptor, BaseEntityAttrDescriptor, FormControlType } from '@processpuzzle/base-entity';
 
+// Control testers
+export {
+  ControlTester,
+  createControlTester,
+  controlTestersFor,
+  identificationAttrFromTesters,
+  linkedFixtureAttrKey,
+  type ControlDataContext,
+  type ControlInteractionContext,
+  type FillControlOptions,
+  type LinkedEntityFixture,
+} from './lib/controls/control-tester';
+
 // Selectors
 export { toTestId, attrSelector, buttonTestId, buttonSelector, formControlSelector, formControlLocator } from './lib/selectors/selector.builder';
 
 // Data
-export { inputAttrs, identificationAttr, buildCreateData, buildUpdateData } from './lib/data/test-data-factory';
+export {
+  inputAttrs,
+  identificationAttr,
+  createControlDataContext,
+  buildCreateData,
+  buildCreateDataForContext,
+  buildLinkedIdentifications,
+  buildLinkedIdentificationsForContext,
+  buildUpdateData,
+  buildUpdateDataForContext,
+} from './lib/data/test-data-factory';
+export { EntityCrudFixtureManager, type EntityFixture } from './lib/data/entity-crud-fixture-manager';
 export { resolveDependencyOrder } from './lib/data/dependency.resolver';
 
 // Routing

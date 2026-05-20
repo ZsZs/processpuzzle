@@ -1,12 +1,9 @@
 import type { FormControlType } from '@processpuzzle/base-entity';
+import { formControlLocatorForType } from '../controls/control-tester';
+import { formControlTestId, toTestId } from './test-id';
 
 /** "Test Entity Component" → "testEntityComponent" */
-export function toTestId(entityName: string): string {
-  return entityName
-    .split(' ')
-    .map((word, i) => (i === 0 ? word.charAt(0).toLowerCase() + word.slice(1) : word.charAt(0).toUpperCase() + word.slice(1)))
-    .join('');
-}
+export { toTestId };
 
 /** e.g. [data-testid="testEntity-name"] */
 export function attrSelector(entityName: string, attrName: string): string {
@@ -24,29 +21,11 @@ export function buttonSelector(entityName: string, action: 'new' | 'save' | 'del
 }
 
 export function formControlSelector(entityName: string, attrName: string): string {
-  return `${toTestId(entityName)}-${attrName}`;
+  return formControlTestId(entityName, attrName);
 }
 
 export function formControlLocator(type: FormControlType): string {
-  switch (type as string) {
-    case 'TEXT_BOX':
-    case 'TEXTAREA':
-      return 'input, textarea';
-    case 'CHECKBOX':
-      return 'input[type="checkbox"]';
-    case 'DATE':
-      return 'input[matInput]';
-    case 'DROPDOWN':
-      return 'mat-select';
-    case 'TAGS':
-      return 'mat-chip-grid input';
-    case 'FOREIGN_KEY':
-    case 'LOOKUP':
-      return 'input[matInput]';
-    // TODO: ARTIFACT / LOOKUP / COMPONENTS — deferred, depends on linked-entity resolution
-    default:
-      return '';
-  }
+  return formControlLocatorForType(type);
 }
 
 /** aria-label of the "Select <EntityName>" button in the FK control. */
