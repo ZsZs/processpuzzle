@@ -52,16 +52,28 @@ export class EntityFormPO {
 
   /** Save navigates back to the list. */
   async save() {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; form save is not applicable`);
+    }
+
     await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'save')).click();
     await this.page.waitForURL(/\/list$/);
   }
 
   async edit() {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; form edit is not applicable`);
+    }
+
     await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'edit')).click();
   }
 
   /** Delete navigates back to the list. */
   async delete() {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; form delete is not applicable`);
+    }
+
     await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'delete')).click();
     await this.page.waitForURL(/\/list$/);
   }

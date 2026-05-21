@@ -23,7 +23,9 @@ export class EntityListPO {
   }
 
   async clickNew() {
-    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new')).click();
+    const newButton = this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new'));
+    await expect(newButton).toBeEnabled();
+    await newButton.click();
   }
 
   /** Type into the toolbar filter input. */
@@ -77,12 +79,20 @@ export class EntityListPO {
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
   }
 
+  async selectFirstRow() {
+    await this.rows().first().locator('mat-checkbox input[type="checkbox"]').first().check();
+  }
+
   /** Click the `{entityName}-select` button (SELECT_OR_CREATE round-trip). */
   async clickSelectButton() {
     await this.page.getByTestId(listSelectButtonTestId(this.descriptor.entityName)).click();
   }
 
   async deleteByIdentification(identificationValue: string) {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; list delete is not applicable`);
+    }
+
     await this.navigateTo();
     await this.selectRowByIdentification(identificationValue);
 
@@ -105,6 +115,18 @@ export class EntityListPO {
 
   async assertNewButtonVisible() {
     await expect(this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new'))).toBeVisible();
+  }
+
+  async assertNewButtonEnabled() {
+    await expect(this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new'))).toBeEnabled();
+  }
+
+  async assertNewButtonDisabled() {
+    await expect(this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new'))).toBeDisabled();
+  }
+
+  async assertDeleteButtonDisabled() {
+    await expect(this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'delete'))).toBeDisabled();
   }
 
   async assertFilterVisible() {
