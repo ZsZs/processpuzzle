@@ -35,6 +35,8 @@ export class EntityRegistryComponent {
       return {
         entityName: descriptor.entityName,
         entityTitle: descriptor.entityTitle,
+        isAbstract: descriptor.isAbstract,
+        parentEntityName: descriptor.parentEntity,
         attrDescriptors: attrDescriptors.map((attr) => this.serializeAttr(attr)),
       };
     });
