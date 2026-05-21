@@ -14,12 +14,15 @@ export class BaseEntityDescriptor {
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle: string;
+  parentEntity: string | undefined;
+  readonly isAbstract: boolean;
 
-  constructor({ store, attrDescriptors, entityName, entityTitle }: BaseEntityDescriptorOptions) {
+  constructor({ store, attrDescriptors, entityName, entityTitle }: BaseEntityDescriptorOptions, isAbstract?: boolean) {
     this.store = store;
     this.attrDescriptors = attrDescriptors;
     this.entityName = entityName;
     this.entityTitle = entityTitle ?? '';
+    this.isAbstract = isAbstract ?? false;
   }
 
   public createTestId(suffix: string): string {

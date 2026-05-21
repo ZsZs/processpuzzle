@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit } from '@angular/core';
+import { Component, computed, inject, input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
@@ -23,6 +23,8 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   readonly layoutService = inject(LayoutService);
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   store: any;
+  isDeleteEnabled = computed(() => this.store.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract);
+  isEditEnabled = computed(() => this.store.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
 
   // region Angular lifecycle hooks
   ngOnInit(): void {

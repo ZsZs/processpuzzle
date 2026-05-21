@@ -96,7 +96,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   // region event handling methods
   onChangeSelection(entity?: Entity) {
     if (entity && this.isSelected(entity)) this.store.selectEntity(entity.id);
-    else this.store.deselectEntity(entity);
+    else if (entity) this.store.deselectEntity(entity.id);
 
     if (this.selection.selected.length === 1) this.store.setCurrentEntity(this.selection.selected[0].id);
     else this.store.clearCurrentEntity();

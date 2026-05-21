@@ -96,7 +96,7 @@ describe('EntityListComponent', () => {
       component.onChangeSelection(testEntity_1);
 
       // VERIFY:
-      expect(store.deselectEntity).toHaveBeenNthCalledWith(1, testEntity_1);
+      expect(store.deselectEntity).toHaveBeenNthCalledWith(1, testEntity_1.id);
       // there is only 1 entity is selected, so it will be also in store selected
       expect(store.setCurrentEntity).toHaveBeenNthCalledWith(2, testEntity_2.id);
     });

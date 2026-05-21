@@ -14,16 +14,16 @@
     <div [ngClass]="layoutService.layoutClass()">
       <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu"><mat-icon>menu</mat-icon> Choose action</button>
       <mat-menu #beforeMenu="matMenu" xPosition="before">
-        <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="store.selectedEntities().length != 1" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
         <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-        <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
       </mat-menu>
     </div>
   } @else {
     <div [ngClass]="layoutService.layoutClass()">
-      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="store.selectedEntities().length != 1" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
       <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="store.selectedEntities().length === 0" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
     </div>
   }
 </mat-toolbar>
