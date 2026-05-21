@@ -28,6 +28,14 @@ export function defineEntityListSuite(options: DefineEntityListSuiteOptions): vo
         await list.assertNewButtonVisible();
         await list.assertFilterVisible();
         await list.assertNotEmpty();
+
+        if (descriptor.isAbstract) {
+          await list.assertNewButtonDisabled();
+          await list.selectFirstRow();
+          await list.assertDeleteButtonDisabled();
+        } else {
+          await list.assertNewButtonEnabled();
+        }
       });
     });
   }

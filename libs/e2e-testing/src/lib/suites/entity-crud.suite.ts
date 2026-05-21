@@ -27,6 +27,8 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
   const timeoutMs = options.timeoutMs ?? 90_000;
 
   for (const descriptor of registry) {
+    if (descriptor.isAbstract) continue;
+
     test.describe(`[${descriptor.entityName}] CRUD`, () => {
       test.describe.configure({ timeout: timeoutMs });
 
