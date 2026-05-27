@@ -1,4 +1,4 @@
-import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
@@ -16,9 +16,9 @@ export const findByQuery = <Entity extends BaseEntity>(store: any, repository: B
       switchMap((parameters) =>
         repository.findByQuery(parameters).pipe(
           tapResponse({
-            next: (response: BaseEntityLoadResponse<Entity> | Entity[] | Entity) => {
+            next: (response: BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>) => {
               if (Object.prototype.hasOwnProperty.call(response, 'content')) {
-                const baseEntityResponse = response as BaseEntityLoadResponse<Entity>;
+                const baseEntityResponse = response as BaseEntityLoadResponse<PersistedEntity<Entity>>;
                 patchState(store, {
                   entities: baseEntityResponse.content,
                   page: baseEntityResponse.page,

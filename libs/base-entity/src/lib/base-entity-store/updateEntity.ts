@@ -1,11 +1,11 @@
-import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export const updateEntity = <Entity extends BaseEntity>(store: any, repository: BaseEntityService<Entity>) => {
-  return async (entity: Entity): Promise<Entity | undefined> => {
+  return async (entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity> | undefined> => {
     patchState(store, { isLoading: true, error: undefined });
     try {
       const updatedEntity = await firstValueFrom(repository.update(entity));
