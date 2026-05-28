@@ -26,7 +26,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
   const registry: BaseEntityDescriptor[] = JSON.parse(fs.readFileSync(options.registryPath, 'utf-8'));
   const routes = new RouteResolver(options.routePrefix);
   const descriptorMap = new Map(registry.map((descriptor) => [descriptor.entityName, descriptor]));
-  const timeoutMs = options.timeoutMs ?? 90_000;
+  const timeoutMs = options.timeoutMs ?? 50_000;
 
   for (const descriptor of registry) {
     if (descriptor.isAbstract) continue;
