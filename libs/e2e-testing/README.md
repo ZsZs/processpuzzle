@@ -102,10 +102,12 @@ import { defineEntityCrudSuite } from '@processpuzzle/e2e-testing';
 import { testConfig } from '../../playwright.config';
 import { REGISTRY_PATH } from '../support/global-setup';
 
-defineEntityCrudSuite({ registryPath: REGISTRY_PATH, routePrefix: testConfig.routePrefix });
+defineEntityCrudSuite({ registryPath: REGISTRY_PATH, routePrefix: testConfig.routePrefix, expectTimeoutMs: 15_000 });
 ```
 
 Run with `nx e2e <your-e2e-project>`. The number of generated test cases scales automatically with the number of entities exposed by your application.
+
+`expectTimeoutMs` is optional. When omitted, form control assertions use the Playwright configured expect timeout.
 
 ## How it works
 
@@ -139,7 +141,7 @@ const routes = new RouteResolver('/base-entity/samples');
 test('custom flow', async ({ page }) => {
   const descriptor: BaseEntityDescriptor = /* … */;
   const list = new EntityListPO(page, descriptor, routes);
-  const form = new EntityFormPO(page, descriptor, routes);
+  const form = new EntityFormPO(page, descriptor, routes, { expectTimeoutMs: 15_000 });
 
   await list.navigateTo();
   await list.clickNew();

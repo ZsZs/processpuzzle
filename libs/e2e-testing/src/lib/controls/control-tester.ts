@@ -23,6 +23,7 @@ export interface ControlDataContext {
 export interface ControlInteractionContext extends ControlDataContext {
   page: Page;
   routes: RouteResolver;
+  expectTimeoutMs?: number;
 }
 
 export interface FillControlOptions {
@@ -43,6 +44,10 @@ function sameCalendarDay(a: string, b: string): boolean {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function expectOptions(context: ControlInteractionContext): { timeout?: number } | undefined {
+  return context.expectTimeoutMs === undefined ? undefined : { timeout: context.expectTimeoutMs };
 }
 
 export abstract class ControlTester {
@@ -86,7 +91,7 @@ export abstract class ControlTester {
   }
 
   async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    await expect(this.inner(context.page, context.descriptor)).toHaveValue(this.displayValue(context, value));
+    await expect(this.inner(context.page, context.descriptor)).toHaveValue(this.displayValue(context, value), expectOptions(context));
   }
 
   protected linkedFixture(context: ControlDataContext): LinkedEntityFixture | undefined {
@@ -167,8 +172,8 @@ class CheckboxControlTester extends ControlTester {
 
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
     const checkbox = this.inner(context.page, context.descriptor);
-    if (value === 'true') await expect(checkbox).toBeChecked();
-    else await expect(checkbox).not.toBeChecked();
+    if (value === 'true') await expect(checkbox).toBeChecked(expectOptions(context));
+    else await expect(checkbox).not.toBeChecked(expectOptions(context));
   }
 }
 
@@ -196,7 +201,7 @@ class DateControlTester extends ControlTester {
 
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
     const input = this.inner(context.page, context.descriptor);
-    await expect(input).not.toHaveValue('');
+    await expect(input).not.toHaveValue('', expectOptions(context));
     const actual = await input.inputValue();
     expect(sameCalendarDay(actual, value), `DATE ${this.attr.attrName}: expected ${value}, got "${actual}"`).toBe(true);
   }
@@ -223,7 +228,7 @@ class DropdownControlTester extends ControlTester {
   }
 
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    await expect(this.control(context.page, context.descriptor).locator('mat-select')).toContainText(value);
+    await expect(this.control(context.page, context.descriptor).locator('mat-select')).toContainText(value, expectOptions(context));
   }
 }
 
@@ -253,7 +258,7 @@ class TagsControlTester extends ControlTester {
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
     const control = this.control(context.page, context.descriptor);
     for (const token of this.tokens(value)) {
-      await expect(control.locator('mat-chip-row').filter({ hasText: token }).first()).toBeVisible();
+      await expect(control.locator('mat-chip-row').filter({ hasText: token }).first()).toBeVisible(expectOptions(context));
     }
   }
 
@@ -368,9 +373,9 @@ class LookupControlTester extends ControlTester {
       .getByRole('listbox', { name: this.attr.label ?? this.attr.attrName })
       .getByRole('option', { name: displayValue, exact: true })
       .first();
-    await expect(option).toBeVisible();
+    await expect(option).toBeVisible(expectOptions(context));
     await option.click();
-    await expect(input).toHaveValue(displayValue);
+    await expect(input).toHaveValue(displayValue, expectOptions(context));
   }
 
   private lookupKey(row: Record<string, string>): string {
