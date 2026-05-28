@@ -435,7 +435,7 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
 
 export function controlTestersFor(descriptor: BaseEntityDescriptor): ControlTester[] {
   return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[])
-    .filter((attr) => attr.visible !== false)
+    .filter((attr) => attr.visible !== false && attr.disabled !== true)
     .map((attr) => createControlTester(attr))
     .filter((tester) => tester.isInput);
 }
