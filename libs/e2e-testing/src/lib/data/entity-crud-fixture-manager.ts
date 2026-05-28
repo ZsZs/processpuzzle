@@ -5,7 +5,7 @@ import {
   controlTestersFor,
   linkedFixtureAttrKey,
 } from '../controls/control-tester';
-import { EntityFormPO } from '../pages/entity-form.po';
+import { EntityFormPO, type EntityFormContextOptions } from '../pages/entity-form.po';
 import { EntityListPO } from '../pages/entity-list.po';
 import { RouteResolver } from '../routing/route.resolver';
 import {
@@ -30,6 +30,7 @@ export class EntityCrudFixtureManager {
     private readonly routes: RouteResolver,
     private readonly descriptorMap: Map<string, BaseEntityDescriptor>,
     private readonly uniqueSuffix: string,
+    private readonly expectTimeoutMs?: number,
   ) {}
 
   async testSetup(page: Page, descriptor: BaseEntityDescriptor): Promise<void> {
@@ -104,12 +105,13 @@ export class EntityCrudFixtureManager {
     return buildLinkedIdentificationsForContext(this.context(descriptor));
   }
 
-  contextOptions(uniqueSuffix = this.uniqueSuffix) {
+  contextOptions(uniqueSuffix = this.uniqueSuffix): EntityFormContextOptions {
     return {
       createdIdsByEntity: this.createdIdsByEntity,
       createdDataByEntity: this.createdDataByEntity,
       linkedFixturesByAttr: this.linkedFixturesByAttr,
       uniqueSuffix,
+      expectTimeoutMs: this.expectTimeoutMs,
     };
   }
 

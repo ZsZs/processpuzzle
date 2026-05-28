@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { buttonTestId } from '../selectors/selector.builder';
 import {
-  type ControlDataContext,
+  type ControlInteractionContext,
   type FillControlOptions,
   type LinkedEntityFixture,
   controlTestersFor,
@@ -16,15 +16,31 @@ export interface EntityFormContextOptions {
   createdDataByEntity?: Record<string, Record<string, string>>;
   linkedFixturesByAttr?: Record<string, LinkedEntityFixture>;
   uniqueSuffix?: string;
+  /** Overrides Playwright's default expect timeout for form control interactions/assertions. */
+  expectTimeoutMs?: number;
 }
 
+export interface EntityFormPOOptions {
+  /** Default expect timeout used when a method call does not provide one in context options. */
+  expectTimeoutMs?: number;
+}
+
+type EntityFormPODependencyOptions = Map<string, BaseEntityDescriptor> | EntityFormPOOptions;
+
 export class EntityFormPO {
+  private readonly descriptorMap: Map<string, BaseEntityDescriptor>;
+  private readonly options: EntityFormPOOptions;
+
   constructor(
     private page: Page,
     private descriptor: BaseEntityDescriptor,
     private routes: RouteResolver,
-    private descriptorMap: Map<string, BaseEntityDescriptor> = new Map(),
-  ) {}
+    descriptorMapOrOptions: EntityFormPODependencyOptions = new Map(),
+    options: EntityFormPOOptions = {},
+  ) {
+    this.descriptorMap = descriptorMapOrOptions instanceof Map ? descriptorMapOrOptions : new Map();
+    this.options = descriptorMapOrOptions instanceof Map ? options : descriptorMapOrOptions;
+  }
 
   // Navigation
 
@@ -95,7 +111,7 @@ export class EntityFormPO {
   private controlContext(
     linkedIdentifications: Record<string, string>,
     contextOptions: EntityFormContextOptions,
-  ): ControlDataContext & { page: Page; routes: RouteResolver } {
+  ): ControlInteractionContext {
     return {
       page: this.page,
       routes: this.routes,
@@ -106,6 +122,7 @@ export class EntityFormPO {
       linkedFixturesByAttr: contextOptions.linkedFixturesByAttr,
       linkedDisplayValuesByAttr: linkedIdentifications,
       uniqueSuffix: contextOptions.uniqueSuffix,
+      expectTimeoutMs: contextOptions.expectTimeoutMs ?? this.options.expectTimeoutMs,
     };
   }
 }

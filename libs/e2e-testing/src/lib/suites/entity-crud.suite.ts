@@ -14,6 +14,8 @@ export interface DefineEntityCrudSuiteOptions {
   routePrefix: string;
   /** Timeout budget for each CRUD test including fixture setup and cleanup. */
   timeoutMs?: number;
+  /** Overrides Playwright's default expect timeout for generated form control assertions. */
+  expectTimeoutMs?: number;
 }
 
 /**
@@ -41,14 +43,14 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('CREATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
 
         await manager.testSetup(page, descriptor);
         await manager.createEntity(page, descriptor);
       });
 
       test('READ', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -59,7 +61,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('UPDATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -77,7 +79,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('DELETE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -97,7 +99,13 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
   }
 }
 
-function createFixtureManager(routes: RouteResolver, descriptorMap: Map<string, BaseEntityDescriptor>, descriptor: BaseEntityDescriptor, retry: number): EntityCrudFixtureManager {
+function createFixtureManager(
+  routes: RouteResolver,
+  descriptorMap: Map<string, BaseEntityDescriptor>,
+  descriptor: BaseEntityDescriptor,
+  retry: number,
+  expectTimeoutMs?: number,
+): EntityCrudFixtureManager {
   const suffix = `e2e-${Date.now().toString(36)}-${descriptor.entityName.replace(/\s+/g, '-').toLowerCase()}-r${retry}`;
-  return new EntityCrudFixtureManager(routes, descriptorMap, suffix);
+  return new EntityCrudFixtureManager(routes, descriptorMap, suffix, expectTimeoutMs);
 }

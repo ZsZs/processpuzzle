@@ -43,7 +43,7 @@ export { createGlobalSetup, type CreateGlobalSetupOptions } from './lib/setup/gl
 
 // Page objects
 export { EntityListPO } from './lib/pages/entity-list.po';
-export { EntityFormPO } from './lib/pages/entity-form.po';
+export { EntityFormPO, type EntityFormContextOptions, type EntityFormPOOptions } from './lib/pages/entity-form.po';
 
 // Suite factories
 export { defineEntityListSuite, type DefineEntityListSuiteOptions } from './lib/suites/entity-list.suite';
