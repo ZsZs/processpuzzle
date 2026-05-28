@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
-import { BaseEntity } from '../../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -9,8 +9,8 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
 
 interface RelatedEntityStore {
-  entities?: () => BaseEntity[];
-  loadById?: (id: string) => BaseEntity | undefined;
+  entities?: () => PersistedEntity<BaseEntity>[];
+  loadById?: (id: string) => PersistedEntity<BaseEntity> | undefined;
 }
 
 @Component({
@@ -90,7 +90,7 @@ interface RelatedEntityStore {
 })
 export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   hasFocus = signal(false);
-  private readonly selectedEntity = signal<BaseEntity | undefined>(undefined);
+  private readonly selectedEntity = signal<PersistedEntity<BaseEntity> | undefined>(undefined);
 
   ngOnInit(): void {
     this.addSelectedComponentFromNavigatorResponse();
@@ -152,7 +152,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     }
 
     const responsePayload = this.formNavigator.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE);
-    const selectedEntity = responsePayload?.payload as BaseEntity | undefined;
+    const selectedEntity = responsePayload?.payload as PersistedEntity<BaseEntity> | undefined;
     const selectedEntityId = selectedEntity?.id;
     if (!selectedEntityId) {
       return;
@@ -182,7 +182,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     return value === undefined || value === null ? '' : String(value);
   }
 
-  private relatedEntityFromLinkedStore(): BaseEntity | undefined {
+  private relatedEntityFromLinkedStore(): PersistedEntity<BaseEntity> | undefined {
     const id = this.foreignKeyId();
     const linkedStore = this.resolveRelatedEntityStore<RelatedEntityStore>();
     if (!id || !linkedStore) {
@@ -194,7 +194,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     }
 
     if (typeof linkedStore.entities === 'function') {
-      return linkedStore.entities().find((entity: BaseEntity) => entity.id === id);
+      return linkedStore.entities().find((entity: PersistedEntity<BaseEntity>) => entity.id === id);
     }
 
     return undefined;

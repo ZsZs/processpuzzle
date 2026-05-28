@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
-import { BaseEntity } from '../../base-entity/base-entity';
+import { assertPersistedEntity, BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
 import { NgClass, NgStyle } from '@angular/common';
 import { ComponentNameAttr, EntityComponentRefComponent } from './entity-component-ref.component';
 import { MatButton } from '@angular/material/button';
@@ -54,9 +54,14 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     };
   }
 
-  components(): BaseEntity[] {
+  components(): PersistedEntity<BaseEntity>[] {
     const value = this.formGroup.get(this.config().attrName)?.value ?? this.value();
-    return Array.isArray(value) ? value : [];
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    value.forEach((component) => assertPersistedEntity(component as BaseEntity));
+    return value as PersistedEntity<BaseEntity>[];
   }
 
   addComponentTitle(): string {
@@ -83,7 +88,10 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
       return;
     }
 
-    const components = [...this.components(), responsePayload.payload as BaseEntity];
+    const selectedComponent = responsePayload.payload as BaseEntity;
+    assertPersistedEntity(selectedComponent);
+
+    const components = [...this.components(), selectedComponent];
     const attrName = this.config().attrName;
     const entity = this.entity() as Record<string, unknown>;
     entity[attrName] = components;

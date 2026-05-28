@@ -1,4 +1,4 @@
-import { BaseEntity } from '../base-entity/base-entity';
+import { assertPersistedEntity, BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { map, Observable } from 'rxjs';
 import { inject, Inject } from '@angular/core';
 import { BaseEntityMapper } from '../base-entity.mapper';
@@ -41,11 +41,11 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     return this.httpClient.delete(this.resourceUrl, { headers: this.headers });
   }
 
-  findAll(page?: number): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity> {
+  findAll(page?: number): Observable<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>> {
     return this.findByQuery({ page });
   }
 
-  findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<Entity> | Entity[] | Entity> {
+  findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>> {
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
@@ -56,38 +56,38 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     } else throw new Error('Could not determine the full url');
   }
 
-  findById(id: string): Observable<void | Entity> {
+  findById(id: string): Observable<void | PersistedEntity<Entity>> {
     const queryCondition: BaseEntityQueryCondition = { pathParams: new Map<string, string>([['id', id]]) };
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
         map((httpResponse: any) => {
-          return this.mapSimpleResponse(httpResponse) as Entity;
+          return this.mapEntityResponse(httpResponse);
         }),
       );
     } else throw new Error('Could not determine the full url');
   }
 
-  add(entity: Entity, id?: number): Observable<Entity> {
+  add(entity: Entity, id?: number): Observable<PersistedEntity<Entity>> {
     const dto = this.entityMapper.toDto(entity);
     const fullUrl = this.buildFullUrl(this.resourceUrl, {});
     if (fullUrl) {
       return this.httpClient.post(fullUrl, dto, { headers: this.headers }).pipe(
         map((response: any) => {
-          return this.entityMapper.fromDto(response, id);
+          return this.mapEntityResponse(response, id);
         }),
       );
     } else throw new Error('Could not determine the full url');
   }
 
-  update(entity: Entity): Observable<Entity> {
+  update(entity: PersistedEntity<Entity>): Observable<PersistedEntity<Entity>> {
     const dto = this.entityMapper.toDto(entity);
     const pathParams = new Map<string, string>([['id', String(entity.id)]]);
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', { pathParams });
     if (fullUrl) {
       return this.httpClient.put(fullUrl, dto, { headers: this.headers }).pipe(
         map((response: any) => {
-          return this.entityMapper.fromDto(response);
+          return this.mapEntityResponse(response);
         }),
       );
     } else throw new Error('Could not determine the full url');
@@ -125,10 +125,10 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     return buildUrl(this.baseUrl, urlOptions);
   }
 
-  private mapPagedResponse(response: any): BaseEntityLoadResponse<Entity> {
+  private mapPagedResponse(response: any): BaseEntityLoadResponse<PersistedEntity<Entity>> {
     const subjectPage = response[0];
     const content = subjectPage.content.map((dto: any, index: number) => {
-      return this.entityMapper.fromDto(dto, index);
+      return this.mapEntityResponse(dto, index);
     });
     return {
       page: subjectPage.page,
@@ -138,14 +138,20 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     };
   }
 
-  private mapSimpleResponse(response: any): Entity[] | Entity {
+  private mapSimpleResponse(response: any): PersistedEntity<Entity>[] | PersistedEntity<Entity> {
     if (Object.prototype.toString.call(response) === '[object Array]') {
       return response.map((dto: any, index: number) => {
-        return this.entityMapper.fromDto(dto, index);
+        return this.mapEntityResponse(dto, index);
       });
     } else {
-      return new Array(this.entityMapper.fromDto(response));
+      return new Array(this.mapEntityResponse(response));
     }
+  }
+
+  private mapEntityResponse(response: any, index?: number): PersistedEntity<Entity> {
+    const entity = this.entityMapper.fromDto(response, index);
+    assertPersistedEntity(entity);
+    return entity;
   }
 
   // endregion

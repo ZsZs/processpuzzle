@@ -2,10 +2,10 @@ import { patchState } from '@ngrx/signals';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
-import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 
 export const addEntity = <Entity extends BaseEntity>(store: any, repository: BaseEntityService<Entity>) => {
-  return async (entity: Entity): Promise<Entity | undefined> => {
+  return async (entity: Entity): Promise<PersistedEntity<Entity> | undefined> => {
     patchState(store, { isLoading: true, error: undefined });
     try {
       const savedEntity = await firstValueFrom(repository.add(entity));

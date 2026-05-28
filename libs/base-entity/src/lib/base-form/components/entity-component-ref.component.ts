@@ -2,7 +2,7 @@ import { Component, inject, input, InputSignal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { BaseEntity } from '../../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 
 export interface ComponentNameAttr {
@@ -26,7 +26,7 @@ export interface ComponentNameAttr {
 })
 export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEntity extends BaseEntity> {
   entity: InputSignal<Entity> = input.required<Entity>();
-  component: InputSignal<ComponentEntity> = input.required<ComponentEntity>();
+  component: InputSignal<PersistedEntity<ComponentEntity>> = input.required<PersistedEntity<ComponentEntity>>();
   componentNameAttr: InputSignal<ComponentNameAttr> = input.required<ComponentNameAttr>();
   disabled: InputSignal<boolean> = input(false);
   formGroup: InputSignal<FormGroup> = input.required<FormGroup>();
@@ -36,7 +36,7 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
   componentName(): string {
     const attrName = this.componentNameAttr().attrName;
     const component = this.component();
-    const componentName = attrName ? (component as Record<string, unknown>)[attrName] : undefined;
+    const componentName = attrName ? (component as unknown as Record<string, unknown>)[attrName] : undefined;
 
     return componentName === undefined || componentName === null ? component.id : String(componentName);
   }

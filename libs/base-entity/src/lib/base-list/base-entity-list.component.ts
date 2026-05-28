@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, signal, ViewChild } from '@angular/core';
-import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
@@ -47,8 +47,8 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
   styleUrl: 'base-entity-list.component.css',
 })
 export class BaseEntityListComponent<Entity extends BaseEntity> implements AfterViewInit, OnInit {
-  dataSource: MatTableDataSource<Entity> = new MatTableDataSource<Entity>();
-  selection = new SelectionModel<Entity>(true, []);
+  dataSource: MatTableDataSource<PersistedEntity<Entity>> = new MatTableDataSource<PersistedEntity<Entity>>();
+  selection = new SelectionModel<PersistedEntity<Entity>>(true, []);
   protected readonly entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   private readonly logger = inject(NGXLogger);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
@@ -94,7 +94,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   // endregion
 
   // region event handling methods
-  onChangeSelection(entity?: Entity) {
+  onChangeSelection(entity?: PersistedEntity<Entity>) {
     if (entity && this.isSelected(entity)) this.store.selectEntity(entity.id);
     else if (entity) this.store.deselectEntity(entity.id);
 
@@ -102,19 +102,19 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     else this.store.clearCurrentEntity();
   }
 
-  onNavigateToDetails(entity: Entity): void {
+  onNavigateToDetails(entity: PersistedEntity<Entity>): void {
     this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entity.id);
     this.store.setCurrentEntity(entity.id);
   }
 
-  onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: Entity) {
+  onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: PersistedEntity<Entity>) {
     const relatedEntityName = config.linkedEntityType?.entityName;
     if (!relatedEntityName) return;
 
     this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName));
   }
 
-  onRowClick(entity: Entity) {
+  onRowClick(entity: PersistedEntity<Entity>) {
     this.selection.toggle(entity);
     this.onChangeSelection(entity);
   }
@@ -177,7 +177,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.dataSource.filter = filterKey.trim().toLocaleLowerCase();
   }
 
-  private getPropertyValue(entity: Entity, property: string): any {
+  private getPropertyValue(entity: PersistedEntity<Entity>, property: string): any {
     return Reflect.get(entity, property);
   }
 
@@ -201,7 +201,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     return numSelected == numRows;
   }
 
-  isSelected(row: Entity) {
+  isSelected(row: PersistedEntity<Entity>) {
     return this.selection.isSelected(row);
   }
 
