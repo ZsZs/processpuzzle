@@ -73,7 +73,7 @@ export abstract class ControlTester {
   }
 
   linkedEntityName(): string | undefined {
-    return this.attr.linkedEntityType?.entityName;
+    return this.attr.linkedEntityType;
   }
 
   protected control(page: Page, descriptor: BaseEntityDescriptor): Locator {

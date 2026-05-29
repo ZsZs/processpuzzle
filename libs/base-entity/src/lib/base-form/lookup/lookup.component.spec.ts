@@ -4,8 +4,8 @@ import { By } from '@angular/platform-browser';
 import { describe, expect, it, vi } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
-import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
 import { LookupTable } from './lookup-table';
@@ -26,36 +26,39 @@ describe('LookupComponent', () => {
     };
   }
 
-  function createLookupConfig(lookupStoreToken: InjectionToken<ReturnType<typeof createLookupStore>>): BaseEntityAttrDescriptor {
+  function createLookupConfig(): BaseEntityAttrDescriptor {
     const config = new BaseEntityAttrDescriptor('selectable', FormControlType.LOOKUP, 'Project Status');
-    config.linkedEntityType = new BaseEntityDescriptor({
-      attrDescriptors: [],
-      entityName: 'ProjectStatus',
-      store: lookupStoreToken,
-    });
+    config.linkedEntityType = 'ProjectStatus';
     return config;
   }
 
+  function provideLookupFacade(lookupStore: ReturnType<typeof createLookupStore>) {
+    const facadeToken = new InjectionToken<any>('LOOKUP_FACADE');
+    const facade = { store: lookupStore };
+    return [
+      { provide: facadeToken, useValue: facade },
+      { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { ProjectStatus: facadeToken } },
+    ];
+  }
+
   it('loads the lookup table and displays the value for the current key.', async () => {
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
-    const config = createLookupConfig(lookupStoreToken);
+    const config = createLookupConfig();
     const entity = new TestEntity('source-id', 'Source entity');
     Reflect.set(entity, 'selectable', 'in-progress');
     const lookupStore = createLookupStore();
 
-    const { fixture } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const { fixture } = await setupFormControlTest(LookupComponent, config, entity, provideLookupFacade(lookupStore));
 
     expect(lookupStore.load).toHaveBeenCalledWith({});
     expect((fixture.debugElement.query(By.css('input[matInput]')).nativeElement as HTMLInputElement).value).toEqual('In Progress');
   });
 
   it('filters lookup items by typed text.', async () => {
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
-    const config = createLookupConfig(lookupStoreToken);
+    const config = createLookupConfig();
     const entity = new TestEntity('source-id', 'Source entity');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, provideLookupFacade(lookupStore));
     const lookupComponent = component as LookupComponent<TestEntity>;
 
     lookupComponent.displayControl.setValue('hold');
@@ -64,12 +67,11 @@ describe('LookupComponent', () => {
   });
 
   it('saves the selected lookup key to the form control and entity.', async () => {
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
-    const config = createLookupConfig(lookupStoreToken);
+    const config = createLookupConfig();
     const entity = new TestEntity('source-id', 'Source entity');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, provideLookupFacade(lookupStore));
     const lookupComponent = component as LookupComponent<TestEntity>;
 
     lookupComponent.selectLookupItem('on-hold');
@@ -80,13 +82,12 @@ describe('LookupComponent', () => {
   });
 
   it('replaces an existing lookup key and marks the form dirty.', async () => {
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
-    const config = createLookupConfig(lookupStoreToken);
+    const config = createLookupConfig();
     const entity = new TestEntity('source-id', 'Source entity');
     Reflect.set(entity, 'selectable', 'in-progress');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, provideLookupFacade(lookupStore));
     const lookupComponent = component as LookupComponent<TestEntity>;
 
     lookupComponent.displayControl.setValue('hold');
@@ -100,13 +101,12 @@ describe('LookupComponent', () => {
   });
 
   it('navigates to the referenced lookup entity without selection mode.', async () => {
-    const lookupStoreToken = new InjectionToken<ReturnType<typeof createLookupStore>>('LOOKUP_STORE');
-    const config = createLookupConfig(lookupStoreToken);
+    const config = createLookupConfig();
     const entity = new TestEntity('source-id', 'Source entity');
     Reflect.set(entity, 'selectable', 'in-progress');
     const lookupStore = createLookupStore();
 
-    const { component } = await setupFormControlTest(LookupComponent, config, entity, [{ provide: lookupStoreToken, useValue: lookupStore }]);
+    const { component } = await setupFormControlTest(LookupComponent, config, entity, provideLookupFacade(lookupStore));
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
     vi.spyOn(formNavigator, 'determineCurrentUrl').mockReturnValue('/test-entity/source-id/details');
     vi.spyOn(formNavigator, 'navigateToRelated').mockResolvedValue(undefined);

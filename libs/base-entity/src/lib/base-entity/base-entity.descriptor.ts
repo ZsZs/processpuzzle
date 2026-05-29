@@ -35,11 +35,11 @@ export class BaseEntityDescriptor {
     return attrDescriptor?.attrName ?? '';
   }
 
-  public overwriteLinkedEntityAttr(attrName: string, linkedEntityDescr: BaseEntityDescriptor): void {
+  public overwriteLinkedEntityAttr(attrName: string, linkedEntityName: string): void {
     const attrDescriptor = filterAttributeDescriptors(this.attrDescriptors).find((attrDescriptor) => attrDescriptor.attrName === attrName);
 
     if (attrDescriptor) {
-      attrDescriptor.linkedEntityType = linkedEntityDescr;
+      attrDescriptor.linkedEntityType = linkedEntityName;
     }
   }
 }

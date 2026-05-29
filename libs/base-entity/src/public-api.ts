@@ -19,6 +19,7 @@ export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
 export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.service';
 export { BASE_ENTITY_STORE, BaseEntityStore } from './lib/base-entity-store/base-entity.store';
 export { BASE_ENTITY_FACADE_REGISTRY, type BaseEntityFacadeRegistry, EntityRegistryComponent } from './lib/base-entity-facade/base-entity-facade-registry';
+export { BaseEntityDescriptorRegistry } from './lib/base-entity-facade/base-entity-descriptor.registry';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';

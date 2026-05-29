@@ -107,7 +107,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: PersistedEntity<Entity>) {
-    const relatedEntityName = config.linkedEntityType?.entityName;
+    const relatedEntityName = config.linkedEntityType;
     if (!relatedEntityName) return;
 
     this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName));

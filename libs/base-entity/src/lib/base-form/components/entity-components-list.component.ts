@@ -25,7 +25,7 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
                   [componentNameAttr]="componentNameAttr()"
                   [disabled]="config().disabled"
                   [formGroup]="formGroup"
-                  [linkedEntityType]="linkedEntityType().entityName"
+                  [linkedEntityType]="linkedEntityName()"
                 />
               </li>
             }
@@ -49,7 +49,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
 
   componentNameAttr(): ComponentNameAttr {
     return {
-      attrName: this.linkedEntityType().componentIdentification(),
+      attrName: this.linkedEntityDescriptor()?.componentIdentification() ?? '',
       name: this.config().attrName,
     };
   }
@@ -65,7 +65,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
   }
 
   addComponentTitle(): string {
-    return 'Add ' + this.linkedEntityType().entityName;
+    return 'Add ' + this.linkedEntityName();
   }
 
   navigateToRelatedList(): void {
@@ -74,7 +74,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     }
 
     this.formNavigator.captureFormSnapshot(this.formGroup.getRawValue());
-    this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
+    this.formNavigator.navigateToRelatedList(this.linkedEntityName(), this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.config().attrName,
       context: this.components(),

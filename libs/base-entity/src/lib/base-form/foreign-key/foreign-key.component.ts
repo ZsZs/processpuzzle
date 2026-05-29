@@ -102,7 +102,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
   }
 
   navigateToRelated() {
-    this.formNavigator.navigateToRelated(this.linkedEntityType().entityName, this.foreignKeyId(), this.formNavigator.determineCurrentUrl());
+    this.formNavigator.navigateToRelated(this.linkedEntityName(), this.foreignKeyId(), this.formNavigator.determineCurrentUrl());
   }
 
   navigateToRelatedList(): void {
@@ -111,7 +111,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     }
 
     this.formNavigator.captureFormSnapshot(this.formGroup.getRawValue());
-    this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
+    this.formNavigator.navigateToRelatedList(this.linkedEntityName(), this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.config().attrName,
     });
@@ -119,11 +119,11 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
   // endregion
 
   selectEntityTitle(): string {
-    return 'Select ' + this.linkedEntityType().entityName;
+    return 'Select ' + this.linkedEntityName();
   }
 
   foreignKeyLabel(): string {
-    return this.linkedEntityType().entityName;
+    return this.linkedEntityName();
   }
 
   showSelectEntityButton(): boolean {
@@ -140,8 +140,8 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
       return this.foreignKeyId();
     }
 
-    const attrName = this.linkedEntityType().componentIdentification();
-    const componentName = (relatedEntity as unknown as Record<string, unknown>)[attrName];
+    const attrName = this.linkedEntityDescriptor()?.componentIdentification() ?? '';
+    const componentName = attrName ? (relatedEntity as unknown as Record<string, unknown>)[attrName] : undefined;
 
     return componentName === undefined || componentName === null ? relatedEntity.id : String(componentName);
   }
@@ -188,7 +188,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
 
   private relatedEntityFromLinkedStore(): PersistedEntity<BaseEntity> | undefined {
     const id = this.foreignKeyId();
-    const linkedStore = this.resolveRelatedEntityStore<RelatedEntityStore>();
+    const linkedStore = this.descriptorRegistry.getStore<RelatedEntityStore>(this.config().linkedEntityType);
     if (!id || !linkedStore) {
       return undefined;
     }
