@@ -47,7 +47,8 @@
       "PowerShell(npm exec nx test base-entity -- --testPathPattern=lookup 2>&1)",
       "PowerShell(npm exec nx test base-entity -- --testNamePattern=\"LookupComponent\" 2>&1)",
       "PowerShell(pnpm nx lint base-entity --silent 2>&1)",
-      "PowerShell(npx nx lint base-entity 2>&1)"
+      "PowerShell(npx nx lint base-entity 2>&1)",
+      "PowerShell(pnpm nx run-many -t lint --projects=base-entity,processpuzzle-testbed --skip-nx-cache 2>&1)"
     ]
   }
 }

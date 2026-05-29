@@ -1,5 +1,5 @@
 import { inject, Injectable, Type } from '@angular/core';
-import { BaseEntityFacade } from '@processpuzzle/base-entity';
+import { BaseEntityDescriptor, BaseEntityFacade } from '@processpuzzle/base-entity';
 import { TestEntityComponent } from './test-entity-component';
 import { TestEntityComponentMapper } from './test-entity-component.mapper';
 import { TestEntityComponentService } from './test-entity-component.service';
@@ -9,8 +9,6 @@ import { createTestEntityComponentDescriptor } from './test-entity-component.des
 @Injectable()
 export class TestEntityComponentFacade extends BaseEntityFacade<TestEntityComponent> {
   readonly entityType = TestEntityComponent;
-  readonly entityName = 'Test Entity Component';
-  readonly attrDescriptors = createTestEntityComponentDescriptor().attrDescriptors;
 
   private readonly mapperRef = inject(TestEntityComponentMapper);
   private readonly serviceRef = inject(TestEntityComponentService);
@@ -25,5 +23,9 @@ export class TestEntityComponentFacade extends BaseEntityFacade<TestEntityCompon
 
   protected override createStoreClass(): Type<unknown> {
     return TestEntityComponentStore;
+  }
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createTestEntityComponentDescriptor();
   }
 }

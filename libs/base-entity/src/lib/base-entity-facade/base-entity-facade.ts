@@ -16,10 +16,7 @@ export type EntityServiceKind = 'rest' | 'firestore';
 @Injectable()
 export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   abstract readonly entityType: new (...args: any[]) => Entity;
-  abstract readonly entityName: string;
-  abstract readonly attrDescriptors: AbstractAttrDescriptor[];
 
-  protected readonly entityTitle? = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
   protected readonly serviceKind: EntityServiceKind = 'rest';
   protected readonly endpoint?: string;
   protected readonly backendRoot?: string;
@@ -55,6 +52,18 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
     return this._descriptor;
   }
 
+  get entityName(): string {
+    return this.descriptor.entityName;
+  }
+
+  get attrDescriptors(): AbstractAttrDescriptor[] {
+    return this.descriptor.attrDescriptors;
+  }
+
+  get entityTitle(): string {
+    return this.descriptor.entityTitle;
+  }
+
   protected createMapper(): BaseEntityMapper<Entity> {
     return new SimpleEntityMapper<Entity>(this.entityType);
   }
@@ -83,11 +92,5 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
     );
   }
 
-  protected createDescriptor(): BaseEntityDescriptor {
-    return new BaseEntityDescriptor({
-      entityName: this.entityName,
-      entityTitle: this.entityTitle,
-      attrDescriptors: this.attrDescriptors,
-    });
-  }
+  protected abstract createDescriptor(): BaseEntityDescriptor;
 }
