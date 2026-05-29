@@ -17,12 +17,25 @@ describe('ForeignKeyComponent', () => {
 
   function createForeignKeyConfig(): BaseEntityAttrDescriptor {
     const config = new BaseEntityAttrDescriptor('number', FormControlType.FOREIGN_KEY);
-    config.linkedEntityType = new BaseEntityDescriptor({
+    config.linkedEntityType = 'TestEntityComponent';
+    return config;
+  }
+
+  function provideLinkedFacade(descriptor: BaseEntityDescriptor, store?: unknown) {
+    const facadeToken = new InjectionToken<any>('LINKED_FACADE');
+    const facade = { descriptor, store };
+    return [
+      { provide: facadeToken, useValue: facade },
+      { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { TestEntityComponent: facadeToken } },
+    ];
+  }
+
+  function linkedComponentDescriptor(): BaseEntityDescriptor {
+    return new BaseEntityDescriptor({
       attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, undefined, undefined, true)],
       entityName: 'TestEntityComponent',
       entityTitle: 'Test Entity Component',
     });
-    return config;
   }
 
   it('shows Select Entity button when enabled and focused.', async () => {
@@ -75,7 +88,7 @@ describe('ForeignKeyComponent', () => {
 
   it('stores only the selected entity ID from SELECT_OR_CREATE response payload addressed by attrName.', async () => {
     const config = createForeignKeyConfig();
-    const { fixture, component } = await setupFormControlTest(ForeignKeyComponent, config, testEntity);
+    const { fixture, component } = await setupFormControlTest(ForeignKeyComponent, config, testEntity, provideLinkedFacade(linkedComponentDescriptor()));
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
 
     formNavigator.pushResponsePayload({ command: NavigatorCommand.SELECT_OR_CREATE, attrName: config.attrName, payload: new TestEntity('selected-id', 'Selected entity') });
@@ -92,16 +105,11 @@ describe('ForeignKeyComponent', () => {
     const config = createForeignKeyConfig();
     const entity = new TestEntity('source-id', 'Source entity', 'Description', true, 100);
     const linkedEntity = new TestEntity('100', 'Registry entity');
-    const linkedFacadeToken = new InjectionToken<any>('LINKED_FACADE');
     const linkedStore = {
       loadById: vi.fn().mockReturnValue(linkedEntity),
     };
-    const linkedFacade = { store: linkedStore };
 
-    const { fixture } = await setupFormControlTest(ForeignKeyComponent, config, entity, [
-      { provide: linkedFacadeToken, useValue: linkedFacade },
-      { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { TestEntityComponent: linkedFacadeToken } },
-    ]);
+    const { fixture } = await setupFormControlTest(ForeignKeyComponent, config, entity, provideLinkedFacade(linkedComponentDescriptor(), linkedStore));
 
     expect((fixture.debugElement.query(By.css('mat-form-field input')).nativeElement as HTMLInputElement).value).toEqual('Registry entity');
     expect(linkedStore.loadById).toHaveBeenCalledWith('100');

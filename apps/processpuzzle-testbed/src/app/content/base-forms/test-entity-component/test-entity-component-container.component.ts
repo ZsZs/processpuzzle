@@ -4,7 +4,6 @@ import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirecti
 import { TestEntityComponentStore } from './test-entity-component.store';
 import { MarkdownComponent } from 'ngx-markdown';
 import { createTestEntityComponentDescriptor } from './test-entity-component.descriptors';
-import { createTestEntityDescriptor } from '../test-entity/test-entity.descriptors';
 
 @Component({
   selector: 'test-entity-component',
@@ -23,7 +22,7 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
     this.entityDescriptor = createTestEntityComponentDescriptor();
     this.entityDescriptor.store = this.store;
     this.entityDescriptor.entityTitle = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
-    this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', createTestEntityDescriptor());
+    this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', 'Test Entity');
   }
 
   // region Angular lifecycle hooks

@@ -15,7 +15,6 @@ import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescript
 import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
-import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { provideNativeDateAdapter } from '@angular/material/core';
 
 describe('BaseEntityFormBuilder', () => {
@@ -39,16 +38,13 @@ describe('BaseEntityFormBuilder', () => {
   }
 
   const componentDescriptor = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS);
-  componentDescriptor.linkedEntityType = new BaseEntityDescriptor({
-    attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, undefined, undefined, true)],
-    entityName: 'TestEntityComponent',
-  });
+  componentDescriptor.linkedEntityType = 'TestEntityComponent';
 
   const foreignKeyDescriptor = new BaseEntityAttrDescriptor('id', FormControlType.FOREIGN_KEY);
-  foreignKeyDescriptor.linkedEntityType = new BaseEntityDescriptor({ attrDescriptors: [], entityName: 'TestEntityComponent' });
+  foreignKeyDescriptor.linkedEntityType = 'TestEntityComponent';
 
   const lookupDescriptor = new BaseEntityAttrDescriptor('lookupValue', FormControlType.LOOKUP);
-  lookupDescriptor.linkedEntityType = new BaseEntityDescriptor({ attrDescriptors: [], entityName: 'TestEntityLookup' });
+  lookupDescriptor.linkedEntityType = 'TestEntityLookup';
 
   const descriptors: AbstractAttrDescriptor[] = [
     new FlexboxDescriptor(

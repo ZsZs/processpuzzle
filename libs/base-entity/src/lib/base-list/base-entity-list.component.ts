@@ -87,8 +87,6 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.formNavigator.determineActiveRouteSegment();
     this.requestPayload = this.formNavigator.popRequestPayload();
     this.selectOrCreateMode.set(this.requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE);
-    // eslint-disable-next-line no-console
-    console.debug('[BaseEntityListComponent] ngOnInit', { entityName: this.entityDescriptor().entityName, requestPayload: this.requestPayload, selectOrCreateMode: this.selectOrCreateMode() });
     this.logger.info('BaseEntityListComponent initialized with:', { columnDescriptors: this.columnDescriptors() });
   }
 
@@ -109,7 +107,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   }
 
   onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: PersistedEntity<Entity>) {
-    const relatedEntityName = config.linkedEntityType?.entityName;
+    const relatedEntityName = config.linkedEntityType;
     if (!relatedEntityName) return;
 
     this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName));

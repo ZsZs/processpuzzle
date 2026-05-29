@@ -130,7 +130,7 @@ export const TestEntityStore = signalStore(
 
 ### 5. Describe the attributes
 
-Each visible field gets a `BaseEntityAttrDescriptor`. `FormControlType` covers `TEXT_BOX`, `TEXTAREA`, `CHECKBOX`, `DATE`, `DROPDOWN`, `LOOKUP`, `RADIO`, `TAGS`, `ARTIFACT`, `COMPONENTS`, `FOREIGN_KEY`, `LABEL`, `TITLE`, and `FLEX_BOX`. Use `FlexboxDescriptor` to lay attributes out in rows and columns, and `linkedEntityType` to attach a related entity's descriptor (used by `LOOKUP`, `FOREIGN_KEY`, and nested `COMPONENTS`).
+Each visible field gets a `BaseEntityAttrDescriptor`. `FormControlType` covers `TEXT_BOX`, `TEXTAREA`, `CHECKBOX`, `DATE`, `DROPDOWN`, `LOOKUP`, `RADIO`, `TAGS`, `ARTIFACT`, `COMPONENTS`, `FOREIGN_KEY`, `LABEL`, `TITLE`, and `FLEX_BOX`. Use `FlexboxDescriptor` to lay attributes out in rows and columns, and `linkedEntityType` (a string — the related entity's name) to point at a related entity (used by `LOOKUP`, `FOREIGN_KEY`, and nested `COMPONENTS`). The descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY`.
 
 ```typescript
 function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
@@ -144,8 +144,8 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
 
-  lookupAttr.linkedEntityType = createTrunkDataDescriptor();
-  componentsAttr.linkedEntityType = createTestEntityComponentDescriptor();
+  lookupAttr.linkedEntityType = 'Trunk Data';
+  componentsAttr.linkedEntityType = 'Test Entity Component';
 
   const column1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr], FlexDirection.COLUMN);
   const column2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, componentsAttr], FlexDirection.COLUMN);
@@ -154,19 +154,14 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   return [layout];
 }
 
-let cachedDescriptor: BaseEntityDescriptor | undefined;
-
 export function createTestEntityDescriptor(): BaseEntityDescriptor {
-  if (cachedDescriptor) return cachedDescriptor;
-  cachedDescriptor = new BaseEntityDescriptor({ entityName: 'Test Entity', attrDescriptors: [] });
-  cachedDescriptor.attrDescriptors = createTestEntityAttrDescriptors();
-  return cachedDescriptor;
+  return new BaseEntityDescriptor({ entityName: 'Test Entity', attrDescriptors: createTestEntityAttrDescriptors() });
 }
 ```
 
 A few notes:
 
-- Caching the descriptor in a module-level variable keeps a single instance shared across components and breaks circular references between bidirectionally linked entities.
+- `linkedEntityType` is just the name of the related entity. The actual `BaseEntityDescriptor` is resolved at runtime through the facade registered in `BASE_ENTITY_FACADE_REGISTRY`.
 - `BaseEntityDescriptor` takes an options object (`{ entityName, attrDescriptors, store?, entityTitle? }`); `store` and `entityTitle` are usually set later in the host component.
 
 ### 6. Render the container

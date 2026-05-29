@@ -1,5 +1,5 @@
 import { inject, Injectable, Type } from '@angular/core';
-import { BaseEntityFacade } from '@processpuzzle/base-entity';
+import { BaseEntityDescriptor, BaseEntityFacade } from '@processpuzzle/base-entity';
 import { TrunkData } from './trunk-data';
 import { TrunkDataMapper } from './trunk-data.mapper';
 import { TrunkDataService } from './trunk-data.service';
@@ -9,8 +9,6 @@ import { createTrunkDataDescriptor } from './trunk-data.descriptors';
 @Injectable()
 export class TrunkDataFacade extends BaseEntityFacade<TrunkData> {
   readonly entityType = TrunkData;
-  readonly entityName = 'Trunk Data';
-  readonly attrDescriptors = createTrunkDataDescriptor().attrDescriptors;
 
   private readonly mapperRef = inject(TrunkDataMapper);
   private readonly serviceRef = inject(TrunkDataService);
@@ -25,5 +23,9 @@ export class TrunkDataFacade extends BaseEntityFacade<TrunkData> {
 
   protected override createStoreClass(): Type<unknown> {
     return TrunkDataStore;
+  }
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createTrunkDataDescriptor();
   }
 }

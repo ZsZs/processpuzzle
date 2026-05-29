@@ -51,7 +51,7 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
   readonly filterText = signal('');
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly lookupStore = computed<LookupStore | undefined>(() => this.resolveRelatedEntityStore<LookupStore>());
+  private readonly lookupStore = computed<LookupStore | undefined>(() => this.descriptorRegistry.getStore<LookupStore>(this.config().linkedEntityType));
   readonly lookupItems = computed<LookupTable[]>(() => this.lookupStore()?.entities?.() ?? []);
   readonly filteredLookupItems = computed<LookupTable[]>(() => {
     const filterText = this.filterText().trim().toLocaleLowerCase();
@@ -110,7 +110,7 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
       return;
     }
 
-    this.formNavigator.navigateToRelated(this.linkedEntityType().entityName, relatedEntityId, this.formNavigator.determineCurrentUrl());
+    this.formNavigator.navigateToRelated(this.linkedEntityName(), relatedEntityId, this.formNavigator.determineCurrentUrl());
   }
 
   canNavigateToRelated(): boolean {

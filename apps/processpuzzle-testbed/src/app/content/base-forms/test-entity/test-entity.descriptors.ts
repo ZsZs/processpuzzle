@@ -1,7 +1,5 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { TestEnum } from './test-entity';
-import { createTestEntityComponentDescriptor } from '../test-entity-component/test-entity-component.descriptors';
-import { createTrunkDataDescriptor } from '../trunk-data/trunk-data.descriptors';
 
 const selectables = Object.keys(TestEnum)
   .filter((key: any) => parseInt(key) >= 0)
@@ -19,8 +17,8 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
-  lookupAttr.linkedEntityType = createTrunkDataDescriptor();
-  componentsAttr.linkedEntityType = createTestEntityComponentDescriptor();
+  lookupAttr.linkedEntityType = 'Trunk Data';
+  componentsAttr.linkedEntityType = 'Test Entity Component';
 
   const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);
   const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr], FlexDirection.COLUMN);
@@ -29,11 +27,6 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-let cachedDescriptor: BaseEntityDescriptor | undefined;
-
 export function createTestEntityDescriptor(): BaseEntityDescriptor {
-  if (cachedDescriptor) return cachedDescriptor;
-  cachedDescriptor = new BaseEntityDescriptor({ entityName: 'Test Entity', attrDescriptors: [] });
-  cachedDescriptor.attrDescriptors = createTestEntityAttrDescriptors();
-  return cachedDescriptor;
+  return new BaseEntityDescriptor({ entityName: 'Test Entity', attrDescriptors: createTestEntityAttrDescriptors() });
 }

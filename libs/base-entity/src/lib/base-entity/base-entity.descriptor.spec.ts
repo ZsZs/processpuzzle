@@ -48,14 +48,8 @@ describe('componentIdentification()', () => {
     expect(entityDescriptor.componentIdentification()).toBe('');
   });
 
-  it('overwrites the linked entity descriptor for a named attribute', () => {
+  it('overwrites the linked entity name for a named attribute', () => {
     const componentAttr = new BaseEntityAttrDescriptor('component', FormControlType.COMPONENTS);
-    const linkedEntityDescriptor = new BaseEntityDescriptor({
-      attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX)],
-      entityName: 'linkedEntity',
-      entityTitle: 'Linked Entity',
-      store: {},
-    });
     const entityDescriptor = new BaseEntityDescriptor({
       attrDescriptors: [componentAttr],
       entityName: 'testEntity',
@@ -63,8 +57,8 @@ describe('componentIdentification()', () => {
       store: {},
     });
 
-    entityDescriptor.overwriteLinkedEntityAttr('component', linkedEntityDescriptor);
+    entityDescriptor.overwriteLinkedEntityAttr('component', 'linkedEntity');
 
-    expect(componentAttr.linkedEntityType).toBe(linkedEntityDescriptor);
+    expect(componentAttr.linkedEntityType).toBe('linkedEntity');
   });
 });
