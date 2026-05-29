@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/base-entity",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "license": "MIT",
   "author": {
     "name": "Zsolt Zsuffa",
@@ -17,13 +17,13 @@
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
     "@angular-architects/ngrx-toolkit": "^21.0.1",
-    "@angular/cdk": "^21.2.11",
-    "@angular/common": "~21.2.13",
-    "@angular/core": "~21.2.13",
-    "@angular/forms": "~21.2.13",
-    "@angular/material": "^21.2.11",
-    "@angular/platform-browser": "~21.2.13",
-    "@angular/router": "~21.2.13",
+    "@angular/cdk": "^21.2.13",
+    "@angular/common": "~21.2.15",
+    "@angular/core": "~21.2.15",
+    "@angular/forms": "~21.2.15",
+    "@angular/material": "^21.2.13",
+    "@angular/platform-browser": "~21.2.15",
+    "@angular/router": "~21.2.15",
     "@angular/fire": "^20.0.1",
     "@jsverse/transloco": "8.3.0",
     "@ngrx/operators": "^21.1.0",

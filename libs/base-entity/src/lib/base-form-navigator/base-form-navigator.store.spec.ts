@@ -96,50 +96,75 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.activeRouteSegment()).toEqual(RouteSegments.LIST_ROUTE);
   });
 
-  it('navigation methods add given payloads to the navigator payload stack.', async () => {
-    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
-    const listPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+  it('navigation methods add given payloads to the navigator payload map, keyed by attrName.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+    const listPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: { entityName: 'TestEntity' } };
 
     await store.navigateToDetails('1', 'home', detailsPayload);
     await store.navigateToRelatedList('TestEntityComponent', 'home', listPayload);
 
-    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload, listPayload]);
+    expect(Array.from(store.navigatorPayloads().values())).toEqual([detailsPayload, listPayload]);
+    expect(store.navigatorPayloads().get('editTarget')).toEqual(detailsPayload);
+    expect(store.navigatorPayloads().get('component')).toEqual(listPayload);
   });
 
-  it('navigateBack() removes the latest navigator payload from the stack.', async () => {
-    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
-    const relatedPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntityComponent' } };
+  it('navigateBack() removes the latest navigator payload from the map.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+    const relatedPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: { entityName: 'TestEntityComponent' } };
 
     await store.navigateToDetails('1', 'home', detailsPayload);
     await store.navigateToRelated('TestEntityComponent', '2', 'home', relatedPayload);
     await store.navigateBack();
 
-    expect(store.navigatorPayloads().toArray()).toEqual([detailsPayload]);
+    expect(Array.from(store.navigatorPayloads().values())).toEqual([detailsPayload]);
   });
 
-  it('direct router navigation clears request and response payload stacks.', async () => {
-    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
-    const responsePayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
+  it('direct router navigation clears request and response payload maps.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+    const responsePayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: { id: '2' } };
 
     await store.navigateToDetails('1', 'home', detailsPayload);
     store.pushResponsePayload(responsePayload);
     await router.navigateByUrl('/home');
 
-    expect(store.requestPayloads().toArray()).toEqual([]);
-    expect(store.responsePayloads().toArray()).toEqual([]);
+    expect(store.requestPayloads().size).toEqual(0);
+    expect(store.responsePayloads().size).toEqual(0);
   });
 
-  it('popResponsePayload() removes and returns the latest matching response payload.', () => {
-    const editPayload: NavigationPayload = { command: NavigatorCommand.EDIT, payload: { id: '1' } };
-    const firstSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '2' } };
-    const secondSelectPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { id: '3' } };
+  it('popResponsePayload(attrName) removes and returns the response payload for that attribute.', () => {
+    const editPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+    const customerPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'customerId', payload: { id: '2' } };
+    const shipperPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'shipperId', payload: { id: '3' } };
 
     store.pushResponsePayload(editPayload);
-    store.pushResponsePayload(firstSelectPayload);
-    store.pushResponsePayload(secondSelectPayload);
+    store.pushResponsePayload(customerPayload);
+    store.pushResponsePayload(shipperPayload);
 
-    expect(store.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE)).toEqual(secondSelectPayload);
-    expect(store.responsePayloads().toArray()).toEqual([editPayload, firstSelectPayload]);
+    expect(store.popResponsePayload('customerId')).toEqual(customerPayload);
+    expect(Array.from(store.responsePayloads().values())).toEqual([editPayload, shipperPayload]);
+  });
+
+  it('popResponsePayload() without an attrName returns and removes the latest response payload.', () => {
+    const customerPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'customerId', payload: { id: '2' } };
+    const shipperPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'shipperId', payload: { id: '3' } };
+
+    store.pushResponsePayload(customerPayload);
+    store.pushResponsePayload(shipperPayload);
+
+    expect(store.popResponsePayload()).toEqual(shipperPayload);
+    expect(Array.from(store.responsePayloads().values())).toEqual([customerPayload]);
+  });
+
+  it('pushing a payload with the same attrName replaces the prior entry and moves it to the end.', () => {
+    const firstPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'customerId', payload: { id: '1' } };
+    const secondPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'shipperId', payload: { id: '2' } };
+    const replacementPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'customerId', payload: { id: '3' } };
+
+    store.pushResponsePayload(firstPayload);
+    store.pushResponsePayload(secondPayload);
+    store.pushResponsePayload(replacementPayload);
+
+    expect(Array.from(store.responsePayloads().values())).toEqual([secondPayload, replacementPayload]);
   });
 
   it('navigateToUrl() navigates to url from store.', async () => {

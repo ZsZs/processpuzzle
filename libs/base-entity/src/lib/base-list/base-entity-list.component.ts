@@ -16,7 +16,7 @@ import { ObjectStoreService } from '../object-store/object-store.service';
 import { SlicePipe } from '@angular/common';
 import { ArtifactAttr } from '../base-form/artifact/artifact-attr';
 import { MatButton } from '@angular/material/button';
-import { NavigatorCommand } from '../base-form-navigator/navigation-payload';
+import { type NavigationPayload, NavigatorCommand } from '../base-form-navigator/navigation-payload';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
@@ -67,6 +67,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   @ViewChild(MatPaginator) paginator = {} as MatPaginator;
   store: any;
   protected selectOrCreateMode = signal(false);
+  private requestPayload?: NavigationPayload;
 
   constructor() {
     this.store = this.entityDescriptor().store;
@@ -84,10 +85,10 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   ngOnInit(): void {
     this.formNavigator.setEntityName(this.entityDescriptor().entityName);
     this.formNavigator.determineActiveRouteSegment();
-    const requestPayload = this.formNavigator.popRequestPayload();
-    this.selectOrCreateMode.set(requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE);
+    this.requestPayload = this.formNavigator.popRequestPayload();
+    this.selectOrCreateMode.set(this.requestPayload?.command === NavigatorCommand.SELECT_OR_CREATE);
     // eslint-disable-next-line no-console
-    console.debug('[BaseEntityListComponent] ngOnInit', { entityName: this.entityDescriptor().entityName, requestPayload, selectOrCreateMode: this.selectOrCreateMode() });
+    console.debug('[BaseEntityListComponent] ngOnInit', { entityName: this.entityDescriptor().entityName, requestPayload: this.requestPayload, selectOrCreateMode: this.selectOrCreateMode() });
     this.logger.info('BaseEntityListComponent initialized with:', { columnDescriptors: this.columnDescriptors() });
   }
 
@@ -161,7 +162,11 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   async onSelectEntity(): Promise<void> {
     if (!this.canSelectEntity()) return;
 
-    this.formNavigator.pushResponsePayload({ command: NavigatorCommand.SELECT_OR_CREATE, payload: this.selection.selected[0] });
+    this.formNavigator.pushResponsePayload({
+      command: NavigatorCommand.SELECT_OR_CREATE,
+      attrName: this.requestPayload?.attrName,
+      payload: this.selection.selected[0],
+    });
     await this.formNavigator.navigateBack();
   }
 
