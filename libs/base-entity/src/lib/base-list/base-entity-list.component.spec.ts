@@ -172,15 +172,15 @@ describe('EntityListComponent', () => {
       expect(selectButton.disabled).toBeFalsy();
     });
 
-    it('onSelectEntity() pushes the selected entity as SELECT_OR_CREATE response payload.', async () => {
-      const requestPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, payload: { entityName: 'TestEntity' } };
+    it('onSelectEntity() pushes the selected entity as SELECT_OR_CREATE response payload echoing the request attrName.', async () => {
+      const requestPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: { entityName: 'TestEntity' } };
       const { component, formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE, requestPayload);
       vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
 
       component.selection.select(testEntity_2);
       await component.onSelectEntity();
 
-      expect(formNavigator.responsePayloads().peek()).toEqual({ command: NavigatorCommand.SELECT_OR_CREATE, payload: testEntity_2 });
+      expect(formNavigator.responsePayloads().get('component')).toEqual({ command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: testEntity_2 });
       expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
   });

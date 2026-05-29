@@ -114,6 +114,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
 
     this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
+      attrName: this.config().attrName,
     });
   }
   // endregion
@@ -151,7 +152,11 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
       return;
     }
 
-    const responsePayload = this.formNavigator.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE);
+    const responsePayload = this.formNavigator.popResponsePayload(this.config().attrName);
+    if (responsePayload?.command !== NavigatorCommand.SELECT_OR_CREATE) {
+      return;
+    }
+
     const selectedEntity = responsePayload?.payload as PersistedEntity<BaseEntity> | undefined;
     const selectedEntityId = selectedEntity?.id;
     if (!selectedEntityId) {

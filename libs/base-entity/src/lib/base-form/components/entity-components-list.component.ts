@@ -75,6 +75,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
 
     this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
+      attrName: this.config().attrName,
     });
   }
 
@@ -83,8 +84,8 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
       return;
     }
 
-    const responsePayload = this.formNavigator.popResponsePayload(NavigatorCommand.SELECT_OR_CREATE);
-    if (!responsePayload?.payload) {
+    const responsePayload = this.formNavigator.popResponsePayload(this.config().attrName);
+    if (responsePayload?.command !== NavigatorCommand.SELECT_OR_CREATE || !responsePayload.payload) {
       return;
     }
 

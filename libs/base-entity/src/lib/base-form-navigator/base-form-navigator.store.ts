@@ -1,9 +1,8 @@
 import { patchState, signalStore, signalStoreFeature, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { inject } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { Stack } from '@processpuzzle/util';
 import { BaseUrlSegments } from './base-url-segments';
-import { type NavigationPayload, NavigatorCommand } from './navigation-payload';
+import { type NavigationPayload } from './navigation-payload';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 
 export enum RouteSegments {
@@ -11,13 +10,15 @@ export enum RouteSegments {
   DETAILS_ROUTE = 'DETAILS_ROUTE',
 }
 
+const ROOT_PAYLOAD_KEY = '';
+
 export interface NavigationState {
   activeRouteSegment: RouteSegments | undefined;
   entityName: string;
   navigationError?: string;
   navigateTo: string;
-  responsePayloads: Stack<NavigationPayload>;
-  requestPayloads: Stack<NavigationPayload>;
+  responsePayloads: Map<string, NavigationPayload>;
+  requestPayloads: Map<string, NavigationPayload>;
   returnTo: string;
 }
 
@@ -26,8 +27,8 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
   entityName: '',
   navigationError: undefined,
   navigateTo: '',
-  responsePayloads: new Stack<NavigationPayload>(),
-  requestPayloads: new Stack<NavigationPayload>(),
+  responsePayloads: new Map<string, NavigationPayload>(),
+  requestPayloads: new Map<string, NavigationPayload>(),
   returnTo: '',
 };
 
@@ -37,6 +38,25 @@ function snakeCaseName(entityName: string) {
     .split(/(?=[A-Z])/)
     .join('-')
     .toLowerCase();
+}
+
+function payloadKey(payload: NavigationPayload): string {
+  return payload.attrName ?? ROOT_PAYLOAD_KEY;
+}
+
+function clonePayloads(source: Map<string, NavigationPayload>): Map<string, NavigationPayload> {
+  return new Map<string, NavigationPayload>(source);
+}
+
+function setLast(target: Map<string, NavigationPayload>, key: string, payload: NavigationPayload): void {
+  target.delete(key);
+  target.set(key, payload);
+}
+
+function lastKeyOf(target: Map<string, NavigationPayload>): string | undefined {
+  let last: string | undefined;
+  for (const key of target.keys()) last = key;
+  return last;
 }
 
 export const BaseFormNavigatorSingletonStore = signalStore(
@@ -49,8 +69,8 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     function clearPayloadStacks(): void {
       patchState(store, {
-        requestPayloads: new Stack<NavigationPayload>(),
-        responsePayloads: new Stack<NavigationPayload>(),
+        requestPayloads: new Map<string, NavigationPayload>(),
+        responsePayloads: new Map<string, NavigationPayload>(),
       });
     }
 
@@ -98,15 +118,6 @@ export const BaseFormNavigatorSingletonStore = signalStore(
           return;
         }
 
-        // eslint-disable-next-line no-console
-        console.debug('[FormNavigator] NavigationEnd', {
-          url: event.url,
-          urlAfterRedirects: event.urlAfterRedirects,
-          pendingNavigatorUrl,
-          isPending: isPendingNavigatorUrl(event),
-          requestPayloads: store.requestPayloads().toArray(),
-        });
-
         if (isPendingNavigatorUrl(event)) {
           pendingNavigatorUrl = undefined;
         } else {
@@ -124,9 +135,10 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     async function navigateBack(defaultUrl?: string): Promise<void> {
       const goTo = store.returnTo() ? store.returnTo() : defaultUrl;
-      const navigatorPayloads = new Stack<NavigationPayload>(store.requestPayloads().toArray());
-      navigatorPayloads.pop();
-      patchState(store, { requestPayloads: navigatorPayloads, returnTo: '' });
+      const requestPayloads = clonePayloads(store.requestPayloads());
+      const lastKey = lastKeyOf(requestPayloads);
+      if (lastKey !== undefined) requestPayloads.delete(lastKey);
+      patchState(store, { requestPayloads, returnTo: '' });
       if (goTo) {
         pendingNavigatorUrl = goTo;
         await router
@@ -177,7 +189,12 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       const baseUrl = determineBaseUrl();
       const listPath = baseUrl + '/' + snakeCaseEntityName + '/list';
       // eslint-disable-next-line no-console
-      console.debug('[FormNavigator] navigateToRelatedList', { relatedTypeName, listPath, payload, requestPayloadsAfterPush: store.requestPayloads().toArray() });
+      console.debug('[FormNavigator] navigateToRelatedList', {
+        relatedTypeName,
+        listPath,
+        payload,
+        requestPayloadsAfterPush: Array.from(store.requestPayloads().values()),
+      });
       await navigateToUrl(listPath, returnTo);
     }
 
@@ -186,36 +203,35 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     }
 
     function pushPayload(payload?: NavigationPayload): void {
-      if (payload) {
-        const navigatorPayloads = new Stack<NavigationPayload>(store.requestPayloads().toArray());
-        navigatorPayloads.push(payload);
-        patchState(store, { requestPayloads: navigatorPayloads });
-      }
+      if (!payload) return;
+      const requestPayloads = clonePayloads(store.requestPayloads());
+      setLast(requestPayloads, payloadKey(payload), payload);
+      patchState(store, { requestPayloads });
     }
 
-    function popRequestPayload(): NavigationPayload | undefined {
-      const navigatorPayloads = new Stack<NavigationPayload>(store.requestPayloads().toArray());
-      const payload = navigatorPayloads.pop();
-      patchState(store, { requestPayloads: navigatorPayloads });
+    function popRequestPayload(attrName?: string): NavigationPayload | undefined {
+      const requestPayloads = clonePayloads(store.requestPayloads());
+      const key = attrName ?? lastKeyOf(requestPayloads);
+      if (key === undefined || !requestPayloads.has(key)) return undefined;
+      const payload = requestPayloads.get(key);
+      requestPayloads.delete(key);
+      patchState(store, { requestPayloads });
       return payload;
     }
 
-    function popResponsePayload(command?: NavigatorCommand): NavigationPayload | undefined {
-      const responsePayloadArray = store.responsePayloads().toArray();
-      const payloadIndex = command === undefined ? responsePayloadArray.length - 1 : responsePayloadArray.map((payload) => payload.command).lastIndexOf(command);
-
-      if (payloadIndex < 0) {
-        return undefined;
-      }
-
-      const [payload] = responsePayloadArray.splice(payloadIndex, 1);
-      patchState(store, { responsePayloads: new Stack<NavigationPayload>(responsePayloadArray) });
+    function popResponsePayload(attrName?: string): NavigationPayload | undefined {
+      const responsePayloads = clonePayloads(store.responsePayloads());
+      const key = attrName ?? lastKeyOf(responsePayloads);
+      if (key === undefined || !responsePayloads.has(key)) return undefined;
+      const payload = responsePayloads.get(key);
+      responsePayloads.delete(key);
+      patchState(store, { responsePayloads });
       return payload;
     }
 
     function pushResponsePayload(payload: NavigationPayload): void {
-      const responsePayloads = new Stack<NavigationPayload>(store.responsePayloads().toArray());
-      responsePayloads.push(payload);
+      const responsePayloads = clonePayloads(store.responsePayloads());
+      setLast(responsePayloads, payloadKey(payload), payload);
       patchState(store, { responsePayloads });
     }
 

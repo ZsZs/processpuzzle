@@ -57,7 +57,7 @@ describe('ForeignKeyComponent', () => {
     expect(fixture.debugElement.query(By.css('button[title="Select TestEntityComponent"]'))).toBeNull();
   });
 
-  it('navigates to the related list in SELECT_OR_CREATE mode.', async () => {
+  it('navigates to the related list in SELECT_OR_CREATE mode and forwards its attrName.', async () => {
     const config = createForeignKeyConfig();
     const { component } = await setupFormControlTest(ForeignKeyComponent, config, testEntity);
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
@@ -69,15 +69,16 @@ describe('ForeignKeyComponent', () => {
 
     expect(formNavigator.navigateToRelatedList).toHaveBeenCalledWith('TestEntityComponent', '/test-entity/1/details', {
       command: NavigatorCommand.SELECT_OR_CREATE,
+      attrName: config.attrName,
     });
   });
 
-  it('stores only the selected entity ID from SELECT_OR_CREATE response payload.', async () => {
+  it('stores only the selected entity ID from SELECT_OR_CREATE response payload addressed by attrName.', async () => {
     const config = createForeignKeyConfig();
     const { fixture, component } = await setupFormControlTest(ForeignKeyComponent, config, testEntity);
     const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
 
-    formNavigator.pushResponsePayload({ command: NavigatorCommand.SELECT_OR_CREATE, payload: new TestEntity('selected-id', 'Selected entity') });
+    formNavigator.pushResponsePayload({ command: NavigatorCommand.SELECT_OR_CREATE, attrName: config.attrName, payload: new TestEntity('selected-id', 'Selected entity') });
     const foreignKeyComponent = component as ForeignKeyComponent<TestEntity>;
     foreignKeyComponent.ngOnInit();
     fixture.detectChanges();

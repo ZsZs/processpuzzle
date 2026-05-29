@@ -5,5 +5,6 @@ export enum NavigatorCommand {
 
 export interface NavigationPayload {
   command: NavigatorCommand;
+  attrName?: string;
   payload?: object;
 }
