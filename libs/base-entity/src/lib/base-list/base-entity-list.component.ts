@@ -166,6 +166,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.requestPayload?.attrName,
       payload: this.selection.selected[0],
+      context: this.requestPayload?.context,
     });
     await this.formNavigator.navigateBack();
   }

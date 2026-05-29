@@ -1,3 +1,4 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
 import { TestEntityComponent } from '../test-entity-component/test-entity-component';

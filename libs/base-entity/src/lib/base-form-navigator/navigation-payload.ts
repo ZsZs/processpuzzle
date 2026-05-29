@@ -7,4 +7,5 @@ export interface NavigationPayload {
   command: NavigatorCommand;
   attrName?: string;
   payload?: object;
+  context?: unknown;
 }
