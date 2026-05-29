@@ -25,7 +25,14 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   private readonly logger = inject(NGXLogger);
 
   // region public methods
-  public buildForm(viewContainerRef: ViewContainerRef, baseEntityForm: FormGroup, store: any, attrDescriptors: AbstractAttrDescriptor[], entity: Signal<Entity>): void {
+  public buildForm(
+    viewContainerRef: ViewContainerRef,
+    baseEntityForm: FormGroup,
+    store: any,
+    attrDescriptors: AbstractAttrDescriptor[],
+    entity: Signal<Entity>,
+    initialValues?: Record<string, unknown>,
+  ): void {
     this.logger.trace('Starting to build form for: ', { attrDescriptors: attrDescriptors });
     viewContainerRef.clear();
     attrDescriptors.forEach((column: AbstractAttrDescriptor) => {
@@ -33,7 +40,8 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       const formControlType = this.createFormControl(column);
       if (formControlType) {
         if (column instanceof BaseEntityAttrDescriptor) {
-          const currentAttrValue = Reflect.get(entity(), column.attrName);
+          const hasSnapshotValue = initialValues != null && Object.prototype.hasOwnProperty.call(initialValues, column.attrName);
+          const currentAttrValue = hasSnapshotValue ? initialValues![column.attrName] : Reflect.get(entity(), column.attrName);
           const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
           baseEntityForm.addControl(column.attrName, formControl);
 
@@ -49,7 +57,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           componentRef.setInput('entity', entity());
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
-          this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity);
+          this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity, initialValues);
         } else throw Error('Undefined subclass of AbstractAttrDescriptor');
       }
     });

@@ -73,9 +73,11 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
       return;
     }
 
+    this.formNavigator.captureFormSnapshot(this.formGroup.getRawValue());
     this.formNavigator.navigateToRelatedList(this.linkedEntityType().entityName, this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.config().attrName,
+      context: this.components(),
     });
   }
 
@@ -92,7 +94,8 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     const selectedComponent = responsePayload.payload as BaseEntity;
     assertPersistedEntity(selectedComponent);
 
-    const components = [...this.components(), selectedComponent];
+    const previousComponents = Array.isArray(responsePayload.context) ? (responsePayload.context as PersistedEntity<BaseEntity>[]) : this.components();
+    const components = [...previousComponents, selectedComponent];
     const attrName = this.config().attrName;
     const entity = this.entity() as Record<string, unknown>;
     entity[attrName] = components;

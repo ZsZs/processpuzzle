@@ -20,6 +20,7 @@ export interface NavigationState {
   responsePayloads: Map<string, NavigationPayload>;
   requestPayloads: Map<string, NavigationPayload>;
   returnTo: string;
+  formSnapshot: Record<string, unknown> | undefined;
 }
 
 const INITIAL_NAVIGATION_STATE: NavigationState = {
@@ -30,6 +31,7 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
   responsePayloads: new Map<string, NavigationPayload>(),
   requestPayloads: new Map<string, NavigationPayload>(),
   returnTo: '',
+  formSnapshot: undefined,
 };
 
 function snakeCaseName(entityName: string) {
@@ -71,7 +73,18 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       patchState(store, {
         requestPayloads: new Map<string, NavigationPayload>(),
         responsePayloads: new Map<string, NavigationPayload>(),
+        formSnapshot: undefined,
       });
+    }
+
+    function captureFormSnapshot(snapshot: Record<string, unknown>): void {
+      patchState(store, { formSnapshot: snapshot });
+    }
+
+    function popFormSnapshot(): Record<string, unknown> | undefined {
+      const snapshot = store.formSnapshot();
+      patchState(store, { formSnapshot: undefined });
+      return snapshot;
     }
 
     function determineActiveRouteSegment(): void {
@@ -253,6 +266,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     }
 
     return {
+      captureFormSnapshot,
       determineCurrentUrl,
       determineActiveRouteSegment,
       navigateBack,
@@ -263,6 +277,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       navigateToUrl,
       destroyNavigationTracking,
       initializeNavigationTracking,
+      popFormSnapshot,
       popRequestPayload,
       popResponsePayload,
       pushResponsePayload,
