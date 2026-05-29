@@ -31,14 +31,7 @@ interface RelatedEntityStore {
           </mat-form-field>
           @if (showSelectEntityButton()) {
             <div class="foreign-key-select-row">
-              <button
-                type="button"
-                class="foreign-key-select-button"
-                mat-button
-                [title]="selectEntityTitle()"
-                [attr.aria-label]="selectEntityTitle()"
-                (click)="navigateToRelatedList()"
-              >
+              <button type="button" class="foreign-key-select-button" mat-button [title]="selectEntityTitle()" [attr.aria-label]="selectEntityTitle()" (click)="navigateToRelatedList()">
                 <mat-icon>add</mat-icon>
                 {{ selectEntityTitle() }}
               </button>
@@ -83,6 +76,11 @@ interface RelatedEntityStore {
         margin-right: 4px;
         font-size: 18px;
         line-height: 18px;
+      }
+
+      :host .foreign-key-field .mdc-notched-outline,
+      :host .foreign-key-field .mdc-notched-outline * {
+        pointer-events: none;
       }
     `,
   ],

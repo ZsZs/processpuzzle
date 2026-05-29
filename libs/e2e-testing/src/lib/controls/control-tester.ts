@@ -281,7 +281,7 @@ class ForeignKeyControlTester extends ControlTester {
   override createValue(context: ControlDataContext): string {
     const fixture = this.linkedFixture(context);
     const linkedName = this.linkedEntityName();
-    return fixture?.id ?? (linkedName ? context.createdIdsByEntity?.[linkedName] ?? '' : '');
+    return fixture?.id ?? (linkedName ? (context.createdIdsByEntity?.[linkedName] ?? '') : '');
   }
 
   override displayValue(context: ControlDataContext, value: string): string {
@@ -298,7 +298,7 @@ class ForeignKeyControlTester extends ControlTester {
     const linkedRow = context.createdDataByEntity?.[linkedName];
     const linkedDescriptor = context.descriptorMap.get(linkedName);
     const linkedIdentification = linkedDescriptor ? identificationAttrFromTesters(linkedDescriptor) : undefined;
-    return linkedIdentification && linkedRow ? linkedRow[linkedIdentification.attrName] ?? '' : '';
+    return linkedIdentification && linkedRow ? (linkedRow[linkedIdentification.attrName] ?? '') : '';
   }
 
   override async fill(context: ControlInteractionContext, value: string, options: FillControlOptions = {}): Promise<void> {
@@ -311,7 +311,8 @@ class ForeignKeyControlTester extends ControlTester {
     if (!context.descriptorMap.has(linkedName)) return;
 
     const originUrl = context.page.url();
-    await this.inner(context.page, context.descriptor).click();
+    //    await this.inner(context.page, context.descriptor).click();
+    await this.inner(context.page, context.descriptor).focus();
     await context.page.getByRole('button', { name: `Select ${linkedName}` }).click();
     await context.page.waitForURL(/\/list(\?|$)/);
 
