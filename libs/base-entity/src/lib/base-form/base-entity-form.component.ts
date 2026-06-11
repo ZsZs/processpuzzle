@@ -24,6 +24,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
   entityId: InputSignal<string> = input.required<string>();
+  isAbstract = computed(() => this.entityDescriptor().isAbstract);
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   store: Signal<any> = computed(() => this.entityDescriptor().store);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
