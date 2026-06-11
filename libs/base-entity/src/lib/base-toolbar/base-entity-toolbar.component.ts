@@ -25,6 +25,7 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   store: any;
   isDeleteEnabled = computed(() => this.store.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract);
   isEditEnabled = computed(() => this.store.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
+  isNewEnabled = computed(() => !this.entityDescriptor().isAbstract);
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
