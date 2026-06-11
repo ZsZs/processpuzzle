@@ -139,9 +139,49 @@ export class EntityCrudFixtureManager {
         throw new Error(`[${descriptor.entityName}.${tester.attr.attrName}] linked entity '${linkedName}' is not present in the registry`);
       }
 
-      const fixture = await this.createLinkedEntity(page, linkedDescriptor, `${this.uniqueSuffix}-${tester.attr.attrName}`, nextStack);
+      const concreteDescriptor = this.resolveConcreteDescriptor(linkedDescriptor, nextStack, `${descriptor.entityName}.${tester.attr.attrName}`);
+      const fixture = await this.createLinkedEntity(page, concreteDescriptor, `${this.uniqueSuffix}-${tester.attr.attrName}`, nextStack);
       this.linkedFixturesByAttr[key] = fixture;
     }
+  }
+
+  private resolveConcreteDescriptor(descriptor: BaseEntityDescriptor, stack: string[], originLabel: string): BaseEntityDescriptor {
+    if (!descriptor.isAbstract) return descriptor;
+
+    const subtype = this.findConcreteSubtype(descriptor.entityName, stack);
+    if (!subtype) {
+      throw new Error(
+        `[${originLabel}] linked entity '${descriptor.entityName}' is abstract and no concrete subtype was found in the registry; cannot create a linked fixture`,
+      );
+    }
+    return subtype;
+  }
+
+  private findConcreteSubtype(abstractName: string, stack: string[]): BaseEntityDescriptor | undefined {
+    for (const candidate of this.descriptorMap.values()) {
+      if (candidate.isAbstract) continue;
+      if (stack.includes(candidate.entityName)) continue;
+      if (this.descendsFrom(candidate, abstractName)) return candidate;
+    }
+    return undefined;
+  }
+
+  private descendsFrom(descriptor: BaseEntityDescriptor, ancestorName: string): boolean {
+    const seen = new Set<string>();
+    let current: BaseEntityDescriptor | undefined = descriptor;
+    while (current) {
+      const parent = this.parentEntityName(current);
+      if (!parent || seen.has(parent)) return false;
+      if (parent === ancestorName) return true;
+      seen.add(parent);
+      current = this.descriptorMap.get(parent);
+    }
+    return false;
+  }
+
+  private parentEntityName(descriptor: BaseEntityDescriptor): string | undefined {
+    const raw = descriptor as unknown as { parentEntity?: string; parentEntityName?: string };
+    return raw.parentEntityName ?? raw.parentEntity;
   }
 
   private async createLinkedEntity(page: Page, descriptor: BaseEntityDescriptor, suffix: string, stack: string[]): Promise<EntityFixture> {
