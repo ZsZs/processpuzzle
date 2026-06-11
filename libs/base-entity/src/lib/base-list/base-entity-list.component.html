@@ -21,7 +21,7 @@
             <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.linkedEntityType !== undefined ) {
             <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
-          } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== null ) {
+          } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null ) {
             @let artifact = element[colDescriptor.attrName];
             <a (click)="onDownloadObject(artifact, $event)">{{ ((artifact.name ?? artifact.objectId ?? '') | slice:0:20) + ((artifact.name ?? artifact.objectId ?? '').length > 20 ? '...' : '') }}</a>
           } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined ) {
