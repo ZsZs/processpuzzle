@@ -17,12 +17,13 @@ export class BaseEntityDescriptor {
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
 
-  constructor({ store, attrDescriptors, entityName, entityTitle }: BaseEntityDescriptorOptions, isAbstract?: boolean) {
+  constructor({ store, attrDescriptors, entityName, entityTitle }: BaseEntityDescriptorOptions, isAbstract?: boolean, parentEntity?: string) {
     this.store = store;
     this.attrDescriptors = attrDescriptors;
     this.entityName = entityName;
     this.entityTitle = entityTitle ?? '';
     this.isAbstract = isAbstract ?? false;
+    this.parentEntity = parentEntity;
   }
 
   public createTestId(suffix: string): string {
