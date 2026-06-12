@@ -1,0 +1,66 @@
+{
+  "name": "util",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/js-shared/util/src",
+  "prefix": "pp",
+  "tags": ["scope:shared", "type:util"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:ng-packagr",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/js-shared/util/ng-package.json",
+        "tsConfig": "libs/js-shared/util/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/js-shared/util/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/js-shared/util/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "dependsOn": ["^build"],
+      "options": {
+        "runner": "vitest",
+        "coverage": true,
+        "tsConfig": "libs/js-shared/util/tsconfig.spec.json"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true,
+          "coverageReporters": ["lcov", "json-summary"]
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/js-shared/util/src/**/*.ts", "libs/js-shared/util/src/**/*.spec.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/util"
+      }
+    }
+  }
+}

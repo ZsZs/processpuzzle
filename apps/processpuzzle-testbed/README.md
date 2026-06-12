@@ -7,9 +7,9 @@ This is a test application for the libraries under the @processpuzzle organizati
 All the source code you can find in the [GitHub repository](https://github.com/ZsZs/processpuzzle).
 
 ### Currently the following libraries are demonstrated:
-- [@processpuzzle/util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/util)
-- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/base-entity)
-- [@processpuzzle/widgets](https://github.com/ZsZs/processpuzzle/tree/develop/libs/widgets)
-- [@processpuzzle/auth](https://github.com/ZsZs/processpuzzle/tree/develop/libs/auth)
+- [@processpuzzle/util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/util)
+- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/base-entity)
+- [@processpuzzle/widgets](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/widgets)
+- [@processpuzzle/auth](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/auth)
 
 

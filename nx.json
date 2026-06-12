@@ -92,7 +92,7 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["libs/test-util/*", "libs/e2e-testing/*"],
+      "include": ["libs/js-shared/test-util/*", "libs/js-shared/e2e-testing/*"],
       "options": {
         "typecheck": {
           "targetName": "typecheck"

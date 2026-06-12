@@ -4,10 +4,10 @@ on:
     branches:
       - "release/api-contracts/*"
     paths:
-      - 'libs/api-contracts/**'
+      - 'libs/java-shared/api-contracts/**'
 
 env:
-  BASE_DIR: "libs/api-contracts"
+  BASE_DIR: "libs/java-shared/api-contracts"
   NX_PROJECT: "api-contracts"
 
 jobs:

@@ -5,15 +5,15 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/object-store/**'
+      - 'libs/java-shared/object-store/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
-      - 'libs/object-store/**'
+      - 'libs/java-shared/object-store/**'
 env:
-  BASE_DIR: "libs/object-store"
+  BASE_DIR: "libs/java-shared/object-store"
   NX_PROJECT: "object-store"
 
 jobs:

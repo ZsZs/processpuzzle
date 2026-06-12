@@ -1,0 +1,39 @@
+{
+  "name": "object-store",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["backend", "java", "springboot", "library"],
+  "sourceRoot": "libs/java-shared/object-store/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn clean install -pl libs/java-shared/object-store -am"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml clean validate"
+      },
+      "configurations": {
+        "ci": {},
+        "dev": {}
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml test"
+      },
+      "configurations": {
+        "ci": {}
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{projectRoot}"
+      }
+    }
+  }
+}

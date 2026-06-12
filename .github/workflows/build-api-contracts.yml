@@ -5,13 +5,13 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/api-contracts/**'
+      - 'libs/java-shared/api-contracts/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
-      - 'libs/api-contracts/**'
+      - 'libs/java-shared/api-contracts/**'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/api-contracts"
+          base_dir: "libs/java-shared/api-contracts"
           nx_project: "api-contracts"
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}

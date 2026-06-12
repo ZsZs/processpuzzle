@@ -4,7 +4,7 @@ on:
     branches:
       - "release/test-util/*"
     paths:
-      - 'libs/test-util/**'
+      - 'libs/js-shared/test-util/**'
 permissions:
   id-token: write
   contents: write
@@ -24,7 +24,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: libs/test-util
+          path: libs/js-shared/test-util
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -46,7 +46,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/test-util"
+          base_dir: "libs/js-shared/test-util"
           nx_project: "test-util"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}

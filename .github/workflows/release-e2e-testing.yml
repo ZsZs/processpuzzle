@@ -4,7 +4,7 @@ on:
     branches:
       - "release/e2e-testing/*"
     paths:
-      - 'libs/e2e-testing/**'
+      - 'libs/js-shared/e2e-testing/**'
 permissions:
   id-token: write
   contents: write
@@ -24,7 +24,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: libs/e2e-testing
+          path: libs/js-shared/e2e-testing
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -46,7 +46,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/e2e-testing"
+          base_dir: "libs/js-shared/e2e-testing"
           nx_project: "e2e-testing"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}

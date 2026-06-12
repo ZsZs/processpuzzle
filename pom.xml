@@ -43,8 +43,8 @@
 
     <modules>
         <module>apps/processpuzzle-backend</module>
-        <module>libs/object-store</module>
-        <module>libs/api-contracts</module>
+        <module>libs/java-shared/object-store</module>
+        <module>libs/java-shared/api-contracts</module>
     </modules>
 
     <properties>

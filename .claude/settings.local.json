@@ -49,7 +49,29 @@
       "PowerShell(pnpm nx lint base-entity --silent 2>&1)",
       "PowerShell(npx nx lint base-entity 2>&1)",
       "PowerShell(pnpm nx run-many -t lint --projects=base-entity,processpuzzle-testbed --skip-nx-cache 2>&1)",
-      "Bash(Get-Content \"C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\f5dc0221-f354-4ec3-b802-54a63d785530\\\\tool-results\\\\toolu_01MGAtkzXDC2Qv9U25fa8ZfL.txt\" -Raw)"
+      "Bash(Get-Content \"C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\f5dc0221-f354-4ec3-b802-54a63d785530\\\\tool-results\\\\toolu_01MGAtkzXDC2Qv9U25fa8ZfL.txt\" -Raw)",
+      "Bash(pnpm nx *)",
+      "PowerShell(pnpm nx test base-entity 2>&1)",
+      "Bash(find /c/Projects/ProcessPuzzle -name \"entity-registry.json\" 2>/dev/null | head -20)",
+      "PowerShell(pnpm nx run e2e-testing:lint 2>&1)",
+      "PowerShell(npm exec -- nx run e2e-testing:lint 2>&1)",
+      "PowerShell(npm exec -- nx run e2e-testing:build 2>&1)",
+      "Bash(npx nx *)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle mv docker tools/docker)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle status)",
+      "PowerShell($lockedFiles = @\\(\\); Get-ChildItem -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\docker\" -Recurse -File | ForEach-Object { try { $fs = [System.IO.File]::Open\\($_.FullName, 'Open', 'ReadWrite', 'None'\\); $fs.Close\\(\\) } catch { $lockedFiles += $_.FullName } }; if \\($lockedFiles.Count -eq 0\\) { \"No locked files found\" } else { \"Locked files:\"; $lockedFiles })",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle add -A)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle status --short)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle diff --cached --stat)",
+      "Bash(git mv *)",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('targets',{}\\).get\\('build',{}\\), indent=2\\)\\)\")",
+      "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\(0\\)\\); console.log\\(JSON.stringify\\(d.targets.build,null,2\\)\\)\")",
+      "Bash(stat -c '%y' dist/libs/e2e-testing/package.json dist/libs/e2e-testing/src 2>&1)",
+      "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/proj.json'\\)\\); console.log\\(JSON.stringify\\(d.targets,null,2\\)\\)\")",
+      "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\('tmp_proj.json'\\)\\); console.log\\(JSON.stringify\\(d.targets,null,2\\)\\)\")"
     ]
   }
 }

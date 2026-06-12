@@ -1,0 +1,65 @@
+{
+  "name": "auth",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/js-shared/auth",
+  "tags": ["scope:shared", "type:auth"],
+  "prefix": "pp",
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/js-shared/auth/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/js-shared/auth/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/js-shared/auth/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "options": {
+        "runner": "vitest",
+        "tsConfig": "libs/js-shared/auth/tsconfig.spec.json",
+        "setupFiles": ["libs/js-shared/auth/test-setup.ts"],
+        "coverage": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/js-shared/auth/src/**/*.ts", "libs/js-shared/auth/domain/**/*.ts", "libs/js-shared/auth/feature/**/*.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/auth"
+      }
+    }
+  }
+}

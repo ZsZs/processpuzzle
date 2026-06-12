@@ -28,22 +28,22 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/auth/feature/assets/auth",
+            "input": "libs/js-shared/auth/feature/assets/auth",
             "output": "assets/auth"
           },
           {
             "glob": "**/*",
-            "input": "libs/auth/feature/assets/i18n/auth",
+            "input": "libs/js-shared/auth/feature/assets/i18n/auth",
             "output": "assets/i18n/auth"
           },
           {
             "glob": "**/*",
-            "input": "libs/base-entity/src/assets/i18n/base-entity",
+            "input": "libs/js-shared/base-entity/src/assets/i18n/base-entity",
             "output": "assets/i18n/base-entity"
           },
           {
             "glob": "**/*",
-            "input": "libs/widgets/src/assets/i18n/widgets",
+            "input": "libs/js-shared/widgets/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },
           "apps/processpuzzle-testbed/src/environments",
@@ -121,7 +121,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/base-entity/src/**/*.ts", "libs/base-entity/src/**/*.spec.ts"]
+        "lintFilePatterns": ["libs/js-shared/base-entity/src/**/*.ts", "libs/js-shared/base-entity/src/**/*.spec.ts"]
       },
       "configurations": {
         "ci": {

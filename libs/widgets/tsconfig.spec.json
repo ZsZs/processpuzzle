@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "types": ["node", "@testing-library/jest-dom"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "mat-cards-grid/src/**/*.ts", "mat-cards-grid/src/**/*.d.ts", "test-setup.ts"]
-}

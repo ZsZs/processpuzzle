@@ -5,12 +5,12 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/util/**'
+      - 'libs/js-shared/util/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
-      - 'libs/util/**'
+      - 'libs/js-shared/util/**'
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/util"
+          base_dir: "libs/js-shared/util"
           nx_project: util
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}

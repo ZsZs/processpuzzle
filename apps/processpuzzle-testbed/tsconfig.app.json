@@ -8,19 +8,19 @@
   "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"],
   "references": [
     {
-      "path": "../../libs/test-util"
+      "path": "../../libs/js-shared/test-util"
     },
     {
-      "path": "../../libs/base-entity"
+      "path": "../../libs/js-shared/base-entity"
     },
     {
-      "path": "../../libs/auth"
+      "path": "../../libs/js-shared/auth"
     },
     {
-      "path": "../../libs/widgets"
+      "path": "../../libs/js-shared/widgets"
     },
     {
-      "path": "../../libs/util"
+      "path": "../../libs/js-shared/util"
     }
   ]
 }
