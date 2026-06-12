@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../../dist/libs/js-shared/auth",
+  "lib": {
+    "entryFile": "public-api.ts"
+  },
+  "assets": [
+    {
+      "glob": "**/*",
+      "input": "feature/assets",
+      "output": "assets"
+    }
+  ]
+}

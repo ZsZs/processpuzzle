@@ -19,14 +19,14 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@processpuzzle/auth": ["./libs/auth/public-api.ts"],
-      "@processpuzzle/auth/domain": ["./libs/auth/domain/public-api.ts"],
-      "@processpuzzle/auth/feature": ["./libs/auth/feature/public-api.ts"],
-      "@processpuzzle/base-entity": ["./libs/base-entity/src/public-api.ts"],
-      "@processpuzzle/test-util": ["./libs/test-util/src/public-api.ts"],
-      "@processpuzzle/util": ["./libs/util/src/public-api.ts"],
-      "@processpuzzle/widgets": ["./libs/widgets/src/public-api.ts"],
-      "@processpuzzle/e2e-testing": ["./libs/e2e-testing/src/public-api.ts"]
+      "@processpuzzle/auth": ["./libs/js-shared/auth/public-api.ts"],
+      "@processpuzzle/auth/domain": ["./libs/js-shared/auth/domain/public-api.ts"],
+      "@processpuzzle/auth/feature": ["./libs/js-shared/auth/feature/public-api.ts"],
+      "@processpuzzle/base-entity": ["./libs/js-shared/base-entity/src/public-api.ts"],
+      "@processpuzzle/test-util": ["./libs/js-shared/test-util/src/public-api.ts"],
+      "@processpuzzle/util": ["./libs/js-shared/util/src/public-api.ts"],
+      "@processpuzzle/widgets": ["./libs/js-shared/widgets/src/public-api.ts"],
+      "@processpuzzle/e2e-testing": ["./libs/js-shared/e2e-testing/src/public-api.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

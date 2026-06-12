@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../dist/out-tsc"
-  },
-  "include": ["domain/**/*.ts", "feature/**/*.ts"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "test-setup.ts"]
-}

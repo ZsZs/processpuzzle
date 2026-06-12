@@ -5,13 +5,13 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/auth/**'
+      - 'libs/js-shared/auth/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
-      - 'libs/auth/**'
+      - 'libs/js-shared/auth/**'
 jobs:
   build:
     runs-on: ubuntu-latest

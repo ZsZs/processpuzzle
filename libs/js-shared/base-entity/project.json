@@ -1,0 +1,63 @@
+{
+  "name": "base-entity",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/js-shared/base-entity/src",
+  "prefix": "pp",
+  "tags": ["scope:base-entity", "type:domain"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/js-shared/base-entity/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/js-shared/base-entity/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/js-shared/base-entity/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
+      "options": {
+        "tsConfig": "libs/js-shared/base-entity/tsconfig.spec.json",
+        "coverage": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/js-shared/base-entity/src/**/*.ts", "libs/js-shared/base-entity/src/**/*.spec.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-entity"
+      }
+    }
+  }
+}

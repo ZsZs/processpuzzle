@@ -5,13 +5,13 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/widgets/**'
+      - 'libs/js-shared/widgets/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
-      - 'libs/widgets/**'
+      - 'libs/js-shared/widgets/**'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/widgets"
+          base_dir: "libs/js-shared/widgets"
           nx_project: widgets
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
