@@ -19,6 +19,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './reports/coverage',
+      include: ['libs/js-shared/widgets/**/*.ts'],
+      exclude: [
+        'libs/js-shared/widgets/**/public-api.ts',
+        'libs/js-shared/widgets/**/test-setup.ts',
+        'libs/js-shared/widgets/**/*.module.ts',
+        'libs/js-shared/widgets/**/*.spec.ts',
+      ],
     },
     server: {
       deps: {
