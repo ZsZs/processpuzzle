@@ -1,9 +1,9 @@
 {
   "name": "api-contracts",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "tags": ["backend", "java", "springboot", "library"],
-  "sourceRoot": "libs/api-contracts/src",
+  "sourceRoot": "libs/java-shared/api-contracts/src",
   "targets": {
     "build": {
       "executor": "nx:run-commands",

@@ -54,7 +54,7 @@ npx nx build api-contracts
 Alternatively, you can use Maven directly:
 
 ```powershell
-mvn clean install -f libs/api-contracts/pom.xml
+mvn clean install -f libs/java-shared/api-contracts/pom.xml
 ```
 
 The build process invokes the `openapi-generator-maven-plugin`, which generates the source code in the `target/generated-sources/openapi` directory.
@@ -73,4 +73,4 @@ This library is configured for publication to Maven Central via the Sonatype Cen
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](../../LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../../../LICENSE) file for details.

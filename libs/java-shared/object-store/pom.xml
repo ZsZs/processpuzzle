@@ -6,14 +6,14 @@
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>processpuzzle-api</artifactId>
+    <artifactId>object-store</artifactId>
     <version>1.0.2-SNAPSHOT</version>
-    <name>ProcessPuzzle :: API Contracts</name>
-    <description>ProcessPuzzle API Contracts and Generated Types</description>
-    <url>https://github.com/ZsZs/processpuzzle/libs/api-contracts</url>
+    <name>ProcessPuzzle :: Object Store</name>
+    <description>ProcessPuzzle Object Store Library</description>
+    <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/object-store</url>
 
     <licenses>
         <license>
@@ -37,60 +37,58 @@
     </scm>
 
     <dependencies>
+        <!-- Project dependencies -->
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>processpuzzle-api</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+
+        <!-- Spring Boot dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
+
         <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>org.openapitools</groupId>
-            <artifactId>jackson-databind-nullable</artifactId>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- OpenAPI Generator plugin for generating API contracts -->
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.10.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-storage-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/object-store-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.objectstore.api</apiPackage>
-                            <modelPackage>com.processpuzzle.objectstore.model</modelPackage>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- Checkstyle plugin for code quality checks -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
+
+            <!-- Jacoco MAVEN plugin -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Jacoco to LCOV conversion plugin -->
 
             <!-- Sources JAR — required by Maven Central -->
             <plugin>
@@ -119,7 +117,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <autoPublish>true</autoPublish>
-                    <waitUntil>published</waitUntil>
+                    <waitUntil>validated</waitUntil>
                 </configuration>
             </plugin>
         </plugins>

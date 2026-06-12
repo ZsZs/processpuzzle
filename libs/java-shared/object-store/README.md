@@ -95,7 +95,7 @@ npm exec nx build object-store
 Or using Maven directly:
 
 ```powershell
-mvn clean install -pl libs/object-store -am
+mvn clean install -pl libs/java-shared/object-store -am
 ```
 
 ### Testing
