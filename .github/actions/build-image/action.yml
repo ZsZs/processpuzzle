@@ -38,7 +38,7 @@ runs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: docker/json-server/Dockerfile
+        file: tools/docker/json-server/Dockerfile
         push: true
         tags: zsuffazs/json-server:${{ inputs.app_version }}, zsuffazs/json-server:latest
 
@@ -46,7 +46,7 @@ runs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: docker/firebase/Dockerfile
+        file: tools/docker/firebase/Dockerfile
         push: true
         tags: zsuffazs/${{ inputs.app_name }}-firebase:${{ inputs.app_version }}, zsuffazs/${{ inputs.app_name }}-firebase:latest
 
@@ -54,7 +54,7 @@ runs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./docker/testbed/Dockerfile
+        file: ./tools/docker/testbed/Dockerfile
         build-args: CICD_STAGE=${{ inputs.cicd_stage }}
         push: true
         tags: zsuffazs/processpuzzle-${{ inputs.app_name }}:${{ inputs.app_version }}, zsuffazs/processpuzzle-${{ inputs.app_name }}:latest

@@ -11,7 +11,7 @@ FROM quay.io/minio/minio:latest
 COPY --from=mc /usr/bin/mc /usr/bin/mc
 
 # Copy initialization script
-COPY ./docker/minio/init-minio.sh /usr/local/bin/init-minio.sh
+COPY ./tools/docker/minio/init-minio.sh /usr/local/bin/init-minio.sh
 RUN chmod +x /usr/local/bin/init-minio.sh
 
 # Expose S3 API and Web Console ports

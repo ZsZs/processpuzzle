@@ -11,7 +11,7 @@ LABEL description="PostgreSQL image optimized for Keycloak"
 
 # Copy initialization scripts
 # Any .sql or .sh scripts in this folder run automatically on first container start
-COPY ./docker/postgresql/init-db.sql /docker-entrypoint-initdb.d/
+COPY ./tools/docker/postgresql/init-db.sql /docker-entrypoint-initdb.d/
 
 EXPOSE 5432
 # (Optional) Optimization: Adjust memory settings for the DB

@@ -9,8 +9,8 @@ services:
       minio:
         condition: service_healthy
     build:
-      context: ../
-      dockerfile: docker/backend/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/backend/Dockerfile
     image: zsuffazs/processpuzzle-backend:latest
     container_name: processpuzzle-backend
     environment:
@@ -36,8 +36,8 @@ services:
       firebase:
         condition: service_healthy
     build:
-      context: ../
-      dockerfile: docker/testbed/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/testbed/Dockerfile
       args:
         CICD_STAGE: ci
     image: zsuffazs/processpuzzle-testbed:latest
@@ -59,8 +59,8 @@ services:
   json-server:
     pull_policy: build
     build:
-      context: ../
-      dockerfile: docker/json-server/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/json-server/Dockerfile
     image: zsuffazs/json-server:latest
     container_name: json-server
     ports:
@@ -75,8 +75,8 @@ services:
     image: zsuffazs/testbed-firebase:latest
     container_name: testbed-firebase
     build:
-      context: ../
-      dockerfile: docker/firebase/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/firebase/Dockerfile
       args:
         - FIREBASE_VERSION=13.33.0
     stop_grace_period: 1m
@@ -106,8 +106,8 @@ services:
 
   keycloak:
     build:
-      context: ../
-      dockerfile: docker/keycloak/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/keycloak/Dockerfile
       args:
         CICD_STAGE: ci
     container_name: testbed-keycloak
@@ -143,8 +143,8 @@ services:
 
   postgres:
     build:
-      context: ../
-      dockerfile: docker/postgresql/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/postgresql/Dockerfile
     image: zsuffazs/testbed-postgres:latest
     container_name: testbed-postgres
     ports:
@@ -165,8 +165,8 @@ services:
 
   minio:
     build:
-      context: ../
-      dockerfile: docker/minio/Dockerfile
+      context: ../../
+      dockerfile: tools/docker/minio/Dockerfile
     image: zsuffazs/testbed-minio:latest
     container_name: testbed-minio
     ports:
