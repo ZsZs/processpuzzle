@@ -30,6 +30,7 @@
       "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "libs/js-shared/util/vitest.config.ts",
         "coverage": true,
         "tsConfig": "libs/js-shared/util/tsconfig.spec.json"
       },
