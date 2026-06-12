@@ -60,7 +60,7 @@
     "test-object-store": "nx run object-store:test --configuration=ci --no-cloud",
     "test-testbed": "nx run processpuzzle-testbed:test --configuration=ci --coverage --no-cloud",
     "test-test-util": "nx run test-util:test --configuration=ci --coverage --no-cloud",
-    "test-util": "nx run util:test --configuration=ci --coverage --no-cloud",
+    "test-util": "nx run util:test --configuration=ci --coverage --no-cloud && node tools/scripts/sanitize-lcov.cjs libs/js-shared/util",
     "test-widgets": "nx run widgets:test --configuration=ci --coverage --no-cloud",
     "test-widgets-ui": "nx run widgets:test --ui"
   },
