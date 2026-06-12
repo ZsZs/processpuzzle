@@ -18,7 +18,7 @@
     "i18n:extract": "transloco-keys-manager extract",
     "i18n:find": "transloco-keys-manager find",
     "playwright-codeget": "npx playwright codegen http://localhost:4200",
-    "run-mock-backend": "npx json-server --watch mock-backend/db.json --port 3000",
+    "run-mock-backend": "npx json-server --watch tools/mock-backend/db.json --port 3000",
     "run-mock-outh2": "npx oauth2-mock-server",
     "run-http-server": "http-server dist/apps/processpuzzle-testbed/browser --proxy http://localhost:9090",
     "run-firebase-emulator": "firebase emulators:start --import apps/processpuzzle-testbed/data",

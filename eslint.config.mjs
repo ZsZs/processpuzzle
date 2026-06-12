@@ -5,7 +5,7 @@ export default [
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
   {
-    ignores: ['**/dist', 'mock-backend', 'apps/processpuzzle-testbed/functions'],
+    ignores: ['**/dist', 'tools/mock-backend', 'apps/processpuzzle-testbed/functions'],
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],

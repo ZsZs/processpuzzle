@@ -62,7 +62,8 @@
       "PowerShell($lockedFiles = @\\(\\); Get-ChildItem -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\docker\" -Recurse -File | ForEach-Object { try { $fs = [System.IO.File]::Open\\($_.FullName, 'Open', 'ReadWrite', 'None'\\); $fs.Close\\(\\) } catch { $lockedFiles += $_.FullName } }; if \\($lockedFiles.Count -eq 0\\) { \"No locked files found\" } else { \"Locked files:\"; $lockedFiles })",
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle add -A)",
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle status --short)",
-      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle diff --cached --stat)"
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle diff --cached --stat)",
+      "Bash(git mv *)"
     ]
   }
 }
