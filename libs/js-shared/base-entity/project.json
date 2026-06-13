@@ -2,6 +2,7 @@
   "name": "base-entity",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "root": "libs/js-shared/base-entity",
   "sourceRoot": "libs/js-shared/base-entity/src",
   "prefix": "pp",
   "tags": ["scope:base-entity", "type:domain"],
@@ -26,14 +27,17 @@
     "test": {
       "executor": "@nx/angular:unit-test",
       "dependsOn": ["^build"],
-      "outputs": ["{workspaceRoot}/reports/coverage/{projectRoot}"],
+      "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
+        "runner": "vitest",
+        "runnerConfig": "libs/js-shared/base-entity/vitest.config.ts",
         "tsConfig": "libs/js-shared/base-entity/tsconfig.spec.json",
         "coverage": true
       },
       "configurations": {
         "ci": {
-          "coverage": true
+          "coverage": true,
+          "coverageReporters": ["lcov", "json-summary"]
         }
       }
     },

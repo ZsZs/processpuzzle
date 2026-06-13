@@ -77,7 +77,13 @@
       "PowerShell(Get-Process node, chrome, msedge, firefox, idea64, java, sonar-scanner -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSet64/1MB\\)}} | Format-Table -AutoSize)",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Select-Object ProcessId, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSetSize/1MB\\)}}, @{n='Cmd';e={if\\($_.CommandLine.Length -gt 180\\){$_.CommandLine.Substring\\(0,180\\)+'...'}else{$_.CommandLine}}} | Format-Table -AutoSize -Wrap)",
       "WebSearch",
-      "Bash(node tools/scripts/sanitize-lcov.cjs libs/js-shared/util)"
+      "Bash(node tools/scripts/sanitize-lcov.cjs libs/js-shared/util)",
+      "Bash(npm run *)",
+      "Bash(tee /tmp/test-output.log)",
+      "Bash(npx vitest *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Read(//tmp/**)",
+      "Bash(ls /tmp/full-test.log 2>&1; ls /c/Users/zsolt/AppData/Local/Temp/full-test.log 2>&1)"
     ]
   }
 }
