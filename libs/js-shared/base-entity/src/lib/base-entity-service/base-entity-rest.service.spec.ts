@@ -108,6 +108,7 @@ describe('BaseEntityService', () => {
     it('omits the page query param when no page is supplied', () => {
       baseEntityService.findAll().subscribe();
       const request = controller.expectOne((req) => req.url.includes('/node') && !req.url.includes('page='));
+      expect(request.request.method).toBe('GET');
       request.flush([payload]);
       controller.verify();
     });
@@ -162,6 +163,7 @@ describe('BaseEntityService', () => {
     it('DELETEs the id-scoped resource URL', () => {
       baseEntityService.delete('abc').subscribe();
       const request = controller.expectOne((req) => req.method === 'DELETE' && req.url.includes('/node/abc'));
+      expect(request.request.method).toBe('DELETE');
       request.flush(null);
       controller.verify();
     });
@@ -171,6 +173,7 @@ describe('BaseEntityService', () => {
     it('DELETEs the unscoped resource URL (resourceUrl as-is, without baseUrl)', () => {
       baseEntityService.deleteAll().subscribe();
       const request = controller.expectOne((req) => req.method === 'DELETE' && req.url === 'message/%{messageId}/node');
+      expect(request.request.url).toBe('message/%{messageId}/node');
       request.flush(null);
       controller.verify();
     });
@@ -188,6 +191,7 @@ describe('BaseEntityService', () => {
     it('appends the hash fragment when supplied', () => {
       baseEntityService.findByQuery({ pathParams, hash: 'section-1' }).subscribe();
       const request = controller.expectOne((req) => req.urlWithParams.includes('#section-1'));
+      expect(request.request.urlWithParams).toContain('#section-1');
       request.flush([payload]);
       controller.verify();
     });

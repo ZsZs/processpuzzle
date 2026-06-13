@@ -25,7 +25,9 @@ describe('ObjectStoreService', () => {
   describe('baseUrl resolution', () => {
     it('uses OBJECT_STORE_SERVICE_ROOT when available', () => {
       service.deleteObjectByID('bucket', 'oid').subscribe();
-      controller.expectOne(`${objectStoreRoot}/objects/bucket/oid`);
+      const request = controller.expectOne(`${objectStoreRoot}/objects/bucket/oid`);
+      expect(request.request.url).toBe(`${objectStoreRoot}/objects/bucket/oid`);
+      request.flush(null);
       controller.verify();
     });
 
@@ -35,7 +37,9 @@ describe('ObjectStoreService', () => {
       setup({ BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: backendRoot } });
 
       service.deleteObjectByID('bucket', 'oid').subscribe();
-      controller.expectOne(`${backendRoot}/objects/bucket/oid`);
+      const request = controller.expectOne(`${backendRoot}/objects/bucket/oid`);
+      expect(request.request.url).toBe(`${backendRoot}/objects/bucket/oid`);
+      request.flush(null);
       controller.verify();
     });
 
@@ -44,7 +48,9 @@ describe('ObjectStoreService', () => {
       setup({ BASE_CONFIGURATION: {} });
 
       service.deleteObjectByID('bucket', 'oid').subscribe();
-      controller.expectOne('/objects/bucket/oid');
+      const request = controller.expectOne('/objects/bucket/oid');
+      expect(request.request.url).toBe('/objects/bucket/oid');
+      request.flush(null);
       controller.verify();
     });
   });
@@ -137,7 +143,9 @@ describe('ObjectStoreService', () => {
 
     it('URL-encodes bucketName and objectID', () => {
       service.getObjectByID('bucket/with slash', 'oid with space').subscribe();
-      controller.expectOne(`${objectStoreRoot}/objects/bucket%2Fwith%20slash/oid%20with%20space`);
+      const request = controller.expectOne(`${objectStoreRoot}/objects/bucket%2Fwith%20slash/oid%20with%20space`);
+      expect(request.request.url).toBe(`${objectStoreRoot}/objects/bucket%2Fwith%20slash/oid%20with%20space`);
+      request.flush(new Blob());
       controller.verify();
     });
   });
