@@ -61,7 +61,6 @@ runs:
         SONAR_TOKEN: ${{ inputs.sonar_token }}
       with:
         projectBaseDir: ${{inputs.base_dir}}
-      working-directory: ${{inputs.base_dir}}
     - name: Generate environment file
       run: npm run config-env-${{inputs.nx_project}} -- --environment=${{inputs.cicd_stage}}
       env:
