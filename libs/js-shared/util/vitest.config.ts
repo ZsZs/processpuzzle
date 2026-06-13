@@ -4,7 +4,7 @@ import { join } from 'node:path';
 export default defineConfig({
   root: __dirname,
   test: {
-    include: ['**/*.spec.ts'],
+    include: ['src/**/*.spec.ts'],
     coverage: {
       enabled: true,
       reportsDirectory: join(__dirname, 'reports/coverage'),
