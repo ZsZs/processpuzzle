@@ -1,9 +1,10 @@
-import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
-import { setUpTranslocoTestBed, TranslocoTestConfig } from './transloco-testing.provider';
+import { TRANSLOCO_LOADER, TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
+import { provideTranslocoTesting, setUpTranslocoTestBed, TestTranslocoLoader, TranslocoTestConfig } from './transloco-testing.provider';
 import { TranslocoTestComponent } from './transloco-test.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { screen } from '@testing-library/angular';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { Observable } from 'rxjs';
 
 describe('transloco-testing.provider', () => {
   const config: TranslocoTestConfig = {
@@ -106,6 +107,91 @@ describe('transloco-testing.provider', () => {
       expect(screen.getByText('Test', { selector: 'p' })).toBeTruthy();
       expect(screen.getByText('Prefixed test', { selector: 'p' })).toBeTruthy();
       expect(screen.getByText('Prefixed ok', { selector: 'p' })).toBeTruthy();
+    });
+  });
+
+  describe('setUpTranslocoTestBed', () => {
+    it('should set active language and update the view', async () => {
+      const { translocoService, setActiveLang } = await setUpTranslocoTestBed(TranslocoTestComponent, config);
+
+      await setActiveLang('de');
+
+      expect(translocoService.getActiveLang()).toBe('de');
+      expect(screen.getByText('In Ordnung', { selector: 'p' })).toBeTruthy();
+    });
+  });
+
+  describe('TestTranslocoLoader', () => {
+    it('should load translations with scope', async () => {
+      const testConfig: TranslocoTestConfig = {
+        scope: 'widgets',
+        translations: {
+          en: { widgets: { TEST: 'Scoped Test' } },
+        },
+      };
+
+      await TestBed.configureTestingModule({
+        providers: [provideTranslocoTesting(testConfig)],
+      });
+
+      const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
+      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+
+      expect(translation).toEqual({ TEST: 'Scoped Test' });
+    });
+
+    it('should load translations without scope and filter out nested objects', async () => {
+      const testConfig: TranslocoTestConfig = {
+        translations: {
+          en: {
+            TEST: 'Test',
+            NESTED: { SO: 'Should be filtered' },
+          },
+        },
+      };
+
+      await TestBed.configureTestingModule({
+        providers: [provideTranslocoTesting(testConfig)],
+      });
+
+      const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
+      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+
+      expect(translation).toEqual({ TEST: 'Test' });
+    });
+
+    it('should load translations without scope when no nested objects exist', async () => {
+      const testConfig: TranslocoTestConfig = {
+        translations: {
+          en: { TEST: 'Test' },
+        },
+      };
+
+      await TestBed.configureTestingModule({
+        providers: [provideTranslocoTesting(testConfig)],
+      });
+
+      const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
+      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+
+      expect(translation).toEqual({ TEST: 'Test' });
+    });
+
+    it('should return empty object if language does not exist', async () => {
+      const testConfig: TranslocoTestConfig = {
+        translations: {
+          en: { TEST: 'Test' },
+        },
+      };
+
+      await TestBed.configureTestingModule({
+        providers: [provideTranslocoTesting(testConfig)],
+      });
+
+      const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
+      const translation = await (loader.getTranslation('fr') as Observable<any>).toPromise();
+
+      expect(translation).toEqual({});
     });
   });
 });

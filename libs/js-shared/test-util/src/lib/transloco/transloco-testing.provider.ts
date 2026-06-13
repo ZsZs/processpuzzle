@@ -48,7 +48,6 @@ export class TestTranslocoLoader implements TranslocoLoader {
     const langEntry = this.translations[lang];
     if (langEntry && typeof langEntry === 'object' && this.scope) {
       const scoped = (langEntry as Translation)[this.scope];
-      console.log(scoped);
       return of(scoped ?? {});
     }
     if (langEntry && typeof langEntry === 'object' && !this.scope) {

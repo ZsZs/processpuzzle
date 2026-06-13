@@ -2,6 +2,7 @@
   "name": "test-util",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "root": "libs/js-shared/test-util",
   "sourceRoot": "libs/js-shared/test-util/src",
   "tags": ["scope:shared", "type:test-util"],
   "prefix": "pp",
@@ -29,6 +30,8 @@
       "dependsOn": ["build"],
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
+        "runner": "vitest",
+        "runnerConfig": "libs/js-shared/test-util/vitest.config.ts",
         "tsConfig": "libs/js-shared/test-util/tsconfig.spec.json",
         "coverage": true
       },
