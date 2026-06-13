@@ -98,7 +98,9 @@
       "PowerShell(npm exec nx -- test base-entity --coverage 2>&1)",
       "PowerShell(npm exec nx -- test base-entity --skip-nx-cache 2>&1)",
       "PowerShell(npm exec nx -- lint base-entity 2>&1)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "PowerShell(pnpm nx test base-entity --testPathPattern=base-entity-facade-registry.spec.ts 2>&1)",
+      "PowerShell(npx nx test base-entity --testPathPattern=base-entity-facade-registry.spec.ts 2>&1)"
     ]
   }
 }
