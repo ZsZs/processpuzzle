@@ -63,7 +63,7 @@ describe('BaseEntityFormBuilder', () => {
     ),
   ];
   const testEntity: Signal<TestEntity> = signal(new TestEntity());
-  let store: any;
+  let store: InstanceType<typeof TestEntityStore>;
   let component: MockFormContainerComponent;
   let fixture: ComponentFixture<MockFormContainerComponent>;
   let formBuilder: BaseEntityFormBuilder<TestEntity>;

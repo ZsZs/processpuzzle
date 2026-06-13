@@ -11,6 +11,7 @@ import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { BaseEntityFormBuilder } from './base-entity-form.builder';
 import { NGXLogger } from 'ngx-logging-kit';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 @Component({
   selector: 'base-form',
@@ -22,11 +23,11 @@ import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-for
 export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit {
   baseEntityForm!: FormGroup;
   entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
-  entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : this.store().loadById(this.entityId())));
+  entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : (this.store().loadById(this.entityId()) as Entity)));
   entityId: InputSignal<string> = input.required<string>();
   isAbstract = computed(() => this.entityDescriptor().isAbstract);
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
-  store: Signal<any> = computed(() => this.entityDescriptor().store);
+  store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);

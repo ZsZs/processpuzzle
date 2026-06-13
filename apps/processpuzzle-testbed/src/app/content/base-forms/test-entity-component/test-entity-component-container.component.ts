@@ -21,7 +21,7 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createTestEntityComponentDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
+    this.entityDescriptor.entityTitle = () => this.store.currentEntity()?.name ?? '';
     this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', 'Test Entity');
   }
 

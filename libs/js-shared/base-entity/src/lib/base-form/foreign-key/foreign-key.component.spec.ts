@@ -22,7 +22,7 @@ describe('ForeignKeyComponent', () => {
   }
 
   function provideLinkedFacade(descriptor: BaseEntityDescriptor, store?: unknown) {
-    const facadeToken = new InjectionToken<any>('LINKED_FACADE');
+    const facadeToken = new InjectionToken<{ descriptor: BaseEntityDescriptor; store?: unknown }>('LINKED_FACADE');
     const facade = { descriptor, store };
     return [
       { provide: facadeToken, useValue: facade },

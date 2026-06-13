@@ -1,7 +1,7 @@
-import { BaseEntity } from '../base-entity/base-entity';
-import { patchState, signalStoreFeature, watchState, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
+import { patchState, signalStoreFeature, withComputed, withHooks, withMethods, withState, WritableStateSource } from '@ngrx/signals';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
-import { computed, InjectionToken, isDevMode } from '@angular/core';
+import { computed, InjectionToken, Signal } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { addEntity } from './addEntity';
@@ -10,8 +10,9 @@ import { deleteAllEntities } from './deleteAllEntities';
 import { updateEntity } from './updateEntity';
 import { findByQuery } from './findByQuery';
 import { entityNameFromType } from '../base-entity/base-entity-utility';
+import { BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
 
-export const BASE_ENTITY_STORE = new InjectionToken<any>('BASE_ENTITY_STORE');
+export const BASE_ENTITY_STORE = new InjectionToken<unknown>('BASE_ENTITY_STORE');
 
 export interface EntityStoreState<Entity extends BaseEntity> {
   entities: Entity[];
@@ -23,6 +24,46 @@ export interface EntityStoreState<Entity extends BaseEntity> {
   isLoading: boolean;
   error: string | undefined;
   selectedEntities: Array<Entity>;
+}
+
+export type EntityStoreHandle<Entity extends BaseEntity> = WritableStateSource<EntityStoreState<Entity>> & {
+  entities: Signal<Entity[]>;
+  selectedEntities: Signal<Entity[]>;
+};
+
+export interface BaseEntityStoreApi<Entity extends BaseEntity> {
+  entities: Signal<Entity[]>;
+  selectedEntities: Signal<Entity[]>;
+  currentEntity: Signal<Entity | undefined>;
+  currentId: Signal<string | undefined>;
+  isLoading: Signal<boolean>;
+  error: Signal<string | undefined>;
+  page: Signal<number>;
+  pageSize: Signal<number>;
+  totalPageCount: Signal<number>;
+  filterKey: Signal<string | undefined>;
+  activeTabs: Signal<string[]>;
+  currentTab: Signal<string | undefined>;
+  countOfEntities: Signal<number>;
+  matTableDataSource: Signal<MatTableDataSource<Entity>>;
+
+  add(entity: Entity): Promise<PersistedEntity<Entity> | undefined>;
+  delete(id: string): Promise<void>;
+  deleteAll(input?: void): void;
+  deselectAll(): void;
+  deselectEntity(id: string): void;
+  load(query: BaseEntityQueryCondition): void;
+  loadById(id: string): Entity | undefined;
+  resetErrorState(): void;
+  selectEntity(id: string): void;
+  setCurrentEntity(id: string | undefined): void;
+  update(entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity> | undefined>;
+  clearCurrentEntity(): void;
+  createEntity(): Entity;
+  doFilter(filterKey: string): void;
+  reset(): void;
+  tabIsActive(tabName: string): void;
+  tabIsInactive(tabName: string): void;
 }
 
 export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, getRepository: () => BaseEntityService<Entity>) {
@@ -65,13 +106,13 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       },
       resetErrorState: () => patchState(store, { error: undefined }),
       selectEntity: (id: string) => {
-        const foundEntity = store.entities() && store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
-        if (foundEntity && foundEntity.length == 1 && store.selectedEntities().indexOf(foundEntity[0]) == -1) {
+        const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
+        if (foundEntity && foundEntity.length === 1 && store.selectedEntities().indexOf(foundEntity[0]) === -1) {
           patchState(store, { selectedEntities: store.selectedEntities().concat(foundEntity) });
         }
       },
-      setCurrentEntity: (id: string): void => {
-        const foundEntity = store.entities() && store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
+      setCurrentEntity: (id: string | undefined): void => {
+        const foundEntity = id != null && store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
         if (foundEntity && foundEntity.length > 0) {
           patchState(store, { currentEntity: foundEntity[0], currentId: foundEntity[0].id });
         } else patchState(store, { currentEntity: undefined, currentId: undefined });
@@ -81,11 +122,6 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
     withHooks((store) => ({
       onInit: () => {
         store.load({});
-        if (isDevMode()) {
-          watchState(store, (state) => {
-            //            console.log('[Base Entity Store] state changed:', state);
-          });
-        }
       },
     })),
     withComputed((store) => ({

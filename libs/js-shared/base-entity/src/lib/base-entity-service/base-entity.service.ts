@@ -3,7 +3,7 @@ import { BaseEntityLoadResponse, BaseEntityQueryCondition } from './base-entity-
 import { Observable } from 'rxjs';
 import { InjectionToken } from '@angular/core';
 
-export const BASE_ENTITY_SERVICE = new InjectionToken<BaseEntityService<any>>('BASE_ENTITY_SERVICE');
+export const BASE_ENTITY_SERVICE = new InjectionToken<BaseEntityService<BaseEntity>>('BASE_ENTITY_SERVICE');
 
 export interface BaseEntityService<Entity extends BaseEntity> {
   add(entity: Entity, id?: number): Observable<PersistedEntity<Entity>>;

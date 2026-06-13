@@ -3,7 +3,7 @@ import { BaseEntityService } from './base-entity.service';
 import { from, map, Observable, of } from 'rxjs';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, OrderByDirection } from './base-entity-load-response';
 import { Inject, inject } from '@angular/core';
-import { collection, deleteDoc, doc, Firestore, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import { collection, deleteDoc, doc, DocumentData, Firestore, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/firestore';
 
@@ -64,17 +64,13 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
   protected async addAsync(entity: Entity): Promise<PersistedEntity<Entity>> {
     const newDoc = entity.id ? doc(this.collection, entity.id) : doc(this.collection);
     await setDoc(newDoc, this.mapEntity(entity));
-    const savedEntity = { ...entity, id: newDoc.id };
-    return new Promise<PersistedEntity<Entity>>((resolve, reject) => {
-      resolve(this.mapDocument(savedEntity));
-      reject(new Error('Failed to update entity: ' + entity));
-    });
+    return this.mapDocument({ ...entity, id: newDoc.id });
   }
 
   protected createQuery(queryCondition: BaseEntityQueryCondition) {
     let orderBys: QueryOrderByConstraint[] = [];
-    if (queryCondition.orderBys && queryCondition.orderBys?.length > 0) {
-      orderBys = queryCondition.orderBys?.map((orderByCondition) => {
+    if (queryCondition.orderBys?.length) {
+      orderBys = queryCondition.orderBys.map((orderByCondition) => {
         const name = Object.keys(OrderByDirection).filter((key) => key === orderByCondition.direction);
         const direction = Object.values(OrderByDirection).filter((value) => value === name[0]);
         return orderBy(orderByCondition.property, direction[0]);
@@ -82,50 +78,44 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
     }
 
     let wheres: QueryFieldFilterConstraint[] = [];
-    if (queryCondition.filters && queryCondition.filters?.length > 0) {
-      wheres =
-        queryCondition.filters?.map((filter) => {
-          return where(filter.property, filter.operator, filter.value);
-        }) ?? [];
+    if (queryCondition.filters?.length) {
+      wheres = queryCondition.filters.map((filter) => where(filter.property, filter.operator, filter.value));
     }
 
     return query(this.collection, ...wheres, ...orderBys, limit(queryCondition.pageSize ?? 99));
   }
 
   protected async findByQueryAsync(queryCondition: BaseEntityQueryCondition): Promise<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[]> {
-    const query = this.createQuery(queryCondition);
-    const results = await getDocs(query);
-    const content: PersistedEntity<Entity>[] = [];
-    results.docs.forEach((doc) => {
-      content.push(this.mapDocument({ id: doc.id, ...doc.data() }));
-    });
+    const builtQuery = this.createQuery(queryCondition);
+    const results = await getDocs(builtQuery);
+    const content = results.docs.map((docSnapshot) => this.mapDocument({ id: docSnapshot.id, ...docSnapshot.data() }));
 
-    return Promise.resolve({
+    return {
       page: queryCondition.page,
       pageSize: queryCondition.pageSize,
       totalPageCount: 1,
       content,
-    });
+    };
   }
 
-  protected mapCollection(collection: Observable<any[]>): PersistedEntity<Entity>[] {
+  protected mapCollection(source: Observable<unknown[]>): PersistedEntity<Entity>[] {
     const entities: PersistedEntity<Entity>[] = [];
-    collection.pipe(
-      map((documents: any[]) => {
-        documents.forEach((document) => entities.push(this.mapDocument(document)));
+    source.pipe(
+      map((documents) => {
+        documents.forEach((docData) => entities.push(this.mapDocument(docData)));
       }),
     );
     return entities;
   }
 
-  protected mapDocument(document: any): PersistedEntity<Entity> {
-    const entity = this.entityMapper.fromDto(document);
+  protected mapDocument(docData: unknown): PersistedEntity<Entity> {
+    const entity = this.entityMapper.fromDto(docData);
     assertPersistedEntity(entity);
     return entity;
   }
 
-  private mapEntity(entity: Entity): any {
-    return this.entityMapper.toDto(entity);
+  private mapEntity(entity: Entity): DocumentData {
+    return this.entityMapper.toDto(entity) as DocumentData;
   }
 
   private async updateAsync(entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity>> {

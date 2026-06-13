@@ -5,8 +5,9 @@ import { patchState } from '@ngrx/signals';
 import { tapResponse } from '@ngrx/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EntityStoreHandle } from './base-entity.store';
 
-export const deleteAllEntities = <Entity extends BaseEntity>(store: any, repository: BaseEntityService<Entity>) => {
+export const deleteAllEntities = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
   return rxMethod<void>(
     pipe(
       switchMap(() => {

@@ -4,8 +4,8 @@ import 'reflect-metadata';
  * Defines an entity data transformer capable of transforming data to and from the server.
  */
 export interface IEntityTransformer {
-  fromServer?: (data: any, criteria?: any) => any;
-  toServer?: (entity: any, criteria?: any) => any;
+  fromServer?: (data: unknown, criteria?: unknown) => unknown;
+  toServer?: (entity: unknown, criteria?: unknown) => unknown;
 }
 
 export interface EntityOptions {
@@ -27,7 +27,7 @@ const ENTITY_ID_PROPERTIES_KEY = 'entity:idProperties';
  * @returns Class decorator function
  */
 export function Entity(options: EntityOptions): ClassDecorator {
-  return function (target: any) {
+  return function (target) {
     // Store metadata on the class (for backward compatibility)
     Reflect.defineMetadata('entity:options', options, target);
 
@@ -48,11 +48,11 @@ export function Entity(options: EntityOptions): ClassDecorator {
  * @param instance An instance of a class decorated with @Entity
  * @returns The entity options or undefined if not found
  */
-export function getEntityOptions(instance: any): EntityOptions | undefined {
+export function getEntityOptions(instance: object | null | undefined): EntityOptions | undefined {
   if (!instance) return undefined;
 
   // Try to get options from the instance
-  const options = instance[ENTITY_OPTIONS_KEY];
+  const options = (instance as Record<symbol, EntityOptions | undefined>)[ENTITY_OPTIONS_KEY];
   if (options) return options;
 
   // Fallback to class metadata (for backward compatibility)
@@ -91,7 +91,7 @@ export function Id(): PropertyDecorator {
  * @param instance An instance of a class with properties decorated with @Id
  * @returns Array of property names marked as IDs or empty array if none found
  */
-export function getEntityIds(instance: any): string[] {
+export function getEntityIds(instance: object | null | undefined): string[] {
   if (!instance) return [];
 
   // Get the constructor from the instance

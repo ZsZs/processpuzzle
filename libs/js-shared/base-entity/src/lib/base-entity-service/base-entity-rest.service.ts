@@ -37,7 +37,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     } else throw new Error('Could not determine the full url');
   }
 
-  deleteAll(): Observable<any> {
+  deleteAll(): Observable<unknown> {
     return this.httpClient.delete(this.resourceUrl, { headers: this.headers });
   }
 
@@ -49,7 +49,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
-        map((httpResponse: any) => {
+        map((httpResponse: unknown) => {
           return queryCondition.page ? this.mapPagedResponse(httpResponse) : this.mapSimpleResponse(httpResponse);
         }),
       );
@@ -61,7 +61,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
       return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
-        map((httpResponse: any) => {
+        map((httpResponse: unknown) => {
           return this.mapEntityResponse(httpResponse);
         }),
       );
@@ -73,7 +73,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const fullUrl = this.buildFullUrl(this.resourceUrl, {});
     if (fullUrl) {
       return this.httpClient.post(fullUrl, dto, { headers: this.headers }).pipe(
-        map((response: any) => {
+        map((response: unknown) => {
           return this.mapEntityResponse(response, id);
         }),
       );
@@ -86,7 +86,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', { pathParams });
     if (fullUrl) {
       return this.httpClient.put(fullUrl, dto, { headers: this.headers }).pipe(
-        map((response: any) => {
+        map((response: unknown) => {
           return this.mapEntityResponse(response);
         }),
       );
@@ -103,12 +103,12 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
       queryCondition.filters.forEach((filter) => queryParams.set(filter.property, filter.value));
     }
 
-    let params: any = {};
+    let params: Record<string, string> | undefined = {};
     if (queryParams.size > 0) {
       for (const [key, value] of queryParams) {
         params = { ...params, [key]: value };
       }
-    } else params = null;
+    } else params = undefined;
 
     if (queryCondition.pathParams !== undefined && queryCondition.pathParams.size != 0) {
       queryCondition.pathParams.forEach((value: string, key: string) => {
@@ -125,9 +125,10 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     return buildUrl(this.baseUrl, urlOptions);
   }
 
-  private mapPagedResponse(response: any): BaseEntityLoadResponse<PersistedEntity<Entity>> {
-    const subjectPage = response[0];
-    const content = subjectPage.content.map((dto: any, index: number) => {
+  private mapPagedResponse(response: unknown): BaseEntityLoadResponse<PersistedEntity<Entity>> {
+    const pages = response as Array<{ content: unknown[]; page: number; pageSize: number; totalPageCount: number }>;
+    const subjectPage = pages[0];
+    const content = subjectPage.content.map((dto, index) => {
       return this.mapEntityResponse(dto, index);
     });
     return {
@@ -138,9 +139,9 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     };
   }
 
-  private mapSimpleResponse(response: any): PersistedEntity<Entity>[] | PersistedEntity<Entity> {
-    if (Object.prototype.toString.call(response) === '[object Array]') {
-      return response.map((dto: any, index: number) => {
+  private mapSimpleResponse(response: unknown): PersistedEntity<Entity>[] | PersistedEntity<Entity> {
+    if (Array.isArray(response)) {
+      return response.map((dto, index) => {
         return this.mapEntityResponse(dto, index);
       });
     } else {
@@ -148,7 +149,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     }
   }
 
-  private mapEntityResponse(response: any, index?: number): PersistedEntity<Entity> {
+  private mapEntityResponse(response: unknown, index?: number): PersistedEntity<Entity> {
     const entity = this.entityMapper.fromDto(response, index);
     assertPersistedEntity(entity);
     return entity;

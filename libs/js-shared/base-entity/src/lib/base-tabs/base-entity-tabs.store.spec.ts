@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('BaseEntityTabsStore', () => {
   const TabsStore = signalStore({ providedIn: 'root' }, BaseEntityTabsStore());
-  let store: any;
+  let store: InstanceType<typeof TabsStore>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

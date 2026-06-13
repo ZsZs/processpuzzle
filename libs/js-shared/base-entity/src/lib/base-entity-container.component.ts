@@ -5,6 +5,8 @@ import { BaseEntityTabsComponent } from './base-tabs/base-entity-tabs.component'
 import { BaseEntityDescriptor } from './base-entity/base-entity.descriptor';
 import { BaseEntityFacade } from './base-entity-facade/base-entity-facade';
 import { ACTIVE_ENTITY_FACADE } from './base-entity-facade/active-entity-facade.token';
+import { BaseEntity } from './base-entity/base-entity';
+import { BaseEntityStoreApi } from './base-entity-store/base-entity.store';
 
 @Component({
   selector: 'base-entity-container',
@@ -19,13 +21,13 @@ import { ACTIVE_ENTITY_FACADE } from './base-entity-facade/active-entity-facade.
 })
 export class BaseEntityContainerComponent implements OnDestroy, OnInit {
   entityDescriptor = input<BaseEntityDescriptor | undefined>(undefined);
-  facade = input<BaseEntityFacade<any> | undefined>(undefined);
+  facade = input<BaseEntityFacade<BaseEntity> | undefined>(undefined);
 
   private readonly injectedFacade = inject(ACTIVE_ENTITY_FACADE, { optional: true });
   protected snackBar = inject<MatSnackBar>(MatSnackBar);
-  store: any;
+  store!: BaseEntityStoreApi<BaseEntity>;
 
-  protected activeFacade = computed<BaseEntityFacade<any> | undefined>(() => this.facade() ?? this.injectedFacade ?? undefined);
+  protected activeFacade = computed<BaseEntityFacade<BaseEntity> | undefined>(() => this.facade() ?? this.injectedFacade ?? undefined);
 
   protected resolvedDescriptor = computed<BaseEntityDescriptor>(() => {
     const f = this.activeFacade();
@@ -43,11 +45,11 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
 
   // region Angular lifecycle hooks
   ngOnDestroy() {
-    this.store?.reset?.();
+    this.store?.reset();
   }
 
   ngOnInit() {
-    this.store = this.activeFacade()?.store ?? this.resolvedDescriptor().store;
+    this.store = (this.activeFacade()?.store ?? this.resolvedDescriptor().store) as BaseEntityStoreApi<BaseEntity>;
   }
 
   // endregion
@@ -55,9 +57,9 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
   // region protected, private helper methods
   private registerEffects() {
     effect(() => {
-      if (this.store?.error?.()) {
-        const errorMessage = this.store.error() ? this.store.error() : 'Undefined Error';
-        this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
+      const errorValue = this.store?.error();
+      if (errorValue) {
+        this.snackBar.open(errorValue, 'Close', { duration: 5000 });
       }
     });
   }

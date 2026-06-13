@@ -19,6 +19,25 @@ import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { EntityComponentsListComponent } from './components/entity-components-list.component';
 import { NGXLogger } from 'ngx-logging-kit';
 import { LookupComponent } from './lookup/lookup.component';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+
+type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
+
+const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
+  [FormControlType.ARTIFACT]: ArtifactComponent as AnyFormControlComponent,
+  [FormControlType.CHECKBOX]: CheckboxComponent as AnyFormControlComponent,
+  [FormControlType.COMPONENTS]: EntityComponentsListComponent as AnyFormControlComponent,
+  [FormControlType.DATE]: DatepickerComponent as AnyFormControlComponent,
+  [FormControlType.DROPDOWN]: DropdownComponent as AnyFormControlComponent,
+  [FormControlType.LABEL]: LabelComponent as AnyFormControlComponent,
+  [FormControlType.LOOKUP]: LookupComponent as AnyFormControlComponent,
+  [FormControlType.RADIO]: RadioComponent as AnyFormControlComponent,
+  [FormControlType.TEXTAREA]: TextareaComponent as AnyFormControlComponent,
+  [FormControlType.FLEX_BOX]: FlexBoxComponent as AnyFormControlComponent,
+  [FormControlType.FOREIGN_KEY]: ForeignKeyComponent as AnyFormControlComponent,
+  [FormControlType.TAGS]: TagsComponent as AnyFormControlComponent,
+  [FormControlType.TEXT_BOX]: TextboxComponent as AnyFormControlComponent,
+};
 
 @Injectable({ providedIn: 'root' })
 export class BaseEntityFormBuilder<Entity extends BaseEntity> {
@@ -28,7 +47,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   public buildForm(
     viewContainerRef: ViewContainerRef,
     baseEntityForm: FormGroup,
-    store: any,
+    store: BaseEntityStoreApi<Entity>,
     attrDescriptors: AbstractAttrDescriptor[],
     entity: Signal<Entity>,
     initialValues?: Record<string, unknown>,
@@ -40,8 +59,10 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       const formControlType = this.createFormControl(column);
       if (formControlType) {
         if (column instanceof BaseEntityAttrDescriptor) {
-          const hasSnapshotValue = initialValues != null && Object.prototype.hasOwnProperty.call(initialValues, column.attrName);
-          const currentAttrValue = hasSnapshotValue ? initialValues![column.attrName] : Reflect.get(entity(), column.attrName);
+          const currentAttrValue =
+            initialValues != null && Object.prototype.hasOwnProperty.call(initialValues, column.attrName)
+              ? initialValues[column.attrName]
+              : Reflect.get(entity(), column.attrName);
           const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
           baseEntityForm.addControl(column.attrName, formControl);
 
@@ -67,33 +88,9 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
 
   // region protected, private helper methods
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
-    if (column.formControlType === FormControlType.ARTIFACT) {
-      return ArtifactComponent<Entity>;
-    } else if (column.formControlType === FormControlType.CHECKBOX) {
-      return CheckboxComponent<Entity>;
-    } else if (column.formControlType === FormControlType.COMPONENTS) {
-      return EntityComponentsListComponent<Entity>;
-    } else if (column.formControlType === FormControlType.DATE) {
-      return DatepickerComponent<Entity>;
-    } else if (column.formControlType === FormControlType.DROPDOWN) {
-      return DropdownComponent<Entity>;
-    } else if (column.formControlType === FormControlType.LABEL) {
-      return LabelComponent<Entity>;
-    } else if (column.formControlType === FormControlType.LOOKUP) {
-      return LookupComponent<Entity>;
-    } else if (column.formControlType === FormControlType.RADIO) {
-      return RadioComponent<Entity>;
-    } else if (column.formControlType === FormControlType.TEXTAREA) {
-      return TextareaComponent<Entity>;
-    } else if (column.formControlType === FormControlType.FLEX_BOX) {
-      return FlexBoxComponent<Entity>;
-    } else if (column.formControlType === FormControlType.FOREIGN_KEY) {
-      return ForeignKeyComponent<Entity>;
-    } else if (column.formControlType === FormControlType.TAGS) {
-      return TagsComponent<Entity>;
-    } else if (column.formControlType === FormControlType.TEXT_BOX) {
-      return TextboxComponent<Entity>;
-    } else throw Error('Undefined form control type');
+    const componentType = FORM_CONTROL_COMPONENTS[column.formControlType];
+    if (!componentType) throw Error('Undefined form control type');
+    return componentType as unknown as Type<BaseFormControlComponent<Entity>>;
   }
 
   // endregion

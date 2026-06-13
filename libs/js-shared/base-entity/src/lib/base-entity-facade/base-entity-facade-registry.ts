@@ -1,11 +1,13 @@
 import { Component, computed, inject, InjectionToken, Injector, type ProviderToken, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityFacade } from './base-entity-facade';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
+import { BaseEntity } from '../base-entity/base-entity';
 
-export type BaseEntityFacadeRegistry = Record<string, ProviderToken<BaseEntityFacade<any>>>;
+export type BaseEntityFacadeRegistry = Record<string, ProviderToken<BaseEntityFacade<BaseEntity>>>;
 
 export const BASE_ENTITY_FACADE_REGISTRY = new InjectionToken<BaseEntityFacadeRegistry>('BASE_ENTITY_FACADE_REGISTRY', {
   factory: () => ({}),
@@ -24,17 +26,18 @@ export class EntityRegistryComponent {
 
   protected registryJson = computed(() => {
     const minified = this.queryParams()?.get('minified') === 'yes';
-    return minified ? JSON.stringify(this.descriptors(), null, 2) : JSON.stringify(this.descriptors(), null, 2);
+    return minified ? JSON.stringify(this.descriptors()) : JSON.stringify(this.descriptors(), null, 2);
   });
 
   private buildDescriptors() {
-    return Object.entries(this.registry).map(([, facadeToken]) => {
+    return Object.values(this.registry).map((facadeToken) => {
       const facade = this.injector.get(facadeToken);
       const descriptor = facade.descriptor;
       const attrDescriptors = filterAttributeDescriptors(facade.descriptor.attrDescriptors);
+      const entityTitle = typeof descriptor.entityTitle === 'function' ? descriptor.entityTitle() : descriptor.entityTitle;
       return {
         entityName: descriptor.entityName,
-        entityTitle: descriptor.entityTitle,
+        entityTitle,
         isAbstract: descriptor.isAbstract,
         parentEntityName: descriptor.parentEntity,
         attrDescriptors: attrDescriptors.map((attr) => this.serializeAttr(attr)),
@@ -42,7 +45,7 @@ export class EntityRegistryComponent {
     });
   }
 
-  private serializeAttr(attr: any) {
+  private serializeAttr(attr: AbstractAttrDescriptor) {
     const isBaseAttr = attr instanceof BaseEntityAttrDescriptor;
     return {
       attrName: attr.attrName,

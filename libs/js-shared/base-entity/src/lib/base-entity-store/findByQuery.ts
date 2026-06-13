@@ -6,8 +6,9 @@ import { pipe, switchMap, tap } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { tapResponse } from '@ngrx/operators';
 import { HttpErrorResponse } from '@angular/common/http';
+import { EntityStoreHandle } from './base-entity.store';
 
-export const findByQuery = <Entity extends BaseEntity>(store: any, repository: BaseEntityService<Entity>) => {
+export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
   return rxMethod<BaseEntityQueryCondition>(
     pipe(
       tap((query: BaseEntityQueryCondition) => patchState(store, { page: query.page, isLoading: true, error: undefined })),

@@ -83,7 +83,10 @@
       "Bash(npx vitest *)",
       "Bash(echo \"EXIT: $?\")",
       "Read(//tmp/**)",
-      "Bash(ls /tmp/full-test.log 2>&1; ls /c/Users/zsolt/AppData/Local/Temp/full-test.log 2>&1)"
+      "Bash(ls /tmp/full-test.log 2>&1; ls /c/Users/zsolt/AppData/Local/Temp/full-test.log 2>&1)",
+      "Bash(npx eslint *)",
+      "PowerShell(pnpm nx run base-entity:typecheck 2>&1)",
+      "PowerShell(npx nx run base-entity:typecheck 2>&1)"
     ]
   }
 }

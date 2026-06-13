@@ -64,12 +64,12 @@ describe('Entity Decorator', () => {
 
     // Test fromServer transformation
     const serverData = { name: 'server data' };
-    const transformedFromServer = transformer.fromServer?.(serverData);
+    const transformedFromServer = transformer.fromServer?.(serverData) as { name?: string } | undefined;
     expect(transformedFromServer?.name).toBe('SERVER DATA');
 
     // Test toServer transformation
     const entityData = { name: 'ENTITY DATA' };
-    const transformedToServer = transformer.toServer?.(entityData);
+    const transformedToServer = transformer.toServer?.(entityData) as { name?: string } | undefined;
     expect(transformedToServer?.name).toBe('entity data');
   });
   describe('Id Decorator', () => {

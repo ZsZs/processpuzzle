@@ -7,6 +7,8 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseEntityToolbarComponent } from '../base-toolbar/base-entity-toolbar.component';
 import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-statusbar.component';
+import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 @Component({
   selector: 'base-entity-tabs',
@@ -33,7 +35,7 @@ import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-stat
   `,
 })
 export class BaseEntityTabsComponent implements OnDestroy, OnInit {
-  store: any;
+  store!: BaseEntityStoreApi<BaseEntity>;
   entityDescriptor = input.required<BaseEntityDescriptor>();
   selectedEntityId: Signal<string | undefined> = computed(() => (this.store.currentId() ? this.store.currentId() : BaseUrlSegments.NewEntity));
   detailsTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - details');
@@ -51,7 +53,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store = this.entityDescriptor().store;
+    this.store = this.entityDescriptor().store as BaseEntityStoreApi<BaseEntity>;
     this.formNavigator.setEntityName(this.entityDescriptor().entityName);
   }
   // endregion

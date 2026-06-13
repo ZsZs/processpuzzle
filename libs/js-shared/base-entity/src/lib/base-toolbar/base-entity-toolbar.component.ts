@@ -11,6 +11,7 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { LayoutService } from '@processpuzzle/util';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 @Component({
   selector: 'base-entity-toolbar',
@@ -22,14 +23,14 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   entityDescriptor = input.required<BaseEntityDescriptor>();
   readonly layoutService = inject(LayoutService);
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
-  store: any;
-  isDeleteEnabled = computed(() => this.store.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract);
-  isEditEnabled = computed(() => this.store.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
+  store!: BaseEntityStoreApi<Entity>;
+  isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract);
+  isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
   isNewEnabled = computed(() => !this.entityDescriptor().isAbstract);
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
-    this.store = this.entityDescriptor().store;
+    this.store = this.entityDescriptor().store as BaseEntityStoreApi<Entity>;
     this.formNavigator.setEntityName(this.entityDescriptor().entityName);
   }
 
@@ -41,12 +42,14 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   }
 
   onDeleteEntities() {
-    this.store.selectedEntities().forEach((entity: Entity) => void this.store.delete(entity.id));
+    this.store.selectedEntities().forEach((entity) => {
+      if (entity.id) void this.store.delete(entity.id);
+    });
   }
 
   onEditEntity() {
-    const entityId = this.store.currentEntity().id;
-    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entityId);
+    const entityId = this.store.currentEntity()?.id;
+    if (entityId) this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entityId);
   }
 
   onDoFilter($event: KeyboardEvent) {
