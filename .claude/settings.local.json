@@ -93,7 +93,11 @@
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show 03b5f28)",
       "Bash(sonar-scanner --version)",
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle log --oneline --all -20 --grep=sonar -i)",
-      "WebFetch(domain:sonarcloud.io)"
+      "WebFetch(domain:sonarcloud.io)",
+      "PowerShell(pnpm nx test base-entity --coverage 2>&1)",
+      "PowerShell(npm exec nx -- test base-entity --coverage 2>&1)",
+      "PowerShell(npm exec nx -- test base-entity --skip-nx-cache 2>&1)",
+      "PowerShell(npm exec nx -- lint base-entity 2>&1)"
     ]
   }
 }

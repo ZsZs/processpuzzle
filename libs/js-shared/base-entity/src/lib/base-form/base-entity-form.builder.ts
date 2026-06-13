@@ -59,10 +59,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       const formControlType = this.createFormControl(column);
       if (formControlType) {
         if (column instanceof BaseEntityAttrDescriptor) {
-          const currentAttrValue =
-            initialValues != null && Object.hasOwn(initialValues, column.attrName)
-              ? initialValues[column.attrName]
-              : Reflect.get(entity(), column.attrName);
+          const currentAttrValue = initialValues != null && Object.hasOwn(initialValues, column.attrName) ? initialValues[column.attrName] : Reflect.get(entity(), column.attrName);
           const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
           baseEntityForm.addControl(column.attrName, formControl);
 
@@ -79,7 +76,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
           this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity, initialValues);
-        } else throw Error('Undefined subclass of AbstractAttrDescriptor');
+        } else throw new Error('Undefined subclass of AbstractAttrDescriptor');
       }
     });
   }

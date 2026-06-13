@@ -18,11 +18,10 @@ export const BASE_ENTITY_FACADE_REGISTRY = new InjectionToken<BaseEntityFacadeRe
   template: ` <pre>{{ registryJson() }}</pre> `,
 })
 export class EntityRegistryComponent {
-  private registry = inject(BASE_ENTITY_FACADE_REGISTRY);
-  private injector = inject(Injector);
-  private queryParams = toSignal(inject(ActivatedRoute).queryParamMap, { initialValue: null });
-
-  private descriptors = signal(this.buildDescriptors());
+  private readonly registry = inject(BASE_ENTITY_FACADE_REGISTRY);
+  private readonly injector = inject(Injector);
+  private readonly queryParams = toSignal(inject(ActivatedRoute).queryParamMap, { initialValue: null });
+  private readonly descriptors = signal(this.buildDescriptors());
 
   protected registryJson = computed(() => {
     const minified = this.queryParams()?.get('minified') === 'yes';
