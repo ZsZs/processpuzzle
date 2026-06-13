@@ -2,6 +2,7 @@
   "name": "util",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "root": "libs/js-shared/util",
   "sourceRoot": "libs/js-shared/util/src",
   "prefix": "pp",
   "tags": ["scope:shared", "type:util"],
@@ -30,6 +31,7 @@
       "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "libs/js-shared/util/vitest.config.ts",
         "coverage": true,
         "tsConfig": "libs/js-shared/util/tsconfig.spec.json"
       },

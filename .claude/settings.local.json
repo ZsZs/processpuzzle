@@ -71,7 +71,13 @@
       "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\(0\\)\\); console.log\\(JSON.stringify\\(d.targets.build,null,2\\)\\)\")",
       "Bash(stat -c '%y' dist/libs/e2e-testing/package.json dist/libs/e2e-testing/src 2>&1)",
       "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/proj.json'\\)\\); console.log\\(JSON.stringify\\(d.targets,null,2\\)\\)\")",
-      "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\('tmp_proj.json'\\)\\); console.log\\(JSON.stringify\\(d.targets,null,2\\)\\)\")"
+      "Bash(node -e \"let d=JSON.parse\\(require\\('fs'\\).readFileSync\\('tmp_proj.json'\\)\\); console.log\\(JSON.stringify\\(d.targets,null,2\\)\\)\")",
+      "Bash(findstr /i \"ai\\\\|claude\\\\|copilot\\\\|cursor\\\\|llm\\\\|gpt\")",
+      "PowerShell($h = Get-Command handle.exe -ErrorAction SilentlyContinue; if \\($h\\) { & $h.Source -nobanner -accepteula \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\util\\\\reports\" } else { \"handle.exe not installed\" })",
+      "PowerShell(Get-Process node, chrome, msedge, firefox, idea64, java, sonar-scanner -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSet64/1MB\\)}} | Format-Table -AutoSize)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Select-Object ProcessId, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSetSize/1MB\\)}}, @{n='Cmd';e={if\\($_.CommandLine.Length -gt 180\\){$_.CommandLine.Substring\\(0,180\\)+'...'}else{$_.CommandLine}}} | Format-Table -AutoSize -Wrap)",
+      "WebSearch",
+      "Bash(node tools/scripts/sanitize-lcov.cjs libs/js-shared/util)"
     ]
   }
 }
