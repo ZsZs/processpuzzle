@@ -16,14 +16,10 @@ interface TestEntityDto {
 export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
   fromDto(dto: unknown): TestEntity {
     const source = dto as TestEntityDto;
-    return new TestEntity(source.id, source.name, source.description, source.boolean, source.number, source.date != null ? new Date(source.date) : undefined, source.enumValue);
+    return new TestEntity(source.id, source.name, source.description, source.boolean, source.number, source.date == null ? undefined : new Date(source.date), source.enumValue);
   }
 
   toDto(entity: TestEntity): unknown {
     return entity;
   }
 }
-
-// function getEnumKeyByEnumValue<E>(myEnum: { [key: number]: string }, enumValue: any): E | undefined {
-//   return Object.values(myEnum)[enumValue] as E;
-// }

@@ -97,7 +97,8 @@
       "PowerShell(pnpm nx test base-entity --coverage 2>&1)",
       "PowerShell(npm exec nx -- test base-entity --coverage 2>&1)",
       "PowerShell(npm exec nx -- test base-entity --skip-nx-cache 2>&1)",
-      "PowerShell(npm exec nx -- lint base-entity 2>&1)"
+      "PowerShell(npm exec nx -- lint base-entity 2>&1)",
+      "Bash(node -e ' *)"
     ]
   }
 }

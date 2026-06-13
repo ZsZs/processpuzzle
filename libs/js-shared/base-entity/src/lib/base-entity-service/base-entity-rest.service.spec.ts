@@ -95,4 +95,101 @@ describe('BaseEntityService', () => {
     expect(actualError?.status).toBe(status);
     expect(actualError?.statusText).toBe(statusText);
   });
+
+  describe('findAll()', () => {
+    it('delegates to findByQuery with the supplied page', () => {
+      baseEntityService.findAll(2).subscribe();
+      const request = controller.expectOne((req) => req.url.includes('/node') && req.url.includes('page=2'));
+      expect(request.request.method).toBe('GET');
+      request.flush([{ page: 2, pageSize: 10, totalPageCount: 4, content: [payload] }]);
+      controller.verify();
+    });
+
+    it('omits the page query param when no page is supplied', () => {
+      baseEntityService.findAll().subscribe();
+      const request = controller.expectOne((req) => req.url.includes('/node') && !req.url.includes('page='));
+      request.flush([payload]);
+      controller.verify();
+    });
+
+    it('wraps a single-object simple response into an array', () => {
+      let actual: TestEntity[] | undefined;
+      baseEntityService.findAll().subscribe((entities) => (actual = entities as TestEntity[]));
+      const request = controller.expectOne((req) => req.url.includes('/node'));
+      request.flush(payload);
+      controller.verify();
+      expect(actual).toEqual([expectedEntity]);
+    });
+  });
+
+  describe('findById()', () => {
+    it('builds an id-scoped URL and maps the single-object response', () => {
+      let actual: TestEntity | undefined;
+      baseEntityService.findById('1').subscribe((entity) => (actual = entity as TestEntity));
+      const request = controller.expectOne((req) => req.url.endsWith('/node') && !req.params.keys().length);
+      expect(request.request.method).toBe('GET');
+      request.flush(payload);
+      controller.verify();
+      expect(actual).toEqual(expectedEntity);
+    });
+  });
+
+  describe('add()', () => {
+    it('POSTs the mapped DTO and returns the persisted entity', () => {
+      let actual: TestEntity | undefined;
+      baseEntityService.add(expectedEntity).subscribe((entity) => (actual = entity as TestEntity));
+      const request = controller.expectOne((req) => req.method === 'POST' && req.url.includes('/node'));
+      expect(request.request.body).toEqual(expectedEntity);
+      request.flush(payload);
+      controller.verify();
+      expect(actual).toEqual(expectedEntity);
+    });
+  });
+
+  describe('update()', () => {
+    it('PUTs the mapped DTO to the id-scoped resource URL', () => {
+      let actual: TestEntity | undefined;
+      baseEntityService.update(expectedEntity).subscribe((entity) => (actual = entity as TestEntity));
+      const request = controller.expectOne((req) => req.method === 'PUT' && req.url.includes(`/node/${expectedEntity.id}`));
+      expect(request.request.body).toEqual(expectedEntity);
+      request.flush(payload);
+      controller.verify();
+      expect(actual).toEqual(expectedEntity);
+    });
+  });
+
+  describe('delete()', () => {
+    it('DELETEs the id-scoped resource URL', () => {
+      baseEntityService.delete('abc').subscribe();
+      const request = controller.expectOne((req) => req.method === 'DELETE' && req.url.includes('/node/abc'));
+      request.flush(null);
+      controller.verify();
+    });
+  });
+
+  describe('deleteAll()', () => {
+    it('DELETEs the unscoped resource URL (resourceUrl as-is, without baseUrl)', () => {
+      baseEntityService.deleteAll().subscribe();
+      const request = controller.expectOne((req) => req.method === 'DELETE' && req.url === 'message/%{messageId}/node');
+      request.flush(null);
+      controller.verify();
+    });
+  });
+
+  describe('buildFullUrl() branches', () => {
+    it('returns a URL with no query string when there are neither page nor filters', () => {
+      baseEntityService.findByQuery({ pathParams }).subscribe();
+      const request = controller.expectOne((req) => req.url.endsWith('message/123/node'));
+      expect(request.request.params.keys().length).toBe(0);
+      request.flush([payload]);
+      controller.verify();
+    });
+
+    it('appends the hash fragment when supplied', () => {
+      baseEntityService.findByQuery({ pathParams, hash: 'section-1' }).subscribe();
+      const request = controller.expectOne((req) => req.urlWithParams.includes('#section-1'));
+      request.flush([payload]);
+      controller.verify();
+    });
+  });
 });

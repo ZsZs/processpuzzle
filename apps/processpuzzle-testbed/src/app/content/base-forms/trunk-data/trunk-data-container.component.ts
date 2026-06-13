@@ -1,5 +1,6 @@
 import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { TrunkDataStore } from './trunk-data.store';
 import { MarkdownComponent } from 'ngx-markdown';
@@ -13,9 +14,9 @@ import { createTrunkDataDescriptor } from './trunk-data.descriptors';
   styles: ``,
 })
 export class TrunkDataContainerComponent implements OnDestroy {
-  private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
+  private readonly containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
-  private store = inject(TrunkDataStore);
+  private readonly store = inject(TrunkDataStore);
   entityDescriptor: BaseEntityDescriptor;
 
   constructor() {
