@@ -2,6 +2,8 @@ import { Component, computed, input, OnInit, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 @Component({
   selector: 'base-entity-statusbar',
@@ -16,14 +18,14 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
   `,
 })
 export class BaseEntityStatusbarComponent implements OnInit {
-  store: any;
+  store!: BaseEntityStoreApi<BaseEntity>;
   entityDescriptor = input.required<BaseEntityDescriptor>();
   entityTitle: Signal<string> = computed<string>(() => this.evaluateEntityTitle(this.entityDescriptor().entityTitle));
-  isVisible: Signal<boolean> = computed(() => this.store.currentEntity() != undefined || this.store.selectedEntities().length == 1);
+  isVisible: Signal<boolean> = computed(() => this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1));
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
-    this.store = this.entityDescriptor().store;
+    this.store = this.entityDescriptor().store as BaseEntityStoreApi<BaseEntity>;
   }
 
   // endregion
@@ -32,9 +34,8 @@ export class BaseEntityStatusbarComponent implements OnInit {
   // endregion
 
   // protected, private helper methods
-  private evaluateEntityTitle(title: string): string {
-    const fn = new Function('ctx', 'return ' + title.replace(/this\./g, 'ctx.'));
-    return fn(this);
+  private evaluateEntityTitle(title: string | (() => string)): string {
+    return typeof title === 'function' ? title() : title;
   }
 
   // endregion

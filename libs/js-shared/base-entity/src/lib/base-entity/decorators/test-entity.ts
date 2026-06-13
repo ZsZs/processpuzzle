@@ -1,11 +1,13 @@
 import { Entity, Id, IEntityTransformer } from './entity.decorator';
 
 const testTransformer: IEntityTransformer = {
-  fromServer: (data: any) => {
-    return { ...data, name: data.name ? data.name.toUpperCase() : '' };
+  fromServer: (data: unknown) => {
+    const source = (data ?? {}) as { name?: string };
+    return { ...source, name: source.name ? source.name.toUpperCase() : '' };
   },
-  toServer: (entity: any) => {
-    return { ...entity, name: entity.name ? entity.name.toLowerCase() : '' };
+  toServer: (entity: unknown) => {
+    const source = (entity ?? {}) as { name?: string };
+    return { ...source, name: source.name ? source.name.toLowerCase() : '' };
   }
 };
 

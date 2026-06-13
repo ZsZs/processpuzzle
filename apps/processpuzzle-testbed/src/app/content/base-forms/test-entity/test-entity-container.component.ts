@@ -33,7 +33,7 @@ export class TestEntityContainerComponent implements OnDestroy {
   constructor() {
     this.baseEntityDescriptor = createTestEntityDescriptor();
     this.baseEntityDescriptor.store = this.store;
-    this.baseEntityDescriptor.entityTitle = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
+    this.baseEntityDescriptor.entityTitle = () => this.store.currentEntity()?.name ?? '';
   }
 
   // region Angular lifecycle hooks

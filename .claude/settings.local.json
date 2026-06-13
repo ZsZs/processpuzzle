@@ -77,7 +77,30 @@
       "PowerShell(Get-Process node, chrome, msedge, firefox, idea64, java, sonar-scanner -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSet64/1MB\\)}} | Format-Table -AutoSize)",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Select-Object ProcessId, @{n='Mem\\(MB\\)';e={[int]\\($_.WorkingSetSize/1MB\\)}}, @{n='Cmd';e={if\\($_.CommandLine.Length -gt 180\\){$_.CommandLine.Substring\\(0,180\\)+'...'}else{$_.CommandLine}}} | Format-Table -AutoSize -Wrap)",
       "WebSearch",
-      "Bash(node tools/scripts/sanitize-lcov.cjs libs/js-shared/util)"
+      "Bash(node tools/scripts/sanitize-lcov.cjs libs/js-shared/util)",
+      "Bash(npm run *)",
+      "Bash(tee /tmp/test-output.log)",
+      "Bash(npx vitest *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Read(//tmp/**)",
+      "Bash(ls /tmp/full-test.log 2>&1; ls /c/Users/zsolt/AppData/Local/Temp/full-test.log 2>&1)",
+      "Bash(npx eslint *)",
+      "PowerShell(pnpm nx run base-entity:typecheck 2>&1)",
+      "PowerShell(npx nx run base-entity:typecheck 2>&1)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle log --oneline -30 -- tools/scripts/sanitize-lcov.cjs package.json libs/js-shared/util/sonar-project.properties)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show --stat dc82f0a)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show 7625197)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show 03b5f28)",
+      "Bash(sonar-scanner --version)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle log --oneline --all -20 --grep=sonar -i)",
+      "WebFetch(domain:sonarcloud.io)",
+      "PowerShell(pnpm nx test base-entity --coverage 2>&1)",
+      "PowerShell(npm exec nx -- test base-entity --coverage 2>&1)",
+      "PowerShell(npm exec nx -- test base-entity --skip-nx-cache 2>&1)",
+      "PowerShell(npm exec nx -- lint base-entity 2>&1)",
+      "Bash(node -e ' *)",
+      "PowerShell(pnpm nx test base-entity --testPathPattern=base-entity-facade-registry.spec.ts 2>&1)",
+      "PowerShell(npx nx test base-entity --testPathPattern=base-entity-facade-registry.spec.ts 2>&1)"
     ]
   }
 }

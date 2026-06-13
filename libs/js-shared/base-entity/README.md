@@ -182,7 +182,7 @@ export class TestEntityContainerComponent {
   constructor() {
     this.baseEntityDescriptor = createTestEntityDescriptor();
     this.baseEntityDescriptor.store = this.store;
-    this.baseEntityDescriptor.entityTitle = "this.store.currentEntity() ? this.store.currentEntity().name : ''";
+    this.baseEntityDescriptor.entityTitle = () => this.store.currentEntity()?.name ?? '';
   }
 }
 ```

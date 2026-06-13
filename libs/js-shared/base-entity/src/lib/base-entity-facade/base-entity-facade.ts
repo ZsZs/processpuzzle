@@ -15,7 +15,7 @@ export type EntityServiceKind = 'rest' | 'firestore';
 
 @Injectable()
 export abstract class BaseEntityFacade<Entity extends BaseEntity> {
-  abstract readonly entityType: new (...args: any[]) => Entity;
+  abstract readonly entityType: new (...args: unknown[]) => Entity;
 
   protected readonly serviceKind: EntityServiceKind = 'rest';
   protected readonly endpoint?: string;
@@ -40,7 +40,7 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
     return (this._storeClass ??= this.createStoreClass());
   }
 
-  get store(): any {
+  get store(): unknown {
     return (this._storeInstance ??= runInInjectionContext(this.injector, () => inject(this.storeClass)));
   }
 
@@ -61,7 +61,8 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   }
 
   get entityTitle(): string {
-    return this.descriptor.entityTitle;
+    const title = this.descriptor.entityTitle;
+    return typeof title === 'function' ? title() : title;
   }
 
   protected createMapper(): BaseEntityMapper<Entity> {

@@ -2,20 +2,22 @@ import type { AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
 import { createTestId } from './base-entity-utility';
 
+export type EntityTitle = string | (() => string);
+
 export interface BaseEntityDescriptorOptions {
-  store?: any;
+  store?: unknown;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
-  entityTitle?: string;
+  entityTitle?: EntityTitle;
   isAbstract?: boolean;
   parentEntity?: string;
 }
 
 export class BaseEntityDescriptor {
-  store: any;
+  store: unknown;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
-  entityTitle: string;
+  entityTitle: EntityTitle;
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
 

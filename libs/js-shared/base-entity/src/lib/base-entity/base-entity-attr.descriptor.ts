@@ -6,7 +6,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   labelClass?: string = '';
   format?: string;
   isLinkToDetails?: boolean;
-  selectables?: Array<{ key: string; value: any }>;
+  selectables?: Array<{ key: string; value: unknown }>;
   visible = true;
   hideInTable?: boolean = false;
   isHeading?: boolean;
@@ -17,7 +17,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   private _label?: string;
   private _linkedEntityType?: string;
 
-  constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: Array<{ key: string; value: any }>, isLinkToDetails?: boolean, options?: object) {
+  constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: Array<{ key: string; value: unknown }>, isLinkToDetails?: boolean, options?: object) {
     super(attrName, formControlType);
     this._label = label;
     this.selectables = selectables;

@@ -18,6 +18,7 @@ import { ArtifactAttr } from '../base-form/artifact/artifact-attr';
 import { MatButton } from '@angular/material/button';
 import { type NavigationPayload, NavigatorCommand } from '../base-form-navigator/navigation-payload';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
+import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -65,12 +66,12 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   });
   @ViewChild(MatSort) sort = {} as MatSort;
   @ViewChild(MatPaginator) paginator = {} as MatPaginator;
-  store: any;
+  store: BaseEntityStoreApi<PersistedEntity<Entity>>;
   protected selectOrCreateMode = signal(false);
   private requestPayload?: NavigationPayload;
 
   constructor() {
-    this.store = this.entityDescriptor().store;
+    this.store = this.entityDescriptor().store as BaseEntityStoreApi<PersistedEntity<Entity>>;
     this.registerEffects();
   }
 
@@ -110,7 +111,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     const relatedEntityName = config.linkedEntityType;
     if (!relatedEntityName) return;
 
-    this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName));
+    this.formNavigator.navigateToRelated(relatedEntityName, this.getPropertyValue(entity, config.attrName) as string);
   }
 
   onRowClick(entity: PersistedEntity<Entity>) {
@@ -181,7 +182,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.dataSource.filter = filterKey.trim().toLocaleLowerCase();
   }
 
-  private getPropertyValue(entity: PersistedEntity<Entity>, property: string): any {
+  private getPropertyValue(entity: PersistedEntity<Entity>, property: string): unknown {
     return Reflect.get(entity, property);
   }
 

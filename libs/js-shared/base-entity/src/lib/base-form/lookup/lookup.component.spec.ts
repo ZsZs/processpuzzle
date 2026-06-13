@@ -33,7 +33,7 @@ describe('LookupComponent', () => {
   }
 
   function provideLookupFacade(lookupStore: ReturnType<typeof createLookupStore>) {
-    const facadeToken = new InjectionToken<any>('LOOKUP_FACADE');
+    const facadeToken = new InjectionToken<{ store: ReturnType<typeof createLookupStore> }>('LOOKUP_FACADE');
     const facade = { store: lookupStore };
     return [
       { provide: facadeToken, useValue: facade },

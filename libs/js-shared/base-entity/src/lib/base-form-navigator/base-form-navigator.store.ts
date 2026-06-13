@@ -167,7 +167,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     async function navigateToDetails(entityName: string, id: string, returnTo?: string, payload?: NavigationPayload) {
       patchState(store, { entityName });
       pushPayload(payload);
-      if (store.activeRouteSegment() != RouteSegments.DETAILS_ROUTE) {
+      if (store.activeRouteSegment() !== RouteSegments.DETAILS_ROUTE) {
         const snakeCaseEntityName = snakeCaseName(entityName);
         const baseUrl = determineBaseUrl();
         const detailsFormPath = baseUrl + '/' + snakeCaseEntityName + '/' + id + '/details';
@@ -181,7 +181,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       const snakeCaseEntityName = snakeCaseName(entityName);
       const baseUrl = determineBaseUrl();
       const goToUrl = baseUrl + '/' + snakeCaseEntityName + '/list';
-      if (store.activeRouteSegment() != RouteSegments.LIST_ROUTE) {
+      if (store.activeRouteSegment() !== RouteSegments.LIST_ROUTE) {
         await navigateToUrl(goToUrl, returnTo);
       }
     }
@@ -201,13 +201,6 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       const snakeCaseEntityName = snakeCaseName(relatedTypeName);
       const baseUrl = determineBaseUrl();
       const listPath = baseUrl + '/' + snakeCaseEntityName + '/list';
-      // eslint-disable-next-line no-console
-      console.debug('[FormNavigator] navigateToRelatedList', {
-        relatedTypeName,
-        listPath,
-        payload,
-        requestPayloadsAfterPush: Array.from(store.requestPayloads().values()),
-      });
       await navigateToUrl(listPath, returnTo);
     }
 

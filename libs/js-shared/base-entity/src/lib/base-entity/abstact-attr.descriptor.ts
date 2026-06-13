@@ -19,7 +19,7 @@ export abstract class AbstractAttrDescriptor {
   attrName: string;
   formControlType: FormControlType;
   disabled = false;
-  style: { [p: string]: any } | null | undefined;
+  style: { [p: string]: unknown } | null | undefined;
 
   protected constructor(attrName: string, formControlType: FormControlType) {
     this.attrName = attrName;

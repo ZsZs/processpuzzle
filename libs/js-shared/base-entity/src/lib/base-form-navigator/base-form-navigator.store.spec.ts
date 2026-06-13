@@ -1,4 +1,4 @@
-import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
@@ -18,10 +18,9 @@ describe('BaseFormNavigatorStore', () => {
 
   const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
   const OtherNavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('ApplicationProperty'));
-  let route: ActivatedRoute;
   let router: Router;
-  let store: any;
-  let otherStore: any;
+  let store: InstanceType<typeof NavigatorStore>;
+  let otherStore: InstanceType<typeof OtherNavigatorStore>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -44,7 +43,6 @@ describe('BaseFormNavigatorStore', () => {
     await RouterTestingHarness.create('home');
     store = TestBed.inject(NavigatorStore);
     otherStore = TestBed.inject(OtherNavigatorStore);
-    route = TestBed.inject(ActivatedRoute);
     router = TestBed.inject(Router);
   });
 
