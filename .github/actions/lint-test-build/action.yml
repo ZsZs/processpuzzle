@@ -54,6 +54,9 @@ runs:
     - name: Test libs and apps
       run: npm run test-${{inputs.nx_project}}
       shell: bash
+    - name: Sanitize LCOV paths
+      run: node tools/scripts/sanitize-lcov.cjs ${{ inputs.base_dir }}
+      shell: bash
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v5.0.0
       env:
