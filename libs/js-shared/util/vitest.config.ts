@@ -1,22 +1,15 @@
 import { defineConfig } from 'vitest/config';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-
-const projectRoot = dirname(fileURLToPath(import.meta.url));
-
-const projectPrefix = 'libs/js-shared/util';
+import { join } from 'node:path';
 
 export default defineConfig({
+  root: __dirname,
   test: {
+    include: ['**/*.spec.ts'],
     coverage: {
-      reportsDirectory: resolve(projectRoot, 'reports/coverage'),
-      include: [`${projectPrefix}/src/**/*.ts`],
-      exclude: [
-        `${projectPrefix}/src/public-api.ts`,
-        `${projectPrefix}/src/test-setup.ts`,
-        `${projectPrefix}/src/**/*.module.ts`,
-        `${projectPrefix}/src/**/*.spec.ts`,
-      ],
+      enabled: true,
+      reportsDirectory: join(__dirname, 'reports/coverage'),
+      reporter: ['lcov', 'html', 'text'],
+      cleanOnRerun: true,
     },
   },
 });

@@ -2,6 +2,7 @@
   "name": "util",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "root": "libs/js-shared/util",
   "sourceRoot": "libs/js-shared/util/src",
   "prefix": "pp",
   "tags": ["scope:shared", "type:util"],
