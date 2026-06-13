@@ -1,124 +1,163 @@
 # @processpuzzle/util
+
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-util.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_util&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_util)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Futil?style=flat)](https://www.npmjs.com/package/@processpuzzle/util)
 
-Dieses Bibliothek enthelt algemein nützliches Funktionen oder Modulen.
+General-purpose utilities used across ProcessPuzzle Angular applications: small data structures, a runtime configuration loader, a central error handler, a logging provider, a layout service and a few helpers.
 
-## wildcardTextMatcher()
+## Installation
 
-Diese Funktion vergleicht ein Text mit ein Vergleicher Text, welch wildcars beinhalten kann.
-
-```typescript
-matchTextWith( textToSearchIn: string, textToMatchWidth: string ): boolean;
+```bash
+npm install @processpuzzle/util
 ```
 
-- *textToSearchIn*: ist der Gegenstand string
-- *textToMachWidth*: ist der Vergleicher string welche wildchars '*' oder '.' beinhalten kann.
+## Public API overview
+
+| Symbol | Kind | Purpose |
+| --- | --- | --- |
+| `wildcardTextMatcher` | function | Match a string against a wildcard pattern. |
+| `getEnvironment` | function | Map the current origin to an environment key. |
+| `Stack<T>` | class | LIFO stack data structure. |
+| `SubstringPipe` | Angular pipe | `substring` pipe for templates. |
+| `LayoutService` | Angular service | Reactive breakpoint/sidenav state. |
+| `ConfigurationService` | Angular service | Loads and merges JSON config files at startup. |
+| `RUNTIME_CONFIGURATION` | injection token | Provides the merged runtime configuration. |
+| `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` | injection tokens | Configuration hooks. |
+| `BaseConfiguration`, `FirebaseConfig` | types | Shared configuration shapes. |
+| `provideLoggingService` / `LoggingConfiguration` | provider | Configures `ngx-logging-kit`. |
+| `provideCentralErrorHandler`, `CentralErrorHandler` | provider / class | Global Angular `ErrorHandler`. |
+| `centralHttpErrorInterceptor` | HTTP interceptor | Forwards HTTP errors to the central handler. |
+| `ERROR_MESSAGE_REPORTER` / `ErrorMessageReporter` | injection token / interface | Optional UI reporter for the central handler. |
+
+## `wildcardTextMatcher(str, rule)`
+
+Returns `true` when `str` matches `rule`. `*` in the rule matches any sequence of characters.
 
 ```typescript
-const result = matchTextWith( 'Hello World', 'Hello*' ); // true
-const result = matchTextWith( 'Hello World', '*World' ); // true
-const result = matchTextWith( 'Hello World', 'He..o World' ); // true
-const result = matchTextWith( 'Hello World', 'Hello .ld' ); // false
+wildcardTextMatcher('Hello World', 'Hello*'); // true
+wildcardTextMatcher('Hello World', '*World'); // true
+wildcardTextMatcher('Hello World', 'Hello'); // true (rule is implicitly suffixed with .*)
 ```
 
-## getEnvironment()
+## `getEnvironment(originUrl?)`
 
-Diese Funktion, abhängig von welche URL wurde die Applikation gestartet, liefert die (BRZ) Kürzel für die Umgebung.
+Returns the environment key that corresponds to the application's origin. Falls back to `location.origin` when no argument is given.
 
-- http://localhost* => 'local';
+| Origin | Returns |
+| --- | --- |
+| `http://localhost:8080*` | `'docker'` |
+| `http://localhost*` | `'local'` |
+| `http://*.elasticbeanstalk.com` | `'aws'` |
+| anything else | throws `Error` |
 
-## Stack
-Werwendung des Stacks
+## `Stack<T>`
+
 ```typescript
 const stack = new Stack<number>();
-
-// Elemente zum Stack hinzufügen
 stack.push(10);
 stack.push(20);
-stack.push(30);
-
-// Stack-Größe ermitteln
-console.log('Stackgröße:', stack.size()); // Output: 3
-
-// Oberstes Element ansehen
-console.log('Oberstes Element:', stack.peek()); // Output: 30
-
-// Element entfernen
-console.log('Vom Stack entfernt:', stack.pop()); // Output: 30
-
-// Nach dem Entfernen das oberste Element ansehen
-console.log('Oberstes Element:', stack.peek()); // Output: 20
-
-// Prüfen, ob der Stack leer ist
-console.log('Ist der Stack leer?', stack.isEmpty()); // Output: false
-
-// Stack leeren
+stack.peek(); // 20
+stack.pop();  // 20
+stack.size(); // 1
+stack.isEmpty(); // false
+stack.toArray(); // [10]
 stack.clear();
-console.log('Ist der Stack leer nach dem Leeren?', stack.isEmpty()); // Output: true
 ```
 
-## SubstringPipe
-Angular pipe to use in templates. Usefull to manipulate displayed text.
+The constructor optionally accepts an initial array: `new Stack([1, 2, 3])`.
+
+## `SubstringPipe`
+
+Standalone Angular pipe registered under the name `substring`. The arguments are forwarded to `String.prototype.substring`.
+
 ```html
-<div matListItemTitle>&nbsp;{{ item.title | substring: 0: 10 }}</div>
+<div>{{ item.title | substring: 0 : 10 }}</div>
 ```
-The first parameter is the starting positon in text, the second is the ending position.
 
-## RuntimeConfiguration
+## `LayoutService`
 
-Das Modul erlaubt mehrere Konfigurationsdateien zu spezifizieren, die dann bei Applikation-Start (im Browser) wird geladen,
-zusammengefügt und steht als DI zur Verfügung. Der Entwickler spezifiziert die Konfiguration Dateien als Wert für
-CONFIGURATION_OPTIONS injection token:
+Tracks the current `BreakpointObserver` state as signals.
 
 ```typescript
-{
-  provide: CONFIGURATION_OPTIONS, useValue:
-  {
-    urlFactory: () => {
-      const env = getEnvironment();
-      return [ 'environments/config.common.json', `run-time-conf/config.${env}.json` ]
-    }, 
-    log: true
-  }
+private readonly layout = inject(LayoutService);
+
+readonly isCompact = computed(() => this.layout.isSmallDevice());
+readonly sidenavMode = this.layout.sidenavMode; // SidenavStatus.EXPAND | CLOSE | SHRINK
+```
+
+Exposed signals: `layoutClass`, `isSmallDevice`, `isMediumDevice`, `isLargeDevice`, `sidenavMode`.
+
+## Runtime configuration
+
+`ConfigurationService<TEnv, TConfig>` loads one or more JSON files at bootstrap, merges them in order (later files override earlier ones) and returns the result. The list of URLs is derived from the environment:
+
+```
+run-time-conf/config.common.json
+run-time-conf/config.${PIPELINE_STAGE}.json
+...CONFIGURATION_OVERRIDES (optional)
+```
+
+Typical bootstrap (see `apps/processpuzzle-testbed/src/main.ts`):
+
+```typescript
+async function bootstrap() {
+  const env = environment as EnvironmentVariables;
+  const service = new ConfigurationService<EnvironmentVariables, RuntimeConfiguration>();
+  const runtimeConfig = await service.init(env);
+
+  await bootstrapApplication(AppComponent, createAppConfig(runtimeConfig));
 }
 ```
 
-In dieses Beispiel wir die Datei ``environment/config.common.json`` erst gelesen, dann ``run-time-config/config.${env}.json``
-und zusammengefügt. D.h der letztere Wert in Datei überschreibt die früheren Werte. Wenn es eine neue Eingenschaft (property)
-mitbringt, dann wird es Teil der Konfiguration.
-Der Entwickler kann die Konfiguration Eigenschaften mit einer Klasse selber definieren. Dazu ist es erforderlich
-ein factory für die Klasse zu definieren:
+The loaded value is then exposed to the rest of the app through the `RUNTIME_CONFIGURATION` token:
 
 ```typescript
-{
-  provide: RuntimeConfiguration, useFactory: ( configurationService: ConfigurationService<RuntimeConfiguration> ) => {
-    return configurationService.configuration, deps: [ ConfigurationService ]
-  }
+{ provide: RUNTIME_CONFIGURATION, useValue: runtimeConfig }
+```
+
+`BaseConfiguration` describes the minimum shape every application's configuration must satisfy (pipeline stage, backend provider, backend / object-store URLs and Firebase config). Extend it in your own `RuntimeConfiguration` type.
+
+The other tokens — `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` — are reserved for downstream libraries that wire configuration into their own bootstrap hooks.
+
+## Logging
+
+`provideLoggingService` wires `ngx-logging-kit` based on a `LoggingConfiguration`:
+
+```typescript
+export interface LoggingConfiguration {
+  level: 'none' | 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error' | 'fatal';
+  serverLogLevel: 'none' | 'trace' | 'debug' | 'info' | 'log' | 'warn' | 'error' | 'fatal';
+  serverLoggingUrl?: string;
 }
 ```
 
-Die mitgelieferte AppInitializer sort für die Konfiguration zu initialisieren, und andere funktionen durchzuführen.
-Siehe [AppInitializer]().
-
 ```typescript
-{
-  provide: APP_INITIALIZER, multi:true, useFactory: ( initializer: AppInitializer ) => {
-    return async() => await initializer.init().then()
-  },
-  deps: [ AppInitializer ]
-}
+providers: [
+  provideLoggingService(runtimeConfig.LOGGING_CONFIGURATION),
+]
 ```
 
-## AppInitializer
+When `serverLogLevel` is `'none'`, no server URL is registered even if one is provided.
 
-AppInitializer ist eine spezielle Implementierung für APP_INITIALIZER wodurch der RuntimeConfiguration automatisch
-konfiguriert wird. Zusätzlich kann der AppInitializer die Methoden die mit CONFIGURATION_APP_INITIALIZER injection token
-definiert sind, auch ausführen. diese Methode sollen ein Promise<unknown> zurückgeben.
+## Central error handling
+
+`provideCentralErrorHandler()` registers `CentralErrorHandler` as Angular's global `ErrorHandler`. It:
+
+- unwraps `rejection` / `ngOriginalError` / `originalError`,
+- reloads the page on chunk-load errors,
+- logs `HttpErrorResponse` with status, statusText and URL,
+- logs everything else as `fatal`,
+- optionally forwards a display message to an `ErrorMessageReporter`.
 
 ```typescript
-{ provide: CONFIGURATION_APP_INITIALIZER, useValue: [() => Promise.resolve('anything'), () => Promise.resolve('something')] }
+providers: [
+  provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
+  provideCentralErrorHandler(),
+  { provide: ERROR_MESSAGE_REPORTER, useExisting: MyToastReporterService }, // optional
+]
 ```
 
-Typische weise wird in app.config.ts konfiguriert, wie [oben](#runtimeconfiguration) dargestellt.
+Implement `ErrorMessageReporter.showErrorMessage(message, error)` to surface errors in the UI (snackbar, toast, dialog, etc.).
+
+`centralHttpErrorInterceptor` simply pipes any HTTP error through the registered `ErrorHandler` and rethrows, so failures still propagate to caller `subscribe`/`catchError` blocks.
