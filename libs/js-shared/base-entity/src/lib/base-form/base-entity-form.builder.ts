@@ -24,19 +24,19 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
 const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
-  [FormControlType.ARTIFACT]: ArtifactComponent as AnyFormControlComponent,
-  [FormControlType.CHECKBOX]: CheckboxComponent as AnyFormControlComponent,
-  [FormControlType.COMPONENTS]: EntityComponentsListComponent as AnyFormControlComponent,
-  [FormControlType.DATE]: DatepickerComponent as AnyFormControlComponent,
-  [FormControlType.DROPDOWN]: DropdownComponent as AnyFormControlComponent,
-  [FormControlType.LABEL]: LabelComponent as AnyFormControlComponent,
-  [FormControlType.LOOKUP]: LookupComponent as AnyFormControlComponent,
-  [FormControlType.RADIO]: RadioComponent as AnyFormControlComponent,
-  [FormControlType.TEXTAREA]: TextareaComponent as AnyFormControlComponent,
-  [FormControlType.FLEX_BOX]: FlexBoxComponent as AnyFormControlComponent,
-  [FormControlType.FOREIGN_KEY]: ForeignKeyComponent as AnyFormControlComponent,
-  [FormControlType.TAGS]: TagsComponent as AnyFormControlComponent,
-  [FormControlType.TEXT_BOX]: TextboxComponent as AnyFormControlComponent,
+  [FormControlType.ARTIFACT]: ArtifactComponent,
+  [FormControlType.CHECKBOX]: CheckboxComponent,
+  [FormControlType.COMPONENTS]: EntityComponentsListComponent,
+  [FormControlType.DATE]: DatepickerComponent,
+  [FormControlType.DROPDOWN]: DropdownComponent,
+  [FormControlType.LABEL]: LabelComponent,
+  [FormControlType.LOOKUP]: LookupComponent,
+  [FormControlType.RADIO]: RadioComponent,
+  [FormControlType.TEXTAREA]: TextareaComponent,
+  [FormControlType.FLEX_BOX]: FlexBoxComponent,
+  [FormControlType.FOREIGN_KEY]: ForeignKeyComponent,
+  [FormControlType.TAGS]: TagsComponent,
+  [FormControlType.TEXT_BOX]: TextboxComponent,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -60,7 +60,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       if (formControlType) {
         if (column instanceof BaseEntityAttrDescriptor) {
           const currentAttrValue =
-            initialValues != null && Object.prototype.hasOwnProperty.call(initialValues, column.attrName)
+            initialValues != null && Object.hasOwn(initialValues, column.attrName)
               ? initialValues[column.attrName]
               : Reflect.get(entity(), column.attrName);
           const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
@@ -89,7 +89,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   // region protected, private helper methods
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
     const componentType = FORM_CONTROL_COMPONENTS[column.formControlType];
-    if (!componentType) throw Error('Undefined form control type');
+    if (!componentType) throw new Error('Undefined form control type');
     return componentType as unknown as Type<BaseFormControlComponent<Entity>>;
   }
 

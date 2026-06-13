@@ -107,3 +107,5 @@ tools/docker/**/pubsub-debug.log
 /apps/processpuzzle-backend/target/
 /**/.flattened-pom.xml
 /.junie/
+
+/**/.scannerwork/

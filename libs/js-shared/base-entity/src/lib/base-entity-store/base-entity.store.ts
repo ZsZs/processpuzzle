@@ -107,7 +107,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       resetErrorState: () => patchState(store, { error: undefined }),
       selectEntity: (id: string) => {
         const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
-        if (foundEntity && foundEntity.length === 1 && store.selectedEntities().indexOf(foundEntity[0]) === -1) {
+        if (foundEntity?.length === 1 && !store.selectedEntities().includes(foundEntity[0])) {
           patchState(store, { selectedEntities: store.selectedEntities().concat(foundEntity) });
         }
       },
