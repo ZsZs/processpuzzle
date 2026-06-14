@@ -105,7 +105,13 @@
       "Bash(curl -s --ssl-no-revoke -u \"fa1e2470af3e8241200954a87715bc1daf9c987f:\" \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_base_entity&branch=feature/base-entity/angular-22&statuses=OPEN,CONFIRMED&sinceLeakPeriod=true&ps=200\" -o /c/Projects/ProcessPuzzle/processpuzzle/.sonar-issues.json)",
       "Bash(node -e \"const d=require\\('/c/Projects/ProcessPuzzle/processpuzzle/.sonar-issues.json'\\);console.log\\('total:',d.total\\);console.log\\(JSON.stringify\\(d.issues.map\\(i=>\\({rule:i.rule,sev:i.severity,file:i.component,line:i.line,msg:i.message}\\)\\),null,2\\)\\);\")",
       "PowerShell(npm exec nx test base-entity 2>&1)",
-      "PowerShell(pnpm nx test widgets --skip-nx-cache 2>&1)"
+      "PowerShell(pnpm nx test widgets --skip-nx-cache 2>&1)",
+      "PowerShell(npm exec nx test widgets -- --skip-nx-cache 2>&1)",
+      "PowerShell(pnpm nx test widgets 2>&1)",
+      "PowerShell(Get-ChildItem package.json | Select-Object Name; \\(Get-Content package.json | ConvertFrom-Json\\).packageManager)",
+      "PowerShell(npx nx test widgets 2>&1)",
+      "PowerShell(npx nx test widgets --skip-nx-cache 2>&1)",
+      "PowerShell(npx nx reset 2>&1)"
     ]
   }
 }
