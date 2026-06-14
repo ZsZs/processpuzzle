@@ -2,7 +2,7 @@
 
 FROM eclipse-temurin:25-jre
 
-LABEL authors="zsolt"
+LABEL authors="Zsolt Zsuffa"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

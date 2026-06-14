@@ -106,6 +106,8 @@ services:
       - "9099:9100" # auth
       - "9199:9200" # Storage
       - "6000:6001" # Hosting
+    networks:
+      - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8081" ]
 
