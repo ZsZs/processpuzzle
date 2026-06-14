@@ -6,7 +6,7 @@ LABEL authors="zsolt"
 
 WORKDIR /app
 
-COPY apps/processpuzzle-backend/target/processpuzzle-backend-*.jar ./processpuzzle-backend.jar
+COPY dist/apps/processpuzzle-backend/processpuzzle-backend.jar ./processpuzzle-backend.jar
 
 EXPOSE 8080
 

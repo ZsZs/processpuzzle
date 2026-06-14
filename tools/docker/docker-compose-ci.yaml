@@ -31,6 +31,10 @@ services:
   processpuzzle-testbed:
     pull_policy: build
     depends_on:
+      processpuzzle-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
       json-server:
         condition: service_healthy
       firebase:

@@ -164,6 +164,13 @@
       "options": {
         "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-testbed"
       }
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build", "processpuzzle-backend:build"],
+      "options": {
+        "command": "docker compose -f tools/docker/docker-compose-ci.yaml build"
+      }
     }
   }
 }
