@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, input, output } from '@angular/core';
 import { CiCdComponent } from './ci-cd.component';
-import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { HttpClient, provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { MarkdownComponent } from 'ngx-markdown';
+
+@Component({ selector: 'markdown', template: '' })
+class MockMarkdownComponent {
+  readonly src = input<string>();
+  readonly load = output<string>();
+  readonly error = output<string | Error>();
+}
 
 describe('CiCdComponent', () => {
   let component: CiCdComponent;
@@ -12,9 +17,13 @@ describe('CiCdComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CiCdComponent, MarkdownComponent],
-      providers: [provideAnimations(), provideHttpClient(), provideMarkdown({ loader: HttpClient }), provideRouter([])],
-    }).compileComponents();
+      imports: [CiCdComponent],
+    })
+      .overrideComponent(CiCdComponent, {
+        remove: { imports: [MarkdownComponent] },
+        add: { imports: [MockMarkdownComponent] },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(CiCdComponent);
     component = fixture.componentInstance;

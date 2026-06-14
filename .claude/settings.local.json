@@ -123,7 +123,8 @@
       "PowerShell(pnpm nx run processpuzzle-testbed:typecheck 2>&1)",
       "Bash(npx tsc *)",
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle log --oneline -10 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)",
-      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show ed088f2 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)"
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show ed088f2 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)",
+      "Bash(grep -rln \"https://raw\\\\|markdown.*\\\\\\\\[src\\\\\\\\]\" C:/Projects/ProcessPuzzle/processpuzzle/apps/processpuzzle-testbed/src)"
     ]
   }
 }
