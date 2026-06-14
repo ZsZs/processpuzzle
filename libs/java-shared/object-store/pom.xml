@@ -10,7 +10,6 @@
     </parent>
 
     <artifactId>object-store</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
     <name>ProcessPuzzle :: Object Store</name>
     <description>ProcessPuzzle Object Store Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/object-store</url>
@@ -41,7 +40,6 @@
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>processpuzzle-api</artifactId>
-            <version>1.0.1</version>
         </dependency>
 
         <!-- Spring Boot dependencies -->
