@@ -143,7 +143,18 @@
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; \\(Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin/maven-metadata.xml\" -UseBasicParsing\\).Content | Select-String -Pattern \"<version>3\\\\.1[0-2]\" -AllMatches | ForEach-Object { $_.Matches.Value })",
       "PowerShell(\\(Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin/maven-metadata.xml\" -UseBasicParsing\\).Content | Select-String -Pattern \"<version>3\\\\.[0-9]+\\\\.[0-9]+</version>\" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value } | Select-Object -Last 10)",
       "PowerShell(mvn -version 2>&1)",
-      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view --job 81302194485 --log 2>&1 | Out-File C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\run2-log.txt -Encoding utf8; \\(Get-Item C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\run2-log.txt\\).Length)"
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view --job 81302194485 --log 2>&1 | Out-File C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\run2-log.txt -Encoding utf8; \\(Get-Item C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\run2-log.txt\\).Length)",
+      "PowerShell(gh run view 27509133717 --log-failed 2>&1)",
+      "PowerShell(Get-Command gh, gh.exe -ErrorAction SilentlyContinue; \\(Get-ChildItem 'C:\\\\Program Files\\\\GitHub CLI', 'C:\\\\Program Files \\(x86\\)\\\\GitHub CLI' -Filter 'gh.exe' -Recurse -ErrorAction SilentlyContinue\\).FullName)",
+      "PowerShell(& 'C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe' run view 27509133717 --log-failed 2>&1)",
+      "PowerShell(& 'C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe' run view 27509133717 2>&1)",
+      "PowerShell(gh run view 27509133738 --log-failed 2>&1)",
+      "Read(//c/Program Files/GitHub CLI//**)",
+      "Read(//c/Users/zsolt/AppData/Local/Programs/**)",
+      "Bash(gh.exe run *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 27509133738 --log-failed)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 27509133738 --json jobs,status,conclusion)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view --job 81305849431 --log)"
     ]
   }
 }

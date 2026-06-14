@@ -27,6 +27,7 @@ services:
       retries: 3
       timeout: 5s
       interval: 20s
+      start_period: 30s
 
   processpuzzle-testbed:
     pull_policy: build
