@@ -10,7 +10,7 @@
       "executor": "nx:run-commands",
       "dependsOn": ["^build"],
       "options": {
-        "command": "mvn -f {projectRoot}/pom.xml clean install"
+        "command": "mvn -pl libs/java-shared/object-store -am clean install"
       }
     },
     "lint": {
