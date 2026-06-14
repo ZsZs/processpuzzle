@@ -29,13 +29,15 @@
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "libs/js-shared/auth/vitest.config.ts",
         "tsConfig": "libs/js-shared/auth/tsconfig.spec.json",
         "setupFiles": ["libs/js-shared/auth/test-setup.ts"],
         "coverage": true
       },
       "configurations": {
         "ci": {
-          "coverage": true
+          "coverage": true,
+          "coverageReporters": ["lcov", "json-summary"]
         }
       }
     },
