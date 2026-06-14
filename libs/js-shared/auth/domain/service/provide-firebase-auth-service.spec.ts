@@ -1,25 +1,15 @@
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { Auth, connectAuthEmulator, getAuth } from '@angular/fire/auth';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Auth } from '@angular/fire/auth';
 import { BaseConfiguration } from '@processpuzzle/util';
 import { provideFirebaseAuthService } from './provide-firebase-auth-service';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { AuthenticationConfiguration } from './provide-authentication.service';
+import { firebaseMocks } from '../../test-setup';
 
 const mockAuth = { name: 'mockAuth' } as unknown as Auth;
-
-vi.mock('@angular/fire/auth', async () => {
-  const actual = await vi.importActual<typeof import('@angular/fire/auth')>('@angular/fire/auth');
-  return {
-    ...actual,
-    getAuth: vi.fn(() => mockAuth),
-    connectAuthEmulator: vi.fn(),
-  };
-});
+const { getAuthMock, connectAuthEmulatorMock } = firebaseMocks;
 
 describe('provideFirebaseAuthService', () => {
-  const getAuthMock = getAuth as unknown as Mock;
-  const connectAuthEmulatorMock = connectAuthEmulator as unknown as Mock;
-
   beforeEach(() => {
     vi.clearAllMocks();
     getAuthMock.mockReturnValue(mockAuth);

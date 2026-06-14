@@ -4,15 +4,6 @@ import { AUTHENTICATION_SERVICE, AuthenticationConfiguration, provideAuthenticat
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { KeycloakAuthService } from './keycloak-auth.service';
 
-// Mock Firebase modules - add default export
-vi.mock('@angular/fire/auth', async () => {
-  return {
-    default: {},
-    getAuth: vi.fn(),
-    connectAuthEmulator: vi.fn(),
-  };
-});
-
 describe('provideAuthenticationService', () => {
   const mockBaseConfig = { PIPELINE_STAGE: 'prod' };
 

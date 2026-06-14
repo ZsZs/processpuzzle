@@ -1,6 +1,20 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
+const hoistedFirebaseMocks = vi.hoisted(() => ({
+  getAuthMock: vi.fn(),
+  connectAuthEmulatorMock: vi.fn(),
+  signInWithEmailAndPasswordMock: vi.fn(),
+}));
+
+vi.mock('@angular/fire/auth', () => ({
+  getAuth: hoistedFirebaseMocks.getAuthMock,
+  connectAuthEmulator: hoistedFirebaseMocks.connectAuthEmulatorMock,
+  signInWithEmailAndPassword: hoistedFirebaseMocks.signInWithEmailAndPasswordMock,
+}));
+
+export const firebaseMocks = hoistedFirebaseMocks;
+
 export const mockAuthService = {
   _user: { set: vi.fn() },
   user: vi.fn().mockReturnValue(undefined),

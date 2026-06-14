@@ -1,15 +1,10 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { Auth, signInWithEmailAndPassword, User as FirebaseUser } from '@angular/fire/auth';
+import { Auth, User as FirebaseUser } from '@angular/fire/auth';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { User } from '../user/user';
+import { firebaseMocks } from '../../test-setup';
 
-vi.mock('@angular/fire/auth', async () => {
-  const actual = await vi.importActual<typeof import('@angular/fire/auth')>('@angular/fire/auth');
-  return {
-    ...actual,
-    signInWithEmailAndPassword: vi.fn(),
-  };
-});
+const { signInWithEmailAndPasswordMock } = firebaseMocks;
 
 describe('FirebaseAuthService', () => {
   type AuthMock = { currentUser: FirebaseUser | null; signOut: Mock };
@@ -51,11 +46,11 @@ describe('FirebaseAuthService', () => {
       const credential = {
         user: { email: 'test@example.com', uid: 'uid123', displayName: 'Test User' },
       };
-      (signInWithEmailAndPassword as unknown as Mock).mockResolvedValueOnce(credential);
+      signInWithEmailAndPasswordMock.mockResolvedValueOnce(credential);
 
       const result = await service.login('url', 'test@example.com', 'password');
 
-      expect(signInWithEmailAndPassword).toHaveBeenCalledWith(authMock, 'test@example.com', 'password');
+      expect(signInWithEmailAndPasswordMock).toHaveBeenCalledWith(authMock, 'test@example.com', 'password');
       expect(result).toBeInstanceOf(User);
       expect(result?.email).toBe('test@example.com');
       expect(result?.id).toBe('uid123');
@@ -65,7 +60,7 @@ describe('FirebaseAuthService', () => {
       const credential = {
         user: { email: 'test@example.com', uid: 'uid123', displayName: 'Test User' },
       };
-      (signInWithEmailAndPassword as unknown as Mock).mockResolvedValueOnce(credential);
+      signInWithEmailAndPasswordMock.mockResolvedValueOnce(credential);
       authMock.currentUser = credential.user as FirebaseUser;
 
       await service.login('url', 'test@example.com', 'password');
@@ -77,26 +72,26 @@ describe('FirebaseAuthService', () => {
       const result = await service.login('url', 'test@example.com', undefined);
 
       expect(result).toBeUndefined();
-      expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+      expect(signInWithEmailAndPasswordMock).not.toHaveBeenCalled();
     });
 
     it('should return undefined and skip signInWithEmailAndPassword when email is missing', async () => {
       const result = await service.login('url', undefined, 'password');
 
       expect(result).toBeUndefined();
-      expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+      expect(signInWithEmailAndPasswordMock).not.toHaveBeenCalled();
     });
 
     it('should return undefined when neither email nor password is provided', async () => {
       const result = await service.login();
 
       expect(result).toBeUndefined();
-      expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+      expect(signInWithEmailAndPasswordMock).not.toHaveBeenCalled();
     });
 
     it('should propagate errors from signInWithEmailAndPassword', async () => {
       const error = new Error('invalid credentials');
-      (signInWithEmailAndPassword as unknown as Mock).mockRejectedValueOnce(error);
+      signInWithEmailAndPasswordMock.mockRejectedValueOnce(error);
 
       await expect(service.login('url', 'test@example.com', 'wrong')).rejects.toBe(error);
     });
