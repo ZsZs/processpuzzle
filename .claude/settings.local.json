@@ -126,7 +126,23 @@
       "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show ed088f2 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)",
       "Bash(grep -rln \"https://raw\\\\|markdown.*\\\\\\\\[src\\\\\\\\]\" C:/Projects/ProcessPuzzle/processpuzzle/apps/processpuzzle-testbed/src)",
       "PowerShell(pnpm nx show project processpuzzle-backend --json 2>&1)",
-      "PowerShell(npx nx show project processpuzzle-backend --json 2>&1)"
+      "PowerShell(npx nx show project processpuzzle-backend --json 2>&1)",
+      "Bash(gh run *)",
+      "PowerShell(gh run view 27505753146 --log-failed 2>&1)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue; \\(Get-Command gh.exe -ErrorAction SilentlyContinue\\).Source)",
+      "WebFetch(domain:github.com)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh --version 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view 27505753146 --log-failed 2>&1 | Select-Object -Last 300)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh auth status 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view 27505753146 --log-failed 2>&1 | Select-Object -Last 400)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view 27505753146 --json status,conclusion,headSha,headBranch,event,displayTitle,createdAt,updatedAt 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run list --branch feature/processpuzzle-testbed/angular-22 --limit 8 --json databaseId,displayTitle,status,conclusion,createdAt,headSha,workflowName 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view 27505753146 --json jobs 2>&1 | Out-File -FilePath C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\jobs.json -Encoding utf8; \\(Get-Content C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\jobs.json | ConvertFrom-Json\\).jobs | ForEach-Object { $_.steps | Select-Object name, conclusion, number })",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh run view --job 81296539728 --log 2>&1 | Out-File C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\full-log.txt -Encoding utf8; \\(Get-Item C:\\\\Users\\\\zsolt\\\\.claude\\\\projects\\\\C--Projects-ProcessPuzzle-processpuzzle\\\\d726f8b4-d464-438d-ae34-7bea1cb28dd3\\\\tool-results\\\\full-log.txt\\).Length)",
+      "WebFetch(domain:repo.maven.apache.org)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; \\(Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin/maven-metadata.xml\" -UseBasicParsing\\).Content | Select-String -Pattern \"<version>3\\\\.1[0-2]\" -AllMatches | ForEach-Object { $_.Matches.Value })",
+      "PowerShell(\\(Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin/maven-metadata.xml\" -UseBasicParsing\\).Content | Select-String -Pattern \"<version>3\\\\.[0-9]+\\\\.[0-9]+</version>\" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value } | Select-Object -Last 10)",
+      "PowerShell(mvn -version 2>&1)"
     ]
   }
 }
