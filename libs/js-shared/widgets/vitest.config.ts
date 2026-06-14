@@ -1,53 +1,15 @@
 import { defineConfig } from 'vitest/config';
-import angular from '@analogjs/vite-plugin-angular';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { join } from 'node:path';
 
 export default defineConfig({
-  plugins: [
-    angular({
-      jit: true,
-    }),
-    nxViteTsPaths(), // 💡 Essential for resolving your "ProcessPuzzle" path aliases
-  ],
+  root: __dirname,
   test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['test-setup.ts'],
-    include: ['src/**/*.spec.ts'],
-    reporters: ['default'],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
-      reportsDirectory: './reports/coverage',
-      include: ['libs/js-shared/widgets/**/*.ts'],
-      exclude: [
-        'libs/js-shared/widgets/**/public-api.ts',
-        'libs/js-shared/widgets/**/test-setup.ts',
-        'libs/js-shared/widgets/**/*.module.ts',
-        'libs/js-shared/widgets/**/*.spec.ts',
-      ],
+      enabled: true,
+      reportsDirectory: join(__dirname, 'reports/coverage'),
+      reporter: ['lcov', 'html', 'text'],
+      cleanOnRerun: true,
+      include: ['src/**/*.ts'],
     },
-    server: {
-      deps: {
-        inline: [
-          '@angular/core',
-          '@angular/common',
-          '@angular/compiler',
-          '@angular/fire',
-          '@angular/platform-browser',
-          '@angular/platform-browser-dynamic',
-          '@angular/router',
-          '@angular/cdk',
-          '@angular/material',
-          '@testing-library/angular',
-          '@jsverse/transloco',
-          'rxfire',
-        ],
-        external: ['firebase', 'firebase-admin'],
-      },
-    },
-  },
-  resolve: {
-    conditions: ['default'],
   },
 });
