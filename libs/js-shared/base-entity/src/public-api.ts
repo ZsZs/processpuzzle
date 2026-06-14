@@ -5,7 +5,7 @@ export { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
 export { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
-export type { BaseEntity } from './lib/base-entity/base-entity';
+export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
 export { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/base-entity/base-entity.descriptor';
