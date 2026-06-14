@@ -33,8 +33,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/java-shared/api-contracts"
-          nx_project: "api-contracts"
+          base_dir: "libs/js-shared/auth"
+          nx_project: "auth"
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}

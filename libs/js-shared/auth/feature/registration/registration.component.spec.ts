@@ -1,254 +1,234 @@
-import { setupMockAuthService } from '../../test-setup';
-import { fireEvent, screen } from '@testing-library/angular';
-import userEvent from '@testing-library/user-event';
-import { RegistrationComponent } from './registration.component';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { screen } from '@testing-library/angular';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { provideRouter } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { TestBed } from '@angular/core/testing';
+import { NavigateBackService } from '@processpuzzle/widgets';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
 
+import { RegistrationComponent } from './registration.component';
+import { mockAuthService, setupMockAuthService } from '../../test-setup';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
-describe.skip('RegistrationComponent', () => {
-  const mockSnackBar = { open: vi.fn() };
-  const testConfig: TranslocoTestConfig = {
-    scope: 'auth',
-    translations: {
-      en: { auth: authEn },
-      de: { auth: authDe },
-    },
-  };
+const testConfig: TranslocoTestConfig = {
+  scope: 'auth',
+  translations: {
+    'auth/en': authEn,
+    'auth/de': authDe,
+  },
+};
+
+describe('RegistrationComponent', () => {
+  const snackBar = { open: vi.fn() };
+  const navigateBack = { goBack: vi.fn() };
   let component: RegistrationComponent;
+
+  const setFormValue = (email: string, password: string, confirmPassword: string) => {
+    component.registerForm.setValue({ email, password, confirmPassword });
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
     const result = await setUpTranslocoTestBed(RegistrationComponent, testConfig, {
-      imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
+      imports: [ReactiveFormsModule],
       providers: [
-        { provide: MatSnackBar, useValue: mockSnackBar },
+        provideNoopAnimations(),
+        provideRouter([]),
+        { provide: MatSnackBar, useValue: snackBar },
+        { provide: NavigateBackService, useValue: navigateBack },
         { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
       ],
     });
-
     component = result.component;
   });
 
-  const fillRegistrationForm = async (email: string, password: string, confirmPassword: string) => {
-    await userEvent.type(screen.getByLabelText(/email/i), email);
-    await userEvent.type(screen.getByLabelText(/^password$/i), password);
-    await userEvent.type(screen.getByLabelText(/confirm password/i), confirmPassword);
-  };
-
-  const submitRegistrationForm = async () => {
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
-  };
-
-  it('should render registration form', async () => {
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+  // region Rendering
+  it('should create the component', () => {
+    expect(component).toBeTruthy();
   });
 
-  it('should show validation errors for empty form submission', async () => {
-    const form = screen.getByRole('form', { name: 'Registration Form' });
-    await fireEvent.submit(form);
-
-    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-    expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+  it('should render the registration form with all controls', () => {
+    expect(screen.getByRole('form', { name: 'Registration Form' })).toBeInTheDocument();
+    expect(component.registerForm.contains('email')).toBe(true);
+    expect(component.registerForm.contains('password')).toBe(true);
+    expect(component.registerForm.contains('confirmPassword')).toBe(true);
   });
 
-  it('should show validation error for invalid email', async () => {
-    const emailInput = screen.getByLabelText(/email/i);
-    await userEvent.type(emailInput, 'invalidemail');
-    await fireEvent.blur(emailInput);
-
-    expect(screen.getByText(/please enter a valid email/i)).toBeInTheDocument();
-  });
-
-  it('should register successfully with valid credentials', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockResolvedValueOnce({});
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockCreateUser).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Password123!');
-  });
-
-  it('should show error message when email is already in use', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/email-already-in-use',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('This email address is already registered', 'Close', expect.any(Object));
-  });
-
-  it('should show error message for weak password', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/weak-password',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'weakpass', 'weakpass');
-
-    const form = screen.getByRole('form', { name: 'Registration Form' });
-    await fireEvent.submit(form);
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('Please choose a stronger password', 'Close', expect.any(Object));
-  });
-
-  it('should handle unknown errors', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/unknown-error',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('An error occurred during registration. Please try again.', 'Close', expect.any(Object));
-  });
-
-  it('should validate password requirements', async () => {
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    await userEvent.type(passwordInput, 'short');
-    await fireEvent.blur(passwordInput);
-
-    expect(screen.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
-  });
-
-  it('should show error message for invalid email error', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/invalid-email',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('Please enter a valid email address', 'Close', expect.any(Object));
-  });
-
-  it('should show error message for operation not allowed error', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/operation-not-allowed',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('Email/password registration is not enabled', 'Close', expect.any(Object));
-  });
-
-  it('should handle error with message property but no code', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      message: 'Some error message',
-    });
-
-    //    await renderComponent();
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('An error occurred during registration. Please try again.', 'Close', expect.any(Object));
-  });
-
-  it('should not submit form when invalid', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    //    await renderComponent();
-
-    const form = screen.getByRole('form', { name: 'Registration Form' });
-    await fireEvent.submit(form);
-
-    expect(mockCreateUser).not.toHaveBeenCalled();
-  });
-
-  it('should toggle password visibility', async () => {
+  it('should initialize signals and visibility flags to defaults', () => {
+    expect(component.isLoading()).toBe(false);
+    expect(component.errorMessage()).toBe('');
     expect(component.hidePassword).toBe(true);
+    expect(component.hideConfirmPassword).toBe(true);
+  });
+  // endregion
 
+  // region Form validation
+  it('should be invalid when all fields are empty', () => {
+    expect(component.registerForm.invalid).toBe(true);
+    expect(component.registerForm.get('email')?.hasError('required')).toBe(true);
+    expect(component.registerForm.get('password')?.hasError('required')).toBe(true);
+    expect(component.registerForm.get('confirmPassword')?.hasError('required')).toBe(true);
+  });
+
+  it('should flag an invalid email format', () => {
+    component.registerForm.get('email')?.setValue('not-an-email');
+    expect(component.registerForm.get('email')?.hasError('email')).toBe(true);
+  });
+
+  it('should flag passwords shorter than 6 characters', () => {
+    component.registerForm.get('password')?.setValue('abc');
+    expect(component.registerForm.get('password')?.hasError('minlength')).toBe(true);
+  });
+
+  it('should be valid when all fields are set correctly', () => {
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
+    expect(component.registerForm.valid).toBe(true);
+    expect(component.registerForm.errors).toBeNull();
+  });
+
+  it('passwordMatchValidator should return null for matching passwords and a passwordMismatch error otherwise', () => {
+    const validator = (component as unknown as { passwordMatchValidator: () => (form: FormGroup) => unknown })
+      .passwordMatchValidator();
+    const matching = new FormGroup({
+      password: new FormControl('Password123!'),
+      confirmPassword: new FormControl('Password123!'),
+    });
+    const mismatched = new FormGroup({
+      password: new FormControl('Password123!'),
+      confirmPassword: new FormControl('Different!'),
+    });
+
+    expect(validator(matching)).toBeNull();
+    expect(validator(mismatched)).toEqual({ passwordMismatch: true });
+  });
+  // endregion
+
+  // region Visibility toggles
+  it('should toggle password visibility', () => {
     component.hidePassword = !component.hidePassword;
-
     expect(component.hidePassword).toBe(false);
   });
 
-  it('should toggle confirm password visibility', async () => {
-    expect(component.hideConfirmPassword).toBe(true);
-
+  it('should toggle confirm password visibility', () => {
     component.hideConfirmPassword = !component.hideConfirmPassword;
-
     expect(component.hideConfirmPassword).toBe(false);
   });
+  // endregion
 
-  it('should set loading state during registration', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+  // region onSubmit - guard
+  it('should not call authService.login when the form is invalid', async () => {
+    await component.onSubmit();
+    expect(mockAuthService.login).not.toHaveBeenCalled();
+    expect(navigateBack.goBack).not.toHaveBeenCalled();
+  });
+  // endregion
 
-    //    const { fixture } = await renderComponent();
+  // region onSubmit - success
+  it('should call authService.login with email and password on submit', async () => {
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
+
+    await component.onSubmit();
+
+    expect(mockAuthService.login).toHaveBeenCalledWith('', 'user@example.com', 'Password123!');
+  });
+
+  it('should reset loading state and navigate back after successful submit', async () => {
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
+
+    await component.onSubmit();
 
     expect(component.isLoading()).toBe(false);
+    expect(component.errorMessage()).toBe('');
+    expect(navigateBack.goBack).toHaveBeenCalledTimes(1);
+  });
 
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
+  it('should set isLoading to true while the login call is pending', async () => {
+    let resolveLogin: (() => void) | undefined;
+    mockAuthService.login = vi.fn().mockImplementation(
+      () => new Promise<void>((resolve) => (resolveLogin = resolve)),
+    );
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
 
-    const submitPromise = userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    const submitPromise = component.onSubmit();
+    expect(component.isLoading()).toBe(true);
 
-    // Check loading state is set during async operation
-    // fixture.detectChanges();
-    // await fixture.whenStable();
-
+    resolveLogin?.();
     await submitPromise;
-  });
-
-  it('should reset loading state after successful registration', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockResolvedValueOnce({});
-
-    //    const { fixture } = await renderComponent();
-    //    const component = fixture.componentInstance;
-
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
-
     expect(component.isLoading()).toBe(false);
   });
+  // endregion
 
-  it('should reset loading state after failed registration', async () => {
-    const mockCreateUser = createUserWithEmailAndPassword as Mocked<any>;
-    mockCreateUser.mockRejectedValueOnce({
-      code: 'auth/email-already-in-use',
+  // region onSubmit - error handling
+  const errorCodeCases: Array<{ name: string; code: string; expected: string }> = [
+    { name: 'email-already-in-use', code: 'auth/email-already-in-use', expected: 'This email address is already registered' },
+    { name: 'invalid-email', code: 'auth/invalid-email', expected: 'Please enter a valid email address' },
+    { name: 'operation-not-allowed', code: 'auth/operation-not-allowed', expected: 'Email/password registration is not enabled' },
+    { name: 'weak-password', code: 'auth/weak-password', expected: 'Please choose a stronger password' },
+    { name: 'unknown-code', code: 'auth/something-else', expected: 'An error occurred during registration. Please try again.' },
+  ];
+
+  errorCodeCases.forEach(({ name, code, expected }) => {
+    it(`should show "${expected}" snackbar when login rejects with ${name}`, async () => {
+      mockAuthService.login = vi.fn().mockRejectedValueOnce({ code });
+      setFormValue('user@example.com', 'Password123!', 'Password123!');
+
+      await component.onSubmit();
+
+      expect(snackBar.open).toHaveBeenCalledWith(expected, 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar'],
+      });
     });
+  });
 
-    //    const { fixture } = await renderComponent();
-    //    const component = fixture.componentInstance;
+  it('should fall back to the message property when no code is present', async () => {
+    mockAuthService.login = vi.fn().mockRejectedValueOnce({ message: 'some message' });
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
 
-    await fillRegistrationForm('test@example.com', 'Password123!', 'Password123!');
-    await submitRegistrationForm();
+    await component.onSubmit();
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'An error occurred during registration. Please try again.',
+      'Close',
+      expect.any(Object),
+    );
+  });
+
+  it('should fall back to the generic message when error has neither code nor message', async () => {
+    mockAuthService.login = vi.fn().mockRejectedValueOnce({});
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
+
+    await component.onSubmit();
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'An error occurred during registration. Please try again.',
+      'Close',
+      expect.any(Object),
+    );
+  });
+
+  it('should reset loading state and navigate back even after a failed submit', async () => {
+    mockAuthService.login = vi.fn().mockRejectedValueOnce({ code: 'auth/email-already-in-use' });
+    setFormValue('user@example.com', 'Password123!', 'Password123!');
+
+    await component.onSubmit();
 
     expect(component.isLoading()).toBe(false);
+    expect(component.errorMessage()).toBe('');
+    expect(navigateBack.goBack).toHaveBeenCalledTimes(1);
   });
+  // endregion
+
+  // region DI sanity
+  it('should inject the configured authentication service', () => {
+    expect(TestBed.inject(AUTHENTICATION_SERVICE)).toBe(mockAuthService);
+  });
+  // endregion
 });

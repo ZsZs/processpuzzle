@@ -1,117 +1,145 @@
-import { setupMockAuthService } from '../../test-setup';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import { fireEvent, screen } from '@testing-library/angular';
-import { LogoutComponent } from './logout.component';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
-import { NavigateBackService } from '@processpuzzle/widgets';
-import { HighContrastModeDetector } from '@angular/cdk/a11y';
+import { ComponentFixture } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
+import { MatButton } from '@angular/material/button';
+import { NavigateBackService } from '@processpuzzle/widgets';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
+import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+
+import { LogoutComponent } from './logout.component';
+import { mockAuthService, setupMockAuthService } from '../../test-setup';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { ComponentFixture } from '@angular/core/testing';
-import { of } from 'rxjs';
-import { MatButton } from '@angular/material/button';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe.skip('LogoutComponent', () => {
-  const authServiceMock = { logout: vi.fn().mockResolvedValue(undefined) };
-  const hcStub = {
-    isHighContrastMode: () => of(false),
-    // or if your code subscribes to a property:
-    // isHighContrastMode$: new BehaviorSubject(false)
+const testConfig: TranslocoTestConfig = {
+  scope: 'auth',
+  translations: {
+    'auth/en': authEn,
+    'auth/de': authDe,
+  },
+};
+
+describe('LogoutComponent', () => {
+  const routeStack = { pop: vi.fn<() => string | undefined>() };
+  const navigateBack = {
+    goBack: vi.fn(),
+    getRouteStack: vi.fn(() => routeStack),
   };
   const matDialogRefStub = { close: vi.fn() };
-  const navigateBackServiceMock = {
-    goBack: vi.fn(),
-    getRouteStack: vi.fn().mockReturnValue({ pop: vi.fn() }),
-  };
-  const testConfig: TranslocoTestConfig = {
-    scope: 'auth',
-    translations: {
-      en: { auth: { authEn } },
-      de: { auth: { authDe } },
-    },
-  };
   let fixture: ComponentFixture<LogoutComponent>;
 
-  beforeEach(async () => {
-    vi.clearAllMocks();
+  const renderComponent = async () => {
     const result = await setUpTranslocoTestBed(LogoutComponent, testConfig, {
       imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
       providers: [
         provideNoopAnimations(),
         { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() },
-        { provide: HighContrastModeDetector, useValue: hcStub },
         { provide: MatDialogRef, useValue: matDialogRefStub },
-        { provide: NavigateBackService, useValue: navigateBackServiceMock },
+        { provide: NavigateBackService, useValue: navigateBack },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
       ],
     });
     fixture = result.fixture;
+    return result;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    routeStack.pop.mockReset();
   });
 
-  it('should render the logout confirmation dialog', () => {
+  // region Rendering
+  it('should render the logout confirmation dialog', async () => {
+    await renderComponent();
     expect(screen.getByText('Confirm Logout')).toBeInTheDocument();
-    expect(screen.getByText('Are you sure you want to log out?')).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to log out\?/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
   });
 
-  it('should call navigateBackService.goBack when Cancel button is clicked', async () => {
-    const cancelButton = screen.getByRole('button', { name: /cancel/i });
-    fireEvent.click(cancelButton);
-
-    expect(navigateBackServiceMock.goBack).toHaveBeenCalledTimes(1);
-    expect(authServiceMock.logout).not.toHaveBeenCalled();
-  });
-
-  it('should call authService.signOut and navigateBackService.goBack when Logout button is clicked', async () => {
+  it('should not show the logout button as disabled initially', async () => {
+    await renderComponent();
     const logoutButton = screen.getByRole('button', { name: /logout/i });
-    fireEvent.click(logoutButton);
+    expect(logoutButton).not.toBeDisabled();
+  });
+  // endregion
+
+  // region onCancel
+  it('should call navigateBackService.goBack when Cancel button is clicked', async () => {
+    await renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+    expect(navigateBack.goBack).toHaveBeenCalledTimes(1);
+    expect(mockAuthService.logout).not.toHaveBeenCalled();
+  });
+  // endregion
+
+  // region onLogout - success
+  it('should pop the current route and pass the previous route to authService.logout', async () => {
+    await renderComponent();
+    routeStack.pop.mockReturnValueOnce('/current').mockReturnValueOnce('/previous');
+
+    fireEvent.click(screen.getByRole('button', { name: /logout/i }));
     await new Promise(process.nextTick);
 
-    expect(authServiceMock.logout).toHaveBeenCalledTimes(1);
-    expect(navigateBackServiceMock.goBack).toHaveBeenCalledTimes(1);
+    expect(routeStack.pop).toHaveBeenCalledTimes(2);
+    expect(mockAuthService.logout).toHaveBeenCalledWith('/previous');
+    expect(navigateBack.goBack).toHaveBeenCalledTimes(1);
   });
 
-  it('should disable the Logout button while logging out', async () => {
-    authServiceMock.logout.mockImplementationOnce(() => {
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(undefined), 100);
-      });
-    });
+  it('should call authService.logout with undefined when the route stack is empty', async () => {
+    await renderComponent();
+    routeStack.pop.mockReturnValue(undefined);
 
+    fireEvent.click(screen.getByRole('button', { name: /logout/i }));
+    await new Promise(process.nextTick);
+
+    expect(mockAuthService.logout).toHaveBeenCalledWith(undefined);
+    expect(navigateBack.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('should disable the Logout button while logout is pending and re-enable it after completion', async () => {
+    await renderComponent();
+    let resolveLogout: (() => void) | undefined;
+    mockAuthService.logout = vi.fn().mockImplementation(
+      () => new Promise<void>((resolve) => (resolveLogout = resolve)),
+    );
     const logoutButton = screen.getByRole('button', { name: /logout/i });
-
     expect(logoutButton).not.toBeDisabled();
 
     fireEvent.click(logoutButton);
     fixture.detectChanges();
-
     expect(logoutButton).toBeDisabled();
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
+    resolveLogout?.();
+    await new Promise(process.nextTick);
+    fixture.detectChanges();
     expect(logoutButton).not.toBeDisabled();
   });
+  // endregion
 
-  it('should handle errors during logout', async () => {
+  // region onLogout - error
+  it('should log an error and re-enable the Logout button when logout rejects', async () => {
+    await renderComponent();
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
-      /* empty */
+      /* swallow */
     });
     const error = new Error('Logout failed');
-    authServiceMock.logout.mockRejectedValueOnce(error);
-    //    await renderComponent();
-    const logoutButton = screen.getByRole('button', { name: /logout/i });
-    fireEvent.click(logoutButton);
+    mockAuthService.logout = vi.fn().mockRejectedValueOnce(error);
+
+    fireEvent.click(screen.getByRole('button', { name: /logout/i }));
     await new Promise(process.nextTick);
+    fixture.detectChanges();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during logout:', error);
-    expect(logoutButton).toBeDisabled();
-    expect(navigateBackServiceMock.goBack).not.toHaveBeenCalled();
+    expect(navigateBack.goBack).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /logout/i })).not.toBeDisabled();
 
     consoleErrorSpy.mockRestore();
   });
+  // endregion
 });
