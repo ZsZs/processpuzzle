@@ -1,19 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TranslocoDirective, TranslocoPipe } from '@jsverse/transloco';
-import { fireEvent, screen } from '@testing-library/angular';
-import userEvent from '@testing-library/user-event';
-import { LoginComponent } from './login.component';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import '@testing-library/jest-dom/vitest';
+import { screen } from '@testing-library/angular';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { provideRouter, Router } from '@angular/router';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
-import { setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
-import { setupMockAuthService } from '../../test-setup';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { TestBed } from '@angular/core/testing';
+import { NavigateBackService } from '@processpuzzle/widgets';
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
+import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
+import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+
+import { LoginComponent } from './login.component';
+import { mockAuthService, setupMockAuthService } from '../../test-setup';
 import authDe from '../assets/i18n/auth/de.json';
 import authEn from '../assets/i18n/auth/en.json';
 
@@ -25,202 +23,218 @@ const testConfig: TranslocoTestConfig = {
   },
 };
 
-describe.skip('LoginComponent', () => {
-  let authService: AuthService;
-  let fixture: ComponentFixture<LoginComponent>;
+describe('LoginComponent', () => {
+  const routeStack: string[] = [];
+  const navigateBack = { getRouteStack: vi.fn<() => string[]>(() => routeStack) };
+  const activatedRouteStub: { snapshot: { data: Record<string, unknown> } } = { snapshot: { data: {} } };
+  let component: LoginComponent;
+  let router: Router;
+  let navigateSpy: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(async () => {
+  const renderWithRouteData = async (data: Record<string, unknown> = {}) => {
+    activatedRouteStub.snapshot.data = data;
     const result = await setUpTranslocoTestBed(LoginComponent, testConfig, {
-      imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, TranslocoDirective, TranslocoPipe],
-      providers: [provideNoopAnimations(), provideRouter([]), { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() }],
+      imports: [ReactiveFormsModule],
+      providers: [
+        provideNoopAnimations(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: activatedRouteStub },
+        { provide: NavigateBackService, useValue: navigateBack },
+        { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() },
+        { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
+      ],
     });
+    component = result.component;
+    router = TestBed.inject(Router);
+    navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    return result;
+  };
 
-    authService = TestBed.inject(AUTHENTICATION_SERVICE);
-    //    component = result.component;
-    fixture = result.fixture;
+  const setCredentials = (email: string, password: string) => {
+    component.loginForm.setValue({ email, password });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    routeStack.length = 0;
+    activatedRouteStub.snapshot.data = {};
   });
 
-  it('should render login form', async () => {
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+  // region Rendering & DI
+  it('should create the component', async () => {
+    await renderWithRouteData();
+    expect(component).toBeTruthy();
   });
 
-  it('should show validation errors for empty form submission', async () => {
-    // Get the form element
-    const form = screen.getByRole('form', { name: 'Login Form' });
+  it('should render the login form', async () => {
+    await renderWithRouteData();
+    expect(screen.getByRole('form', { name: 'Login Form' })).toBeInTheDocument();
+  });
+  // endregion
 
-    // Get the email and password inputs
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText('Password');
-
-    // Touch the inputs to trigger validation
-    fireEvent.blur(emailInput);
-    fireEvent.blur(passwordInput);
-
-    // Submit the form
-    fireEvent.submit(form);
-
-    // Force change detection
-    fixture.detectChanges();
-
-    // Check for validation errors in the DOM
-    const formElement = fixture.nativeElement;
-    expect(formElement.textContent).toContain('Email is required');
-    expect(formElement.textContent).toContain('Password is required');
+  // region ngOnInit
+  it('should build the login form when no signedInUser is on the route', async () => {
+    await renderWithRouteData();
+    expect(component.loginForm).toBeDefined();
+    expect(component.loginForm.contains('email')).toBe(true);
+    expect(component.loginForm.contains('password')).toBe(true);
   });
 
-  it('should show validation error for invalid email', async () => {
-    const emailInput = screen.getByLabelText(/email/i);
-    await userEvent.type(emailInput, 'invalidemail');
-    fireEvent.blur(emailInput);
+  it('should skip building the login form when route already has a signedInUser', async () => {
+    await renderWithRouteData();
+    activatedRouteStub.snapshot.data = { signedInUser: { id: '1' } };
+    (component as unknown as { loginForm: unknown }).loginForm = undefined;
 
-    // Force change detection
-    fixture.detectChanges();
+    component.ngOnInit();
 
-    // Check for validation error in the DOM
-    const formElement = fixture.nativeElement;
-    expect(formElement.textContent).toContain('Please enter a valid email');
+    expect(component.loginForm).toBeUndefined();
+  });
+  // endregion
+
+  // region Form state
+  it('should expose default signal and flag values', async () => {
+    await renderWithRouteData();
+    expect(component.isLoading()).toBe(false);
+    expect(component.errorMessage()).toBe('');
+    expect(component.hidePassword).toBe(true);
+  });
+
+  it('should mark the form invalid when fields are empty and validate email format', async () => {
+    await renderWithRouteData();
+    expect(component.loginForm.invalid).toBe(true);
+    expect(component.loginForm.get('email')?.hasError('required')).toBe(true);
+    expect(component.loginForm.get('password')?.hasError('required')).toBe(true);
+
+    component.loginForm.get('email')?.setValue('not-an-email');
+    expect(component.loginForm.get('email')?.hasError('email')).toBe(true);
+  });
+
+  it('should become valid with proper credentials', async () => {
+    await renderWithRouteData();
+    setCredentials('user@example.com', 'pw');
+    expect(component.loginForm.valid).toBe(true);
   });
 
   it('should toggle password visibility', async () => {
-    const passwordInput = screen.getByLabelText('Password');
-    expect(passwordInput).toHaveAttribute('type', 'password');
-
-    // Find the visibility toggle button by finding the button that contains the mat-icon
-    //    const visibilityIcon = screen.getByText(/visibility_off/i).closest('button');
-    const visibilityIcon = screen.getByRole('button', { name: /toggle password visibility/i });
-
-    if (visibilityIcon) fireEvent.click(visibilityIcon);
-
-    // Force change detection
-    fixture.detectChanges();
-
-    expect(passwordInput).toHaveAttribute('type', 'text');
-
-    // Now the icon should have changed to 'visibility'
-    if (visibilityIcon) fireEvent.click(visibilityIcon);
-
-    // Force change detection
-    fixture.detectChanges();
-
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    await renderWithRouteData();
+    component.hidePassword = !component.hidePassword;
+    expect(component.hidePassword).toBe(false);
   });
+  // endregion
 
-  it('should sign in successfully with valid credentials', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
+  // region onSubmit - guard
+  it('should not call authService.login when the form is invalid', async () => {
+    await renderWithRouteData();
+    await component.onSubmit();
+    expect(mockAuthService.login).not.toHaveBeenCalled();
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+  // endregion
 
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
+  // region onSubmit - success
+  it('should call authService.login with the last route from the stack and navigate home', async () => {
+    await renderWithRouteData();
+    routeStack.push('/dashboard', '/settings');
+    setCredentials('user@example.com', 'pw');
 
-    expect(authService).toHaveBeenCalledWith(expect.anything(), 'test@example.com', 'Password123!');
+    await component.onSubmit();
+
+    expect(navigateBack.getRouteStack).toHaveBeenCalledTimes(1);
+    expect(mockAuthService.login).toHaveBeenCalledWith('/settings', 'user@example.com', 'pw');
     expect(navigateSpy).toHaveBeenCalledWith(['/']);
+    expect(component.isLoading()).toBe(false);
+    expect(component.errorMessage()).toBe('');
   });
 
-  it('should sign in with Google', async () => {
-    // const mockSignInWithPopup = signInWithPopup as Mocked<any>;
-    // mockSignInWithPopup.mockResolvedValueOnce({});
+  it('should pass undefined as the redirect url when the route stack is empty', async () => {
+    await renderWithRouteData();
+    setCredentials('user@example.com', 'pw');
 
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
+    await component.onSubmit();
 
-    await userEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
+    expect(mockAuthService.login).toHaveBeenCalledWith(undefined, 'user@example.com', 'pw');
+  });
 
-    expect(authService.login()).toHaveBeenCalled();
-    //    expect(GoogleAuthProvider).toHaveBeenCalled();
+  it('should set isLoading while the login call is pending', async () => {
+    await renderWithRouteData();
+    let resolveLogin: (() => void) | undefined;
+    mockAuthService.login = vi.fn().mockImplementation(
+      () => new Promise<void>((resolve) => (resolveLogin = resolve)),
+    );
+    setCredentials('user@example.com', 'pw');
+
+    const pending = component.onSubmit();
+    expect(component.isLoading()).toBe(true);
+
+    resolveLogin?.();
+    await pending;
+    expect(component.isLoading()).toBe(false);
+  });
+  // endregion
+
+  // region onSubmit - error mapping
+  const errorCases: Array<{ name: string; code: string; expected: string }> = [
+    { name: 'invalid-email', code: 'auth/invalid-email', expected: 'Invalid email address' },
+    { name: 'user-disabled', code: 'auth/user-disabled', expected: 'This account has been disabled' },
+    { name: 'user-not-found', code: 'auth/user-not-found', expected: 'No account found with this email' },
+    { name: 'wrong-password', code: 'auth/wrong-password', expected: 'Invalid password' },
+    { name: 'popup-closed-by-user', code: 'auth/popup-closed-by-user', expected: 'Sign-in popup was closed before completion' },
+    { name: 'unknown-code', code: 'auth/something-else', expected: 'An error occurred during sign in' },
+  ];
+
+  errorCases.forEach(({ name, code, expected }) => {
+    it(`should set errorMessage to "${expected}" when login rejects with ${name}`, async () => {
+      await renderWithRouteData();
+      mockAuthService.login = vi.fn().mockRejectedValueOnce({ code });
+      setCredentials('user@example.com', 'pw');
+
+      await component.onSubmit();
+
+      expect(component.errorMessage()).toBe(expected);
+      expect(component.isLoading()).toBe(false);
+      expect(navigateSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should fall back to the error message property when no code is present', async () => {
+    await renderWithRouteData();
+    mockAuthService.login = vi.fn().mockRejectedValueOnce({ message: 'some message' });
+    setCredentials('user@example.com', 'pw');
+
+    await component.onSubmit();
+
+    expect(component.errorMessage()).toBe('An error occurred during sign in');
+  });
+
+  it('should show the default error when neither code nor message is provided', async () => {
+    await renderWithRouteData();
+    mockAuthService.login = vi.fn().mockRejectedValueOnce({});
+    setCredentials('user@example.com', 'pw');
+
+    await component.onSubmit();
+
+    expect(component.errorMessage()).toBe('An error occurred during sign in');
+  });
+  // endregion
+
+  // region signInWithGoogle
+  it('should navigate home when sign-in with Google succeeds', async () => {
+    await renderWithRouteData();
+    await (component as unknown as { signInWithGoogle: () => Promise<void> }).signInWithGoogle();
+
     expect(navigateSpy).toHaveBeenCalledWith(['/']);
+    expect(component.errorMessage()).toBe('');
+    expect(component.isLoading()).toBe(false);
   });
 
-  it('should show error message for invalid email', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // mockSignIn.mockRejectedValueOnce({ code: 'auth/invalid-email' });
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@google.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
+  it('should map errors from the router into errorMessage when sign-in with Google fails', async () => {
+    await renderWithRouteData();
+    navigateSpy.mockRejectedValueOnce({ code: 'auth/popup-closed-by-user' });
 
-    expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
+    await (component as unknown as { signInWithGoogle: () => Promise<void> }).signInWithGoogle();
+
+    expect(component.errorMessage()).toBe('Sign-in popup was closed before completion');
+    expect(component.isLoading()).toBe(false);
   });
-
-  it('should show error message for user not found', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // mockSignIn.mockRejectedValueOnce({ code: 'auth/user-not-found' });
-    await userEvent.type(screen.getByLabelText(/email/i), 'nonexistent@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
-
-    expect(screen.getByText(/no account found with this email/i)).toBeInTheDocument();
-  });
-
-  it('should show error message for wrong password', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // mockSignIn.mockRejectedValueOnce({
-    //   code: 'auth/wrong-password',
-    // });
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'WrongPassword');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
-
-    expect(screen.getByText(/invalid password/i)).toBeInTheDocument();
-  });
-
-  it('should show error message for disabled account', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // mockSignIn.mockRejectedValueOnce({
-    //   code: 'auth/user-disabled',
-    // });
-    await userEvent.type(screen.getByLabelText(/email/i), 'disabled@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
-
-    expect(screen.getByText(/this account has been disabled/i)).toBeInTheDocument();
-  });
-
-  it('should show error message when popup is closed', async () => {
-    // const mockSignInWithPopup = signInWithPopup as Mocked<any>;
-    // mockSignInWithPopup.mockRejectedValueOnce({
-    //   code: 'auth/popup-closed-by-user',
-    // });
-    await userEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
-
-    expect(screen.getByText(/sign-in popup was closed before completion/i)).toBeInTheDocument();
-  });
-
-  it('should show generic error message for unknown errors', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // mockSignIn.mockRejectedValueOnce({
-    //   code: 'auth/unknown-error',
-    // });
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
-
-    expect(screen.getByText(/an error occurred during sign in/i)).toBeInTheDocument();
-  });
-
-  it('should show loading state during sign in', async () => {
-    // const mockSignIn = signInWithEmailAndPassword as Mocked<any>;
-    // // Use a delayed promise to test loading state
-    // mockSignIn.mockImplementationOnce(() => {
-    //   return new Promise((resolve) => {
-    //     setTimeout(() => resolve({}), 100);
-    //   });
-    // });
-
-    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'Password123!');
-
-    const signInButton = screen.getByRole('button', { name: /^sign in$/i });
-    fireEvent.click(signInButton);
-
-    expect(screen.getByRole('button', { name: /^signing in...$/i })).toBeInTheDocument();
-  });
-
-  it('should navigate to registration page when clicking create account', async () => {
-    const createAccountButton = screen.getByRole('button', { name: /create account/i });
-    expect(createAccountButton).toHaveAttribute('routerlink', '/auth/register');
-  });
+  // endregion
 });

@@ -9,7 +9,7 @@ export default defineConfig({
       reportsDirectory: join(__dirname, 'reports/coverage'),
       reporter: ['lcov', 'html', 'text'],
       cleanOnRerun: true,
-      exclude: ['libs/js-shared/!(auth)/**'],
+      exclude: ['libs/js-shared/!(auth)/**', 'libs/js-shared/auth/feature/test-form/**'],
     },
   },
 });

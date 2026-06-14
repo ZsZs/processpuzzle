@@ -111,7 +111,13 @@
       "PowerShell(Get-ChildItem package.json | Select-Object Name; \\(Get-Content package.json | ConvertFrom-Json\\).packageManager)",
       "PowerShell(npx nx test widgets 2>&1)",
       "PowerShell(npx nx test widgets --skip-nx-cache 2>&1)",
-      "PowerShell(npx nx reset 2>&1)"
+      "PowerShell(npx nx reset 2>&1)",
+      "PowerShell(pnpm nx test auth --testPathPattern=registration.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test auth --testPathPattern=registration.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test auth --help 2>&1)",
+      "PowerShell(pnpm nx test js-shared-auth -- --run libs/js-shared/auth/feature/logout/logout.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test js-shared-auth --testFile=libs/js-shared/auth/feature/logout/logout.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test auth --testPathPattern=\"logout.component.spec\" 2>&1)"
     ]
   }
 }

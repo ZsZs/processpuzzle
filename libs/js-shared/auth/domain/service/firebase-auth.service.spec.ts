@@ -1,80 +1,57 @@
-import { beforeEach, describe, expect, it, Mocked, vi } from 'vitest';
-import { FirebaseAuthService } from './firebase-auth.service';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Auth, signInWithEmailAndPassword, User as FirebaseUser } from '@angular/fire/auth';
-import { Router } from '@angular/router';
+import { FirebaseAuthService } from './firebase-auth.service';
 import { User } from '../user/user';
-import { TestBed } from '@angular/core/testing';
-/*
+
 vi.mock('@angular/fire/auth', async () => {
+  const actual = await vi.importActual<typeof import('@angular/fire/auth')>('@angular/fire/auth');
   return {
-    default: {},
-    Auth: vi.fn(),
-    getAuth: vi.fn(),
-    connectAuthEmulator: vi.fn(),
+    ...actual,
     signInWithEmailAndPassword: vi.fn(),
   };
 });
-*/
-describe.skip('FirebaseAuthService', () => {
+
+describe('FirebaseAuthService', () => {
+  type AuthMock = { currentUser: FirebaseUser | null; signOut: Mock };
   let service: FirebaseAuthService;
-  let authMock: Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
-  let routerMock: Partial<Router>;
+  let authMock: AuthMock;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     authMock = {
       currentUser: null,
       signOut: vi.fn().mockResolvedValue(undefined),
-    } as Mocked<Partial<Auth>> & { currentUser: FirebaseUser | null };
-
-    routerMock = { navigate: vi.fn() };
-
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: Auth, useValue: authMock },
-        { provide: Router, useValue: routerMock },
-      ],
-    });
-
-    TestBed.runInInjectionContext(() => {
-      service = new FirebaseAuthService(authMock as Auth);
-    });
+    };
+    service = new FirebaseAuthService(authMock as unknown as Auth);
   });
 
+  // region construction
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
+  // endregion
 
+  // region authenticate
   describe('authenticate', () => {
-    it('should return true if currentUser is not null', async () => {
+    it('should resolve to true when currentUser is set', async () => {
       authMock.currentUser = { uid: '123' } as FirebaseUser;
-      const result = await service.authenticate();
-      expect(result).toBe(true);
+      await expect(service.authenticate()).resolves.toBe(true);
     });
 
-    it('should return false if currentUser is null', async () => {
+    it('should resolve to false when currentUser is null', async () => {
       authMock.currentUser = null;
-      const result = await service.authenticate();
-      expect(result).toBe(false);
+      await expect(service.authenticate()).resolves.toBe(false);
     });
   });
+  // endregion
 
+  // region login
   describe('login', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
-    it('should call signInWithEmailAndPassword and return user when email and password are provided', async () => {
-      const mockUserCredential = {
-        user: {
-          email: 'test@example.com',
-          uid: 'uid123',
-          displayName: 'Test User',
-        },
+    it('should call signInWithEmailAndPassword and return a User when credentials are provided', async () => {
+      const credential = {
+        user: { email: 'test@example.com', uid: 'uid123', displayName: 'Test User' },
       };
-      (signInWithEmailAndPassword as Mocked<any>).mockResolvedValue(mockUserCredential);
-
-      // Update authMock to simulate successful login impact on getCurrentUser
-      authMock.currentUser = mockUserCredential.user as FirebaseUser;
+      (signInWithEmailAndPassword as unknown as Mock).mockResolvedValueOnce(credential);
 
       const result = await service.login('url', 'test@example.com', 'password');
 
@@ -82,25 +59,69 @@ describe.skip('FirebaseAuthService', () => {
       expect(result).toBeInstanceOf(User);
       expect(result?.email).toBe('test@example.com');
       expect(result?.id).toBe('uid123');
+    });
+
+    it('should expose the signed-in user through getCurrentUser after a successful login', async () => {
+      const credential = {
+        user: { email: 'test@example.com', uid: 'uid123', displayName: 'Test User' },
+      };
+      (signInWithEmailAndPassword as unknown as Mock).mockResolvedValueOnce(credential);
+      authMock.currentUser = credential.user as FirebaseUser;
+
+      await service.login('url', 'test@example.com', 'password');
+
       expect(service.getCurrentUser()?.email).toBe('test@example.com');
     });
 
-    it('should return undefined if email or password is missing', async () => {
+    it('should return undefined and skip signInWithEmailAndPassword when password is missing', async () => {
       const result = await service.login('url', 'test@example.com', undefined);
+
       expect(result).toBeUndefined();
       expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
     });
-  });
 
-  describe('logout', () => {
-    it('should call auth.signOut', async () => {
-      await service.logout();
-      expect(authMock.signOut).toHaveBeenCalled();
+    it('should return undefined and skip signInWithEmailAndPassword when email is missing', async () => {
+      const result = await service.login('url', undefined, 'password');
+
+      expect(result).toBeUndefined();
+      expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+    });
+
+    it('should return undefined when neither email nor password is provided', async () => {
+      const result = await service.login();
+
+      expect(result).toBeUndefined();
+      expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors from signInWithEmailAndPassword', async () => {
+      const error = new Error('invalid credentials');
+      (signInWithEmailAndPassword as unknown as Mock).mockRejectedValueOnce(error);
+
+      await expect(service.login('url', 'test@example.com', 'wrong')).rejects.toBe(error);
     });
   });
+  // endregion
 
+  // region logout
+  describe('logout', () => {
+    it('should delegate to auth.signOut', async () => {
+      await service.logout();
+      expect(authMock.signOut).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors from auth.signOut', async () => {
+      const error = new Error('signOut failed');
+      authMock.signOut.mockRejectedValueOnce(error);
+
+      await expect(service.logout()).rejects.toBe(error);
+    });
+  });
+  // endregion
+
+  // region getCurrentUser
   describe('getCurrentUser', () => {
-    it('should return User object based on auth.currentUser', () => {
+    it('should build a User from auth.currentUser when one is signed in', () => {
       authMock.currentUser = {
         email: 'test@example.com',
         uid: 'uid123',
@@ -108,16 +129,20 @@ describe.skip('FirebaseAuthService', () => {
       } as FirebaseUser;
 
       const result = service.getCurrentUser();
+
       expect(result).toBeInstanceOf(User);
       expect(result?.email).toBe('test@example.com');
       expect(result?.id).toBe('uid123');
     });
 
-    it('should return User with empty/undefined fields if auth.currentUser is null', () => {
+    it('should return a User with undefined email when no one is signed in', () => {
       authMock.currentUser = null;
+
       const result = service.getCurrentUser();
+
       expect(result).toBeInstanceOf(User);
       expect(result?.email).toBeUndefined();
     });
   });
+  // endregion
 });
