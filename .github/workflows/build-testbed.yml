@@ -43,7 +43,7 @@ jobs:
 
       - id: build-backend
         name: Build backend jar
-        run: npx nx run processpuzzle-backend:build
+        run: npx nx run processpuzzle-backend:build --no-cloud
 
       - id: docker-compose
         name: run-docker-compose
