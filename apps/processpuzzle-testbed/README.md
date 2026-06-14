@@ -16,5 +16,3 @@ The testbed exercises the following libraries from the [ProcessPuzzle Framework]
 - [@processpuzzle/auth](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/auth) — authentication and authorization (OIDC / Keycloak).
 - [@processpuzzle/test-util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/test-util) — helper utilities for unit testing.
 - [@processpuzzle/e2e-testing](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/e2e-testing) — building blocks for Playwright-based end-to-end tests.
-
-
