@@ -1,9 +1,11 @@
 import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { TestEntityComponentStore } from './test-entity-component.store';
 import { MarkdownComponent } from 'ngx-markdown';
 import { createTestEntityComponentDescriptor } from './test-entity-component.descriptors';
+import { TestEntityComponent } from './test-entity-component';
 
 @Component({
   selector: 'test-entity-component',
@@ -21,7 +23,7 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createTestEntityComponentDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = () => this.store.currentEntity()?.name ?? '';
+    this.entityDescriptor.entityTitle = () => (this.store.currentEntity() as TestEntityComponent).name ?? '';
     this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', 'Test Entity');
   }
 

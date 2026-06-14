@@ -4,7 +4,7 @@
 
 export { ApplicationProperty } from './app-property/app-property';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
-export { CardsGridSpec } from './mat-cards-grid/cards-spec';
+export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { LanguageConfig, LanguageDefinition } from './transloco/language-config';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';

@@ -15,7 +15,7 @@ export type EntityServiceKind = 'rest' | 'firestore';
 
 @Injectable()
 export abstract class BaseEntityFacade<Entity extends BaseEntity> {
-  abstract readonly entityType: new (...args: unknown[]) => Entity;
+  abstract readonly entityType: Type<Entity>;
 
   protected readonly serviceKind: EntityServiceKind = 'rest';
   protected readonly endpoint?: string;

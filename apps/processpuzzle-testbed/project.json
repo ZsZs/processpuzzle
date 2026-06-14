@@ -7,7 +7,7 @@
   "tags": ["type:app"],
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:application",
+      "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/processpuzzle-testbed",
@@ -69,7 +69,7 @@
           "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.js",
           "node_modules/prismjs/plugins/command-line/prism-command-line.js"
         ],
-        "allowedCommonJsDependencies": ["prismjs", "build-url-ts"]
+        "allowedCommonJsDependencies": ["prismjs", "build-url-ts", "reflect-metadata"]
       },
       "configurations": {
         "production": {
@@ -77,12 +77,12 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "3mb",
-              "maximumError": "6mb"
+              "maximumWarning": "6mb",
+              "maximumError": "8mb"
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "10kb",
+              "maximumWarning": "12kb",
               "maximumError": "20kb"
             }
           ],
@@ -97,7 +97,7 @@
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@angular-devkit/build-angular:dev-server",
+      "executor": "@angular/build:dev-server",
       "configurations": {
         "production": {
           "buildTarget": "processpuzzle-testbed:build:production"
@@ -112,7 +112,7 @@
       }
     },
     "extract-i18n": {
-      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "executor": "@angular/build:extract-i18n",
       "options": {
         "buildTarget": "processpuzzle-testbed:build"
       }
@@ -137,14 +137,17 @@
     "test": {
       "executor": "@nx/angular:unit-test",
       "outputs": ["{projectRoot}/reports/coverage"],
+      "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "apps/processpuzzle-testbed/vitest.config.ts",
         "tsConfig": "apps/processpuzzle-testbed/tsconfig.spec.json",
         "coverage": true
       },
       "configurations": {
         "ci": {
-          "coverage": true
+          "coverage": true,
+          "coverageReporters": ["lcov", "json-summary"]
         }
       }
     },

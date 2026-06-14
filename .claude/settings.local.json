@@ -119,7 +119,11 @@
       "PowerShell(npx nx test js-shared-auth --testFile=libs/js-shared/auth/feature/logout/logout.component.spec.ts 2>&1)",
       "PowerShell(npx nx test auth --testPathPattern=\"logout.component.spec\" 2>&1)",
       "Bash(python -c \"import sys, json; p=json.load\\(sys.stdin\\); print\\(json.dumps\\(p.get\\('exports', {}\\).get\\('./auth', {}\\), indent=2\\)\\)\")",
-      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('C:/Projects/ProcessPuzzle/processpuzzle/node_modules/@angular/fire/package.json'\\).exports['./auth'], null, 2\\)\\)\")"
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('C:/Projects/ProcessPuzzle/processpuzzle/node_modules/@angular/fire/package.json'\\).exports['./auth'], null, 2\\)\\)\")",
+      "PowerShell(pnpm nx run processpuzzle-testbed:typecheck 2>&1)",
+      "Bash(npx tsc *)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle log --oneline -10 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)",
+      "Bash(git -C C:/Projects/ProcessPuzzle/processpuzzle show ed088f2 -- libs/js-shared/base-entity/src/lib/base-entity-facade/base-entity-facade.ts)"
     ]
   }
 }

@@ -1,7 +1,8 @@
+import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
 import { UtilsComponent } from './util.component';
-import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
+import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown, SANITIZE } from 'ngx-markdown';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { SecurityContext } from '@angular/core';
 
@@ -10,7 +11,7 @@ describe('UtilsComponent', () => {
     provideHttpClient(),
     provideMarkdown({
       loader: HttpClient,
-      sanitize: SecurityContext.NONE,
+      sanitize: { provide: SANITIZE, useValue: SecurityContext.NONE },
       mermaidOptions: {
         provide: MERMAID_OPTIONS,
         useValue: {

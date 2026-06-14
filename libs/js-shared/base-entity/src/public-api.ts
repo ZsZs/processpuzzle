@@ -1,7 +1,7 @@
 // Public API Surface of @processpuzzle/base-entity
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
-export { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
+export type { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
 export { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
@@ -12,7 +12,8 @@ export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/ba
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
 export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
 export { OrderByDirection } from './lib/base-entity-service/base-entity-load-response';
-export { BaseEntityMapper, SimpleEntityMapper, getEnumKeyByValue, getEnumValueByKey } from './lib/base-entity.mapper';
+export { SimpleEntityMapper, getEnumKeyByValue, getEnumValueByKey } from './lib/base-entity.mapper';
+export type { BaseEntityMapper } from './lib/base-entity.mapper';
 export { BaseEntityFacade, type EntityServiceKind } from './lib/base-entity-facade/base-entity-facade';
 export { ACTIVE_ENTITY_FACADE } from './lib/base-entity-facade/active-entity-facade.token';
 export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
@@ -26,4 +27,4 @@ export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entit
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
-export { LookupTable } from './lib/base-form/lookup/lookup-table';
+export type { LookupTable } from './lib/base-form/lookup/lookup-table';

@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/testbed",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Test application for @processpuzzle libraries",
   "private": false,
   "repository": {
@@ -9,12 +9,11 @@
     "directory": "apps/processpuzzle-testbed"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
-    "@processpuzzle/auth": "^0.0.2",
-    "@processpuzzle/base-entity": "^0.3.0",
-    "@processpuzzle/util": "^0.2.4",
-    "@processpuzzle/widgets": "^0.0.8"
+    "@processpuzzle/auth": "^0.8.0",
+    "@processpuzzle/base-entity": "^0.8.0",
+    "@processpuzzle/util": "^0.8.0",
+    "@processpuzzle/widgets": "^0.8.0"
   }
 }
