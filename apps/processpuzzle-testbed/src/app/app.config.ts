@@ -53,7 +53,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
         const firestore = getFirestore();
         const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
         if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
-        else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
+        else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 8080);
         return firestore;
       }),
       provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
