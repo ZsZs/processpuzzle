@@ -1,10 +1,5 @@
 # Stage 1: Build/Optimization stage
 FROM quay.io/keycloak/keycloak:26.4.7 AS builder
-LABEL authors="Zsolt Zsuffa"
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true

@@ -1,1 +1,13 @@
-{}
+{
+  "BASE_CONFIGURATION": {
+    "PIPELINE_STAGE": "ci"
+  },
+  "AUTHENTICATION_CONFIGURATION": {
+    "AUTHENTICATION_PROVIDER": "keycloak",
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070/"
+  },
+  "LOGGING_CONFIGURATION": {
+    "level": "info",
+    "serverLogLevel": "none"
+  }
+}
