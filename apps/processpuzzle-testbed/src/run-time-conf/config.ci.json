@@ -4,7 +4,7 @@
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",
-    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070/"
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:9099/auth"
   },
   "LOGGING_CONFIGURATION": {
     "level": "info",

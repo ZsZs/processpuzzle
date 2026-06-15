@@ -30,5 +30,5 @@ runs:
       if: ${{ !cancelled() }}
       with:
         name: playwright-report-${{ github.sha }}
-        path: dist/.playwright/apps/processpuzzle-testbed-e2e
+        path: ${{inputs.base_dir}}/reports/e2e
         retention-days: 30

@@ -49,6 +49,7 @@
     "publish-testbed": "npm run copy-package-json && nx run processpuzzle-testbed:nx-release-publish --first-release --exclude=base-entity, test-util, util --access public --no-cloud",
     "release-all": "npm run copy-package-json && nx release publish --skip-publish --no-cloud --dry-run",
     "release-check": "nx release plan:check --no-cloud",
+    "e2e-test-filtered": "nx e2e processpuzzle-testbed-e2e --no-cloud -- --grep \"\\[Test Entity\\] CRUD\"",
     "e2e-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud",
     "release": "ts-node tools/scripts/release.ts",
     "release:dry": "DRY_RUN=true ts-node tools/scripts/release.ts",

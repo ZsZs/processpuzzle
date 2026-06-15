@@ -56,7 +56,7 @@ services:
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:9090/home" ]
+      test: [ "CMD", "curl", "http://localhost:80/home" ]
       retries: 3
       timeout: 5s
       interval: 20s

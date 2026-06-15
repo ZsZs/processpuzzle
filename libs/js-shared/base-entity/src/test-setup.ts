@@ -82,6 +82,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.componentRef.instance.formGroup = this.baseEntityForm;
     this.componentRef.instance.config = this.config as unknown as InputSignal<BaseEntityAttrDescriptor>;
     this.componentRef.instance.entity = this.entity as unknown as InputSignal<TestEntity>;
+    this.componentRef.instance.entityName = signal('TestEntity') as unknown as InputSignal<string>;
     this.componentRef.instance.value = signal(currentAttrValue) as unknown as InputSignal<unknown>;
     const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
     this.baseEntityForm.addControl(this.config().attrName, formControl);

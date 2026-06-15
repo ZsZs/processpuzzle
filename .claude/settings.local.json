@@ -154,7 +154,11 @@
       "Bash(gh.exe run *)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 27509133738 --log-failed)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 27509133738 --json jobs,status,conclusion)",
-      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view --job 81305849431 --log)"
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view --job 81305849431 --log)",
+      "Bash(git log *)",
+      "Bash(xargs grep -l \"data-testid\\\\|getByTestId\\\\|testid\")",
+      "Bash(xargs grep -l \"class TrunkData\\\\|export.*TrunkData\")",
+      "Bash(npm exec *)"
     ]
   }
 }

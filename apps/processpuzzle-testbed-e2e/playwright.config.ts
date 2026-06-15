@@ -12,11 +12,11 @@ if (process.env['ENVIRONMENT']) {
 const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localhost:4200';
 export const testConfig = { routePrefix: '/base-entity/samples' };
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// require('dotenv').config();
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const entityUnderTest = process.env['E2E_ENTITY'];
+const suiteUnderTest = process.env['E2E_SUITE']; // CRUD or LIST
+const grep =
+  entityUnderTest || suiteUnderTest ? new RegExp([entityUnderTest ? `\\[${escapeRegex(entityUnderTest)}\\]` : '', suiteUnderTest ? ` ${escapeRegex(suiteUnderTest)}` : ''].join('')) : undefined;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -38,10 +38,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run serve-processpuzzle-testbed',
     url: baseURL,
-    reuseExistingServer: (() => {
-      if (environment === 'dev') return true;
-      return environment !== 'ci';
-    })(),
+    reuseExistingServer: true,
     cwd: workspaceRoot,
   },
   reporter: [

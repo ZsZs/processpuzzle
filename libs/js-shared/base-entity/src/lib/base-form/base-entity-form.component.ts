@@ -78,7 +78,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
       if (this.entityId() && this.entityDescriptor() && this.entity())
         untracked(() => {
           const snapshot = this.formNavigator.popFormSnapshot();
-          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.entityDescriptor().attrDescriptors, this.entity, snapshot);
+          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.entityDescriptor().attrDescriptors, this.entity, this.entityDescriptor().entityName, snapshot);
         });
     });
 
