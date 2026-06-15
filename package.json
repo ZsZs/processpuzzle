@@ -177,7 +177,7 @@
     "eslint-plugin-vitest": "^0.5.4",
     "firebase-functions-test": "^3.5.0",
     "globals": "^17.6.0",
-    "happy-dom": "^20.10.2",
+    "happy-dom": "^20.10.3",
     "http-server": "^14.1.1",
     "jsdom": "^29.1.1",
     "json-server": "^0.17.4",
