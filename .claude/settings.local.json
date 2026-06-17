@@ -169,7 +169,14 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/firebase/package.json'\\).version\\)\")",
       "PowerShell(npx nx lint processpuzzle-testbed 2>&1)",
       "PowerShell(try { \\(Invoke-WebRequest -Uri \"http://localhost:8081/\" -UseBasicParsing -TimeoutSec 3\\).StatusCode } catch { $_.Exception.Message })",
-      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{ LocalAddress = $_.LocalAddress; PID = $_.OwningProcess; ProcessName = $proc.ProcessName; Path = $proc.Path } })"
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{ LocalAddress = $_.LocalAddress; PID = $_.OwningProcess; ProcessName = $proc.ProcessName; Path = $proc.Path } })",
+      "Bash(npm view *)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "PowerShell(gh run view 27708775676 --log-failed 2>&1)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('nx:', p.devDependencies?.nx || p.dependencies?.nx\\);\")",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue | Select-Object Source; \\(Get-Command gh -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\", \"C:\\\\Program Files \\(x86\\)\\\\GitHub CLI\\\\gh.exe\", \"$env:LOCALAPPDATA\\\\Programs\\\\GitHub CLI\\\\gh.exe\", \"$env:USERPROFILE\\\\AppData\\\\Local\\\\GitHubCLI\\\\gh.exe\"\\); $paths | ForEach-Object { if \\(Test-Path $_\\) { \"FOUND: $_\" } }; where.exe gh 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27708775676 --log-failed 2>&1)"
     ]
   }
 }
