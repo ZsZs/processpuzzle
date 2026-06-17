@@ -161,4 +161,3 @@ providers: [
 Implement `ErrorMessageReporter.showErrorMessage(message, error)` to surface errors in the UI (snackbar, toast, dialog, etc.).
 
 `centralHttpErrorInterceptor` simply pipes any HTTP error through the registered `ErrorHandler` and rethrows, so failures still propagate to caller `subscribe`/`catchError` blocks.
-

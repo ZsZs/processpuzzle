@@ -127,7 +127,9 @@
     "versionPlans": {
       "ignorePatternsForPlanCheck": ["**/*.spec.ts"]
     },
-    "releaseTagPattern": "release/{projectName}/{version}",
+    "releaseTag": {
+      "pattern": "release/{projectName}/{version}"
+    },
     "git": {
       "commitMessage": "chore(release): {projectName}-{version}"
     },
