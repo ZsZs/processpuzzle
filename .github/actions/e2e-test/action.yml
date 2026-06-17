@@ -5,6 +5,9 @@ inputs:
     description: Target environment.
     required: true
     default: ci
+  base_dir:
+    description: Base directory of Playwright tests
+    required: true
 runs:
   using: composite
   steps:

@@ -9,11 +9,5 @@
     "directory": "apps/processpuzzle-testbed"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
-  "dependencies": {},
-  "peerDependencies": {
-    "@processpuzzle/auth": "^0.8.0",
-    "@processpuzzle/base-entity": "^0.8.0",
-    "@processpuzzle/util": "^0.8.0",
-    "@processpuzzle/widgets": "^0.8.0"
-  }
+  "dependencies": {}
 }
