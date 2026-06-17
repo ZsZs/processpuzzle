@@ -77,6 +77,7 @@ services:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
 
   firebase:
+    pull_policy: build
     image: zsuffazs/testbed-firebase:latest
     container_name: testbed-firebase
     build:
