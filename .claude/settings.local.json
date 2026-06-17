@@ -169,7 +169,9 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/firebase/package.json'\\).version\\)\")",
       "PowerShell(npx nx lint processpuzzle-testbed 2>&1)",
       "PowerShell(try { \\(Invoke-WebRequest -Uri \"http://localhost:8081/\" -UseBasicParsing -TimeoutSec 3\\).StatusCode } catch { $_.Exception.Message })",
-      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{ LocalAddress = $_.LocalAddress; PID = $_.OwningProcess; ProcessName = $proc.ProcessName; Path = $proc.Path } })"
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{ LocalAddress = $_.LocalAddress; PID = $_.OwningProcess; ProcessName = $proc.ProcessName; Path = $proc.Path } })",
+      "Bash(npm view *)",
+      "WebFetch(domain:registry.npmjs.org)"
     ]
   }
 }

@@ -15,10 +15,10 @@
     "@angular/common": "~22.0.1",
     "@angular/core": "~22.0.1",
     "@angular/material": "^22.0.1",
-    "@jsverse/transloco": "8.3.0",
+    "@jsverse/transloco": "8.4.0",
     "@testing-library/angular": "^19.4.1",
     "rxjs": "~7.8.2",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "sideEffects": false
 }

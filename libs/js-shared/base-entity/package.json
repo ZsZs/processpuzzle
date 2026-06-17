@@ -25,7 +25,7 @@
     "@angular/platform-browser": "~22.0.1",
     "@angular/router": "~22.0.1",
     "@angular/fire": "^20.0.1",
-    "@jsverse/transloco": "8.3.0",
+    "@jsverse/transloco": "8.4.0",
     "@ngrx/operators": "^21.1.1",
     "@ngrx/signals": "^21.1.1",
     "@processpuzzle/util": "^0.8.0",

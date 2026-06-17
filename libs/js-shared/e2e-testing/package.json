@@ -19,7 +19,7 @@
   "main": "./src/public-api.js",
   "types": "./src/public-api.d.ts",
   "peerDependencies": {
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.0",
     "@processpuzzle/base-entity": "^0.8.0"
   },
   "dependencies": {
