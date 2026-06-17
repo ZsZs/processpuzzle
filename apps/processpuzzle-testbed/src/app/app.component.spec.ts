@@ -1,18 +1,37 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { LayoutService } from '@processpuzzle/util';
+import { Component } from '@angular/core';
+import { HeaderComponent } from './navigation/header/header.component';
+import { SidenavComponent } from './navigation/sidenav/sidenav.component';
+import { FooterComponent } from './navigation/footer/footer.component';
+
+@Component({ selector: 'app-header', template: '' })
+class MockHeaderComponent {}
+
+@Component({ selector: 'app-sidenav', template: '' })
+class MockSidenavComponent {}
+
+@Component({ selector: 'app-footer', template: '' })
+class MockFooterComponent {}
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let component: AppComponent;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent, NoopAnimationsModule, provideRouter([])],
-      providers: [LayoutService],
-    }).compileComponents();
+      imports: [AppComponent, NoopAnimationsModule],
+      providers: [LayoutService, provideRouter([])],
+    })
+      .overrideComponent(AppComponent, {
+        remove: { imports: [HeaderComponent, SidenavComponent, FooterComponent] },
+        add: { imports: [MockHeaderComponent, MockSidenavComponent, MockFooterComponent] },
+      })
+      .compileComponents();
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

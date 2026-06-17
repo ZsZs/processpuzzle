@@ -17,6 +17,7 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   config: InputSignal<BaseEntityAttrDescriptor> = input.required<BaseEntityAttrDescriptor>();
   entity: InputSignal<Entity> = input.required();
+  entityName: InputSignal<string> = input.required<string>();
   formGroup!: FormGroup;
   store!: BaseEntityStoreApi<Entity>;
   style = computed<{ [p: string]: unknown } | null | undefined>(() => this.config().style);
@@ -34,9 +35,9 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   @HostBinding('attr.data-testid')
   get testId(): string | null {
     const attrName = this.config()?.attrName;
-    const entity = this.entity();
-    if (!attrName || !entity) return null;
-    return createTestId(entity.constructor as new () => Entity, attrName);
+    const entityName = this.entityName();
+    if (!attrName || !entityName) return null;
+    return createTestId(entityName, attrName);
   }
 
   protected readonly logger = inject(NGXLogger);

@@ -2,11 +2,15 @@
 
 FROM eclipse-temurin:25-jre
 
-LABEL authors="zsolt"
+LABEL authors="Zsolt Zsuffa"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY apps/processpuzzle-backend/target/processpuzzle-backend-*.jar ./processpuzzle-backend.jar
+COPY dist/apps/processpuzzle-backend/processpuzzle-backend.jar ./processpuzzle-backend.jar
 
 EXPOSE 8080
 

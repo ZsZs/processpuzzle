@@ -58,7 +58,7 @@ export class KeycloakAuthService extends AuthService {
   private async initKeycloak() {
     await this.keycloak.init({
       onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: 'http://localhost:4200/assets/auth/silent-check-sso.html',
+      silentCheckSsoRedirectUri: globalThis.location.origin + '/assets/auth/silent-check-sso.html',
     });
 
     // Check if authenticated using the keycloak-js instance directly

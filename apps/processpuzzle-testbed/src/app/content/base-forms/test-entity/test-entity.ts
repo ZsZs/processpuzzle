@@ -13,16 +13,16 @@ export enum TestEnum {
 
 export class TestEntity implements BaseEntity {
   readonly id: string;
-  private name: string;
-  private description: string | undefined;
-  private boolean;
-  private number;
-  private date;
-  private lookup: string;
-  private enumValue: TestEnum;
-  private artifact?: ArtifactAttr | undefined;
-  private tags: Array<string> | undefined;
-  private components: Array<TestEntityComponent> | undefined;
+  name: string;
+  description: string | undefined;
+  boolean;
+  number;
+  date;
+  lookup: string;
+  enumValue: TestEnum;
+  artifact?: ArtifactAttr | undefined;
+  tags: Array<string> | undefined;
+  components: Array<TestEntityComponent> | undefined;
 
   constructor(
     id?: string,

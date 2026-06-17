@@ -3,9 +3,11 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/processpuzzle-backend/src",
+  "implicitDependencies": ["api-contracts", "object-store"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
       "options": {
         "command": "mvn clean package -pl apps/processpuzzle-backend -am"
       }
@@ -13,13 +15,13 @@
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "mvn spring-boot:run -pl apps/processpuzzle-backend"
+        "command": "mvn spring-boot:run -pl apps/processpuzzle-backend -am"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "mvn test -pl apps/processpuzzle-backend"
+        "command": "mvn test -pl apps/processpuzzle-backend -am"
       }
     }
   },

@@ -50,6 +50,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
     store: BaseEntityStoreApi<Entity>,
     attrDescriptors: AbstractAttrDescriptor[],
     entity: Signal<Entity>,
+    entityName: string,
     initialValues?: Record<string, unknown>,
   ): void {
     this.logger.trace('Starting to build form for: ', { attrDescriptors: attrDescriptors });
@@ -66,6 +67,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
           componentRef.setInput('config', column);
           componentRef.setInput('entity', entity());
+          componentRef.setInput('entityName', entityName);
           componentRef.setInput('value', currentAttrValue);
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
@@ -73,9 +75,10 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
           componentRef.setInput('config', column as unknown as BaseEntityAttrDescriptor);
           componentRef.setInput('entity', entity());
+          componentRef.setInput('entityName', entityName);
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
-          this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity, initialValues);
+          this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity, entityName, initialValues);
         } else throw new Error('Undefined subclass of AbstractAttrDescriptor');
       }
     });

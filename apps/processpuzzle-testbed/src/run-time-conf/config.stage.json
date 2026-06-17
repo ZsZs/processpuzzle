@@ -1,6 +1,10 @@
 {
-  "PIPELINE_STAGE": "stage",
-  "AUTHENTICATION_PROVIDER": "firebase-auth",
-  "BACKEND_SERVICE_PROVIDER": "firestore",
-  "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api"
+  "BASE_CONFIGURATION": {
+    "PIPELINE_STAGE": "stage",
+    "BACKEND_SERVICE_PROVIDER": "firestore",
+    "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api"
+  },
+  "AUTHENTICATION_CONFIGURATION": {
+    "AUTHENTICATION_PROVIDER": "firebase-auth"
+  }
 }

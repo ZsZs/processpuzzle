@@ -34,23 +34,38 @@ export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE:
   }
 
   private mergeConfigs(configs: TConfiguration[]): TConfiguration {
-    return { ...configs[0], ...configs[1] };
+    return configs.reduce<TConfiguration>((acc, cur) => this.deepMerge(acc, cur), {} as TConfiguration);
+  }
+
+  private deepMerge<T>(target: T, source: T): T {
+    if (source === null || source === undefined) return target;
+    if (typeof source !== 'object' || Array.isArray(source)) return source;
+    const result: Record<string, unknown> = { ...(target as Record<string, unknown>) };
+    for (const key of Object.keys(source as Record<string, unknown>)) {
+      const sourceValue = (source as Record<string, unknown>)[key];
+      const targetValue = (target as Record<string, unknown> | undefined)?.[key];
+      const bothPlainObjects =
+        sourceValue !== null && typeof sourceValue === 'object' && !Array.isArray(sourceValue) && targetValue !== null && typeof targetValue === 'object' && !Array.isArray(targetValue);
+      result[key] = bothPlainObjects ? this.deepMerge(targetValue, sourceValue) : sourceValue;
+    }
+    return result as T;
   }
 
   private async loadConfig(url: string): Promise<TConfiguration> {
     this.currentConfigUrl = url;
-    let config: TConfiguration;
     try {
       const response = await fetch(url);
-      if (!response.ok) console.log(`Failed to load configuration from ${url}`);
-      config = (await response.json()) as unknown as TConfiguration;
+      if (!response.ok) {
+        console.log(`Failed to load configuration from ${url}`);
+        return {} as TConfiguration;
+      }
+      return (await response.json()) as unknown as TConfiguration;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
         console.log(`Error: ${error} while fetching from:  ${url}`);
       }
       throw error;
     }
-    return config;
   }
 
   private async loadConfigs(configUrls: string[]): Promise<TConfiguration[]> {

@@ -1,25 +1,29 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { SidenavComponent } from './sidenav.component';
 import { LayoutService } from '@processpuzzle/util';
-import { MockBreakpointObserver } from '@processpuzzle/test-util';
+import { MockBreakpointObserver, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 
 describe('SidenavComponent', () => {
+  const testConfig: TranslocoTestConfig = { translations: { en: {} } };
   let component: SidenavComponent;
   let fixture: ComponentFixture<SidenavComponent>;
   let breakpointObserver: MockBreakpointObserver;
   let layoutService: LayoutService;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SidenavComponent],
-      providers: [provideRouter([]), { provide: BreakpointObserver, useClass: MockBreakpointObserver }, { provide: LayoutService, useClass: LayoutService, deps: [BreakpointObserver] }],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(SidenavComponent);
-    component = fixture.componentInstance;
+    const result = await setUpTranslocoTestBed(SidenavComponent, testConfig, {
+      providers: [
+        provideRouter([]),
+        { provide: BreakpointObserver, useClass: MockBreakpointObserver },
+        { provide: LayoutService, useClass: LayoutService, deps: [BreakpointObserver] },
+      ],
+    });
+    component = result.component;
+    fixture = result.fixture;
     layoutService = TestBed.inject(LayoutService);
     breakpointObserver = TestBed.inject(BreakpointObserver) as unknown as MockBreakpointObserver;
     breakpointObserver.resize(800);

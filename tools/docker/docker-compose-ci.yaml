@@ -27,10 +27,15 @@ services:
       retries: 3
       timeout: 5s
       interval: 20s
+      start_period: 30s
 
   processpuzzle-testbed:
     pull_policy: build
     depends_on:
+      processpuzzle-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
       json-server:
         condition: service_healthy
       firebase:
@@ -43,15 +48,15 @@ services:
     image: zsuffazs/processpuzzle-testbed:latest
     container_name: processpuzzle-testbed
     environment:
-      PIPELINE_STAGE: "CI"
-      FIREBASE_API_KEY: $FIREBASE_API_KEY
+      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
     ports:
       - "9090:80"
     tty: true
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:9090/home" ]
+      test: [ "CMD", "curl", "http://localhost:80/home" ]
       retries: 3
       timeout: 5s
       interval: 20s
@@ -72,6 +77,7 @@ services:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
 
   firebase:
+    pull_policy: build
     image: zsuffazs/testbed-firebase:latest
     container_name: testbed-firebase
     build:
@@ -85,22 +91,22 @@ services:
       FIRESTORE_EMULATOR_HOST: "localhost:8081"
       PUBSUB_EMULATOR_HOST: "localhost:8085"
       FUNCTIONS_EMULATOR_HOST: "localhost:5001"
-      FIREBASE_PROJECT: "processpuzzle-testbed-stage"
-      GCLOUD_PROJECT: "processpuzzle-testbed-stage"
+      FIREBASE_PROJECT: "demo-processpuzzle-testbed"
+      GCLOUD_PROJECT: "demo-processpuzzle-testbed"
       FORCE_COLOR: 'true'
-      DATA_DIRECTORY: "data"
+      DATA_DIRECTORY: "tools/firebase/data"
       CHOKIDAR_USEPOLLING: 'true'
     ports:
-      - "4000:4001" # ui
-      - "4400:4401" # hub
-      - "4600:4601" # logging
-      - "5001:5002" # functions
+      - "4000:4000" # ui
+      - "4400:4400" # hub
+      - "4600:4600" # logging
+      - "5001:5001" # functions
       - "8081:8081" # firestore
-      - "8085:8086" # pubsub
-      - "9000:9001" # database
-      - "9099:9100" # auth
-      - "9199:9200" # Storage
-      - "6000:6001" # Hosting
+      - "8085:8085" # pubsub
+      - "9099:9099" # auth
+      - "9199:9199" # storage
+    networks:
+      - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8081" ]
 

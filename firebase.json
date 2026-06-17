@@ -54,35 +54,47 @@
   },
   "emulators": {
     "auth": {
+      "host": "0.0.0.0",
       "port": 9099
     },
     "functions": {
+      "host": "0.0.0.0",
       "port": 5001
     },
     "firestore": {
-      "port": 8080
+      "host": "0.0.0.0",
+      "port": 8081
     },
     "hosting": {
+      "host": "0.0.0.0",
       "port": 6002
     },
     "logging": {
+      "host": "0.0.0.0",
       "port": 4600
     },
     "pubsub": {
+      "host": "0.0.0.0",
       "port": 8085
     },
     "storage": {
+      "host": "0.0.0.0",
       "port": 9199
     },
     "ui": {
       "enabled": true,
+      "host": "0.0.0.0",
       "port": 4000
+    },
+    "hub": {
+      "host": "0.0.0.0",
+      "port": 4400
     },
     "singleProjectMode": true
   },
   "functions": [
     {
-      "source": "apps/firebase-functions",
+      "source": "tools/firebase/functions",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -92,8 +104,8 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"apps/firebase-functions\" run lint",
-        "npm --prefix \"apps/firebase-functions\" run build"
+        "npm --prefix \"tools/firebase/functions\" run lint",
+        "npm --prefix \"tools/firebase/functions\" run build"
       ]
     }
   ]

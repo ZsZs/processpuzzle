@@ -10,14 +10,14 @@ import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMa
 import { initializeApp } from 'firebase/app';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
-import { connectFirestoreEmulator, getFirestore, provideFirestore } from '@angular/fire/firestore';
-import { environment } from '../environments/environment';
+import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideAppPropertyStore, provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/widgets';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_ENTITY_FACADE_REGISTRY } from '@processpuzzle/base-entity';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
@@ -27,7 +27,21 @@ import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
-      provideAppPropertyStore(),
+      provideFirestore(() => {
+        const fireConf = runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION;
+        const firestore = getFirestore();
+        if (fireConf.FIRESTORE_EMULATOR_HOST && fireConf.FIRESTORE_EMULATOR_PORT) {
+          connectFirestoreEmulator(firestore, fireConf.FIRESTORE_EMULATOR_HOST, fireConf.FIRESTORE_EMULATOR_PORT);
+        }
+        return firestore;
+      }),
+      provideAuthenticationService(runtimeConfiguration),
+      provideZonelessChangeDetection(),
+      provideFirebaseApp(() => initializeApp(runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION), [FIREBASE_OPTIONS]),
+      provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
+      provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
+      provideCentralErrorHandler(),
+      provideAppPropertyStore(Firestore),
       TestEntityFacade,
       TestEntityComponentFacade,
       TrunkDataFacade,
@@ -46,19 +60,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },
       { provide: AUTHENTICATION_CONFIGURATION, useValue: runtimeConfiguration.AUTHENTICATION_CONFIGURATION },
       { provide: FIREBASE_OPTIONS, useValue: runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION },
-      provideAuthenticationService(runtimeConfiguration),
-      provideZonelessChangeDetection(),
-      provideFirebaseApp(() => initializeApp(runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION), [FIREBASE_OPTIONS]),
-      provideFirestore(() => {
-        const firestore = getFirestore();
-        const pipelineStage = environment.PIPELINE_STAGE ?? 'ci';
-        if (pipelineStage === 'dev') connectFirestoreEmulator(firestore, 'localhost', 8080);
-        else if (pipelineStage === 'ci') connectFirestoreEmulator(firestore, 'firebase', 9090);
-        return firestore;
-      }),
-      provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
-      provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
-      provideCentralErrorHandler(),
       provideErrorSnackbar(),
       provideRouter(appRoutes, withComponentInputBinding()),
       provideNativeDateAdapter(),

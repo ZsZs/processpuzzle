@@ -5,12 +5,11 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>processpuzzle-api</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/api-contracts</url>

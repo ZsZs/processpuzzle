@@ -4,11 +4,13 @@
   "projectType": "library",
   "tags": ["backend", "java", "springboot", "library"],
   "sourceRoot": "libs/java-shared/object-store/src",
+  "implicitDependencies": ["api-contracts"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
       "options": {
-        "command": "mvn clean install -pl libs/java-shared/object-store -am"
+        "command": "mvn -pl libs/java-shared/object-store -am clean install"
       }
     },
     "lint": {
@@ -24,7 +26,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "mvn -f {projectRoot}/pom.xml test"
+        "command": "mvn -pl libs/java-shared/object-store -am test"
       },
       "configurations": {
         "ci": {}

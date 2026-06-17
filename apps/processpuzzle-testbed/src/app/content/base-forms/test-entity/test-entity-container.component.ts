@@ -1,9 +1,11 @@
 import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { TestEntityStore } from './test-entity.store';
 import { createTestEntityDescriptor } from './test-entity.descriptors';
 import { MarkdownComponent } from 'ngx-markdown';
+import { TestEntity } from './test-entity';
 
 @Component({
   selector: 'test-entity-container',
@@ -33,7 +35,7 @@ export class TestEntityContainerComponent implements OnDestroy {
   constructor() {
     this.baseEntityDescriptor = createTestEntityDescriptor();
     this.baseEntityDescriptor.store = this.store;
-    this.baseEntityDescriptor.entityTitle = () => this.store.currentEntity()?.name ?? '';
+    this.baseEntityDescriptor.entityTitle = () => (this.store.currentEntity() as TestEntity)?.name ?? '';
   }
 
   // region Angular lifecycle hooks

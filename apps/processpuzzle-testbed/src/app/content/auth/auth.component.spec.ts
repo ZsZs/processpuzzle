@@ -1,40 +1,31 @@
+import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
 import { AuthComponent } from './auth.component';
-import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
-import { HttpClient, provideHttpClient } from '@angular/common/http';
-import { SecurityContext } from '@angular/core';
+import { MarkdownComponent } from 'ngx-markdown';
+import { Component, input, output } from '@angular/core';
+
+@Component({ selector: 'markdown', template: '' })
+class MockMarkdownComponent {
+  readonly src = input<string>();
+  readonly load = output<string>();
+  readonly error = output<string | Error>();
+}
 
 describe('AuthComponent', () => {
-  const providers = [
-    provideHttpClient(),
-    provideMarkdown({
-      loader: HttpClient,
-      sanitize: SecurityContext.NONE as any,
-      mermaidOptions: {
-        provide: MERMAID_OPTIONS,
-        useValue: {
-          darkMode: true,
-          look: 'handDrawn',
-        },
-      },
-      clipboardOptions: {
-        provide: CLIPBOARD_OPTIONS,
-        useValue: {
-          buttonComponent: ClipboardButtonComponent,
-        },
-      },
-    }),
-  ];
+  const renderOptions = {
+    importOverrides: [{ replace: MarkdownComponent, with: MockMarkdownComponent }],
+  };
+
   it('should create the component', async () => {
-    const { fixture } = await render(AuthComponent, { providers });
+    const { fixture } = await render(AuthComponent, renderOptions);
     const componentInstance = fixture.componentInstance;
 
     expect(componentInstance).toBeTruthy();
   });
 
   it('should call the onLoad method when triggered', async () => {
-    const { fixture } = await render(AuthComponent, { providers });
+    const { fixture } = await render(AuthComponent, renderOptions);
     const componentInstance = fixture.componentInstance;
     const onLoadSpy = vi.spyOn(componentInstance, 'onLoad');
 
@@ -45,7 +36,7 @@ describe('AuthComponent', () => {
   });
 
   it('should call the onError method when triggered', async () => {
-    const { fixture } = await render(AuthComponent, { providers });
+    const { fixture } = await render(AuthComponent, renderOptions);
     const componentInstance = fixture.componentInstance;
     const onErrorSpy = vi.spyOn(componentInstance, 'onError');
 

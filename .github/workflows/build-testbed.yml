@@ -20,6 +20,8 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_TOKEN }}
+      PIPELINE_STAGE: "ci"
     outputs:
       RUNNER: ${{ runner.name }}
     strategy:
@@ -41,13 +43,9 @@ jobs:
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
 
-      - id: build-image
-        name: Build and publish Docker images
-        uses: ./.github/actions/build-image
-        with:
-          cicd_stage: 'ci'
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+      - id: build-backend
+        name: Build backend jar
+        run: npx nx run processpuzzle-backend:build --no-cloud
 
       - id: docker-compose
         name: run-docker-compose
@@ -59,4 +57,5 @@ jobs:
         name: run-e2e-tests
         uses: ./.github/actions/e2e-test
         with:
+          base_dir: 'apps/processpuzzle-testbed-e2e'
           target_environment: 'ci'

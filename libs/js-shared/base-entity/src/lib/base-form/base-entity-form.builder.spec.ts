@@ -88,7 +88,7 @@ describe('BaseEntityFormBuilder', () => {
     formBuilder = TestBed.inject(BaseEntityFormBuilder) as unknown as BaseEntityFormBuilder<TestEntity>;
     store = TestBed.inject(TestEntityStore);
 
-    formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, descriptors, testEntity);
+    formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, descriptors, testEntity, 'Test Entity');
     fixture.detectChanges();
   });
 
@@ -129,7 +129,7 @@ describe('BaseEntityFormBuilder', () => {
       }
     }
 
-    expect(() => formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new DummySubclass()], testEntity)).toThrow(
+    expect(() => formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new DummySubclass()], testEntity, 'Test Entity')).toThrow(
       new Error('Undefined subclass of AbstractAttrDescriptor'),
     );
   });
@@ -141,6 +141,6 @@ describe('BaseEntityFormBuilder', () => {
       }
     }
 
-    expect(() => formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new DummySubclass()], testEntity)).toThrow(new Error('Undefined form control type'));
+    expect(() => formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new DummySubclass()], testEntity, 'Test Entity')).toThrow(new Error('Undefined form control type'));
   });
 });
