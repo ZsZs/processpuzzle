@@ -1,6 +1,5 @@
 {
   "BASE_CONFIGURATION": {
-    "PIPELINE_STAGE": "dev",
     "BACKEND_SERVICE_PROVIDER": "rest",
     "BACKEND_SERVICE_ROOT": "http://localhost:3000/",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",

@@ -1,4 +1,2 @@
-apps/firebase-functions
-apps/processpuzzle-testbed/functions
-tools/docker/firebase/functions
+tools/firebase
 tools/mock-backend

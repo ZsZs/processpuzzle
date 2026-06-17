@@ -158,7 +158,13 @@
       "Bash(git log *)",
       "Bash(xargs grep -l \"data-testid\\\\|getByTestId\\\\|testid\")",
       "Bash(xargs grep -l \"class TrunkData\\\\|export.*TrunkData\")",
-      "Bash(npm exec *)"
+      "Bash(npm exec *)",
+      "Bash(mkdir -p tools/firebase && git mv apps/processpuzzle-testbed/data tools/firebase/data && ls tools/firebase/data)",
+      "PowerShell(if \\(-not \\(Test-Path tools/firebase\\)\\) { New-Item -ItemType Directory -Path tools/firebase | Out-Null }; Move-Item -Path apps/processpuzzle-testbed/data -Destination tools/firebase/data -Force; Get-ChildItem tools/firebase/data)",
+      "Bash(git rm *)",
+      "PowerShell(Move-Item -Path apps/firebase-functions -Destination tools/firebase/functions -Force)",
+      "PowerShell(npm exec nx test util --no-cloud 2>&1)",
+      "Bash(docker image *)"
     ]
   }
 }

@@ -1,4 +1,14 @@
 {
+  "BASE_CONFIGURATION": {
+    "PIPELINE_STAGE": "dev",
+    "FIREBASE_CONFIGURATION": {
+      "projectId": "demo-processpuzzle-testbed",
+      "FIRESTORE_EMULATOR_HOST": "localhost",
+      "FIRESTORE_EMULATOR_PORT": 8081,
+      "FIREBASE_AUTH_EMULATOR_HOST": "localhost",
+      "FIREBASE_AUTH_EMULATOR_PORT": 9099
+    }
+  },
   "LOGGING_CONFIGURATION": {
     "level": "debug",
     "serverLogLevel": "none",

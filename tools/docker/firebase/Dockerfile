@@ -1,27 +1,29 @@
 FROM node:22-alpine
-ARG FIREBASE_VERSION=13.33.0
-RUN apk --no-cache add openjdk11-jre bash curl openssl gettext nano nginx sudo && \
+ARG FIREBASE_VERSION=15.20.0
+RUN apk --no-cache add openjdk11-jre bash curl && \
     npm cache clean --force && \
     npm i -g firebase-tools@$FIREBASE_VERSION
-COPY tools/docker/firebase/nginx.conf /etc/nginx/
+
+WORKDIR /workspace
+
+# Firebase root config (paths inside firebase.json are resolved relative to here)
+COPY .firebaserc firebase.json firestore.indexes.json firestore.rules storage.rules ./
+
+# Emulator import data (shared with native dev)
+COPY tools/firebase/data ./tools/firebase/data
+
+# Single source of truth for mock data
+COPY tools/mock-backend/db.json ./tools/mock-backend/db.json
+
+# Functions sources + build (produces lib/index.js and syncs db.json)
+COPY tools/firebase/functions ./tools/firebase/functions
+RUN npm --prefix tools/firebase/functions install && \
+    npm --prefix tools/firebase/functions run build
+
 COPY tools/docker/firebase/serve.sh /usr/bin/
-RUN sed -i "s/\r$//" /usr/bin/serve.sh
-RUN chmod +x /usr/bin/serve.sh
-WORKDIR /srv/firebase
-COPY .firebaserc .
-COPY firebase.json .
-COPY firestore.indexes.json .
-COPY firestore.rules .
-COPY storage.rules .
-COPY dist/apps/processpuzzle-testbed ./dist/apps/processpuzzle-testbed
-COPY apps/firebase-functions ./apps/firebase-functions
-COPY apps/processpuzzle-testbed/data ./data
-EXPOSE 4000
-EXPOSE 4600
-EXPOSE 5001
-EXPOSE 6002
-EXPOSE 9090
-EXPOSE 8085
-EXPOSE 9099
-EXPOSE 9199
+RUN sed -i "s/\r$//" /usr/bin/serve.sh && chmod +x /usr/bin/serve.sh
+
+# Emulator ports (per firebase.json)
+EXPOSE 4000 4400 4600 5001 8081 8085 9099 9199
+
 ENTRYPOINT ["/usr/bin/serve.sh"]

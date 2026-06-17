@@ -1,13 +1,21 @@
 {
   "BASE_CONFIGURATION": {
-    "PIPELINE_STAGE": "ci"
+    "PIPELINE_STAGE": "ci",
+    "FIREBASE_CONFIGURATION": {
+      "projectId": "demo-processpuzzle-testbed",
+      "FIRESTORE_EMULATOR_HOST": "localhost",
+      "FIRESTORE_EMULATOR_PORT": 8081,
+      "FIREBASE_AUTH_EMULATOR_HOST": "localhost",
+      "FIREBASE_AUTH_EMULATOR_PORT": 9099
+    }
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",
-    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:9099/auth"
-  },
-  "LOGGING_CONFIGURATION": {
-    "level": "info",
-    "serverLogLevel": "none"
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070",
+    "AUTH_SERVICE_CONFIG": {
+      "realm": "master",
+      "clientId": "processpuzzle-testbed",
+      "authServerUrl": "http://localhost:7070"
+    }
   }
 }

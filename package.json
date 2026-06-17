@@ -21,7 +21,7 @@
     "run-mock-backend": "npx json-server --watch tools/mock-backend/db.json --port 3000",
     "run-mock-outh2": "npx oauth2-mock-server",
     "run-http-server": "http-server dist/apps/processpuzzle-testbed/browser --proxy http://localhost:9090",
-    "run-firebase-emulator": "firebase emulators:start --import apps/processpuzzle-testbed/data",
+    "run-firebase-emulator": "npm --prefix tools/firebase/functions run build && firebase emulators:start --project demo-processpuzzle-testbed --import tools/firebase/data",
     "stop-firebase-emulator": "lsof -t -i:5001 -i:5002 -i:8080 -i:9000 -i:9099 -i:9199 -i:9090 | xargs kill -9",
     "serve-processpuzzle-testbed": "npm run config-env-testbed -- --environment=dev && nx run processpuzzle-testbed:serve",
     "serve-processpuzzle-ui": "nx run processpuzzle-ui:serve --configuration=de-DE",
