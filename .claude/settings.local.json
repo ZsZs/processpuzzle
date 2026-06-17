@@ -164,7 +164,8 @@
       "Bash(git rm *)",
       "PowerShell(Move-Item -Path apps/firebase-functions -Destination tools/firebase/functions -Force)",
       "PowerShell(npm exec nx test util --no-cloud 2>&1)",
-      "Bash(docker image *)"
+      "Bash(docker image *)",
+      "Bash(mkdir -p C:/Projects/ProcessPuzzle/processpuzzle/tools/docker/keycloak/import)"
     ]
   }
 }
