@@ -5,5 +5,5 @@
     "types": ["node", "@testing-library/jest-dom"]
   },
   "include": ["domain/**/*.d.ts", "feature/**/*.d.ts", "feature/**/*.spec.ts", "domain/**/*.spec.ts"],
-  "exclude": ["test-setup.ts", "feature/assets/**", "domain/service/provide-firebase-auth-service.spec.ts"]
+  "exclude": ["test-setup.ts", "feature/assets/**", "domain/service/firebase-auth.service.spec.ts", "domain/service/provide-firebase-auth-service.spec.ts"]
 }
