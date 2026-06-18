@@ -4,10 +4,21 @@ import { BaseConfiguration } from '@processpuzzle/util';
 import { provideFirebaseAuthService } from './provide-firebase-auth-service';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { AuthenticationConfiguration } from './provide-authentication.service';
-import { firebaseMocks } from '../../test-setup';
 
-const mockAuth = { name: 'mockAuth' } as unknown as Auth;
+const firebaseMocks = vi.hoisted(() => ({
+  getAuthMock: vi.fn(),
+  connectAuthEmulatorMock: vi.fn(),
+  signInWithEmailAndPasswordMock: vi.fn(),
+}));
+
+vi.mock('@angular/fire/auth', () => ({
+  getAuth: firebaseMocks.getAuthMock,
+  connectAuthEmulator: firebaseMocks.connectAuthEmulatorMock,
+  signInWithEmailAndPassword: firebaseMocks.signInWithEmailAndPasswordMock,
+}));
+
 const { getAuthMock, connectAuthEmulatorMock } = firebaseMocks;
+const mockAuth = { name: 'mockAuth' } as unknown as Auth;
 
 describe('provideFirebaseAuthService', () => {
   beforeEach(() => {

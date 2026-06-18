@@ -2,7 +2,18 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Auth, User as FirebaseUser } from '@angular/fire/auth';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { User } from '../user/user';
-import { firebaseMocks } from '../../test-setup';
+
+const firebaseMocks = vi.hoisted(() => ({
+  getAuthMock: vi.fn(),
+  connectAuthEmulatorMock: vi.fn(),
+  signInWithEmailAndPasswordMock: vi.fn(),
+}));
+
+vi.mock('@angular/fire/auth', () => ({
+  getAuth: firebaseMocks.getAuthMock,
+  connectAuthEmulator: firebaseMocks.connectAuthEmulatorMock,
+  signInWithEmailAndPassword: firebaseMocks.signInWithEmailAndPasswordMock,
+}));
 
 const { signInWithEmailAndPasswordMock } = firebaseMocks;
 
