@@ -1,7 +1,7 @@
 export class BaseState {
   constructor(
     readonly name: string,
-    readonly isFinal: boolean = false,
+    readonly isFinal = false,
   ) {}
 
   describe(): string {

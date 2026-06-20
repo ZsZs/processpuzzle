@@ -1,7 +1,7 @@
 export class BaseRule {
   constructor(
     readonly name: string,
-    readonly priority: number = 0,
+    readonly priority = 0,
   ) {}
 
   describe(): string {
