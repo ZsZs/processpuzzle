@@ -1,0 +1,67 @@
+{
+  "name": "base-state-frontend",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "root": "libs/js-shared/base-state-frontend",
+  "sourceRoot": "libs/js-shared/base-state-frontend/src",
+  "prefix": "pp",
+  "tags": ["scope:base-state", "type:domain"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build"],
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/js-shared/base-state-frontend/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/js-shared/base-state-frontend/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/js-shared/base-state-frontend/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "options": {
+        "runner": "vitest",
+        "runnerConfig": "libs/js-shared/base-state-frontend/vitest.config.ts",
+        "tsConfig": "libs/js-shared/base-state-frontend/tsconfig.spec.json",
+        "coverage": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true,
+          "coverageReporters": ["lcov", "json-summary"]
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/js-shared/base-state-frontend/src/**/*.ts", "libs/js-shared/base-state-frontend/src/**/*.spec.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "format": "json",
+          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+        },
+        "dev": {
+          "format": "html",
+          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+        }
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-state-frontend"
+      }
+    }
+  }
+}

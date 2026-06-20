@@ -43,8 +43,12 @@
 
     <modules>
         <module>apps/processpuzzle-backend</module>
-        <module>libs/java-shared/object-store</module>
         <module>libs/java-shared/api-contracts</module>
+        <module>libs/java-shared/base-desktop-backend</module>
+        <module>libs/java-shared/base-process-backend</module>
+        <module>libs/java-shared/base-rule-backend</module>
+        <module>libs/java-shared/base-state-backend</module>
+        <module>libs/java-shared/object-store</module>
     </modules>
 
     <properties>
@@ -62,6 +66,30 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>object-store</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-rule-backend</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-state-backend</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-process-backend</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-desktop-backend</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
