@@ -147,6 +147,25 @@ services:
       timeout: 10s
       retries: 3
 
+  pgweb:
+    build:
+      context: ../../
+      dockerfile: tools/docker/pgweb/Dockerfile
+      args:
+        CICD_STAGE: ci
+    container_name: testbed-pgweb
+    image: zsuffazs/testbed-pgweb:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://keycloak:password123@postgres:5432/keycloak?sslmode=disable
+    command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]
+    networks:
+      - cmdb
+
   postgres:
     build:
       context: ../../

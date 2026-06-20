@@ -76,3 +76,18 @@ const fileContent = `
 
 writeFileUsingFS(targetPat, fileContent); // appending data into the target file/* eslint:enable */
 writeFileUsingFS(`${envDir}/environment.ts`, fileContent);
+
+// Emit runtime-env.json so main.ts can load it in non-Docker stages (dev/stage/prod).
+// In Docker (ci), docker-entrypoint.sh overwrites this file from container env vars at startup.
+// Values are stringified the same way as the TS env file above (missing env → literal "undefined").
+const assetsDir = 'apps/processpuzzle-testbed/src/assets';
+const runtimeEnvContent =
+  JSON.stringify(
+    {
+      PIPELINE_STAGE: `${process.env['PIPELINE_STAGE']}`,
+      FIREBASE_API_KEY: `${process.env['FIREBASE_API_KEY']}`,
+    },
+    null,
+    2,
+  ) + '\n';
+writeFileUsingFS(`${assetsDir}/runtime-env.json`, runtimeEnvContent);
