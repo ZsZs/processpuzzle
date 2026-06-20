@@ -10,7 +10,7 @@ jobs:
   deploy-to-firebase-stage:
     environment: STAGE
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

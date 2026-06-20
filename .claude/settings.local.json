@@ -178,7 +178,10 @@
       "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\", \"C:\\\\Program Files \\(x86\\)\\\\GitHub CLI\\\\gh.exe\", \"$env:LOCALAPPDATA\\\\Programs\\\\GitHub CLI\\\\gh.exe\", \"$env:USERPROFILE\\\\AppData\\\\Local\\\\GitHubCLI\\\\gh.exe\"\\); $paths | ForEach-Object { if \\(Test-Path $_\\) { \"FOUND: $_\" } }; where.exe gh 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27708775676 --log-failed 2>&1)",
       "Bash(node -e \"const fire = require\\('@angular/fire/auth'\\); console.log\\(Object.keys\\(fire\\).filter\\(k => k.includes\\('Auth'\\) || k.includes\\('connect'\\) || k.includes\\('getAuth'\\) || k === 'connectAuthEmulator'\\)\\);\")",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602 --log-failed)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=82483562805 --log)"
     ]
   }
 }
