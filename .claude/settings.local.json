@@ -181,7 +181,8 @@
       "Bash(git check-ignore *)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602 --log-failed)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602)",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=82483562805 --log)"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=82483562805 --log)",
+      "Bash(where.exe mvn *)"
     ]
   }
 }
