@@ -91,11 +91,7 @@ export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE:
     if (url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-
-    if (url.startsWith('/')) url = url.substring(1);
-
-    const baseHref = globalThis.location.origin;
-    return `${baseHref}/${url}`;
+    return new URL(url, document.baseURI).href;
   }
 
   private getUrls(): string[] {
