@@ -1,0 +1,34 @@
+rules:
+  - id: positive-quantities
+    name: All line item quantities are positive
+    context: Order
+    severity: ERROR
+    expression: "entity.lineItems.every(li => li.quantity > 0)"
+
+  - id: total-matches-line-items
+    name: Total matches sum of line items
+    context: Order
+    severity: ERROR
+    expression: >-
+      Math.abs(entity.total - entity.lineItems.reduce((sum, li) => sum + li.unitPrice *
+      li.quantity, 0)) < 0.001
+
+  - id: shipped-requires-address
+    name: Shipped orders require a shipping address
+    description: >-
+      Conditional rule — PPCL's "implies" (condition implies consequence) translates to
+      JS as !condition || consequence.
+    context: Order
+    severity: WARNING
+    expression: "entity.status !== 'SHIPPED' || entity.shippingAddress != null"
+
+  - id: special-order-allows-zero-quantity
+    name: Special orders may include zero-quantity placeholder items
+    description: >-
+      Overrides 'positive-quantities' for the SpecialOrder context — demonstrates the
+      extends/override convention for relaxing a constraint inherited from a base rule.
+    context: SpecialOrder
+    extends: positive-quantities
+    override: true
+    severity: ERROR
+    expression: "entity.lineItems.every(li => li.quantity >= 0)"
