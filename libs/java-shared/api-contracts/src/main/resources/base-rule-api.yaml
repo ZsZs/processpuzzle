@@ -1,0 +1,318 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Rule Engine API
+  description: >-
+    CRUD and YAML import/export operations for PPCL (ProcessPuzzle Constraint Language)
+    rule definitions. Intended as the source-of-truth contract — consistent with the
+    existing convention of generating Spring server stubs and Angular TypeScript clients
+    from OpenAPI YAML via openapi-generator-maven-plugin.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+  /rules:
+    get:
+      operationId: listRules
+      summary: List rule definitions
+      tags:
+        - Base Rule
+      parameters:
+        - name: context
+          in: query
+          description: Filter by the entity type a rule applies to (e.g. "Order").
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching rule definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuleDefinition"
+    post:
+      operationId: createRule
+      summary: Create a new rule definition
+      tags:
+        - Base Rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: A rule with this id already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /rules/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getRule
+      summary: Get a rule definition by id
+      tags:
+        - Base Rule
+      responses:
+        "200":
+          description: The rule definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateRule
+      summary: Update an existing rule definition
+      tags:
+        - Base Rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteRule
+      summary: Delete a rule definition
+      tags:
+        - Base Rule
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Rule is extended by another rule and cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /rules/import:
+    post:
+      operationId: importRules
+      summary: Bulk-import rule definitions from a PPCL YAML file
+      tags:
+        - Base Rule
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: >-
+            Import outcome. All-or-nothing: if any entry fails validation (duplicate id,
+            unknown or cyclic 'extends' reference), nothing in the file is persisted and
+            the full list of problems is returned in errors.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /rules/export:
+    get:
+      operationId: exportRules
+      summary: Export rule definitions as a PPCL YAML file
+      tags:
+        - Base Rule
+      parameters:
+        - name: context
+          in: query
+          description: Limit the export to rules for a single entity type.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: YAML file
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+                format: binary
+
+  /rules/evaluate:
+    post:
+      operationId: evaluateObject
+      summary: Evaluate rules against a JSON object
+      tags:
+        - Base Rule
+      description: >-
+        Evaluates the enabled rules that match the given context against the supplied
+        entity payload and returns the aggregated outcome. `passed` is false when at
+        least one rule of severity ERROR is violated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationRequest"
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+components:
+  responses:
+    NotFound:
+      description: Rule not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+
+  schemas:
+    Severity:
+      type: string
+      enum: [ ERROR, WARNING, INFO ]
+
+    RuleDefinitionInput:
+      type: object
+      required: [ id, name, context, expression, severity ]
+      properties:
+        id:
+          type: string
+          example: positive-quantities
+        name:
+          type: string
+        description:
+          type: string
+        context:
+          type: string
+          description: The entity type this rule applies to.
+          example: Order
+        expression:
+          type: string
+          description: PPCL expression — a JS boolean expression evaluated against `entity`.
+        severity:
+          $ref: "#/components/schemas/Severity"
+        extendsRuleId:
+          type: string
+          nullable: true
+          description: Id of the rule this one extends/overrides, if any.
+        override:
+          type: boolean
+          default: false
+        enabled:
+          type: boolean
+          default: true
+
+    RuleDefinition:
+      allOf:
+        - $ref: "#/components/schemas/RuleDefinitionInput"
+        - type: object
+          properties:
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    EvaluationRequest:
+      type: object
+      required: [ context, entity ]
+      properties:
+        context:
+          type: string
+          description: The entity type whose rules should be applied.
+          example: Order
+        entity:
+          type: object
+          description: The JSON object evaluated as `entity` by each rule's PPCL expression.
+          additionalProperties: true
+
+    RuleViolation:
+      type: object
+      required: [ ruleId, severity ]
+      properties:
+        ruleId:
+          type: string
+        ruleName:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        message:
+          type: string
+
+    EvaluationResult:
+      type: object
+      required: [ passed, violations ]
+      properties:
+        passed:
+          type: boolean
+          description: True when no rule of severity ERROR was violated.
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleViolation"
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
