@@ -8,7 +8,7 @@ export class TranslocoHttpLoader implements TranslocoLoader {
   private readonly http: HttpClient = inject(HttpClient);
 
   getTranslation(lang: string): Observable<Translation> {
-    const path = `/assets/i18n/${lang}.json`;
+    const path = `assets/i18n/${lang}.json`;
     console.log(`Loading translations from: ${path}`);
     return this.http.get<Translation>(path);
   }
