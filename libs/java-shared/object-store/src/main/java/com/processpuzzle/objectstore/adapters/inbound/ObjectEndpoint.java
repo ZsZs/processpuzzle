@@ -1,6 +1,6 @@
 package com.processpuzzle.objectstore.adapters.inbound;
 
-import com.processpuzzle.objectstore.api.ObjectStoreApi;
+import com.processpuzzle.objectstore.api.DefaultApi;
 import com.processpuzzle.objectstore.model.GetObjectUriByID200Response;
 import com.processpuzzle.objectstore.model.UploadObject201Response;
 import com.processpuzzle.objectstore.usecases.inbound.DeleteObject;
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-public class ObjectEndpoint implements ObjectStoreApi {
+public class ObjectEndpoint implements DefaultApi {
     private final DeleteObject deleteObject;
     private final GetObject getObject;
     private final GetObjectUri getObjectUri;

@@ -38,7 +38,7 @@ springdoc:
     path: /api-docs
 
 base-rule:
-  loadSamples: no
+  loadSamples: yes
 
 minio:
   endpoint: http://localhost:7000
