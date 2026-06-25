@@ -10,6 +10,8 @@ paths:
     post:
       summary: Upload binary data with metadata
       operationId: uploadObject
+      tags:
+        - Object Store
       requestBody:
         required: true
         content:
@@ -57,6 +59,8 @@ paths:
       summary: Retrieve binary data and metadata by ID
       description: Use the object's ID as a path parameter.
       operationId: getObjectByID
+      tags:
+        - Object Store
       parameters:
         - name: bucketName
           in: path
@@ -90,6 +94,8 @@ paths:
     delete:
       summary: Delete a stored binary object by ID
       operationId: deleteObjectByID
+      tags:
+        - Object Store
       parameters:
         - name: bucketName
           in: path
@@ -110,6 +116,8 @@ paths:
     get:
       summary: Get signed, short term URI for downloading the object.
       operationId: getObjectUriByID
+      tags:
+        - Object Store
       parameters:
         - name: bucketName
           in: path

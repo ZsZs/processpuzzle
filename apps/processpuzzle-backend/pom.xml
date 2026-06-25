@@ -14,11 +14,18 @@
     <description>ProcessPuzzle Backend Application</description>
 
     <dependencies>
+        <!-- Module dependencies -->
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>object-store</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-rule-backend</artifactId>
+        </dependency>
+
+        <!-- Spring dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -33,6 +40,13 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
             <version>3.0.2</version>
+        </dependency>
+
+        <!-- Embedded database for development and integration tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
