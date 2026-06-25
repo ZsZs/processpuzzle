@@ -193,7 +193,15 @@
       "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am compile -o)",
       "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend help:effective-pom -o)",
       "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am clean install -DskipTests)",
-      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am test)"
+      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am test)",
+      "Bash(mvn -q -DskipTests=false test -pl .)",
+      "PowerShell(Get-Command mvn -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command mvnw -ErrorAction SilentlyContinue)",
+      "PowerShell($env:Path -split ';' | Where-Object { $_ -match 'maven|apache' }; Get-ChildItem -Path C:\\\\ -Filter 'mvn.cmd' -Recurse -Depth 3 -ErrorAction SilentlyContinue | Select-Object -First 5)",
+      "PowerShell($env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am -DskipITs test -q 2>&1 | Select-Object -Last 80)",
+      "PowerShell($pwd)",
+      "PowerShell($env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1 | Select-Object -Last 100)",
+      "PowerShell(Set-Location \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\"; Get-Location; $env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1 | Select-Object -Last 120)"
     ]
   }
 }

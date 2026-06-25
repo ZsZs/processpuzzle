@@ -37,6 +37,9 @@ springdoc:
   api-docs:
     path: /api-docs
 
+base-rule:
+  loadSamples: no
+
 minio:
   endpoint: http://localhost:7000
   access-key: minioadmin
