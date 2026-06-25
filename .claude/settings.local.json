@@ -182,7 +182,18 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602 --log-failed)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 27871336602)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=82483562805 --log)",
-      "Bash(where.exe mvn *)"
+      "Bash(where.exe mvn *)",
+      "Bash(git fsck *)",
+      "Bash(awk '{print $3}')",
+      "Bash(git ls-tree *)",
+      "Bash(mvn clean *)",
+      "Bash(where mvn *)",
+      "Bash(find / -name \"mvn.cmd\" 2>/dev/null | head -5 && find / -name \"mvn\" -type f 2>/dev/null | head -5)",
+      "Bash(env)",
+      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am compile -o)",
+      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend help:effective-pom -o)",
+      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am clean install -DskipTests)",
+      "Bash(/c/DevEnv/apache-maven-3.9.14/bin/mvn -pl libs/java-shared/base-rule-backend -am test)"
     ]
   }
 }

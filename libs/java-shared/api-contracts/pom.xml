@@ -82,6 +82,26 @@
                             </configOptions>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>generate-rule-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/base-rule-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <apiPackage>com.processpuzzle.rule.api</apiPackage>
+                            <modelPackage>com.processpuzzle.rule.model</modelPackage>
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useTags>true</useTags>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 

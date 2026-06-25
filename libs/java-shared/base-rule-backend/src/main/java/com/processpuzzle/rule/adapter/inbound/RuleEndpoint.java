@@ -1,21 +1,8 @@
 package com.processpuzzle.rule.adapter.inbound;
 
-import com.processpuzzle.rule.api.DefaultApi;
-import com.processpuzzle.rule.model.EvaluationRequest;
-import com.processpuzzle.rule.model.EvaluationResult;
-import com.processpuzzle.rule.model.ImportResult;
-import com.processpuzzle.rule.model.RuleDefinition;
-import com.processpuzzle.rule.model.RuleDefinitionInput;
-import com.processpuzzle.rule.usecase.CreateRule;
-import com.processpuzzle.rule.usecase.DeleteRule;
-import com.processpuzzle.rule.usecase.EvaluateObject;
-import com.processpuzzle.rule.usecase.EvaluationOutcome;
-import com.processpuzzle.rule.usecase.ExportRules;
-import com.processpuzzle.rule.usecase.FindAllRules;
-import com.processpuzzle.rule.usecase.FindRule;
-import com.processpuzzle.rule.usecase.ImportOutcome;
-import com.processpuzzle.rule.usecase.ImportRules;
-import com.processpuzzle.rule.usecase.UpdateRule;
+import com.processpuzzle.rule.api.BaseRuleApi;
+import com.processpuzzle.rule.model.*;
+import com.processpuzzle.rule.usecase.*;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -30,8 +17,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 
 @RestController
-public class RuleEndpoint implements DefaultApi {
-
+public class RuleEndpoint implements BaseRuleApi {
     private final CreateRule createRule;
     private final UpdateRule updateRule;
     private final DeleteRule deleteRule;
