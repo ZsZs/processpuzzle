@@ -1,20 +1,22 @@
 <mat-toolbar color="primary" class="app-header">
   <pp-navigate-back/>
   @if (!layoutService.isSmallDevice()) {
-    <a [routerLink]="['/home']">
-      <img
-        ngSrc="../../../assets/processpuzzle-logo-with-title.jpg"
-        class="app-logo"
-        priority width="75"
-        height="85"
-        (click)="onLogoClick()"
-        (keydown)="onLogoKeyPress($event)"
-        alt="ProcessPuzzle Logo" />
-    </a>
+    @if (!isDesignRoute()) {
+      <a [routerLink]="['/home']">
+        <img
+          ngSrc="../../../assets/processpuzzle-logo-with-title.jpg"
+          class="app-logo"
+          priority width="75"
+          height="85"
+          (click)="onLogoClick()"
+          (keydown)="onLogoKeyPress($event)"
+          alt="ProcessPuzzle Logo" />
+      </a>
+    }
     <button mat-icon-button (click)="sidenavToggle()" class="example-icon" aria-label="Example icon-button with menu icon">
       <mat-icon>menu</mat-icon>
     </button>
-    <span>{{ title }}</span>
+    <span>{{ title() }}</span>
   } @else {
     <ng-container *transloco="let t; prefix: 'navigation'">
       <div>
@@ -31,9 +33,10 @@
         </mat-menu>
       </div>
     </ng-container>
-    <h1>{{ title }}</h1>
+    <h1>{{ title() }}</h1>
   }
   <span class="toolbar-spacer"></span>
+  <pp-design-button/>
   <pp-like-button/>
   <pp-share-button/>
   <pp-language-selector/>

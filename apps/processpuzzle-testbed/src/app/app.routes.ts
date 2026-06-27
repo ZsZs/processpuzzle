@@ -105,6 +105,10 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
   },
   {
+    path: 'design',
+    loadComponent: () => import('@processpuzzle/design').then((comp) => comp.DesignContentComponent),
+  },
+  {
     path: 'entity-registry',
     loadComponent: () => import('@processpuzzle/base-entity').then((comp) => comp.EntityRegistryComponent),
   },

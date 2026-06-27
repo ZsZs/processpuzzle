@@ -45,12 +45,12 @@ public class EvaluateObject {
                 if (!ruleEngine.evaluate(rule.getId(), entity)) {
                     violations.add(new RuleViolation(
                             rule.getId(), rule.getName(), rule.getSeverity(),
-                            messageFor(rule)));
+                            messageFor(rule), rule.getTranslocoId()));
                 }
             } catch (RuntimeException ex) {
                 violations.add(new RuleViolation(
                         rule.getId(), rule.getName(), Severity.ERROR,
-                        "Evaluation failed: " + ex.getMessage()));
+                        "Evaluation failed: " + ex.getMessage(), rule.getTranslocoId()));
             }
         }
 
@@ -59,8 +59,12 @@ public class EvaluateObject {
     }
 
     private static String messageFor(RuleDefinition rule) {
-        return rule.getDescription() != null && !rule.getDescription().isBlank()
-                ? rule.getDescription()
-                : rule.getName();
+        if (rule.getMessage() != null && !rule.getMessage().isBlank()) {
+            return rule.getMessage();
+        }
+        if (rule.getDescription() != null && !rule.getDescription().isBlank()) {
+            return rule.getDescription();
+        }
+        return rule.getName();
     }
 }

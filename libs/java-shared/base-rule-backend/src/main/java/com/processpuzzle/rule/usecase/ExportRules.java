@@ -33,7 +33,8 @@ public class ExportRules {
         List<RuleYamlEntry> entries = rules.stream()
                 .map(r -> new RuleYamlEntry(
                         r.getId(), r.getName(), r.getDescription(), r.getContext(),
-                        r.getExpression(), r.getSeverity().name(), r.getExtendsRuleId(),
+                        r.getExpression(), r.getSeverity().name(),
+                        r.getMessage(), r.getTranslocoId(), r.getExtendsRuleId(),
                         r.isOverride() ? Boolean.TRUE : null,
                         r.isEnabled() ? null : Boolean.FALSE))
                 .toList();

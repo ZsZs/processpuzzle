@@ -1,4 +1,4 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, computed, inject, output } from '@angular/core';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -9,8 +9,9 @@ import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthButtonComponent } from '@processpuzzle/auth';
+import { DesignRouteService } from '@processpuzzle/design';
 import { LayoutService, SubstringPipe } from '@processpuzzle/util';
-import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
+import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',
@@ -29,6 +30,7 @@ import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, 
     MatListItemIcon,
     MatListItemTitle,
     NavigateBackComponent,
+    DesignButtonComponent,
     LikeButtonComponent,
     ShareButtonComponent,
     LanguageSelectorComponent,
@@ -43,8 +45,9 @@ export class HeaderComponent {
   readonly layoutService = inject(LayoutService);
   readonly router = inject(Router);
   readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
-  readonly title = 'ProcessPuzzle Testbed';
   readonly toggleSideNav = output<undefined>();
+  readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
+  readonly title = computed(() => (this.isDesignRoute() ? 'ProcessPuzzle Designer' : 'ProcessPuzzle Testbed'));
 
   // region event handlers
   async onLogoClick() {

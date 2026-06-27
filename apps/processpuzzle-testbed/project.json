@@ -43,6 +43,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/design/src/assets/i18n/design",
+            "output": "assets/i18n/design"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/widgets/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
           },

@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DesignRouteService } from '@processpuzzle/design';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
 
@@ -10,6 +12,8 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
   styleUrls: ['./content.component.scss'],
 })
 export class ContentComponent {
+  readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
+
   readonly cards: CardsGridSpec[] = [
     {
       icon: 'service_toolbox',

@@ -235,6 +235,18 @@ components:
           description: PPCL expression — a JS boolean expression evaluated against `entity`.
         severity:
           $ref: "#/components/schemas/Severity"
+        message:
+          type: string
+          description: >-
+            Human-readable message used when the rule is violated. Surfaced in evaluation
+            results and in exceptions raised by enforcing callers. When absent, callers fall
+            back to description or name.
+        translocoId:
+          type: string
+          description: >-
+            Transloco translation key for the violation message in the UI. The frontend uses
+            this key to look up a localized message; the backend treats it as an opaque
+            identifier.
         extendsRuleId:
           type: string
           nullable: true
@@ -298,6 +310,9 @@ components:
           $ref: "#/components/schemas/Severity"
         message:
           type: string
+        translocoId:
+          type: string
+          description: Transloco translation key the UI can use to localize the message.
 
     EvaluationResult:
       type: object

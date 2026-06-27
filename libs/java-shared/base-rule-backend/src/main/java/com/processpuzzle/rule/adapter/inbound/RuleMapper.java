@@ -25,6 +25,8 @@ public class RuleMapper {
                 input.getContext(),
                 input.getExpression(),
                 toDomainSeverity(input.getSeverity()),
+                input.getMessage(),
+                input.getTranslocoId(),
                 input.getExtendsRuleId(),
                 Boolean.TRUE.equals(input.getOverride()),
                 input.getEnabled() == null || input.getEnabled());
@@ -36,6 +38,8 @@ public class RuleMapper {
         target.setContext(input.getContext());
         target.setExpression(input.getExpression());
         target.setSeverity(toDomainSeverity(input.getSeverity()));
+        target.setMessage(input.getMessage());
+        target.setTranslocoId(input.getTranslocoId());
         target.setExtendsRuleId(input.getExtendsRuleId());
         target.setOverride(Boolean.TRUE.equals(input.getOverride()));
         target.setEnabled(input.getEnabled() == null || input.getEnabled());
@@ -49,6 +53,8 @@ public class RuleMapper {
                 rule.getExpression(),
                 toModelSeverity(rule.getSeverity()));
         model.setDescription(rule.getDescription());
+        model.setMessage(rule.getMessage());
+        model.setTranslocoId(rule.getTranslocoId());
         model.setExtendsRuleId(rule.getExtendsRuleId());
         model.setOverride(rule.isOverride());
         model.setEnabled(rule.isEnabled());
@@ -78,6 +84,7 @@ public class RuleMapper {
                 toModelSeverity(violation.severity()));
         model.setRuleName(violation.ruleName());
         model.setMessage(violation.message());
+        model.setTranslocoId(violation.translocoId());
         return model;
     }
 

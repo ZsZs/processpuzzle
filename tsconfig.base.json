@@ -27,6 +27,7 @@
       "@processpuzzle/base-process-frontend": ["./libs/js-shared/base-process-frontend/src/public-api.ts"],
       "@processpuzzle/base-rule-frontend": ["./libs/js-shared/base-rule-frontend/src/public-api.ts"],
       "@processpuzzle/base-state-frontend": ["./libs/js-shared/base-state-frontend/src/public-api.ts"],
+      "@processpuzzle/design": ["./libs/js-shared/design/src/public-api.ts"],
       "@processpuzzle/test-util": ["./libs/js-shared/test-util/src/public-api.ts"],
       "@processpuzzle/util": ["./libs/js-shared/util/src/public-api.ts"],
       "@processpuzzle/widgets": ["./libs/js-shared/widgets/src/public-api.ts"],

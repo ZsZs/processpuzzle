@@ -117,6 +117,7 @@
       "base-rule-frontend",
       "base-state-backend",
       "base-state-frontend",
+      "design",
       "processpuzzle-testbed",
       "test-util",
       "util",

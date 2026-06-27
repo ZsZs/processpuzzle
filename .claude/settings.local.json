@@ -201,7 +201,31 @@
       "PowerShell($env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am -DskipITs test -q 2>&1 | Select-Object -Last 80)",
       "PowerShell($pwd)",
       "PowerShell($env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1 | Select-Object -Last 100)",
-      "PowerShell(Set-Location \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\"; Get-Location; $env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1 | Select-Object -Last 120)"
+      "PowerShell(Set-Location \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\"; Get-Location; $env:Path = \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin;$env:Path\"; & \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1 | Select-Object -Last 120)",
+      "PowerShell(pnpm nx build base-rule-backend 2>&1)",
+      "PowerShell(npx nx build base-rule-backend 2>&1)",
+      "PowerShell(Get-Command mvn -ErrorAction SilentlyContinue; \\(Get-ChildItem env:JAVA_HOME -ErrorAction SilentlyContinue\\).Value; \\(Get-ChildItem env:M2_HOME -ErrorAction SilentlyContinue\\).Value; \\(Get-ChildItem env:MAVEN_HOME -ErrorAction SilentlyContinue\\).Value)",
+      "PowerShell(& \"c:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/api-contracts -am clean install -DskipTests -q 2>&1)",
+      "PowerShell(& \"c:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am compile -q 2>&1)",
+      "PowerShell(& \"c:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -q 2>&1)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command \"Get-ChildItem -Recurse 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-entity\\\\src\\\\lib' -Filter '*.ts' | Select-Object -ExpandProperty FullName\")",
+      "Bash(\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command \"Get-Content 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-entity\\\\src\\\\public-api.ts' | Select-String -Pattern 'BaseEntity|FormControlType|FlexboxDescriptor|FlexDirection|AbstractAttr|BaseEntityAttr|BaseEntityRest|BaseEntityFacade|BaseEntityContainer|BaseFormHost'\")",
+      "Bash(\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command \"Get-Content 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\tsconfig.base.json' -Raw\")",
+      "Bash(\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command \"Get-Content 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-process-frontend\\\\package.json' -Raw\")",
+      "Bash(\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command \"Get-Content 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-entity\\\\package.json' -Raw | ConvertFrom-Json | Select-Object -ExpandProperty version\")",
+      "PowerShell(pnpm nx lint base-rule-frontend 2>&1)",
+      "PowerShell(pnpm nx show project design --json 2>&1)",
+      "PowerShell(pnpm nx build design 2>&1)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\" -Recurse -Filter \"*like*button*\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\widgets\\\\src\" | Where-Object {$_.PSIsContainer} | Select-Object Name)",
+      "PowerShell(pnpm nx test processpuzzle-testbed -- --run src/app/app.component.spec.ts 2>&1)",
+      "PowerShell(npx nx test processpuzzle-testbed -- --run src/app/app.component.spec.ts 2>&1)",
+      "Bash(xargs grep -l \"design\")",
+      "PowerShell(pnpm nx run js-shared-widgets:lint 2>&1)",
+      "PowerShell(npm exec nx run js-shared-widgets:lint 2>&1)"
     ]
   }
 }

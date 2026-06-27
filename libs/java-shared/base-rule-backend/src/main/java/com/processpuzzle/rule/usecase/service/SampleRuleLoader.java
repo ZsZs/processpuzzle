@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
@@ -16,19 +15,14 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Component
-@ConditionalOnProperty(prefix = "base-rule", name = "loadSamples", havingValue = "yes")
+@ConditionalOnProperty(prefix = "base-rule", name = "loadSamples", havingValue = "true")
 public class SampleRuleLoader {
     private static final Logger LOG = LoggerFactory.getLogger(SampleRuleLoader.class);
     private static final String SAMPLE_RULES_LOCATION = "classpath:sample-rules/*.yaml";
-
     private final ImportRules importRules;
     private final ResourcePatternResolver resourceResolver;
 
-    public SampleRuleLoader(ImportRules importRules) {
-        this(importRules, new PathMatchingResourcePatternResolver());
-    }
-
-    SampleRuleLoader(ImportRules importRules, ResourcePatternResolver resourceResolver) {
+    public SampleRuleLoader(ImportRules importRules, ResourcePatternResolver resourceResolver) {
         this.importRules = importRules;
         this.resourceResolver = resourceResolver;
     }

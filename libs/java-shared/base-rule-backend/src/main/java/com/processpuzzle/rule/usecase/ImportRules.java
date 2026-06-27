@@ -84,7 +84,8 @@ public class ImportRules {
             } else {
                 rule = new RuleDefinition(
                         entry.id(), entry.name(), entry.description(), entry.context(),
-                        entry.expression(), parseSeverity(entry.severity()), entry.extendsRuleId(),
+                        entry.expression(), parseSeverity(entry.severity()),
+                        entry.message(), entry.translocoId(), entry.extendsRuleId(),
                         Boolean.TRUE.equals(entry.override()),
                         entry.enabled() == null || entry.enabled());
                 created++;
@@ -102,6 +103,8 @@ public class ImportRules {
         rule.setContext(entry.context());
         rule.setExpression(entry.expression());
         rule.setSeverity(parseSeverity(entry.severity()));
+        rule.setMessage(entry.message());
+        rule.setTranslocoId(entry.translocoId());
         rule.setExtendsRuleId(entry.extendsRuleId());
         rule.setOverride(Boolean.TRUE.equals(entry.override()));
         rule.setEnabled(entry.enabled() == null || entry.enabled());
