@@ -1,3 +1,4 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from '@processpuzzle/base-entity';
 
 const column_1 = new BaseEntityAttrDescriptor('key', FormControlType.TEXT_BOX, 'Key', undefined, false);

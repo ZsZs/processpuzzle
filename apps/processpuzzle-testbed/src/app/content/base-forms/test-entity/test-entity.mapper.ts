@@ -1,3 +1,4 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
 import { TestEntity, TestEnum } from './test-entity';
 import { inject, Injectable } from '@angular/core';

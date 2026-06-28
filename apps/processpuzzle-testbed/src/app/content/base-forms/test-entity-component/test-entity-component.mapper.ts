@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { TestEntityComponent } from './test-entity-component';
 

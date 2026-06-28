@@ -231,7 +231,10 @@
       "Bash(Get-ChildItem libs/js-shared/design -Recurse -Filter \"*content*\")",
       "Bash(Select-Object -First 20 FullName)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28320664414 --repo ZsZs/processpuzzle --log-failed)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run list --limit 5)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28324176194 --log-failed)",
+      "PowerShell(npx nx run processpuzzle-testbed:lint 2>&1)"
     ]
   }
 }

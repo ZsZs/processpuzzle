@@ -5,6 +5,7 @@ import { SidenavComponent } from './navigation/sidenav/sidenav.component';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { FooterComponent } from './navigation/footer/footer.component';
 import { MatIconRegistry } from '@angular/material/icon';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignRouteService } from '@processpuzzle/design';
 
 @Component({

@@ -8,9 +8,12 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
 import { TranslocoDirective } from '@jsverse/transloco';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AuthButtonComponent } from '@processpuzzle/auth';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignRouteService } from '@processpuzzle/design';
 import { LayoutService, SubstringPipe } from '@processpuzzle/util';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
 
 @Component({

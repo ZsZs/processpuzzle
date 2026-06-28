@@ -1,5 +1,6 @@
 import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { FirestoreDocStore } from './firestore-doc.store';
 import { firestoreDocDescriptors } from './firestore-doc.descriptor';

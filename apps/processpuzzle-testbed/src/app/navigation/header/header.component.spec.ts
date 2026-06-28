@@ -7,6 +7,7 @@ import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { LanguageSelectorComponent, LikeButtonComponent, NavigateBackComponent, ShareButtonComponent } from '@processpuzzle/widgets';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AuthButtonComponent } from '@processpuzzle/auth';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 

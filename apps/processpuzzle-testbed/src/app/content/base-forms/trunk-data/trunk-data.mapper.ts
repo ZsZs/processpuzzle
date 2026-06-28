@@ -1,3 +1,4 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { Injectable } from '@angular/core';
 import { TrunkData } from './trunk-data';

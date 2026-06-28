@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FirestoreDoc } from './firestore-doc';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 
 @Injectable({ providedIn: 'root' })
