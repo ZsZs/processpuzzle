@@ -234,7 +234,14 @@
       "Bash(npm install *)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run list --limit 5)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28324176194 --log-failed)",
-      "PowerShell(npx nx run processpuzzle-testbed:lint 2>&1)"
+      "PowerShell(npx nx run processpuzzle-testbed:lint 2>&1)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28324537209 --log-failed)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28324537209)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 83912190872)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --log-failed --job=83912190872)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases --jq '.[0:5] | .[] | {tag_name, published_at, prerelease}')",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases/tags/v0.11.0 --jq '{name, body}')",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases/tags/v0.10.0 --jq '{name, body}')"
     ]
   }
 }
