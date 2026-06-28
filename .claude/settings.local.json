@@ -227,7 +227,9 @@
       "PowerShell(pnpm nx run js-shared-widgets:lint 2>&1)",
       "PowerShell(npm exec nx run js-shared-widgets:lint 2>&1)",
       "PowerShell(npx nx show project widgets --json 2>&1)",
-      "PowerShell(npx nx show project processpuzzle-testbed-e2e --json 2>$null)"
+      "PowerShell(npx nx show project processpuzzle-testbed-e2e --json 2>$null)",
+      "Bash(Get-ChildItem libs/js-shared/design -Recurse -Filter \"*content*\")",
+      "Bash(Select-Object -First 20 FullName)"
     ]
   }
 }

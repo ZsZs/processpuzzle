@@ -3,7 +3,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
-import { DesignContentComponent } from 'libs/js-shared/design/src/lib/content/design-content.component';
+import { DesignContentComponent } from './design-content.component';
 
 describe('ContentComponent', () => {
   const testConfig: TranslocoTestConfig = { translations: { en: {} } };
