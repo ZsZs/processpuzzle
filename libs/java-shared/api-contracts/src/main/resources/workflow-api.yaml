@@ -1,0 +1,1166 @@
+openapi: 3.1.0
+info:
+  title: ProcessPuzzle Workflow Engine API (base-workflow)
+  description: >-
+    SPEM-inspired workflow definition and execution API. Orchestrates activities, roles,
+    work products and tools across a ProcessPuzzle process instance.
+
+    base-workflow is a pure orchestrator: rule evaluation is delegated to base-rule, state
+    machine transitions to base-state, and entity data shape to base-entity. References to
+    those libraries are by ID only — base-workflow never owns or duplicates their models.
+    Coordination between libraries happens exclusively through the shared event schema
+    defined in base-workflow-events.yaml.
+  version: 0.1.0
+
+servers:
+  - url: /api/workflow
+
+# ─────────────────────────────────────────────────────────────
+# DEFINITION API  (design-time)
+# ─────────────────────────────────────────────────────────────
+paths:
+
+  # ── Process Definitions ───────────────────────────────────
+
+  /processes:
+    get:
+      operationId: listProcessDefinitions
+      summary: List all process definitions
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of process definitions (summary view, no activities/steps)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_ProcessDefinitionSummary"
+
+    post:
+      operationId: createProcessDefinition
+      summary: Create a new process definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /processes/{processId}:
+    parameters:
+      - $ref: "#/components/parameters/ProcessIdParam"
+    get:
+      operationId: getProcessDefinition
+      summary: Get a process definition with all activities, roles, work products and tools
+      responses:
+        "200":
+          description: Full process definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateProcessDefinition
+      summary: Replace a process definition
+      description: >-
+        Only allowed if there are no ACTIVE process instances for this definition.
+        Use version to prevent lost updates (optimistic locking).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteProcessDefinition
+      summary: Delete a process definition
+      description: Only allowed if there are no process instances (active or historic).
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /processes/import:
+    post:
+      operationId: importProcessDefinitions
+      summary: Bulk-import process definitions from a SPEM YAML file
+      description: >-
+        All-or-nothing import: if any entry fails structural validation, nothing in the file
+        is persisted. References to base-rule rule IDs and base-state state machine IDs are
+        recorded as-is and validated lazily at instance start time, not at import time.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /processes/{processId}/export:
+    parameters:
+      - $ref: "#/components/parameters/ProcessIdParam"
+    get:
+      operationId: exportProcessDefinition
+      summary: Export a single process definition as SPEM YAML
+      responses:
+        "200":
+          description: YAML file
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Tool Definitions ──────────────────────────────────────
+
+  /tools:
+    get:
+      operationId: listToolDefinitions
+      summary: List all tool definitions
+      responses:
+        "200":
+          description: Tool definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ToolDefinition"
+
+    post:
+      operationId: createToolDefinition
+      summary: Create a new tool definition (external REST service)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /tools/{toolId}:
+    parameters:
+      - name: toolId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getToolDefinition
+      summary: Get a tool definition
+      responses:
+        "200":
+          description: Tool definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateToolDefinition
+      summary: Update a tool definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteToolDefinition
+      summary: Delete a tool definition
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ─────────────────────────────────────────────────────────────
+  # EXECUTION API  (runtime)
+  # ─────────────────────────────────────────────────────────────
+
+  # ── Process Instances ─────────────────────────────────────
+
+  /instances:
+    get:
+      operationId: listProcessInstances
+      summary: List process instances
+      parameters:
+        - name: processId
+          in: query
+          description: Filter by process definition id
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProcessInstanceStatus"
+        - name: entityId
+          in: query
+          description: >-
+            Filter by the base-entity entity instance this process is running against.
+            Useful when a process is tied to a specific entity (e.g. "delivery process for
+            Order #1234").
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of process instances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_ProcessInstanceSummary"
+
+    post:
+      operationId: startProcessInstance
+      summary: Start a new process instance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartProcessRequest"
+      responses:
+        "201":
+          description: Instance created and first activities activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Process definition not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /instances/{instanceId}:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+    get:
+      operationId: getProcessInstance
+      summary: Get a process instance with its activity and work product instances
+      responses:
+        "200":
+          description: Full process instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessInstance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: cancelProcessInstance
+      summary: Cancel a running process instance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "204":
+          description: Cancelled
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Instance is already completed or cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Activity Instances ────────────────────────────────────
+
+  /instances/{instanceId}/activities:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+    get:
+      operationId: listActivityInstances
+      summary: List all activity instances for a process instance
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ActivityInstanceStatus"
+      responses:
+        "200":
+          description: Activity instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityInstance"
+
+  /instances/{instanceId}/activities/{activityId}:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - name: activityId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getActivityInstance
+      summary: Get a single activity instance
+      responses:
+        "200":
+          description: Activity instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityInstance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /instances/{instanceId}/activities/{activityId}/assign:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - name: activityId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: assignActivity
+      summary: Assign an active activity to a user
+      description: >-
+        The assignee must hold a role that matches the activity's performedBy role
+        definition. Role membership is managed by base-entity; base-workflow validates by
+        calling base-entity's role membership query.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignActivityRequest"
+      responses:
+        "200":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Activity is not in ACTIVE status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /instances/{instanceId}/activities/{activityId}/complete:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - name: activityId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: completeActivity
+      summary: Mark an activity as completed
+      description: >-
+        Triggers evaluation of the activity's postcondition (via base-rule) and, if it
+        passes, publishes ActivityCompletedEvent. base-state will react to that event and
+        fire the corresponding state machine transition on any linked work products.
+        base-workflow will then re-evaluate which activities become ACTIVE next.
+        If the postcondition fails, the activity stays ACTIVE and the response includes
+        the evaluation detail.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteActivityRequest"
+      responses:
+        "200":
+          description: Completion accepted (postcondition passed) or rejected (postcondition failed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteActivityResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Activity is not in ACTIVE status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /instances/{instanceId}/activities/{activityId}/skip:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - name: activityId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: skipActivity
+      summary: Skip an activity (manager override)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Skipped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityInstance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Work Product Instances ────────────────────────────────
+
+  /instances/{instanceId}/work-products:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+    get:
+      operationId: listWorkProductInstances
+      summary: >-
+        List work product instances in a process instance. Each entry carries the
+        current state from base-state (read-only from base-workflow's perspective)
+        and the entityId linking to the actual data in base-entity.
+      responses:
+        "200":
+          description: Work product instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkProductInstance"
+
+  /instances/{instanceId}/work-products/{workProductId}:
+    parameters:
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - name: workProductId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getWorkProductInstance
+      summary: Get a single work product instance
+      responses:
+        "200":
+          description: Work product instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkProductInstance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ─────────────────────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+    ProcessIdParam:
+      name: processId
+      in: path
+      required: true
+      schema:
+        type: string
+    InstanceIdParam:
+      name: instanceId
+      in: path
+      required: true
+      schema:
+        type: string
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Conflict:
+      description: Conflict (duplicate id, active instances prevent mutation, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+
+  schemas:
+
+    # ── Enums ──────────────────────────────────────────────
+
+    ProcessInstanceStatus:
+      type: string
+      enum: [ ACTIVE, COMPLETED, CANCELLED, SUSPENDED ]
+
+    ActivityInstanceStatus:
+      type: string
+      enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED ]
+
+    WorkProductType:
+      type: string
+      enum: [ ARTIFACT, DELIVERABLE, OUTCOME, ENTITY ]
+
+    AuthType:
+      type: string
+      enum: [ NONE, BEARER_TOKEN, BASIC, API_KEY ]
+
+    HttpMethod:
+      type: string
+      enum: [ GET, POST, PUT, PATCH, DELETE ]
+
+    # ── Process Definition ─────────────────────────────────
+
+    ProcessDefinitionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+          format: int64
+        activeInstances:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProcessDefinitionInput:
+      type: object
+      required: [ id, name, activities ]
+      properties:
+        id:
+          type: string
+          example: software-delivery
+        name:
+          type: string
+        description:
+          type: string
+        extends:
+          type: string
+          nullable: true
+          description: >-
+            ID of a parent ProcessDefinition to inherit roles, work products and activities
+            from. Follows the same extends/override convention as base-rule.
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleDefinitionInput"
+        workProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkProductDefinitionInput"
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDefinitionInput"
+        tools:
+          type: array
+          description: >-
+            References to ToolDefinitions used by activities in this process. Defined
+            separately via /tools so they can be shared across process definitions.
+          items:
+            type: string
+            description: Tool definition id
+
+    ProcessDefinition:
+      allOf:
+        - $ref: "#/components/schemas/ProcessDefinitionInput"
+        - type: object
+          properties:
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    # ── Role Definition ────────────────────────────────────
+
+    RoleDefinitionInput:
+      type: object
+      required: [ id, name ]
+      properties:
+        id:
+          type: string
+          example: developer
+        name:
+          type: string
+        description:
+          type: string
+        entityRoleId:
+          type: string
+          nullable: true
+          description: >-
+            ID of the corresponding role definition in base-entity. When set,
+            base-workflow validates that a user holds this entity role before
+            allowing them to be assigned to activities that require this role.
+
+    # ── Work Product Definition ────────────────────────────
+
+    WorkProductDefinitionInput:
+      type: object
+      required: [ id, name, type ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/WorkProductType"
+        entityTypeId:
+          type: string
+          nullable: true
+          description: >-
+            ID of the entity type in base-entity that backs this work product's data.
+            base-workflow uses this to link a WorkProductInstance to its entity instance.
+        stateMachineId:
+          type: string
+          nullable: true
+          description: >-
+            ID of the state machine definition in base-state that governs this work
+            product's lifecycle. base-workflow passes this ID when publishing
+            WorkProductInstanceCreatedEvent so base-state can initialize the right machine.
+
+    # ── Activity Definition ────────────────────────────────
+
+    ActivityDefinitionInput:
+      type: object
+      required: [ id, name, performedBy ]
+      properties:
+        id:
+          type: string
+          example: write-spec
+        name:
+          type: string
+        description:
+          type: string
+        performedBy:
+          type: string
+          description: Role definition id
+        inputs:
+          type: array
+          description: Work product definition ids this activity reads
+          items:
+            type: string
+        outputs:
+          type: array
+          description: Work product definition ids this activity produces or modifies
+          items:
+            type: string
+        preconditionRuleId:
+          type: string
+          nullable: true
+          description: >-
+            ID of a rule in base-rule. Evaluated when this activity is a candidate to
+            become ACTIVE. If it returns false, the activity stays PENDING.
+        postconditionRuleId:
+          type: string
+          nullable: true
+          description: >-
+            ID of a rule in base-rule. Evaluated when a user calls /complete. If it
+            returns false, completion is rejected and the activity stays ACTIVE.
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepDefinitionInput"
+        dependsOn:
+          type: array
+          description: >-
+            Activity definition ids that must be COMPLETED before this activity can
+            become ACTIVE. Empty means the activity is eligible from process start.
+          items:
+            type: string
+        parallel:
+          type: boolean
+          default: false
+          description: >-
+            When true, this activity can run concurrently with its siblings that share
+            the same dependsOn. When false (default), activities within the same
+            dependency level run sequentially in definition order.
+        override:
+          type: boolean
+          default: false
+          description: >-
+            When this ProcessDefinition extends another, marks this activity as replacing
+            an identically-named activity from the parent rather than adding to it.
+
+    # ── Step Definition ────────────────────────────────────
+
+    StepDefinitionInput:
+      type: object
+      required: [ id, name ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        toolId:
+          type: string
+          nullable: true
+          description: >-
+            Tool definition id. When set, completing this step triggers a REST call
+            to the tool's specified operation. The call is made by base-workflow;
+            the result is made available to subsequent steps via the process context.
+        toolOperation:
+          type: string
+          nullable: true
+          description: Operation id within the referenced tool definition.
+        inputMapping:
+          type: object
+          nullable: true
+          description: >-
+            Maps fields from the process context / work product instances to tool
+            operation input parameters. Keys are tool parameter names, values are
+            PPCL expressions evaluated against the process context.
+          additionalProperties:
+            type: string
+        outputMapping:
+          type: object
+          nullable: true
+          description: >-
+            Maps tool response fields back into the process context. Keys are context
+            variable names, values are JSONPath expressions into the tool response.
+          additionalProperties:
+            type: string
+
+    # ── Tool Definition ────────────────────────────────────
+
+    ToolDefinitionInput:
+      type: object
+      required: [ id, name, baseUrl ]
+      properties:
+        id:
+          type: string
+          example: jira
+        name:
+          type: string
+        description:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        auth:
+          $ref: "#/components/schemas/ToolAuthConfig"
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolOperationInput"
+
+    ToolDefinition:
+      allOf:
+        - $ref: "#/components/schemas/ToolDefinitionInput"
+        - type: object
+          properties:
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+
+    ToolAuthConfig:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          $ref: "#/components/schemas/AuthType"
+        secretRef:
+          type: string
+          nullable: true
+          description: >-
+            Key name of the secret in the application's secret store (environment
+            variable name or Vault path). base-workflow never stores credential values
+            directly — only the reference.
+
+    ToolOperationInput:
+      type: object
+      required: [ id, method, path ]
+      properties:
+        id:
+          type: string
+          example: create-issue
+        method:
+          $ref: "#/components/schemas/HttpMethod"
+        path:
+          type: string
+          example: /rest/api/3/issue
+        description:
+          type: string
+        payloadTemplate:
+          type: string
+          nullable: true
+          description: >-
+            JSON template for the request body. Supports ${expression} placeholders
+            evaluated as PPCL expressions against the current process context.
+        expectedStatusCodes:
+          type: array
+          items:
+            type: integer
+          description: HTTP status codes treated as successful. Defaults to [200, 201, 204].
+
+    # ── Process Instance (runtime) ─────────────────────────
+
+    StartProcessRequest:
+      type: object
+      required: [ processDefinitionId ]
+      properties:
+        processDefinitionId:
+          type: string
+        entityId:
+          type: string
+          nullable: true
+          description: >-
+            Optional base-entity entity instance this process runs against. When set,
+            it is passed as context to rule evaluation and state machine triggers.
+        context:
+          type: object
+          nullable: true
+          description: >-
+            Initial key/value context variables available to rule guards, postcondition
+            expressions, and tool payload templates throughout the process instance.
+          additionalProperties: true
+
+    ProcessInstanceSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        processDefinitionId:
+          type: string
+        processDefinitionName:
+          type: string
+        status:
+          $ref: "#/components/schemas/ProcessInstanceStatus"
+        entityId:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProcessInstance:
+      allOf:
+        - $ref: "#/components/schemas/ProcessInstanceSummary"
+        - type: object
+          properties:
+            activities:
+              type: array
+              items:
+                $ref: "#/components/schemas/ActivityInstance"
+            workProducts:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkProductInstance"
+            context:
+              type: object
+              description: Current process context, updated by tool output mappings
+              additionalProperties: true
+
+    # ── Activity Instance (runtime) ────────────────────────
+
+    ActivityInstance:
+      type: object
+      properties:
+        id:
+          type: string
+        activityDefinitionId:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ActivityInstanceStatus"
+        assignedTo:
+          type: string
+          nullable: true
+          description: User id (from base-entity)
+        blockedReason:
+          type: string
+          nullable: true
+          description: >-
+            Set when status is BLOCKED — contains the result detail from the
+            precondition rule evaluation that prevented activation.
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        skippedAt:
+          type: string
+          format: date-time
+          nullable: true
+        stepResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepResult"
+
+    StepResult:
+      type: object
+      properties:
+        stepId:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        toolResponse:
+          type: object
+          nullable: true
+          description: Raw response body from the tool call, if this step invoked a tool.
+          additionalProperties: true
+        error:
+          type: string
+          nullable: true
+
+    AssignActivityRequest:
+      type: object
+      required: [ userId ]
+      properties:
+        userId:
+          type: string
+
+    CompleteActivityRequest:
+      type: object
+      properties:
+        context:
+          type: object
+          description: >-
+            Additional context variables to merge into the process context before
+            evaluating the postcondition. Useful for passing output values from
+            the user's actions (e.g. reviewScore, approval decision).
+          additionalProperties: true
+
+    CompleteActivityResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+          description: True if postcondition passed and the activity moved to COMPLETED.
+        activity:
+          $ref: "#/components/schemas/ActivityInstance"
+        postconditionDetail:
+          type: string
+          nullable: true
+          description: >-
+            Human-readable detail from the postcondition evaluation. Present when
+            accepted is false — tells the user what condition wasn't met yet.
+
+    # ── Work Product Instance (runtime) ───────────────────
+
+    WorkProductInstance:
+      type: object
+      properties:
+        id:
+          type: string
+        workProductDefinitionId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/WorkProductType"
+        entityId:
+          type: string
+          nullable: true
+          description: ID of the actual entity instance in base-entity.
+        stateMachineInstanceId:
+          type: string
+          nullable: true
+          description: >-
+            ID of the state machine instance in base-state. Clients that need the
+            current state or full state history should query base-state's API directly
+            using this ID. base-workflow only stores the reference.
+        currentState:
+          type: string
+          nullable: true
+          description: >-
+            Cached current state name from base-state, refreshed when
+            EntityStateChangedEvent is received. Provided here as a convenience so
+            clients don't need to query base-state just to render a process overview.
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Import Result ──────────────────────────────────────
+
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    # ── Paging ─────────────────────────────────────────────
+
+    PageOf_ProcessDefinitionSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessDefinitionSummary"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    PageOf_ProcessInstanceSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessInstanceSummary"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    # ── Error ──────────────────────────────────────────────
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+          nullable: true
