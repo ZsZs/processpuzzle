@@ -229,7 +229,9 @@
       "PowerShell(npx nx show project widgets --json 2>&1)",
       "PowerShell(npx nx show project processpuzzle-testbed-e2e --json 2>$null)",
       "Bash(Get-ChildItem libs/js-shared/design -Recurse -Filter \"*content*\")",
-      "Bash(Select-Object -First 20 FullName)"
+      "Bash(Select-Object -First 20 FullName)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28320664414 --repo ZsZs/processpuzzle --log-failed)",
+      "Bash(npm install *)"
     ]
   }
 }

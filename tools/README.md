@@ -16,10 +16,53 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 Two compose files at `tools/docker/`:
 
-- **`docker-compose-ci.yaml`** — full local CI stack: testbed, Spring backend, Keycloak (+ Postgres), MinIO, Firebase emulators, json-server. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
+- **`docker-compose-ci.yaml`** — full local CI stack: testbed, Spring backend, Keycloak (+ Postgres), MinIO, Firebase emulators, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
 - **`docker-compose-prod.yaml`** — slim image pull definition for the registry images. Used to smoke-test a published image, not to build.
 
 Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/init-db.sql`, `firebase/serve.sh`).
+
+### Services in the CI stack
+
+| Service | Container | Image | Host port → container | Purpose |
+| --- | --- | --- | --- | --- |
+| `processpuzzle-testbed` | `processpuzzle-testbed` | `zsuffazs/processpuzzle-testbed` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
+| `processpuzzle-backend` | `processpuzzle-backend` | `zsuffazs/processpuzzle-backend` | `8080 → 8080` | Spring Boot backend; talks to MinIO for object storage. |
+| `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider for the testbed. Stores realm data in Postgres. |
+| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak; volume `postgres_data`. |
+| `pgweb` | `testbed-pgweb` | `zsuffazs/testbed-pgweb` | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. |
+| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by the backend; volume `minio-data`. |
+| `firebase` | `testbed-firebase` | `zsuffazs/testbed-firebase` | `4000` UI, `4400` hub, `4600` logging, `5001` functions, `8081` firestore, `8085` pubsub, `9099` auth, `9199` storage | Firebase emulator suite + local Functions; seeded from `tools/firebase/data`. |
+| `json-server` | `json-server` | `zsuffazs/json-server` | `3000 → 3000` | REST mock for entities not yet implemented in the backend; seeded from `tools/mock-backend/db.json`. |
+
+> **Port note.** Firestore emulator owns host port `8081`. pgweb is published on host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`).
+
+### Service dependency diagram
+
+Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime.
+
+```mermaid
+graph TD
+    testbed[processpuzzle-testbed<br/>host :9090]
+    backend[processpuzzle-backend<br/>host :8080]
+    keycloak[keycloak<br/>host :7070]
+    postgres[(postgres<br/>host :5432)]
+    pgweb[pgweb<br/>host :8082]
+    minio[(minio<br/>host :7000 / :7001)]
+    firebase[firebase emulators<br/>host :4000/:5001/:8081/:9099/...]
+    jsonserver[json-server<br/>host :3000]
+
+    testbed -- REST --> backend
+    testbed -- OIDC --> keycloak
+    testbed -- REST --> jsonserver
+    testbed -- SDK --> firebase
+
+    backend -- S3 --> minio
+    keycloak -- JDBC --> postgres
+    pgweb -- read-only --> postgres
+
+    classDef store fill:#eef,stroke:#446
+    class postgres,minio store
+```
 
 ## How pipeline stages work
 
