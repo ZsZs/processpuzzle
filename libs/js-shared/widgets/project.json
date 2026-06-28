@@ -2,7 +2,6 @@
   "name": "widgets",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "root": "libs/js-shared/widgets",
   "sourceRoot": "libs/js-shared/widgets/src",
   "prefix": "pp",
   "tags": ["scope:shared", "type:widgets"],
@@ -11,6 +10,7 @@
       "executor": "@nx/angular:package",
       "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "defaultConfiguration": "production",
       "options": {
         "project": "libs/js-shared/widgets/ng-package.json",
         "tsConfig": "libs/js-shared/widgets/tsconfig.lib.json"
@@ -22,8 +22,7 @@
         "development": {
           "tsConfig": "libs/js-shared/widgets/tsconfig.lib.json"
         }
-      },
-      "defaultConfiguration": "production"
+      }
     },
     "test": {
       "executor": "@nx/angular:unit-test",
@@ -44,21 +43,26 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/js-shared/widgets/**/*.ts", "libs/js-shared/widgets/**/*.spec.ts"]
-      },
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.js",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ],
       "configurations": {
         "ci": {
           "format": "json",
-          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+          "output-file": "reports/eslint/eslint.json"
         },
         "dev": {
           "format": "html",
-          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+          "output-file": "reports/eslint/eslint.html"
         }
-      }
+      },
+      "outputs": ["{projectRoot}/reports/eslint/eslint.json", "{projectRoot}/reports/eslint/eslint.html", "{options.outputFile}"]
     },
     "nx-release-publish": {
       "options": {

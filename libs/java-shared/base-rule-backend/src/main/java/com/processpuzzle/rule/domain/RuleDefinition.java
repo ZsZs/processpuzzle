@@ -39,6 +39,12 @@ public class RuleDefinition {
     @Column(nullable = false, length = 20)
     private Severity severity = Severity.ERROR;
 
+    @Column(length = 1000)
+    private String message;
+
+    @Column(name = "transloco_id", length = 200)
+    private String translocoId;
+
     @Column(name = "extends_rule_id", length = 100)
     private String extendsRuleId;
 
@@ -62,7 +68,8 @@ public class RuleDefinition {
     }
 
     public RuleDefinition(String id, String name, String description, String context,
-                           String expression, Severity severity, String extendsRuleId,
+                           String expression, Severity severity, String message,
+                           String translocoId, String extendsRuleId,
                            boolean override, boolean enabled) {
         this.id = id;
         this.name = name;
@@ -70,6 +77,8 @@ public class RuleDefinition {
         this.context = context;
         this.expression = expression;
         this.severity = severity;
+        this.message = message;
+        this.translocoId = translocoId;
         this.extendsRuleId = extendsRuleId;
         this.override = override;
         this.enabled = enabled;
@@ -129,6 +138,22 @@ public class RuleDefinition {
 
     public void setSeverity(Severity severity) {
         this.severity = severity;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getTranslocoId() {
+        return translocoId;
+    }
+
+    public void setTranslocoId(String translocoId) {
+        this.translocoId = translocoId;
     }
 
     public String getExtendsRuleId() {

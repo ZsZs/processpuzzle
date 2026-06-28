@@ -23,7 +23,7 @@
       "inputs": ["production", "^production"],
       "options": {}
     },
-    "@nx/eslint:lint": {
+    "lint": {
       "cache": true,
       "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/.eslintignore", "{workspaceRoot}/eslint.config.js"]
     },
@@ -105,7 +105,25 @@
     }
   ],
   "release": {
-    "projects": ["api-contracts", "auth", "base-entity", "processpuzzle-testbed", "test-util", "util", "widgets", "e2e-testing"],
+    "projects": [
+      "api-contracts",
+      "auth",
+      "base-desktop-backend",
+      "base-desktop-frontend",
+      "base-entity",
+      "base-process-backend",
+      "base-process-frontend",
+      "base-rule-backend",
+      "base-rule-frontend",
+      "base-state-backend",
+      "base-state-frontend",
+      "design",
+      "processpuzzle-testbed",
+      "test-util",
+      "util",
+      "widgets",
+      "e2e-testing"
+    ],
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npm run build-all-ci",

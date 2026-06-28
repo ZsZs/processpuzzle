@@ -13,6 +13,8 @@ public record RuleYamlEntry(
         String context,
         String expression,
         String severity,
+        String message,
+        String translocoId,
         @JsonProperty("extends") String extendsRuleId,
         Boolean override,
         Boolean enabled

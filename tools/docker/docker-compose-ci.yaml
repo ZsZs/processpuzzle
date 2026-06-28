@@ -159,7 +159,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       PGWEB_DATABASE_URL: postgres://keycloak:password123@postgres:5432/keycloak?sslmode=disable
     command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]

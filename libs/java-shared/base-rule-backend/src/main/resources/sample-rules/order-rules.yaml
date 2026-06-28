@@ -4,6 +4,8 @@ rules:
     context: Order
     severity: ERROR
     expression: "entity.lineItems.every(li => li.quantity > 0)"
+    message: All line item quantities must be greater than zero.
+    translocoId: rule.order.positiveQuantities
 
   - id: total-matches-line-items
     name: Total matches sum of line items
@@ -12,6 +14,8 @@ rules:
     expression: >-
       Math.abs(entity.total - entity.lineItems.reduce((sum, li) => sum + li.unitPrice *
       li.quantity, 0)) < 0.001
+    message: Order total does not match the sum of line item subtotals.
+    translocoId: rule.order.totalMatchesLineItems
 
   - id: shipped-requires-address
     name: Shipped orders require a shipping address
@@ -21,6 +25,8 @@ rules:
     context: Order
     severity: WARNING
     expression: "entity.status !== 'SHIPPED' || entity.shippingAddress != null"
+    message: A shipped order is missing its shipping address.
+    translocoId: rule.order.shippedRequiresAddress
 
   - id: special-order-allows-zero-quantity
     name: Special orders may include zero-quantity placeholder items
@@ -32,3 +38,5 @@ rules:
     override: true
     severity: ERROR
     expression: "entity.lineItems.every(li => li.quantity >= 0)"
+    message: Special order line items must have a non-negative quantity.
+    translocoId: rule.specialOrder.allowsZeroQuantity

@@ -9,6 +9,7 @@
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/processpuzzle-testbed",
         "index": "apps/processpuzzle-testbed/src/index.html",
@@ -40,6 +41,11 @@
             "glob": "**/*",
             "input": "libs/js-shared/base-entity/src/assets/i18n/base-entity",
             "output": "assets/i18n/base-entity"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/js-shared/design/src/assets/i18n/design",
+            "output": "assets/i18n/design"
           },
           {
             "glob": "**/*",
@@ -99,11 +105,14 @@
           "extractLicenses": false,
           "sourceMap": true
         }
-      },
-      "defaultConfiguration": "production"
+      }
     },
     "serve": {
       "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "proxyConfig": "apps/processpuzzle-testbed/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "processpuzzle-testbed:build:production"
@@ -111,10 +120,6 @@
         "development": {
           "buildTarget": "processpuzzle-testbed:build:development"
         }
-      },
-      "defaultConfiguration": "development",
-      "options": {
-        "proxyConfig": "apps/processpuzzle-testbed/proxy.conf.json"
       }
     },
     "extract-i18n": {
@@ -124,21 +129,26 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/js-shared/base-entity/src/**/*.ts", "libs/js-shared/base-entity/src/**/*.spec.ts"]
-      },
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.js",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ],
       "configurations": {
         "ci": {
           "format": "json",
-          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+          "output-file": "reports/eslint/eslint.json"
         },
         "dev": {
           "format": "html",
-          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+          "output-file": "reports/eslint/eslint.html"
         }
-      }
+      },
+      "outputs": ["{projectRoot}/reports/eslint/eslint.json", "{projectRoot}/reports/eslint/eslint.html", "{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/angular:unit-test",
