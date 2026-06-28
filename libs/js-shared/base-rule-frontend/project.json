@@ -2,7 +2,6 @@
   "name": "base-rule-frontend",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "root": "libs/js-shared/base-rule-frontend",
   "sourceRoot": "libs/js-shared/base-rule-frontend/src",
   "prefix": "pp",
   "tags": ["scope:base-rule", "type:domain"],
@@ -11,6 +10,7 @@
       "executor": "@nx/angular:package",
       "dependsOn": ["^build"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "defaultConfiguration": "production",
       "options": {
         "project": "libs/js-shared/base-rule-frontend/ng-package.json"
       },
@@ -21,8 +21,7 @@
         "development": {
           "tsConfig": "libs/js-shared/base-rule-frontend/tsconfig.lib.json"
         }
-      },
-      "defaultConfiguration": "production"
+      }
     },
     "test": {
       "executor": "@nx/angular:unit-test",
@@ -42,21 +41,26 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/js-shared/base-rule-frontend/src/**/*.ts", "libs/js-shared/base-rule-frontend/src/**/*.spec.ts"]
-      },
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.js",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ],
       "configurations": {
         "ci": {
           "format": "json",
-          "outputFile": "{projectRoot}/reports/eslint/eslint.json"
+          "output-file": "reports/eslint/eslint.json"
         },
         "dev": {
           "format": "html",
-          "outputFile": "{workspaceRoot}/reports/eslint/{projectRoot}/eslint.html"
+          "output-file": "reports/eslint/eslint.html"
         }
-      }
+      },
+      "outputs": ["{projectRoot}/reports/eslint/eslint.json", "{projectRoot}/reports/eslint/eslint.html", "{options.outputFile}"]
     },
     "nx-release-publish": {
       "options": {

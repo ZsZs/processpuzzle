@@ -225,7 +225,9 @@
       "PowerShell(npx nx test processpuzzle-testbed -- --run src/app/app.component.spec.ts 2>&1)",
       "Bash(xargs grep -l \"design\")",
       "PowerShell(pnpm nx run js-shared-widgets:lint 2>&1)",
-      "PowerShell(npm exec nx run js-shared-widgets:lint 2>&1)"
+      "PowerShell(npm exec nx run js-shared-widgets:lint 2>&1)",
+      "PowerShell(npx nx show project widgets --json 2>&1)",
+      "PowerShell(npx nx show project processpuzzle-testbed-e2e --json 2>$null)"
     ]
   }
 }
