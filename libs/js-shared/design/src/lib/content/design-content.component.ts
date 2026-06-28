@@ -22,7 +22,7 @@ export class DesignContentComponent {
       title: 'base-entity_card_title',
       subtitle: 'base-entity_card_subtitle',
       content: ['base-entity_card_content', 'base-entity_card_content_1', 'base-entity_card_content_2', 'base-entity_card_content_3'],
-      actions: [{ link: '/base-entity', caption: 'base-entity_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/entities', caption: 'base-entity_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {
@@ -30,7 +30,7 @@ export class DesignContentComponent {
       title: 'base-rule_card_title',
       subtitle: 'base-rule_card_subtitle',
       content: ['base-rule_card_content', 'base-rule_card_content_1', 'base-rule_card_content_2', 'base-rule_card_content_3'],
-      actions: [{ link: '/base-rule', caption: 'base-rule_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/rules', caption: 'base-rule_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {
@@ -38,7 +38,7 @@ export class DesignContentComponent {
       title: 'base-state_card_title',
       subtitle: 'base-state_card_subtitle',
       content: ['base-state_card_content', 'base-state_card_content_1', 'base-state_card_content_2', 'base-state_card_content_3'],
-      actions: [{ link: '/base-state', caption: 'base-state_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/states', caption: 'base-state_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {
@@ -46,7 +46,7 @@ export class DesignContentComponent {
       title: 'base-workflow_card_title',
       subtitle: 'base-workflow_card_subtitle',
       content: ['base-workflow_card_content', 'base-workflow_card_content_1', 'base-workflow_card_content_2', 'base-workflow_card_content_3'],
-      actions: [{ link: '/base-workflow', caption: 'base-workflow_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/workflows', caption: 'base-workflow_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {
@@ -54,7 +54,7 @@ export class DesignContentComponent {
       title: 'base-desktop_card_title',
       subtitle: 'base-desktop_card_subtitle',
       content: ['base-desktop_card_content', 'base-desktop_card_content_1', 'base-desktop_card_content_2', 'base-desktop_card_content_3'],
-      actions: [{ link: '/base-desktop', caption: 'base-desktop_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/desktop', caption: 'base-desktop_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
   ];

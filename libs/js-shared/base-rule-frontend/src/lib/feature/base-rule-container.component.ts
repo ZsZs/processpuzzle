@@ -12,7 +12,7 @@ import { createBaseRuleDescriptor } from '../domain/base-rule.descriptors';
   template: `<base-entity-container [entityDescriptor]="baseEntityDescriptor"></base-entity-container>`,
 })
 export class BaseRuleContainerComponent implements OnDestroy {
-  private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
+  private readonly containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   private readonly store = inject(BaseRuleStore);
   readonly baseEntityDescriptor: BaseEntityDescriptor;
