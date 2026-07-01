@@ -14,6 +14,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   lines?: number;
   options: { inputType: 'text' };
   required = false;
+  referenceIdField?: string = 'id';
   private _label?: string;
   private _linkedEntityType?: string;
 

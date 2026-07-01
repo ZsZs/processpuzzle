@@ -56,12 +56,20 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
 
   components(): PersistedEntity<BaseEntity>[] {
     const value = this.formGroup.get(this.config().attrName)?.value ?? this.value();
-    if (!Array.isArray(value)) {
-      return [];
-    }
+    if (!Array.isArray(value)) return [];
 
-    value.forEach((component) => assertPersistedEntity(component as BaseEntity));
-    return value as PersistedEntity<BaseEntity>[];
+    const idField = this.config().referenceIdField ?? 'id';
+    const normalized = value.map((item) => {
+      if (typeof item === 'string' || typeof item === 'number') {
+        return { id: String(item) };
+      }
+      if (idField !== 'id' && item && typeof item === 'object' && !('id' in item)) {
+        return { ...item, id: String((item as any)[idField] ?? '') };
+      }
+      return item;
+    });
+    normalized.forEach((component) => assertPersistedEntity(component));
+    return normalized;
   }
 
   addComponentTitle(): string {

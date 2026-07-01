@@ -3,7 +3,7 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 const RULE_SOURCES = {
-  orderRules: '../../libs/java-shared/base-rule-backend/src/main/resources/sample-rules/order-rules.yaml',
+  rules: '../../libs/java-shared/base-rule-backend/src/main/resources/sample-rules/order-rules.yaml',
 };
 
 function loadYamlRules(relativePath) {
