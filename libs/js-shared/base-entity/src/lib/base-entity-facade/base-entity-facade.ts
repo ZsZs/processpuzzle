@@ -1,8 +1,10 @@
 import { inject, Injectable, Injector, runInInjectionContext, Type } from '@angular/core';
 import { signalStore } from '@ngrx/signals';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
+import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntityMapper, SimpleEntityMapper } from '../base-entity.mapper';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { BaseEntityRestService } from '../base-entity-service/base-entity-rest.service';
@@ -90,6 +92,7 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
       BaseEntityStore<Entity>(this.entityType, () => this.service),
       BaseEntityTabsStore(),
       BaseEntityContainerStore(),
+      withDevtools(entityNameFromType(this.entityType)),
     );
   }
 

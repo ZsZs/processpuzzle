@@ -241,7 +241,12 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --log-failed --job=83912190872)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases --jq '.[0:5] | .[] | {tag_name, published_at, prerelease}')",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases/tags/v0.11.0 --jq '{name, body}')",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases/tags/v0.10.0 --jq '{name, body}')"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/FirebaseExtended/action-hosting-deploy/releases/tags/v0.10.0 --jq '{name, body}')",
+      "PowerShell(pnpm nx run base-entity:lint 2>&1)",
+      "PowerShell(npx nx run base-entity:lint 2>&1)",
+      "PowerShell(npx nx run-many --target=lint --projects=widgets,base-rule-frontend,processpuzzle-testbed 2>&1)",
+      "PowerShell(npx eslint libs/js-shared/widgets/src/app-property/app-property.store.ts libs/js-shared/base-rule-frontend/src/lib/domain/base-rule.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/trunk-data/trunk-data.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/firestore/firestore-doc.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity-component/test-entity-component.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity/test-entity.store.ts 2>&1)",
+      "PowerShell(npx eslint libs/js-shared/widgets/src/app-property/app-property.store.ts libs/js-shared/base-rule-frontend/src/lib/domain/base-rule.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/trunk-data/trunk-data.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/firestore/firestore-doc.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity-component/test-entity-component.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity/test-entity.store.ts; Write-Output \"EXIT=$LASTEXITCODE\")"
     ]
   }
 }

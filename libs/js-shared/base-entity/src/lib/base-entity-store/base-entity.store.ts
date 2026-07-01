@@ -1,6 +1,5 @@
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { patchState, signalStoreFeature, withComputed, withHooks, withMethods, withState, WritableStateSource } from '@ngrx/signals';
-import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { computed, InjectionToken, Signal } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
@@ -9,7 +8,6 @@ import { deleteEntity } from './deleteEntity';
 import { deleteAllEntities } from './deleteAllEntities';
 import { updateEntity } from './updateEntity';
 import { findByQuery } from './findByQuery';
-import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
 
 export const BASE_ENTITY_STORE = new InjectionToken<unknown>('BASE_ENTITY_STORE');
@@ -79,7 +77,6 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       error: undefined,
       selectedEntities: [],
     }),
-    withDevtools(entityNameFromType(entityType)),
     withMethods((store, repository = getRepository()) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
