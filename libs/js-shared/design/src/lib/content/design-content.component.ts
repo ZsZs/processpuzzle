@@ -30,7 +30,7 @@ export class DesignContentComponent {
       title: 'base-rule_card_title',
       subtitle: 'base-rule_card_subtitle',
       content: ['base-rule_card_content', 'base-rule_card_content_1', 'base-rule_card_content_2', 'base-rule_card_content_3'],
-      actions: [{ link: '/design/rules', caption: 'base-rule_card_button', colour: 'primary' }],
+      actions: [{ link: '/design/base-rule', caption: 'base-rule_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {

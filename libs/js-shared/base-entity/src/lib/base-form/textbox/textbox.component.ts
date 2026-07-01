@@ -11,5 +11,15 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
   standalone: true,
   templateUrl: './textbox.component.html',
   imports: [NgIf, MatFormField, MatInput, MatLabel, FormsModule, ReactiveFormsModule],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+    `,
+  ],
 })
 export class TextboxComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

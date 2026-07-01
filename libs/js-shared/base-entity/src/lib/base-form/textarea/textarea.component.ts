@@ -11,5 +11,15 @@ import { ReactiveFormsModule } from '@angular/forms';
   standalone: true,
   templateUrl: './textarea.component.html',
   imports: [NgIf, NgClass, MatFormField, MatInput, MatLabel, ReactiveFormsModule],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      .full-width {
+        width: 100%;
+      }
+    `,
+  ],
 })
 export class TextareaComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

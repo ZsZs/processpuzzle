@@ -5,7 +5,7 @@
         </ng-container>
         <div 
             [ngClass]="config().styleClass ? config().styleClass : ''"
-            *ngFor="let radio of config().selectables; let i = index">
+            *ngFor="let radio of config().getSelectables(); let i = index">
             <input type="radio"
                 class="form-check-input"
                 [name]="config().attrName"

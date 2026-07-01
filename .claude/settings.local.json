@@ -246,7 +246,17 @@
       "PowerShell(npx nx run base-entity:lint 2>&1)",
       "PowerShell(npx nx run-many --target=lint --projects=widgets,base-rule-frontend,processpuzzle-testbed 2>&1)",
       "PowerShell(npx eslint libs/js-shared/widgets/src/app-property/app-property.store.ts libs/js-shared/base-rule-frontend/src/lib/domain/base-rule.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/trunk-data/trunk-data.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/firestore/firestore-doc.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity-component/test-entity-component.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity/test-entity.store.ts 2>&1)",
-      "PowerShell(npx eslint libs/js-shared/widgets/src/app-property/app-property.store.ts libs/js-shared/base-rule-frontend/src/lib/domain/base-rule.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/trunk-data/trunk-data.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/firestore/firestore-doc.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity-component/test-entity-component.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity/test-entity.store.ts; Write-Output \"EXIT=$LASTEXITCODE\")"
+      "PowerShell(npx eslint libs/js-shared/widgets/src/app-property/app-property.store.ts libs/js-shared/base-rule-frontend/src/lib/domain/base-rule.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/trunk-data/trunk-data.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/firestore/firestore-doc.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity-component/test-entity-component.store.ts apps/processpuzzle-testbed/src/app/content/base-forms/test-entity/test-entity.store.ts; Write-Output \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(pnpm nx lint processpuzzle-testbed 2>&1)",
+      "PowerShell(npm exec nx -- lint processpuzzle-testbed 2>&1)",
+      "Bash(xargs grep -l \"BaseEntityDescriptor\")",
+      "Bash(xargs ls -1)",
+      "Bash(Get-ChildItem -Path . -Name)",
+      "Bash(Find \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-entity\\\\src\\\\lib\\\\base-entity-facade\" -name \"base-entity-facade.ts\" -type f)",
+      "PowerShell(pnpm nx run-many -t lint test --projects=base-entity,base-rule-frontend,e2e-testing --parallel=3 2>&1)",
+      "PowerShell(\\(Get-Command npm\\).Source; \\(Get-Command yarn -ErrorAction SilentlyContinue\\).Source; if \\(Test-Path package-lock.json\\) { \"npm lock\" }; if \\(Test-Path pnpm-lock.yaml\\) { \"pnpm lock\" }; if \\(Test-Path yarn.lock\\) { \"yarn lock\" })",
+      "PowerShell(npm exec -- nx run-many -t lint --projects=base-entity,base-rule-frontend,e2e-testing --parallel=3 2>&1)",
+      "PowerShell(npm exec -- nx run-many -t test --projects=base-entity,base-rule-frontend --parallel=2 2>&1)"
     ]
   }
 }

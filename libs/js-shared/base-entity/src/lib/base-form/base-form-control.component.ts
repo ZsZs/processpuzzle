@@ -40,6 +40,15 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
     return createTestId(entityName, attrName);
   }
 
+  @HostBinding('attr.style')
+  get hostStyle(): string | null {
+    const s = this.config()?.style;
+    if (!s) return null;
+    return Object.entries(s)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(';');
+  }
+
   protected readonly logger = inject(NGXLogger);
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   protected readonly descriptorRegistry = inject(BaseEntityDescriptorRegistry);

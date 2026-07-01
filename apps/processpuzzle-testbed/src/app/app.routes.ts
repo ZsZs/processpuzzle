@@ -106,17 +106,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'design',
-    children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        loadComponent: () => import('@processpuzzle/design').then((comp) => comp.DesignContentComponent),
-      },
-      {
-        path: 'rules',
-        loadComponent: () => import('@processpuzzle/base-rule-frontend').then((comp) => comp.BaseRuleContainerComponent),
-      },
-    ],
+    loadChildren: () => import('@processpuzzle/design').then((m) => m.DESIGN_ROUTES),
   },
   {
     path: 'entity-registry',
