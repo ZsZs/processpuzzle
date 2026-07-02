@@ -5,7 +5,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
-import { MatFormField, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-navigator/base-form-navigator.store';
@@ -16,7 +16,7 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 @Component({
   selector: 'base-entity-toolbar',
   standalone: true,
-  imports: [CommonModule, MatToolbarModule, MatIcon, MatFormField, MatInput, MatButton, MatIconButton, MatSuffix, MatMenu, MatMenuItem, MatMenuTrigger],
+  imports: [CommonModule, MatToolbarModule, MatIcon, MatFormField, MatLabel, MatInput, MatButton, MatIconButton, MatSuffix, MatMenu, MatMenuItem, MatMenuTrigger],
   templateUrl: './base-entity-toolbar.component.html',
 })
 export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements OnInit {

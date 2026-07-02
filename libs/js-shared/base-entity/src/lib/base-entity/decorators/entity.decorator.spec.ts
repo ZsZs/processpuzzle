@@ -89,7 +89,7 @@ describe('Entity Decorator', () => {
       expect(idProperties).toContain('alternateId');
 
       // Verify that the total count is correct (2 properties)
-      expect(idProperties.length).toBe(2);
+      expect(idProperties).toHaveLength(2);
     });
 
     it('should handle multiple ID properties correctly', () => {

@@ -283,7 +283,17 @@
       "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_util&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&impactSoftwareQualities=MAINTAINABILITY&ps=100\" -o /tmp/sonar-util.json)",
       "PowerShell(npm exec -- nx run util:test 2>&1)",
       "PowerShell(npx eslint \"libs/js-shared/util/src/lib/error-handler/central-error-handler.ts\" \"libs/js-shared/util/src/lib/runtime-configuration/configuration.service.ts\" \"libs/js-shared/util/src/lib/logging/provide-logging.service.ts\" \"libs/js-shared/util/src/lib/stack.ts\" \"libs/js-shared/util/src/lib/substring.pipe.ts\" \"libs/js-shared/util/src/lib/substring.pipe.spec.ts\" \"libs/js-shared/util/src/lib/layout-service/layout.service.ts\" \"libs/js-shared/util/src/lib/wildcard-text-matcher.ts\" 2>&1)",
-      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/measures/component_tree?component=processpuzzle_util&metricKeys=new_coverage,new_lines_to_cover,new_uncovered_lines,coverage,uncovered_lines,lines_to_cover&s=metric&metricSort=new_coverage&asc=true&ps=100&qualifiers=FIL\" -o /tmp/sonar-util-cov.json)"
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/measures/component_tree?component=processpuzzle_util&metricKeys=new_coverage,new_lines_to_cover,new_uncovered_lines,coverage,uncovered_lines,lines_to_cover&s=metric&metricSort=new_coverage&asc=true&ps=100&qualifiers=FIL\" -o /tmp/sonar-util-cov.json)",
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/measures/component_tree?component=processpuzzle_base_entity&pullRequest=414&metricKeys=new_coverage,new_lines_to_cover,new_uncovered_lines&s=metric&metricSort=new_uncovered_lines&asc=false&ps=100&qualifiers=FIL\" -o /tmp/sonar-be-cov.json)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const d=JSON.parse\\(fs.readFileSync\\('C:/Users/zsolt/AppData/Local/Temp/sonar-be-cov.json','utf8'\\)\\); const rows=d.components.map\\(c=>{const m={};c.measures.forEach\\(x=>m[x.metric]=x.periods?x.periods[0].value:x.value\\);return {path:c.path,ntc:+\\(m.new_lines_to_cover||0\\),nul:+\\(m.new_uncovered_lines||0\\),cov:m.new_coverage}}\\).filter\\(r=>r.ntc>0||r.nul>0\\); rows.sort\\(\\(a,b\\)=>b.nul-a.nul\\); rows.forEach\\(r=>console.log\\(String\\(r.nul\\).padStart\\(4\\),'/',String\\(r.ntc\\).padStart\\(4\\),' ',\\(r.cov?r.cov.slice\\(0,5\\):'-'\\).padStart\\(5\\),'% ',r.path\\)\\);\")",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr view 414 --repo processpuzzle/processpuzzle --json headRefName,title,state)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" repo view --json nameWithOwner)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr view 414 --json headRefName,title,state,baseRefName)",
+      "Bash(awk '/^end_of_record/{exit} /^DA:/{split\\($0,a,\",\"\\); split\\(a[1],b,\":\"\\); if\\(a[2]==\"0\"\\) print \"  L\"b[2]\" uncovered\"}')",
+      "Bash(grep -A 300 'SF:.*[/\\\\\\\\]__TRACKED_VAR__$' libs/js-shared/base-entity/reports/coverage/lcov.info)",
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_base_entity&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&ps=100\" -o /tmp/sonar-be.json)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const d=JSON.parse\\(fs.readFileSync\\('C:/Users/zsolt/AppData/Local/Temp/sonar-be.json','utf8'\\)\\); console.log\\('Total:',d.total\\); d.issues.forEach\\(i=>console.log\\(i.rule+' | '+i.severity+' | '+i.component.replace\\('processpuzzle_base_entity:',''\\)+':'+\\(i.line||'?'\\)+' | '+i.message\\)\\)\")",
+      "PowerShell(npm exec -- nx run base-entity:test 2>&1)"
     ]
   }
 }

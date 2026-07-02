@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
@@ -10,7 +9,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
   selector: 'base-textbox',
   standalone: true,
   templateUrl: './textbox.component.html',
-  imports: [NgIf, MatFormField, MatInput, MatLabel, FormsModule, ReactiveFormsModule],
+  imports: [MatFormField, MatInput, MatLabel, FormsModule, ReactiveFormsModule],
   styles: [
     `
       :host {

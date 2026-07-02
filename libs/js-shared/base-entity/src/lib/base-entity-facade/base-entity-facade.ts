@@ -31,19 +31,23 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   private _descriptor?: BaseEntityDescriptor;
 
   get mapper(): BaseEntityMapper<Entity> {
-    return (this._mapper ??= this.createMapper());
+    this._mapper ??= this.createMapper();
+    return this._mapper;
   }
 
   get service(): BaseEntityService<Entity> {
-    return (this._service ??= this.createService(this.mapper));
+    this._service ??= this.createService(this.mapper);
+    return this._service;
   }
 
   get storeClass(): Type<unknown> {
-    return (this._storeClass ??= this.createStoreClass());
+    this._storeClass ??= this.createStoreClass();
+    return this._storeClass;
   }
 
   get store(): unknown {
-    return (this._storeInstance ??= runInInjectionContext(this.injector, () => inject(this.storeClass)));
+    this._storeInstance ??= runInInjectionContext(this.injector, () => inject(this.storeClass));
+    return this._storeInstance;
   }
 
   get descriptor(): BaseEntityDescriptor {

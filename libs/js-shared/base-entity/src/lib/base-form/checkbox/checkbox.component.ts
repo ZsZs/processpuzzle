@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -10,6 +10,6 @@ import { BaseEntity } from '../../base-entity/base-entity';
   standalone: true,
   templateUrl: './checkbox.component.html',
   styleUrls: ['./checkbox.component.css'],
-  imports: [NgClass, NgIf, MatCheckbox, FormsModule, ReactiveFormsModule],
+  imports: [NgClass, MatCheckbox, FormsModule, ReactiveFormsModule],
 })
 export class CheckboxComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

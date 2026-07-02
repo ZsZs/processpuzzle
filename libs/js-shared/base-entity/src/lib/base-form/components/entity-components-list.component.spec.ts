@@ -70,6 +70,22 @@ describe('EntityComponentsListComponent', () => {
 
       expect(() => component.components()).toThrow('Persisted entity must have an id');
     });
+
+    it('normalises primitive ids into { id } objects', async () => {
+      const { component } = await setupList(makeConfig(), []);
+      component.formGroup.get('components')?.setValue(['a', 7]);
+
+      expect(component.components()).toEqual([{ id: 'a' }, { id: '7' }]);
+    });
+
+    it('promotes the configured referenceIdField to id when items lack one', async () => {
+      const config = makeConfig();
+      config.referenceIdField = 'code';
+      const { component } = await setupList(config, []);
+      component.formGroup.get('components')?.setValue([{ code: 'X-1', label: 'first' }]);
+
+      expect(component.components()).toEqual([{ code: 'X-1', label: 'first', id: 'X-1' }]);
+    });
   });
 
   describe('componentNameAttr()', () => {

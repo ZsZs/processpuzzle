@@ -12,8 +12,8 @@ describe('filterAttributeDescriptors()', () => {
   const column2 = new FlexboxDescriptor([row3], FlexDirection.COLUMN);
 
   it('should filter out ControlLayoutDescriptors', () => {
-    expect(filterAttributeDescriptors([row1, row2]).length).toBe(4);
-    expect(filterAttributeDescriptors([column1, column2]).length).toBe(6);
+    expect(filterAttributeDescriptors([row1, row2])).toHaveLength(4);
+    expect(filterAttributeDescriptors([column1, column2])).toHaveLength(6);
   });
 
   it('return attributes in order', () => {

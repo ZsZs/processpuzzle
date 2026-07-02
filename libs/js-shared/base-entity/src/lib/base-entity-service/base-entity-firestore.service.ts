@@ -71,9 +71,9 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
     let orderBys: QueryOrderByConstraint[] = [];
     if (queryCondition.orderBys?.length) {
       orderBys = queryCondition.orderBys.map((orderByCondition) => {
-        const name = Object.keys(OrderByDirection).filter((key) => key === orderByCondition.direction);
-        const direction = Object.values(OrderByDirection).filter((value) => value === name[0]);
-        return orderBy(orderByCondition.property, direction[0]);
+        const name = Object.keys(OrderByDirection).find((key) => key === orderByCondition.direction);
+        const direction = Object.values(OrderByDirection).find((value) => value === name);
+        return orderBy(orderByCondition.property, direction);
       });
     }
 
@@ -124,7 +124,7 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
     const docRef = doc(this.firestore, this.collectionName, entity.id);
     await updateDoc(docRef, this.mapEntity(entity));
 
-    return Promise.resolve(entity);
+    return entity;
   }
 
   // endregion

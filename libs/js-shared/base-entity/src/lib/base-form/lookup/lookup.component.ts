@@ -6,7 +6,6 @@ import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field'
 import { MatInput } from '@angular/material/input';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { LookupTable } from './lookup-table';
-import { NgIf } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
@@ -21,7 +20,7 @@ interface LookupStore {
   selector: 'lookup-control',
   standalone: true,
   template: `
-    <ng-container *ngIf="config().visible">
+    @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
           <mat-label>{{ config().label }}</mat-label>
@@ -42,9 +41,9 @@ interface LookupStore {
         </mat-form-field>
         <input type="hidden" [formControlName]="config().attrName" />
       </div>
-    </ng-container>
+    }
   `,
-  imports: [NgIf, ReactiveFormsModule, MatLabel, MatFormField, MatInput, MatAutocompleteModule, MatIconButton, MatIcon, MatSuffix],
+  imports: [ReactiveFormsModule, MatLabel, MatFormField, MatInput, MatAutocompleteModule, MatIconButton, MatIcon, MatSuffix],
 })
 export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   readonly displayControl = new FormControl<string>('', { nonNullable: true });
@@ -93,7 +92,8 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
   }
 
   selectLookupItem(selectedValue: unknown): void {
-    this.setLookupKey(String(selectedValue ?? ''));
+    const key = selectedValue == null || typeof selectedValue === 'object' ? '' : String(selectedValue);
+    this.setLookupKey(key);
     this.restoreSelectedValue();
   }
 

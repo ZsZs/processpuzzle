@@ -37,8 +37,8 @@ export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEnt
     const attrName = this.componentNameAttr().attrName;
     const component = this.component();
     const componentName = attrName ? (component as unknown as Record<string, unknown>)[attrName] : undefined;
-
-    return componentName === undefined || componentName === null ? component.id : String(componentName);
+    if (componentName == null || typeof componentName === 'object') return component.id;
+    return String(componentName);
   }
 
   navigateToRelated(event: Event): void {

@@ -1,7 +1,8 @@
 <mat-toolbar *ngIf="formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE">
   <div class="dense-3" [ngStyle]="{'padding-top': '12px' }">
     <mat-form-field>
-      <input #filterInput [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
+      <mat-label [attr.for]="entityDescriptor().createTestId('filter-input')">Filter</mat-label>
+      <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
       @if (filterInput.value) {
         <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
           <mat-icon>cancel</mat-icon>

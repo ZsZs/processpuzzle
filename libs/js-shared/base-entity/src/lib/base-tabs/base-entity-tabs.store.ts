@@ -20,7 +20,7 @@ export function BaseEntityTabsStore() {
       }
       function tabIsActive(tabName: string): void {
         let activeTabs: Array<string>;
-        if (store.activeTabs().indexOf(tabName) == -1) {
+        if (!store.activeTabs().includes(tabName)) {
           activeTabs = store.activeTabs().concat([tabName]);
         } else {
           activeTabs = store.activeTabs();

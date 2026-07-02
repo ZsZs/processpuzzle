@@ -55,6 +55,14 @@ function setLast(target: Map<string, NavigationPayload>, key: string, payload: N
   target.set(key, payload);
 }
 
+function levelUpUrl(currentUrl: string): string {
+  return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+}
+
+function normalizeUrl(url: string): string {
+  return url.startsWith('/') ? url : '/' + url;
+}
+
 function lastKeyOf(target: Map<string, NavigationPayload>): string | undefined {
   let last: string | undefined;
   for (const key of target.keys()) last = key;
@@ -106,14 +114,6 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     function determineCurrentUrl(): string {
       return Reflect.get(route, '_routerState').snapshot.url;
-    }
-
-    function levelUpUrl(currentUrl: string) {
-      return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-    }
-
-    function normalizeUrl(url: string): string {
-      return url.startsWith('/') ? url : '/' + url;
     }
 
     function isPendingNavigatorUrl(navigationEnd: NavigationEnd): boolean {
