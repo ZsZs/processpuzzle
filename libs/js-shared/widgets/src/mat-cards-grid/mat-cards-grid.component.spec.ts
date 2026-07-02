@@ -66,26 +66,26 @@ describe('MatCardsGridComponent', () => {
 
   it('should render two cards', () => {
     const cards = hostFixture.nativeElement.querySelectorAll('mat-card');
-    expect(cards.length).toBe(2);
+    expect(cards).toHaveLength(2);
   });
 
   it('should render card titles correctly', () => {
     const cardTitles = hostFixture.nativeElement.querySelectorAll('mat-card-title');
-    expect(cardTitles.length).toBe(2);
+    expect(cardTitles).toHaveLength(2);
     expect(cardTitles[0].textContent).toContain('Test Card 1');
     expect(cardTitles[1].textContent).toContain('Test Card 2');
   });
 
   it('should render translated subtitles correctly', () => {
     const cardSubtitles = hostFixture.nativeElement.querySelectorAll('mat-card-subtitle');
-    expect(cardSubtitles.length).toBe(2);
+    expect(cardSubtitles).toHaveLength(2);
     expect(cardSubtitles[0].textContent).toContain('Test Subtitle 1');
     expect(cardSubtitles[1].textContent).toContain('Test Subtitle 2');
   });
 
   it('should render translated content correctly', () => {
     const cardContents = hostFixture.nativeElement.querySelectorAll('mat-card-content');
-    expect(cardContents.length).toBe(2);
+    expect(cardContents).toHaveLength(2);
     expect(cardContents[0].textContent).toContain('Test Content 1');
     expect(cardContents[0].textContent).toContain('Test Content Item 1.1');
     expect(cardContents[0].textContent).toContain('Test Content Item 1.2');
@@ -97,12 +97,12 @@ describe('MatCardsGridComponent', () => {
 
   it('should render card actions', () => {
     const cardActions = hostFixture.nativeElement.querySelectorAll('mat-card-actions');
-    expect(cardActions.length).toBe(2);
+    expect(cardActions).toHaveLength(2);
   });
 
   it('should render translated buttons correctly', () => {
     const buttons = hostFixture.nativeElement.querySelectorAll('button');
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
     expect(buttons[0].textContent).toContain('Test Button 1');
     //    expect(buttons[0].getAttribute('ng-reflect-router-link')).toBe('/test1');
     expect(buttons[1].textContent).toContain('Test Button 2');

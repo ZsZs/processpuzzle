@@ -34,11 +34,11 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
   formSnapshot: undefined,
 };
 
-function snakeCaseName(entityName: string) {
+export function snakeCaseName(entityName: string) {
   return entityName
-    .replace(/\s+/g, '')
-    .split(/(?=[A-Z])/)
-    .join('-')
+    .replace(/\s+/g, '') // strip whitespace
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2') // "ITVariant" -> "IT-Variant"
+    .replace(/([a-z\d])([A-Z])/g, '$1-$2') // "DeviceType" -> "Device-Type"
     .toLowerCase();
 }
 
@@ -53,6 +53,14 @@ function clonePayloads(source: Map<string, NavigationPayload>): Map<string, Navi
 function setLast(target: Map<string, NavigationPayload>, key: string, payload: NavigationPayload): void {
   target.delete(key);
   target.set(key, payload);
+}
+
+function levelUpUrl(currentUrl: string): string {
+  return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+}
+
+function normalizeUrl(url: string): string {
+  return url.startsWith('/') ? url : '/' + url;
 }
 
 function lastKeyOf(target: Map<string, NavigationPayload>): string | undefined {
@@ -106,14 +114,6 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     function determineCurrentUrl(): string {
       return Reflect.get(route, '_routerState').snapshot.url;
-    }
-
-    function levelUpUrl(currentUrl: string) {
-      return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
-    }
-
-    function normalizeUrl(url: string): string {
-      return url.startsWith('/') ? url : '/' + url;
     }
 
     function isPendingNavigatorUrl(navigationEnd: NavigationEnd): boolean {

@@ -214,12 +214,12 @@ class DropdownControlTester extends ControlTester {
 
   override createValue(context: ControlDataContext): string {
     void context;
-    return String(this.attr.selectables?.[0]?.value ?? '');
+    return String(this.attr.getSelectables()?.[0]?.value ?? '');
   }
 
   override updateValue(context: ControlDataContext, original: Record<string, string>): string {
     void context;
-    return String(this.attr.selectables?.[1]?.value ?? original[this.attr.attrName] ?? '');
+    return String(this.attr.getSelectables()?.[1]?.value ?? original[this.attr.attrName] ?? '');
   }
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {

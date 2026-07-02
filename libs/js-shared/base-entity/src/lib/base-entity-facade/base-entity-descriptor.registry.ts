@@ -21,6 +21,6 @@ export class BaseEntityDescriptorRegistry {
     if (!entityName) return undefined;
     const facadeToken = this.registry[entityName];
     if (!facadeToken) return undefined;
-    return this.injector.get(facadeToken, undefined);
+    return this.injector.get(facadeToken, null, { optional: true }) ?? undefined;
   }
 }

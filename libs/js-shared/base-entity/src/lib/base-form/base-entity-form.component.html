@@ -1,12 +1,25 @@
 <mat-card appearance="outlined" class="dense-3">
   <mat-card-content>
-    <form [formGroup]="baseEntityForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="baseEntityForm" (ngSubmit)="onSubmit()" (focusout)="onFieldBlur()">
       <ng-template baseFormHost></ng-template>
     </form>
+    @if (violations().length > 0) {
+      <ul class="rule-violations" data-testid="rule-violations">
+        @for (violation of violations(); track violation.ruleId) {
+          <li [class]="'rule-violation severity-' + violation.severity.toLowerCase()">
+            <mat-icon>{{ violation.severity === 'ERROR' ? 'error' : violation.severity === 'WARNING' ? 'warning' : 'info' }}</mat-icon>
+            <span>{{ violation.message ?? violation.error ?? violation.ruleId }}</span>
+          </li>
+        }
+      </ul>
+    }
   </mat-card-content>
   <mat-card-actions>
     <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" mat-raised-button color="secondary" (click)="onCancel()">Cancel</button>
     <button id="delete" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-raised-button color="primary" type="button" [disabled]="isNewObject() || isAbstract()" (click)="onDelete()">Delete</button>
-    <button id="submit" [attr.data-testid]="entityDescriptor().createTestId('save')" mat-raised-button color="primary" type="submit" [disabled]="baseEntityForm.invalid || !baseEntityForm.dirty || isAbstract()" (click)="onSubmit()">Save</button>
+    @if (entityDescriptor().extraFormActionsTemplate?.(); as extraTpl) {
+      <ng-container [ngTemplateOutlet]="extraTpl"></ng-container>
+    }
+    <button id="submit" [attr.data-testid]="entityDescriptor().createTestId('save')" mat-raised-button color="primary" type="submit" [disabled]="baseEntityForm.invalid || !baseEntityForm.dirty || isAbstract() || hasErrorViolations()" (click)="onSubmit()">Save</button>
   </mat-card-actions>
 </mat-card>

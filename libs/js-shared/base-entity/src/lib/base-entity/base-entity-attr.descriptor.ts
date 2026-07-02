@@ -1,12 +1,15 @@
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 
+export type Selectable = { key: string; value: unknown };
+export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
+
 export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   description?: string;
   styleClass? = '';
   labelClass?: string = '';
   format?: string;
   isLinkToDetails?: boolean;
-  selectables?: Array<{ key: string; value: unknown }>;
+  selectables?: SelectablesInput;
   visible = true;
   hideInTable?: boolean = false;
   isHeading?: boolean;
@@ -14,15 +17,21 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   lines?: number;
   options: { inputType: 'text' };
   required = false;
+  referenceIdField?: string = 'id';
   private _label?: string;
   private _linkedEntityType?: string;
 
-  constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: Array<{ key: string; value: unknown }>, isLinkToDetails?: boolean, options?: object) {
+  constructor(attrName: string, formControlType: FormControlType, label?: string, selectables?: SelectablesInput, isLinkToDetails?: boolean, options?: object) {
     super(attrName, formControlType);
     this._label = label;
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
+  }
+
+  getSelectables(): Array<Selectable> | undefined {
+    if (this.selectables === undefined) return undefined;
+    return typeof this.selectables === 'function' ? this.selectables() : this.selectables;
   }
 
   // region properties

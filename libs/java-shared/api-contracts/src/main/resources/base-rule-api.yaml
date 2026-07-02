@@ -257,6 +257,15 @@ components:
         enabled:
           type: boolean
           default: true
+        fields:
+          type: array
+          description: >-
+            Names of the entity attributes the rule applies to. Used by the UI to highlight
+            the offending form controls when the rule is violated. Optional; when absent the
+            rule is treated as form-level.
+          items:
+            type: string
+          example: [ "total", "lineItems" ]
 
     RuleDefinition:
       allOf:

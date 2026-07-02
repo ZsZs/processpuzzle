@@ -1,5 +1,4 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
@@ -12,7 +11,7 @@ import { MatIcon } from '@angular/material/icon';
   selector: 'base-tags',
   standalone: true,
   template: `
-    <ng-container *ngIf="config().visible">
+    @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
           <mat-label>{{ config().label }}</mat-label>
@@ -29,9 +28,9 @@ import { MatIcon } from '@angular/material/icon';
           </mat-chip-grid>
         </mat-form-field>
       </div>
-    </ng-container>
+    }
   `,
-  imports: [NgIf, ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon],
+  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon],
 })
 export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];

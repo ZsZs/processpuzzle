@@ -142,8 +142,8 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
 
     const attrName = this.linkedEntityDescriptor()?.componentIdentification() ?? '';
     const componentName = attrName ? (relatedEntity as unknown as Record<string, unknown>)[attrName] : undefined;
-
-    return componentName === undefined || componentName === null ? relatedEntity.id : String(componentName);
+    if (componentName == null || typeof componentName === 'object') return relatedEntity.id;
+    return String(componentName);
   }
 
   private addSelectedComponentFromNavigatorResponse(): void {

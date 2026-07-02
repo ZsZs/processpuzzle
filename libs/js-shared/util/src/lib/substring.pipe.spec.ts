@@ -31,7 +31,7 @@ describe('SubstringPipe', () => {
   });
 
   it('should handle invalid values gracefully', () => {
-    const input: any = null;
+    const input = null as unknown as string;
     expect(() => pipe.transform(input)).toThrow(TypeError);
   });
 

@@ -34,11 +34,11 @@ export class LayoutService {
     this.breakpointObserver.observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Medium, Breakpoints.Large, Breakpoints.XLarge]).subscribe((result) => {
       if (result.matches) {
         for (const query of Object.keys(result.breakpoints)) {
-          if (Breakpoints.XSmall.indexOf(query) > -1 && result.breakpoints[query]) this.layoutClass.set(this.HANDSET_LAYOUT);
-          else if (Breakpoints.Small.indexOf(query) > -1 && result.breakpoints[query]) this.layoutClass.set(this.TABLET_LAYOUT);
-          else if (Breakpoints.Medium.indexOf(query) > -1 && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
-          else if (Breakpoints.Large.indexOf(query) > -1 && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
-          else if (Breakpoints.XLarge.indexOf(query) > -1 && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
+          if (Breakpoints.XSmall.includes(query) && result.breakpoints[query]) this.layoutClass.set(this.HANDSET_LAYOUT);
+          else if (Breakpoints.Small.includes(query) && result.breakpoints[query]) this.layoutClass.set(this.TABLET_LAYOUT);
+          else if (Breakpoints.Medium.includes(query) && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
+          else if (Breakpoints.Large.includes(query) && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
+          else if (Breakpoints.XLarge.includes(query) && result.breakpoints[query]) this.layoutClass.set(this.WEB_LAYOUT);
         }
       }
     });

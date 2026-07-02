@@ -22,6 +22,7 @@ export class BaseRule implements BaseEntity {
   version: number | undefined;
   createdAt: string | undefined;
   updatedAt: string | undefined;
+  fields: string[] | undefined;
 
   constructor(
     id?: string,
@@ -38,6 +39,7 @@ export class BaseRule implements BaseEntity {
     version?: number,
     createdAt?: string,
     updatedAt?: string,
+    fields?: string[],
   ) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'BaseRule';
@@ -53,5 +55,6 @@ export class BaseRule implements BaseEntity {
     this.version = version;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.fields = fields;
   }
 }

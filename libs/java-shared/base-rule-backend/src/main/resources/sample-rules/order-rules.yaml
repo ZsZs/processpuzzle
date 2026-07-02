@@ -3,7 +3,10 @@ rules:
     name: All line item quantities are positive
     context: Order
     severity: ERROR
-    expression: "entity.lineItems.every(li => li.quantity > 0)"
+    enabled: true
+    fields:
+      - lineItems
+    expression: "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) > 0)"
     message: All line item quantities must be greater than zero.
     translocoId: rule.order.positiveQuantities
 
@@ -11,9 +14,14 @@ rules:
     name: Total matches sum of line items
     context: Order
     severity: ERROR
+    enabled: true
+    fields:
+      - total
+      - lineItems
     expression: >-
-      Math.abs(entity.total - entity.lineItems.reduce((sum, li) => sum + li.unitPrice *
-      li.quantity, 0)) < 0.001
+      !entity.lineItems ||
+      Math.abs(Number(entity.total) - entity.lineItems.reduce((sum, li) => sum + Number(li.unitPrice)
+      * Number(li.quantity), 0)) < 0.001
     message: Order total does not match the sum of line item subtotals.
     translocoId: rule.order.totalMatchesLineItems
 
@@ -21,10 +29,14 @@ rules:
     name: Shipped orders require a shipping address
     description: >-
       Conditional rule — PPCL's "implies" (condition implies consequence) translates to
-      JS as !condition || consequence.
+      JS as !condition || consequence. An empty string counts as missing.
     context: Order
     severity: WARNING
-    expression: "entity.status !== 'SHIPPED' || entity.shippingAddress != null"
+    enabled: true
+    fields:
+      - shippingAddress
+      - status
+    expression: "entity.status !== 'SHIPPED' || (entity.shippingAddress != null && entity.shippingAddress !== '')"
     message: A shipped order is missing its shipping address.
     translocoId: rule.order.shippedRequiresAddress
 
@@ -37,6 +49,9 @@ rules:
     extends: positive-quantities
     override: true
     severity: ERROR
-    expression: "entity.lineItems.every(li => li.quantity >= 0)"
+    enabled: true
+    fields:
+      - lineItems
+    expression: "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) >= 0)"
     message: Special order line items must have a non-negative quantity.
     translocoId: rule.specialOrder.allowsZeroQuantity

@@ -36,7 +36,8 @@ public class ExportRules {
                         r.getExpression(), r.getSeverity().name(),
                         r.getMessage(), r.getTranslocoId(), r.getExtendsRuleId(),
                         r.isOverride() ? Boolean.TRUE : null,
-                        r.isEnabled() ? null : Boolean.FALSE))
+                        r.isEnabled() ? null : Boolean.FALSE,
+                        r.getFields().isEmpty() ? null : r.getFields()))
                 .toList();
 
         return yamlMapper.writeValueAsBytes(new RuleYamlDocument(entries));

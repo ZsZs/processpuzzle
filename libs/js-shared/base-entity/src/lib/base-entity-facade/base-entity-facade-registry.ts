@@ -58,7 +58,7 @@ export class EntityRegistryComponent {
         labelClass: attr.labelClass,
         format: attr.format,
         isLinkToDetails: attr.isLinkToDetails,
-        selectables: attr.selectables,
+        selectables: attr.getSelectables(),
         visible: attr.visible,
         hideInTable: attr.hideInTable,
         isHeading: attr.isHeading,

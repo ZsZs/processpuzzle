@@ -1,4 +1,5 @@
 import { signalStore } from '@ngrx/signals';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { inject } from '@angular/core';
 import { BaseEntityContainerStore, BaseEntityStore, BaseEntityTabsStore } from '@processpuzzle/base-entity';
 import { ApplicationProperty } from './app-property';
@@ -9,4 +10,5 @@ export const ApplicationPropertyStore = signalStore(
   BaseEntityStore<ApplicationProperty>(ApplicationProperty, () => inject(ApplicationPropertyService)),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),
+  withDevtools('ApplicationProperty'),
 );

@@ -20,6 +20,7 @@ export class BaseRuleMapper implements BaseEntityMapper<BaseRule> {
       dto.version,
       dto.createdAt,
       dto.updatedAt,
+      dto.fields,
     );
   }
 

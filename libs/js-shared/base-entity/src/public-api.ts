@@ -6,7 +6,7 @@ export { BaseEntityContainerComponent } from './lib/base-entity-container.compon
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
 export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
-export { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
+export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/base-entity/base-entity.descriptor';
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
@@ -23,8 +23,11 @@ export { BASE_ENTITY_FACADE_REGISTRY, type BaseEntityFacadeRegistry, EntityRegis
 export { BaseEntityDescriptorRegistry } from './lib/base-entity-facade/base-entity-descriptor.registry';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
+export { NavigatorCommand, type NavigationPayload } from './lib/base-form-navigator/navigation-payload';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
+export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
+export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';

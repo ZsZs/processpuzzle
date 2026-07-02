@@ -87,7 +87,8 @@ public class ImportRules {
                         entry.expression(), parseSeverity(entry.severity()),
                         entry.message(), entry.translocoId(), entry.extendsRuleId(),
                         Boolean.TRUE.equals(entry.override()),
-                        entry.enabled() == null || entry.enabled());
+                        entry.enabled() == null || entry.enabled(),
+                        entry.fields());
                 created++;
             }
             repository.save(rule);
@@ -108,6 +109,7 @@ public class ImportRules {
         rule.setExtendsRuleId(entry.extendsRuleId());
         rule.setOverride(Boolean.TRUE.equals(entry.override()));
         rule.setEnabled(entry.enabled() == null || entry.enabled());
+        rule.setFields(entry.fields());
     }
 
     private Severity parseSeverity(String value) {

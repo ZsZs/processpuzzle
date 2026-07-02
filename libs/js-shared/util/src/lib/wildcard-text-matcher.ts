@@ -1,6 +1,6 @@
 export function wildcardTextMatcher(str: string, rule: string) {
   // for this solution to work on any string, no matter what characters it has
-  const escapeRegex = (str: string) => str.replace('/([.*+?^=!:${}()|[]/\\])/g', '\\$1');
+  const escapeRegex = (str: string) => str.replace('/([.*+?^=!:${}()|[]/\\])/g', String.raw`\$1`);
 
   // "."  => Find a single character, except newline or line terminator
   // ".*" => Matches any string that contains zero or more characters

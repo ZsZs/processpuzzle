@@ -192,7 +192,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store, formNavigator };
 }
 
-export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false) {
+export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false, extraProviders: Provider[] = []) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const runtimeConfigMock = {
     BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
@@ -215,6 +215,7 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
       { provide: CONFIGURATION_OPTIONS, useValue: { urlFactory: () => ['environments/config.common.json'], log: true } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
       { provide: TestConfiguration, useValue: runtimeConfigMock },
+      ...extraProviders,
     ],
   }).compileComponents();
 

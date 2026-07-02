@@ -169,5 +169,61 @@
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }
+  ],
+  "order": [
+    {
+      "id": "1",
+      "orderNumber": "ORD-1001",
+      "customerName": "Alice Johnson",
+      "status": "DRAFT",
+      "total": 89.88,
+      "shippingAddress": null,
+      "lineItems": [
+        { "id": "1", "productName": "Widget A", "quantity": 2, "unitPrice": 19.99, "orderId": "1" },
+        { "id": "2", "productName": "Widget B", "quantity": 1, "unitPrice": 49.90, "orderId": "1" }
+      ]
+    },
+    {
+      "id": "2",
+      "orderNumber": "ORD-1002",
+      "customerName": "Bob Meier",
+      "status": "SHIPPED",
+      "total": 85.50,
+      "shippingAddress": "Hauptstraße 12, 80331 München, DE",
+      "lineItems": [
+        { "id": "3", "productName": "Bolt M8", "quantity": 5, "unitPrice": 12.00, "orderId": "2" },
+        { "id": "4", "productName": "Nut M8", "quantity": 3, "unitPrice": 8.50, "orderId": "2" }
+      ]
+    },
+    {
+      "id": "3",
+      "orderNumber": "ORD-1003",
+      "customerName": "Carla Rossi",
+      "status": "CONFIRMED",
+      "total": 100.00,
+      "shippingAddress": null,
+      "lineItems": [
+        { "id": "5", "productName": "Temperature Sensor", "quantity": 4, "unitPrice": 25.00, "orderId": "3" }
+      ]
+    },
+    {
+      "id": "4",
+      "orderNumber": "ORD-1004",
+      "customerName": "Daniel Novak",
+      "status": "DELIVERED",
+      "total": 499.00,
+      "shippingAddress": "Wenceslas Square 5, 110 00 Praha, CZ",
+      "lineItems": [
+        { "id": "6", "productName": "Servo Motor", "quantity": 1, "unitPrice": 499.00, "orderId": "4" }
+      ]
+    }
+  ],
+  "order-line": [
+    { "id": "1", "productName": "Widget A", "quantity": 2, "unitPrice": 19.99, "orderId": "1" },
+    { "id": "2", "productName": "Widget B", "quantity": 1, "unitPrice": 49.90, "orderId": "1" },
+    { "id": "3", "productName": "Bolt M8", "quantity": 5, "unitPrice": 12.00, "orderId": "2" },
+    { "id": "4", "productName": "Nut M8", "quantity": 3, "unitPrice": 8.50, "orderId": "2" },
+    { "id": "5", "productName": "Temperature Sensor", "quantity": 4, "unitPrice": 25.00, "orderId": "3" },
+    { "id": "6", "productName": "Servo Motor", "quantity": 1, "unitPrice": 499.00, "orderId": "4" }
   ]
 }

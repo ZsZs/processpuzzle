@@ -1,8 +1,10 @@
 import { inject, Injectable, Injector, runInInjectionContext, Type } from '@angular/core';
 import { signalStore } from '@ngrx/signals';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
+import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntityMapper, SimpleEntityMapper } from '../base-entity.mapper';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { BaseEntityRestService } from '../base-entity-service/base-entity-rest.service';
@@ -29,19 +31,23 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   private _descriptor?: BaseEntityDescriptor;
 
   get mapper(): BaseEntityMapper<Entity> {
-    return (this._mapper ??= this.createMapper());
+    this._mapper ??= this.createMapper();
+    return this._mapper;
   }
 
   get service(): BaseEntityService<Entity> {
-    return (this._service ??= this.createService(this.mapper));
+    this._service ??= this.createService(this.mapper);
+    return this._service;
   }
 
   get storeClass(): Type<unknown> {
-    return (this._storeClass ??= this.createStoreClass());
+    this._storeClass ??= this.createStoreClass();
+    return this._storeClass;
   }
 
   get store(): unknown {
-    return (this._storeInstance ??= runInInjectionContext(this.injector, () => inject(this.storeClass)));
+    this._storeInstance ??= runInInjectionContext(this.injector, () => inject(this.storeClass));
+    return this._storeInstance;
   }
 
   get descriptor(): BaseEntityDescriptor {
@@ -90,6 +96,7 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
       BaseEntityStore<Entity>(this.entityType, () => this.service),
       BaseEntityTabsStore(),
       BaseEntityContainerStore(),
+      withDevtools(entityNameFromType(this.entityType)),
     );
   }
 

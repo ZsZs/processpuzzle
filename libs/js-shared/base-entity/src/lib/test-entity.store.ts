@@ -1,4 +1,5 @@
 import { signalStore } from '@ngrx/signals';
+import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { inject } from '@angular/core';
 import { BaseEntityStore } from './base-entity-store/base-entity.store';
 import { TestEntityService } from './base-entity-service/test-entity.service';
@@ -11,4 +12,5 @@ export const TestEntityStore = signalStore(
   BaseEntityStore<TestEntity>(TestEntity, () => inject(TestEntityService)),
   BaseEntityTabsStore(),
   BaseEntityContainerStore(),
+  withDevtools('TestEntity'),
 );

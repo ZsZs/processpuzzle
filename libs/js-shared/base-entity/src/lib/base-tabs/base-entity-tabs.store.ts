@@ -1,5 +1,4 @@
 import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { withDevtools } from '@angular-architects/ngrx-toolkit';
 
 export interface EntityTabsState {
   activeTabs: string[];
@@ -14,7 +13,6 @@ const INITIAL_TABS_STATE: EntityTabsState = {
 export function BaseEntityTabsStore() {
   return signalStoreFeature(
     withState<EntityTabsState>(INITIAL_TABS_STATE),
-    withDevtools('Base Entity Tabs'),
     withMethods((store) => {
       function reset(): void {
         const activeTabs: string[] = [];
@@ -22,7 +20,7 @@ export function BaseEntityTabsStore() {
       }
       function tabIsActive(tabName: string): void {
         let activeTabs: Array<string>;
-        if (store.activeTabs().indexOf(tabName) == -1) {
+        if (!store.activeTabs().includes(tabName)) {
           activeTabs = store.activeTabs().concat([tabName]);
         } else {
           activeTabs = store.activeTabs();

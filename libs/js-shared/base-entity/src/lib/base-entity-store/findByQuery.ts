@@ -18,7 +18,7 @@ export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<
         repository.findByQuery(parameters).pipe(
           tapResponse({
             next: (response: BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>) => {
-              if (Object.prototype.hasOwnProperty.call(response, 'content')) {
+              if (Object.hasOwn(response as object, 'content')) {
                 const baseEntityResponse = response as BaseEntityLoadResponse<PersistedEntity<Entity>>;
                 patchState(store, {
                   entities: baseEntityResponse.content,

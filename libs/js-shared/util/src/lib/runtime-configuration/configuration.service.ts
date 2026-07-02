@@ -17,8 +17,9 @@ export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE:
     this.environment = environment;
     try {
       await this.initInternal();
-    } catch (error: any) {
-      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${error.message}`, { cause: error });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Runtime configuration:${this.currentConfigUrl} load failed - ${message}`, { cause: error });
     }
     return this.configuration;
   }
@@ -62,7 +63,7 @@ export class ConfigurationService<TEnvironmentVariable extends { PIPELINE_STAGE:
       return (await response.json()) as unknown as TConfiguration;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        console.log(`Error: ${error} while fetching from:  ${url}`);
+        console.log(`Error: ${error.message} while fetching from:  ${url}`);
       }
       throw error;
     }

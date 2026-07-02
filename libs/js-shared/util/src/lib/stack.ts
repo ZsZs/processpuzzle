@@ -23,7 +23,7 @@ export class Stack<T> {
     if (this.isEmpty()) {
       return undefined; // Stack ist leer
     }
-    return this.items[this.items.length - 1];
+    return this.items.at(-1);
   }
 
   // Prüfen, ob der Stack leer ist
