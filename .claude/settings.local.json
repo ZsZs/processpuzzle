@@ -265,7 +265,10 @@
       "PowerShell(npm exec -- nx test base-rule-frontend 2>&1)",
       "PowerShell(npm exec nx run-many --target=test --projects=base-entity,base-rule-frontend 2>&1)",
       "PowerShell(npm exec -- nx run-many -t test -p base-entity base-rule-frontend 2>&1)",
-      "Bash(curl -s \"http://localhost:3000/rules?filter=context%3D%3DOrder\")"
+      "Bash(curl -s \"http://localhost:3000/rules?filter=context%3D%3DOrder\")",
+      "PowerShell(pnpm nx test base-rule-frontend 2>&1)",
+      "PowerShell(npx nx test base-rule-frontend 2>&1)",
+      "PowerShell(npx nx test base-rule-frontend --skip-nx-cache 2>&1)"
     ]
   }
 }
