@@ -64,9 +64,7 @@ describe('MarkdownPageComponent', () => {
 
   describe('onLoad', () => {
     it('should handle load event', () => {
-      const testContent = '# Test Markdown';
-
-      expect(() => component.onLoad(testContent)).not.toThrow();
+      expect(() => component.onLoad()).not.toThrow();
     });
   });
 
@@ -118,7 +116,7 @@ describe('MarkdownPageComponent', () => {
       const markdownComponent = fixture.debugElement.children[0];
       markdownComponent.triggerEventHandler('load', 'test content');
 
-      expect(onLoadSpy).toHaveBeenCalledWith('test content');
+      expect(onLoadSpy).toHaveBeenCalled();
     });
 
     it('should bind error event to onError handler', () => {

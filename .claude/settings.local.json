@@ -268,7 +268,18 @@
       "Bash(curl -s \"http://localhost:3000/rules?filter=context%3D%3DOrder\")",
       "PowerShell(pnpm nx test base-rule-frontend 2>&1)",
       "PowerShell(npx nx test base-rule-frontend 2>&1)",
-      "PowerShell(npx nx test base-rule-frontend --skip-nx-cache 2>&1)"
+      "PowerShell(npx nx test base-rule-frontend --skip-nx-cache 2>&1)",
+      "Bash(curl -s \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_widgets&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&impactSoftwareQualities=MAINTAINABILITY&ps=100\")",
+      "Bash(curl -sS \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_widgets&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&impactSoftwareQualities=MAINTAINABILITY&ps=100\" -o /tmp/sonar.json)",
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_widgets&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&impactSoftwareQualities=MAINTAINABILITY&ps=100\" -o /tmp/sonar.json)",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\('/tmp/sonar.json'\\)\\); issues=data.get\\('issues',[]\\); print\\('Total:', data.get\\('total'\\)\\); [print\\(f\\\\\"{i['rule']} | {i.get\\('severity'\\)} | {i['component']}:{i.get\\('line','?'\\)} | {i['message']}\\\\\"\\) for i in issues]\")",
+      "Bash(node -e \"const d=require\\('/tmp/sonar.json'\\); console.log\\('Total:',d.total\\); d.issues.forEach\\(i=>console.log\\(i.rule+' | '+i.severity+' | '+i.component+':'+\\(i.line||'?'\\)+' | '+i.message\\)\\)\")",
+      "Bash(cygpath -w /tmp/sonar.json)",
+      "PowerShell(pnpm nx run widgets:lint 2>&1)",
+      "PowerShell(npm exec -- nx run widgets:lint 2>&1)",
+      "PowerShell(npm exec -- nx run widgets:lint --files=\"libs/js-shared/widgets/src/markdown-page/markdown-page.component.ts\",\"libs/js-shared/widgets/src/like-button/like-button.component.ts\",\"libs/js-shared/widgets/src/app-property/app-property.service.spec.ts\",\"libs/js-shared/widgets/src/mat-cards-grid/mat-cards-grid.component.spec.ts\",\"libs/js-shared/widgets/src/language-selector/language-selector.component.css\" 2>&1)",
+      "PowerShell(npx eslint \"libs/js-shared/widgets/src/markdown-page/markdown-page.component.ts\" \"libs/js-shared/widgets/src/like-button/like-button.component.ts\" \"libs/js-shared/widgets/src/app-property/app-property.service.spec.ts\" \"libs/js-shared/widgets/src/mat-cards-grid/mat-cards-grid.component.spec.ts\" \"libs/js-shared/widgets/src/language-selector/language-selector.component.css\" 2>&1)",
+      "PowerShell(npm exec -- nx run widgets:test 2>&1)"
     ]
   }
 }

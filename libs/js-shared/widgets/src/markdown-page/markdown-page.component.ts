@@ -6,18 +6,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'pp-markdown-page',
   imports: [CommonModule, MarkdownComponent],
-  template: ` <markdown [src]="src()" (load)="onLoad($event)" (error)="onError($event)"></markdown> `,
+  template: ` <markdown [src]="src()" (load)="onLoad()" (error)="onError($event)"></markdown> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkdownPageComponent {
-  private snackBar = inject(MatSnackBar);
+  private readonly snackBar = inject(MatSnackBar);
   markdownSrcInput = input<string>('');
   markdownSrc = input<string>();
   src = computed(() => this.markdownSrcInput() || this.markdownSrc() || '');
 
   // region event handling methods
-  onLoad($event: string) {
-    // TODO: find out the use of this event
+  onLoad() {
+    // no-op: template binding requires a handler
   }
 
   onError($event: string | Error) {

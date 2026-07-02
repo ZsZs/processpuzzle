@@ -1,9 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 
-describe('dummy test', () => {
-  it('should run', () => {
-    expect(true).toBe(true);
-  });
+describe('ApplicationPropertyService', () => {
+  it.todo('should be created');
 });
 /*
 import { ApplicationPropertyService } from './app-property.service';

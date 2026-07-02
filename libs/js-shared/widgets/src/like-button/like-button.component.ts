@@ -32,7 +32,7 @@ export class LikeButtonComponent {
   onLike(): void {
     const count = this.likesCount();
     if (count) {
-      count.value = (parseInt(count.value, 10) + 1).toString();
+      count.value = (Number.parseInt(count.value, 10) + 1).toString();
       void this.store.update(count);
     } else {
       void this.store.add(new ApplicationProperty(undefined, this.LIKES_PROPERTY, '1'));
