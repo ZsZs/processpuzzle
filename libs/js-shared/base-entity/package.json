@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/base-entity",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "license": "MIT",
   "author": {
     "name": "Zsolt Zsuffa",
@@ -17,22 +17,22 @@
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
     "@angular-architects/ngrx-toolkit": "^21.0.1",
-    "@angular/cdk": "^22.0.1",
-    "@angular/common": "~22.0.1",
-    "@angular/core": "~22.0.1",
-    "@angular/forms": "~22.0.1",
-    "@angular/material": "^22.0.1",
-    "@angular/platform-browser": "~22.0.1",
-    "@angular/router": "~22.0.1",
+    "@angular/cdk": "^22.0.3",
+    "@angular/common": "~22.0.5",
+    "@angular/core": "~22.0.5",
+    "@angular/forms": "~22.0.5",
+    "@angular/material": "^22.0.3",
+    "@angular/platform-browser": "~22.0.5",
+    "@angular/router": "~22.0.5",
     "@angular/fire": "^20.0.1",
     "@jsverse/transloco": "8.4.0",
     "@ngrx/operators": "^21.1.1",
     "@ngrx/signals": "^21.1.1",
     "@processpuzzle/util": "^0.8.0",
-    "build-url-ts": "^6.2.0",
+    "build-url-ts": "^6.3.0",
     "ngx-logging-kit": "^21.0.1",
     "rxjs": "~7.8.2",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.1"
   },
   "dependencies": {
     "tslib": "^2.8.1"
