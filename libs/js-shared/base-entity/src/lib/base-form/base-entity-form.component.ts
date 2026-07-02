@@ -1,5 +1,6 @@
 import { BaseEntity } from '../base-entity/base-entity';
 import { Component, computed, effect, inject, input, InputSignal, OnInit, Signal, untracked, ViewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -17,7 +18,7 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
   selector: 'base-form',
   standalone: true,
   templateUrl: 'base-entity-form.component.html',
-  imports: [BaseFormHostDirective, ReactiveFormsModule, MatCard, MatCardContent, MatCardActions, MatButton],
+  imports: [BaseFormHostDirective, NgTemplateOutlet, ReactiveFormsModule, MatCard, MatCardContent, MatCardActions, MatButton],
   providers: [{ provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } }],
 })
 export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit {

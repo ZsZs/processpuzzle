@@ -7,6 +7,9 @@
   <mat-card-actions>
     <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" mat-raised-button color="secondary" (click)="onCancel()">Cancel</button>
     <button id="delete" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-raised-button color="primary" type="button" [disabled]="isNewObject() || isAbstract()" (click)="onDelete()">Delete</button>
+    @if (entityDescriptor().extraFormActionsTemplate?.(); as extraTpl) {
+      <ng-container [ngTemplateOutlet]="extraTpl"></ng-container>
+    }
     <button id="submit" [attr.data-testid]="entityDescriptor().createTestId('save')" mat-raised-button color="primary" type="submit" [disabled]="baseEntityForm.invalid || !baseEntityForm.dirty || isAbstract()" (click)="onSubmit()">Save</button>
   </mat-card-actions>
 </mat-card>

@@ -1,14 +1,17 @@
+import type { TemplateRef } from '@angular/core';
 import type { AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
 import { createTestId } from './base-entity-utility';
 
 export type EntityTitle = string | (() => string);
+export type ExtraFormActionsTemplate = () => TemplateRef<unknown> | undefined;
 
 export interface BaseEntityDescriptorOptions {
   store?: unknown;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle?: EntityTitle;
+  extraFormActionsTemplate?: ExtraFormActionsTemplate;
   isAbstract?: boolean;
   parentEntity?: string;
 }
@@ -18,14 +21,16 @@ export class BaseEntityDescriptor {
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle: EntityTitle;
+  extraFormActionsTemplate?: ExtraFormActionsTemplate;
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
 
-  constructor({ store, attrDescriptors, entityName, entityTitle, isAbstract, parentEntity }: BaseEntityDescriptorOptions) {
+  constructor({ store, attrDescriptors, entityName, entityTitle, extraFormActionsTemplate, isAbstract, parentEntity }: BaseEntityDescriptorOptions) {
     this.store = store;
     this.attrDescriptors = attrDescriptors;
     this.entityName = entityName;
     this.entityTitle = entityTitle ?? '';
+    this.extraFormActionsTemplate = extraFormActionsTemplate;
     this.isAbstract = isAbstract ?? false;
     this.parentEntity = parentEntity;
   }

@@ -256,7 +256,13 @@
       "PowerShell(pnpm nx run-many -t lint test --projects=base-entity,base-rule-frontend,e2e-testing --parallel=3 2>&1)",
       "PowerShell(\\(Get-Command npm\\).Source; \\(Get-Command yarn -ErrorAction SilentlyContinue\\).Source; if \\(Test-Path package-lock.json\\) { \"npm lock\" }; if \\(Test-Path pnpm-lock.yaml\\) { \"pnpm lock\" }; if \\(Test-Path yarn.lock\\) { \"yarn lock\" })",
       "PowerShell(npm exec -- nx run-many -t lint --projects=base-entity,base-rule-frontend,e2e-testing --parallel=3 2>&1)",
-      "PowerShell(npm exec -- nx run-many -t test --projects=base-entity,base-rule-frontend --parallel=2 2>&1)"
+      "PowerShell(npm exec -- nx run-many -t test --projects=base-entity,base-rule-frontend --parallel=2 2>&1)",
+      "Bash(xargs grep -l \"class.*DetailsForm\\\\|Details.*Form.*component\")",
+      "Bash(Get-ChildItem -Recurse -Path \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\libs\\\\js-shared\\\\base-entity\\\\src\" -Filter \"*.component.ts\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs grep -l \"addAction\\\\|registerAction\\\\|customAction\")",
+      "PowerShell(npm exec -- nx test base-rule-frontend --testPathPattern=base-rule-evaluator 2>&1)",
+      "PowerShell(npm exec -- nx test base-rule-frontend 2>&1)"
     ]
   }
 }

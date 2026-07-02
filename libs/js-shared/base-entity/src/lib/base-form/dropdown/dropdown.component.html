@@ -3,7 +3,7 @@
       <mat-form-field>
         <mat-label>{{config().label}}</mat-label>
         <mat-select formControlName="{{config().attrName}}">
-          @for (option of config().getSelectables(); track option) {
+          @for (option of config().getSelectables(); track option.value) {
             <mat-option [value]="option.value">{{option.value}}</mat-option>
           }
         </mat-select>
