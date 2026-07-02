@@ -1,6 +1,6 @@
 {
   "name": "@processpuzzle/widgets",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "publishConfig": {
     "access": "public"
   },
@@ -11,16 +11,16 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/cdk": "^22.0.1",
-    "@angular/common": "~22.0.1",
-    "@angular/core": "~22.0.1",
-    "@angular/material": "^22.0.1",
-    "@angular/platform-browser": "~22.0.1",
-    "@angular/router": "~22.0.1",
+    "@angular/cdk": "^22.0.3",
+    "@angular/common": "~22.0.5",
+    "@angular/core": "~22.0.5",
+    "@angular/material": "^22.0.3",
+    "@angular/platform-browser": "~22.0.5",
+    "@angular/router": "~22.0.5",
     "@fortawesome/angular-fontawesome": "^5.0.0",
-    "@fortawesome/fontawesome-svg-core": "^7.2.0",
-    "@fortawesome/free-brands-svg-icons": "^7.2.0",
-    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/fontawesome-svg-core": "^7.3.0",
+    "@fortawesome/free-brands-svg-icons": "^7.3.0",
+    "@fortawesome/free-solid-svg-icons": "^7.3.0",
     "@jsverse/transloco": "8.4.0",
     "@ngrx/component-store": "^21.1.1",
     "@ngrx/operators": "^21.1.1",
