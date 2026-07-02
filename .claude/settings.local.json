@@ -279,7 +279,11 @@
       "PowerShell(npm exec -- nx run widgets:lint 2>&1)",
       "PowerShell(npm exec -- nx run widgets:lint --files=\"libs/js-shared/widgets/src/markdown-page/markdown-page.component.ts\",\"libs/js-shared/widgets/src/like-button/like-button.component.ts\",\"libs/js-shared/widgets/src/app-property/app-property.service.spec.ts\",\"libs/js-shared/widgets/src/mat-cards-grid/mat-cards-grid.component.spec.ts\",\"libs/js-shared/widgets/src/language-selector/language-selector.component.css\" 2>&1)",
       "PowerShell(npx eslint \"libs/js-shared/widgets/src/markdown-page/markdown-page.component.ts\" \"libs/js-shared/widgets/src/like-button/like-button.component.ts\" \"libs/js-shared/widgets/src/app-property/app-property.service.spec.ts\" \"libs/js-shared/widgets/src/mat-cards-grid/mat-cards-grid.component.spec.ts\" \"libs/js-shared/widgets/src/language-selector/language-selector.component.css\" 2>&1)",
-      "PowerShell(npm exec -- nx run widgets:test 2>&1)"
+      "PowerShell(npm exec -- nx run widgets:test 2>&1)",
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/issues/search?componentKeys=processpuzzle_util&issueStatuses=OPEN,CONFIRMED&inNewCodePeriod=true&impactSoftwareQualities=MAINTAINABILITY&ps=100\" -o /tmp/sonar-util.json)",
+      "PowerShell(npm exec -- nx run util:test 2>&1)",
+      "PowerShell(npx eslint \"libs/js-shared/util/src/lib/error-handler/central-error-handler.ts\" \"libs/js-shared/util/src/lib/runtime-configuration/configuration.service.ts\" \"libs/js-shared/util/src/lib/logging/provide-logging.service.ts\" \"libs/js-shared/util/src/lib/stack.ts\" \"libs/js-shared/util/src/lib/substring.pipe.ts\" \"libs/js-shared/util/src/lib/substring.pipe.spec.ts\" \"libs/js-shared/util/src/lib/layout-service/layout.service.ts\" \"libs/js-shared/util/src/lib/wildcard-text-matcher.ts\" 2>&1)",
+      "Bash(curl -sS --ssl-no-revoke \"https://sonarcloud.io/api/measures/component_tree?component=processpuzzle_util&metricKeys=new_coverage,new_lines_to_cover,new_uncovered_lines,coverage,uncovered_lines,lines_to_cover&s=metric&metricSort=new_coverage&asc=true&ps=100&qualifiers=FIL\" -o /tmp/sonar-util-cov.json)"
     ]
   }
 }

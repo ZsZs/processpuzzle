@@ -34,6 +34,6 @@ export function provideLoggingService(config: LoggingConfiguration): Environment
     disableFileDetails: false,
     enableSourceMaps: sourceDetailsEnabled,
     serverLogLevel: mapLoggerLevel(config.serverLogLevel),
-    serverLoggingUrl: config.serverLogLevel !== 'none' ? config.serverLoggingUrl : undefined,
+    serverLoggingUrl: config.serverLogLevel === 'none' ? undefined : config.serverLoggingUrl,
   });
 }

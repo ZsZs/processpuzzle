@@ -23,7 +23,7 @@ export class CentralErrorHandler implements ErrorHandler {
   private logError(error: unknown): void {
     if (this.isChunkLoadError(error)) {
       this.logger.warn('Application chunk failed to load. Reloading application.', error);
-      window.location.reload();
+      globalThis.location.reload();
       return;
     }
 
@@ -50,7 +50,7 @@ export class CentralErrorHandler implements ErrorHandler {
 
   private isChunkLoadError(error: unknown): boolean {
     const message = this.getErrorMessage(error);
-    return /Loading chunk [\d]+ failed|ChunkLoadError/i.test(message);
+    return /Loading chunk \d+ failed|ChunkLoadError/i.test(message);
   }
 
   private getErrorMessage(error: unknown): string {
@@ -97,8 +97,7 @@ export class CentralErrorHandler implements ErrorHandler {
 
   private formatHttpError(error: HttpErrorResponse): string {
     const url = error.url ? ` ${error.url}` : '';
-    const statusText = error.statusText ? ` ${error.statusText}` : '';
-    return `HTTP ${error.status}${statusText}${url}`;
+    return `HTTP ${error.status}${url}`;
   }
 
   private isRecord(value: unknown): value is ErrorRecord {

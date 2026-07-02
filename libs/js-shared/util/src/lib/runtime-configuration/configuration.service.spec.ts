@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ConfigurationService } from '../runtime-configuration/configuration.service';
 import { TestConfiguration } from './test-configuration';
@@ -121,5 +122,39 @@ describe('ConfigurationService', () => {
 
     await configService.init(noOverridesEnvironmentVars);
     expect(configService.configuration).toEqual(commonConfig);
+  });
+
+  it('init() wraps HttpErrorResponse rejections into a descriptive Error with the original as cause', async () => {
+    const httpError = new HttpErrorResponse({ status: 500, statusText: 'Server Error', url: '/config' });
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url.includes('config.dev.json')) {
+        return Promise.reject(httpError);
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(commonConfig) } as Response);
+    });
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await expect(configService.init(noOverridesEnvironmentVars)).rejects.toMatchObject({
+      message: expect.stringContaining('Runtime configuration:'),
+      cause: httpError,
+    });
+    expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('while fetching from:'));
+  });
+
+  it('init() wraps generic rejections with the underlying error message', async () => {
+    const failure = new Error('network unreachable');
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url.includes('config.dev.json')) {
+        return Promise.reject(failure);
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(commonConfig) } as Response);
+    });
+
+    await expect(configService.init(noOverridesEnvironmentVars)).rejects.toMatchObject({
+      message: expect.stringContaining('network unreachable'),
+      cause: failure,
+    });
   });
 });

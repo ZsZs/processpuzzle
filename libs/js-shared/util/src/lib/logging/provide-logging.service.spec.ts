@@ -58,4 +58,40 @@ describe('provideLoggingService', () => {
     expect(loggerConfig.enableSourceMaps).toBe(false);
     expect(loggerConfig.disableFileDetails).toBe(false);
   });
+
+  it.each([
+    ['none', 7],
+    ['log', 3],
+    ['warn', 4],
+    ['fatal', 6],
+  ] as const)('maps %s logging level to numeric value %i', (level, expected) => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideLoggingService({
+          level,
+          serverLogLevel: 'none',
+        }),
+      ],
+    });
+
+    const loggerConfig = TestBed.inject(TOKEN_LOGGER_CONFIG) as INGXLoggerConfig;
+
+    expect(loggerConfig.level).toBe(expected);
+  });
+
+  it('omits serverLoggingUrl when server logging is disabled', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideLoggingService({
+          level: 'info',
+          serverLogLevel: 'none',
+          serverLoggingUrl: '/api/logs',
+        }),
+      ],
+    });
+
+    const loggerConfig = TestBed.inject(TOKEN_LOGGER_CONFIG) as INGXLoggerConfig;
+
+    expect(loggerConfig.serverLoggingUrl).toBeUndefined();
+  });
 });
