@@ -56,6 +56,14 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'gavel',
+      title: 'base-rule_card_title',
+      subtitle: 'base-rule_card_subtitle',
+      content: ['base-rule_card_content', 'base-rule_card_content_1', 'base-rule_card_content_2', 'base-rule_card_content_3'],
+      actions: [{ link: '/base-rule', caption: 'base-rule_card_button', colour: 'primary' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'repartition',
       title: 'ci-cd_card_title',
       subtitle: 'ci-cd_card_subtitle',

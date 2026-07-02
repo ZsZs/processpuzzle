@@ -7,6 +7,10 @@ import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.faca
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
+import { OrderFacade } from './content/base-rules/order/order.facade';
+import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { provideBaseRuleEngine } from '@processpuzzle/base-rule-frontend';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -92,6 +96,42 @@ export const appRoutes: Route[] = [
             path: 'firestore-doc',
             loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: FirestoreDocFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: 'base-rule',
+    title: 'ProcessPuzzle Testbed - Base Rule',
+    data: { icon: 'gavel', menuTitle: 'base-rule' },
+    loadComponent: () => import('./content/base-rules/base-rules.component').then((comp) => comp.BaseRulesComponent),
+    providers: [LayoutService, OrderFacade, OrderLineFacade, provideBaseRuleEngine()],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-rules/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-rules/samples.component').then((comp) => comp.SamplesComponent),
+        children: [
+          {
+            path: 'order',
+            loadComponent: () => import('./content/base-rules/order/order-container.component').then((comp) => comp.OrderContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderFacade }],
+            children: BASE_ENTITY_ROUTES,
+          },
+          {
+            path: 'order-line',
+            loadComponent: () => import('./content/base-rules/order-line/order-line-container.component').then((comp) => comp.OrderLineContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderLineFacade }],
             children: BASE_ENTITY_ROUTES,
           },
         ],

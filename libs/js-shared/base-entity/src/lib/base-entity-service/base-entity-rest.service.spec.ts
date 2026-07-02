@@ -14,8 +14,8 @@ describe('BaseEntityService', () => {
   const filters: FilterCondition[] = [{ property: 'xpath', operator: '==', value: '/ie4q01' }];
   const queryCondition: BaseEntityQueryCondition = { pathParams, filters };
   const expectedEntity = new TestEntity('1', 'hello', 'anything', false, 100, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_FOUR);
-  const expectedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?xpath=%2Fie4q01';
-  const expectedPagedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?page=1&xpath=%2Fie4q01';
+  const expectedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?filter=xpath%3D%3D%2Fie4q01';
+  const expectedPagedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?page=1&filter=xpath%3D%3D%2Fie4q01';
   const payload = { id: '1', name: 'hello', description: 'anything', boolean: false, number: 100, date: '2024-01-18T20:02:27.000Z', enumValue: 3 };
   let baseEntityService: TestEntityService;
   let controller: HttpTestingController;

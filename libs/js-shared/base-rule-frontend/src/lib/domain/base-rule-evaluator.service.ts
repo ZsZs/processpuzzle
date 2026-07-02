@@ -27,8 +27,8 @@ export class BaseRuleEvaluatorService {
     }
 
     const passed = Boolean(result);
-    if (passed) return { ...base, passed: true };
-    return { ...base, passed: false, message: rule.message ?? rule.description ?? rule.name, translocoId: rule.translocoId };
+    if (passed) return { ...base, passed: true, fields: rule.fields };
+    return { ...base, passed: false, message: rule.message ?? rule.description ?? rule.name, translocoId: rule.translocoId, fields: rule.fields };
   }
 
   clearCache(): void {

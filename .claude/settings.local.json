@@ -262,7 +262,10 @@
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(xargs grep -l \"addAction\\\\|registerAction\\\\|customAction\")",
       "PowerShell(npm exec -- nx test base-rule-frontend --testPathPattern=base-rule-evaluator 2>&1)",
-      "PowerShell(npm exec -- nx test base-rule-frontend 2>&1)"
+      "PowerShell(npm exec -- nx test base-rule-frontend 2>&1)",
+      "PowerShell(npm exec nx run-many --target=test --projects=base-entity,base-rule-frontend 2>&1)",
+      "PowerShell(npm exec -- nx run-many -t test -p base-entity base-rule-frontend 2>&1)",
+      "Bash(curl -s \"http://localhost:3000/rules?filter=context%3D%3DOrder\")"
     ]
   }
 }

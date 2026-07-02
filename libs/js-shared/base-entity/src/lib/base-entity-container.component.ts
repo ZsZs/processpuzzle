@@ -41,6 +41,7 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
 
   constructor() {
     this.registerEffects();
+    this.registerFacadeDescriptorMerge();
   }
 
   // region Angular lifecycle hooks
@@ -61,6 +62,17 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
       if (errorValue) {
         this.snackBar.open(errorValue, 'Close', { duration: 5000 });
       }
+    });
+  }
+
+  private registerFacadeDescriptorMerge() {
+    effect(() => {
+      const facade = this.activeFacade();
+      const input = this.entityDescriptor();
+      if (!facade || !input) return;
+      const facadeDescriptor = facade.descriptor;
+      if (input.entityTitle) facadeDescriptor.entityTitle = input.entityTitle;
+      if (input.extraFormActionsTemplate) facadeDescriptor.extraFormActionsTemplate = input.extraFormActionsTemplate;
     });
   }
 

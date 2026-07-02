@@ -7,6 +7,7 @@ import { BaseEntityLoadResponse, BaseEntityQueryCondition } from './base-entity-
 import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { BaseEntityService } from './base-entity.service';
+import { toRsql } from './rsql';
 
 export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   private readonly runtimeConfiguration = inject(RUNTIME_CONFIGURATION);
@@ -99,9 +100,8 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   protected buildFullUrl(resourceUri: string, queryCondition: BaseEntityQueryCondition): string | undefined {
     const queryParams: Map<string, string> = new Map<string, string>();
     if (queryCondition.page) queryParams.set('page', queryCondition.page.toString());
-    if (queryCondition.filters !== undefined && queryCondition.filters.length != 0) {
-      queryCondition.filters.forEach((filter) => queryParams.set(filter.property, filter.value));
-    }
+    const rsql = this.buildRsql(queryCondition);
+    if (rsql) queryParams.set('filter', rsql);
 
     let params: Record<string, string> | undefined = {};
     if (queryParams.size > 0) {
@@ -123,6 +123,12 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
       queryParams: params,
     };
     return buildUrl(this.baseUrl, urlOptions);
+  }
+
+  protected buildRsql(queryCondition: BaseEntityQueryCondition): string | undefined {
+    if (queryCondition.filterGroup) return toRsql(queryCondition.filterGroup);
+    if (queryCondition.filters?.length) return toRsql(queryCondition.filters);
+    return undefined;
   }
 
   private mapPagedResponse(response: unknown): BaseEntityLoadResponse<PersistedEntity<Entity>> {

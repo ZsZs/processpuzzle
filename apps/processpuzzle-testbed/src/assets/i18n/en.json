@@ -6,6 +6,7 @@
     "widgets": "ProcessPuzzle Testbed - Widgets",
     "auth": "ProcessPuzzle Testbed - Authentication",
     "base-entity": "ProcessPuzzle Testbed - Base Entity",
+    "base-rule": "ProcessPuzzle Testbed - Base Rule",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
   "home": {
@@ -42,6 +43,13 @@
     "base-entity_card_content_2": "Generate full flagged reactive form with checks and error messages",
     "base-entity_card_content_3": "Generate state dependent header to navigate from table to form and back",
     "base-entity_card_button": "See Base Entity Library...",
+    "base-rule_card_title": "Base Rule - @processpuzzle/base-rule",
+    "base-rule_card_subtitle": "Declarative business rules at design and run-time",
+    "base-rule_card_content": "Provides a uniform way to define, import, export and evaluate business rules over your domain objects without scattering conditions through the code base.",
+    "base-rule_card_content_1": "Define rules in YAML and load them as RuleDefinitions",
+    "base-rule_card_content_2": "Evaluate objects against rule sets and collect violations",
+    "base-rule_card_content_3": "Import and export rule catalogues between environments",
+    "base-rule_card_button": "See Base Rule Library...",
     "test-utils_card_title": "Test Utils - @processpuzzle/test-util",
     "test-utils_card_subtitle": "Utilities for unit- and integration testing",
     "test-utils_card_content": "This is a collection of functions and services to easy unit- and integration testing.",
@@ -62,5 +70,18 @@
     "samples_tab_label": "Samples",
     "samples_desc_1": "The sample entities, to demonstrate the functionality this library are as follows:",
     "samples_desc_2": "The tables and forms below are generated from the entities end their attribute descriptors, run-time."
+  },
+  "base-rules": {
+    "overview_tab_label": "Overview",
+    "samples_tab_label": "Samples",
+    "samples_desc_1": "The following sample entities demonstrate the capabilities of the rule engine:",
+    "samples_desc_2": "Pick a sample below to explore how rules are defined and evaluated against it.",
+    "intro_heading": "ProcessPuzzle Rule Engine",
+    "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
+    "backend_heading": "Backend — base-rule-backend",
+    "intro_paragraph_1": "The ProcessPuzzle Rule Engine lets Low-Code applications author, evaluate and visualize business rules. It combines a set of Angular building blocks for the user interface with a Spring Boot backend that stores and executes the rule definitions.",
+    "intro_paragraph_2": "The engine is split into two complementary libraries which share a common domain vocabulary:",
+    "intro_frontend_desc": "Angular services, stores and components used to design, edit and visualize rules in the browser.",
+    "intro_backend_desc": "Spring Boot module that persists rule definitions and evaluates them on the server side, following the platform's Hexagonal architecture."
   }
 }

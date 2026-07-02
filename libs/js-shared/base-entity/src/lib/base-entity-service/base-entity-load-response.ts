@@ -18,6 +18,17 @@ export interface FilterCondition {
   value: string;
 }
 
+export type LogicalOperator = 'AND' | 'OR';
+
+export interface FilterGroup {
+  operator: LogicalOperator;
+  conditions: Array<FilterCondition | FilterGroup>;
+}
+
+export function isFilterGroup(node: FilterCondition | FilterGroup): node is FilterGroup {
+  return (node as FilterGroup).conditions !== undefined;
+}
+
 export enum OrderByDirection {
   ASC = 'asc',
   DESC = 'desc',
@@ -35,6 +46,7 @@ export interface BaseEntityQueryCondition {
   pageSize?: number;
   pathParams?: Map<string, string>;
   filters?: FilterCondition[];
+  filterGroup?: FilterGroup;
   orderBys?: OrderBy[];
 }
 

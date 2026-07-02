@@ -12,3 +12,4 @@ export { BaseRuleStore } from './lib/domain/base-rule.store';
 export { BaseRuleFacade } from './lib/feature/base-rule.facade';
 export { BaseRuleContainerComponent } from './lib/feature/base-rule-container.component';
 export { BASE_RULE_ROUTES } from './lib/base-rule.routes';
+export { BaseRuleEngineAdapter, provideBaseRuleEngine } from './lib/adapter/base-rule-engine.adapter';

@@ -29,7 +29,8 @@ public class RuleMapper {
                 input.getTranslocoId(),
                 input.getExtendsRuleId(),
                 Boolean.TRUE.equals(input.getOverride()),
-                input.getEnabled() == null || input.getEnabled());
+                input.getEnabled() == null || input.getEnabled(),
+                input.getFields());
     }
 
     public void applyToDomain(RuleDefinitionInput input, RuleDefinition target) {
@@ -43,6 +44,7 @@ public class RuleMapper {
         target.setExtendsRuleId(input.getExtendsRuleId());
         target.setOverride(Boolean.TRUE.equals(input.getOverride()));
         target.setEnabled(input.getEnabled() == null || input.getEnabled());
+        target.setFields(input.getFields());
     }
 
     public com.processpuzzle.rule.model.RuleDefinition toModel(RuleDefinition rule) {
@@ -58,6 +60,7 @@ public class RuleMapper {
         model.setExtendsRuleId(rule.getExtendsRuleId());
         model.setOverride(rule.isOverride());
         model.setEnabled(rule.isEnabled());
+        model.setFields(rule.getFields());
         model.setVersion(rule.getVersion());
         model.setCreatedAt(toOffsetDateTime(rule.getCreatedAt()));
         model.setUpdatedAt(toOffsetDateTime(rule.getUpdatedAt()));

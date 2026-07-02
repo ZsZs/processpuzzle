@@ -8,4 +8,5 @@ export interface RuleEvaluationResult {
   message?: string;
   translocoId?: string;
   error?: string;
+  fields?: string[];
 }

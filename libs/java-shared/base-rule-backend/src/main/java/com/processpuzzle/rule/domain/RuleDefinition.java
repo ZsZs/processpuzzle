@@ -3,6 +3,9 @@ package com.processpuzzle.rule.domain;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Persisted PPCL rule definition.
@@ -54,6 +57,11 @@ public class RuleDefinition {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "rule_definition_fields", joinColumns = @JoinColumn(name = "rule_id"))
+    @Column(name = "field_name", length = 100)
+    private List<String> fields = new ArrayList<>();
+
     @Version
     private Long version;
 
@@ -71,6 +79,14 @@ public class RuleDefinition {
                            String expression, Severity severity, String message,
                            String translocoId, String extendsRuleId,
                            boolean override, boolean enabled) {
+        this(id, name, description, context, expression, severity, message,
+                translocoId, extendsRuleId, override, enabled, null);
+    }
+
+    public RuleDefinition(String id, String name, String description, String context,
+                           String expression, Severity severity, String message,
+                           String translocoId, String extendsRuleId,
+                           boolean override, boolean enabled, List<String> fields) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -82,6 +98,7 @@ public class RuleDefinition {
         this.extendsRuleId = extendsRuleId;
         this.override = override;
         this.enabled = enabled;
+        this.fields = fields == null ? new ArrayList<>() : new ArrayList<>(fields);
     }
 
     @PrePersist
@@ -178,6 +195,14 @@ public class RuleDefinition {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public List<String> getFields() {
+        return Collections.unmodifiableList(fields);
+    }
+
+    public void setFields(List<String> fields) {
+        this.fields = fields == null ? new ArrayList<>() : new ArrayList<>(fields);
     }
 
     public Long getVersion() {

@@ -28,4 +28,6 @@ export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entit
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
+export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
+export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';
