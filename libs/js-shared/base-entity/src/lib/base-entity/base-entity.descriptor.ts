@@ -14,6 +14,7 @@ export interface BaseEntityDescriptorOptions {
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
   isAbstract?: boolean;
   parentEntity?: string;
+  route?: string;
 }
 
 export class BaseEntityDescriptor {
@@ -24,8 +25,9 @@ export class BaseEntityDescriptor {
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
+  route: string | undefined;
 
-  constructor({ store, attrDescriptors, entityName, entityTitle, extraFormActionsTemplate, isAbstract, parentEntity }: BaseEntityDescriptorOptions) {
+  constructor({ store, attrDescriptors, entityName, entityTitle, extraFormActionsTemplate, isAbstract, parentEntity, route }: BaseEntityDescriptorOptions) {
     this.store = store;
     this.attrDescriptors = attrDescriptors;
     this.entityName = entityName;
@@ -33,6 +35,7 @@ export class BaseEntityDescriptor {
     this.extraFormActionsTemplate = extraFormActionsTemplate;
     this.isAbstract = isAbstract ?? false;
     this.parentEntity = parentEntity;
+    this.route = route;
   }
 
   public createTestId(suffix: string): string {

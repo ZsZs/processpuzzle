@@ -311,7 +311,17 @@
       "PowerShell(Get-Command node -ErrorAction SilentlyContinue)",
       "PowerShell(npm exec nx run base-entity:build 2>&1)",
       "PowerShell(npm exec nx run base-rule-frontend:build 2>&1)",
-      "PowerShell(npm exec nx run processpuzzle-testbed:build 2>&1)"
+      "PowerShell(npm exec nx run processpuzzle-testbed:build 2>&1)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28655461667 --log-failed)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28655461667)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=84983322382 --log)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=84983322382 --log 2>&1 > /tmp/build_log.txt; wc -l /tmp/build_log.txt)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job=84983322382 --log > $env:TEMP\\\\build_log.txt 2>&1; \\(Get-Content $env:TEMP\\\\build_log.txt | Measure-Object -Line\\).Lines)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/ZsZs/processpuzzle/actions/runs/28655461667 --jq '{status,conclusion,event,head_sha,head_branch,name,run_started_at,updated_at,triggering_actor:.triggering_actor.login,workflow_id}')",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/ZsZs/processpuzzle/actions/jobs/84983322382 --jq '.steps[] | {name,status,conclusion,started_at,completed_at}')",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api \"repos/ZsZs/processpuzzle/contents/libs/java-shared/object-store/pom.xml?ref=8cd834412e55504bf21661c3393783965f1b1733\" --jq '.content')",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api \"repos/ZsZs/processpuzzle/contents/pom.xml?ref=8cd834412e55504bf21661c3393783965f1b1733\" --jq '.content')",
+      "Bash(xargs grep -l \"entity-registry\")"
     ]
   }
 }

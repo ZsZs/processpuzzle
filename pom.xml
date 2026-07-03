@@ -58,6 +58,7 @@
         <maven.compiler.target>25</maven.compiler.target>
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
+        <processpuzzle.api.version>1.0.4</processpuzzle.api.version>
     </properties>
 
     <dependencyManagement>
@@ -96,7 +97,7 @@
             <dependency>
                 <groupId>com.processpuzzle</groupId>
                 <artifactId>processpuzzle-api</artifactId>
-                <version>${project.version}</version>
+                <version>${processpuzzle.api.version}</version>
             </dependency>
 
             <!-- Spring Boot dependencies -->

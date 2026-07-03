@@ -1,3 +1,5 @@
+import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
+
 /** "Test Entity Component" → "test-entity-component" */
 export function toRoutePath(entityName: string): string {
   return entityName.toLowerCase().replace(/\s+/g, '-');
@@ -6,11 +8,15 @@ export function toRoutePath(entityName: string): string {
 export class RouteResolver {
   constructor(private readonly routePrefix: string) {}
 
-  listRoute(entityName: string): string {
-    return `${this.routePrefix}/${toRoutePath(entityName)}/list`;
+  listRoute(descriptor: BaseEntityDescriptor): string {
+    return `${this.basePath(descriptor)}/list`;
   }
 
-  detailRoute(entityName: string, entityId: string): string {
-    return `${this.routePrefix}/${toRoutePath(entityName)}/${entityId}/details`;
+  detailRoute(descriptor: BaseEntityDescriptor, entityId: string): string {
+    return `${this.basePath(descriptor)}/${entityId}/details`;
+  }
+
+  private basePath(descriptor: BaseEntityDescriptor): string {
+    return descriptor.route ?? `${this.routePrefix}/${toRoutePath(descriptor.entityName)}`;
   }
 }

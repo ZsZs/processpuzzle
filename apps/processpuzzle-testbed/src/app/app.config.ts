@@ -23,6 +23,8 @@ import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.f
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
+import { OrderFacade } from './content/base-rules/order/order.facade';
+import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -46,6 +48,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       TestEntityComponentFacade,
       TrunkDataFacade,
       FirestoreDocFacade,
+      OrderFacade,
+      OrderLineFacade,
       {
         provide: BASE_ENTITY_FACADE_REGISTRY,
         useValue: {
@@ -53,6 +57,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Test Entity Component': TestEntityComponentFacade,
           'Trunk Data': TrunkDataFacade,
           'Firestore Doc': FirestoreDocFacade,
+          Order: OrderFacade,
+          'Order Line': OrderLineFacade,
         },
       },
       provideAnimations(),

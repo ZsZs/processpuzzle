@@ -45,7 +45,7 @@ export class EntityFormPO {
   // Navigation
 
   async navigateToDetail(entityId: string) {
-    await this.page.goto(this.routes.detailRoute(this.descriptor.entityName, entityId));
+    await this.page.goto(this.routes.detailRoute(this.descriptor, entityId));
     await this.page.waitForURL(/\/details$/);
   }
 

@@ -158,7 +158,7 @@ test('custom flow', async ({ page }) => {
 | `createGlobalSetup(options)` | factory | Returns a Playwright `globalSetup` that loads & caches the descriptor registry. |
 | `defineEntityListSuite(options)` | suite factory | Registers `[entity] LIST › renders toolbar and rows` for every descriptor. |
 | `defineEntityCrudSuite(options)` | suite factory | Registers `[entity] CRUD › CREATE/READ/UPDATE/DELETE` for every descriptor, in serial mode. |
-| `RouteResolver` | class | Builds list/detail routes from a configurable `routePrefix`. |
+| `RouteResolver` | class | Builds list/detail routes. Uses `descriptor.route` from the registry when present; otherwise falls back to `${routePrefix}/${kebab(entityName)}`. |
 | `EntityListPO`, `EntityFormPO` | classes | Page objects for list and detail/edit views. |
 | `toTestId`, `attrSelector`, `buttonTestId`, `buttonSelector`, `formControlSelector`, `formControlLocator` | functions | Selector helpers that encode the `data-testid` conventions. |
 | `inputAttrs`, `identificationAttr`, `buildCreateData`, `buildUpdateData` | functions | Data-shape helpers driven by descriptors. |

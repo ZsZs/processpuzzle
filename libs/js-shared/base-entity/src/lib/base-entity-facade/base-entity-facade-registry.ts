@@ -6,6 +6,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { BaseEntityFacade } from './base-entity-facade';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
+import { EntityRouteRegistry } from '../base-form-navigator/entity-route.registry';
 
 export type BaseEntityFacadeRegistry = Record<string, ProviderToken<BaseEntityFacade<BaseEntity>>>;
 
@@ -20,6 +21,7 @@ export const BASE_ENTITY_FACADE_REGISTRY = new InjectionToken<BaseEntityFacadeRe
 export class EntityRegistryComponent {
   private readonly registry = inject(BASE_ENTITY_FACADE_REGISTRY);
   private readonly injector = inject(Injector);
+  private readonly entityRouteRegistry = inject(EntityRouteRegistry);
   private readonly queryParams = toSignal(inject(ActivatedRoute).queryParamMap, { initialValue: null });
   private readonly descriptors = signal(this.buildDescriptors());
 
@@ -39,6 +41,7 @@ export class EntityRegistryComponent {
         entityTitle,
         isAbstract: descriptor.isAbstract,
         parentEntityName: descriptor.parentEntity,
+        route: this.entityRouteRegistry.basePath(descriptor.entityName),
         attrDescriptors: attrDescriptors.map((attr) => this.serializeAttr(attr)),
       };
     });

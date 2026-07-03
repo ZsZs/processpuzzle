@@ -8,6 +8,7 @@ import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
+import { EntityRouteRegistry } from '../base-form-navigator/entity-route.registry';
 import { BASE_ENTITY_FACADE_REGISTRY, EntityRegistryComponent } from './base-entity-facade-registry';
 
 @Injectable()
@@ -60,6 +61,9 @@ class FacadeWithFunctionTitle {
 
 async function setupComponent(minified?: string) {
   const queryParamMap = of(convertToParamMap(minified === undefined ? {} : { minified }));
+  const entityRouteRegistryStub: Partial<EntityRouteRegistry> = {
+    basePath: (entityName: string) => (entityName === 'EntityA' ? '/base/entity-a' : undefined),
+  };
 
   await TestBed.configureTestingModule({
     imports: [EntityRegistryComponent],
@@ -67,6 +71,7 @@ async function setupComponent(minified?: string) {
       FacadeWithStringTitle,
       FacadeWithFunctionTitle,
       { provide: ActivatedRoute, useValue: { queryParamMap } },
+      { provide: EntityRouteRegistry, useValue: entityRouteRegistryStub },
       {
         provide: BASE_ENTITY_FACADE_REGISTRY,
         useValue: { entityA: FacadeWithStringTitle, entityB: FacadeWithFunctionTitle },
@@ -144,6 +149,14 @@ describe('EntityRegistryComponent', () => {
       required: true,
       linkedEntityType: 'OtherEntity',
     });
+  });
+
+  it('includes the route from EntityRouteRegistry, omitting it when no basePath is registered', async () => {
+    const { text } = await setupComponent();
+    const parsed = JSON.parse(text);
+
+    expect(parsed[0].route).toBe('/base/entity-a');
+    expect(parsed[1].route).toBeUndefined();
   });
 
   it('renders minified JSON when minified=yes query param is present', async () => {

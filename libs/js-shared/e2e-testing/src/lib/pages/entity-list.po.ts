@@ -18,7 +18,7 @@ export class EntityListPO {
   // ── Navigation ──────────────────────────────────────────────────
 
   async navigateTo() {
-    await this.page.goto(this.routes.listRoute(this.descriptor.entityName));
+    await this.page.goto(this.routes.listRoute(this.descriptor));
     await this.page.waitForURL(/\/list$/);
   }
 
