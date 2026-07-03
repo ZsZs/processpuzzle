@@ -2,7 +2,7 @@ name: Release-API-Contracts
 on:
   push:
     branches:
-      - "release/api-contracts/*"
+      - "release/processpuzzle-api/*"
     paths:
       - 'libs/java-shared/api-contracts/**'
 

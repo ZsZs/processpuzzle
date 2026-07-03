@@ -299,7 +299,13 @@
       "Bash(Select-String -Pattern \"release\")",
       "Bash(Select-Object -First 15)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28647045466 --log-failed)",
-      "WebFetch(domain:central.sonatype.com)"
+      "WebFetch(domain:central.sonatype.com)",
+      "Bash(git merge *)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(git grep *)",
+      "WebFetch(domain:repo1.maven.org)",
+      "Bash(mvn -f \"C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\pom.xml\" -q -DskipTests -pl libs/java-shared/base-rule-backend -am compile)"
     ]
   }
 }
