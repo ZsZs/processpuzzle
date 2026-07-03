@@ -1,11 +1,7 @@
 {
   "hosting": {
     "public": "dist/apps/processpuzzle-testbed/browser",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "/api/**",
@@ -18,7 +14,8 @@
         "source": "**",
         "destination": "/index.html"
       }
-    ]    "headers": [
+    ],
+    "headers": [
       {
         "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
         "headers": [
@@ -102,17 +99,8 @@
     {
       "source": "tools/firebase/functions",
       "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ],
-      "predeploy": [
-        "npm --prefix \"tools/firebase/functions\" run lint",
-        "npm --prefix \"tools/firebase/functions\" run build"
-      ]
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
+      "predeploy": ["npm --prefix \"tools/firebase/functions\" run lint", "npm --prefix \"tools/firebase/functions\" run build"]
     }
   ]
 }
