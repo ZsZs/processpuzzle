@@ -321,7 +321,8 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api repos/ZsZs/processpuzzle/actions/jobs/84983322382 --jq '.steps[] | {name,status,conclusion,started_at,completed_at}')",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api \"repos/ZsZs/processpuzzle/contents/libs/java-shared/object-store/pom.xml?ref=8cd834412e55504bf21661c3393783965f1b1733\" --jq '.content')",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" api \"repos/ZsZs/processpuzzle/contents/pom.xml?ref=8cd834412e55504bf21661c3393783965f1b1733\" --jq '.content')",
-      "Bash(xargs grep -l \"entity-registry\")"
+      "Bash(xargs grep -l \"entity-registry\")",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28673184115 --log-failed)"
     ]
   }
 }

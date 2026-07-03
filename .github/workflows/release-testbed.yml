@@ -83,7 +83,7 @@ jobs:
       - name: Deploy Firebase Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
-        run: npx firebase-tools deploy --only functions --project processpuzzle-testbed --non-interactive
+        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes --project processpuzzle-testbed-stage --non-interactive
 
       - id: deploy-to-firebase
         name: Deploy to Firebase host
