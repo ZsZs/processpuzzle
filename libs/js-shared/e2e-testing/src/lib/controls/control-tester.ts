@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType, Selectable } from '@processpuzzle/base-entity';
 import { RouteResolver } from '../routing/route.resolver';
 import { formControlTestId, toTestId } from '../selectors/test-id';
 
@@ -48,6 +48,13 @@ function escapeRegExp(value: string): string {
 
 function expectOptions(context: ControlInteractionContext): { timeout?: number } | undefined {
   return context.expectTimeoutMs === undefined ? undefined : { timeout: context.expectTimeoutMs };
+}
+
+function resolveSelectables(attr: BaseEntityAttrDescriptor): Array<Selectable> | undefined {
+  if (typeof attr.getSelectables === 'function') return attr.getSelectables();
+  const raw = attr.selectables;
+  if (raw === undefined) return undefined;
+  return typeof raw === 'function' ? raw() : raw;
 }
 
 export abstract class ControlTester {
@@ -214,12 +221,12 @@ class DropdownControlTester extends ControlTester {
 
   override createValue(context: ControlDataContext): string {
     void context;
-    return String(this.attr.getSelectables()?.[0]?.value ?? '');
+    return String(resolveSelectables(this.attr)?.[0]?.value ?? '');
   }
 
   override updateValue(context: ControlDataContext, original: Record<string, string>): string {
     void context;
-    return String(this.attr.getSelectables()?.[1]?.value ?? original[this.attr.attrName] ?? '');
+    return String(resolveSelectables(this.attr)?.[1]?.value ?? original[this.attr.attrName] ?? '');
   }
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
