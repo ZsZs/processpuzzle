@@ -2,7 +2,14 @@
   "BASE_CONFIGURATION": {
     "PIPELINE_STAGE": "stage",
     "BACKEND_SERVICE_PROVIDER": "firestore",
-    "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api"
+    "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
+    "FIREBASE_CONFIGURATION": {
+      "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
+      "projectId": "processpuzzle-testbed-stage",
+      "storageBucket": "processpuzzle-testbed-stage.firebasestorage.app",
+      "messagingSenderId": "86206865743",
+      "appId": "1:86206865743:web:89f5140e6e0f63db68253a"
+    }
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "firebase-auth"
