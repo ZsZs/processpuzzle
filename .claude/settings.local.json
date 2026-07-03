@@ -297,7 +297,9 @@
       "PowerShell(pnpm nx run js-shared-e2e-testing:build 2>&1)",
       "PowerShell(npm exec -- nx run js-shared-e2e-testing:build 2>&1)",
       "Bash(Select-String -Pattern \"release\")",
-      "Bash(Select-Object -First 15)"
+      "Bash(Select-Object -First 15)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28647045466 --log-failed)",
+      "WebFetch(domain:central.sonatype.com)"
     ]
   }
 }
