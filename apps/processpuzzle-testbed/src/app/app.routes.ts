@@ -76,24 +76,28 @@ export const appRoutes: Route[] = [
         children: [
           {
             path: 'test-entity',
+            data: { entityName: 'Test Entity' },
             loadComponent: () => import('./content/base-forms/test-entity/test-entity-container.component').then((comp) => comp.TestEntityContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityFacade }],
             children: BASE_ENTITY_ROUTES,
           },
           {
             path: 'test-entity-component',
+            data: { entityName: 'Test Entity Component' },
             loadComponent: () => import('./content/base-forms/test-entity-component/test-entity-component-container.component').then((comp) => comp.TestEntityComponentContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityComponentFacade }],
             children: BASE_ENTITY_ROUTES,
           },
           {
             path: 'trunk-data',
+            data: { entityName: 'Trunk Data' },
             loadComponent: () => import('./content/base-forms/trunk-data/trunk-data-container.component').then((comp) => comp.TrunkDataContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TrunkDataFacade }],
             children: BASE_ENTITY_ROUTES,
           },
           {
             path: 'firestore-doc',
+            data: { entityName: 'Firestore Doc' },
             loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: FirestoreDocFacade }],
             children: BASE_ENTITY_ROUTES,
@@ -124,12 +128,14 @@ export const appRoutes: Route[] = [
         children: [
           {
             path: 'order',
+            data: { entityName: 'Order' },
             loadComponent: () => import('./content/base-rules/order/order-container.component').then((comp) => comp.OrderContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderFacade }],
             children: BASE_ENTITY_ROUTES,
           },
           {
             path: 'order-line',
+            data: { entityName: 'Order Line' },
             loadComponent: () => import('./content/base-rules/order-line/order-line-container.component').then((comp) => comp.OrderLineContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderLineFacade }],
             children: BASE_ENTITY_ROUTES,

@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { BaseUrlSegments } from './base-url-segments';
 import { type NavigationPayload } from './navigation-payload';
+import { EntityRouteRegistry } from './entity-route.registry';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 
 export enum RouteSegments {
@@ -73,7 +74,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
   { providedIn: 'root' },
   withState<NavigationState>(INITIAL_NAVIGATION_STATE),
   withDevtools('Base Form Navigator'),
-  withMethods((store, router = inject(Router), route = inject(ActivatedRoute)) => {
+  withMethods((store, router = inject(Router), route = inject(ActivatedRoute), entityRouteRegistry = inject(EntityRouteRegistry)) => {
     let pendingNavigatorUrl: string | undefined;
     let routerEventsSubscription: { unsubscribe(): void } | undefined;
 
@@ -189,6 +190,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     async function navigateToRelated(relatedTypeName: string, id: string, returnTo?: string, payload?: NavigationPayload) {
       patchState(store, { entityName: relatedTypeName });
       pushPayload(payload);
+      const registeredPath = entityRouteRegistry.detailsPath(relatedTypeName, id);
+      if (registeredPath) {
+        await navigateToUrl(registeredPath, returnTo);
+        return;
+      }
       const snakeCaseEntityName = snakeCaseName(relatedTypeName);
       const baseUrl = determineBaseUrl();
       const detailsFormPath = baseUrl + '/' + snakeCaseEntityName + '/' + id + '/details';
@@ -198,6 +204,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     async function navigateToRelatedList(relatedTypeName: string, returnTo?: string, payload?: NavigationPayload) {
       patchState(store, { entityName: relatedTypeName });
       pushPayload(payload);
+      const registeredPath = entityRouteRegistry.listPath(relatedTypeName);
+      if (registeredPath) {
+        await navigateToUrl(registeredPath, returnTo);
+        return;
+      }
       const snakeCaseEntityName = snakeCaseName(relatedTypeName);
       const baseUrl = determineBaseUrl();
       const listPath = baseUrl + '/' + snakeCaseEntityName + '/list';

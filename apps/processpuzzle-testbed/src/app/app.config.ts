@@ -18,7 +18,7 @@ import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_ENTITY_FACADE_REGISTRY } from '@processpuzzle/base-entity';
+import { BASE_ENTITY_FACADE_REGISTRY, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
@@ -62,6 +62,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: FIREBASE_OPTIONS, useValue: runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION },
       provideErrorSnackbar(),
       provideRouter(appRoutes, withComponentInputBinding()),
+      provideEntityRouteRegistry(),
       provideNativeDateAdapter(),
       provideShareButtonsOptions(shareIcons()),
       provideTranslocoService(runtimeConfiguration.LANGUAGE_CONFIGURATION),

@@ -24,6 +24,8 @@ export { BaseEntityDescriptorRegistry } from './lib/base-entity-facade/base-enti
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
 export { NavigatorCommand, type NavigationPayload } from './lib/base-form-navigator/navigation-payload';
+export { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
+export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-route-registry.providers';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
