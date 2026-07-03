@@ -59,6 +59,7 @@
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
         <processpuzzle.api.version>1.0.4</processpuzzle.api.version>
+        <base-rule-backend.version>1.0.2</base-rule-backend.version>
     </properties>
 
     <dependencyManagement>
@@ -73,7 +74,7 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-rule-backend</artifactId>
-                <version>${project.version}</version>
+                <version>${base-rule-backend.version}</version>
             </dependency>
 
             <dependency>
