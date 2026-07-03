@@ -295,7 +295,11 @@
       "Bash(node -e \"const fs=require\\('fs'\\); const d=JSON.parse\\(fs.readFileSync\\('C:/Users/zsolt/AppData/Local/Temp/sonar-be.json','utf8'\\)\\); console.log\\('Total:',d.total\\); d.issues.forEach\\(i=>console.log\\(i.rule+' | '+i.severity+' | '+i.component.replace\\('processpuzzle_base_entity:',''\\)+':'+\\(i.line||'?'\\)+' | '+i.message\\)\\)\")",
       "PowerShell(npm exec -- nx run base-entity:test 2>&1)",
       "PowerShell(pnpm nx run js-shared-e2e-testing:build 2>&1)",
-      "PowerShell(npm exec -- nx run js-shared-e2e-testing:build 2>&1)"
+      "PowerShell(npm exec -- nx run js-shared-e2e-testing:build 2>&1)",
+      "Bash(Select-String -Pattern \"release\")",
+      "Bash(Select-Object -First 15)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28647045466 --log-failed)",
+      "WebFetch(domain:central.sonatype.com)"
     ]
   }
 }
