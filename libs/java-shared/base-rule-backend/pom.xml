@@ -45,6 +45,7 @@
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>processpuzzle-api</artifactId>
+            <version>1.0.4</version>
         </dependency>
 
         <!-- Spring Boot dependencies -->
