@@ -18,7 +18,7 @@
         <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</mat-header-cell>
         <mat-cell (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
           @if (colDescriptor.isLinkToDetails) {
-            <a (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
+            <a class="link-to-details" (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.linkedEntityType !== undefined ) {
             <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null ) {

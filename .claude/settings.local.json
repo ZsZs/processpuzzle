@@ -345,7 +345,9 @@
       "PowerShell(npx nx run design:build --configuration=production --no-cloud --skip-nx-cache --verbose 2>&1)",
       "PowerShell(npx tsc -p libs/js-shared/design/tsconfig.lib.prod.json --noEmit 2>&1)",
       "PowerShell(npx ngc -p libs/js-shared/design/tsconfig.lib.prod.json --noEmit 2>&1)",
-      "PowerShell(npx nx run design:build --configuration=development --no-cloud --skip-nx-cache 2>&1)"
+      "PowerShell(npx nx run design:build --configuration=development --no-cloud --skip-nx-cache 2>&1)",
+      "PowerShell(pnpm nx build base-entity-frontend 2>&1)",
+      "PowerShell(npx nx build base-entity-frontend 2>&1)"
     ]
   }
 }

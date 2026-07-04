@@ -12,6 +12,14 @@
 
 .mat-column-select {
     overflow: initial;
+    flex: 0 0 48px;
+    width: 48px;
+    max-width: 48px;
+}
+
+.link-to-details {
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .mat-mdc-row:hover {

@@ -1,25 +1,47 @@
-import {
-  Component,
-  ElementRef,
-  Inject,
-  OnDestroy,
-  ViewChild,
-  AfterViewInit,
-  forwardRef,
-  signal,
-  output,
-} from '@angular/core';
+import { AfterViewInit, Component, ElementRef, forwardRef, Inject, OnDestroy, output, signal, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { EditorState, Compartment } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
-import { defaultKeymap, historyKeymap, history } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
 import { bracketMatching } from '@codemirror/language';
 
 import { rsqlLanguage, rsqlSyntaxHighlighting } from './rsql-language';
 import { createRsqlLinter } from './rsql-linter';
 import { createRsqlCompletionSource } from './rsql-completion';
-import { RsqlFieldMetadataProvider } from './rsql-field-metadata.model';
+import { RsqlFieldMetadata, RsqlFieldMetadataProvider, RsqlFieldType } from './rsql-field-metadata.model';
+import { TranslocoDirective } from '@jsverse/transloco';
+
+const FALLBACK_SAMPLE = "status==active;createdAt=gt='2026-01-01'";
+const SAMPLE_TYPE_PRIORITY: RsqlFieldType[] = ['string', 'date', 'datetime', 'enum', 'boolean', 'number'];
+
+function buildSampleQuery(provider: RsqlFieldMetadataProvider): string {
+  const fields = provider.getFields();
+  if (fields.length === 0) return FALLBACK_SAMPLE;
+
+  const picks: string[] = [];
+  const used = new Set<string>();
+  for (const type of SAMPLE_TYPE_PRIORITY) {
+    if (picks.length >= 2) break;
+    const field = fields.find((f) => f.type === type && !used.has(f.name));
+    if (!field) continue;
+    picks.push(sampleClause(field));
+    used.add(field.name);
+  }
+  if (picks.length === 0) picks.push(`${fields[0].name}=='sample'`);
+  return picks.join(';');
+}
+
+function sampleClause(field: RsqlFieldMetadata): string {
+  switch (field.type) {
+    case 'string': return `${field.name}=='sample'`;
+    case 'number': return `${field.name}=gt=0`;
+    case 'boolean': return `${field.name}==true`;
+    case 'date':
+    case 'datetime': return `${field.name}=gt='2026-01-01'`;
+    case 'enum': return `${field.name}==${field.enumValues?.[0] ?? 'value'}`;
+  }
+}
 
 @Component({
   selector: 'pp-rsql-query-editor',
@@ -32,8 +54,15 @@ import { RsqlFieldMetadataProvider } from './rsql-field-metadata.model';
         border-radius: 4px;
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
         font-size: 13px;
+        resize: both;
+        overflow: hidden;
+        min-width: 320px;
+        min-height: 2.5rem;
+        height: 180px;
+        width: 100%;
       }
       .rsql-editor-host :global(.cm-editor) {
+        height: 100%;
         min-height: 2.5rem;
       }
       .rsql-editor-host :global(.cm-editor.cm-focused) {
@@ -43,6 +72,7 @@ import { RsqlFieldMetadataProvider } from './rsql-field-metadata.model';
     `,
   ],
   providers: [
+    TranslocoDirective,
     {
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => RsqlQueryEditorComponent),
@@ -82,18 +112,31 @@ export class RsqlQueryEditorComponent implements AfterViewInit, OnDestroy, Contr
       }
     });
 
+    const sampleQuery = buildSampleQuery(this.fieldMetadata);
+    const acceptSampleOnTab = {
+      key: 'Tab',
+      run: (view: EditorView) => {
+        if (view.state.doc.length !== 0) return false;
+        view.dispatch({
+          changes: { from: 0, insert: sampleQuery },
+          selection: { anchor: sampleQuery.length },
+        });
+        return true;
+      },
+    };
+
     const state = EditorState.create({
       doc: this.pendingValue,
       extensions: [
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([acceptSampleOnTab, ...defaultKeymap, ...historyKeymap]),
         rsqlLanguage,
         rsqlSyntaxHighlighting,
         bracketMatching(),
         closeBrackets(),
         autocompletion({ override: [createRsqlCompletionSource(this.fieldMetadata)] }),
         createRsqlLinter(this.fieldMetadata),
-        cmPlaceholder("e.g. status==active;createdAt=gt='2026-01-01'"),
+        cmPlaceholder(`e.g. ${sampleQuery}`),
         this.readOnlyCompartment.of([]),
         updateListener,
         EditorView.domEventHandlers({

@@ -49,12 +49,23 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>> {
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
-      return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
-        map((httpResponse: unknown) => {
-          return queryCondition.page ? this.mapPagedResponse(httpResponse) : this.mapSimpleResponse(httpResponse);
+      return this.httpClient.get(fullUrl, { headers: this.headers, observe: 'response' }).pipe(
+        map((httpResponse) => {
+          if (httpResponse.status === 204 || this.isEmptyBody(httpResponse.body)) {
+            throw new Error('The query returned no content.');
+          }
+          return queryCondition.page ? this.mapPagedResponse(httpResponse.body) : this.mapSimpleResponse(httpResponse.body);
         }),
       );
     } else throw new Error('Could not determine the full url');
+  }
+
+  private isEmptyBody(body: unknown): boolean {
+    if (body == null) return true;
+    if (Array.isArray(body)) return body.length === 0;
+    if (typeof body === 'object') return Object.keys(body as object).length === 0;
+    if (typeof body === 'string') return body.length === 0;
+    return false;
   }
 
   findById(id: string): Observable<void | PersistedEntity<Entity>> {
@@ -126,6 +137,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   }
 
   protected buildRsql(queryCondition: BaseEntityQueryCondition): string | undefined {
+    if (queryCondition.query) return queryCondition.query;
     if (queryCondition.filterGroup) return toRsql(queryCondition.filterGroup);
     if (queryCondition.filters?.length) return toRsql(queryCondition.filters);
     return undefined;

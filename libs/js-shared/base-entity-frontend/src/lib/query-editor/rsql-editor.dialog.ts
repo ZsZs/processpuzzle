@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { RsqlQueryEditorComponent } from './rsql-query-editor.component';
@@ -15,13 +15,10 @@ export interface RsqlEditorDialogData {
   imports: [ReactiveFormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton, RsqlQueryEditorComponent, TranslocoDirective],
   providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
   template: `
-    <ng-container *transloco="let t; scope: 'base_entity'">
+    <ng-container *transloco="let t">
       <h2 mat-dialog-title>{{ t('base_entity.rsql_editor_dialog.title') }}</h2>
       <mat-dialog-content class="editor-content">
-        <pp-rsql-query-editor
-          [formControl]="queryControl"
-          (validityChange)="isValid.set($event)">
-        </pp-rsql-query-editor>
+        <pp-rsql-query-editor [formControl]="queryControl" (validityChange)="isValid.set($event)"> </pp-rsql-query-editor>
       </mat-dialog-content>
       <mat-dialog-actions align="end">
         <button type="button" mat-button [mat-dialog-close]="null">{{ t('base_entity.rsql_editor_dialog.cancel_button') }}</button>

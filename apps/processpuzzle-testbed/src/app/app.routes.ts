@@ -60,7 +60,7 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook', menuTitle: 'base-entity' },
     loadComponent: () => import('./content/base-forms/base-forms.component').then((comp) => comp.BaseFormsComponent),
-    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade, provideTranslocoScope('base_entity')],
+    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
     children: [
       {
         path: '',
