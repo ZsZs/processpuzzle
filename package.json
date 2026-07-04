@@ -78,6 +78,7 @@
     "release-check": "nx release plan:check --no-cloud",
     "e2e-test-filtered": "nx e2e processpuzzle-testbed-e2e --no-cloud -- --grep \"\\[Firestore Doc\\] CRUD\"",
     "e2e-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud",
+    "e2e-smoke-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud -- --grep @smoke",
     "release": "ts-node tools/scripts/release.ts",
     "release:dry": "DRY_RUN=true ts-node tools/scripts/release.ts",
     "test-all": "nx run-many -t test --exclude=processpuzzle-testbed --configuration=ci --no-cloud",

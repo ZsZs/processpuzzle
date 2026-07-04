@@ -5,6 +5,9 @@ on:
       - "release/testbed/*"
     paths:
       - 'apps/processpuzzle-testbed/**'
+      - 'tools/firebase/functions/**'
+      - 'tools/mock-backend/db.json'
+      - 'firebase.json'
 permissions:
   id-token: write
   contents: write
@@ -14,7 +17,7 @@ jobs:
   release-to-firebase-prod:
     environment: PROD
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,7 +54,7 @@ jobs:
           nx_project: testbed
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'prod'
 
       - id: build-images
@@ -63,6 +66,25 @@ jobs:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Install Firebase Functions dependencies
+        working-directory: tools/firebase/functions
+        run: npm install --no-audit --no-fund
+
+      - name: Write Firebase service account key
+        id: write-sa
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          SA_PATH="${RUNNER_TEMP}/firebase-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$SA_PATH"
+          echo "path=$SA_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Firebase Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
+        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes --project processpuzzle-testbed --non-interactive --force
+
       - id: deploy-to-firebase
         name: Deploy to Firebase host
         uses: ./.github/actions/deploy-to-firebase
@@ -72,11 +94,18 @@ jobs:
           channel_id: 'live'
           project_root: .
 
+      - name: Remove Firebase service account key
+        if: always()
+        shell: bash
+        run: rm -f "${{ steps.write-sa.outputs.path }}"
+
       - id: integration-test
         name: run-integration-tests
         uses: ./.github/actions/e2e-test
         with:
           target_environment: 'prod'
+          base_dir: 'apps/processpuzzle-testbed-e2e'
+          test_scope: 'smoke'
 
       - name: Config Git
         shell: bash

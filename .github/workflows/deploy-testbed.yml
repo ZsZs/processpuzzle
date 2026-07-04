@@ -5,6 +5,9 @@ on:
       - "develop"
     paths:
       - 'apps/processpuzzle-testbed/**'
+      - 'tools/firebase/functions/**'
+      - 'tools/mock-backend/db.json'
+      - 'firebase.json'
 
 jobs:
   deploy-to-firebase-stage:
@@ -25,7 +28,7 @@ jobs:
           nx_project: testbed
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'stage'
 
       - id: build-image
@@ -36,6 +39,25 @@ jobs:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Install Firebase Functions dependencies
+        working-directory: tools/firebase/functions
+        run: npm install --no-audit --no-fund
+
+      - name: Write Firebase service account key
+        id: write-sa
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          SA_PATH="${RUNNER_TEMP}/firebase-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$SA_PATH"
+          echo "path=$SA_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Firebase Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
+        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes --project processpuzzle-testbed-stage --non-interactive --force
+
       - id: deploy-to-firebase
         name: Deploy to Firebase host
         uses: ./.github/actions/deploy-to-firebase
@@ -44,6 +66,11 @@ jobs:
           project_id: processpuzzle-testbed-stage
           channel_id: 'live'
           project_root: .
+
+      - name: Remove Firebase service account key
+        if: always()
+        shell: bash
+        run: rm -f "${{ steps.write-sa.outputs.path }}"
 
       - id: integration-test
         name: run-integration-tests
