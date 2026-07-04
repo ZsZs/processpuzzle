@@ -17,7 +17,7 @@ jobs:
   release-to-firebase-prod:
     environment: PROD
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
           nx_project: testbed
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'prod'
 
       - id: build-images
