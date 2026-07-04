@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/application-page.fixture';
 
-test.describe('Home page structure', () => {
+test.describe('Home page structure', { tag: '@smoke' }, () => {
   test('Home page', async ({ page, applicationPage }) => {
     await applicationPage.goto();
     await expect(page).toHaveTitle('ProcessPuzzle Testbed - Home');
@@ -18,7 +18,7 @@ test.describe('Home page structure', () => {
   });
 });
 
-test.describe('Home page navigation', () => {
+test.describe('Home page navigation', { tag: '@smoke' }, () => {
   test('Navigate to content pages', async ({ page, applicationPage }) => {
     await applicationPage.goto();
     expect(applicationPage.appContent).toBeTruthy();

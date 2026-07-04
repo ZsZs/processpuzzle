@@ -105,6 +105,7 @@ jobs:
         with:
           target_environment: 'prod'
           base_dir: 'apps/processpuzzle-testbed-e2e'
+          test_scope: 'smoke'
 
       - name: Config Git
         shell: bash
