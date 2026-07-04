@@ -10,7 +10,7 @@
       "executor": "nx:run-commands",
       "dependsOn": ["^build"],
       "options": {
-        "command": "mvn -pl libs/java-shared/base-state-backend -am clean install"
+        "command": "mvn -pl libs/java-shared/base-state-backend clean install"
       }
     },
     "lint": {
