@@ -1,0 +1,17 @@
+{
+  "delete_artifact_confirmation_dialog": {
+    "title": "Supprimer l'artefact ?",
+    "content": "Cela supprimera définitivement « {{ artifactName }} » du magasin d'objets.",
+    "cancel_button": "Annuler",
+    "delete_button": "Supprimer"
+  },
+  "toolbar": {
+    "query_label": "Requête",
+    "filter_label": "Filtre"
+  },
+  "rsql_editor_dialog": {
+    "title": "Éditeur de requêtes avancé",
+    "cancel_button": "Annuler",
+    "apply_button": "Appliquer"
+  }
+}

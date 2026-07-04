@@ -1,5 +1,5 @@
 {
-  "name": "base-entity",
+  "name": "base-entity-frontend",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/js-shared/base-entity/src",
@@ -12,14 +12,14 @@
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "defaultConfiguration": "production",
       "options": {
-        "project": "libs/js-shared/base-entity/ng-package.json"
+        "project": "libs/js-shared/base-entity-frontend/ng-package.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/js-shared/base-entity/tsconfig.lib.prod.json"
+          "tsConfig": "libs/js-shared/base-entity-frontend/tsconfig.lib.prod.json"
         },
         "development": {
-          "tsConfig": "libs/js-shared/base-entity/tsconfig.lib.json"
+          "tsConfig": "libs/js-shared/base-entity-frontend/tsconfig.lib.json"
         }
       }
     },
@@ -29,8 +29,8 @@
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "runner": "vitest",
-        "runnerConfig": "libs/js-shared/base-entity/vitest.config.ts",
-        "tsConfig": "libs/js-shared/base-entity/tsconfig.spec.json",
+        "runnerConfig": "libs/js-shared/base-entity-frontend/vitest.config.ts",
+        "tsConfig": "libs/js-shared/base-entity-frontend/tsconfig.spec.json",
         "coverage": true
       },
       "configurations": {

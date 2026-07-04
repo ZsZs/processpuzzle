@@ -5,19 +5,40 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
-import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { LayoutService } from '@processpuzzle/util';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+import { BaseEntityQueryComponent } from '../base-query/base-entity-query.component';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'base-entity-toolbar',
   standalone: true,
-  imports: [CommonModule, MatToolbarModule, MatIcon, MatFormField, MatLabel, MatInput, MatButton, MatIconButton, MatSuffix, MatMenu, MatMenuItem, MatMenuTrigger],
+  imports: [CommonModule, MatToolbarModule, MatIcon, MatFormField, MatInput, MatButton, MatIconButton, MatSuffix, MatMenu, MatMenuItem, MatMenuTrigger, BaseEntityQueryComponent, TranslocoDirective],
   templateUrl: './base-entity-toolbar.component.html',
+  styles: [
+    `
+      .toolbar-inputs {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+      }
+      .filter-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .field-label {
+        font-size: 14px;
+        white-space: nowrap;
+      }
+    `,
+  ],
+  providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
 })
 export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements OnInit {
   entityDescriptor = input.required<BaseEntityDescriptor>();

@@ -1,15 +1,20 @@
 <mat-toolbar *ngIf="formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE">
-  <div class="dense-3" [ngStyle]="{'padding-top': '12px' }">
-    <mat-form-field>
-      <mat-label [attr.for]="entityDescriptor().createTestId('filter-input')">Filter</mat-label>
-      <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )" placeholder="Filter">
-      @if (filterInput.value) {
-        <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
-          <mat-icon>cancel</mat-icon>
-        </button>
-      }
-    </mat-form-field>
-  </div>
+  <ng-container *transloco="let t;">
+    <div class="dense-3 toolbar-inputs" [ngStyle]="{'padding-top': '12px' }">
+      <base-entity-query [entityDescriptor]="entityDescriptor()"></base-entity-query>
+      <div class="filter-wrapper">
+        <label class="field-label" [attr.for]="entityDescriptor().createTestId('filter-input')">{{ t('base_entity.toolbar.filter_label') }}</label>
+        <mat-form-field subscriptSizing="dynamic">
+          <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )">
+          @if (filterInput.value) {
+            <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+  </ng-container>
   <span class="toolbar-spacer"></span>
   @if(isSmallDevice()) {
     <div [ngClass]="layoutService.layoutClass()">

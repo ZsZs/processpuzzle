@@ -4,5 +4,14 @@
     "content": "This will permanently delete \"{{ artifactName }}\" from the object store.",
     "cancel_button": "Cancel",
     "delete_button": "Delete"
+  },
+  "toolbar": {
+    "query_label": "Query",
+    "filter_label": "Filter"
+  },
+  "rsql_editor_dialog": {
+    "title": "Advanced query editor",
+    "cancel_button": "Cancel",
+    "apply_button": "Apply"
   }
 }

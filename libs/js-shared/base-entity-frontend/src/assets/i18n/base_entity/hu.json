@@ -1,0 +1,17 @@
+{
+  "delete_artifact_confirmation_dialog": {
+    "title": "Elem törlése?",
+    "content": "Ez véglegesen törli a(z) „{{ artifactName }}\" elemet az objektumtárból.",
+    "cancel_button": "Mégse",
+    "delete_button": "Törlés"
+  },
+  "toolbar": {
+    "query_label": "Lekérdezés",
+    "filter_label": "Szűrő"
+  },
+  "rsql_editor_dialog": {
+    "title": "Speciális lekérdezés-szerkesztő",
+    "cancel_button": "Mégse",
+    "apply_button": "Alkalmaz"
+  }
+}

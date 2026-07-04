@@ -48,6 +48,7 @@ export interface BaseEntityQueryCondition {
   filters?: FilterCondition[];
   filterGroup?: FilterGroup;
   orderBys?: OrderBy[];
+  query?: string;
 }
 
 export interface FirestoreQuery<Entity extends BaseEntity> {

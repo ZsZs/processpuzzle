@@ -1,0 +1,17 @@
+{
+  "delete_artifact_confirmation_dialog": {
+    "title": "¿Eliminar artefacto?",
+    "content": "Esto eliminará permanentemente \"{{ artifactName }}\" del almacén de objetos.",
+    "cancel_button": "Cancelar",
+    "delete_button": "Eliminar"
+  },
+  "toolbar": {
+    "query_label": "Consulta",
+    "filter_label": "Filtro"
+  },
+  "rsql_editor_dialog": {
+    "title": "Editor de consultas avanzado",
+    "cancel_button": "Cancelar",
+    "apply_button": "Aplicar"
+  }
+}
