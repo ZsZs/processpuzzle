@@ -326,7 +326,10 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 85064857512 --log-failed)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run list --workflow=release-testbed.yml --limit 5)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 85069128290 --log-failed)",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 85069128290)"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 85069128290)",
+      "Bash(node -e \"console.log\\(require.resolve\\('js-yaml'\\)\\)\")",
+      "Bash(node -e \"const db=require\\('./tools/firebase/functions/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\); console.log\\('first rule sample:', JSON.stringify\\(\\(db.rules||[]\\)[0], null, 2\\).slice\\(0, 300\\)\\)\")",
+      "Bash(node -e \"const db=require\\('C:/Projects/ProcessPuzzle/processpuzzle/tools/firebase/functions/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\)\")"
     ]
   }
 }
