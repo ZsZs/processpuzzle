@@ -57,7 +57,7 @@
     "lint-auth": "nx run auth:lint --configuration=ci --no-cloud",
     "lint-base-desktop-backend": "nx run base-desktop-backend:lint --configuration=ci --no-cloud",
     "lint-base-desktop-frontend": "nx run base-desktop-frontend:lint --configuration=ci --no-cloud",
-    "lint-base-entity": "nx run base-entity-frontend:lint --configuration=ci --no-cloud",
+    "lint-base-entity-frontend": "nx run base-entity-frontend:lint --configuration=ci --no-cloud",
     "lint-base-process-backend": "nx run base-process-backend:lint --configuration=ci --no-cloud",
     "lint-base-process-frontend": "nx run base-process-frontend:lint --configuration=ci --no-cloud",
     "lint-base-rule-backend": "nx run base-rule-backend:lint --configuration=ci --no-cloud",
