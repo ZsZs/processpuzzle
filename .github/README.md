@@ -13,7 +13,7 @@ The pipeline is **project-scoped**: every publishable library and application ow
 | Nx project | Build workflow | Release workflow | Path filter |
 | --- | --- | --- | --- |
 | `auth` | `build-auth.yml` | `release-auth.yml` | `libs/js-shared/auth/**` |
-| `base-entity` | `build-base-entity.yml` | `release-base-entity.yml` | `libs/js-shared/base-entity/**` |
+| `base-entity-frontend` | `build-base-entity-frontend.yml` | `release-base-entity-frontend.yml` | `libs/js-shared/base-entity-frontend/**` |
 | `e2e-testing` | `build-e2e-testing.yml` | `release-e2e-testing.yml` | `libs/js-shared/e2e-testing/**` |
 | `object-store` | `build-object-store.yml` | `release-object-store.yml` | `libs/js-shared/object-store/**` |
 | `test-util` | `build-test-util.yml` | `release-test-util.yml` | `libs/js-shared/test-util/**` |
@@ -55,7 +55,7 @@ A holder of released versions only — no workflow is bound to it.
 Workflows are gated by both **branch** and **path filter**, so unrelated changes do not start unnecessary jobs.
 
 - **Build workflows** trigger on `push` to `feature/**` and `develop`, and on `pull_request` to `develop`, restricted to the project's `paths:` filter.
-- **`build-testbed.yml`** additionally has a `workflow_run:` trigger that fires when `Build-Auth`, `Build-Base-Entity`, `Build-Util`, or `Build-Widgets` complete — so the testbed is re-validated whenever an upstream library build runs.
+- **`build-testbed.yml`** additionally has a `workflow_run:` trigger that fires when `Build-Auth`, `Build-Base-Entity-Frontend`, `Build-Util`, or `Build-Widgets` complete — so the testbed is re-validated whenever an upstream library build runs.
 - **`deploy-testbed.yml`** triggers only on `push` to `develop` under `apps/processpuzzle-testbed/**` and runs in the **STAGE** GitHub Environment.
 - **Release workflows** trigger on `push` to `release/<project>/*` under the project's path filter. The testbed release runs in the **PROD** GitHub Environment.
 - **`ng-update.yml`** runs on cron `30 5 * * 1,3,5`.

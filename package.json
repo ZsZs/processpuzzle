@@ -86,7 +86,7 @@
     "test-auth": "nx run auth:test --configuration=ci --coverage --no-cloud --skip-nx-cache",
     "test-base-desktop-backend": "nx run base-desktop-backend:test --configuration=ci --no-cloud",
     "test-base-desktop-frontend": "nx run base-desktop-frontend:test --configuration=ci --coverage --no-cloud",
-    "test-base-entity": "nx run base-entity-frontend:test --configuration=ci --coverage --no-cloud",
+    "test-base-entity-frontend": "nx run base-entity-frontend:test --configuration=ci --coverage --no-cloud",
     "test-base-process-backend": "nx run base-process-backend:test --configuration=ci --no-cloud",
     "test-base-process-frontend": "nx run base-process-frontend:test --configuration=ci --coverage --no-cloud",
     "test-base-rule-backend": "nx run base-rule-backend:test --configuration=ci --no-cloud",

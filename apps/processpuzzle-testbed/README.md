@@ -11,7 +11,7 @@ Each feature module of the testbed focuses on a single library — showing typic
 ## Demonstrated libraries
 The testbed exercises the following libraries from the [ProcessPuzzle Framework](https://github.com/ZsZs/processpuzzle/tree/develop/libs):
 - [@processpuzzle/util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/util) — general-purpose helpers, runtime config loader, error handler, logging and layout services.
-- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/base-entity) — Angular Material table and reactive form generator driven by entity definitions.
+- [@processpuzzle/base-entity](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/base-entity-frontend) — Angular Material table and reactive form generator driven by entity definitions.
 - [@processpuzzle/widgets](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/widgets) — reusable UI widgets for application development.
 - [@processpuzzle/auth](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/auth) — authentication and authorization (OIDC / Keycloak).
 - [@processpuzzle/test-util](https://github.com/ZsZs/processpuzzle/tree/develop/libs/js-shared/test-util) — helper utilities for unit testing.

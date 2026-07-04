@@ -26,7 +26,7 @@ import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CON
 import { TestConfiguration } from './lib/test-configuration';
 import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.component';
 import { of, throwError } from 'rxjs';
-import { MockBreakpointObserver } from '@processpuzzle/test-util';
+import { MockBreakpointObserver, provideTranslocoTesting } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -280,6 +280,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
         { path: 'test-entity/:id/details', component: DummyComponent },
         { path: 'test-entity/list', component: DummyComponent },
       ]),
+      provideTranslocoTesting({ translations: {} }),
       LayoutService,
       { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
       { provide: BreakpointObserver, useClass: MockBreakpointObserver },

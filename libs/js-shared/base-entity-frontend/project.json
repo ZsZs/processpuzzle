@@ -2,7 +2,7 @@
   "name": "base-entity-frontend",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "libs/js-shared/base-entity/src",
+  "sourceRoot": "libs/js-shared/base-entity-frontend/src",
   "prefix": "pp",
   "tags": ["scope:base-entity", "type:domain"],
   "targets": {
@@ -64,7 +64,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-entity"
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-entity-frontend"
       }
     }
   }

@@ -5,6 +5,6 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'base-entity-overview',
   standalone: true,
   imports: [MarkdownComponent],
-  template: ` <markdown clipboard mermaid [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/js-shared/base-entity/README.md'" ngPreserveWhitespaces></markdown> `,
+  template: ` <markdown clipboard mermaid [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/js-shared/base-entity-frontend/README.md'" ngPreserveWhitespaces></markdown> `,
 })
 export class OverviewComponent {}

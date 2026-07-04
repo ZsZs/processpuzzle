@@ -5,7 +5,7 @@ on:
       - "feature/**"
       - "develop"
     paths:
-      - 'libs/js-shared/base-entity/**'
+      - 'libs/js-shared/base-entity-frontend/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]

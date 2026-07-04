@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ZsZs/processpuzzle.git",
-    "directory": "libs/js-shared/base-entity"
+    "directory": "libs/js-shared/base-entity-frontend"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {

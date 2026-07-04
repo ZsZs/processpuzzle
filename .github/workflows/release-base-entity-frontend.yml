@@ -1,10 +1,10 @@
-name: Release-Base-Entity
+name: Release-Base-Entity-Frontend
 on:
   push:
     branches:
       - "release/base-entity/*"
     paths:
-      - 'libs/js-shared/base-entity/**'
+      - 'libs/js-shared/base-entity-frontend/**'
 permissions:
   id-token: write
   contents: write
@@ -24,7 +24,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: libs/js-shared/base-entity
+          path: libs/js-shared/base-entity-frontend
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -46,8 +46,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: 'libs/js-shared/base-entity'
-          nx_project: base-entity
+          base_dir: 'libs/js-shared/base-entity-frontend'
+          nx_project: base-entity-frontend
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=base-entity --access public --no-cloud
+        run: npx nx release publish --projects=base-entity-frontend --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

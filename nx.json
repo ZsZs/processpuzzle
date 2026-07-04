@@ -110,7 +110,7 @@
       "auth",
       "base-desktop-backend",
       "base-desktop-frontend",
-      "base-entity",
+      "base-entity-frontend",
       "base-process-backend",
       "base-process-frontend",
       "base-rule-backend",

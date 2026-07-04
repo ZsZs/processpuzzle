@@ -92,8 +92,12 @@ export class RsqlQueryEditorComponent implements AfterViewInit, OnDestroy, Contr
 
   private view?: EditorView;
   private readOnlyCompartment = new Compartment();
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string) => void = () => {
+    /* replaced by registerOnChange */
+  };
+  private onTouched: () => void = () => {
+    /* replaced by registerOnTouched */
+  };
   private pendingValue = '';
 
   constructor(@Inject(RsqlFieldMetadataProvider) private readonly fieldMetadata: RsqlFieldMetadataProvider) {}
