@@ -4,7 +4,7 @@
     "description": "Cloud Functions for Firebase",
     "scripts": {
         "lint": "eslint --ext .js,.ts .",
-        "sync-db": "node -e \"const fs=require('fs');const db=require('../../mock-backend/db.js')();const json=JSON.stringify(db,null,2);fs.writeFileSync('db.json',json);fs.mkdirSync('lib',{recursive:true});fs.writeFileSync('lib/db.json',json)\"",
+        "sync-db": "node -e \"const fs=require('fs');fs.copyFileSync('../../mock-backend/db.json','db.json');fs.mkdirSync('lib',{recursive:true});fs.copyFileSync('db.json','lib/db.json')\"",
         "build": "npm run sync-db && tsc",
         "build:watch": "npm run sync-db && tsc --watch",
         "serve": "npm run build && firebase emulators:start --only functions",

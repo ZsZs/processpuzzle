@@ -22,6 +22,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Merge YAML rules into mock-backend db.json
+      shell: bash
+      run: node -e "const fs=require('fs');const db=require('./tools/mock-backend/db.js')();fs.writeFileSync('./tools/mock-backend/db.json',JSON.stringify(db,null,2))"
+
     - name: Set up Docker Build
       uses: docker/setup-buildx-action@v3
 

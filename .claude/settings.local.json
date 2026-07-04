@@ -329,7 +329,12 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view --job 85069128290)",
       "Bash(node -e \"console.log\\(require.resolve\\('js-yaml'\\)\\)\")",
       "Bash(node -e \"const db=require\\('./tools/firebase/functions/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\); console.log\\('first rule sample:', JSON.stringify\\(\\(db.rules||[]\\)[0], null, 2\\).slice\\(0, 300\\)\\)\")",
-      "Bash(node -e \"const db=require\\('C:/Projects/ProcessPuzzle/processpuzzle/tools/firebase/functions/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\)\")"
+      "Bash(node -e \"const db=require\\('C:/Projects/ProcessPuzzle/processpuzzle/tools/firebase/functions/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\)\")",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28697601443 --log-failed)",
+      "Bash(node -e \"const pkg=require\\('./package.json'\\); console.log\\('js-yaml in deps:', !!\\(pkg.dependencies||{}\\)['js-yaml']\\); console.log\\('js-yaml in devDeps:', !!\\(pkg.devDependencies||{}\\)['js-yaml']\\)\")",
+      "Bash(node -e \"const db=require\\('C:/Projects/ProcessPuzzle/processpuzzle/tools/mock-backend/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const db=require\\('./tools/mock-backend/db.js'\\)\\(\\);fs.writeFileSync\\('./tools/mock-backend/db.json',JSON.stringify\\(db,null,2\\)\\)\")",
+      "Bash(node -e \"const db=require\\('./tools/mock-backend/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\)\")"
     ]
   }
 }
