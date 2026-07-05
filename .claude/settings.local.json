@@ -347,7 +347,8 @@
       "PowerShell(npx ngc -p libs/js-shared/design/tsconfig.lib.prod.json --noEmit 2>&1)",
       "PowerShell(npx nx run design:build --configuration=development --no-cloud --skip-nx-cache 2>&1)",
       "PowerShell(pnpm nx build base-entity-frontend 2>&1)",
-      "PowerShell(npx nx build base-entity-frontend 2>&1)"
+      "PowerShell(npx nx build base-entity-frontend 2>&1)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr view 426 --repo ZsZs/processpuzzle --json title,files,url,body,headRefName,baseRefName)"
     ]
   }
 }
