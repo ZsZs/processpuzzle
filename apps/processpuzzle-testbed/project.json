@@ -39,8 +39,8 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/js-shared/base-entity/src/assets/i18n/base-entity",
-            "output": "assets/i18n/base-entity"
+            "input": "libs/js-shared/base-entity-frontend/src/assets/i18n/base_entity",
+            "output": "assets/i18n/base_entity"
           },
           {
             "glob": "**/*",

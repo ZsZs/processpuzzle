@@ -335,7 +335,23 @@
       "Bash(node -e \"const db=require\\('C:/Projects/ProcessPuzzle/processpuzzle/tools/mock-backend/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\)\")",
       "Bash(node -e \"const fs=require\\('fs'\\);const db=require\\('./tools/mock-backend/db.js'\\)\\(\\);fs.writeFileSync\\('./tools/mock-backend/db.json',JSON.stringify\\(db,null,2\\)\\)\")",
       "Bash(node -e \"const db=require\\('./tools/mock-backend/db.json'\\); console.log\\('Top-level keys:', Object.keys\\(db\\)\\); console.log\\('rules count:', \\(db.rules||[]\\).length\\)\")",
-      "Bash(npx --no-install playwright test --config apps/processpuzzle-testbed-e2e/playwright.config.ts --list --grep @smoke)"
+      "Bash(npx --no-install playwright test --config apps/processpuzzle-testbed-e2e/playwright.config.ts --list --grep @smoke)",
+      "PowerShell(pnpm nx build base-entity 2>&1)",
+      "PowerShell(npx nx build base-entity 2>&1)",
+      "PowerShell(pnpm nx run design:build --configuration=production --no-cloud 2>&1)",
+      "PowerShell(npx nx run design:build --configuration=production --no-cloud 2>&1)",
+      "PowerShell(npx nx run design:build --configuration=production --no-cloud --verbose 2>&1)",
+      "PowerShell(npx nx run base-entity-frontend:build --configuration=production --no-cloud --verbose 2>&1)",
+      "PowerShell(npx nx run design:build --configuration=production --no-cloud --skip-nx-cache --verbose 2>&1)",
+      "PowerShell(npx tsc -p libs/js-shared/design/tsconfig.lib.prod.json --noEmit 2>&1)",
+      "PowerShell(npx ngc -p libs/js-shared/design/tsconfig.lib.prod.json --noEmit 2>&1)",
+      "PowerShell(npx nx run design:build --configuration=development --no-cloud --skip-nx-cache 2>&1)",
+      "PowerShell(pnpm nx build base-entity-frontend 2>&1)",
+      "PowerShell(npx nx build base-entity-frontend 2>&1)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr view 426 --repo ZsZs/processpuzzle --json title,files,url,body,headRefName,baseRefName)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28731091804 --log-failed)",
+      "Bash(Select-String -Pattern \"Home Page|FAIL|Error|e2e|expected|Received|✘|✗\" -SimpleMatch)",
+      "Bash(Select-Object -First 100)"
     ]
   }
 }

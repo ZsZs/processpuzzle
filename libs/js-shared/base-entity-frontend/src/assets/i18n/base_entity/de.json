@@ -1,0 +1,17 @@
+{
+  "delete_artifact_confirmation_dialog": {
+    "title": "Artefakt löschen?",
+    "content": "Dadurch wird „{{ artifactName }}\" dauerhaft aus dem Objektspeicher gelöscht.",
+    "cancel_button": "Abbrechen",
+    "delete_button": "Löschen"
+  },
+  "toolbar": {
+    "query_label": "Abfrage",
+    "filter_label": "Filter"
+  },
+  "rsql_editor_dialog": {
+    "title": "Erweiterter Abfrage-Editor",
+    "cancel_button": "Abbrechen",
+    "apply_button": "Übernehmen"
+  }
+}

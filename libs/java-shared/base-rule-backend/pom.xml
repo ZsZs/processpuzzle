@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>base-rule-backend</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3-SNAPSHOT</version>
     <name>ProcessPuzzle :: Base Rule Backend</name>
     <description>ProcessPuzzle Base Rule Engine Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-rule-backend</url>
@@ -45,7 +45,6 @@
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>processpuzzle-api</artifactId>
-            <version>1.0.4</version>
         </dependency>
 
         <!-- Spring Boot dependencies -->

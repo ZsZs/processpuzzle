@@ -10,10 +10,11 @@ import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc
 import { OrderFacade } from './content/base-rules/order/order.facade';
 import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { provideBaseRuleEngine } from '@processpuzzle/base-rule-frontend';
+import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
+import { provideTranslocoScope } from '@jsverse/transloco';
 
 export const appRoutes: Route[] = [
   {
@@ -59,7 +60,7 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook', menuTitle: 'base-entity' },
     loadComponent: () => import('./content/base-forms/base-forms.component').then((comp) => comp.BaseFormsComponent),
-    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade],
+    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
     children: [
       {
         path: '',

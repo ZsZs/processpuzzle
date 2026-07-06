@@ -1,0 +1,47 @@
+@if (store.isLoading()) {
+  <mat-progress-bar mode="query"></mat-progress-bar>
+}
+<div class="base-entity-list mat-elevation-z8">
+  <mat-table [dataSource]="dataSource" matSort aria-describedby="base-entity-list">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef>
+        <mat-checkbox (change)="$event ? onToggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()" [indeterminate]="selection.hasValue() && !isAllSelected()"> </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null; onChangeSelection(row)" [checked]="selection.isSelected(row)"></mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
+      <ng-container [matColumnDef]="colDescriptor.attrName">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</mat-header-cell>
+        <mat-cell (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
+          @if (colDescriptor.isLinkToDetails) {
+            <a class="link-to-details" (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
+          } @else if (colDescriptor.linkedEntityType !== undefined ) {
+            <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
+          } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null ) {
+            @let artifact = element[colDescriptor.attrName];
+            <a (click)="onDownloadObject(artifact, $event)">{{ ((artifact.name ?? artifact.objectId ?? '') | slice:0:20) + ((artifact.name ?? artifact.objectId ?? '').length > 20 ? '...' : '') }}</a>
+          } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined ) {
+            {{ (element[colDescriptor.attrName].join(', ') | slice:0:20) + (element[colDescriptor.attrName].join(', ').length > 20 ? '...' : '') }}
+          } @else {
+            {{ element[colDescriptor.attrName] }}
+          }
+        </mat-cell>
+      </ng-container>
+    }
+    <mat-header-row *matHeaderRowDef="displayedColumns()"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns()"></mat-row>
+  </mat-table>
+  <div class="base-entity-list-footer">
+    @if (selectOrCreateMode()) {
+      <div class="base-entity-list-actions">
+        <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" type="button" mat-raised-button color="secondary" (click)="onCancelSelectOrCreate()">Cancel</button>
+        <button id="select" [attr.data-testid]="entityDescriptor().createTestId( 'select')" type="button" mat-raised-button color="primary" [disabled]="!canSelectEntity()" (click)="onSelectEntity()">Select</button>
+      </div>
+    }
+    <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
+  </div>
+</div>
