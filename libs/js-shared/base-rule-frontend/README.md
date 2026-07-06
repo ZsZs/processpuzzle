@@ -1,4 +1,4 @@
-# @processpuzzle/base-rule-frontend
+# @processpuzzle/base-rule
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-rule-frontend.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_rule_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_rule_frontend)

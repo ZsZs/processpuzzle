@@ -70,5 +70,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: "@processpuzzle/base-rule-frontend/${{steps.package-version.outputs.current-version}}"
+          title: "@processpuzzle/base-rule/${{steps.package-version.outputs.current-version}}"
           tag: "base-rule-frontend@${{steps.package-version.outputs.current-version}}"
