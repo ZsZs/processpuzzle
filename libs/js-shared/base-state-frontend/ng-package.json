@@ -3,5 +3,6 @@
   "dest": "../../../dist/libs/js-shared/base-state-frontend",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": [{ "glob": "**/*", "input": "src/assets", "output": "assets" }]
 }
