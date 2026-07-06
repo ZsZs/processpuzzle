@@ -348,7 +348,10 @@
       "PowerShell(npx nx run design:build --configuration=development --no-cloud --skip-nx-cache 2>&1)",
       "PowerShell(pnpm nx build base-entity-frontend 2>&1)",
       "PowerShell(npx nx build base-entity-frontend 2>&1)",
-      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr view 426 --repo ZsZs/processpuzzle --json title,files,url,body,headRefName,baseRefName)"
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr view 426 --repo ZsZs/processpuzzle --json title,files,url,body,headRefName,baseRefName)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28731091804 --log-failed)",
+      "Bash(Select-String -Pattern \"Home Page|FAIL|Error|e2e|expected|Received|✘|✗\" -SimpleMatch)",
+      "Bash(Select-Object -First 100)"
     ]
   }
 }
