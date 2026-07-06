@@ -2,7 +2,7 @@ name: Release-Base-Entity-Frontend
 on:
   push:
     branches:
-      - "release/base-entity/*"
+      - "release/base-entity-frontend/*"
     paths:
       - 'libs/js-shared/base-entity-frontend/**'
 permissions:
