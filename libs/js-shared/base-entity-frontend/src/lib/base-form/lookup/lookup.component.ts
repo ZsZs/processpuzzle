@@ -92,7 +92,12 @@ export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlC
   }
 
   selectLookupItem(selectedValue: unknown): void {
-    const key = selectedValue == null || typeof selectedValue === 'object' ? '' : String(selectedValue);
+    let key = '';
+    if (typeof selectedValue === 'string') {
+      key = selectedValue;
+    } else if (typeof selectedValue === 'number' || typeof selectedValue === 'boolean' || typeof selectedValue === 'bigint') {
+      key = String(selectedValue);
+    }
     this.setLookupKey(key);
     this.restoreSelectedValue();
   }

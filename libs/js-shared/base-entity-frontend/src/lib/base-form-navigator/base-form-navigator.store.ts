@@ -38,7 +38,7 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
 export function snakeCaseName(entityName: string) {
   return entityName
     .replace(/\s+/g, '') // strip whitespace
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2') // "ITVariant" -> "IT-Variant"
+    .replace(/([A-Z]+)(?=[A-Z][a-z])/g, '$1-') // "ITVariant" -> "IT-Variant"
     .replace(/([a-z\d])([A-Z])/g, '$1-$2') // "DeviceType" -> "Device-Type"
     .toLowerCase();
 }

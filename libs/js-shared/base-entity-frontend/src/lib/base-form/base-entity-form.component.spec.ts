@@ -207,7 +207,9 @@ describe('GenericEntityFormComponent', () => {
       const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, false, [{ provide: RULE_ENGINE, useValue: ruleEngine }]);
       const violationsStore = TestBed.inject(RuleViolationsSingletonStore);
       const clearSpy = vi.spyOn(violationsStore, 'clearViolations');
-      const unsubscribeSpy = vi.spyOn(component['ruleSubscription']!, 'unsubscribe');
+      const ruleSubscription = component['ruleSubscription'];
+      if (!ruleSubscription) throw new Error('Expected ruleSubscription to be defined');
+      const unsubscribeSpy = vi.spyOn(ruleSubscription, 'unsubscribe');
 
       component.ngOnDestroy();
 

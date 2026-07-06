@@ -77,17 +77,17 @@
 .rule-violation.severity-error {
     border-left-color: #d32f2f;
     background-color: rgba(211, 47, 47, 0.08);
-    color: #b71c1c;
+    color: #4a0000;
 }
 
 .rule-violation.severity-warning {
     border-left-color: #f57c00;
     background-color: rgba(245, 124, 0, 0.08);
-    color: #b26a00;
+    color: #4a2b00;
 }
 
 .rule-violation.severity-info {
     border-left-color: #1976d2;
     background-color: rgba(25, 118, 210, 0.08);
-    color: #0d47a1;
+    color: #051f47;
 }

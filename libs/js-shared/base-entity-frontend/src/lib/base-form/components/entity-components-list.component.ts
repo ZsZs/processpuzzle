@@ -64,7 +64,7 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
         return { id: String(item) };
       }
       if (idField !== 'id' && item && typeof item === 'object' && !('id' in item)) {
-        return { ...item, id: String((item as any)[idField] ?? '') };
+        return { ...item, id: String((item as Record<string, unknown>)[idField] ?? '') };
       }
       return item;
     });

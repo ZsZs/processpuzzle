@@ -24,8 +24,8 @@ describe('BaseStatusbarComponent', () => {
     fixture.detectChanges();
 
     const toolbar = (fixture.nativeElement as HTMLElement).querySelector('mat-toolbar');
-    expect(toolbar).not.toBeNull();
-    expect(toolbar!.textContent).toContain('Test Entity');
+    if (!toolbar) throw new Error('mat-toolbar was not rendered');
+    expect(toolbar.textContent).toContain('Test Entity');
   });
 
   it('renders severity chips summarising violations for the current entity', async () => {
@@ -33,7 +33,9 @@ describe('BaseStatusbarComponent', () => {
     const statusbar = component as BaseEntityStatusbarComponent;
     store.setCurrentEntity('1');
     const violationsStore = TestBed.inject(RuleViolationsSingletonStore);
-    violationsStore.setViolations(statusbar.entityDescriptor()!.entityName, [
+    const descriptor = statusbar.entityDescriptor();
+    if (!descriptor) throw new Error('Expected entityDescriptor to be defined');
+    violationsStore.setViolations(descriptor.entityName, [
       { ruleId: 'e1', passed: false, severity: 'ERROR' },
       { ruleId: 'w1', passed: false, severity: 'WARNING' },
       { ruleId: 'w2', passed: false, severity: 'WARNING' },
@@ -56,7 +58,9 @@ describe('BaseStatusbarComponent', () => {
       entityName: 'TestEntity',
       entityTitle: () => 'Computed Title',
     });
-    descriptor.store = statusbar.entityDescriptor()!.store;
+    const currentDescriptor = statusbar.entityDescriptor();
+    if (!currentDescriptor) throw new Error('Expected entityDescriptor to be defined');
+    descriptor.store = currentDescriptor.store;
     (statusbar.entityDescriptor as unknown as InputSignal<BaseEntityDescriptor>) = signal(descriptor) as unknown as InputSignal<BaseEntityDescriptor>;
     store.setCurrentEntity('1');
 

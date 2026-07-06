@@ -19,12 +19,8 @@ export function BaseEntityTabsStore() {
         patchState(store, { activeTabs, currentTab: undefined });
       }
       function tabIsActive(tabName: string): void {
-        let activeTabs: Array<string>;
-        if (!store.activeTabs().includes(tabName)) {
-          activeTabs = store.activeTabs().concat([tabName]);
-        } else {
-          activeTabs = store.activeTabs();
-        }
+        const current = store.activeTabs();
+        const activeTabs = current.includes(tabName) ? current : current.concat([tabName]);
         patchState(store, { activeTabs, currentTab: tabName });
       }
       function tabIsInactive(tabName: string): void {

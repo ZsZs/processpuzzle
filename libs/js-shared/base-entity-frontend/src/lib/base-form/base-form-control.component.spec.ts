@@ -21,9 +21,10 @@ describe('BaseFormControlComponent', () => {
   it('linkedEntityName() throws and logs when linkedEntityType is not configured', async () => {
     const config = new BaseEntityAttrDescriptor('number', FormControlType.FOREIGN_KEY);
     const { component } = await setupFormControlTest(TestBaseFormControl, config, testEntity);
-    const errorSpy = vi.spyOn(component!['logger'], 'error').mockImplementation(() => undefined);
+    if (!component) throw new Error('Expected component to be defined');
+    const errorSpy = vi.spyOn(component['logger'], 'error').mockImplementation(() => undefined);
 
-    expect(() => component!.linkedEntityName()).toThrow(/linkedEntityType should be defined for 'number'/);
+    expect(() => component.linkedEntityName()).toThrow(/linkedEntityType should be defined for 'number'/);
     expect(errorSpy).toHaveBeenCalled();
   });
 

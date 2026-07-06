@@ -40,7 +40,7 @@ describe('DropdownComponent', () => {
     await fixture.whenStable();
 
     const matSelect = fixture.debugElement.query(By.directive(MatSelect)).componentInstance as MatSelect;
-    expect(matSelect.options.length).toBe(5);
+    expect(matSelect.options).toHaveLength(5);
     expect(matSelect.options.map((o) => String(o.value))).toEqual(['Not Started', 'Kick off', 'In Progress', 'On Hold', 'Completed']);
   });
 });

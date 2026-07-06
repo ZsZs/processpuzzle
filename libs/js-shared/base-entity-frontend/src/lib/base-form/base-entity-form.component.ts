@@ -102,9 +102,10 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
 
   // region protected, private helper methods
   private evaluateRules(candidate?: Entity | Record<string, unknown>): void {
-    if (!this.ruleEngine || this.rules.length === 0) return;
+    const ruleEngine = this.ruleEngine;
+    if (!ruleEngine || this.rules.length === 0) return;
     const target = candidate ?? { ...this.entity(), ...this.baseEntityForm.value };
-    const results = this.rules.map((rule) => this.ruleEngine!.evaluate(target, rule));
+    const results = this.rules.map((rule) => ruleEngine.evaluate(target, rule));
     const failing = results.filter((r) => !r.passed);
     this.violations.set(failing);
     this.violationsStore.setViolations(this.entityDescriptor().entityName, failing);
@@ -137,7 +138,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     for (const field of this.fieldsWithRuleErrors) {
       const control = this.baseEntityForm.get(field);
       if (!control) continue;
-      const errors = { ...(control.errors ?? {}) };
+      const errors = { ...control.errors };
       delete errors['ruleViolation'];
       control.setErrors(Object.keys(errors).length ? errors : null);
     }

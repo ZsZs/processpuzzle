@@ -25,8 +25,8 @@ describe('toRsql', () => {
   });
 
   it('emits =in= with parenthesised list for in / not-in', () => {
-    expect(toRsql([{ property: 'status', operator: 'in', value: ['DRAFT', 'SHIPPED'] as any }])).toBe('status=in=(DRAFT,SHIPPED)');
-    expect(toRsql([{ property: 'status', operator: 'not-in', value: ['CANCELLED'] as any }])).toBe('status=out=(CANCELLED)');
+    expect(toRsql([{ property: 'status', operator: 'in', value: ['DRAFT', 'SHIPPED'] as unknown as string }])).toBe('status=in=(DRAFT,SHIPPED)');
+    expect(toRsql([{ property: 'status', operator: 'not-in', value: ['CANCELLED'] as unknown as string }])).toBe('status=out=(CANCELLED)');
   });
 
   it('emits =in= for array-contains against the single value', () => {
@@ -71,6 +71,6 @@ describe('toRsql', () => {
   });
 
   it('renders null values as the literal null', () => {
-    expect(toRsql([{ property: 'shippingAddress', operator: '==', value: null as any }])).toBe('shippingAddress==null');
+    expect(toRsql([{ property: 'shippingAddress', operator: '==', value: null as unknown as string }])).toBe('shippingAddress==null');
   });
 });

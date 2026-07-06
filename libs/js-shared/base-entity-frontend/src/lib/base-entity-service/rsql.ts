@@ -51,10 +51,10 @@ function encodeValue(value: unknown, operator: WhereFilterOp): string {
 
 function encodeScalar(value: unknown): string {
   if (value === null || value === undefined) return 'null';
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  const asString = String(value);
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  const asString = typeof value === 'string' ? value : JSON.stringify(value);
   if (/[\s,;()"'=<>!]/.test(asString)) {
-    return `"${asString.replace(/"/g, '\\"')}"`;
+    return `"${asString.replaceAll('"', String.raw`\"`)}"`;
   }
   return asString;
 }

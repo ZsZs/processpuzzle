@@ -84,13 +84,13 @@ describe('DescriptorBackedFieldMetadataProvider', () => {
 
     const provider = new DescriptorBackedFieldMetadataProvider([dropdown, textbox, noSelectables]);
     const fields = provider.getFields();
-    const color = fields.find((f) => f.name === 'color')!;
-    const name = fields.find((f) => f.name === 'name')!;
-    const mode = fields.find((f) => f.name === 'mode')!;
+    const color = fields.find((f) => f.name === 'color');
+    const name = fields.find((f) => f.name === 'name');
+    const mode = fields.find((f) => f.name === 'mode');
 
-    expect(color.enumValues).toEqual(['red', 'blue']);
-    expect(name.enumValues).toBeUndefined();
-    expect(mode.enumValues).toEqual([]);
+    expect(color?.enumValues).toEqual(['red', 'blue']);
+    expect(name?.enumValues).toBeUndefined();
+    expect(mode?.enumValues).toEqual([]);
   });
 
   it('exposes the label from the descriptor and the type-appropriate operator set', () => {

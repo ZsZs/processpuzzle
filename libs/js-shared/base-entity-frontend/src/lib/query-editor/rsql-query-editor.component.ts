@@ -187,13 +187,14 @@ export class RsqlQueryEditorComponent implements AfterViewInit, OnDestroy, Contr
   }
 
   private reportValidity(): void {
-    if (!this.view) return;
+    const view = this.view;
+    if (!view) return;
     // @codemirror/lint stores active diagnostics on a state field we can read via
     // the lintState extension's export, but the simplest robust check is to
     // re-run the same validators used by the linter.
     import('@codemirror/lint').then(({ forEachDiagnostic }) => {
       let hasError = false;
-      forEachDiagnostic(this.view!.state, (d) => {
+      forEachDiagnostic(view.state, (d) => {
         if (d.severity === 'error') hasError = true;
       });
       const valid = !hasError;
