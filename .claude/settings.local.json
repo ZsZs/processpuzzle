@@ -352,7 +352,12 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 28731091804 --log-failed)",
       "Bash(Select-String -Pattern \"Home Page|FAIL|Error|e2e|expected|Received|✘|✗\" -SimpleMatch)",
       "Bash(Select-Object -First 100)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(r' -Quiet\")",
+      "Bash(powershell -Command \"Get-Content -Raw -Path 'C:/Projects/ProcessPuzzle/processpuzzle/tools/docker/testbed/docker-entrypoint.sh' | Select-String -Pattern '`r' -Quiet\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\('C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\tools\\\\docker\\\\testbed\\\\docker-entrypoint.sh'\\); $hasCRLF = $false; for \\($i = 0; $i -lt [Math]::Min\\($bytes.Length - 1, 200\\); $i++\\) { if \\($bytes[$i] -eq 13 -and $bytes[$i+1] -eq 10\\) { $hasCRLF = $true; break } }; Write-Output \"CRLF line endings: $hasCRLF\")",
+      "PowerShell($p = 'C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\tools\\\\docker\\\\testbed\\\\docker-entrypoint.sh'; $c = [System.IO.File]::ReadAllText\\($p\\) -replace \"`r`n\",\"`n\"; [System.IO.File]::WriteAllText\\($p, $c, \\(New-Object System.Text.UTF8Encoding $false\\)\\); Write-Output \"Converted to LF\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\('C:\\\\Projects\\\\ProcessPuzzle\\\\processpuzzle\\\\tools\\\\docker\\\\testbed\\\\docker-entrypoint.sh'\\); $hasCRLF = $false; for \\($i=0; $i -lt $bytes.Length-1; $i++\\) { if \\($bytes[$i] -eq 13 -and $bytes[$i+1] -eq 10\\) { $hasCRLF = $true; break } }; \"CRLF still present: $hasCRLF\")"
     ]
   }
 }
