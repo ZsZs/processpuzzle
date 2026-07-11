@@ -1,0 +1,27 @@
+# Default: let git decide, but normalize to LF in the repo
+* text=auto eol=lf
+
+# Shell / Unix scripts must be LF (broken shebang otherwise)
+*.sh   text eol=lf
+*.bash text eol=lf
+
+# Windows scripts must be CRLF
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files - never touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

@@ -9,6 +9,7 @@ COPY dist/apps/processpuzzle-testbed/browser .
 COPY tools/docker/testbed/runtime-env.json.template /etc/templates/runtime-env.json.template
 COPY tools/docker/testbed/nginx.conf /etc/nginx/conf.d/default.conf
 COPY tools/docker/testbed/docker-entrypoint.sh /docker-entrypoint.d/40-render-runtime-env.sh
-RUN chmod +x /docker-entrypoint.d/40-render-runtime-env.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-render-runtime-env.sh \
+    && chmod +x /docker-entrypoint.d/40-render-runtime-env.sh
 
 EXPOSE 80
