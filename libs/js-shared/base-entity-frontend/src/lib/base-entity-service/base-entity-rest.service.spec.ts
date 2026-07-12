@@ -197,5 +197,21 @@ describe('BaseEntityService', () => {
       request.flush([payload]);
       controller.verify();
     });
+
+    it('serialises orderBys into a comma-separated order query param', () => {
+      baseEntityService
+        .findByQuery({
+          pathParams,
+          orderBys: [
+            { property: 'name', direction: 'asc' },
+            { property: 'date', direction: 'desc' },
+          ],
+        })
+        .subscribe();
+      const request = controller.expectOne((req) => req.urlWithParams.includes('order=name%2Casc%2Cdate%2Cdesc'));
+      expect(request.request.urlWithParams).toContain('order=name%2Casc%2Cdate%2Cdesc');
+      request.flush([payload]);
+      controller.verify();
+    });
   });
 });

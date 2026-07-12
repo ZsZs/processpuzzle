@@ -428,7 +428,10 @@
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core test -Dtest=LoggingAspectTest)",
       "Bash(where pnpm.cmd npx.cmd)",
       "PowerShell(pnpm --version)",
-      "PowerShell(npx nx test base-entity-frontend -t \"base-entity-rest\" 2>&1)"
+      "PowerShell(npx nx test base-entity-frontend -t \"base-entity-rest\" 2>&1)",
+      "PowerShell(pnpm nx test base-entity-frontend 2>&1)",
+      "PowerShell(npx nx test base-entity-frontend 2>&1)",
+      "Bash(grep -E \"^DA:.*,0$\")"
     ]
   }
 }
