@@ -411,7 +411,9 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972506)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run list --workflow=build-processpuzzle-core.yml --limit 5)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972506 --job 86637419989 --log)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972526)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972526 --log-failed)"
     ]
   }
 }
