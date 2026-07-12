@@ -19,28 +19,36 @@ class LoggingAspectTest {
 
     private ListAppender<ILoggingEvent> plainAppender;
     private ListAppender<ILoggingEvent> annotatedAppender;
+    private ListAppender<ILoggingEvent> nestedAppender;
     private Logger plainLogger;
     private Logger annotatedLogger;
+    private Logger nestedLogger;
 
     @BeforeEach
     void setUp() {
         plainLogger = (Logger) LoggerFactory.getLogger(PlainService.class);
         annotatedLogger = (Logger) LoggerFactory.getLogger(AnnotatedService.class);
+        nestedLogger = (Logger) LoggerFactory.getLogger(NestedService.class);
         plainLogger.setLevel(Level.TRACE);
         annotatedLogger.setLevel(Level.TRACE);
+        nestedLogger.setLevel(Level.TRACE);
         plainLogger.setAdditive(false);
         annotatedLogger.setAdditive(false);
+        nestedLogger.setAdditive(false);
 
         plainAppender = attach(plainLogger);
         annotatedAppender = attach(annotatedLogger);
+        nestedAppender = attach(nestedLogger);
     }
 
     @AfterEach
     void tearDown() {
         plainLogger.detachAppender(plainAppender);
         annotatedLogger.detachAppender(annotatedAppender);
+        nestedLogger.detachAppender(nestedAppender);
         plainLogger.setAdditive(true);
         annotatedLogger.setAdditive(true);
+        nestedLogger.setAdditive(true);
     }
 
     @Test
@@ -54,15 +62,20 @@ class LoggingAspectTest {
 
         ILoggingEvent entry = plainAppender.list.get(0);
         assertThat(entry.getLevel()).isEqualTo(Level.INFO);
-        assertThat(entry.getMessage()).isEqualTo("method entry");
+        assertThat(entry.getFormattedMessage()).isEqualTo("→ PlainService.greet({\"name\":\"world\"})");
         assertThat(entry.getMDCPropertyMap())
                 .containsEntry(LoggingAspect.MDC_CLASS, "PlainService")
                 .containsEntry(LoggingAspect.MDC_METHOD, "greet")
-                .containsEntry(LoggingAspect.MDC_ARGS, "{\"name\":\"world\"}");
+                .containsEntry(LoggingAspect.MDC_ARGS, "{\"name\":\"world\"}")
+                .containsEntry(LoggingAspect.MDC_DEPTH, "0")
+                .containsKey(LoggingAspect.MDC_CALL_ID)
+                .doesNotContainKey(LoggingAspect.MDC_PARENT_CALL_ID);
 
         ILoggingEvent exit = plainAppender.list.get(1);
-        assertThat(exit.getMessage()).isEqualTo("method exit");
-        assertThat(exit.getMDCPropertyMap()).containsEntry(LoggingAspect.MDC_RESULT, "\"hello world\"");
+        assertThat(exit.getFormattedMessage()).isEqualTo("← PlainService.greet = \"hello world\"");
+        assertThat(exit.getMDCPropertyMap())
+                .containsEntry(LoggingAspect.MDC_RESULT, "\"hello world\"")
+                .containsEntry(LoggingAspect.MDC_CALL_ID, entry.getMDCPropertyMap().get(LoggingAspect.MDC_CALL_ID));
     }
 
     @Test
@@ -106,7 +119,7 @@ class LoggingAspectTest {
                 .filter(e -> e.getLevel() == Level.ERROR)
                 .findFirst()
                 .orElseThrow();
-        assertThat(errorEvent.getMessage()).isEqualTo("method threw");
+        assertThat(errorEvent.getFormattedMessage()).isEqualTo("✗ PlainService.explode threw IllegalStateException");
         assertThat(errorEvent.getThrowableProxy().getMessage()).isEqualTo("boom");
     }
 
@@ -128,6 +141,35 @@ class LoggingAspectTest {
 
         ILoggingEvent exit = annotatedAppender.list.get(1);
         assertThat(exit.getMDCPropertyMap()).containsEntry(LoggingAspect.MDC_RESULT, "void");
+        assertThat(exit.getFormattedMessage()).isEqualTo("← AnnotatedService.publicOne = void");
+    }
+
+    @Test
+    void nestedCalls_indentAndLinkParentChild() {
+        NestedService target = new NestedService();
+        NestedService proxy = proxy(target);
+        target.bindSelf(proxy);
+
+        proxy.outer();
+
+        assertThat(nestedAppender.list).hasSize(4);
+
+        ILoggingEvent outerEntry = nestedAppender.list.get(0);
+        ILoggingEvent innerEntry = nestedAppender.list.get(1);
+        ILoggingEvent innerExit = nestedAppender.list.get(2);
+        ILoggingEvent outerExit = nestedAppender.list.get(3);
+
+        assertThat(outerEntry.getFormattedMessage()).startsWith("→ NestedService.outer");
+        assertThat(innerEntry.getFormattedMessage()).startsWith("  → NestedService.inner");
+        assertThat(innerExit.getFormattedMessage()).startsWith("  ← NestedService.inner");
+        assertThat(outerExit.getFormattedMessage()).startsWith("← NestedService.outer");
+
+        assertThat(outerEntry.getMDCPropertyMap())
+                .containsEntry(LoggingAspect.MDC_DEPTH, "0")
+                .doesNotContainKey(LoggingAspect.MDC_PARENT_CALL_ID);
+        assertThat(innerEntry.getMDCPropertyMap())
+                .containsEntry(LoggingAspect.MDC_DEPTH, "1")
+                .containsEntry(LoggingAspect.MDC_PARENT_CALL_ID, outerEntry.getMDCPropertyMap().get(LoggingAspect.MDC_CALL_ID));
     }
 
     @SuppressWarnings("unchecked")
@@ -183,6 +225,23 @@ class LoggingAspectTest {
         @LogMethod(level = org.slf4j.event.Level.WARN)
         public void overridden() {
             // no-op
+        }
+    }
+
+    @LogClass
+    static class NestedService {
+        private NestedService self;
+
+        public void bindSelf(NestedService self) {
+            this.self = self;
+        }
+
+        public int outer() {
+            return self != null ? self.inner(2) : inner(2);
+        }
+
+        public int inner(int value) {
+            return value * 10;
         }
     }
 }

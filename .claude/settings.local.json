@@ -423,7 +423,12 @@
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -q)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -Dsurefire.failIfNoSpecifiedTests=false -q)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -Dsurefire.failIfNoSpecifiedTests=false)",
-      "PowerShell(npm run test-base-rule-frontend 2>&1)"
+      "PowerShell(npm run test-base-rule-frontend 2>&1)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core -q test -Dtest=LoggingAspectTest)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core test -Dtest=LoggingAspectTest)",
+      "Bash(where pnpm.cmd npx.cmd)",
+      "PowerShell(pnpm --version)",
+      "PowerShell(npx nx test base-entity-frontend -t \"base-entity-rest\" 2>&1)"
     ]
   }
 }

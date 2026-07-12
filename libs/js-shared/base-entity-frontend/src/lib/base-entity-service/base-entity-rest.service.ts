@@ -54,10 +54,14 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
           if (httpResponse.status === 204 || this.isEmptyBody(httpResponse.body)) {
             throw new Error('The query returned no content.');
           }
-          return queryCondition.page ? this.mapPagedResponse(httpResponse.body) : this.mapSimpleResponse(httpResponse.body);
+          return this.isPagedResponse(httpResponse.body) ? this.mapPagedResponse(httpResponse.body) : this.mapSimpleResponse(httpResponse.body);
         }),
       );
     } else throw new Error('Could not determine the full url');
+  }
+
+  private isPagedResponse(body: unknown): boolean {
+    return body !== null && typeof body === 'object' && !Array.isArray(body) && Array.isArray((body as { content?: unknown }).content);
   }
 
   private isEmptyBody(body: unknown): boolean {
