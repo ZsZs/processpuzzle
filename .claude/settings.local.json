@@ -406,7 +406,12 @@
       "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" search issues --repo apache/maven-javadoc-plugin \"1.1 switch\" --json title,number,state,url --limit 10)",
       "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" issue view 1266 --repo apache/maven-javadoc-plugin --json title,body,state,closedAt,comments)",
       "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" api repos/apache/maven-javadoc-plugin/releases --jq '.[] | {tag_name, published_at, name}')",
-      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" release view maven-javadoc-plugin-3.12.0 --repo apache/maven-javadoc-plugin)"
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" release view maven-javadoc-plugin-3.12.0 --repo apache/maven-javadoc-plugin)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972506 --log-failed)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972506)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run list --workflow=build-processpuzzle-core.yml --limit 5)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972506 --job 86637419989 --log)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }
