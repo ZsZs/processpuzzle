@@ -14,8 +14,8 @@ describe('BaseEntityService', () => {
   const filters: FilterCondition[] = [{ property: 'xpath', operator: '==', value: '/ie4q01' }];
   const queryCondition: BaseEntityQueryCondition = { pathParams, filters };
   const expectedEntity = new TestEntity('1', 'hello', 'anything', false, 100, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_FOUR);
-  const expectedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?filter=xpath%3D%3D%2Fie4q01';
-  const expectedPagedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?page=1&filter=xpath%3D%3D%2Fie4q01';
+  const expectedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?where=xpath%3D%3D%2Fie4q01';
+  const expectedPagedUrl = 'http://localhost:4200/services/generic-message/api/v1/message/123/node?page=1&where=xpath%3D%3D%2Fie4q01';
   const payload = { id: '1', name: 'hello', description: 'anything', boolean: false, number: 100, date: '2024-01-18T20:02:27.000Z', enumValue: 3 };
   let baseEntityService: TestEntityService;
   let controller: HttpTestingController;
@@ -75,9 +75,9 @@ describe('BaseEntityService', () => {
       actualResponse = response as BaseEntityLoadResponse<TestEntity>;
     });
     const request = controller.expectOne(expectedPagedUrl);
-    request.flush([{ page: 1, pageSize: 10, totalPageCount: 8, content: [payload] }]);
+    request.flush({ number: 1, size: 10, totalElements: 8, totalPages: 1, content: [payload] });
     controller.verify();
-    expect(actualResponse).toEqual({ page: 1, pageSize: 10, totalPageCount: 8, content: [expectedEntity] });
+    expect(actualResponse).toEqual({ number: 1, size: 10, totalElements: 8, totalPages: 1, content: [expectedEntity] });
   });
 
   it('findByQuery() fails when HTTP Error occurs.', () => {
@@ -103,7 +103,7 @@ describe('BaseEntityService', () => {
       baseEntityService.findAll(2).subscribe();
       const request = controller.expectOne((req) => req.url.includes('/node') && req.url.includes('page=2'));
       expect(request.request.method).toBe('GET');
-      request.flush([{ page: 2, pageSize: 10, totalPageCount: 4, content: [payload] }]);
+      request.flush({ number: 2, size: 10, totalElements: 4, totalPages: 1, content: [payload] });
       controller.verify();
     });
 

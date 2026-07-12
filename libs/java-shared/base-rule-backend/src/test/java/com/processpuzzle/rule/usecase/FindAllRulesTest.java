@@ -5,6 +5,9 @@ import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -26,61 +29,82 @@ class FindAllRulesTest {
     }
 
     @Test
-    void allParamsNull_callsRepositoryWithNullSpecAndUnsorted() {
-        when(repository.findAll((Specification<RuleDefinition>) any(), any(Sort.class))).thenReturn(List.of());
+    void allParamsNull_callsRepositoryWithoutSpecAndDefaultPageable() {
+        when(repository.findAll(any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute(null, null, null);
+        findAllRules.execute(null, null, null, null, null);
 
-        ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
-        verify(repository).findAll((Specification<RuleDefinition>) isNull(), sortCaptor.capture());
-        assertThat(sortCaptor.getValue().isSorted()).isFalse();
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(pageableCaptor.capture());
+        verify(repository, never()).findAll((Specification<RuleDefinition>) any(), any(Pageable.class));
+        Pageable pageable = pageableCaptor.getValue();
+        assertThat(pageable.getPageNumber()).isZero();
+        assertThat(pageable.getPageSize()).isEqualTo(20);
+        assertThat(pageable.getSort().isSorted()).isFalse();
     }
 
     @Test
-    void contextOnly_passesSpecAndUnsorted() {
-        when(repository.findAll((Specification<RuleDefinition>) any(), any(Sort.class))).thenReturn(List.of());
+    void contextOnly_passesSpecAndDefaultPageable() {
+        when(repository.findAll((Specification<RuleDefinition>) any(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("Order", null, null);
+        findAllRules.execute("Order", null, null, null, null);
 
         ArgumentCaptor<Specification<RuleDefinition>> specCaptor = specCaptor();
-        ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
-        verify(repository).findAll(specCaptor.capture(), sortCaptor.capture());
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(specCaptor.capture(), pageableCaptor.capture());
         assertThat(specCaptor.getValue()).isNotNull();
-        assertThat(sortCaptor.getValue().isSorted()).isFalse();
+        assertThat(pageableCaptor.getValue().getSort().isSorted()).isFalse();
     }
 
     @Test
-    void order_isParsedAndPassed() {
-        when(repository.findAll((Specification<RuleDefinition>) any(), any(Sort.class))).thenReturn(List.of());
+    void order_isParsedAndAppliedToPageable() {
+        when(repository.findAll(any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute(null, null, "name,desc");
+        findAllRules.execute(null, null, "name,desc", null, null);
 
-        ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
-        verify(repository).findAll((Specification<RuleDefinition>) any(), sortCaptor.capture());
-        assertThat(sortCaptor.getValue()).containsExactly(Sort.Order.desc("name"));
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getSort()).containsExactly(Sort.Order.desc("name"));
+    }
+
+    @Test
+    void pageAndSize_areForwardedToPageable() {
+        when(repository.findAll(any(Pageable.class))).thenReturn(emptyPage());
+
+        findAllRules.execute(null, null, null, 3, 5);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(pageableCaptor.capture());
+        Pageable pageable = pageableCaptor.getValue();
+        assertThat(pageable.getPageNumber()).isEqualTo(3);
+        assertThat(pageable.getPageSize()).isEqualTo(5);
     }
 
     @Test
     void whereAndContext_areCombinedIntoSingleSpec() {
-        when(repository.findAll((Specification<RuleDefinition>) any(), any(Sort.class))).thenReturn(List.of());
+        when(repository.findAll((Specification<RuleDefinition>) any(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("Order", "enabled==true", null);
+        findAllRules.execute("Order", "enabled==true", null, null, null);
 
         ArgumentCaptor<Specification<RuleDefinition>> specCaptor = specCaptor();
-        verify(repository).findAll(specCaptor.capture(), any(Sort.class));
+        verify(repository).findAll(specCaptor.capture(), any(Pageable.class));
         assertThat(specCaptor.getValue()).isNotNull();
     }
 
     @Test
     void invalidWhere_bubblesAsIllegalArgument() {
         try {
-            findAllRules.execute(null, "context==", null);
+            findAllRules.execute(null, "context==", null, null, null);
         } catch (IllegalArgumentException expected) {
             assertThat(expected).hasMessageStartingWith("Invalid RSQL");
             verifyNoInteractions(repository);
             return;
         }
         throw new AssertionError("expected IllegalArgumentException");
+    }
+
+    private static Page<RuleDefinition> emptyPage() {
+        return new PageImpl<>(List.of());
     }
 
     @SuppressWarnings("unchecked")

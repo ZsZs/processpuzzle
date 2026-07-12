@@ -11,7 +11,7 @@ import { EntityStoreHandle } from './base-entity.store';
 export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
   return rxMethod<BaseEntityQueryCondition>(
     pipe(
-      tap((query: BaseEntityQueryCondition) => patchState(store, { page: query.page, isLoading: true, error: undefined })),
+      tap((query: BaseEntityQueryCondition) => patchState(store, { number: query.page, isLoading: true, error: undefined })),
       //        debounceTime(1000),
       //        distinctUntilChanged(),
       switchMap((parameters) =>
@@ -22,18 +22,20 @@ export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<
                 const baseEntityResponse = response as BaseEntityLoadResponse<PersistedEntity<Entity>>;
                 patchState(store, {
                   entities: baseEntityResponse.content,
-                  page: baseEntityResponse.page,
-                  pageSize: baseEntityResponse.pageSize,
-                  totalPageCount: baseEntityResponse.totalPageCount,
+                  number: baseEntityResponse.number,
+                  size: baseEntityResponse.size,
+                  totalElements: baseEntityResponse.totalElements,
+                  totalPages: baseEntityResponse.totalPages,
                   isLoading: false,
                 });
               } else {
                 const entities = (response as Entity[]).slice();
                 patchState(store, {
                   entities,
-                  page: undefined,
-                  pageSize: entities.length,
-                  totalPageCount: undefined,
+                  number: undefined,
+                  size: entities.length,
+                  totalElements: entities.length,
+                  totalPages: undefined,
                   isLoading: false,
                 });
               }

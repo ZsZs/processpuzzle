@@ -15,9 +15,8 @@ spring:
       enabled: true
 
 logging:
-  structured:
-    format:
-      console: logstash
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
 
 server:
   port: 8080
@@ -70,3 +69,16 @@ minio:
     video: video
     archives: archives
     logs: logs
+
+---
+spring:
+  config:
+    activate:
+      on-profile: stage | prod
+
+logging:
+  pattern:
+    console:
+  structured:
+    format:
+      console: logstash

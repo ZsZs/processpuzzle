@@ -62,8 +62,9 @@ export interface FirestoreQuery<Entity extends BaseEntity> {
 }
 
 export interface BaseEntityLoadResponse<Entity extends BaseEntity> {
-  page: number | undefined;
-  pageSize: number | undefined;
-  totalPageCount: number | undefined;
+  number: number | undefined;
+  size: number | undefined;
+  totalElements: number | undefined;
+  totalPages: number | undefined;
   content: Entity[];
 }

@@ -6,6 +6,6 @@ import { BaseRuleMapper } from './base-rule.mapper';
 @Injectable({ providedIn: 'root' })
 export class BaseRuleService extends BaseEntityRestService<BaseRule> {
   constructor(protected override entityMapper: BaseRuleMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'rules');
+    super(entityMapper, 'RULE_SERVICE_ROOT', 'rules');
   }
 }

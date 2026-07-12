@@ -1,6 +1,7 @@
 {
   "BASE_CONFIGURATION": {
     "PIPELINE_STAGE": "ci",
+    "RULE_SERVICE_ROOT": "http://localhost:8080",
     "FIREBASE_CONFIGURATION": {
       "projectId": "demo-processpuzzle-testbed",
       "FIRESTORE_EMULATOR_HOST": "localhost",

@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>processpuzzle-backend</artifactId>
-    <name>ProcessPuzzle :: Backend</name>
+    <name>ProcessPuzzle :: Backend Application</name>
     <description>ProcessPuzzle Backend Application</description>
 
     <dependencies>

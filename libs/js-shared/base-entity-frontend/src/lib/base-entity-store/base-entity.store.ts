@@ -14,9 +14,10 @@ export const BASE_ENTITY_STORE = new InjectionToken<unknown>('BASE_ENTITY_STORE'
 
 export interface EntityStoreState<Entity extends BaseEntity> {
   entities: Entity[];
-  page: number;
-  pageSize: number;
-  totalPageCount: number;
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
   currentId: string | undefined;
   currentEntity: Entity | undefined;
   isLoading: boolean;
@@ -36,9 +37,10 @@ export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   currentId: Signal<string | undefined>;
   isLoading: Signal<boolean>;
   error: Signal<string | undefined>;
-  page: Signal<number>;
-  pageSize: Signal<number>;
-  totalPageCount: Signal<number>;
+  number: Signal<number>;
+  size: Signal<number>;
+  totalElements: Signal<number>;
+  totalPages: Signal<number>;
   filterKey: Signal<string | undefined>;
   activeTabs: Signal<string[]>;
   currentTab: Signal<string | undefined>;
@@ -68,9 +70,10 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
   return signalStoreFeature(
     withState<EntityStoreState<Entity>>({
       entities: [],
-      page: 0,
-      pageSize: 5,
-      totalPageCount: 0,
+      number: 0,
+      size: 5,
+      totalElements: 0,
+      totalPages: 0,
       currentEntity: undefined,
       currentId: undefined,
       isLoading: false,

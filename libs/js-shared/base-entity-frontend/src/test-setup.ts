@@ -112,7 +112,7 @@ export const testEntity_1 = new TestEntity('1', 'hello', 'anything', false, 100,
 export const testEntity_2 = new TestEntity('2', 'bella', 'something', true, 200, new Date('2023-02-18T20:02:27.000Z'), TestEnum.VALUE_TWO);
 export const newTestEntity = new TestEntity('3', 'new', 'new description', true, 300, new Date('2024-02-18T20:02:27.000Z'), TestEnum.VALUE_THREE);
 export const MOCK_API_RESPONSE: TestEntity[] = [testEntity_1, testEntity_2];
-export const MOCK_PAGED_RESPONSE: BaseEntityLoadResponse<TestEntity> = { page: 33, pageSize: 2, totalPageCount: 333, content: MOCK_API_RESPONSE };
+export const MOCK_PAGED_RESPONSE: BaseEntityLoadResponse<TestEntity> = { number: 33, size: 2, totalElements: 666, totalPages: 333, content: MOCK_API_RESPONSE };
 
 export function setupMockService({
   isApiFailed = false,
