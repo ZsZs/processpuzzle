@@ -8,7 +8,7 @@ The library uses [OpenAPI 3.0.3](https://swagger.io/specification/) to define se
 
 ### Current API Definitions
 
-- **Object Store API** (`object-store-api.yaml`): Provides endpoints for managing binary objects in buckets, including:
+- **Store API** (`processpuzzle-store-api.yaml`): Provides endpoints for managing binary objects in buckets, including:
     - Uploading binary data with metadata.
     - Retrieving binary data and metadata by ID.
     - Deleting stored objects.
@@ -38,8 +38,8 @@ To use the generated contracts in your Spring Boot application, add the followin
 
 The following packages are available after code generation:
 
-- `com.processpuzzle.objectstore.api`: Contains the generated Spring `@Controller` interfaces.
-- `com.processpuzzle.objectstore.model`: Contains the generated POJOs for request and response bodies.
+- `com.processpuzzle.store.api`: Contains the generated Spring `@Controller` interfaces.
+- `com.processpuzzle.store.model`: Contains the generated POJOs for request and response bodies.
 
 ## Development
 

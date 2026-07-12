@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/processpuzzle-backend/src",
-  "implicitDependencies": ["api-contracts", "object-store"],
+  "implicitDependencies": ["api-contracts", "processpuzzle-core", "processpuzzle-store", "base-workflow-backend"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",

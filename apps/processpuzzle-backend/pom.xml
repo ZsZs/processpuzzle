@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.5-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -17,12 +17,32 @@
         <!-- Module dependencies -->
         <dependency>
             <groupId>com.processpuzzle</groupId>
-            <artifactId>object-store</artifactId>
+            <artifactId>processpuzzle-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>processpuzzle-store</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
             <artifactId>base-rule-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-desktop-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-state-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-workflow-backend</artifactId>
         </dependency>
 
         <!-- Spring dependencies -->

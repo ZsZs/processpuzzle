@@ -15,7 +15,7 @@ The pipeline is **project-scoped**: every publishable library and application ow
 | `auth` | `build-auth.yml` | `release-auth.yml` | `libs/js-shared/auth/**` |
 | `base-entity-frontend` | `build-base-entity-frontend.yml` | `release-base-entity-frontend.yml` | `libs/js-shared/base-entity-frontend/**` |
 | `e2e-testing` | `build-e2e-testing.yml` | `release-e2e-testing.yml` | `libs/js-shared/e2e-testing/**` |
-| `object-store` | `build-object-store.yml` | `release-object-store.yml` | `libs/js-shared/object-store/**` |
+| `processpuzzle-store` | `build-processpuzzle-store.yml` | `release-processpuzzle-store.yml` | `libs/java-shared/processpuzzle-store/**` |
 | `test-util` | `build-test-util.yml` | `release-test-util.yml` | `libs/js-shared/test-util/**` |
 | `util` | `build-util.yml` | `release-util.yml` | `libs/js-shared/util/**` |
 | `widgets` | `build-widgets.yml` | `release-widgets.yml` | `libs/js-shared/widgets/**` |

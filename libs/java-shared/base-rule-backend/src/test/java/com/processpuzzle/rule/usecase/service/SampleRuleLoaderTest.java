@@ -1,9 +1,14 @@
 package com.processpuzzle.rule.usecase.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.ImportRules;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -17,9 +22,26 @@ import static org.mockito.Mockito.*;
 
 class SampleRuleLoaderTest {
 
+    private static Level originalLevel;
+
     private ImportRules importRules;
     private ResourcePatternResolver resourceResolver;
     private SampleRuleLoader loader;
+
+    @BeforeAll
+    static void silenceLoader() {
+        // The "continuesWhenSingleFileFails" test intentionally makes execute() throw;
+        // SampleRuleLoader.importSample() logs the exception at WARN, which otherwise
+        // dumps a stack trace to the build console.
+        Logger logger = (Logger) LoggerFactory.getLogger(SampleRuleLoader.class);
+        originalLevel = logger.getLevel();
+        logger.setLevel(Level.OFF);
+    }
+
+    @AfterAll
+    static void restoreLoaderLogging() {
+        ((Logger) LoggerFactory.getLogger(SampleRuleLoader.class)).setLevel(originalLevel);
+    }
 
     @BeforeEach
     void setUp() {

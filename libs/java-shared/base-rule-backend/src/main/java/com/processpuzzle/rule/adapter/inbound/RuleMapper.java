@@ -2,8 +2,8 @@ package com.processpuzzle.rule.adapter.inbound;
 
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.model.EvaluationResult;
-import com.processpuzzle.rule.model.ImportResult;
 import com.processpuzzle.rule.model.RuleDefinitionInput;
+import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
