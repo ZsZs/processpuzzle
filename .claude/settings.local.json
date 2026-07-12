@@ -415,7 +415,10 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972526)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972526 --log-failed)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972525)",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972525 --log-failed)"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29187972525 --log-failed)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr view 436)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f libs/java-shared/processpuzzle-core/pom.xml -pl libs/java-shared/processpuzzle-core spotless:check -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core spotless:check -q)"
     ]
   }
 }

@@ -14,9 +14,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    private static final String ERROR_KEY = "error";
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidDataAccessApiUsageException.class)
@@ -25,20 +27,20 @@ public class ApiExceptionHandler {
         // Specification lambda and Spring's HibernateExceptionTranslator wraps them.
         Throwable root = ex.getMostSpecificCause();
         if (root instanceof IllegalArgumentException) {
-            return ResponseEntity.badRequest().body(Map.of("error", root.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, root.getMessage()));
         }
         throw ex;
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleConflictState(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(ERROR_KEY, ex.getMessage()));
     }
 
     @ExceptionHandler(JsonProcessingException.class)
     public ResponseEntity<Map<String, String>> handleParseError(JsonProcessingException ex) {
         return ResponseEntity.badRequest()
-                .body(Map.of("error", "Could not parse YAML: " + ex.getOriginalMessage()));
+                .body(Map.of(ERROR_KEY, "Could not parse YAML: " + ex.getOriginalMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
