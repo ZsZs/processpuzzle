@@ -179,7 +179,7 @@ describe('BaseEntityFirestoreService', () => {
 
       expect(limit).toHaveBeenCalledWith(99);
       expect(query).toHaveBeenCalledWith(fakeCollectionRef, 'limit-constraint');
-      expect(response.totalPageCount).toBe(1);
+      expect(response.totalPages).toBe(1);
       expect(response.content).toEqual([]);
     });
 
@@ -238,9 +238,9 @@ describe('BaseEntityFirestoreService', () => {
 
       const response = (await firstValueFrom(baseEntityService.findByQuery({ page: 2, pageSize: 10 }))) as BaseEntityLoadResponse<TestEntity>;
 
-      expect(response.page).toBe(2);
-      expect(response.pageSize).toBe(10);
-      expect(response.totalPageCount).toBe(1);
+      expect(response.number).toBe(2);
+      expect(response.size).toBe(10);
+      expect(response.totalPages).toBe(1);
       expect(response.content[0].id).toBe('x');
     });
   });

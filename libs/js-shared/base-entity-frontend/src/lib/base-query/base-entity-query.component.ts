@@ -1,4 +1,4 @@
-import { Component, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, Injector, input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -35,9 +35,15 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
           <button [attr.data-testid]="entityDescriptor().createTestId('query-editor-open')" type="button" mat-icon-button matSuffix aria-label="Open advanced query editor" (click)="onOpenEditor()">
             <mat-icon>edit_note</mat-icon>
           </button>
-          <button [attr.data-testid]="entityDescriptor().createTestId('query-send')" type="button" mat-icon-button matSuffix aria-label="Send query" [disabled]="!queryValue()" (click)="onSendQuery()">
-            <mat-icon>play_arrow</mat-icon>
-          </button>
+          @if (queryActive()) {
+            <button [attr.data-testid]="entityDescriptor().createTestId('query-clear')" type="button" mat-icon-button matSuffix aria-label="Clear query" (click)="onClearQuery()">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          } @else {
+            <button [attr.data-testid]="entityDescriptor().createTestId('query-send')" type="button" mat-icon-button matSuffix aria-label="Send query" [disabled]="!queryValue()" (click)="onSendQuery()">
+              <mat-icon>play_arrow</mat-icon>
+            </button>
+          }
         </mat-form-field>
       </div>
     </ng-container>
@@ -62,6 +68,8 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
 export class BaseEntityQueryComponent<Entity extends BaseEntity> implements OnInit {
   entityDescriptor = input.required<BaseEntityDescriptor>();
   queryValue = signal<string>('');
+  appliedQuery = signal<string | undefined>(undefined);
+  queryActive = computed(() => this.appliedQuery() !== undefined && this.queryValue() === this.appliedQuery());
   store!: BaseEntityStoreApi<Entity>;
 
   private readonly dialog = inject(MatDialog);
@@ -74,7 +82,15 @@ export class BaseEntityQueryComponent<Entity extends BaseEntity> implements OnIn
   onSendQuery(): void {
     const value = this.queryValue().trim();
     if (!value) return;
+    this.queryValue.set(value);
     this.store.load({ query: value });
+    this.appliedQuery.set(value);
+  }
+
+  onClearQuery(): void {
+    this.queryValue.set('');
+    this.appliedQuery.set(undefined);
+    this.store.load({});
   }
 
   onOpenEditor(): void {

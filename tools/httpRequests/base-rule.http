@@ -1,0 +1,67 @@
+### GET all rules (no filters, unsorted)
+# @name getAllRules
+GET {{processpuzzle-backend}}/rules
+
+### GET rules for the "Order" context
+# @name getRulesByContext
+GET {{processpuzzle-backend}}/rules?context=Order
+
+### GET only enabled rules
+# @name getEnabledRules
+GET {{processpuzzle-backend}}/rules?where=enabled==true
+
+### GET ERROR-severity rules
+# @name getErrorRules
+GET {{processpuzzle-backend}}/rules?where=severity==ERROR
+
+### GET rules whose severity is ERROR or WARNING (RSQL =in=)
+# @name getErrorOrWarningRules
+GET {{processpuzzle-backend}}/rules?where=severity=in=(ERROR,WARNING)
+
+### GET override rules only
+# @name getOverrideRules
+GET {{processpuzzle-backend}}/rules?where=override==true
+
+### GET rules that extend another rule (non-null extendsRuleId)
+# @name getExtendingRules
+GET {{processpuzzle-backend}}/rules?where=extendsRuleId!=null
+
+### GET rules whose name contains "quantities" (RSQL =like=)
+# @name getRulesByNameLike
+GET {{processpuzzle-backend}}/rules?where=name=like=quantities
+
+### GET Order-context ERROR rules (composite AND)
+# @name getOrderErrorRules
+GET {{processpuzzle-backend}}/rules?where=context==Order;severity==ERROR
+
+### GET rules created after a given instant
+# @name getRulesCreatedAfter
+GET {{processpuzzle-backend}}/rules?where=createdAt=gt=2026-07-12T00:00:00Z
+
+### GET all rules ordered by name ascending
+# @name getAllRulesOrderedByName
+GET {{processpuzzle-backend}}/rules?order=name,asc
+
+### GET all rules ordered by context asc then updatedAt desc
+# @name getAllRulesOrderedMulti
+GET {{processpuzzle-backend}}/rules?order=context,asc,updatedAt,desc
+
+### GET enabled Order rules, ordered by severity then name
+# @name getEnabledOrderRulesOrdered
+GET {{processpuzzle-backend}}/rules?context=Order&where=enabled==true&order=severity,asc,name,asc
+
+### GET first page (2 rules per page)
+# @name getFirstPage
+GET {{processpuzzle-backend}}/rules?page=0&size=2
+
+### GET second page (2 rules per page)
+# @name getSecondPage
+GET {{processpuzzle-backend}}/rules?page=1&size=2
+
+### GET a page of Order rules ordered by name
+# @name getOrderPageByName
+GET {{processpuzzle-backend}}/rules?context=Order&order=name,asc&page=0&size=10
+
+### GET a page of ERROR-severity rules (composite: where + order + paging)
+# @name getErrorRulesPaged
+GET {{processpuzzle-backend}}/rules?where=severity==ERROR&order=updatedAt,desc&page=0&size=5

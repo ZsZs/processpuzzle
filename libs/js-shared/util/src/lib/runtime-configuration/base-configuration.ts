@@ -10,5 +10,6 @@ export interface BaseConfiguration {
   readonly BACKEND_SERVICE_PROVIDER: 'rest' | 'firestore';
   readonly BACKEND_SERVICE_ROOT: string;
   readonly OBJECT_STORE_SERVICE_ROOT: string;
+  readonly RULE_SERVICE_ROOT: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

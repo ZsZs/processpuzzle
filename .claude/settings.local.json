@@ -419,7 +419,19 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr view 436)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f libs/java-shared/processpuzzle-core/pom.xml -pl libs/java-shared/processpuzzle-core spotless:check -q)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core spotless:check -q)",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29190884919 --log-failed)"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" run view 29190884919 --log-failed)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -Dsurefire.failIfNoSpecifiedTests=false -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/base-rule-backend -am test -Dtest=FindAllRulesTest -Dsurefire.failIfNoSpecifiedTests=false)",
+      "PowerShell(npm run test-base-rule-frontend 2>&1)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core -q test -Dtest=LoggingAspectTest)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -pl libs/java-shared/processpuzzle-core test -Dtest=LoggingAspectTest)",
+      "Bash(where pnpm.cmd npx.cmd)",
+      "PowerShell(pnpm --version)",
+      "PowerShell(npx nx test base-entity-frontend -t \"base-entity-rest\" 2>&1)",
+      "PowerShell(pnpm nx test base-entity-frontend 2>&1)",
+      "PowerShell(npx nx test base-entity-frontend 2>&1)",
+      "Bash(grep -E \"^DA:.*,0$\")"
     ]
   }
 }

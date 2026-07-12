@@ -2,11 +2,13 @@ package com.processpuzzle.rule.adapter.inbound;
 
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.model.EvaluationResult;
+import com.processpuzzle.rule.model.PageOfRuleDefinition;
 import com.processpuzzle.rule.model.RuleDefinitionInput;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -65,6 +67,18 @@ public class RuleMapper {
         model.setCreatedAt(toOffsetDateTime(rule.getCreatedAt()));
         model.setUpdatedAt(toOffsetDateTime(rule.getUpdatedAt()));
         return model;
+    }
+
+    public PageOfRuleDefinition toModel(Page<RuleDefinition> page) {
+        List<com.processpuzzle.rule.model.RuleDefinition> content = page.getContent().stream()
+                .map(this::toModel)
+                .toList();
+        return new PageOfRuleDefinition()
+                .content(content)
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .number(page.getNumber())
+                .size(page.getSize());
     }
 
     public ImportResult toModel(ImportOutcome outcome) {

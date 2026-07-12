@@ -3,7 +3,7 @@ import { map, Observable } from 'rxjs';
 import { inject, Inject } from '@angular/core';
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BaseEntityLoadResponse, BaseEntityQueryCondition } from './base-entity-load-response';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition, OrderBy } from './base-entity-load-response';
 import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { BaseEntityService } from './base-entity.service';
@@ -54,10 +54,14 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
           if (httpResponse.status === 204 || this.isEmptyBody(httpResponse.body)) {
             throw new Error('The query returned no content.');
           }
-          return queryCondition.page ? this.mapPagedResponse(httpResponse.body) : this.mapSimpleResponse(httpResponse.body);
+          return this.isPagedResponse(httpResponse.body) ? this.mapPagedResponse(httpResponse.body) : this.mapSimpleResponse(httpResponse.body);
         }),
       );
     } else throw new Error('Could not determine the full url');
+  }
+
+  private isPagedResponse(body: unknown): boolean {
+    return body !== null && typeof body === 'object' && !Array.isArray(body) && Array.isArray((body as { content?: unknown }).content);
   }
 
   private isEmptyBody(body: unknown): boolean {
@@ -110,9 +114,11 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   // region protected, private helper methods
   protected buildFullUrl(resourceUri: string, queryCondition: BaseEntityQueryCondition): string | undefined {
     const queryParams: Map<string, string> = new Map<string, string>();
-    if (queryCondition.page) queryParams.set('page', queryCondition.page.toString());
+    if (queryCondition.page !== undefined) queryParams.set('page', queryCondition.page.toString());
+    if (queryCondition.pageSize !== undefined) queryParams.set('size', queryCondition.pageSize.toString());
+    if (queryCondition.orderBys?.length) queryParams.set('order', this.buildOrder(queryCondition.orderBys));
     const rsql = this.buildRsql(queryCondition);
-    if (rsql) queryParams.set('filter', rsql);
+    if (rsql) queryParams.set('where', rsql);
 
     let params: Record<string, string> | undefined = {};
     if (queryParams.size > 0) {
@@ -143,16 +149,18 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     return undefined;
   }
 
+  private buildOrder(orderBys: OrderBy[]): string {
+    return orderBys.map((o) => `${o.property},${o.direction}`).join(',');
+  }
+
   private mapPagedResponse(response: unknown): BaseEntityLoadResponse<PersistedEntity<Entity>> {
-    const pages = response as Array<{ content: unknown[]; page: number; pageSize: number; totalPageCount: number }>;
-    const subjectPage = pages[0];
-    const content = subjectPage.content.map((dto, index) => {
-      return this.mapEntityResponse(dto, index);
-    });
+    const page = response as { content: unknown[]; number: number; size: number; totalElements: number; totalPages: number };
+    const content = page.content.map((dto, index) => this.mapEntityResponse(dto, index));
     return {
-      page: subjectPage.page,
-      pageSize: subjectPage.pageSize,
-      totalPageCount: subjectPage.totalPageCount,
+      number: page.number,
+      size: page.size,
+      totalElements: page.totalElements,
+      totalPages: page.totalPages,
       content,
     };
   }

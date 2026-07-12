@@ -86,7 +86,7 @@ describe('BaseRuleEngineAdapter', () => {
     });
 
     it('unwraps a paginated { content } response', async () => {
-      const paged = { content: [baseRule({ id: 'r1', context: 'Order' })], page: 0, pageSize: 10, totalPageCount: 1 };
+      const paged = { content: [baseRule({ id: 'r1', context: 'Order' })], number: 0, size: 10, totalElements: 1, totalPages: 1 };
       service.findByQuery.mockReturnValue(of(paged));
 
       const rules = await firstValueFrom(adapter.loadRulesFor('Order'));

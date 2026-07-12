@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>base-state-backend</artifactId>
-    <name>ProcessPuzzle :: Base State Backend</name>
+    <name>ProcessPuzzle :: Base State</name>
     <description>ProcessPuzzle Base State Machine Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-state-backend</url>
 

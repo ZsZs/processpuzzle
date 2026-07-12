@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>base-workflow-backend</artifactId>
-    <name>ProcessPuzzle :: Base Workflow Backend</name>
+    <name>ProcessPuzzle :: Base Workflow</name>
     <description>ProcessPuzzle Base Workflow Engine Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-workflow-backend</url>
 

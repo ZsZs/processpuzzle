@@ -85,9 +85,10 @@ describe('BaseEntityStore', () => {
       const { store, mockService } = setup({ payload: MOCK_PAGED_RESPONSE });
       expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
       expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
-      expect(store.page()).toEqual(33);
-      expect(store.pageSize()).toEqual(2);
-      expect(store.totalPageCount()).toEqual(333);
+      expect(store.number()).toEqual(33);
+      expect(store.size()).toEqual(2);
+      expect(store.totalElements()).toEqual(666);
+      expect(store.totalPages()).toEqual(333);
     });
 
     it('load() will verify if API is failed', () => {

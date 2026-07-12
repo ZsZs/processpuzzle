@@ -91,9 +91,10 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
     const content = results.docs.map((docSnapshot) => this.mapDocument({ id: docSnapshot.id, ...docSnapshot.data() }));
 
     return {
-      page: queryCondition.page,
-      pageSize: queryCondition.pageSize,
-      totalPageCount: 1,
+      number: queryCondition.page,
+      size: queryCondition.pageSize,
+      totalElements: content.length,
+      totalPages: 1,
       content,
     };
   }

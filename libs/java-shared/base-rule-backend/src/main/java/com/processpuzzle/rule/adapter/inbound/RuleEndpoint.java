@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
 
 @RestController
 @LogClass
@@ -75,11 +74,8 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<List<RuleDefinition>> listRules(String context, String where, String order) {
-        List<RuleDefinition> rules = findAllRules.execute(context, where, order).stream()
-                .map(mapper::toModel)
-                .toList();
-        return ResponseEntity.ok(rules);
+    public ResponseEntity<PageOfRuleDefinition> listRules(String context, String where, String order, Integer page, Integer size) {
+        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(context, where, order, page, size)));
     }
 
     @Override

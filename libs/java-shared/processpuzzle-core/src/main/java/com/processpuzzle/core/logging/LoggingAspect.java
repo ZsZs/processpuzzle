@@ -12,9 +12,12 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 @Aspect
 public class LoggingAspect {
@@ -23,6 +26,12 @@ public class LoggingAspect {
     static final String MDC_METHOD = "logMethod";
     static final String MDC_ARGS = "logArgs";
     static final String MDC_RESULT = "logResult";
+    static final String MDC_CALL_ID = "logCallId";
+    static final String MDC_PARENT_CALL_ID = "logParentCallId";
+    static final String MDC_DEPTH = "logDepth";
+
+    private static final String INDENT_UNIT = "  ";
+    private static final ThreadLocal<Deque<String>> CALL_STACK = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final ObjectMapper objectMapper;
 
@@ -60,13 +69,19 @@ public class LoggingAspect {
 
         String className = declaringType.getSimpleName();
         String methodName = signature.getName();
+        Deque<String> stack = CALL_STACK.get();
+        String parentCallId = stack.peek();
+        String callId = UUID.randomUUID().toString();
+        int depth = stack.size();
+        String indent = INDENT_UNIT.repeat(depth);
+        String argsJson = renderArgs(signature.getParameterNames(), joinPoint.getArgs());
 
+        stack.push(callId);
         try {
             if (entryEnabled) {
-                MDC.put(MDC_CLASS, className);
-                MDC.put(MDC_METHOD, methodName);
-                MDC.put(MDC_ARGS, renderArgs(signature.getParameterNames(), joinPoint.getArgs()));
-                logger.atLevel(level).log("method entry");
+                setInvocationMdc(className, methodName, callId, parentCallId, depth);
+                MDC.put(MDC_ARGS, argsJson);
+                logger.atLevel(level).log("{}→ {}.{}({})", indent, className, methodName, argsJson);
             }
 
             Object result;
@@ -74,27 +89,51 @@ public class LoggingAspect {
                 result = joinPoint.proceed();
             } catch (Throwable throwable) {
                 if (logger.isErrorEnabled()) {
-                    MDC.put(MDC_CLASS, className);
-                    MDC.put(MDC_METHOD, methodName);
-                    logger.atLevel(Level.ERROR).setCause(throwable).log("method threw");
+                    setInvocationMdc(className, methodName, callId, parentCallId, depth);
+                    logger.atLevel(Level.ERROR)
+                            .setCause(throwable)
+                            .log("{}✗ {}.{} threw {}", indent, className, methodName, throwable.getClass().getSimpleName());
                 }
                 throw throwable;
             }
 
             if (entryEnabled) {
-                MDC.put(MDC_CLASS, className);
-                MDC.put(MDC_METHOD, methodName);
-                MDC.put(MDC_RESULT, renderResult(signature.getReturnType(), result));
-                logger.atLevel(level).log("method exit");
+                String resultRendered = renderResult(signature.getReturnType(), result);
+                setInvocationMdc(className, methodName, callId, parentCallId, depth);
+                MDC.put(MDC_RESULT, resultRendered);
+                logger.atLevel(level).log("{}← {}.{} = {}", indent, className, methodName, resultRendered);
             }
 
             return result;
         } finally {
-            MDC.remove(MDC_CLASS);
-            MDC.remove(MDC_METHOD);
-            MDC.remove(MDC_ARGS);
-            MDC.remove(MDC_RESULT);
+            stack.pop();
+            if (stack.isEmpty()) {
+                CALL_STACK.remove();
+            }
+            clearInvocationMdc();
         }
+    }
+
+    private void setInvocationMdc(String className, String methodName, String callId, String parentCallId, int depth) {
+        MDC.put(MDC_CLASS, className);
+        MDC.put(MDC_METHOD, methodName);
+        MDC.put(MDC_CALL_ID, callId);
+        MDC.put(MDC_DEPTH, Integer.toString(depth));
+        if (parentCallId != null) {
+            MDC.put(MDC_PARENT_CALL_ID, parentCallId);
+        } else {
+            MDC.remove(MDC_PARENT_CALL_ID);
+        }
+    }
+
+    private void clearInvocationMdc() {
+        MDC.remove(MDC_CLASS);
+        MDC.remove(MDC_METHOD);
+        MDC.remove(MDC_ARGS);
+        MDC.remove(MDC_RESULT);
+        MDC.remove(MDC_CALL_ID);
+        MDC.remove(MDC_PARENT_CALL_ID);
+        MDC.remove(MDC_DEPTH);
     }
 
     private String renderArgs(String[] names, Object[] values) {
