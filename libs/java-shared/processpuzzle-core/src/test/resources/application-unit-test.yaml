@@ -1,0 +1,14 @@
+# Spring profile activated by Maven Surefire for unit tests
+# (spring.profiles.active=unit-test set in the parent pom).
+# Add per-project overrides here that should apply during unit testing.
+spring:
+  main:
+    banner-mode: off
+    lazy-initialization: true
+  jmx:
+    enabled: false
+
+logging:
+  level:
+    root: warn
+    com.processpuzzle: info

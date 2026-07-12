@@ -1,6 +1,6 @@
 package com.processpuzzle.backend;
 
-import com.processpuzzle.objectstore.adapters.outbound.MinioConfig;
+import com.processpuzzle.store.adapters.outbound.MinioConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;

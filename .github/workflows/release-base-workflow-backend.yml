@@ -1,0 +1,48 @@
+name: Release-Base-Workflow-Backend
+on:
+  push:
+    branches:
+      - "release/base-workflow-backend/*"
+    paths:
+      - 'libs/java-shared/base-workflow-backend/**'
+
+env:
+  BASE_DIR: "libs/java-shared/base-workflow-backend"
+  NX_PROJECT: "base-workflow-backend"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          base_dir: ${{env.BASE_DIR}}
+          nx_project: ${{env.NX_PROJECT}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          sonar_token: ${{secrets.SONAR_TOKEN}}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          java-version: '25.x'
+
+      - id: release-java
+        name: Release the Java library to Maven Central
+        uses: ./.github/actions/release-java
+        with:
+          base_dir: ${{env.BASE_DIR}}
+          nx_project: ${{env.NX_PROJECT}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          sonar_token: ${{secrets.SONAR_TOKEN}}
+          node-version: "24.x"
+          java-version: "25.x"
+          central_token_password: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          central_token_username: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}

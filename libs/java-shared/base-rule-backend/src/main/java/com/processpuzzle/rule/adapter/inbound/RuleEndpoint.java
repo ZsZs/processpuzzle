@@ -1,8 +1,10 @@
 package com.processpuzzle.rule.adapter.inbound;
 
+import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.rule.api.BaseRuleApi;
 import com.processpuzzle.rule.model.*;
 import com.processpuzzle.rule.usecase.*;
+import com.processpuzzle.shared.model.ImportResult;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +19,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 
 @RestController
+@LogClass
 public class RuleEndpoint implements BaseRuleApi {
     private final CreateRule createRule;
     private final UpdateRule updateRule;
@@ -72,8 +75,8 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<List<RuleDefinition>> listRules(String context) {
-        List<RuleDefinition> rules = findAllRules.execute(context).stream()
+    public ResponseEntity<List<RuleDefinition>> listRules(String context, String where, String order) {
+        List<RuleDefinition> rules = findAllRules.execute(context, where, order).stream()
                 .map(mapper::toModel)
                 .toList();
         return ResponseEntity.ok(rules);

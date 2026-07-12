@@ -1,0 +1,20 @@
+# Spring profile activated by Maven Surefire for unit tests
+# (spring.profiles.active=unit-test set in the parent pom).
+# Overrides the defaults in application.yaml to keep unit tests fast and quiet.
+spring:
+  main:
+    banner-mode: off
+    lazy-initialization: true
+  jmx:
+    enabled: false
+  h2:
+    console:
+      enabled: false
+
+logging:
+  level:
+    root: warn
+    com.processpuzzle: info
+
+base-rule:
+  loadSamples: no

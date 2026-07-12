@@ -5,12 +5,11 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.5-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>processpuzzle-api</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
     <name>ProcessPuzzle :: API Contracts</name>
     <description>ProcessPuzzle API Contracts and Generated Types</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/api-contracts</url>
@@ -64,16 +63,40 @@
                 <version>7.10.0</version>
                 <executions>
                     <execution>
+                        <id>generate-shared-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/shared-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <generateApis>false</generateApis>
+                            <apiPackage>com.processpuzzle.shared.api</apiPackage>
+                            <modelPackage>com.processpuzzle.shared.model</modelPackage>
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useTags>true</useTags>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>generate-storage-api</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/object-store-api.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/processpuzzle-store-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.objectstore.api</apiPackage>
-                            <modelPackage>com.processpuzzle.objectstore.model</modelPackage>
+                            <apiPackage>com.processpuzzle.store.api</apiPackage>
+                            <modelPackage>com.processpuzzle.store.model</modelPackage>
+                            <schemaMappings>
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                            </schemaMappings>
                             <configOptions>
                                 <delegatePattern>false</delegatePattern>
                                 <interfaceOnly>true</interfaceOnly>
@@ -94,6 +117,32 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <apiPackage>com.processpuzzle.rule.api</apiPackage>
                             <modelPackage>com.processpuzzle.rule.model</modelPackage>
+                            <schemaMappings>
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                            </schemaMappings>
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useTags>true</useTags>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-workflow-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/workflow-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <apiPackage>com.processpuzzle.workflow.api</apiPackage>
+                            <modelPackage>com.processpuzzle.workflow.model</modelPackage>
+                            <schemaMappings>
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                            </schemaMappings>
                             <configOptions>
                                 <delegatePattern>false</delegatePattern>
                                 <interfaceOnly>true</interfaceOnly>

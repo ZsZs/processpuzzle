@@ -5,12 +5,11 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.5-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>base-rule-backend</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
     <name>ProcessPuzzle :: Base Rule Backend</name>
     <description>ProcessPuzzle Base Rule Engine Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-rule-backend</url>
@@ -47,6 +46,11 @@
             <artifactId>processpuzzle-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>processpuzzle-core</artifactId>
+        </dependency>
+
         <!-- Spring Boot dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -74,6 +78,13 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
+        <!-- RSQL query language for the listRules `where` param -->
+        <dependency>
+            <groupId>cz.jirutka.rsql</groupId>
+            <artifactId>rsql-parser</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
         <!-- GraalVM Polyglot / GraalJS for PPCL rule evaluation -->
         <dependency>
             <groupId>org.graalvm.polyglot</groupId>
@@ -97,6 +108,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-data-jpa-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

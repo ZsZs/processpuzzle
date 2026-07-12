@@ -8,7 +8,7 @@
 
 `@processpuzzle/design` is the **Design-time module** of the ProcessPuzzle Low-Code platform. It provides the Angular entry point through which end-users author the artifacts that make up a business application: **entities**, **rules**, **states**, **workflows**, and **desktops**. The library ships a routable landing page, child routes for each building block, and a route-awareness service that lets host applications react to the user entering or leaving the `/design` area.
 
-It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `base-rule-frontend`, `base-state-frontend`, `base-desktop-frontend`, `base-process-frontend`) and composes their routes into a single design experience.
+It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `base-rule-frontend`, `base-state-frontend`, `base-desktop-frontend`, `base-workflow-frontend`) and composes their routes into a single design experience.
 
 ## Features
 
