@@ -2,7 +2,11 @@
   <app-header class="app-header" (toggleSideNav)="toggleSidenav()"></app-header>
   <mat-sidenav-container class="app-content-container" autosize>
     <mat-sidenav mode="side" [opened]="sidenavOpened()" class="app-sidenav-container" #sidenav>
-      <app-sidenav></app-sidenav>
+      @if (designRouteService.isDesignRoute()) {
+        <pp-design-sidenav></pp-design-sidenav>
+      } @else {
+        <app-sidenav></app-sidenav>
+      }
     </mat-sidenav>
     <mat-sidenav-content class="app-sidenav-content">
       <router-outlet></router-outlet>

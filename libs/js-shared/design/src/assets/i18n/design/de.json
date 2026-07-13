@@ -34,5 +34,12 @@
   "base-desktop_card_content_1": "Konfigurierbares Layout mit Seitennavigation, Kopf- und Fußzeile",
   "base-desktop_card_content_2": "Slots für Entitäts-, Regel-, Zustands- und Workflow-Module",
   "base-desktop_card_content_3": "Theming und responsives Verhalten von Haus aus",
-  "base-desktop_card_button": "Desktop definieren"
+  "base-desktop_card_button": "Desktop definieren",
+  "entities": "Entitäten",
+  "rules": "Regeln",
+  "states": "Zustände",
+  "workflows": "Workflows",
+  "desktop": "Desktop",
+  "under-construction_title": "Im Aufbau",
+  "under-construction_message": "Diese Seite ist noch nicht verfügbar. Bitte später wiederkommen."
 }

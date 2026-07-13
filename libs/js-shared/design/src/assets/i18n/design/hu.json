@@ -34,5 +34,12 @@
   "base-desktop_card_content_1": "Konfigurálható elrendezés oldalsávval, fejléccel és lábléccel",
   "base-desktop_card_content_2": "Helyek az entitás-, szabály-, állapot- és munkafolyamat-moduloknak",
   "base-desktop_card_content_3": "Témázás és reszponzív viselkedés alapból",
-  "base-desktop_card_button": "Asztal meghatározása"
+  "base-desktop_card_button": "Asztal meghatározása",
+  "entities": "Entitások",
+  "rules": "Szabályok",
+  "states": "Állapotok",
+  "workflows": "Munkafolyamatok",
+  "desktop": "Asztal",
+  "under-construction_title": "Fejlesztés alatt",
+  "under-construction_message": "Ez az oldal még nem érhető el. Térjen vissza később."
 }

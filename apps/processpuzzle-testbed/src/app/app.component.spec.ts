@@ -9,12 +9,17 @@ import { Component } from '@angular/core';
 import { HeaderComponent } from './navigation/header/header.component';
 import { SidenavComponent } from './navigation/sidenav/sidenav.component';
 import { FooterComponent } from './navigation/footer/footer.component';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DesignSidenavComponent } from '@processpuzzle/design';
 
 @Component({ selector: 'app-header', template: '' })
 class MockHeaderComponent {}
 
 @Component({ selector: 'app-sidenav', template: '' })
 class MockSidenavComponent {}
+
+@Component({ selector: 'pp-design-sidenav', template: '' })
+class MockDesignSidenavComponent {}
 
 @Component({ selector: 'app-footer', template: '' })
 class MockFooterComponent {}
@@ -28,8 +33,8 @@ describe('AppComponent', () => {
       providers: [LayoutService, provideRouter([])],
     })
       .overrideComponent(AppComponent, {
-        remove: { imports: [HeaderComponent, SidenavComponent, FooterComponent] },
-        add: { imports: [MockHeaderComponent, MockSidenavComponent, MockFooterComponent] },
+        remove: { imports: [HeaderComponent, SidenavComponent, DesignSidenavComponent, FooterComponent] },
+        add: { imports: [MockHeaderComponent, MockSidenavComponent, MockDesignSidenavComponent, MockFooterComponent] },
       })
       .compileComponents();
     fixture = TestBed.createComponent(AppComponent);

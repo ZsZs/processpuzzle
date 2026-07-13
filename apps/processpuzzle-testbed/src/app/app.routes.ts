@@ -154,6 +154,7 @@ export const appRoutes: Route[] = [
   {
     path: 'design',
     loadChildren: () => import('@processpuzzle/design').then((m) => m.DESIGN_ROUTES),
+    providers: [provideTranslocoScope({ scope: 'design', alias: 'design' })],
   },
   {
     path: 'entity-registry',

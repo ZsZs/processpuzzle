@@ -34,5 +34,12 @@
   "base-desktop_card_content_1": "Configurable layout with sidenav, header and footer",
   "base-desktop_card_content_2": "Slots for entity, rule, state and workflow modules",
   "base-desktop_card_content_3": "Theming and responsive behaviour out of the box",
-  "base-desktop_card_button": "Define desktop"
+  "base-desktop_card_button": "Define desktop",
+  "entities": "Entities",
+  "rules": "Rules",
+  "states": "States",
+  "workflows": "Workflows",
+  "desktop": "Desktop",
+  "under-construction_title": "Under construction",
+  "under-construction_message": "This page is not available yet. Come back later."
 }
