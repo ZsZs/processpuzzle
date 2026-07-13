@@ -32,13 +32,17 @@ const PROJECTS = new Map([
   ['processpuzzle-store', 'libs/java-shared/processpuzzle-store'],
 ]);
 
+// shell: true so Windows resolves mvn.cmd / gh.exe via PATHEXT — without it Node's
+// direct CreateProcess call fails with ENOENT on any command that isn't a literal .exe.
+const SPAWN_OPTS = { shell: true };
+
 function run(cmd, args) {
   console.log(`$ ${cmd} ${args.join(' ')}`);
-  execFileSync(cmd, args, { stdio: 'inherit' });
+  execFileSync(cmd, args, { ...SPAWN_OPTS, stdio: 'inherit' });
 }
 
 function capture(cmd, args) {
-  return execFileSync(cmd, args, { encoding: 'utf8' }).trim();
+  return execFileSync(cmd, args, { ...SPAWN_OPTS, encoding: 'utf8' }).trim();
 }
 
 function readCurrentVersion(project) {
