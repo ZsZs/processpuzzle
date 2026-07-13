@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - "release/base-desktop-backend/*"
-    paths:
-      - 'libs/java-shared/base-desktop-backend/**'
 
 env:
   BASE_DIR: "libs/java-shared/base-desktop-backend"

@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - "release/base-workflow-backend/*"
-    paths:
-      - 'libs/java-shared/base-workflow-backend/**'
 
 env:
   BASE_DIR: "libs/java-shared/base-workflow-backend"
