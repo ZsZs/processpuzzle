@@ -98,3 +98,8 @@ runs:
       with:
         title: "@processpuzzle/${{inputs.nx_project}}/${{steps.version.outputs.VERSION}}"
         tag: "${{inputs.nx_project}}@${{steps.version.outputs.VERSION}}"
+
+    - name: Merge release branch to develop and master
+      uses: ./.github/actions/release-merge
+      with:
+        github_token: ${{ inputs.github_token }}
