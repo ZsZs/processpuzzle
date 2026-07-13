@@ -106,16 +106,11 @@
   ],
   "release": {
     "projects": [
-      "api-contracts",
       "auth",
-      "base-desktop-backend",
       "base-desktop-frontend",
       "base-entity-frontend",
-      "base-workflow-backend",
       "base-workflow-frontend",
-      "base-rule-backend",
       "base-rule-frontend",
-      "base-state-backend",
       "base-state-frontend",
       "design",
       "processpuzzle-testbed",
