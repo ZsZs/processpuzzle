@@ -134,3 +134,8 @@ jobs:
         with:
           title: "@processpuzzle/testbed/${{steps.package-version.outputs.current-version}}"
           tag: "testbed@${{steps.package-version.outputs.current-version}}"
+
+      - name: Merge release branch to develop and master
+        uses: ./.github/actions/release-merge
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

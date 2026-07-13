@@ -72,3 +72,8 @@ jobs:
         with:
           title: "@processpuzzle/base-desktop-frontend/${{steps.package-version.outputs.current-version}}"
           tag: "base-desktop-frontend@${{steps.package-version.outputs.current-version}}"
+
+      - name: Merge release branch to develop and master
+        uses: ./.github/actions/release-merge
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
