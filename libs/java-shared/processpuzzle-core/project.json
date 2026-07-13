@@ -31,11 +31,6 @@
         "ci": {}
       }
     },
-    "nx-release-publish": {
-      "options": {
-        "packageRoot": "{projectRoot}"
-      }
-    },
     "release": {
       "executor": "nx:run-commands",
       "options": {
