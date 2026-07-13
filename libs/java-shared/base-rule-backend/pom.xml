@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>base-rule-backend</artifactId>
+    <version>${base-rule-backend.version}</version>
     <name>ProcessPuzzle :: Base Rule</name>
     <description>ProcessPuzzle Base Rule Engine Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-rule-backend</url>
