@@ -1,7 +1,7 @@
 package com.processpuzzle.rule.usecase;
 
-import com.processpuzzle.rule.adapter.inbound.rsql.RsqlSpecificationBuilder;
-import com.processpuzzle.rule.adapter.inbound.rsql.SortParser;
+import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
+import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import org.springframework.data.domain.Page;

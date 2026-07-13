@@ -78,13 +78,6 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
-        <!-- RSQL query language for the listRules `where` param -->
-        <dependency>
-            <groupId>cz.jirutka.rsql</groupId>
-            <artifactId>rsql-parser</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
         <!-- GraalVM Polyglot / GraalJS for PPCL rule evaluation -->
         <dependency>
             <groupId>org.graalvm.polyglot</groupId>
