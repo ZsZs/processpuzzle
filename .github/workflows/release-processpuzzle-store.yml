@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - "release/processpuzzle-store/*"
-    paths:
-      - 'libs/java-shared/processpuzzle-store/**'
 
 env:
   BASE_DIR: "libs/java-shared/processpuzzle-store"

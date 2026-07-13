@@ -2,9 +2,7 @@ name: Release-API-Contracts
 on:
   push:
     branches:
-      - "release/processpuzzle-api/*"
-    paths:
-      - 'libs/java-shared/api-contracts/**'
+      - "release/api-contracts/*"
 
 env:
   BASE_DIR: "libs/java-shared/api-contracts"
