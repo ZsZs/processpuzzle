@@ -63,7 +63,7 @@
              property via <version>${<lib>.version}</version>. Bumped by
              tools/scripts/release-java-lib.mjs. flatten-maven-plugin resolves the reference
              at publish time so the pom deployed to Central carries a literal version. -->
-        <api-contracts.version>1.0.5</api-contracts.version>
+        <api-contracts.version>1.0.6-SNAPSHOT</api-contracts.version>
         <base-desktop-backend.version>1.0.5-SNAPSHOT</base-desktop-backend.version>
         <base-rule-backend.version>1.0.5-SNAPSHOT</base-rule-backend.version>
         <base-state-backend.version>1.0.5-SNAPSHOT</base-state-backend.version>
