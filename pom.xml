@@ -60,16 +60,18 @@
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
         <!-- Per-lib versions. Single source of truth: each child pom references the matching
-             property via <version>${<lib>.version}</version>. Bumped by
-             tools/scripts/release-java-lib.mjs. flatten-maven-plugin resolves the reference
-             at publish time so the pom deployed to Central carries a literal version. -->
-        <api-contracts.version>1.0.6-SNAPSHOT</api-contracts.version>
-        <base-desktop-backend.version>1.0.5-SNAPSHOT</base-desktop-backend.version>
-        <base-rule-backend.version>1.0.5-SNAPSHOT</base-rule-backend.version>
-        <base-state-backend.version>1.0.5-SNAPSHOT</base-state-backend.version>
-        <base-workflow-backend.version>1.0.5-SNAPSHOT</base-workflow-backend.version>
-        <processpuzzle-core.version>1.0.6-SNAPSHOT</processpuzzle-core.version>
-        <processpuzzle-store.version>1.0.5-SNAPSHOT</processpuzzle-store.version>
+             property via <version>${<lib>.version}</version>, and root <dependencyManagement>
+             pins sibling deps to the same property. Property therefore always reflects the
+             CURRENT PUBLISHED version, no SNAPSHOT between releases.
+             tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
+             flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
+        <api-contracts.version>1.0.5</api-contracts.version>
+        <base-desktop-backend.version>1.0.4</base-desktop-backend.version>
+        <base-rule-backend.version>1.0.2</base-rule-backend.version>
+        <base-state-backend.version>1.0.4</base-state-backend.version>
+        <base-workflow-backend.version>1.0.4</base-workflow-backend.version>
+        <processpuzzle-core.version>1.0.5</processpuzzle-core.version>
+        <processpuzzle-store.version>1.0.4</processpuzzle-store.version>
     </properties>
 
     <dependencyManagement>
