@@ -1,0 +1,63 @@
+name: release-merge
+description: |
+  After a successful release publish, merge the release/<lib>/<version> branch
+  into develop (via the PR opened by tools/scripts/release-*-lib.mjs) and into
+  master (via a fresh PR created here). Deletes the branch when done.
+
+  No-op if the workflow ref is not a release/* branch — safe to include in any
+  workflow, only fires when it makes sense.
+
+  Assumes:
+  - The release script has already opened a PR from the release branch to develop.
+  - The token used has permission to merge PRs on both develop and master
+    (branch protection may need to allow the release workflow to merge, or the
+    token needs admin. If merge fails, fix and re-run manually.).
+
+inputs:
+  github_token:
+    description: Token with pull-request write access on develop and master
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Merge release branch into develop and master
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        set -euo pipefail
+
+        BRANCH="${GITHUB_REF_NAME}"
+        if [[ ! "$BRANCH" =~ ^release/ ]]; then
+          echo "Not a release branch ($BRANCH) — skipping auto-merge."
+          exit 0
+        fi
+
+        echo "Auto-merging release branch: $BRANCH"
+
+        # 1. Merge the existing PR to develop (opened by the release script).
+        DEV_PR=$(gh pr list --head "$BRANCH" --base develop --state open \
+          --json number --jq '.[0].number // empty')
+        if [[ -z "$DEV_PR" ]]; then
+          echo "ERROR: no open PR from $BRANCH to develop." >&2
+          echo "The release script normally opens this PR; check its output." >&2
+          exit 1
+        fi
+        echo "Merging PR #$DEV_PR into develop..."
+        gh pr merge "$DEV_PR" --merge
+
+        # 2. Open a new PR from the release branch to master and merge it.
+        # The release branch has develop-tip + release commit; merging into
+        # master brings master up to the released state.
+        echo "Opening PR from $BRANCH to master..."
+        gh pr create \
+          --base master \
+          --head "$BRANCH" \
+          --title "release: merge $BRANCH into master" \
+          --body "Auto-created by the release workflow after successful publish. Brings master to the released state."
+
+        echo "Merging release branch into master and deleting it..."
+        gh pr merge "$BRANCH" --merge --delete-branch
+
+        echo "Done. Branch $BRANCH merged to develop and master, then deleted."
