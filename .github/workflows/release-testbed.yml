@@ -2,12 +2,7 @@ name: Release-Testbed
 on:
   push:
     branches:
-      - "release/testbed/*"
-    paths:
-      - 'apps/processpuzzle-testbed/**'
-      - 'tools/firebase/functions/**'
-      - 'tools/mock-backend/db.json'
-      - 'firebase.json'
+      - "release/processpuzzle-testbed/*"
 permissions:
   id-token: write
   contents: write
