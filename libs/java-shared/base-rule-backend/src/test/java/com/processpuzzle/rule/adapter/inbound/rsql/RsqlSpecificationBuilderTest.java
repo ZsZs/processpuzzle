@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.adapter.inbound.rsql;
 
+import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;

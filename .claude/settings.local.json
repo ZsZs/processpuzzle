@@ -431,7 +431,13 @@
       "PowerShell(npx nx test base-entity-frontend -t \"base-entity-rest\" 2>&1)",
       "PowerShell(pnpm nx test base-entity-frontend 2>&1)",
       "PowerShell(npx nx test base-entity-frontend 2>&1)",
-      "Bash(grep -E \"^DA:.*,0$\")"
+      "Bash(grep -E \"^DA:.*,0$\")",
+      "Bash(mkdir -p C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/src/main/java/com/processpuzzle/core/rsql C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/src/test/java/com/processpuzzle/core/rsql)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml -am -pl libs/java-shared/processpuzzle-core -f C:/Projects/ProcessPuzzle/processpuzzle/pom.xml install -DskipTests -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml install -DskipTests -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/base-rule-backend/pom.xml test -q)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/base-rule-backend/pom.xml test)",
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml test)"
     ]
   }
 }

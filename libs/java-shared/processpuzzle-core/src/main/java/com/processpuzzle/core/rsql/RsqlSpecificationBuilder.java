@@ -1,4 +1,4 @@
-package com.processpuzzle.rule.adapter.inbound.rsql;
+package com.processpuzzle.core.rsql;
 
 import cz.jirutka.rsql.parser.RSQLParser;
 import cz.jirutka.rsql.parser.RSQLParserException;

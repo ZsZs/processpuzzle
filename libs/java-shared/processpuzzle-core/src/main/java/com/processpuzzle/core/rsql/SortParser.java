@@ -1,4 +1,4 @@
-package com.processpuzzle.rule.adapter.inbound.rsql;
+package com.processpuzzle.core.rsql;
 
 import org.springframework.data.domain.Sort;
 
