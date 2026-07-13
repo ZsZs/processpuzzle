@@ -66,6 +66,23 @@
       "options": {
         "packageRoot": "{workspaceRoot}/dist/libs/js-shared/test-util"
       }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment patch"
+      },
+      "configurations": {
+        "major": {
+          "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment major"
+        },
+        "minor": {
+          "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment minor"
+        },
+        "patch": {
+          "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment patch"
+        }
+      }
     }
   }
 }
