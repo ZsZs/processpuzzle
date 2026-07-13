@@ -214,7 +214,7 @@
     "@vitest/ui": "^4.1.9",
     "angular-eslint": "^22.0.0",
     "autoprefixer": "^10.5.2",
-    "baseline-browser-mapping": "^2.10.40",
+    "baseline-browser-mapping": "^2.10.43",
     "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "eslint-config-google": "^0.14.0",
