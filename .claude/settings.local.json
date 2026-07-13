@@ -437,7 +437,25 @@
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml install -DskipTests -q)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/base-rule-backend/pom.xml test -q)",
       "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/base-rule-backend/pom.xml test)",
-      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml test)"
+      "Bash(\"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -f C:/Projects/ProcessPuzzle/processpuzzle/libs/java-shared/processpuzzle-core/pom.xml test)",
+      "Bash(git branch *)",
+      "Bash(mvn -q -DskipTests validate)",
+      "PowerShell(mvn -q -DskipTests validate 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -q -DskipTests validate 2>&1)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -DskipTests validate 2>&1 | Select-Object -Last 30; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" -N help:describe -Dplugin=org.codehaus.mojo:versions-maven-plugin -Ddetail=false -Dgoal=set-property 2>&1 | Select-Object -Last 12; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -N versions:help 2>&1 | Select-Object -First 8; \"EXIT=$LASTEXITCODE\")",
+      "Bash(ls \"/c/Users/zsolt/.m2/repository/org/codehaus/mojo/versions-maven-plugin/\" 2>&1 | head -20)",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -N org.codehaus.mojo:versions-maven-plugin:2.19.1:help 2>&1 | Select-Object -First 15; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -N org.codehaus.mojo:versions-maven-plugin:2.19.1:set-property -Dproperty=processpuzzle-core.version -DnewVersion=9.9.9-TEST -DgenerateBackupPoms=false 2>&1 | Select-Object -Last 10; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -pl libs/java-shared/processpuzzle-core -N org.codehaus.mojo:versions-maven-plugin:2.19.1:set -DnewVersion=9.9.9-TEST -DgenerateBackupPoms=false -DprocessAllModules=false -DprocessParent=false -DupdateMatchingVersions=false 2>&1 | Select-Object -Last 12; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -pl libs/java-shared/processpuzzle-core org.codehaus.mojo:versions-maven-plugin:2.19.1:set -DnewVersion=9.9.9-TEST -DgenerateBackupPoms=false -DprocessAllModules=false -DprocessParent=false -DupdateMatchingVersions=false 2>&1 | Select-Object -Last 15; \"EXIT=$LASTEXITCODE\")",
+      "Bash(node tools/scripts/release-java-lib.mjs --help)",
+      "Bash(node tools/scripts/release-java-lib.mjs prepare --project bogus)",
+      "Bash(echo \"EXIT=$?\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -DskipTests validate 2>&1 | Select-Object -Last 15; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(& \"C:\\\\DevEnv\\\\apache-maven-3.9.14\\\\bin\\\\mvn.cmd\" --% -o -pl libs/java-shared/processpuzzle-core flatten:flatten 2>&1 | Select-Object -Last 15; \"EXIT=$LASTEXITCODE\")",
+      "Bash(grep -c '\\\\${' libs/java-shared/processpuzzle-core/.flattened-pom.xml)"
     ]
   }
 }

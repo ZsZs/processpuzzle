@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>processpuzzle-core</artifactId>
+    <version>${processpuzzle-core.version}</version>
     <name>ProcessPuzzle :: Core</name>
     <description>ProcessPuzzle Core Library — cross-cutting exception handling and logging support</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/processpuzzle-core</url>

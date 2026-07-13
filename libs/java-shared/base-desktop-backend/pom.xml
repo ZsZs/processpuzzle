@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>base-desktop-backend</artifactId>
+    <version>${base-desktop-backend.version}</version>
     <name>ProcessPuzzle :: Base Desktop</name>
     <description>ProcessPuzzle Base Desktop Backend Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/base-desktop-backend</url>

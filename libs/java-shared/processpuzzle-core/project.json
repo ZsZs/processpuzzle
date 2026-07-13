@@ -35,6 +35,18 @@
       "options": {
         "packageRoot": "{projectRoot}"
       }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/release-java-lib.mjs prepare --project {projectName}"
+      }
+    },
+    "release-finalize": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/release-java-lib.mjs finalize --project {projectName}"
+      }
     }
   }
 }

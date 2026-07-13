@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>processpuzzle-store</artifactId>
+    <version>${processpuzzle-store.version}</version>
     <name>ProcessPuzzle :: Store</name>
     <description>ProcessPuzzle Store Library</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/processpuzzle-store</url>

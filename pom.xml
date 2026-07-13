@@ -59,9 +59,17 @@
         <maven.compiler.target>25</maven.compiler.target>
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <processpuzzle.api.version>1.0.5-SNAPSHOT</processpuzzle.api.version>
-        <processpuzzle-core.version>1.0.0-SNAPSHOT</processpuzzle-core.version>
-        <base-rule-backend.version>1.0.3-SNAPSHOT</base-rule-backend.version>
+        <!-- Per-lib versions. Single source of truth: each child pom references the matching
+             property via <version>${<lib>.version}</version>. Bumped by
+             tools/scripts/release-java-lib.mjs. flatten-maven-plugin resolves the reference
+             at publish time so the pom deployed to Central carries a literal version. -->
+        <api-contracts.version>1.0.5-SNAPSHOT</api-contracts.version>
+        <base-desktop-backend.version>1.0.5-SNAPSHOT</base-desktop-backend.version>
+        <base-rule-backend.version>1.0.5-SNAPSHOT</base-rule-backend.version>
+        <base-state-backend.version>1.0.5-SNAPSHOT</base-state-backend.version>
+        <base-workflow-backend.version>1.0.5-SNAPSHOT</base-workflow-backend.version>
+        <processpuzzle-core.version>1.0.5-SNAPSHOT</processpuzzle-core.version>
+        <processpuzzle-store.version>1.0.5-SNAPSHOT</processpuzzle-store.version>
     </properties>
 
     <dependencyManagement>
@@ -70,43 +78,43 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>processpuzzle-core</artifactId>
-                <version>${project.version}</version>
+                <version>${processpuzzle-core.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>processpuzzle-store</artifactId>
-                <version>${project.version}</version>
+                <version>${processpuzzle-store.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-rule-backend</artifactId>
-                <version>${project.version}</version>
+                <version>${base-rule-backend.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-state-backend</artifactId>
-                <version>${project.version}</version>
+                <version>${base-state-backend.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-workflow-backend</artifactId>
-                <version>${project.version}</version>
+                <version>${base-workflow-backend.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-desktop-backend</artifactId>
-                <version>${project.version}</version>
+                <version>${base-desktop-backend.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.processpuzzle</groupId>
                 <artifactId>processpuzzle-api</artifactId>
-                <version>${project.version}</version>
+                <version>${api-contracts.version}</version>
             </dependency>
 
             <!-- Spring Boot dependencies -->
@@ -288,6 +296,14 @@
                         <autoPublish>true</autoPublish>
                         <waitUntil>published</waitUntil>
                     </configuration>
+                </plugin>
+
+                <!-- Versions plugin — used by tools/scripts/release-java-lib.mjs to bump
+                     per-lib versions during release. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.19.1</version>
                 </plugin>
 
                 <!-- Spotless: applies the Eclipse formatter (tools/eclipse-formatter.xml)
