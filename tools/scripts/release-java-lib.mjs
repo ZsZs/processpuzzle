@@ -1,19 +1,29 @@
 #!/usr/bin/env node
 // Per-lib Java release orchestration.
 //
-// Subcommands:
-//   prepare  --project <nx-project>   create release branch, bump SNAPSHOT -> release
-//                                     version, commit, push, open PR (GH Action deploys).
-//   finalize --project <nx-project>   on develop, bump patch to next -SNAPSHOT, push.
+// Subcommand:
+//   prepare --project <nx-project> --increment <major|minor|patch>
 //
-// Preconditions (enforced by the pom refactor):
-//   - Root pom has a version property named <${project}.version>
-//   - The corresponding child pom's <version> element references that property
-//     (e.g. <version>${processpuzzle-core.version}</version>)
-//   - flatten-maven-plugin (already configured in the root pom) resolves the reference
-//     at publish time so poms deployed to Central carry a literal version.
+// Flow (matches tools/scripts/release-js-lib.mjs):
+//   1. Assert on develop, clean tree
+//   2. Read current version from root pom's <${project}.version> property
+//   3. Compute new version via semver bump
+//   4. Create release/<project>/<newVersion> branch
+//   5. Bump the property via versions-maven-plugin (single edit, root pom only)
+//   6. Commit, push, open PR to develop
 //
-// Bumping is therefore a single edit to the root pom property.
+// Design (why there's no finalize step):
+//   The property doubles as (a) the lib's own artifact version and (b) the pin
+//   siblings use in <dependencyManagement>. If it drifts to a -SNAPSHOT between
+//   releases, every sibling depending on this lib becomes unreleasable because
+//   the SNAPSHOT isn't on Central. So we keep the property at the LAST PUBLISHED
+//   version between releases — no ceremony, next release just bumps.
+//
+// Preconditions:
+//   - Root pom has a version property named <${project}.version> holding a plain
+//     X.Y.Z semver (no -SNAPSHOT, no prereleases).
+//   - The corresponding child pom's <version> uses ${<project>.version}.
+//   - flatten-maven-plugin resolves the property at publish time.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -32,10 +42,10 @@ const PROJECTS = new Map([
   ['processpuzzle-store', 'libs/java-shared/processpuzzle-store'],
 ]);
 
-// Node 18.20+/20.12+/21.7+ refuses to spawn Windows .cmd/.bat files without shell: true
-// (CVE-2024-27980). mvn on Windows is mvn.cmd, so mvn calls need shell: true. But routing
-// git and gh through the shell means their args get re-parsed by cmd.exe — parens, spaces
-// and colons in commit messages get mangled. Only enable shell for the batch-file case.
+const INCREMENTS = new Set(['major', 'minor', 'patch']);
+
+// See [[node-spawn-cmd-windows]] memory: .cmd/.bat on Windows need shell:true
+// (CVE-2024-27980) but shell:true mangles args for .exe callees. Predicate per callee.
 const IS_WINDOWS = process.platform === 'win32';
 function needsShell(cmd) {
   return IS_WINDOWS && (cmd === MVN || /\.(cmd|bat)$/i.test(cmd));
@@ -74,7 +84,7 @@ function assertOnBranch(branch) {
   }
 }
 
-function bumpVersion(project, newVersion) {
+function setProperty(project, newVersion) {
   run(MVN, [
     '-N',
     'versions:set-property',
@@ -85,20 +95,24 @@ function bumpVersion(project, newVersion) {
   ]);
 }
 
-function stripSnapshot(v) {
-  if (!v.endsWith('-SNAPSHOT')) {
-    throw new Error(`Version '${v}' does not end with -SNAPSHOT`);
+function bumpVersion(current, increment) {
+  const m = current.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!m) {
+    throw new Error(
+      `Cannot bump version '${current}': only plain X.Y.Z semver is supported. ` +
+        `If the property still has a -SNAPSHOT suffix from the old flow, strip it ` +
+        `manually on develop first (set it to the last published version).`,
+    );
   }
-  return v.slice(0, -'-SNAPSHOT'.length);
-}
-
-function nextPatchSnapshot(releaseVersion) {
-  const parts = releaseVersion.split('.');
-  if (parts.length !== 3 || parts.some((p) => !/^\d+$/.test(p))) {
-    throw new Error(`Cannot bump patch of non-semver version '${releaseVersion}'`);
+  const major = Number(m[1]);
+  const minor = Number(m[2]);
+  const patch = Number(m[3]);
+  switch (increment) {
+    case 'major': return `${major + 1}.0.0`;
+    case 'minor': return `${major}.${minor + 1}.0`;
+    case 'patch': return `${major}.${minor}.${patch + 1}`;
+    default: throw new Error(`Unknown increment '${increment}' (expected major|minor|patch)`);
   }
-  const [major, minor, patch] = parts.map(Number);
-  return `${major}.${minor}.${patch + 1}-SNAPSHOT`;
 }
 
 function projectPath(project) {
@@ -114,19 +128,19 @@ function projectPath(project) {
   return path;
 }
 
-function prepare(project) {
+function prepare(project, increment) {
   projectPath(project);
   assertOnBranch('develop');
   assertCleanTree();
 
-  const currentSnapshot = readCurrentVersion(project);
-  const releaseVersion = stripSnapshot(currentSnapshot);
-  const branch = `release/${project}/${releaseVersion}`;
+  const current = readCurrentVersion(project);
+  const newVersion = bumpVersion(current, increment);
+  const branch = `release/${project}/${newVersion}`;
 
-  console.log(`\n>>> Releasing ${project}: ${currentSnapshot} -> ${releaseVersion}\n`);
+  console.log(`\n>>> Releasing ${project}: ${current} -> ${newVersion} (${increment})\n`);
 
   run('git', ['checkout', '-b', branch]);
-  bumpVersion(project, releaseVersion);
+  setProperty(project, newVersion);
   run('git', ['add', 'pom.xml']);
   run('git', ['commit', '-m', `release(${project}): bump version.`]);
   run('git', ['push', '-u', 'origin', branch]);
@@ -134,48 +148,21 @@ function prepare(project) {
     'pr', 'create',
     '--base', 'develop',
     '--head', branch,
-    '--title', `release(${project}): ${releaseVersion}`,
+    '--title', `release(${project}): ${newVersion}`,
     '--body',
-    `Release **${project}** at **${releaseVersion}**.\n\n` +
+    `Release **${project}** at **${newVersion}** (${increment} bump).\n\n` +
       `The Maven Central deploy workflow triggers on push to \`${branch}\`. ` +
-      `Once it succeeds and this PR is merged, run:\n\n` +
-      `\`\`\`\nnx run ${project}:release-finalize\n\`\`\`\n\n` +
-      `to bump develop to the next -SNAPSHOT.`,
+      `On publish success the release-merge composite auto-merges this PR ` +
+      `into develop and opens+merges a PR into master.`,
   ]);
 
-  console.log(`\nBranch pushed, PR opened. Watch the release workflow, then merge the PR.`);
-  console.log(`After merge, on develop, run: nx run ${project}:release-finalize`);
-}
-
-function finalize(project) {
-  projectPath(project);
-  assertOnBranch('develop');
-  assertCleanTree();
-
-  const current = readCurrentVersion(project);
-  if (current.endsWith('-SNAPSHOT')) {
-    throw new Error(
-      `Version '${current}' is already a SNAPSHOT. Nothing to finalize. ` +
-        `Did the release PR get merged into develop?`,
-    );
-  }
-  const next = nextPatchSnapshot(current);
-
-  console.log(`\n>>> Bumping next SNAPSHOT for ${project}: ${current} -> ${next}\n`);
-
-  bumpVersion(project, next);
-  run('git', ['add', 'pom.xml']);
-  run('git', ['commit', '-m', `chore(${project}): bump next SNAPSHOT version.`]);
-  run('git', ['push', 'origin', 'develop']);
-
-  console.log(`\nNext SNAPSHOT (${next}) committed and pushed on develop.`);
+  console.log(`\nBranch pushed, PR opened. Watch the release workflow.`);
 }
 
 function usage() {
   return (
     `Usage:\n` +
-    `  node tools/scripts/release-java-lib.mjs prepare  --project <name>\n` +
-    `  node tools/scripts/release-java-lib.mjs finalize --project <name>\n\n` +
+    `  node tools/scripts/release-java-lib.mjs prepare --project <name> --increment <major|minor|patch>\n\n` +
     `Known projects:\n  ${[...PROJECTS.keys()].join('\n  ')}\n`
   );
 }
@@ -193,6 +180,7 @@ function main() {
       args: rest,
       options: {
         project: { type: 'string', short: 'p' },
+        increment: { type: 'string', short: 'i' },
       },
     }));
   } catch (err) {
@@ -206,19 +194,24 @@ function main() {
     console.error(usage());
     process.exit(2);
   }
-
-  switch (subcommand) {
-    case 'prepare':
-      prepare(values.project);
-      break;
-    case 'finalize':
-      finalize(values.project);
-      break;
-    default:
-      console.error(`Unknown subcommand: ${subcommand}`);
-      console.error(usage());
-      process.exit(2);
+  if (!values.increment) {
+    console.error('Missing --increment <major|minor|patch>');
+    console.error(usage());
+    process.exit(2);
   }
+  if (!INCREMENTS.has(values.increment)) {
+    console.error(`Invalid --increment '${values.increment}' (expected major|minor|patch)`);
+    console.error(usage());
+    process.exit(2);
+  }
+
+  if (subcommand !== 'prepare') {
+    console.error(`Unknown subcommand: ${subcommand}`);
+    console.error(usage());
+    process.exit(2);
+  }
+
+  prepare(values.project, values.increment);
 }
 
 try {
