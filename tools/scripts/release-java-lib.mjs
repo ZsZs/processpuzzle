@@ -32,17 +32,22 @@ const PROJECTS = new Map([
   ['processpuzzle-store', 'libs/java-shared/processpuzzle-store'],
 ]);
 
-// shell: true so Windows resolves mvn.cmd / gh.exe via PATHEXT — without it Node's
-// direct CreateProcess call fails with ENOENT on any command that isn't a literal .exe.
-const SPAWN_OPTS = { shell: true };
+// Node 18.20+/20.12+/21.7+ refuses to spawn Windows .cmd/.bat files without shell: true
+// (CVE-2024-27980). mvn on Windows is mvn.cmd, so mvn calls need shell: true. But routing
+// git and gh through the shell means their args get re-parsed by cmd.exe — parens, spaces
+// and colons in commit messages get mangled. Only enable shell for the batch-file case.
+const IS_WINDOWS = process.platform === 'win32';
+function needsShell(cmd) {
+  return IS_WINDOWS && (cmd === MVN || /\.(cmd|bat)$/i.test(cmd));
+}
 
 function run(cmd, args) {
   console.log(`$ ${cmd} ${args.join(' ')}`);
-  execFileSync(cmd, args, { ...SPAWN_OPTS, stdio: 'inherit' });
+  execFileSync(cmd, args, { shell: needsShell(cmd), stdio: 'inherit' });
 }
 
 function capture(cmd, args) {
-  return execFileSync(cmd, args, { ...SPAWN_OPTS, encoding: 'utf8' }).trim();
+  return execFileSync(cmd, args, { shell: needsShell(cmd), encoding: 'utf8' }).trim();
 }
 
 function readCurrentVersion(project) {
