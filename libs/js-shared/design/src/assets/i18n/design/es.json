@@ -34,5 +34,12 @@
   "base-desktop_card_content_1": "Diseño configurable con sidenav, encabezado y pie de página",
   "base-desktop_card_content_2": "Espacios para módulos de entidad, regla, estado y flujo",
   "base-desktop_card_content_3": "Theming y comportamiento responsive listos para usar",
-  "base-desktop_card_button": "Definir escritorio"
+  "base-desktop_card_button": "Definir escritorio",
+  "entities": "Entidades",
+  "rules": "Reglas",
+  "states": "Estados",
+  "workflows": "Flujos de trabajo",
+  "desktop": "Escritorio",
+  "under-construction_title": "En construcción",
+  "under-construction_message": "Esta página aún no está disponible. Vuelva más tarde."
 }

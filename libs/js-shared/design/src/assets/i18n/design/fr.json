@@ -34,5 +34,12 @@
   "base-desktop_card_content_1": "Mise en page configurable avec menu latéral, en-tête et pied de page",
   "base-desktop_card_content_2": "Emplacements pour les modules entité, règle, état et workflow",
   "base-desktop_card_content_3": "Thématisation et comportement responsive prêts à l'emploi",
-  "base-desktop_card_button": "Définir le bureau"
+  "base-desktop_card_button": "Définir le bureau",
+  "entities": "Entités",
+  "rules": "Règles",
+  "states": "États",
+  "workflows": "Workflows",
+  "desktop": "Bureau",
+  "under-construction_title": "En construction",
+  "under-construction_message": "Cette page n'est pas encore disponible. Revenez plus tard."
 }

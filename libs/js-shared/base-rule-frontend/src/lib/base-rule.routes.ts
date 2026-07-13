@@ -5,6 +5,8 @@ import { BaseRuleContainerComponent } from './feature/base-rule-container.compon
 export const BASE_RULE_ROUTES: Routes = [
   {
     path: 'base-rule',
+    title: 'ProcessPuzzle Design - Base Rule',
+    data: { icon: 'gavel', menuTitle: 'design.rules' },
     component: BaseRuleContainerComponent,
     children: BASE_ENTITY_ROUTES,
   },
