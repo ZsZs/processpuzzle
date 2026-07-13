@@ -34,6 +34,7 @@ const PROJECTS = new Map([
   ['test-util', 'libs/js-shared/test-util'],
   ['util', 'libs/js-shared/util'],
   ['widgets', 'libs/js-shared/widgets'],
+  ['processpuzzle-testbed', 'apps/processpuzzle-testbed'],
 ]);
 
 const INCREMENTS = new Set(['major', 'minor', 'patch']);
