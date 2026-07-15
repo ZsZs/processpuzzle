@@ -82,6 +82,18 @@ runs:
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
       working-directory: ${{inputs.base_dir}}
 
+    - name: Build in-repo dependencies into local repo
+      # Build this module's in-repo upstream dependencies (e.g. processpuzzle-core)
+      # from source into ~/.m2 so the deploy below resolves them locally instead of
+      # from Maven Central. A freshly-released sibling published via the Central
+      # Portal has not necessarily propagated to repo.maven.apache.org yet, which
+      # otherwise breaks a downstream release (processpuzzle-store 1.1.0 could not
+      # find processpuzzle-core 1.1.0). -am pulls in only upstream deps and is a
+      # no-op for libs with no in-repo dependencies (e.g. api-contracts).
+      run: mvn --batch-mode -pl ${{ inputs.base_dir }} -am -DskipTests -Dgpg.skip install
+      working-directory: ${{ github.workspace }}
+      shell: bash
+
     - name: Publish to Maven Central
       run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml deploy -Prelease
       working-directory: ${{ inputs.base_dir }}
