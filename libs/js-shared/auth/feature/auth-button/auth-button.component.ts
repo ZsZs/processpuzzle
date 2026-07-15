@@ -93,7 +93,7 @@ export class AuthButtonComponent {
 
   private computeColor(seed: string): string {
     let hash = 0;
-    for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < seed.length; i++) hash = (seed.codePointAt(i) ?? 0) + ((hash << 5) - hash);
     const hue = Math.abs(hash) % 360;
     return `hsl(${hue}, 55%, 45%)`;
   }
