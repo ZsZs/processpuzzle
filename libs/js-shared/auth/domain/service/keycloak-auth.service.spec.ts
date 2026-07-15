@@ -79,7 +79,7 @@ describe('KeycloakAuthService', () => {
       mockKeycloakInstance.authenticated = false;
       await service.login('dashboard');
       expect(mockKeycloakInstance.login).toHaveBeenCalledWith({
-        redirectUri: (globalThis.location as any).origin + '/dashboard',
+        redirectUri: new URL('dashboard', document.baseURI).href,
       });
     });
 
@@ -107,7 +107,7 @@ describe('KeycloakAuthService', () => {
     it('should call keycloak.logout and clear user signal', async () => {
       await service.logout('home');
       expect(mockKeycloakInstance.logout).toHaveBeenCalledWith({
-        redirectUri: (globalThis.location as any).origin + '/home',
+        redirectUri: new URL('home', document.baseURI).href,
       });
       expect(service.getCurrentUser()).toBeUndefined();
     });

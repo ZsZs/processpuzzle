@@ -26,13 +26,13 @@ export class KeycloakAuthService extends AuthService {
     await this.ensureInitialized();
     if (this.isAuthenticated()) return this.user() as User;
     else {
-      await this.keycloak.login({ redirectUri: globalThis.location.origin + '/' + redirectUrl });
+      await this.keycloak.login({ redirectUri: this.toRedirectUri(redirectUrl) });
       return this.getCurrentUser() as User;
     }
   }
 
   override async logout(redirectUrl?: string): Promise<void> {
-    await this.keycloak.logout({ redirectUri: globalThis.location.origin + '/' + redirectUrl });
+    await this.keycloak.logout({ redirectUri: this.toRedirectUri(redirectUrl) });
     this._user.set(undefined);
   }
 
@@ -58,7 +58,7 @@ export class KeycloakAuthService extends AuthService {
   private async initKeycloak() {
     await this.keycloak.init({
       onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: globalThis.location.origin + '/assets/auth/silent-check-sso.html',
+      silentCheckSsoRedirectUri: new URL('assets/auth/silent-check-sso.html', document.baseURI).href,
     });
 
     // Check if authenticated using the keycloak-js instance directly
@@ -72,6 +72,16 @@ export class KeycloakAuthService extends AuthService {
     } else {
       this._user.set(undefined);
     }
+  }
+
+  /**
+   * Builds an absolute redirect URI that honours the app's <base href>
+   * (e.g. "/cmdb/frontend/"), not just the origin. `target` is an Angular
+   * router URL such as "/home" (leading slash) or undefined.
+   */
+  private toRedirectUri(target?: string): string {
+    const relative = (target ?? '').replace(/^\/+/, ''); // strip leading slash(es)
+    return new URL(relative, document.baseURI).href;
   }
   // endregion
 }
