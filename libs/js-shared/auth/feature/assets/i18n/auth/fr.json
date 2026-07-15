@@ -5,7 +5,7 @@
     "register": "S'inscrire",
     "my_profile": "Mon Profil"
   },
-  "login-form": {
+  "login_form": {
     "title": "Connexion",
     "email_label": "Email",
     "email_err_required": "L'email est requis",
@@ -17,13 +17,13 @@
     "signing_in_button": "Connexion en cours...",
     "google_button": "Se connecter avec Google"
   },
-  "logout-dialog": {
+  "logout_dialog": {
     "title": "Confirmer la déconnexion",
     "content": "Êtes-vous sûr de vouloir vous déconnecter?",
     "cancel_button": "Annuler",
     "logout_button": "Déconnexion"
   },
-  "registration-form": {
+  "registration_form": {
     "title": "Créer un compte",
     "email_label": "Email",
     "email_placeholder": "Entrez votre email",

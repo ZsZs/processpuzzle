@@ -5,7 +5,7 @@
     "register": "Registrieren",
     "my_profile": "Mein Profil"
   },
-  "login-form": {
+  "login_form": {
     "title": "Anmelden",
     "email_label": "E-Mail",
     "email_err_required": "E-Mail ist erforderlich",
@@ -17,13 +17,13 @@
     "signing_in_button": "Anmeldung läuft...",
     "google_button": "Mit Google anmelden"
   },
-  "logout-dialog": {
+  "logout_dialog": {
     "title": "Abmeldung bestätigen",
     "content": "Sind Sie sicher, dass Sie sich abmelden möchten?",
     "cancel_button": "Abbrechen",
     "logout_button": "Abmelden"
   },
-  "registration-form": {
+  "registration_form": {
     "title": "Konto erstellen",
     "email_label": "E-Mail",
     "email_placeholder": "Geben Sie Ihre E-Mail-Adresse ein",

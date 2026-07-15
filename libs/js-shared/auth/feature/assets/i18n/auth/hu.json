@@ -5,7 +5,7 @@
     "register": "Regisztráció",
     "my_profile": "Profilom"
   },
-  "login-form": {
+  "login_form": {
     "title": "Bejelentkezés",
     "email_label": "Email",
     "email_err_required": "Az email megadása kötelező",
@@ -17,13 +17,13 @@
     "signing_in_button": "Bejelentkezés folyamatban...",
     "google_button": "Bejelentkezés Google-lal"
   },
-  "logout-dialog": {
+  "logout_dialog": {
     "title": "Kijelentkezés megerősítése",
     "content": "Biztosan ki szeretne jelentkezni?",
     "cancel_button": "Mégsem",
     "logout_button": "Kijelentkezés"
   },
-  "registration-form": {
+  "registration_form": {
     "title": "Fiók létrehozása",
     "email_label": "Email",
     "email_placeholder": "Adja meg az email címét",
