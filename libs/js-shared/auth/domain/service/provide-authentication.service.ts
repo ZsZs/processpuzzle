@@ -1,4 +1,4 @@
-import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, inject, InjectionToken, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
 import { AuthService } from './auth.service';
 import { FirebaseAuthConfig } from './firebase-auth.config';
@@ -32,5 +32,17 @@ export function provideAuthenticationService(runtimeConfig: { BASE_CONFIGURATION
       },
       deps: [RUNTIME_CONFIGURATION],
     },
+    // Finalize the OIDC redirect callback and/or restore an existing SSO session
+    // at bootstrap, so auth state is set no matter which route the user lands on
+    // (and on every refresh) — independent of route guards.
+    provideAppInitializer(async () => {
+      const authService = inject(AUTHENTICATION_SERVICE);
+      try {
+        await authService.authenticate();
+      } catch (e) {
+        // Never block app bootstrap if the IdP is unreachable.
+        console.error('Authentication initialization failed', e);
+      }
+    }),
   ]);
 }
