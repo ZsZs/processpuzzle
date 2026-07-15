@@ -9,9 +9,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
@@ -219,7 +222,26 @@ class LoggingAspectTest {
     }
 
     @Test
-    void inputStreamArg_isRenderedAsPlaceholder() {
+    void inputStreamArg_isRenderedAsPlaceholder() throws IOException {
+        OpaqueArgService proxy = proxy(new OpaqueArgService());
+        Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
+        logger.setLevel(Level.TRACE);
+        logger.setAdditive(false);
+        ListAppender<ILoggingEvent> appender = attach(logger);
+
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(new byte[]{1, 2})) {
+            proxy.consume(stream);
+
+            String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
+            assertThat(argsJson).isEqualTo("{\"stream\":\"<InputStream>\"}");
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+        }
+    }
+
+    @Test
+    void resourceArg_isRenderedAsPlaceholder() {
         OpaqueArgService proxy = proxy(new OpaqueArgService());
         Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
         logger.setLevel(Level.TRACE);
@@ -227,10 +249,29 @@ class LoggingAspectTest {
         ListAppender<ILoggingEvent> appender = attach(logger);
 
         try {
-            proxy.consume(new ByteArrayInputStream(new byte[]{1, 2}));
+            proxy.load(new ByteArrayResource(new byte[]{1, 2}));
 
             String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
-            assertThat(argsJson).isEqualTo("{\"stream\":\"<InputStream>\"}");
+            assertThat(argsJson).contains("<Resource ");
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+        }
+    }
+
+    @Test
+    void servletArg_isRenderedAsPlaceholder() {
+        OpaqueArgService proxy = proxy(new OpaqueArgService());
+        Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
+        logger.setLevel(Level.TRACE);
+        logger.setAdditive(false);
+        ListAppender<ILoggingEvent> appender = attach(logger);
+
+        try {
+            proxy.handle(new MockHttpServletRequest());
+
+            String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
+            assertThat(argsJson).isEqualTo("{\"request\":\"<MockHttpServletRequest>\"}");
         } finally {
             logger.detachAppender(appender);
             logger.setAdditive(true);
@@ -304,6 +345,14 @@ class LoggingAspectTest {
         }
 
         public void consume(InputStream stream) {
+            // no-op
+        }
+
+        public void load(org.springframework.core.io.Resource resource) {
+            // no-op
+        }
+
+        public void handle(jakarta.servlet.ServletRequest request) {
             // no-op
         }
     }

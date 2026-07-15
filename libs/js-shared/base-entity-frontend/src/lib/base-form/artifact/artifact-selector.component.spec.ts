@@ -140,28 +140,16 @@ describe('ArtifactSelectorComponent', () => {
     });
   });
 
-  it('derives the mime type from the file extension when the browser leaves file.type empty', async () => {
+  it.each([
+    { scenario: 'derives the mime type from the file extension', fileName: 'report.csv', expected: 'text/csv' },
+    { scenario: 'falls back to application/octet-stream for unknown extensions', fileName: 'binary.dat', expected: 'application/octet-stream' },
+    { scenario: 'falls back to application/octet-stream when the file has no extension', fileName: 'Makefile', expected: 'application/octet-stream' },
+  ])('$scenario when the browser leaves file.type empty', async ({ fileName, expected }) => {
     const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
 
-    component.onFileSelected(fileSelectEvent(createFile('report.csv', '')));
+    component.onFileSelected(fileSelectEvent(createFile(fileName, '')));
 
-    expect(component.mimeType).toBe('text/csv');
-  });
-
-  it('falls back to application/octet-stream for unknown extensions', async () => {
-    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
-
-    component.onFileSelected(fileSelectEvent(createFile('binary.dat', '')));
-
-    expect(component.mimeType).toBe('application/octet-stream');
-  });
-
-  it('falls back to application/octet-stream when the file has no extension at all', async () => {
-    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
-
-    component.onFileSelected(fileSelectEvent(createFile('Makefile', '')));
-
-    expect(component.mimeType).toBe('application/octet-stream');
+    expect(component.mimeType).toBe(expected);
   });
 
   it('does not upload when uploadSelectedFile() is called without a selected file', async () => {

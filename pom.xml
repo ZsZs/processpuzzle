@@ -241,9 +241,11 @@
                                 <goal>prepare-agent</goal>
                             </goals>
                         </execution>
+                        <!-- Bound to `test` (not `verify`) so the XML report is produced by
+                             `mvn test`, which is what the Nx test target and CI run. -->
                         <execution>
                             <id>report</id>
-                            <phase>verify</phase>
+                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
@@ -341,7 +343,9 @@
                     <systemPropertyVariables>
                         <spring.profiles.active>unit-test</spring.profiles.active>
                     </systemPropertyVariables>
-                    <argLine>-XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
+                    <!-- @{argLine} preserves the JaCoCo agent injected by jacoco:prepare-agent;
+                         a bare value would replace it and produce zero coverage. -->
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
 
