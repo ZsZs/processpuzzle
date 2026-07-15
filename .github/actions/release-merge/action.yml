@@ -47,9 +47,31 @@ runs:
         echo "Merging PR #$DEV_PR into develop..."
         gh pr merge "$DEV_PR" --merge
 
-        # 2. Open a new PR from the release branch to master and merge it.
-        # The release branch has develop-tip + release commit; merging into
-        # master brings master up to the released state.
+        # 2. Reconcile the release branch with master before opening the
+        # master PR. The release branch and master each advance the version
+        # line from a shared base (develop never sees master's release-bump
+        # commits), so a straight release -> master merge ALWAYS conflicts on
+        # the package.json "version" field. Merge master back into the release
+        # branch, favouring the release branch on conflict (its version is
+        # always the newest). Non-conflicting master changes are still merged.
+        #
+        # Done in a throwaway detached worktree so the runner's checked-out
+        # release branch and its build artifacts (e.g. a regenerated
+        # package-lock.json) are left untouched.
+        echo "Reconciling $BRANCH with master to avoid the version conflict..."
+        git fetch --no-tags origin master
+        TMP_WT="${RUNNER_TEMP:-/tmp}/release-merge-wt-$$"
+        git worktree add --detach "$TMP_WT" "origin/$BRANCH"
+        git -C "$TMP_WT" -c user.name="github-actions[bot]" \
+          -c user.email="github-actions[bot]@users.noreply.github.com" \
+          merge --no-edit -X ours origin/master
+        git -C "$TMP_WT" push origin "HEAD:$BRANCH"
+        git worktree remove --force "$TMP_WT"
+
+        # 3. Open a new PR from the reconciled release branch to master and
+        # merge it. The release branch now contains develop-tip + release
+        # commit + master's history, so master fast-forwards to the released
+        # state without conflict.
         echo "Opening PR from $BRANCH to master..."
         gh pr create \
           --base master \
