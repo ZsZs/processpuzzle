@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, screen } from '@testing-library/angular';
 import { AuthButtonComponent } from './auth-button.component';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE, User } from '@processpuzzle/auth/domain';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -26,15 +26,16 @@ const testConfig: TranslocoTestConfig = {
 
 describe('AuthButtonComponent', () => {
   // Helper function to create a mock AuthService with controlled authentication state
-  const createMockAuthService = (isAuth: boolean) => {
+  const createMockAuthService = (isAuth: boolean, user?: User) => {
     return {
       isAuthenticated: signal(isAuth) as Signal<boolean>,
+      currentUser: signal(user) as Signal<User | undefined>,
     };
   };
 
   // Helper function to render the component with different auth states
-  const renderComponent = async (isAuthenticated: boolean) => {
-    const mockAuthService = createMockAuthService(isAuthenticated);
+  const renderComponent = async (isAuthenticated: boolean, user?: User) => {
+    const mockAuthService = createMockAuthService(isAuthenticated, user);
 
     return await setUpTranslocoTestBed(AuthButtonComponent, testConfig, {
       imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
@@ -126,5 +127,26 @@ describe('AuthButtonComponent', () => {
 
     const iconElement = screen.getByText('person');
     expect(iconElement).toBeInTheDocument();
+  });
+
+  it('should display an initials avatar when authenticated without a photo', async () => {
+    await renderComponent(true, new User('jane.doe@example.com', undefined, 'Jane', 'Doe'));
+
+    expect(screen.getByText('JD')).toBeInTheDocument();
+    expect(screen.queryByText('person')).not.toBeInTheDocument();
+  });
+
+  it('should fall back to email initials when no name is available', async () => {
+    await renderComponent(true, new User('sam@example.com'));
+
+    expect(screen.getByText('SA')).toBeInTheDocument();
+  });
+
+  it('should display a photo thumbnail when the user has a photoUrl', async () => {
+    await renderComponent(true, new User('jane.doe@example.com', undefined, 'Jane', 'Doe', 'https://example.com/jane.png'));
+
+    const avatar = screen.getByAltText('User avatar');
+    expect(avatar).toBeInTheDocument();
+    expect(avatar).toHaveAttribute('src', 'https://example.com/jane.png');
   });
 });
