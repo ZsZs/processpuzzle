@@ -18,7 +18,7 @@ export class FirebaseAuthService extends AuthService {
   public async login(redirectUrl?: string, email?: string, password?: string): Promise<User | undefined> {
     if (email != null && password != null) {
       const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
-      const user = new User(userCredential.user.email, userCredential.user.uid, userCredential.user.displayName);
+      const user = new User(userCredential.user.email, userCredential.user.uid, userCredential.user.displayName, null, userCredential.user.photoURL);
       this._user.set(user);
       return user;
     } else return undefined;
@@ -30,7 +30,7 @@ export class FirebaseAuthService extends AuthService {
 
   getCurrentUser(): User | undefined {
     const currentUser = this.auth.currentUser;
-    return new User(currentUser?.email, currentUser?.uid, currentUser?.displayName);
+    return new User(currentUser?.email, currentUser?.uid, currentUser?.displayName, null, currentUser?.photoURL);
   }
   // endregion
 }
