@@ -140,6 +140,23 @@ class UploadObjectTest {
     }
 
     @Test
+    void execute_shouldWrapIOException_whenReadingImageStreamFails() {
+        when(fileStorageService.bucketExists("images")).thenReturn(true);
+        InputStream broken = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("boom");
+            }
+        };
+
+        RuntimeException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                RuntimeException.class,
+                () -> uploadObject.execute("photo.png", broken, "image/png"));
+
+        org.junit.jupiter.api.Assertions.assertNotNull(thrown.getCause());
+    }
+
+    @Test
     void execute_shouldSucceedEvenWhenThumbnailGenerationFails() throws IOException {
         when(fileStorageService.bucketExists("images")).thenReturn(true);
         when(thumbnailGenerator.generate(any(byte[].class), anyInt(), anyDouble())).thenThrow(new IOException("bad image"));
