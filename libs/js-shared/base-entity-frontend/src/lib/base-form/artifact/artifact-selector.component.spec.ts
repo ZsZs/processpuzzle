@@ -5,6 +5,11 @@ import { mock, type MockProxy } from 'vitest-mock-extended';
 import { ObjectStoreService, type UploadObjectResponse } from '../../object-store/object-store.service';
 import { ArtifactSelectorComponent } from './artifact-selector.component';
 
+interface InitialState {
+  isSelectorVisible?: boolean;
+  isUploading?: boolean;
+}
+
 function createFile(name: string, type: string): File {
   return new File(['payload'], name, { type });
 }
@@ -18,16 +23,18 @@ function emptyFileEvent(): Event {
   return { target: { files: { item: () => null } } } as unknown as Event;
 }
 
-async function setupSelector(objectStore: MockProxy<ObjectStoreService>, initialState?: Partial<ArtifactSelectorComponent>) {
+async function setupSelector(objectStore: MockProxy<ObjectStoreService>, initialState?: InitialState) {
   await TestBed.configureTestingModule({
     imports: [ArtifactSelectorComponent],
     providers: [{ provide: ObjectStoreService, useValue: objectStore }],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(ArtifactSelectorComponent);
-  if (initialState) Object.assign(fixture.componentInstance, initialState);
+  const component = fixture.componentInstance;
+  if (initialState?.isSelectorVisible !== undefined) component.isSelectorVisible.set(initialState.isSelectorVisible);
+  if (initialState?.isUploading !== undefined) component.isUploading.set(initialState.isUploading);
   fixture.detectChanges();
-  return { fixture, component: fixture.componentInstance };
+  return { fixture, component };
 }
 
 describe('ArtifactSelectorComponent', () => {
@@ -51,16 +58,17 @@ describe('ArtifactSelectorComponent', () => {
 
     component.showSelector();
 
-    expect(component.isSelectorVisible).toBe(true);
+    expect(component.isSelectorVisible()).toBe(true);
   });
 
-  it('renders the file/name/mime inputs when the selector is visible', async () => {
+  it('renders the file/name/mime inputs and upload/cancel buttons when the selector is visible', async () => {
     const { fixture } = await setupSelector(objectStore, { isSelectorVisible: true });
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelector('input[type="file"]')).not.toBeNull();
-    const textInputs = host.querySelectorAll('input[type="text"]');
-    expect(textInputs).toHaveLength(2);
+    expect(host.querySelectorAll('input[type="text"]')).toHaveLength(2);
+    const buttonLabels = Array.from(host.querySelectorAll('button')).map((btn) => btn.textContent?.trim());
+    expect(buttonLabels).toEqual(expect.arrayContaining(['Upload', 'Cancel']));
   });
 
   it('renders the uploading indicator when isUploading is set', async () => {
@@ -69,50 +77,60 @@ describe('ArtifactSelectorComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Uploading...');
   });
 
-  it('renders the error message paragraph when errorMessage is set', async () => {
-    const { fixture } = await setupSelector(objectStore, { errorMessage: 'Artifact upload failed.' });
-
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Artifact upload failed.');
-  });
-
   it('does nothing when onFileSelected fires without a file', async () => {
-    const { component } = await setupSelector(objectStore);
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
 
     component.onFileSelected(emptyFileEvent());
 
     expect(component.artifactName).toBe('');
     expect(component.mimeType).toBe('');
+    expect(component.canUpload()).toBe(false);
     expect(objectStore.uploadObject).not.toHaveBeenCalled();
   });
 
-  it('uploads the selected file and emits artifactUploaded with the full server response', async () => {
+  it('populates artifactName and mimeType on file selection without uploading', async () => {
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
+
+    component.onFileSelected(fileSelectEvent(createFile('local.txt', 'text/plain')));
+
+    expect(component.artifactName).toBe('local.txt');
+    expect(component.mimeType).toBe('text/plain');
+    expect(component.canUpload()).toBe(true);
+    expect(objectStore.uploadObject).not.toHaveBeenCalled();
+  });
+
+  it('uploads via uploadSelectedFile() and emits the artifact using the server response', async () => {
     const response: UploadObjectResponse = { objectID: 'oid-1', fileName: 'server-name.txt', mimeType: 'text/x-custom', bucketName: 'bucket-a' };
     objectStore.uploadObject.mockReturnValue(of(response));
-    const { component } = await setupSelector(objectStore);
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
     const emit = vi.fn();
     component.artifactUploaded.subscribe(emit);
 
     const file = createFile('local.txt', 'text/plain');
     component.onFileSelected(fileSelectEvent(file));
+    component.artifactName = 'edited-name.txt';
+    component.mimeType = 'text/edited';
+    component.uploadSelectedFile();
 
-    expect(objectStore.uploadObject).toHaveBeenCalledWith(file, 'local.txt', 'text/plain');
+    expect(objectStore.uploadObject).toHaveBeenCalledWith(file, 'edited-name.txt', 'text/edited');
     expect(emit).toHaveBeenCalledWith({
       bucket: 'bucket-a',
       objectId: 'oid-1',
       name: 'server-name.txt',
       mimeType: 'text/x-custom',
     });
-    expect(component.isUploading).toBe(false);
-    expect(component.errorMessage).toBe('');
+    expect(component.isSelectorVisible()).toBe(false);
+    expect(component.isUploading()).toBe(false);
   });
 
   it('falls back to local artifactName and mimeType when the response omits them', async () => {
     objectStore.uploadObject.mockReturnValue(of({ objectID: 'oid-2', fileName: '', mimeType: '' } as UploadObjectResponse));
-    const { component } = await setupSelector(objectStore);
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
     const emit = vi.fn();
     component.artifactUploaded.subscribe(emit);
 
     component.onFileSelected(fileSelectEvent(createFile('local.csv', 'text/plain')));
+    component.uploadSelectedFile();
 
     expect(emit).toHaveBeenCalledWith({
       bucket: '',
@@ -122,63 +140,68 @@ describe('ArtifactSelectorComponent', () => {
     });
   });
 
-  it('derives the mime type from the file extension when the browser leaves file.type empty', async () => {
-    objectStore.uploadObject.mockReturnValue(of({ objectID: 'oid', fileName: 'a.csv', mimeType: 'text/csv', bucketName: 'b' }));
-    const { component } = await setupSelector(objectStore);
+  it.each([
+    { scenario: 'derives the mime type from the file extension', fileName: 'report.csv', expected: 'text/csv' },
+    { scenario: 'falls back to application/octet-stream for unknown extensions', fileName: 'binary.dat', expected: 'application/octet-stream' },
+    { scenario: 'falls back to application/octet-stream when the file has no extension', fileName: 'Makefile', expected: 'application/octet-stream' },
+  ])('$scenario when the browser leaves file.type empty', async ({ fileName, expected }) => {
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
 
-    component.onFileSelected(fileSelectEvent(createFile('report.csv', '')));
+    component.onFileSelected(fileSelectEvent(createFile(fileName, '')));
 
-    expect(component.mimeType).toBe('text/csv');
-    expect(objectStore.uploadObject).toHaveBeenCalledWith(expect.any(File), 'report.csv', 'text/csv');
+    expect(component.mimeType).toBe(expected);
   });
 
-  it('falls back to application/octet-stream for unknown extensions', async () => {
-    objectStore.uploadObject.mockReturnValue(of({ objectID: 'oid', fileName: 'binary.dat', mimeType: 'application/octet-stream' }));
-    const { component } = await setupSelector(objectStore);
+  it('does not upload when uploadSelectedFile() is called without a selected file', async () => {
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
 
-    component.onFileSelected(fileSelectEvent(createFile('binary.dat', '')));
+    component.uploadSelectedFile();
 
-    expect(component.mimeType).toBe('application/octet-stream');
+    expect(objectStore.uploadObject).not.toHaveBeenCalled();
   });
 
-  it('falls back to application/octet-stream when the file has no extension at all', async () => {
-    objectStore.uploadObject.mockReturnValue(of({ objectID: 'oid', fileName: '', mimeType: '' }));
-    const { component } = await setupSelector(objectStore);
-
-    component.onFileSelected(fileSelectEvent(createFile('Makefile', '')));
-
-    expect(component.mimeType).toBe('application/octet-stream');
-  });
-
-  it('keeps isUploading true while the upload is pending and ignores concurrent file selections', async () => {
+  it('keeps isUploading true while the upload is pending', async () => {
     const inflight = new Subject<UploadObjectResponse>();
     objectStore.uploadObject.mockReturnValue(inflight.asObservable());
-    const { component } = await setupSelector(objectStore);
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
 
     component.onFileSelected(fileSelectEvent(createFile('first.txt', 'text/plain')));
+    component.uploadSelectedFile();
 
-    expect(component.isUploading).toBe(true);
-
-    component.onFileSelected(fileSelectEvent(createFile('second.txt', 'text/plain')));
-
-    expect(objectStore.uploadObject).toHaveBeenCalledTimes(1);
+    expect(component.isUploading()).toBe(true);
+    expect(component.canUpload()).toBe(false);
 
     inflight.next({ objectID: 'oid', fileName: 'first.txt', mimeType: 'text/plain', bucketName: 'b' });
     inflight.complete();
 
-    expect(component.isUploading).toBe(false);
+    expect(component.isUploading()).toBe(false);
   });
 
-  it('sets errorMessage and clears the uploading flag when the upload fails', async () => {
+  it('returns to display mode without emitting when the upload fails', async () => {
     objectStore.uploadObject.mockReturnValue(throwError(() => new Error('boom')));
-    const { component } = await setupSelector(objectStore);
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
     const emit = vi.fn();
     component.artifactUploaded.subscribe(emit);
 
     component.onFileSelected(fileSelectEvent(createFile('a.txt', 'text/plain')));
+    component.uploadSelectedFile();
 
-    expect(component.isUploading).toBe(false);
-    expect(component.errorMessage).toBe('Artifact upload failed.');
+    expect(component.isUploading()).toBe(false);
+    expect(component.isSelectorVisible()).toBe(false);
+    expect(component.artifactName).toBe('');
+    expect(component.mimeType).toBe('');
     expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('resets to display mode when cancel() is called', async () => {
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
+
+    component.onFileSelected(fileSelectEvent(createFile('a.txt', 'text/plain')));
+    component.cancel();
+
+    expect(component.isSelectorVisible()).toBe(false);
+    expect(component.artifactName).toBe('');
+    expect(component.mimeType).toBe('');
+    expect(objectStore.uploadObject).not.toHaveBeenCalled();
   });
 });

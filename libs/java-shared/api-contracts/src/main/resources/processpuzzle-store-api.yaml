@@ -135,10 +135,34 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  uri:
-                    type: string
+                $ref: "#/components/schemas/ObjectUriResponse"
+        '404':
+          $ref: "#/components/responses/NotFound"
+  /objects/{bucketName}/{objectID}/thumbnail-uri:
+    get:
+      summary: Get signed, short term URI for downloading the object's thumbnail.
+      description: Returns a signed MinIO URL for the thumbnail generated at upload time. Returns 404 when no thumbnail exists for the object (non-image types or thumbnail generation disabled at upload).
+      operationId: getThumbnailUriByID
+      tags:
+        - Object Store
+      parameters:
+        - name: bucketName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: objectID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signed URI for thumbnail download.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectUriResponse"
         '404':
           $ref: "#/components/responses/NotFound"
 components:
@@ -176,4 +200,12 @@ components:
           type: string
         errorText:
           type: string
+
+    ObjectUriResponse:
+      type: object
+      required: [ uri ]
+      properties:
+        uri:
+          type: string
+          description: Signed MinIO URL, short-term (typically 1 hour).
 

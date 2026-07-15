@@ -7,6 +7,7 @@ import { User } from '../user/user';
 export abstract class AuthService {
   protected _user: WritableSignal<User | undefined> = signal<User | undefined>(undefined);
   protected readonly user: Signal<User | undefined> = this._user.asReadonly();
+  readonly currentUser: Signal<User | undefined> = this._user.asReadonly();
   isAuthenticated: Signal<boolean | undefined> = computed(() => (this.user ? !!this.user() : undefined));
 
   abstract authenticate(): Promise<boolean>;

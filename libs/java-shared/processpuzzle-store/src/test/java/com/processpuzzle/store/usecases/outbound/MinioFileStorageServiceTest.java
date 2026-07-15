@@ -130,4 +130,40 @@ class MinioFileStorageServiceTest {
 
         verify(minioClient).removeObject(any(RemoveObjectArgs.class));
     }
+
+    @Test
+    void objectExists_shouldReturnTrue_whenStatSucceeds() throws Exception {
+        when(minioClient.statObject(any(StatObjectArgs.class))).thenReturn(mock(StatObjectResponse.class));
+
+        assertTrue(fileStorageService.objectExists("test-bucket", "test-object"));
+    }
+
+    @Test
+    void objectExists_shouldReturnFalse_whenNoSuchKey() throws Exception {
+        io.minio.errors.ErrorResponseException error = mock(io.minio.errors.ErrorResponseException.class);
+        io.minio.messages.ErrorResponse errorResponse = mock(io.minio.messages.ErrorResponse.class);
+        when(errorResponse.code()).thenReturn("NoSuchKey");
+        when(error.errorResponse()).thenReturn(errorResponse);
+        when(minioClient.statObject(any(StatObjectArgs.class))).thenThrow(error);
+
+        assertFalse(fileStorageService.objectExists("test-bucket", "missing"));
+    }
+
+    @Test
+    void objectExists_shouldThrow_whenErrorIsNotNoSuchKey() throws Exception {
+        io.minio.errors.ErrorResponseException error = mock(io.minio.errors.ErrorResponseException.class);
+        io.minio.messages.ErrorResponse errorResponse = mock(io.minio.messages.ErrorResponse.class);
+        when(errorResponse.code()).thenReturn("AccessDenied");
+        when(error.errorResponse()).thenReturn(errorResponse);
+        when(minioClient.statObject(any(StatObjectArgs.class))).thenThrow(error);
+
+        assertThrows(RuntimeException.class, () -> fileStorageService.objectExists("test-bucket", "test-object"));
+    }
+
+    @Test
+    void objectExists_shouldThrow_whenGenericErrorOccurs() throws Exception {
+        when(minioClient.statObject(any(StatObjectArgs.class))).thenThrow(new IllegalStateException("network down"));
+
+        assertThrows(RuntimeException.class, () -> fileStorageService.objectExists("test-bucket", "test-object"));
+    }
 }

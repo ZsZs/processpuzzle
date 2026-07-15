@@ -2,11 +2,12 @@ package com.processpuzzle.store.adapters.inbound;
 
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.store.api.ObjectStoreApi;
-import com.processpuzzle.store.model.GetObjectUriByID200Response;
+import com.processpuzzle.store.model.ObjectUriResponse;
 import com.processpuzzle.store.model.UploadObject201Response;
 import com.processpuzzle.store.usecases.inbound.DeleteObject;
 import com.processpuzzle.store.usecases.inbound.GetObject;
 import com.processpuzzle.store.usecases.inbound.GetObjectUri;
+import com.processpuzzle.store.usecases.inbound.GetThumbnailUri;
 import com.processpuzzle.store.usecases.inbound.UploadObject;
 import com.processpuzzle.store.usecases.outbound.StoredObject;
 import org.springframework.core.io.InputStreamResource;
@@ -26,12 +27,14 @@ public class ObjectEndpoint implements ObjectStoreApi {
     private final DeleteObject deleteObject;
     private final GetObject getObject;
     private final GetObjectUri getObjectUri;
+    private final GetThumbnailUri getThumbnailUri;
     private final UploadObject uploadObject;
 
-    public ObjectEndpoint(DeleteObject deleteObject, GetObject getObject, GetObjectUri getObjectUri, UploadObject uploadObject) {
+    public ObjectEndpoint(DeleteObject deleteObject, GetObject getObject, GetObjectUri getObjectUri, GetThumbnailUri getThumbnailUri, UploadObject uploadObject) {
         this.deleteObject = deleteObject;
         this.getObject = getObject;
         this.getObjectUri = getObjectUri;
+        this.getThumbnailUri = getThumbnailUri;
         this.uploadObject = uploadObject;
     }
 
@@ -62,22 +65,35 @@ public class ObjectEndpoint implements ObjectStoreApi {
     }
 
     @Override
-    public ResponseEntity<GetObjectUriByID200Response> getObjectUriByID(String bucketName, String objectID) {
+    public ResponseEntity<ObjectUriResponse> getObjectUriByID(String bucketName, String objectID) {
         String uri = getObjectUri.execute(bucketName, objectID);
-        GetObjectUriByID200Response response = new GetObjectUriByID200Response();
+        ObjectUriResponse response = new ObjectUriResponse();
         response.setUri(uri);
         return ResponseEntity.ok(response);
     }
 
     @Override
+    public ResponseEntity<ObjectUriResponse> getThumbnailUriByID(String bucketName, String objectID) {
+        return getThumbnailUri.execute(bucketName, objectID)
+                .map(uri -> {
+                    ObjectUriResponse response = new ObjectUriResponse();
+                    response.setUri(uri);
+                    return ResponseEntity.ok(response);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Override
     public ResponseEntity<UploadObject201Response> uploadObject(MultipartFile file, String fileName, String mimeType) {
         try {
-            String objectID = uploadObject.execute(fileName, file.getInputStream(), mimeType);
+            UploadObject.Result result = uploadObject.execute(fileName, file.getInputStream(), mimeType);
             UploadObject201Response response = new UploadObject201Response();
-            response.setObjectID(objectID);
+            response.setObjectID(result.objectID());
             response.setFileName(fileName);
             response.setMimeType(mimeType);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.LOCATION, result.bucketName());
+            return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

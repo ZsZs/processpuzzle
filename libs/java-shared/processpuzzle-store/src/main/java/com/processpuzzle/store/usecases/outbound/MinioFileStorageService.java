@@ -1,6 +1,7 @@
 package com.processpuzzle.store.usecases.outbound;
 
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import io.minio.messages.Bucket;
 import org.springframework.stereotype.Service;
@@ -114,6 +115,21 @@ public class MinioFileStorageService implements FileStorageService {
                             .build());
         } catch (Exception e) {
             throw new RuntimeException("Error getting signed URL for object: " + objectName + " from bucket: " + bucketName, e);
+        }
+    }
+
+    @Override
+    public boolean objectExists(String bucketName, String objectName) {
+        try {
+            minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+            return true;
+        } catch (ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
+                return false;
+            }
+            throw new RuntimeException("Error checking object existence: " + objectName + " in bucket: " + bucketName, e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking object existence: " + objectName + " in bucket: " + bucketName, e);
         }
     }
 

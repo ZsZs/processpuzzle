@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 
@@ -65,6 +65,16 @@ export class ObjectStoreService {
   getObjectUriByID(bucketName: string, objectID: string): Observable<ObjectUriResponse> {
     const path = `/objects/${encodeURIComponent(bucketName)}/${encodeURIComponent(objectID)}/uri`;
     return this.httpClient.get<ObjectUriResponse>(this.buildFullUrl(path));
+  }
+
+  getThumbnailUriByID(bucketName: string, objectID: string): Observable<ObjectUriResponse | null> {
+    const path = `/objects/${encodeURIComponent(bucketName)}/${encodeURIComponent(objectID)}/thumbnail-uri`;
+    return this.httpClient.get<ObjectUriResponse>(this.buildFullUrl(path)).pipe(
+      catchError((error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.status === 404) return of(null);
+        return throwError(() => error);
+      }),
+    );
   }
 
   private buildFullUrl(path: string): string {

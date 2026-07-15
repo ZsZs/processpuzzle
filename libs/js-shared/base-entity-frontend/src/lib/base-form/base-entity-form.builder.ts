@@ -3,6 +3,7 @@ import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { AdditionalPropertiesComponent } from './additional-properties/additional-properties.component';
 import { ArtifactComponent } from './artifact/artifact.component';
 import { LabelComponent } from './label/label.component';
 import { DatepickerComponent } from './datepicker/datepicker.component';
@@ -24,6 +25,7 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
 const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
+  [FormControlType.ADDITIONAL_PROPERTIES]: AdditionalPropertiesComponent,
   [FormControlType.ARTIFACT]: ArtifactComponent,
   [FormControlType.CHECKBOX]: CheckboxComponent,
   [FormControlType.COMPONENTS]: EntityComponentsListComponent,

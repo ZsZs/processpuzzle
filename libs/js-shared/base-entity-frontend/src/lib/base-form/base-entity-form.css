@@ -32,7 +32,16 @@
 .base-entity-form-list {
     min-height: 24px;
     margin: 4px 0 0;
-    padding-left: 20px;
+    padding-left: 0;
+    list-style: none;
+}
+
+.base-entity-form-focus-action {
+    display: none;
+}
+
+.base-entity-form-field:focus-within .base-entity-form-focus-action {
+    display: revert;
 }
 
 .base-entity-form-delete-button {

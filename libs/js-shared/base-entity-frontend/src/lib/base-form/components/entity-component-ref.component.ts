@@ -23,6 +23,19 @@ export interface ComponentNameAttr {
     }
   `,
   styleUrls: ['../base-entity-form.css'],
+  styles: [
+    `
+      :host {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+      }
+      :host .base-entity-form-delete-button {
+        margin-left: auto;
+      }
+    `,
+  ],
 })
 export class EntityComponentRefComponent<Entity extends BaseEntity, ComponentEntity extends BaseEntity> {
   entity: InputSignal<Entity> = input.required<Entity>();
