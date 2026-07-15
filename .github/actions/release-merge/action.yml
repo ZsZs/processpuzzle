@@ -57,7 +57,16 @@ runs:
           --title "release: merge $BRANCH into master" \
           --body "Auto-created by the release workflow after successful publish. Brings master to the released state."
 
-        echo "Merging release branch into master and deleting it..."
-        gh pr merge "$BRANCH" --merge --delete-branch
+        echo "Merging release branch into master..."
+        gh pr merge "$BRANCH" --merge
+
+        # Delete the remote branch via the API rather than `gh pr merge
+        # --delete-branch`: the latter also deletes the local checked-out
+        # branch, forcing a `git checkout` of the default branch, which aborts
+        # when the runner's working tree has build-time changes (e.g. a
+        # regenerated package-lock.json). The API delete touches no local git.
+        echo "Deleting remote branch $BRANCH..."
+        gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${BRANCH}" || \
+          echo "WARNING: could not delete remote branch $BRANCH (already gone?)."
 
         echo "Done. Branch $BRANCH merged to develop and master, then deleted."
