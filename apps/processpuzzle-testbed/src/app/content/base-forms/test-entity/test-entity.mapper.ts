@@ -21,6 +21,7 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
       dto.artifact,
       dto.tags,
       dto.components?.map((component: any) => this.componentMapper.fromDto(component)),
+      dto.additionalProperties,
     );
   }
 

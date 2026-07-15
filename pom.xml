@@ -59,6 +59,11 @@
         <maven.compiler.target>25</maven.compiler.target>
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
+        <!-- Default so surefire's @{argLine} resolves in modules that do NOT run the JaCoCo
+             agent (e.g. app modules without the jacoco plugin). jacoco:prepare-agent overrides
+             this property with the -javaagent argument in modules that do. Without this default,
+             @{argLine} is passed literally and the forked JVM fails with "could not open {argLine}". -->
+        <argLine/>
         <!-- Per-lib versions. Single source of truth: each child pom references the matching
              property via <version>${<lib>.version}</version>, and root <dependencyManagement>
              pins sibling deps to the same property. Property therefore always reflects the
@@ -241,9 +246,11 @@
                                 <goal>prepare-agent</goal>
                             </goals>
                         </execution>
+                        <!-- Bound to `test` (not `verify`) so the XML report is produced by
+                             `mvn test`, which is what the Nx test target and CI run. -->
                         <execution>
                             <id>report</id>
-                            <phase>verify</phase>
+                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
@@ -341,7 +348,9 @@
                     <systemPropertyVariables>
                         <spring.profiles.active>unit-test</spring.profiles.active>
                     </systemPropertyVariables>
-                    <argLine>-XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
+                    <!-- @{argLine} preserves the JaCoCo agent injected by jacoco:prepare-agent;
+                         a bare value would replace it and produce zero coverage. -->
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
 

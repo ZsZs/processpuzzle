@@ -2,6 +2,14 @@ minio:
   endpoint: http://localhost:7000
   access-key: minioadmin
   secret-key: minioadmin
+  http-timeouts:
+    connect: 5s
+    read: 30s
+    write: 60s
+  thumbnail:
+    enabled: true
+    max-dimension: 200
+    quality: 0.85
   buckets:
     configuration: configuration
     text: text

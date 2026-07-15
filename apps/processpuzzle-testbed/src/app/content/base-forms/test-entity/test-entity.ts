@@ -23,6 +23,7 @@ export class TestEntity implements BaseEntity {
   artifact?: ArtifactAttr | undefined;
   tags: Array<string> | undefined;
   components: Array<TestEntityComponent> | undefined;
+  additionalProperties: Record<string, string> | undefined;
 
   constructor(
     id?: string,
@@ -36,6 +37,7 @@ export class TestEntity implements BaseEntity {
     artifact?: ArtifactAttr,
     tags?: Array<string>,
     components?: Array<TestEntityComponent>,
+    additionalProperties?: Record<string, string>,
   ) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'TestEntity';
@@ -48,5 +50,6 @@ export class TestEntity implements BaseEntity {
     this.artifact = artifact;
     this.tags = tags;
     this.components = components;
+    this.additionalProperties = additionalProperties;
   }
 }

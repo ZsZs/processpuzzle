@@ -18,10 +18,13 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
+  const additionalPropertiesAttr = new BaseEntityAttrDescriptor('additionalProperties', FormControlType.ADDITIONAL_PROPERTIES, 'Additional Properties');
   lookupAttr.linkedEntityType = 'Trunk Data';
   componentsAttr.linkedEntityType = 'Test Entity Component';
+  componentsAttr.hideInTable = true;
+  additionalPropertiesAttr.hideInTable = true;
 
-  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr], FlexDirection.COLUMN);
+  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, additionalPropertiesAttr], FlexDirection.COLUMN);
   const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr], FlexDirection.COLUMN);
   const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
   flexBoxContainer.style = { 'column-gap': '20px' };
