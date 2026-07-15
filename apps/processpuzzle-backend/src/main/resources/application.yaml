@@ -13,6 +13,10 @@ spring:
   h2:
     console:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 logging:
   pattern:
@@ -40,6 +44,7 @@ app:
     allowed-origins: http://localhost:4200
     allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
     allowed-headers: "*"
+    exposed-headers: Location,X-Object-Name,X-Object-Bucket
     allow-credentials: true
 
 info:

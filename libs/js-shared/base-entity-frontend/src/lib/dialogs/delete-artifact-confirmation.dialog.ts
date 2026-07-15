@@ -15,7 +15,7 @@ export interface DeleteArtifactConfirmationDialogData {
   selector: 'app-delete-artifact-confirmation-dialog',
   standalone: true,
   imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton],
-  providers: [provideTranslocoScope('base-entity')],
+  providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
   template: `
     <h2 mat-dialog-title>{{ t(data.titleKey) }}</h2>
     <mat-dialog-content>{{ t(data.contentKey, data.contentParams) }}</mat-dialog-content>

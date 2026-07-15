@@ -2,6 +2,8 @@ package com.processpuzzle.core.logging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -10,7 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
+import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -140,7 +145,7 @@ public class LoggingAspect {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < values.length; i++) {
             String key = (names != null && i < names.length && names[i] != null) ? names[i] : "arg" + i;
-            map.put(key, values[i]);
+            map.put(key, safeForLogging(values[i]));
         }
         return toJson(map);
     }
@@ -149,7 +154,31 @@ public class LoggingAspect {
         if (returnType == void.class || returnType == Void.class) {
             return "void";
         }
-        return toJson(result);
+        return toJson(safeForLogging(result));
+    }
+
+    private Object safeForLogging(Object value) {
+        if (value == null) return null;
+        if (value instanceof byte[] bytes) {
+            return "<byte[" + bytes.length + "]>";
+        }
+        if (value instanceof InputStream) {
+            return "<InputStream>";
+        }
+        if (value instanceof MultipartFile file) {
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("originalFilename", Objects.toString(file.getOriginalFilename(), ""));
+            summary.put("size", file.getSize());
+            summary.put("contentType", Objects.toString(file.getContentType(), ""));
+            return summary;
+        }
+        if (value instanceof Resource resource) {
+            return "<Resource " + Objects.toString(resource.getDescription(), "") + ">";
+        }
+        if (value instanceof ServletRequest || value instanceof ServletResponse) {
+            return "<" + value.getClass().getSimpleName() + ">";
+        }
+        return value;
     }
 
     private String toJson(Object value) {

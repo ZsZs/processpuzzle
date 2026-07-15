@@ -14,7 +14,7 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
   template: `
     @if (config().visible) {
       <div class="row">
-        <fieldset class="base-entity-form-field" [ngClass]="config().styleClass" [ngStyle]="config().style">
+        <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
           <legend [ngClass]="config().labelClass">{{ config().label }}</legend>
           <ul [id]="config().attrName" class="base-entity-form-list">
             @for (component of components(); track component.id) {
@@ -31,7 +31,7 @@ import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
             }
           </ul>
           @if (!config().disabled) {
-            <button type="button" mat-button [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
+            <button type="button" mat-button class="base-entity-form-focus-action" [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
               <mat-icon>add</mat-icon>
               {{ addComponentTitle() }}
             </button>

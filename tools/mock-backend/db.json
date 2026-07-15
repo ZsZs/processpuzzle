@@ -19,6 +19,11 @@
         "tag1",
         "tag2"
       ],
+      "additionalProperties": {
+        "priority": "high",
+        "owner": "alice",
+        "region": "eu-west-1"
+      },
       "components": [
         {
           "id": "1",
@@ -52,6 +57,9 @@
       "tags": [
         "tag3"
       ],
+      "additionalProperties": {
+        "priority": "low"
+      },
       "artifact": {
         "bucket": "documents",
         "objectId": "a0dfb8a9-bbf0-4664-b705-cf4ecb450d66",
@@ -82,6 +90,7 @@
       "date": "2024-03-21T23:00:00.000Z",
       "lookup": "schlüssel_3",
       "enumValue": 0,
+      "additionalProperties": {},
       "artifact": {
         "bucket": "documents",
         "objectId": "dafda75e-73f7-41ab-a351-14a0a7c851af",
@@ -109,7 +118,11 @@
       "boolean": true,
       "number": 500,
       "date": "2024-05-18T20:02:27",
-      "enumValue": 4
+      "enumValue": 4,
+      "additionalProperties": {
+        "owner": "carol",
+        "reviewed": "true"
+      }
     }
   ],
   "test-entity-component": [

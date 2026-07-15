@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ObjectStoreService } from '../../object-store/object-store.service';
 import { ArtifactAttr } from './artifact-attr';
@@ -9,52 +9,46 @@ import { ArtifactAttr } from './artifact-attr';
   imports: [FormsModule],
   template: `
     <div class="artifact-selector">
-      @if (!isSelectorVisible) {
-        <button type="button" (click)="showSelector()">Upload file</button>
+      @if (!isSelectorVisible()) {
+        <button type="button" class="base-entity-form-focus-action" (click)="showSelector()">Upload file</button>
       } @else {
         <div class="artifact-selector__inputs">
-          <input type="file" (change)="onFileSelected($event)" />
-          <input
-            type="text"
-            [(ngModel)]="artifactName"
-            placeholder="Artifact name"
-            [disabled]="isUploading"
-          />
-          <input
-            type="text"
-            [(ngModel)]="mimeType"
-            placeholder="MIME type"
-            [disabled]="isUploading"
-          />
+          <input type="file" (change)="onFileSelected($event)" [disabled]="isUploading()" />
+          <input type="text" [(ngModel)]="artifactName" placeholder="Artifact name" [disabled]="isUploading()" />
+          <input type="text" [(ngModel)]="mimeType" placeholder="MIME type" [disabled]="isUploading()" />
+          <button type="button" (click)="uploadSelectedFile()" [disabled]="!canUpload()">Upload</button>
+          <button type="button" (click)="cancel()" [disabled]="isUploading()">Cancel</button>
         </div>
       }
 
-      @if (isUploading) {
+      @if (isUploading()) {
         <p>Uploading...</p>
-      }
-
-      @if (errorMessage) {
-        <p>{{ errorMessage }}</p>
       }
     </div>
   `,
-  styles: ``,
+  styleUrls: ['../base-entity-form.css'],
+  styles: [
+    `
+      :host-context(.base-entity-form-field:focus-within) .base-entity-form-focus-action {
+        display: revert;
+      }
+    `,
+  ],
 })
 export class ArtifactSelectorComponent {
   private readonly objectStoreService = inject(ObjectStoreService);
 
   @Output() artifactUploaded = new EventEmitter<ArtifactAttr>();
 
-  isSelectorVisible = false;
-  isUploading = false;
+  readonly isSelectorVisible = signal(false);
+  readonly isUploading = signal(false);
   artifactName = '';
   mimeType = '';
-  errorMessage = '';
 
   private selectedFile: File | null = null;
 
   showSelector(): void {
-    this.isSelectorVisible = true;
+    this.isSelectorVisible.set(true);
   }
 
   onFileSelected(event: Event): void {
@@ -66,19 +60,20 @@ export class ArtifactSelectorComponent {
     }
 
     this.selectedFile = file;
-    this.errorMessage = '';
     this.artifactName = file.name;
     this.mimeType = file.type || this.deriveMimeType(file.name);
-
-    this.uploadSelectedFile();
   }
 
-  private uploadSelectedFile(): void {
-    if (!this.selectedFile || !this.artifactName || !this.mimeType || this.isUploading) {
+  canUpload(): boolean {
+    return this.selectedFile !== null && this.artifactName.length > 0 && this.mimeType.length > 0 && !this.isUploading();
+  }
+
+  uploadSelectedFile(): void {
+    if (!this.selectedFile || !this.canUpload()) {
       return;
     }
 
-    this.isUploading = true;
+    this.isUploading.set(true);
 
     this.objectStoreService.uploadObject(this.selectedFile, this.artifactName, this.mimeType).subscribe({
       next: (response) => {
@@ -90,14 +85,28 @@ export class ArtifactSelectorComponent {
         };
 
         this.artifactUploaded.emit(artifact);
-        this.selectedFile = null;
-        this.isUploading = false;
+        this.resetToDisplayMode();
       },
       error: () => {
-        this.isUploading = false;
-        this.errorMessage = 'Artifact upload failed.';
+        this.resetToDisplayMode();
       },
     });
+  }
+
+  cancel(): void {
+    if (this.isUploading()) {
+      return;
+    }
+
+    this.resetToDisplayMode();
+  }
+
+  private resetToDisplayMode(): void {
+    this.selectedFile = null;
+    this.artifactName = '';
+    this.mimeType = '';
+    this.isUploading.set(false);
+    this.isSelectorVisible.set(false);
   }
 
   private deriveMimeType(fileName: string): string {

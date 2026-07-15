@@ -46,6 +46,7 @@ services:
     image: zsuffazs/processpuzzle-backend:latest
     container_name: processpuzzle-backend
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: springboot
       MINIO_SECRET_KEY: springboot123

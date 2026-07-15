@@ -9,7 +9,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -172,6 +175,68 @@ class LoggingAspectTest {
                 .containsEntry(LoggingAspect.MDC_PARENT_CALL_ID, outerEntry.getMDCPropertyMap().get(LoggingAspect.MDC_CALL_ID));
     }
 
+    @Test
+    void multipartFileArg_isSummarizedNotSerialized() {
+        OpaqueArgService proxy = proxy(new OpaqueArgService());
+        Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
+        logger.setLevel(Level.TRACE);
+        logger.setAdditive(false);
+        ListAppender<ILoggingEvent> appender = attach(logger);
+
+        try {
+            MockMultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", new byte[]{1, 2, 3, 4});
+
+            proxy.upload(file);
+
+            assertThat(appender.list).hasSize(2);
+            String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
+            assertThat(argsJson).contains("\"originalFilename\":\"photo.png\"");
+            assertThat(argsJson).contains("\"size\":4");
+            assertThat(argsJson).contains("\"contentType\":\"image/png\"");
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+        }
+    }
+
+    @Test
+    void byteArrayArg_isRenderedAsCompactSummary() {
+        OpaqueArgService proxy = proxy(new OpaqueArgService());
+        Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
+        logger.setLevel(Level.TRACE);
+        logger.setAdditive(false);
+        ListAppender<ILoggingEvent> appender = attach(logger);
+
+        try {
+            proxy.storeBytes(new byte[]{1, 2, 3, 4, 5});
+
+            String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
+            assertThat(argsJson).isEqualTo("{\"bytes\":\"<byte[5]>\"}");
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+        }
+    }
+
+    @Test
+    void inputStreamArg_isRenderedAsPlaceholder() {
+        OpaqueArgService proxy = proxy(new OpaqueArgService());
+        Logger logger = (Logger) LoggerFactory.getLogger(OpaqueArgService.class);
+        logger.setLevel(Level.TRACE);
+        logger.setAdditive(false);
+        ListAppender<ILoggingEvent> appender = attach(logger);
+
+        try {
+            proxy.consume(new ByteArrayInputStream(new byte[]{1, 2}));
+
+            String argsJson = appender.list.get(0).getMDCPropertyMap().get(LoggingAspect.MDC_ARGS);
+            assertThat(argsJson).isEqualTo("{\"stream\":\"<InputStream>\"}");
+        } finally {
+            logger.detachAppender(appender);
+            logger.setAdditive(true);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T proxy(T target) {
         AspectJProxyFactory factory = new AspectJProxyFactory(target);
@@ -224,6 +289,21 @@ class LoggingAspectTest {
 
         @LogMethod(level = org.slf4j.event.Level.WARN)
         public void overridden() {
+            // no-op
+        }
+    }
+
+    @LogClass
+    static class OpaqueArgService {
+        public void upload(org.springframework.web.multipart.MultipartFile file) {
+            // no-op
+        }
+
+        public void storeBytes(byte[] bytes) {
+            // no-op
+        }
+
+        public void consume(InputStream stream) {
             // no-op
         }
     }

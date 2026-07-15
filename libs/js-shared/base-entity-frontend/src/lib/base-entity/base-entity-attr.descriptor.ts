@@ -11,6 +11,7 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
   visible = true;
+  showThumbnail?: boolean = true;
   hideInTable?: boolean = false;
   isHeading?: boolean;
   placeholder?: string;

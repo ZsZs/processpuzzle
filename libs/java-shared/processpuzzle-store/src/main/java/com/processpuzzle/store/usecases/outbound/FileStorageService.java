@@ -13,5 +13,6 @@ public interface FileStorageService {
     void uploadObject(String bucketName, String objectName, InputStream inputStream, String contentType, Map<String, String> metadata);
     StoredObject getObject(String bucketName, String objectName);
     String getObjectUri(String bucketName, String objectName);
+    boolean objectExists(String bucketName, String objectName);
     void deleteObject(String bucketName, String objectName);
 }

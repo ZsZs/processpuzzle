@@ -46,6 +46,7 @@ describe('ArtifactComponent', () => {
     await TestBed.configureTestingModule({ imports: [NoopAnimationsModule] }).compileComponents();
     dialog = mock<MatDialog>();
     objectStore = mock<ObjectStoreService>();
+    objectStore.getThumbnailUriByID.mockReturnValue(of(null));
   });
 
   afterEach(() => {
@@ -171,6 +172,72 @@ describe('ArtifactComponent', () => {
       expect(control?.value).toBeNull();
       expect(control?.dirty).toBe(true);
       expect(control?.touched).toBe(true);
+    });
+  });
+
+  describe('thumbnail / icon preview', () => {
+    it('renders <img> with the signed thumbnail URL when mime is image and endpoint returns a uri', async () => {
+      const artifact = makeArtifact({ mimeType: 'image/png', name: 'photo.png' });
+      objectStore.getThumbnailUriByID.mockReturnValue(of({ uri: 'https://cdn.example/photo-thumb.jpg' }));
+      const { fixture } = await setupArtifactComponent(makeConfig(), artifact, dialog, objectStore);
+      TestBed.flushEffects();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      const img = host.querySelector('img.artifact-thumbnail') as HTMLImageElement | null;
+      expect(img).not.toBeNull();
+      expect(img?.src).toBe('https://cdn.example/photo-thumb.jpg');
+      expect(host.querySelector('mat-icon.artifact-icon')).toBeNull();
+      expect(objectStore.getThumbnailUriByID).toHaveBeenCalledWith('bucket-1', 'oid-1');
+    });
+
+    it('renders <mat-icon> with the mime-mapped icon for non-image artifacts', async () => {
+      const artifact = makeArtifact({ mimeType: 'application/pdf', name: 'manual.pdf' });
+      const { fixture } = await setupArtifactComponent(makeConfig(), artifact, dialog, objectStore);
+      TestBed.flushEffects();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('img.artifact-thumbnail')).toBeNull();
+      const icon = host.querySelector('mat-icon.artifact-icon');
+      expect(icon).not.toBeNull();
+      expect(icon?.textContent?.trim()).toBe('picture_as_pdf');
+      expect(objectStore.getThumbnailUriByID).not.toHaveBeenCalled();
+    });
+
+    it('renders <mat-icon> when the thumbnail endpoint returns null (404)', async () => {
+      const artifact = makeArtifact({ mimeType: 'image/png', name: 'photo.png' });
+      objectStore.getThumbnailUriByID.mockReturnValue(of(null));
+      const { fixture } = await setupArtifactComponent(makeConfig(), artifact, dialog, objectStore);
+      TestBed.flushEffects();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('img.artifact-thumbnail')).toBeNull();
+      const icon = host.querySelector('mat-icon.artifact-icon');
+      expect(icon).not.toBeNull();
+      expect(icon?.textContent?.trim()).toBe('image');
+    });
+
+    it('renders <mat-icon> when showThumbnail is false, even for image mime', async () => {
+      const config = makeConfig();
+      config.showThumbnail = false;
+      const artifact = makeArtifact({ mimeType: 'image/png', name: 'photo.png' });
+      const { fixture } = await setupArtifactComponent(config, artifact, dialog, objectStore);
+      TestBed.flushEffects();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('img.artifact-thumbnail')).toBeNull();
+      expect(host.querySelector('mat-icon.artifact-icon')).not.toBeNull();
+      expect(objectStore.getThumbnailUriByID).not.toHaveBeenCalled();
+    });
+
+    it('mimeIcon() falls back to insert_drive_file for unknown mime types', async () => {
+      const { component } = await setupArtifactComponent(makeConfig(), makeArtifact(), dialog, objectStore);
+
+      expect(component.mimeIcon('application/x-unknown-format')).toBe('insert_drive_file');
+      expect(component.mimeIcon(undefined)).toBe('insert_drive_file');
     });
   });
 
