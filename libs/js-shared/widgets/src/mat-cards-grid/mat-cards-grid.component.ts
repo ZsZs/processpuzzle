@@ -7,11 +7,12 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { CardsGridSpec } from './cards-spec';
 import { LayoutService } from '@processpuzzle/util';
 import { MatIcon } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
   selector: 'mat-cards-grid',
   standalone: true,
-  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon],
+  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon, MatMenuModule],
   template: `
     <div [ngClass]="layoutService.layoutClass()">
       @for (card of cards; track $index) {
@@ -29,6 +30,24 @@ import { MatIcon } from '@angular/material/icon';
                 <button mat-icon-button>
                   <mat-icon class="icon-large material-symbols-outlined">{{ card.icon }}</mat-icon>
                 </button>
+              }
+              @if (card.menuItems && card.menuItems.length > 0) {
+                @if (!card.icon) {
+                  <span class="toolbar-spacer"></span>
+                }
+                <button mat-icon-button [matMenuTriggerFor]="cardMenu" aria-label="Card menu">
+                  <mat-icon class="icon-large material-symbols-outlined">more_vert</mat-icon>
+                </button>
+                <mat-menu #cardMenu="matMenu">
+                  @for (menuItem of card.menuItems; track $index) {
+                    <button mat-menu-item [routerLink]="menuItem.link">
+                      @if (menuItem.icon) {
+                        <mat-icon class="material-symbols-outlined">{{ menuItem.icon }}</mat-icon>
+                      }
+                      <span>{{ t(menuItem.label) }}</span>
+                    </button>
+                  }
+                </mat-menu>
               }
             </mat-card-header>
             @if (hasValue(card.content)) {
