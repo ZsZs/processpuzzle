@@ -33,3 +33,7 @@ export { BASE_ENTITY_ROUTES } from './lib/base-entity.routes'; // With @angular/
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
 export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';
+export { PdfExportService } from './lib/pdf-service/pdf-export.service';
+export type { PdfColumnDefinition, PdfExportOptions, PdfExportResult } from './lib/pdf-service/pdf-export.types';
+export { entityDescriptorToPdfColumns } from './lib/pdf-service/entity-descriptor-to-pdf-columns';
+export { PdfExportOptionsDialog, type PdfExportDialogResult } from './lib/pdf-service/pdf-export-options.dialog';

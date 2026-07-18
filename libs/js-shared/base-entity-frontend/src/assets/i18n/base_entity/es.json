@@ -9,6 +9,21 @@
     "query_label": "Consulta",
     "filter_label": "Filtro"
   },
+  "pdf_export": {
+    "button": "PDF",
+    "tooltip": "Exportar lista a PDF",
+    "dialog_title": "Opciones de exportación PDF",
+    "orientation_label": "Orientación",
+    "orientation_portrait": "Vertical",
+    "orientation_landscape": "Horizontal",
+    "page_size_label": "Tamaño de página",
+    "include_footer_label": "Incluir pie de página",
+    "cancel_button": "Cancelar",
+    "export_button": "Exportar",
+    "subtitle": "{{ count }} registros",
+    "success": "{{ count }} registros exportados a PDF",
+    "failure": "Error al exportar el PDF"
+  },
   "rsql_editor_dialog": {
     "title": "Editor de consultas avanzado",
     "cancel_button": "Cancelar",
