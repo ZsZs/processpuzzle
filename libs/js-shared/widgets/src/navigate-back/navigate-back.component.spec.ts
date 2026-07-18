@@ -1,45 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/angular';
+import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { NavigateBackComponent } from './navigate-back.component';
 import { NavigateBackService } from './navigate-back.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { TestBed } from '@angular/core/testing';
 
-// Create a mock NavigationBackService
+// Mock NavigateBackService so the component under test carries no navigation dependencies.
 const navigateBackServiceMock = {
-  goBack: vi.fn(), // Mock the goBack method
+  goBack: vi.fn(),
 };
 
-describe.skip('NavigateBackComponent', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MatIconModule, MatButtonModule, NavigateBackComponent],
-      providers: [{ provide: NavigateBackService, useValue: navigateBackServiceMock }],
-    }).compileComponents();
+async function setup() {
+  return render(NavigateBackComponent, {
+    imports: [MatIconModule, MatButtonModule],
+    componentProviders: [{ provide: NavigateBackService, useValue: navigateBackServiceMock }],
+  });
+}
+
+describe('NavigateBackComponent', () => {
+  beforeEach(() => {
+    navigateBackServiceMock.goBack.mockReset();
   });
 
-  it('should render the Go Back button with an icon', () => {
-    // Verify that the button is in the document
-    const button = screen.getByRole('button', { name: 'Go back' });
-    expect(button).toBeTruthy();
+  it('should render the Go back button with the arrow icon', async () => {
+    await setup();
 
-    // Verify that the material icon is rendered
+    expect(screen.getByRole('button', { name: 'Go back' })).toBeTruthy();
     const icon = screen.getByText('arrow_back');
     expect(icon).toBeTruthy();
-    expect(icon).toHaveClass('fat-back-arrow'); // Verify the custom class
+    expect(icon).toHaveClass('fat-back-arrow');
   });
 
-  it('should call the NavigateBackService goBack method when the button is clicked', async () => {
-    // Find the button
-    const button = screen.getByRole('button', { name: 'Go back' });
+  it('should call NavigateBackService.goBack when the button is clicked', async () => {
+    await setup();
 
-    // Simulate a user clicking the button using userEvent
-    const user = userEvent.setup();
-    await user.click(button);
+    await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
 
-    // Assert that the goBack method was called
     expect(navigateBackServiceMock.goBack).toHaveBeenCalledTimes(1);
   });
 });
