@@ -10,7 +10,8 @@
       "storageBucket": "processpuzzle-testbed-stage.firebasestorage.app",
       "messagingSenderId": "86206865743",
       "appId": "1:86206865743:web:89f5140e6e0f63db68253a"
-    }
+    },
+    "APPLICATION_VERSION": "1.4.0"
   },
   "LANGUAGE_CONFIGURATION": {
     "DEFAULT_LANGUAGE": "en",

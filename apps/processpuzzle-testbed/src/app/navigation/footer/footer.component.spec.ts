@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FooterComponent } from './footer.component';
 import { By } from '@angular/platform-browser';
+import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 
 describe('FooterComponent', () => {
   let component: FooterComponent;
@@ -10,7 +11,7 @@ describe('FooterComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FooterComponent],
-      //      providers: [provideFirestore(() => getFirestore())],
+      providers: [{ provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { APPLICATION_VERSION: '1.4.0' } } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FooterComponent);
