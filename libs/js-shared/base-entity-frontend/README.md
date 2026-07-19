@@ -21,6 +21,8 @@ the library generates these **Outputs:**
 
 - A **Reactive Angular Form** built dynamically at run-time.
 - An **Angular Material Table** built dynamically at run-time.
+- A **descriptor-aware RSQL search** with an assisted advanced query editor (see [RSQL search](#rsql-search)).
+- A **client-side PDF export** of the table, driven by the same descriptors (see [PDF export](#pdf-export)).
 
 The diagram below shows the main classes the library exposes:
 
@@ -208,3 +210,72 @@ export class TestEntityFacade extends BaseEntityFacade<TestEntity> {
 ```
 
 The facade can then be provided through the `ACTIVE_ENTITY_FACADE` token, and `BaseEntityContainerComponent` will resolve its descriptor automatically — no per-entity container component required.
+
+## RSQL search
+
+The list toolbar carries two independent search inputs:
+
+- **Filter** — a client-side, case-insensitive substring match over the rows already loaded into the Material table. Instant, but limited to the current page of data.
+- **Query** — a server-side [RSQL/FIQL](https://github.com/jirutka/rsql-parser) expression. On <kbd>Enter</kbd> (or the ▶ button) the toolbar calls `store.load({ query })`; the REST service forwards it to the backend as a `where=<rsql>` request parameter (`BaseEntityFirestoreService` applies the equivalent constraints). Clearing the query reloads the unfiltered list.
+
+### Query syntax
+
+RSQL combines comparisons with logical operators:
+
+| Kind | Tokens |
+|------|--------|
+| Comparison | `==`  `!=`  `=gt=`  `=ge=`  `=lt=`  `=le=`  `=in=`  `=out=`  `=like=` |
+| Logic | `;` (AND)  `,` (OR)  `( … )` (grouping) |
+| Values | unquoted, `'single'`/`"double"` quoted, or a list `field=in=(a,b,c)` |
+
+```text
+status==active;createdAt=gt='2026-01-01'
+name=like='*foo*',priority=ge=3
+```
+
+### Advanced editor
+
+The **✎ (`edit_note`)** button in the query field opens the **advanced query editor** dialog — a CodeMirror-based editor (`RsqlEditorDialog` → `RsqlQueryEditorComponent`) that provides:
+
+- **Syntax highlighting** and bracket matching for RSQL.
+- **Autocomplete** of field names, the operators valid for each field's type, and enum values.
+- **Live linting** — structural validation (paren balance, clause ordering, unterminated strings) plus semantic checks (unknown field, operator not allowed for the field's type). **Apply** stays disabled while the expression is invalid.
+- A **sample query** inserted on <kbd>Tab</kbd> in an empty editor, plus a matching placeholder.
+
+Both the autocomplete and the linter are driven by field metadata derived from the entity's descriptor by `DescriptorBackedFieldMetadataProvider`: each `BaseEntityAttrDescriptor` maps to an RSQL field whose type (and therefore its allowed operators) comes from the `FormControlType` — `CHECKBOX`→boolean, `DATE`→date, `DROPDOWN`/`RADIO`→enum (enum values taken from the attribute's selectables), a numeric/date `TEXT_BOX` input type→number/date, everything else→string. Presentation-only controls (`ARTIFACT`, `COMPONENTS`, `FLEX_BOX`, `LABEL`, `TITLE`) are excluded from the searchable fields.
+
+To use the editor outside the entity toolbar, provide your own `RsqlFieldMetadataProvider` and bind `RsqlQueryEditorComponent` through a reactive `FormControl` (see `query-editor/example-usage.ts`).
+
+## PDF export
+
+The list toolbar can export the current entities to a PDF **entirely on the client** — no backend round-trip. When the list view is active and the store holds at least one entity, `BaseEntityToolbarComponent` shows a **PDF** action (the familiar `picture_as_pdf` icon). It appears both as a toolbar button and, on small screens, as a menu item.
+
+Clicking it opens a small options dialog (orientation, page size, page-footer toggle) — deliberately not a full layout editor — and then generates and downloads the file.
+
+What ends up in the PDF is derived from the very same descriptors that drive the table:
+
+- **Columns** come from the entity's `BaseEntityAttrDescriptor`s, flattened through nested `FlexboxDescriptor`s. Any attribute marked `hideInTable = true` is dropped — so **a field hidden from the list is also absent from the PDF**.
+- **Cell rendering** is chosen from each attribute's `FormControlType`: `CHECKBOX` becomes `✓`/`✗` (centered), `DATE` is formatted as a locale date, `TAGS` are joined, and `ARTIFACT` shows the artifact name.
+- The document **title** uses the descriptor's `entityTitle` (falling back to `entityName`), with a record-count subtitle and page footers.
+
+The heavy `jspdf` / `jspdf-autotable` dependencies are **lazy-loaded on first export**, so they never enter the initial bundle.
+
+### Programmatic use
+
+The export is also usable outside the toolbar. The public API exposes `PdfExportService`, the `entityDescriptorToPdfColumns` mapper, the `PdfExportOptionsDialog`, and the `PdfColumnDefinition` / `PdfExportOptions` / `PdfExportResult` types.
+
+```typescript
+private readonly pdfExport = inject(PdfExportService);
+
+async export(descriptor: BaseEntityDescriptor, entities: BaseEntity[]) {
+  const columns = entityDescriptorToPdfColumns(descriptor.attrDescriptors);
+  const result = await this.pdfExport.export(entities as Record<string, unknown>[], columns, {
+    title: 'Test Entities',
+    filename: 'test-entity-export',
+    orientation: 'landscape',
+  });
+  // result: { success, filename, rowCount, error? }
+}
+```
+
+Column headers, cell text, and dialog labels are translated through the `base_entity` Transloco scope (keys under `pdf_export`).

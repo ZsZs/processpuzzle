@@ -20,6 +20,9 @@
     <div [ngClass]="layoutService.layoutClass()">
       <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu"><mat-icon>menu</mat-icon> Choose action</button>
       <mat-menu #beforeMenu="matMenu" xPosition="before">
+        @if (isPdfExportEnabled()) {
+          <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-menu-item [disabled]="isExporting()" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
+        }
         <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
         <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item [disabled]="!isNewEnabled()" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
         <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
@@ -27,6 +30,9 @@
     </div>
   } @else {
     <div [ngClass]="layoutService.layoutClass()">
+      @if (isPdfExportEnabled()) {
+        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-button [disabled]="isExporting()" [matTooltip]="t('base_entity.pdf_export.tooltip')" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
+      }
       <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
       <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
       <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>

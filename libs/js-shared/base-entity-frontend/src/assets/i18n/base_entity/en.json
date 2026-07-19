@@ -9,6 +9,21 @@
     "query_label": "Query",
     "filter_label": "Filter"
   },
+  "pdf_export": {
+    "button": "PDF",
+    "tooltip": "Export list to PDF",
+    "dialog_title": "PDF export options",
+    "orientation_label": "Orientation",
+    "orientation_portrait": "Portrait",
+    "orientation_landscape": "Landscape",
+    "page_size_label": "Page size",
+    "include_footer_label": "Include page footer",
+    "cancel_button": "Cancel",
+    "export_button": "Export",
+    "subtitle": "{{ count }} records",
+    "success": "Exported {{ count }} records to PDF",
+    "failure": "PDF export failed"
+  },
   "rsql_editor_dialog": {
     "title": "Advanced query editor",
     "cancel_button": "Cancel",

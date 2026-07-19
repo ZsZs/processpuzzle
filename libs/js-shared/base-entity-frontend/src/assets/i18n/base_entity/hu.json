@@ -9,6 +9,21 @@
     "query_label": "Lekérdezés",
     "filter_label": "Szűrő"
   },
+  "pdf_export": {
+    "button": "PDF",
+    "tooltip": "Lista exportálása PDF-be",
+    "dialog_title": "PDF exportálási beállítások",
+    "orientation_label": "Tájolás",
+    "orientation_portrait": "Álló",
+    "orientation_landscape": "Fekvő",
+    "page_size_label": "Oldalméret",
+    "include_footer_label": "Lábléc megjelenítése",
+    "cancel_button": "Mégse",
+    "export_button": "Exportálás",
+    "subtitle": "{{ count }} rekord",
+    "success": "{{ count }} rekord exportálva PDF-be",
+    "failure": "A PDF exportálás sikertelen"
+  },
   "rsql_editor_dialog": {
     "title": "Speciális lekérdezés-szerkesztő",
     "cancel_button": "Mégse",
