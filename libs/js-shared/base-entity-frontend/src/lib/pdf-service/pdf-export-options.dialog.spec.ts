@@ -26,7 +26,7 @@ describe('PdfExportOptionsDialog', () => {
   it('renders the dialog with export and cancel actions', () => {
     const { fixture } = createComponent();
     const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
   });
 
   it('defaults to portrait / a4 / footer-on', () => {
