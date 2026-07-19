@@ -40,7 +40,9 @@ describe('entityDescriptorToPdfColumns', () => {
 
     expect(column.align).toBe('center');
     expect(column.formatter?.(true, {})).toBe('✓');
+    expect(column.formatter?.('true', {})).toBe('✓');
     expect(column.formatter?.(false, {})).toBe('✗');
+    expect(column.formatter?.('maybe', {})).toBe('');
   });
 
   it('formats DATE values as locale dates', () => {
@@ -50,15 +52,23 @@ describe('entityDescriptorToPdfColumns', () => {
     const [column] = entityDescriptorToPdfColumns([date]);
 
     expect(column.formatter?.(value, {})).toBe(value.toLocaleDateString());
+    expect(column.formatter?.('2024-03-04', {})).toBe(new Date('2024-03-04').toLocaleDateString());
     expect(column.formatter?.(undefined, {})).toBe('');
+    expect(column.formatter?.('not-a-date', {})).toBe('not-a-date');
   });
 
-  it('joins TAGS arrays', () => {
+  it('joins TAGS arrays and coerces non-array values without default object stringification', () => {
     const tags = new BaseEntityAttrDescriptor('labels', FormControlType.TAGS, 'Labels');
 
     const [column] = entityDescriptorToPdfColumns([tags]);
 
     expect(column.formatter?.(['a', 'b'], {})).toBe('a, b');
+    expect(column.formatter?.(42, {})).toBe('42');
+    expect(column.formatter?.(true, {})).toBe('true');
+    expect(column.formatter?.(10n, {})).toBe('10');
+    expect(column.formatter?.({ a: 1 }, {})).toBe('{"a":1}');
+    expect(column.formatter?.(null, {})).toBe('');
+    expect(column.formatter?.(Symbol('x'), {})).toBe('');
   });
 
   it('renders ARTIFACT name or objectId', () => {

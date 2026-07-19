@@ -28,38 +28,57 @@ export function entityDescriptorToPdfColumns(descriptors: AbstractAttrDescriptor
 }
 
 function columnAlign(type: FormControlType): PdfColumnDefinition['align'] {
-  switch (type) {
-    case FormControlType.CHECKBOX:
-      return 'center';
-    default:
-      return 'left';
-  }
+  return type === FormControlType.CHECKBOX ? 'center' : 'left';
 }
 
 function columnFormatter(descriptor: BaseEntityAttrDescriptor): PdfColumnDefinition['formatter'] | undefined {
   switch (descriptor.formControlType) {
     case FormControlType.CHECKBOX:
-      return (value) => (value === true || value === 'true' ? '✓' : value === false || value === 'false' ? '✗' : '');
+      return formatBoolean;
 
     case FormControlType.DATE:
-      return (value) => {
-        if (!value) return '';
-        const date = value instanceof Date ? value : new Date(String(value));
-        return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
-      };
+      return formatDate;
 
     case FormControlType.TAGS:
-      return (value) => (Array.isArray(value) ? value.join(', ') : value == null ? '' : String(value));
+      return formatTags;
 
     case FormControlType.ARTIFACT:
-      return (value) => {
-        if (value == null) return '';
-        const artifact = value as { name?: string; objectId?: string };
-        return artifact.name ?? artifact.objectId ?? '';
-      };
+      return formatArtifact;
 
     // TEXT_BOX, TEXTAREA, DROPDOWN, FOREIGN_KEY, LOOKUP, etc. → default string coercion in the service
     default:
       return undefined;
   }
+}
+
+function formatBoolean(value: unknown): string {
+  if (value === true || value === 'true') return '✓';
+  if (value === false || value === 'false') return '✗';
+  return '';
+}
+
+function formatDate(value: unknown): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(toText(value));
+  return Number.isNaN(date.getTime()) ? toText(value) : date.toLocaleDateString();
+}
+
+function formatTags(value: unknown): string {
+  if (Array.isArray(value)) return value.join(', ');
+  return toText(value);
+}
+
+function formatArtifact(value: unknown): string {
+  if (value == null) return '';
+  const artifact = value as { name?: string; objectId?: string };
+  return artifact.name ?? artifact.objectId ?? '';
+}
+
+/** Coerces an arbitrary value to a cell string without ever relying on Object's default `[object Object]` stringification. */
+function toText(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return value.toString();
+  if (typeof value === 'object') return JSON.stringify(value);
+  return ''; // symbol / function — not meaningful in a table cell
 }

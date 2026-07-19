@@ -177,20 +177,21 @@ export class PdfExportService {
    */
   private formatValue(value: unknown): string {
     if (value === null || value === undefined) return '';
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (value instanceof Date) return value.toLocaleDateString();
-    if (typeof value === 'string') {
-      // ISO date strings — render as locale date, not raw ISO
-      const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
-      if (isoDatePattern.test(value)) {
-        const date = new Date(value);
-        return isNaN(date.getTime()) ? value : date.toLocaleDateString();
-      }
-      return value;
-    }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'number') return value.toLocaleString();
+    if (typeof value === 'bigint') return value.toString();
+    if (typeof value === 'string') return this.formatString(value);
     if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
+    return ''; // symbol / function — not meaningful in a table cell
+  }
+
+  /** Renders ISO date strings as locale dates, leaving all other strings untouched. */
+  private formatString(value: string): string {
+    const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
+    if (!isoDatePattern.test(value)) return value;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
   }
 
   private drawFooter(

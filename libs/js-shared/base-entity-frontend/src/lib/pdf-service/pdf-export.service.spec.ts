@@ -79,16 +79,19 @@ describe('PdfExportService', () => {
       { field: 'flag', header: 'Flag' },
       { field: 'when', header: 'When' },
       { field: 'iso', header: 'Iso' },
+      { field: 'plain', header: 'Plain' },
       { field: 'count', header: 'Count' },
+      { field: 'big', header: 'Big' },
       { field: 'meta', header: 'Meta' },
+      { field: 'sym', header: 'Sym' },
       { field: 'empty', header: 'Empty' },
     ];
     const when = new Date('2024-01-18T00:00:00.000Z');
 
-    await service.export([{ flag: true, when, iso: '2024-03-04', count: 1234, meta: { a: 1 }, empty: null }], plainColumns);
+    await service.export([{ flag: true, when, iso: '2024-03-04', plain: 'hello', count: 1234, big: 10n, meta: { a: 1 }, sym: Symbol('x'), empty: null }], plainColumns);
 
     const options = autoTable.mock.calls[0][1] as { body: string[][] };
-    expect(options.body[0]).toEqual(['Yes', when.toLocaleDateString(), new Date('2024-03-04').toLocaleDateString(), (1234).toLocaleString(), '{"a":1}', '']);
+    expect(options.body[0]).toEqual(['Yes', when.toLocaleDateString(), new Date('2024-03-04').toLocaleDateString(), 'hello', (1234).toLocaleString(), '10', '{"a":1}', '', '']);
   });
 
   it('honours an explicit orientation', async () => {
