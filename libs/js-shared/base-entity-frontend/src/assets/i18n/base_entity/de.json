@@ -9,6 +9,21 @@
     "query_label": "Abfrage",
     "filter_label": "Filter"
   },
+  "pdf_export": {
+    "button": "PDF",
+    "tooltip": "Liste als PDF exportieren",
+    "dialog_title": "PDF-Exportoptionen",
+    "orientation_label": "Ausrichtung",
+    "orientation_portrait": "Hochformat",
+    "orientation_landscape": "Querformat",
+    "page_size_label": "Seitengröße",
+    "include_footer_label": "Seitenfußzeile einfügen",
+    "cancel_button": "Abbrechen",
+    "export_button": "Exportieren",
+    "subtitle": "{{ count }} Datensätze",
+    "success": "{{ count }} Datensätze als PDF exportiert",
+    "failure": "PDF-Export fehlgeschlagen"
+  },
   "rsql_editor_dialog": {
     "title": "Erweiterter Abfrage-Editor",
     "cancel_button": "Abbrechen",

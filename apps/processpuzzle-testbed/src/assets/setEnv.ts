@@ -1,4 +1,4 @@
-const { writeFile: writeF, existsSync: exists, mkdirSync: makeDirSync } = require('node:fs');
+const { writeFile: writeF, readFileSync: readSync, writeFileSync: writeSync, existsSync: exists, mkdirSync: makeDirSync } = require('node:fs');
 
 require('dotenv').config();
 
@@ -91,3 +91,18 @@ const runtimeEnvContent =
     2,
   ) + '\n';
 writeFileUsingFS(`${assetsDir}/runtime-env.json`, runtimeEnvContent);
+
+// Bake the build-time application version (from package.json) into the runtime configuration.
+// APPLICATION_VERSION is a build constant, so it belongs in config.common.json (a build asset)
+// rather than runtime-env.json (per-deployment env). ConfigurationService merges it into
+// RuntimeConfiguration.BASE_CONFIGURATION at bootstrap.
+function syncApplicationVersion() {
+  const packageJsonPath = 'apps/processpuzzle-testbed/package.json';
+  const commonConfigPath = 'apps/processpuzzle-testbed/src/run-time-conf/config.common.json';
+  const version = JSON.parse(readSync(packageJsonPath, 'utf8')).version;
+  const commonConfig = JSON.parse(readSync(commonConfigPath, 'utf8'));
+  commonConfig.BASE_CONFIGURATION = { ...commonConfig.BASE_CONFIGURATION, APPLICATION_VERSION: version };
+  writeSync(commonConfigPath, JSON.stringify(commonConfig, null, 2) + '\n');
+  console.log(`APPLICATION_VERSION ${version} written to ${commonConfigPath}`);
+}
+syncApplicationVersion();

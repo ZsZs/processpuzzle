@@ -1,69 +1,48 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/angular';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
-import { LanguageSelectorComponent } from './language-selector.component';
+import { ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { OverlayModule } from '@angular/cdk/overlay';
+import { MatMenuModule } from '@angular/material/menu';
+import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { mockLanguageConfig, setUpTranslocoTestBed } from '@processpuzzle/test-util';
+import { LanguageSelectorComponent } from './language-selector.component';
 import widgetsDe from '../assets/i18n/widgets/de.json';
 import widgetsEn from '../assets/i18n/widgets/en.json';
 
-describe.skip('LanguageSelectorComponent', () => {
-  const testConfig: TranslocoTestConfig = {
-    scope: 'widgets',
-    translations: {
-      'widgets/en': widgetsEn,
-      'widgets/de': widgetsDe,
-    },
-  };
+describe('LanguageSelectorComponent', () => {
+  let fixture: ComponentFixture<LanguageSelectorComponent>;
+
+  const getTriggerButton = (): HTMLButtonElement => fixture.debugElement.query(By.css('button[aria-label="Select Language Button"]')).nativeElement as HTMLButtonElement;
 
   beforeEach(async () => {
-    await setUpTranslocoTestBed(LanguageSelectorComponent, testConfig, {
-      imports: [MatIconModule, MatButtonModule, OverlayModule],
-      providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
-    });
+    // Render the real language list (no overrideComponent) so the component's inline template
+    // is instrumented for coverage; mockLanguageConfig feeds the list its available languages.
+    const testVars = await setUpTranslocoTestBed(
+      LanguageSelectorComponent,
+      { scope: 'widgets', translations: { en: {}, de: {}, 'widgets/en': widgetsEn, 'widgets/de': widgetsDe } },
+      {
+        imports: [MatIconModule, MatButtonModule, MatMenuModule, NoopAnimationsModule],
+        providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
+      },
+    );
+    fixture = testVars.fixture;
   });
 
-  it('should render the component', async () => {
-    expect(screen.getByRole('button', { name: /select language button/i })).toBeVisible();
+  it('should render the language trigger button', () => {
+    const button = getTriggerButton();
+    expect(button).toBeTruthy();
+    expect(button.getAttribute('aria-label')).toBe('Select Language Button');
+    expect(fixture.debugElement.query(By.css('mat-icon')).nativeElement.textContent).toContain('language');
   });
 
-  it('should open the overlay when the button is clicked', async () => {
-    // Initially, overlay content should not be in the DOM
-    expect(screen.queryByRole('dialog')).toBeNull();
+  it('should open the menu and render the language selection list when the trigger is clicked', () => {
+    getTriggerButton().click();
+    fixture.detectChanges();
 
-    // Click the button to open the overlay
-    const button = screen.getByRole('button', { name: /select language button/i });
-    fireEvent.click(button);
-
-    // Verify if content is displayed after clicking
-    await waitFor(() => {
-      expect(screen.getByText('English')).toBeVisible();
-      expect(screen.getByText('German')).toBeVisible();
-      expect(screen.getByText('Spanish')).toBeVisible();
-    });
-  });
-
-  it('should close the overlay on backdrop click', async () => {
-    // Open the overlay by clicking the button
-    const button = screen.getByRole('button', { name: /select language button/i });
-    fireEvent.click(button);
-
-    // Wait for the overlay to appear
-    await waitFor(() => {
-      expect(screen.getByText('English')).toBeVisible();
-      expect(screen.getByText('German')).toBeVisible();
-      expect(screen.getByText('Spanish')).toBeVisible();
-    });
-
-    // Close the overlay by simulating a backdrop click
-    const backdrop = document.querySelector('.cdk-overlay-backdrop') as HTMLElement;
-    fireEvent.click(backdrop);
-
-    // After the backdrop click, verify the content is removed
-    await waitFor(() => {
-      expect(screen.queryByText('Language Selector')).toBeNull();
-    });
+    const panel = document.querySelector('.mat-mdc-menu-panel');
+    expect(panel).toBeTruthy();
+    expect(panel?.querySelector('mat-selection-list')).toBeTruthy();
   });
 });

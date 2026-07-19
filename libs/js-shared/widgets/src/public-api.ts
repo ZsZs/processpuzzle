@@ -5,6 +5,7 @@
 export { ApplicationProperty } from './app-property/app-property';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
+export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
 export type { LanguageConfig, LanguageDefinition } from './transloco/language-config';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
@@ -18,6 +19,7 @@ export { provideTranslocoService } from './transloco/provide-transloco.service';
 export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { TranslocoHttpLoader } from './transloco/transloco.loader';
+export { VersionButtonComponent } from './version-button/version-button.component';
 export { widgetsRoutes } from './widgets.routes';
 
 export * from './error-snackbar/error-snackbar.component';

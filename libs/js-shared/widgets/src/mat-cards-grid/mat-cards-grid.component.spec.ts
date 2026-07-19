@@ -108,4 +108,73 @@ describe('MatCardsGridComponent', () => {
     expect(buttons[1].textContent).toContain('Test Button 2');
     //    expect(buttons[1].getAttribute('ng-reflect-router-link')).toBe('/test2');
   });
+
+});
+
+// Separate host so the icon card is present on first render, exercising the @if (card.icon) branch.
+@Component({
+  template: ` <mat-cards-grid [cards]="cards"></mat-cards-grid>`,
+  standalone: true,
+  imports: [MatCardsGridComponent],
+})
+class IconHostComponent {
+  cards: CardsGridSpec[] = [{ icon: 'settings', title: 'Iconic Card', subtitle: 'subtitle', content: ['content'], actions: [], translocoPrefix: 'test1' }];
+}
+
+describe('MatCardsGridComponent with an icon card', () => {
+  it('should render the card icon button when a card provides an icon', async () => {
+    const { fixture } = await setUpTranslocoTestBed(
+      IconHostComponent,
+      { translations: { en: { test1: { subtitle: 'Test Subtitle 1', content: 'Test Content 1' } } } },
+      { providers: [provideRouter([])] },
+    );
+
+    const icon = fixture.nativeElement.querySelector('.icon-large') as HTMLElement;
+    expect(icon).toBeTruthy();
+    expect(icon.textContent).toContain('settings');
+  });
+});
+
+// Host with a card that declares menu items, exercising the @if (card.menuItems) branch.
+@Component({
+  template: ` <mat-cards-grid [cards]="cards"></mat-cards-grid>`,
+  standalone: true,
+  imports: [MatCardsGridComponent],
+})
+class MenuHostComponent {
+  cards: CardsGridSpec[] = [
+    {
+      title: 'Menu Card',
+      subtitle: 'subtitle',
+      content: ['content'],
+      actions: [],
+      menuItems: [
+        { icon: 'open_in_new', label: 'menu_item_1', link: '/test1' },
+        { label: 'menu_item_2', link: '/test2' },
+      ],
+      translocoPrefix: 'test1',
+    },
+  ];
+}
+
+describe('MatCardsGridComponent with a menu card', () => {
+  it('should render a more_vert trigger and the translated menu items', async () => {
+    const { fixture } = await setUpTranslocoTestBed(
+      MenuHostComponent,
+      { translations: { en: { test1: { subtitle: 'Test Subtitle 1', content: 'Test Content 1', menu_item_1: 'First Item', menu_item_2: 'Second Item' } } } },
+      { providers: [provideRouter([])] },
+    );
+
+    const trigger = fixture.nativeElement.querySelector('button[aria-label="Card menu"]') as HTMLButtonElement;
+    expect(trigger).toBeTruthy();
+    expect(trigger.textContent).toContain('more_vert');
+
+    trigger.click();
+    fixture.detectChanges();
+
+    const menuItems = document.querySelectorAll('.mat-mdc-menu-item');
+    expect(menuItems).toHaveLength(2);
+    expect(menuItems[0].textContent).toContain('First Item');
+    expect(menuItems[1].textContent).toContain('Second Item');
+  });
 });

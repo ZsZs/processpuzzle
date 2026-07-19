@@ -4,6 +4,11 @@ import { By } from '@angular/platform-browser';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { TestEntity } from '../test-entity';
 import { describe, expect, it, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { of } from 'rxjs';
+import { PdfExportService } from '../pdf-service/pdf-export.service';
 
 describe('BaseEntityToolbarComponent', () => {
   describe('sanity tests', () => {
@@ -77,6 +82,50 @@ describe('BaseEntityToolbarComponent', () => {
       // VERIFY:
       expect(component.store.delete).toHaveBeenNthCalledWith(1, '1');
       expect(component.store.delete).toHaveBeenNthCalledWith(2, '2');
+    });
+
+    it('shows the PDF export button when the list has entities', async () => {
+      const { fixture } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+      const pdfButton = fixture.debugElement.query(By.css('button[data-testid="testEntity-pdf-export"]'));
+      expect(pdfButton).toBeTruthy();
+    });
+
+    it('onExportPdf() runs the export with descriptor columns when the dialog is confirmed', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      const dialog = TestBed.inject(MatDialog);
+      vi.spyOn(dialog, 'open').mockReturnValue({ afterClosed: () => of({ orientation: 'landscape', pageSize: 'a4', includeFooter: true }) } as ReturnType<MatDialog['open']>);
+      const pdfExportService = TestBed.inject(PdfExportService);
+      const exportSpy = vi.spyOn(pdfExportService, 'export').mockResolvedValue({ success: true, filename: 'testentity-export.pdf', rowCount: 2 });
+
+      await (component as BaseEntityToolbarComponent<TestEntity>).onExportPdf();
+
+      expect(exportSpy).toHaveBeenCalledTimes(1);
+      const [entities, columns] = exportSpy.mock.calls[0];
+      expect(entities.length).toBeGreaterThan(0);
+      expect(columns.length).toBeGreaterThan(0);
+    });
+
+    it('onExportPdf() reports a failed export via the snackbar', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      const dialog = TestBed.inject(MatDialog);
+      vi.spyOn(dialog, 'open').mockReturnValue({ afterClosed: () => of({ orientation: 'portrait', pageSize: 'a4', includeFooter: true }) } as ReturnType<MatDialog['open']>);
+      vi.spyOn(TestBed.inject(PdfExportService), 'export').mockResolvedValue({ success: false, filename: 'testentity-export.pdf', rowCount: 0, error: 'boom' });
+      const snackBarSpy = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+
+      await (component as BaseEntityToolbarComponent<TestEntity>).onExportPdf();
+
+      expect(snackBarSpy).toHaveBeenCalledWith('boom', undefined, { duration: 4000 });
+    });
+
+    it('onExportPdf() does nothing when the dialog is cancelled', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      const dialog = TestBed.inject(MatDialog);
+      vi.spyOn(dialog, 'open').mockReturnValue({ afterClosed: () => of(undefined) } as ReturnType<MatDialog['open']>);
+      const exportSpy = vi.spyOn(TestBed.inject(PdfExportService), 'export');
+
+      await (component as BaseEntityToolbarComponent<TestEntity>).onExportPdf();
+
+      expect(exportSpy).not.toHaveBeenCalled();
     });
 
     it('onDoFilter()', async () => {

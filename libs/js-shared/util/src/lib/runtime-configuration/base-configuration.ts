@@ -7,6 +7,7 @@ export interface FirebaseConfig {
 }
 export interface BaseConfiguration {
   readonly PIPELINE_STAGE: 'dev' | 'ci' | 'stage' | 'prod';
+  readonly APPLICATION_VERSION: string;
   readonly BACKEND_SERVICE_PROVIDER: 'rest' | 'firestore';
   readonly BACKEND_SERVICE_ROOT: string;
   readonly OBJECT_STORE_SERVICE_ROOT: string;
