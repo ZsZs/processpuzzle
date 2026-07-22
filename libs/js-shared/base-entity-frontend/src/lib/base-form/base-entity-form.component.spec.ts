@@ -118,6 +118,23 @@ describe('GenericEntityFormComponent', () => {
       expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
 
+    it('enables Save after a signal-less programmatic mutation (zoneless-safe reactive binding)', async () => {
+      // Reproduces the components-list navigator flow: setValue()/markAsDirty() with no DOM event and no signal write.
+      const { fixture, component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const submitButton = fixture.debugElement.query(By.css('button#submit')).nativeElement;
+      expect(submitButton.disabled).toBe(true);
+
+      const control = component.baseEntityForm.get('boolean');
+      control?.setValue(false);
+      control?.markAsDirty();
+      fixture.detectChanges();
+
+      expect(component.saveDisabled()).toBe(false);
+      expect(submitButton.disabled).toBe(false);
+    });
+
     it('onDelete() deletes the current entity and navigates back', async () => {
       const { component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       const deleteSpy = vi.spyOn(store, 'delete').mockResolvedValue(undefined);
