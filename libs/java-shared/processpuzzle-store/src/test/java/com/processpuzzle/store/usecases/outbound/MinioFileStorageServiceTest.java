@@ -22,12 +22,15 @@ class MinioFileStorageServiceTest {
     @Mock
     private MinioClient minioClient;
 
+    @Mock
+    private MinioClient minioPresignClient;
+
     private MinioFileStorageService fileStorageService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        fileStorageService = new MinioFileStorageService(minioClient);
+        fileStorageService = new MinioFileStorageService(minioClient, minioPresignClient);
     }
 
     @Test
@@ -116,12 +119,12 @@ class MinioFileStorageServiceTest {
     @Test
     void getObjectUri_shouldReturnPresignedUrl() throws Exception {
         String expectedUrl = "http://localhost:9000/test-bucket/test-object?signed=true";
-        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn(expectedUrl);
+        when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn(expectedUrl);
 
         String actualUrl = fileStorageService.getObjectUri("test-bucket", "test-object");
 
         assertEquals(expectedUrl, actualUrl);
-        verify(minioClient).getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class));
+        verify(minioPresignClient).getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class));
     }
 
     @Test

@@ -76,7 +76,7 @@
         <base-state-backend.version>1.0.5</base-state-backend.version>
         <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
         <processpuzzle-core.version>1.1.0</processpuzzle-core.version>
-        <processpuzzle-store.version>1.1.0</processpuzzle-store.version>
+        <processpuzzle-store.version>1.1.1</processpuzzle-store.version>
     </properties>
 
     <dependencyManagement>

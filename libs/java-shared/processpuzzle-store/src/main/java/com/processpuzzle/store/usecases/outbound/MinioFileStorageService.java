@@ -4,6 +4,7 @@ import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import io.minio.messages.Bucket;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -15,9 +16,12 @@ import java.util.stream.Collectors;
 @Service
 public class MinioFileStorageService implements FileStorageService {
     private final MinioClient minioClient;
+    private final MinioClient minioPresignClient;
 
-    public MinioFileStorageService(MinioClient minioClient) {
+    public MinioFileStorageService(@Qualifier("minioClient") MinioClient minioClient,
+                                   @Qualifier("minioPresignClient") MinioClient minioPresignClient) {
         this.minioClient = minioClient;
+        this.minioPresignClient = minioPresignClient;
     }
 
     @Override
@@ -106,7 +110,7 @@ public class MinioFileStorageService implements FileStorageService {
     @Override
     public String getObjectUri(String bucketName, String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(
+            return minioPresignClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucketName)
