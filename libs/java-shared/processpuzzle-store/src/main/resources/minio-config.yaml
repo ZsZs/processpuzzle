@@ -1,5 +1,6 @@
 minio:
   endpoint: http://localhost:7000
+  public-endpoint: http://localhost:7000
   access-key: minioadmin
   secret-key: minioadmin
   http-timeouts:

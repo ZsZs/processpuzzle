@@ -18,6 +18,7 @@ public class MinioProperties {
     private String endpoint;
     private String accessKey;
     private String secretKey;
+    private String publicEndpoint;
     private Map<String, String> buckets;
     private Map<String, String> mimeTypes;
     private Thumbnail thumbnail = new Thumbnail();
