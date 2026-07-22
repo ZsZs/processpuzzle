@@ -1,5 +1,6 @@
 import { BaseEntity } from '../base-entity/base-entity';
 import { Component, computed, effect, inject, input, InputSignal, OnDestroy, OnInit, signal, Signal, untracked, ViewChild, WritableSignal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ROUTER_OUTLET_DATA } from '@angular/router';
@@ -38,6 +39,10 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
 
   violations: WritableSignal<RuleEvaluationResult[]> = signal([]);
   hasErrorViolations = computed(() => this.violations().some((v) => v.severity === 'ERROR'));
+  // Reactive Save-button state: recomputes on any form value/status/pristine change so it also refreshes under
+  // zoneless change detection, where a bare `baseEntityForm.dirty` binding stays stale after signal-less mutations
+  // (e.g. the components-list navigator flow that only calls setValue()/markAsDirty()).
+  saveDisabled!: Signal<boolean>;
 
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);
@@ -51,6 +56,12 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private ruleSubscription: Subscription | undefined;
 
   constructor() {
+    this.baseEntityForm = this.formBuilder.group({});
+    const formEvents = toSignal(this.baseEntityForm.events, { initialValue: null });
+    this.saveDisabled = computed(() => {
+      formEvents(); // establishes the reactive dependency; child setValue()/markAsDirty() bubble value/status events to the parent group
+      return this.baseEntityForm.invalid || !this.baseEntityForm.dirty || this.isAbstract() || this.hasErrorViolations();
+    });
     this.registerEffects();
   }
 
@@ -58,7 +69,6 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   ngOnInit(): void {
     this.formNavigator.setEntityName(this.entityDescriptor().entityName);
     this.formNavigator.determineActiveRouteSegment();
-    this.baseEntityForm = this.formBuilder.group({});
     this.logger.info('BaseEntityFormComponent initialized with: ', { entityDescriptor: this.entityDescriptor() });
     this.loadRules();
   }
