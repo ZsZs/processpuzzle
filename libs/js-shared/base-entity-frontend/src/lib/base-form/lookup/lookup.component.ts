@@ -43,6 +43,16 @@ interface LookupStore {
       </div>
     }
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+    `,
+  ],
   imports: [ReactiveFormsModule, MatLabel, MatFormField, MatInput, MatAutocompleteModule, MatIconButton, MatIcon, MatSuffix],
 })
 export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {

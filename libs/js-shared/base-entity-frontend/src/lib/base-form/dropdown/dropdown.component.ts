@@ -10,5 +10,15 @@ import { BaseEntity } from '../../base-entity/base-entity';
   standalone: true,
   templateUrl: './dropdown.component.html',
   imports: [ReactiveFormsModule, MatLabel, MatFormField, MatSelectModule],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+    `,
+  ],
 })
 export class DropdownComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

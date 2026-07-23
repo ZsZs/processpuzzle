@@ -2,6 +2,28 @@
     display: block;
 }
 
+/* Small gap between the form action buttons. */
+mat-card-actions {
+    gap: 3px;
+}
+
+/* Form action buttons take the brand button colors (mat-raised-button = protected variant).
+   Consumers can retarget these via the --pp-button-* tokens. */
+#submit {
+    --mat-button-protected-container-color: var(--pp-button-primary-bg);
+    --mat-button-protected-label-text-color: var(--pp-button-primary-text);
+}
+
+#delete {
+    --mat-button-protected-container-color: var(--pp-button-delete-bg);
+    --mat-button-protected-label-text-color: var(--pp-button-delete-text);
+}
+
+#cancel {
+    --mat-button-protected-container-color: var(--pp-button-secondary-bg);
+    --mat-button-protected-label-text-color: var(--pp-button-secondary-text);
+}
+
 .base-entity-form-field {
     box-sizing: border-box;
     min-width: 0;

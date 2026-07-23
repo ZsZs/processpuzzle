@@ -16,7 +16,7 @@ import { ReactiveFormsModule } from '@angular/forms';
       :host {
         display: block;
       }
-      .full-width {
+      mat-form-field {
         width: 100%;
       }
     `,

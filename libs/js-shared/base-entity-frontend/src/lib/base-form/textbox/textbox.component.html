@@ -2,7 +2,7 @@
   <div class="row" [formGroup]="formGroup">
     <mat-form-field>
       <mat-label [attr.for]="config().attrName">{{ config().label }}</mat-label>
-      <input matInput [id]="config().attrName" formControlName="{{ config().attrName }}" />
+      <input matInput [type]="config().options.inputType" [id]="config().attrName" formControlName="{{ config().attrName }}" />
     </mat-form-field>
   </div>
 }

@@ -7,7 +7,12 @@
   },
   "toolbar": {
     "query_label": "Query",
-    "filter_label": "Filter"
+    "query_tooltip": "Query the list with an RSQL expression",
+    "filter_label": "Filter",
+    "filter_tooltip": "Filter the loaded rows by text",
+    "edit_tooltip": "Edit the selected record",
+    "new_tooltip": "Create a new record",
+    "delete_tooltip": "Delete the selected records"
   },
   "pdf_export": {
     "button": "PDF",

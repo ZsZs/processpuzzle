@@ -7,7 +7,12 @@
   },
   "toolbar": {
     "query_label": "Consulta",
-    "filter_label": "Filtro"
+    "query_tooltip": "Consultar la lista con una expresión RSQL",
+    "filter_label": "Filtro",
+    "filter_tooltip": "Filtrar las filas cargadas por texto",
+    "edit_tooltip": "Editar el registro seleccionado",
+    "new_tooltip": "Crear un nuevo registro",
+    "delete_tooltip": "Eliminar los registros seleccionados"
   },
   "pdf_export": {
     "button": "PDF",

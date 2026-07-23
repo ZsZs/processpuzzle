@@ -24,12 +24,34 @@ import { MatIcon } from '@angular/material/icon';
                 </button>
               </mat-chip-row>
             }
-            <input [placeholder]="config().label" [matChipInputFor]="chipGrid" [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="add($event)" />
+            <input [matChipInputFor]="chipGrid" [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="add($event)" />
           </mat-chip-grid>
         </mat-form-field>
       </div>
     }
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+      /* Material defaults the chip input to a 150px flex-basis, which wraps it
+         onto its own (empty-looking) line once a chip is present. Shrink the
+         basis so it stays on the chips' line; flex-grow still fills the rest. */
+      input.mat-mdc-chip-input {
+        flex-basis: 30px;
+      }
+      /* Brand the chips light green; consumers can retarget via --pp-chip-*. */
+      mat-chip-row {
+        --mat-chip-elevated-container-color: var(--pp-chip-bg);
+        --mat-chip-label-text-color: var(--pp-chip-text);
+        --mat-chip-with-trailing-icon-trailing-icon-color: var(--pp-chip-text);
+      }
+    `,
+  ],
   imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon],
 })
 export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {

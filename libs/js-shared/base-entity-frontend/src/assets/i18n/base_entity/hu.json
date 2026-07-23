@@ -7,7 +7,12 @@
   },
   "toolbar": {
     "query_label": "Lekérdezés",
-    "filter_label": "Szűrő"
+    "query_tooltip": "Lista lekérdezése RSQL kifejezéssel",
+    "filter_label": "Szűrő",
+    "filter_tooltip": "Betöltött sorok szűrése szöveg alapján",
+    "edit_tooltip": "Kijelölt rekord szerkesztése",
+    "new_tooltip": "Új rekord létrehozása",
+    "delete_tooltip": "Kijelölt rekordok törlése"
   },
   "pdf_export": {
     "button": "PDF",

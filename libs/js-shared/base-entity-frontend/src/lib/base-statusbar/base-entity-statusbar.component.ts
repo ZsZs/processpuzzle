@@ -35,6 +35,11 @@ import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.sto
   `,
   styles: [
     `
+      mat-toolbar {
+        background-color: #ffffff;
+        border-radius: 6px;
+        margin-bottom: 3px;
+      }
       .statusbar-spacer {
         flex: 1 1 auto;
       }

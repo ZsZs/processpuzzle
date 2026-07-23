@@ -12,5 +12,15 @@ import { BaseEntity } from '../../base-entity/base-entity';
   standalone: true,
   imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, ReactiveFormsModule],
   templateUrl: './datepicker.component.html',
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+    `,
+  ],
 })
 export class DatepickerComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {}

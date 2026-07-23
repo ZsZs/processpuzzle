@@ -7,7 +7,12 @@
   },
   "toolbar": {
     "query_label": "Requête",
-    "filter_label": "Filtre"
+    "query_tooltip": "Interroger la liste avec une expression RSQL",
+    "filter_label": "Filtre",
+    "filter_tooltip": "Filtrer les lignes chargées par texte",
+    "edit_tooltip": "Modifier l'enregistrement sélectionné",
+    "new_tooltip": "Créer un nouvel enregistrement",
+    "delete_tooltip": "Supprimer les enregistrements sélectionnés"
   },
   "pdf_export": {
     "button": "PDF",

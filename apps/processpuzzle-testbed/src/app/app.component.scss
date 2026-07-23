@@ -21,13 +21,13 @@ mat-sidenav {
   left: 0;
   right: 0;
   height: 100%;
-  background: #eee;
+  background: var(--pp-surface-base);
 }
 
 .app-sidenav-container {
   border-radius: 0;
-  color: white;
-  background-color: rgb(24, 111, 206) //cmyk(84, 54, 5, 0);
+  color: var(--pp-on-sidenav);
+  background-color: var(--pp-surface-sidenav);
 }
 
 .app-sidenav-content {
