@@ -44,7 +44,7 @@
     <modules>
         <module>apps/processpuzzle-backend</module>
         <module>libs/java-shared/api-contracts</module>
-        <module>libs/java-shared/base-desktop-backend</module>
+        <module>libs/java-shared/base-app-backend</module>
         <module>libs/java-shared/base-workflow-backend</module>
         <module>libs/java-shared/base-rule-backend</module>
         <module>libs/java-shared/base-state-backend</module>
@@ -71,7 +71,7 @@
              tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
              flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
         <api-contracts.version>1.0.6</api-contracts.version>
-        <base-desktop-backend.version>1.0.5</base-desktop-backend.version>
+        <base-app-backend.version>1.0.5</base-app-backend.version>
         <base-rule-backend.version>1.0.3</base-rule-backend.version>
         <base-state-backend.version>1.0.5</base-state-backend.version>
         <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
@@ -114,8 +114,8 @@
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>base-desktop-backend</artifactId>
-                <version>${base-desktop-backend.version}</version>
+                <artifactId>base-app-backend</artifactId>
+                <version>${base-app-backend.version}</version>
             </dependency>
 
             <dependency>

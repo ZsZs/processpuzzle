@@ -8,7 +8,7 @@ ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle UI](/apps/processpuzzle-ui) – Web application to help you to define your own business application.
 ## Architecture
 ProcessPuzzle is organized around five **features** — `base-entity`, `base-rule`, `base-state`, `base-workflow`
-and `base-desktop`. Three principles hold them together: every feature is **metadata-driven**, every feature has
+and `base-app`. Three principles hold them together: every feature is **metadata-driven**, every feature has
 a **frontend and a backend** half, and the features talk to each other through **events** rather than direct calls.
 
 ### Metadata-driven by design
@@ -20,7 +20,7 @@ No feature hard-codes what your application is *about*. Each one interprets a de
 | `base-rule` | `BaseRule` records (expression + context + severity) | Validation feedback on any generated form |
 | `base-state` | State/transition definitions | Allowed transitions and current-state projections |
 | `base-workflow` | Workflow (process) definitions | Long-running process execution and monitoring |
-| `base-desktop` | Workspace / navigation / panel layout definitions | The shell that hosts everything else |
+| `base-app` | Workspace / navigation / panel layout definitions | The shell that hosts everything else |
 
 The pay-off is that **extension is configuration, not code**:
 - **Nothing to recompile.** Descriptors and rules are data. A `BaseRule` is a persisted entity, authored through
@@ -32,7 +32,7 @@ The pay-off is that **extension is configuration, not code**:
   change is reflected everywhere. Theming works the same way — see [Theming](#theming) — CSS custom properties
   cascade at run-time with no rebuild of the framework libraries.
 - **Metadata is composable.** `base-rule` reads `base-entity`'s descriptors to know which contexts exist; the
-  desktop reads route metadata to build navigation. Features cooperate through each other's metadata rather
+  app shell reads route metadata to build navigation. Features cooperate through each other's metadata rather
   than through each other's internals.
 - **Self-describing at run-time** — the same descriptors are what a Low-Code designer such as
   [ProcessPuzzle UI](/apps/processpuzzle-ui) edits, so the modelling tool and the runtime never drift apart.
@@ -53,7 +53,7 @@ graph TD
     ruleFE[base-rule]
     stateFE[base-state-frontend]
     workflowFE[base-workflow-frontend]
-    desktopFE[base-desktop-frontend]
+    appFE[base-app-frontend]
 
     entityFE --> util
     widgets --> entityFE
@@ -65,8 +65,8 @@ graph TD
     stateFE --> util
     workflowFE --> stateFE
     workflowFE --> util
-    desktopFE --> widgets
-    desktopFE --> util
+    appFE --> widgets
+    appFE --> util
   end
 
   subgraph BE["Backend layer — Spring Boot libraries (com.processpuzzle)"]
@@ -77,7 +77,7 @@ graph TD
     ruleBE[base-rule-backend]
     stateBE[base-state-backend]
     workflowBE[base-workflow-backend]
-    desktopBE[base-desktop-backend]
+    appBE[base-app-backend]
 
     store --> core
     store --> contracts
@@ -88,15 +88,15 @@ graph TD
     workflowBE --> stateBE
     workflowBE --> core
     workflowBE --> contracts
-    desktopBE --> core
-    desktopBE --> contracts
+    appBE --> core
+    appBE --> contracts
   end
 
   entityFE -. "REST / Firestore" .-> store
   ruleFE -. "REST: /rules" .-> ruleBE
   stateFE -. REST .-> stateBE
   workflowFE -. REST .-> workflowBE
-  desktopFE -. REST .-> desktopBE
+  appFE -. REST .-> appBE
 ```
 
 The frontend dependency edges above are the real `package.json` dependencies; the backend edges are the real
@@ -113,7 +113,7 @@ observing domain events** instead of calling one another:
 sequenceDiagram
   autonumber
   actor User
-  participant D as base-desktop
+  participant D as base-app
   participant E as base-entity
   participant R as base-rule
   participant S as base-state
@@ -159,7 +159,7 @@ different stages:
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | scaffold | scaffold |
 | `base-workflow` | scaffold | scaffold |
-| `base-desktop` | scaffold | scaffold |
+| `base-app` | scaffold | scaffold |
 
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without
 reshaping the whole.
