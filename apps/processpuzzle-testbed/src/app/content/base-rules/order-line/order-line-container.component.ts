@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { OrderLineStore } from './order-line.store';
 import { createOrderLineDescriptor } from './order-line.descriptors';
-import { OrderLine } from './order-line';
 
 @Component({
   selector: 'order-line-container',
@@ -22,7 +21,6 @@ export class OrderLineContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createOrderLineDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = () => (this.store.currentEntity() as OrderLine)?.productName ?? '';
     this.entityDescriptor.overwriteLinkedEntityAttr('orderId', 'Order');
   }
 

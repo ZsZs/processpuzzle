@@ -5,7 +5,6 @@ import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirecti
 import { TestEntityComponentStore } from './test-entity-component.store';
 import { MarkdownComponent } from 'ngx-markdown';
 import { createTestEntityComponentDescriptor } from './test-entity-component.descriptors';
-import { TestEntityComponent } from './test-entity-component';
 
 @Component({
   selector: 'test-entity-component',
@@ -23,7 +22,6 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createTestEntityComponentDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = () => (this.store.currentEntity() as TestEntityComponent).name ?? '';
     this.entityDescriptor.overwriteLinkedEntityAttr('testEntityId', 'Test Entity');
   }
 

@@ -6,6 +6,7 @@
     "widgets": "ProcessPuzzle Tesztpad - Widgetek",
     "auth": "ProcessPuzzle Tesztpad - Hitelesítés",
     "base-entity": "ProcessPuzzle Tesztpad - Alap Entitás",
+    "base-rule": "ProcessPuzzle Tesztpad - Alap Szabály",
     "ci-cd": "ProcessPuzzle Tesztpad - CI/CD"
   },
   "home": {
@@ -62,5 +63,18 @@
     "samples_tab_label": "Példák",
     "samples_desc_1": "Az alábbi példa entitások a könyvtár funkcionalitásának bemutatására szolgálnak:",
     "samples_desc_2": "Az alábbi táblázatok és űrlapok az entitásokból és azok attribútum leíróiból generálódnak futásidőben."
+  },
+  "base-rules": {
+    "overview_tab_label": "Áttekintés",
+    "samples_tab_label": "Példák",
+    "samples_desc_1": "Az alábbi példa entitások a szabálymotor képességeit mutatják be:",
+    "samples_desc_2": "Válasszon egy példát alább, hogy megismerje, hogyan definiálják és értékelik ki a szabályokat rá vonatkozóan.",
+    "intro_heading": "ProcessPuzzle Szabálymotor",
+    "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
+    "backend_heading": "Backend — base-rule-backend",
+    "intro_paragraph_1": "A ProcessPuzzle Szabálymotor lehetővé teszi a Low-Code alkalmazások számára az üzleti szabályok létrehozását, kiértékelését és megjelenítését. Angular építőelemek készletét kombinálja a felhasználói felülethez egy Spring Boot backenddel, amely tárolja és végrehajtja a szabálydefiníciókat.",
+    "intro_paragraph_2": "A motor két egymást kiegészítő könyvtárra oszlik, amelyek közös domain szókészletet használnak:",
+    "intro_frontend_desc": "Angular szolgáltatások, store-ok és komponensek a szabályok böngészőben történő tervezéséhez, szerkesztéséhez és megjelenítéséhez.",
+    "intro_backend_desc": "Spring Boot modul, amely tárolja a szabálydefiníciókat és a szerveroldalon értékeli ki azokat, a platform hexagonális architektúráját követve."
   }
 }

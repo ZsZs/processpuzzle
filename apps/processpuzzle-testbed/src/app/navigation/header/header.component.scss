@@ -1,7 +1,7 @@
 @use '../../../styles' as *;
 
 mat-toolbar {
-  background-color: rgb(92, 218, 207) //cmyk(60, 0, 33, 5);
+  background-color: var(--pp-surface-header);
 }
 
 .app-header {
@@ -10,7 +10,7 @@ mat-toolbar {
 
 .app-logo {
   margin: 5px;
-  border: 5px solid white;
+  border: 5px solid var(--pp-color-white);
 }
 
 mat-menu {

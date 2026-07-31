@@ -20,6 +20,7 @@ import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { EntityComponentsListComponent } from './components/entity-components-list.component';
 import { NGXLogger } from 'ngx-logging-kit';
 import { LookupComponent } from './lookup/lookup.component';
+import { TitleComponent } from './title/title.component';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
@@ -39,6 +40,7 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.FOREIGN_KEY]: ForeignKeyComponent,
   [FormControlType.TAGS]: TagsComponent,
   [FormControlType.TEXT_BOX]: TextboxComponent,
+  [FormControlType.TITLE]: TitleComponent,
 };
 
 @Injectable({ providedIn: 'root' })

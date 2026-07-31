@@ -1,0 +1,14 @@
+{
+  "_self": "Testentität",
+  "name": "Name",
+  "description": "Beschreibung",
+  "boolean": "Boolescher Wert",
+  "number": "Zahl",
+  "date": "Datum",
+  "lookup": "Nachschlagefeld",
+  "enumValue": "Aufzählung",
+  "artifact": "Artefakt",
+  "tags": "Schlagwörter",
+  "components": "Komponenten",
+  "additionalProperties": "Zusätzliche Eigenschaften"
+}

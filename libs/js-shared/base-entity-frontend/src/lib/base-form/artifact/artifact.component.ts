@@ -12,6 +12,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs';
 import { DeleteArtifactConfirmationDialog, DeleteArtifactConfirmationDialogData } from '../../dialogs/delete-artifact-confirmation.dialog';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
   ['application/pdf', 'picture_as_pdf'],
@@ -28,7 +29,7 @@ const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
 @Component({
   selector: 'app-artifact',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, NgClass, NgStyle, ArtifactSelectorComponent, MatIconButton, MatIcon],
+  imports: [FormsModule, ReactiveFormsModule, NgClass, NgStyle, ArtifactSelectorComponent, MatIconButton, MatIcon, EntityLabelPipe],
   template: `
     @if (config().visible) {
       @if (config().isHeading) {
@@ -36,7 +37,7 @@ const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
       } @else {
         <div class="row">
           <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
-            <legend [ngClass]="config().labelClass">{{ config().label }}</legend>
+            <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
             <ul [id]="config().attrName" class="base-entity-form-list">
               @if (artifact(); as artifact) {
                 <li>

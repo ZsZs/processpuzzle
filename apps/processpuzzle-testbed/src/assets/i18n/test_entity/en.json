@@ -1,0 +1,14 @@
+{
+  "_self": "Test Entity",
+  "name": "Name",
+  "description": "Description",
+  "boolean": "Boolean",
+  "number": "Number",
+  "date": "Date",
+  "lookup": "Lookup",
+  "enumValue": "Enum",
+  "artifact": "Artifact",
+  "tags": "Tags",
+  "components": "Components",
+  "additionalProperties": "Additional Properties"
+}

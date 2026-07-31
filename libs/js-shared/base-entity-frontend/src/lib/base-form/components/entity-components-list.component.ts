@@ -6,16 +6,17 @@ import { ComponentNameAttr, EntityComponentRefComponent } from './entity-compone
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 @Component({
   selector: 'app-component-list',
   standalone: true,
-  imports: [NgClass, NgStyle, EntityComponentRefComponent, MatButton, MatIcon],
+  imports: [NgClass, NgStyle, EntityComponentRefComponent, MatButton, MatIcon, EntityLabelPipe],
   template: `
     @if (config().visible) {
       <div class="row">
         <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
-          <legend [ngClass]="config().labelClass">{{ config().label }}</legend>
+          <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
           <ul [id]="config().attrName" class="base-entity-form-list">
             @for (component of components(); track component.id) {
               <li>

@@ -1,7 +1,7 @@
 @if (config().visible) {
   <div class="row" style="margin-bottom: 10px" [formGroup]="formGroup">
     <mat-form-field>
-      <mat-label [attr.for]="config().attrName">{{ config().label }}</mat-label>
+      <mat-label [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
       <input matInput [id]="config().attrName" [matDatepicker]="picker" formControlName="{{ config().attrName }}" />
       <mat-hint>MM-DD-YYYY</mat-hint>
       <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>

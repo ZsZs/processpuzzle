@@ -23,7 +23,7 @@
 .default-mat-card {
   display: flex;
   flex-direction: column;
-  background-color: rgb(153, 217, 235);
+  background-color: var(--pp-surface-card);
 }
 
 .default-mat-card mat-card-title {

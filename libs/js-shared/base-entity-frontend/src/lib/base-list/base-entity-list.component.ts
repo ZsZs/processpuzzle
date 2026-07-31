@@ -19,6 +19,7 @@ import { MatButton } from '@angular/material/button';
 import { type NavigationPayload, NavigatorCommand } from '../base-form-navigator/navigation-payload';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+import { EntityLabelPipe } from '../i18n/entity-label.pipe';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -43,6 +44,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     MatCheckbox,
     SlicePipe,
     MatButton,
+    EntityLabelPipe,
   ],
   templateUrl: 'base-entity-list.component.html',
   styleUrl: 'base-entity-list.component.css',

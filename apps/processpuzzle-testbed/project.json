@@ -56,6 +56,7 @@
           "apps/processpuzzle-testbed/src/run-time-conf"
         ],
         "styles": [
+          "libs/js-shared/widgets/src/theme/pp-colors.css",
           "apps/processpuzzle-testbed/src/custom-theme.scss",
           "apps/processpuzzle-testbed/src/styles.scss",
           "node_modules/prismjs/themes/prism-okaidia.css",
@@ -129,19 +130,9 @@
       }
     },
     "lint": {
-      "inputs": [
-        "default",
-        "{workspaceRoot}/.eslintrc.json",
-        "{workspaceRoot}/.eslintignore",
-        "{workspaceRoot}/eslint.config.js",
-        {
-          "externalDependencies": ["eslint"]
-        }
-      ],
       "configurations": {
         "ci": {
-          "format": "json",
-          "output-file": "reports/eslint/eslint.json"
+          "format": "../../tools/eslint/console-and-json.formatter.mjs"
         },
         "dev": {
           "format": "html",

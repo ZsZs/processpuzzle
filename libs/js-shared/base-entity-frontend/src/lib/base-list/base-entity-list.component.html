@@ -15,7 +15,7 @@
 
     @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
       <ng-container [matColumnDef]="colDescriptor.attrName">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.label }}</mat-header-cell>
+        <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.i18nKey() | ppLabel: colDescriptor.label }}</mat-header-cell>
         <mat-cell (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
           @if (colDescriptor.isLinkToDetails) {
             <a class="link-to-details" (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
