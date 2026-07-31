@@ -53,6 +53,12 @@
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
         </dependency>
+
+        <!-- Annotations only, for the com.processpuzzle.shared application module declaration -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

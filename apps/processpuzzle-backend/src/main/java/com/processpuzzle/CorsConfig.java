@@ -1,4 +1,4 @@
-package com.processpuzzle.backend;
+package com.processpuzzle;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

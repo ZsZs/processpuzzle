@@ -88,6 +88,7 @@ graph TD
     workflowBE --> stateBE
     workflowBE --> core
     workflowBE --> contracts
+    appBE --> ruleBE
     appBE --> core
     appBE --> contracts
   end
@@ -103,6 +104,16 @@ The frontend dependency edges above are the real `package.json` dependencies; th
 `pom.xml` dependencies. Note that the two layers mirror each other's shape but are **independently
 versioned and independently usable** — a `base-entity` application can run against plain REST, `json-server`
 or Firestore without any ProcessPuzzle backend at all.
+
+On the backend those edges are not just Maven's business: each library is a **Spring Modulith application
+module** (`app`, `rule`, `basestate`, `workflow`, `store`, plus the open infrastructure modules `core` and
+`shared`), declared in a `package-info.java` at the library's root package. A module lists the modules it may
+use in `allowedDependencies` and exposes only what it means to — `base-rule`, for instance, publishes
+`rule :: usecase` (`EvaluateObject` and the result types) and `rule :: domain` (`Severity` alone), keeping its
+repository and rule engine internal. `ProcessPuzzleBackendApplication` in `com.processpuzzle` is the Modulith
+root; `ModularityTests` in each library and in the application verify the declarations at build time, so a
+reach into another feature's internals fails the build rather than review. `/actuator/modulith` serves the
+same structure at run-time.
 
 ### Event-driven feature integration
 Workflow automation only feels coherent if a data change, a rule verdict, a state transition and a workflow

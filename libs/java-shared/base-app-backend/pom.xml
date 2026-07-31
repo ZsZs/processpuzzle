@@ -48,6 +48,13 @@
             <artifactId>processpuzzle-core</artifactId>
         </dependency>
 
+        <!-- An app definition is validated against the organization's own base-rule records in
+             addition to the structural checks in AppDefinitionValidator. -->
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-rule-backend</artifactId>
+        </dependency>
+
         <!-- Spring Boot dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -81,10 +88,21 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Annotations only, for the com.processpuzzle.app application module declaration -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

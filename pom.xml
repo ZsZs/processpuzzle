@@ -59,6 +59,9 @@
         <maven.compiler.target>25</maven.compiler.target>
         <minio.version>8.6.0</minio.version>
         <okhttp.version>4.12.0</okhttp.version>
+        <!-- Spring Boot's BOM does not manage Spring Modulith, so spring-modulith-bom is imported
+             below. 2.1.0 is the line built against Spring Boot 4.1. -->
+        <spring-modulith.version>2.1.0</spring-modulith.version>
         <!-- Default so surefire's @{argLine} resolves in modules that do NOT run the JaCoCo
              agent (e.g. app modules without the jacoco plugin). jacoco:prepare-agent overrides
              this property with the -javaagent argument in modules that do. Without this default,
@@ -81,6 +84,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Modulith BOM — every library declares spring-modulith-api without a
+                 version so the whole workspace moves in lockstep. -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Module dependencies -->
             <dependency>
                 <groupId>${project.groupId}</groupId>
