@@ -44,7 +44,6 @@ export class BaseRuleContainerComponent implements OnInit, OnDestroy {
     this.contextOptions = Object.keys(this.entityRegistry).map((name) => ({ key: name, value: name }));
     this.baseEntityDescriptor = createBaseRuleDescriptor(() => this.contextOptions as Array<Selectable>);
     this.baseEntityDescriptor.store = this.store;
-    this.baseEntityDescriptor.entityTitle = () => (this.store.currentEntity() as BaseRule)?.name ?? '';
     this.baseEntityDescriptor.extraFormActionsTemplate = () => this.dryRunActionsTpl();
   }
 

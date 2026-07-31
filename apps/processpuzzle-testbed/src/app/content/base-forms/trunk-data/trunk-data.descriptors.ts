@@ -11,6 +11,8 @@ const column_3 = new BaseEntityAttrDescriptor('value', FormControlType.TEXT_BOX,
 const trunkDataDescriptors: BaseEntityAttrDescriptor[] = [column_1, column_2, column_3];
 
 export function createTrunkDataDescriptor(): BaseEntityDescriptor {
+  // Entity/attribute names translate under the `trunk_data` key root derived from the entity name
+  // (see assets/i18n/trunk_data/*.json); the route registers `provideTranslocoScope({ scope: 'trunk_data' })`.
   return new BaseEntityDescriptor({
     entityName: 'Trunk Data',
     attrDescriptors: trunkDataDescriptors,

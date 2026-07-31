@@ -5,7 +5,7 @@
       <div class="filter-wrapper">
         <label class="field-label" [attr.for]="entityDescriptor().createTestId('filter-input')">{{ t('base_entity.toolbar.filter_label') }}</label>
         <mat-form-field subscriptSizing="dynamic">
-          <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" (keyup)="onDoFilter( $event )">
+          <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" [matTooltip]="t('base_entity.toolbar.filter_tooltip')" (keyup)="onDoFilter( $event )">
           @if (filterInput.value) {
             <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
               <mat-icon>cancel</mat-icon>
@@ -23,9 +23,9 @@
         @if (isPdfExportEnabled()) {
           <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-menu-item [disabled]="isExporting()" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
         }
-        <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
-        <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item [disabled]="!isNewEnabled()" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-        <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
       </mat-menu>
     </div>
   } @else {
@@ -33,9 +33,9 @@
       @if (isPdfExportEnabled()) {
         <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-button [disabled]="isExporting()" [matTooltip]="t('base_entity.pdf_export.tooltip')" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
       }
-      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
-      <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
     </div>
   }
 </mat-toolbar>

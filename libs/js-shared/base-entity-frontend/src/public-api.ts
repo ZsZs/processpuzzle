@@ -9,6 +9,7 @@ export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/bas
 export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/base-entity/base-entity.descriptor';
+export { EntityLabelPipe } from './lib/i18n/entity-label.pipe';
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
 export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
 export { OrderByDirection } from './lib/base-entity-service/base-entity-load-response';

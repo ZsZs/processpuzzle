@@ -31,6 +31,36 @@ describe('BaseEntityTabsComponent', () => {
     });
   });
 
+  describe('tab labels:', () => {
+    async function renderWithTranslations(translations: Record<string, string>) {
+      const { fixture } = await setupContainerComponentTest(BaseEntityTabsComponent, { en: translations });
+      const [listLink, detailsLink] = fixture.debugElement.queryAll(By.css('a[mat-tab-link]'));
+
+      return { list: listLink.nativeElement.textContent.trim(), details: detailsLink.nativeElement.textContent.trim() };
+    }
+
+    it('interpolates the translated entity name into the tab keys', async () => {
+      const labels = await renderWithTranslations({
+        'base_entity.tabs.list': '{{ entity }} - lista',
+        'base_entity.tabs.details': '{{ entity }} - részletek',
+        'test_entity._self': 'Teszt entitás',
+      });
+
+      expect(labels.list).toBe('Teszt entitás - lista');
+      expect(labels.details).toBe('Teszt entitás - részletek');
+    });
+
+    it('falls back to the raw entity name when the entity key is not translated', async () => {
+      const labels = await renderWithTranslations({
+        'base_entity.tabs.list': '{{ entity }} - list',
+        'base_entity.tabs.details': '{{ entity }} - details',
+      });
+
+      expect(labels.list).toBe('TestEntity - list');
+      expect(labels.details).toBe('TestEntity - details');
+    });
+  });
+
   describe('angular lifecycle hooks:', () => {
     it('onDestroy() deregisters tabs in store', async () => {
       // SETUP:

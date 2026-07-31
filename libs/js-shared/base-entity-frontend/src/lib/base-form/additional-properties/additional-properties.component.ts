@@ -7,6 +7,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 interface KeyValueEntry {
   key: string;
@@ -20,7 +21,7 @@ interface KeyValueEntry {
     @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <fieldset class="base-entity-form-field" [ngClass]="config().styleClass" [ngStyle]="config().style">
-          <legend [ngClass]="config().labelClass">{{ config().label }}</legend>
+          <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
           <ul [id]="config().attrName" class="base-entity-form-list" (click)="enterEditMode()">
             @for (entry of entries(); track entry.key) {
               <li>
@@ -87,7 +88,7 @@ interface KeyValueEntry {
       }
     `,
   ],
-  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatIconButton, MatIcon],
+  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatIconButton, MatIcon, EntityLabelPipe],
 })
 export class AdditionalPropertiesComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly editing = signal(false);

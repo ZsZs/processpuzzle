@@ -1,5 +1,5 @@
 @if (config().visible) {
   <div [formGroup]="formGroup" class="row">
-    <mat-checkbox [ngClass]="config().labelClass" formControlName="{{ config().attrName }}">{{ config().label }}</mat-checkbox>
+    <mat-checkbox [ngClass]="config().labelClass" formControlName="{{ config().attrName }}">{{ config().i18nKey() | ppLabel: config().label }}</mat-checkbox>
   </div>
 }

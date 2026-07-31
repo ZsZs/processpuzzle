@@ -1,8 +1,8 @@
 @if (config().visible) {
   <div class="row" [formGroup]="formGroup">
     <mat-form-field [ngClass]="config().styleClass">
-      <mat-label [ngClass]="config().labelClass" [attr.for]="config().attrName">{{ config().label }}</mat-label>
-      <textarea matInput [id]="config().attrName" formControlName="{{ config().attrName }}" placeholder="Ex. It makes me feel..."></textarea>
+      <mat-label [ngClass]="config().labelClass" [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
+      <textarea matInput [id]="config().attrName" [attr.rows]="config().lines" formControlName="{{ config().attrName }}" [placeholder]="config().placeholder ?? ''"></textarea>
     </mat-form-field>
   </div>
 }

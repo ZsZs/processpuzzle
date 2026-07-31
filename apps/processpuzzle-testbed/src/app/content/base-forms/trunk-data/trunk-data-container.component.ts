@@ -22,7 +22,6 @@ export class TrunkDataContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createTrunkDataDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = () => this.store.currentEntity()?.key ?? '';
   }
 
   // region Angular lifecycle hooks

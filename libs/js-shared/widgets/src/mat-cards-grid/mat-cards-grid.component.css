@@ -22,7 +22,7 @@
 .default-mat-card {
     display: flex;
     flex-direction: column;
-    background-color: rgb(153, 217, 235);
+    background-color: var(--pp-surface-card);
 }
 
 mat-card-title {
@@ -36,6 +36,13 @@ mat-card-content {
     font-size: medium;
     text-align: left;
     padding-bottom: 10px;
+}
+
+/* Card action buttons take the brand primary button colors
+   (default matButton="elevated" = protected variant). Override via --pp-button-* tokens. */
+mat-card-actions button {
+    --mat-button-protected-container-color: var(--pp-button-primary-bg);
+    --mat-button-protected-label-text-color: var(--pp-button-primary-text);
 }
 
 .icon-large {

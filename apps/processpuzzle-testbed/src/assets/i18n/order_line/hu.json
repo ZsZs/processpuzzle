@@ -1,0 +1,7 @@
+{
+  "_self": "Megrendelés tétel",
+  "productName": "Termék",
+  "quantity": "Mennyiség",
+  "unitPrice": "Egységár",
+  "orderId": "Megrendelés"
+}

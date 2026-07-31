@@ -1,0 +1,39 @@
+/*
+ * ProcessPuzzle brand color tokens.
+ *
+ * These are the platform's four named colors plus the semantic roles and
+ * button colors derived from them. They are defined as CSS custom properties
+ * so that a library consumer can rebrand the whole UI by redefining any of
+ * them in their own global stylesheet (loaded after this file), e.g.:
+ *
+ *   :root { --pp-color-light-green: #a8e6cf; --pp-button-primary-bg: #123; }
+ *
+ * Override the base palette to re-tint everything at once, or override a
+ * semantic / button token to retarget a single surface.
+ */
+:root {
+  /* --- Base palette: the four named colors --- */
+  --pp-color-white: #eeeeee; /* soft off-white used as the content background */
+  --pp-color-light-green: rgb(92, 218, 207); /* cmyk(60, 0, 33, 5) */
+  --pp-color-light-blue: rgb(153, 217, 235);
+  --pp-color-dark-blue: rgb(24, 111, 206); /* cmyk(84, 54, 5, 0) */
+
+  /* --- Semantic surfaces (role -> base color) --- */
+  --pp-surface-base: var(--pp-color-white);
+  --pp-surface-header: var(--pp-color-light-green);
+  --pp-surface-card: var(--pp-color-light-blue);
+  --pp-surface-sidenav: var(--pp-color-dark-blue);
+  --pp-on-sidenav: var(--pp-color-white);
+
+  /* --- Buttons (forms & cards) --- */
+  --pp-button-primary-bg: var(--pp-color-dark-blue); /* Save, card actions */
+  --pp-button-primary-text: var(--pp-color-white);
+  --pp-button-secondary-bg: var(--pp-color-white); /* Cancel (almost white) */
+  --pp-button-secondary-text: var(--pp-color-dark-blue);
+  --pp-button-delete-bg: var(--pp-color-light-green); /* Delete (turquoise) */
+  --pp-button-delete-text: var(--pp-color-dark-blue);
+
+  /* --- Chips (TAGS control) --- */
+  --pp-chip-bg: var(--pp-color-dark-blue);
+  --pp-chip-text: var(--pp-color-white);
+}

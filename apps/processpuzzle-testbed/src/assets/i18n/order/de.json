@@ -1,0 +1,9 @@
+{
+  "_self": "Auftrag",
+  "orderNumber": "Auftragsnr.",
+  "customerName": "Kunde",
+  "status": "Status",
+  "total": "Gesamtbetrag",
+  "shippingAddress": "Lieferadresse",
+  "lineItems": "Positionen"
+}

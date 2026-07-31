@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatChipEditedEvent, MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRemove, MatChipRow } from '@angular/material/chips';
 import { MatIcon } from '@angular/material/icon';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 @Component({
   selector: 'base-tags',
@@ -14,7 +15,7 @@ import { MatIcon } from '@angular/material/icon';
     @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
-          <mat-label>{{ config().label }}</mat-label>
+          <mat-label>{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
           <mat-chip-grid #chipGrid [id]="config().attrName">
             @for (tag of tags(); track $index; let i = $index) {
               <mat-chip-row [editable]="true" (edited)="edit(i, $event)" (removed)="remove(i)">
@@ -24,13 +25,35 @@ import { MatIcon } from '@angular/material/icon';
                 </button>
               </mat-chip-row>
             }
-            <input [placeholder]="config().label" [matChipInputFor]="chipGrid" [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="add($event)" />
+            <input [matChipInputFor]="chipGrid" [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="add($event)" />
           </mat-chip-grid>
         </mat-form-field>
       </div>
     }
   `,
-  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      mat-form-field {
+        width: 100%;
+      }
+      /* Material defaults the chip input to a 150px flex-basis, which wraps it
+         onto its own (empty-looking) line once a chip is present. Shrink the
+         basis so it stays on the chips' line; flex-grow still fills the rest. */
+      input.mat-mdc-chip-input {
+        flex-basis: 30px;
+      }
+      /* Brand the chips light green; consumers can retarget via --pp-chip-*. */
+      mat-chip-row {
+        --mat-chip-elevated-container-color: var(--pp-chip-bg);
+        --mat-chip-label-text-color: var(--pp-chip-text);
+        --mat-chip-with-trailing-icon-trailing-icon-color: var(--pp-chip-text);
+      }
+    `,
+  ],
+  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon, EntityLabelPipe],
 })
 export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];

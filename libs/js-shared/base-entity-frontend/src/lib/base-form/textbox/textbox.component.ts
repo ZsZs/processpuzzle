@@ -4,12 +4,13 @@ import { BaseEntity } from '../../base-entity/base-entity';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 @Component({
   selector: 'base-textbox',
   standalone: true,
   templateUrl: './textbox.component.html',
-  imports: [MatFormField, MatInput, MatLabel, FormsModule, ReactiveFormsModule],
+  imports: [MatFormField, MatInput, MatLabel, FormsModule, ReactiveFormsModule, EntityLabelPipe],
   styles: [
     `
       :host {

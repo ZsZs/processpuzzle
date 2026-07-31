@@ -6,6 +6,7 @@ import { MatFormField, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -17,7 +18,7 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
 @Component({
   selector: 'base-entity-query',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormField, MatInput, MatIcon, MatIconButton, MatSuffix, TranslocoDirective],
+  imports: [CommonModule, FormsModule, MatFormField, MatInput, MatIcon, MatIconButton, MatSuffix, MatTooltip, TranslocoDirective],
   providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
   template: `
     <ng-container *transloco="let t">
@@ -29,6 +30,7 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
             [attr.data-testid]="entityDescriptor().createTestId('query')"
             matInput
             type="text"
+            [matTooltip]="t('base_entity.toolbar.query_tooltip')"
             [(ngModel)]="queryValue"
             (keyup.enter)="onSendQuery()"
           />
