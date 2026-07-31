@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: ProcessPuzzle Base State API
+  description: ProcessPuzzle Base State API
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  

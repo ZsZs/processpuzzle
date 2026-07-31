@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: ProcessPuzzle Base Entity API
+  description: ProcessPuzzle Base Entity API
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  

@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: ProcessPuzzle Base App API
+  description: ProcessPuzzle Base App API
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  
