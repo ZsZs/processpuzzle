@@ -61,6 +61,9 @@ springdoc:
 base-rule:
   loadSamples: yes
 
+base-app:
+  loadDefaultApps: yes
+
 minio:
   endpoint: http://localhost:7000
   access-key: minioadmin

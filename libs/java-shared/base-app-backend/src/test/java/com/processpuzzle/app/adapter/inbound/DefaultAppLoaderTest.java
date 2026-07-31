@@ -1,0 +1,264 @@
+package com.processpuzzle.app.adapter.inbound;
+
+import com.processpuzzle.app.model.AppDefinition;
+import com.processpuzzle.app.model.AppDefinitionInput;
+import com.processpuzzle.app.model.KeyAvailability;
+import com.processpuzzle.app.model.Organization;
+import com.processpuzzle.app.model.OrganizationInput;
+import com.processpuzzle.app.model.OrganizationStatus;
+import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.RegionDefinition;
+import com.processpuzzle.app.model.RegionType;
+import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.app.usecase.AppValidationProblem;
+import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
+import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
+import com.processpuzzle.app.usecase.port.EntityNameRegistry;
+import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.app.usecase.service.AppRuleValidator;
+import com.processpuzzle.rule.usecase.EvaluateObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Covers the loader's file walk and, through the bundled {@code processpuzzle-testbed-apps.yaml},
+ * the shipped default definition itself: the last test feeds the parsed demo app to the real
+ * {@link AppDefinitionValidator}, so a YAML edit that breaks a page or nav reference fails here
+ * rather than at run-time with the loader logging a rejection nobody reads.
+ */
+class DefaultAppLoaderTest {
+
+    private static final String TESTBED_KEY = "processpuzzle-testbed";
+    private static final String TESTBED_FILE = "processpuzzle-testbed-apps.yaml";
+
+    private AppEndpoint endpoint;
+    private ResourcePatternResolver resourceResolver;
+    private DefaultAppLoader loader;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        endpoint = mock(AppEndpoint.class);
+        resourceResolver = mock(ResourcePatternResolver.class);
+        when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { bundledTestbedFile() });
+        keyIs(availableKey(TESTBED_KEY));
+        when(endpoint.provisionOrganization(any())).thenAnswer(call -> provisioned(call.getArgument(0)));
+        when(endpoint.createAppDefinition(anyString(), any())).thenAnswer(call -> created(call.getArgument(1)));
+        loader = new DefaultAppLoader(endpoint, resourceResolver);
+    }
+
+    @Test
+    void provisionsTheOrganizationNamedByTheFileAndCreatesItsDefinitions() {
+        loader.loadDefaults();
+
+        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
+        verify(endpoint).provisionOrganization(organization.capture());
+        assertThat(organization.getValue().getKey()).isEqualTo(TESTBED_KEY);
+        assertThat(organization.getValue().getName()).isEqualTo("ProcessPuzzle Testbed");
+        assertThat(organization.getValue().getDefaultLocale()).isEqualTo("en");
+
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    @Test
+    void loadsIntoAnExistingOrganizationInsteadOfReprovisioningIt() {
+        keyIs(takenKey(TESTBED_KEY));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).provisionOrganization(any());
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    @Test
+    void leavesAnAlreadyPresentDefinitionUntouched() {
+        // doThrow, not when(...).thenThrow: re-stubbing through the mock would invoke the answer set up
+        // in setUp with null arguments.
+        doThrow(new AppDefinitionAlreadyExistsException(TESTBED_KEY, "demo"))
+                .when(endpoint).createAppDefinition(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void survivesADefinitionRejectedByValidation() {
+        doThrow(new AppDefinitionInvalidException(TESTBED_KEY, "demo",
+                List.of(new AppValidationProblem("/pages/0", "app.validation.orphan-page", "Unreachable."))))
+                .when(endpoint).createAppDefinition(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void skipsAFileWhoseKeyIsNotClaimable() {
+        keyIs(reservedKey("api"));
+        resolvesTo(yamlFile("api-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).provisionOrganization(any());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void skipsAFileNotNamedAfterAnOrganization() {
+        resolvesTo(yamlFile("apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).checkOrganizationKey(anyString());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void provisionsAFileWithoutAnOrganizationBlockUnderItsOwnKey() {
+        keyIs(availableKey("other-org"));
+        resolvesTo(yamlFile("other-org-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
+
+        loader.loadDefaults();
+
+        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
+        verify(endpoint).provisionOrganization(organization.capture());
+        assertThat(organization.getValue().getKey()).isEqualTo("other-org");
+        assertThat(organization.getValue().getName()).isEqualTo("other-org");
+    }
+
+    @Test
+    void theBundledDemoAppIsAValidNavigableDefinition() {
+        loader.loadDefaults();
+
+        AppDefinitionInput demo = capturedDefinition();
+        assertThat(demo.getId()).isEqualTo("demo");
+        assertThat(demo.getName()).isEqualTo("Demo");
+        assertThat(demo.getTranslocoId()).isEqualTo("demo.app.name");
+        assertThat(demo.getTheme()).isNotNull();
+        assertThat(demo.getLayout()).isNotNull();
+
+        // Every region type is declared, and the sidenav is populated — an app published without one
+        // gives end users a shell they cannot navigate.
+        assertThat(demo.getRegions()).extracting(RegionDefinition::getType)
+                .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.CONTENT, RegionType.FOOTER);
+        assertThat(sidenavOf(demo).getNavItems()).isNotEmpty();
+
+        // Every declared page is reachable and every entity widget names its entity, both of which the
+        // structural validator and the 'App Definition' rules require.
+        assertThat(demo.getPages()).extracting(PageDefinition::getId)
+                .containsExactly("order-list", "order-entry", "order-line-list");
+        assertThat(demo.getPages()).allSatisfy(page ->
+                assertThat(page.getWidgets()).isNotEmpty().allSatisfy(widget ->
+                        assertThat(entityNameOf(widget)).isNotBlank()));
+
+        assertThat(structuralValidator().validate(TESTBED_KEY, demo)).isEmpty();
+    }
+
+    // --- helpers -----------------------------------------------------------------------------
+
+    private AppDefinitionInput capturedDefinition() {
+        ArgumentCaptor<AppDefinitionInput> definition = ArgumentCaptor.forClass(AppDefinitionInput.class);
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), definition.capture());
+        return definition.getValue();
+    }
+
+    private static RegionDefinition sidenavOf(AppDefinitionInput definition) {
+        Optional<RegionDefinition> sidenav = definition.getRegions().stream()
+                .filter(region -> region.getType() == RegionType.SIDENAV).findFirst();
+        assertThat(sidenav).isPresent();
+        return sidenav.get();
+    }
+
+    private static String entityNameOf(WidgetRef widget) {
+        assertThat(widget.getProps()).isNotNull();
+        return String.valueOf(widget.getProps().get("entityName"));
+    }
+
+    /** The real structural validator, with no entity registry and no rule engine wired. */
+    @SuppressWarnings("unchecked")
+    private static AppDefinitionValidator structuralValidator() {
+        ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
+        when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
+        ObjectProvider<EvaluateObject> evaluateObjectProvider = mock(ObjectProvider.class);
+        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
+        return new AppDefinitionValidator(entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
+    }
+
+    private void keyIs(KeyAvailability availability) {
+        when(endpoint.checkOrganizationKey(anyString())).thenReturn(ResponseEntity.ok(availability));
+    }
+
+    private void resolvesTo(Resource resource) {
+        try {
+            when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { resource });
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static KeyAvailability availableKey(String key) {
+        return new KeyAvailability(key, true);
+    }
+
+    private static KeyAvailability takenKey(String key) {
+        KeyAvailability availability = new KeyAvailability(key, false);
+        availability.setErrorId("organization.key.taken");
+        return availability;
+    }
+
+    private static KeyAvailability reservedKey(String key) {
+        KeyAvailability availability = new KeyAvailability(key, false);
+        availability.setErrorId("organization.key.reserved");
+        return availability;
+    }
+
+    private static ResponseEntity<ProvisioningResult> provisioned(OrganizationInput input) {
+        Organization organization = new Organization(input.getKey(), input.getName(), OrganizationStatus.ACTIVE);
+        AppDefinition starter = new AppDefinition();
+        starter.setId("app");
+        return new ResponseEntity<>(new ProvisioningResult(organization, starter), HttpStatus.CREATED);
+    }
+
+    private static ResponseEntity<AppDefinition> created(AppDefinitionInput input) {
+        AppDefinition definition = new AppDefinition();
+        definition.setId(input.getId());
+        definition.setVersion(1L);
+        return new ResponseEntity<>(definition, HttpStatus.CREATED);
+    }
+
+    /** The file this library actually ships, so the test reads the same bytes production does. */
+    private static Resource bundledTestbedFile() {
+        return new ClassPathResource("default-apps/" + TESTBED_FILE);
+    }
+
+    /** An in-memory YAML file; {@link ByteArrayResource} has no name of its own. */
+    private static Resource yamlFile(String fileName, String content) {
+        return new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public String getFilename() {
+                return fileName;
+            }
+        };
+    }
+}
