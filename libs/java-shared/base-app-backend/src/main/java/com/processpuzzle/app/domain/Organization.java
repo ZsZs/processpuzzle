@@ -1,0 +1,131 @@
+package com.processpuzzle.app.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+/**
+ * A tenant. Its {@code key} is the public URL segment of the tenant's application
+ * ({@code https://processpuzzle.com/{key}}) and the scope of every piece of metadata belonging
+ * to it, which is why it is immutable once claimed — renaming would orphan every id.
+ *
+ * <p>There is deliberately no JPA association to {@link AppDefinition}. A {@code @OneToMany}
+ * would have to join on the composite key pair for no benefit; {@code DeleteOrganization}
+ * cascades explicitly via {@code AppDefinitionRepository.deleteByOrgKey} inside the same
+ * transaction instead.
+ */
+@Entity
+@Table(name = "organizations")
+public class Organization {
+
+    @Id
+    @Column(name = "org_key", length = 63)
+    private String key;
+
+    @Column(nullable = false, length = 200)
+    private String name;
+
+    @Column(length = 1000)
+    private String description;
+
+    @Column(name = "contact_email", length = 320)
+    private String contactEmail;
+
+    @Column(name = "default_locale", length = 35)
+    private String defaultLocale;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OrganizationStatus status = OrganizationStatus.ACTIVE;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(nullable = false)
+    private Instant updatedAt;
+
+    protected Organization() {
+        // required by JPA
+    }
+
+    public Organization(String key, String name, String description, String contactEmail,
+                        String defaultLocale, OrganizationStatus status) {
+        this.key = key;
+        this.name = name;
+        this.description = description;
+        this.contactEmail = contactEmail;
+        this.defaultLocale = defaultLocale;
+        this.status = status == null ? OrganizationStatus.ACTIVE : status;
+    }
+
+    @PrePersist
+    void onCreate() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
+    }
+
+    public OrganizationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrganizationStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+}

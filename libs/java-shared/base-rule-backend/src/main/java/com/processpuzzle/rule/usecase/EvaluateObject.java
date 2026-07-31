@@ -4,6 +4,7 @@ import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
+import com.processpuzzle.rule.usecase.engine.RuleKey;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +24,8 @@ public class EvaluateObject {
         this.ruleEngine = ruleEngine;
     }
 
-    public EvaluationOutcome execute(String context, Map<String, Object> entity) {
+    /** Applies only {@code orgKey}'s own rules; another organization's are never evaluated. */
+    public EvaluationOutcome execute(String orgKey, String context, Map<String, Object> entity) {
         if (context == null || context.isBlank()) {
             throw new IllegalArgumentException("context is required");
         }
@@ -32,17 +34,18 @@ public class EvaluateObject {
         }
 
         List<RuleViolation> violations = new ArrayList<>();
-        for (RuleDefinition rule : repository.findByContext(context)) {
+        for (RuleDefinition rule : repository.findByOrgKeyAndContext(orgKey, context)) {
             if (!rule.isEnabled()) {
                 continue;
             }
+            RuleKey key = RuleKey.of(rule.getOrgKey(), rule.getId());
             // Lazily register so a freshly-restarted instance can evaluate before its in-memory
             // engine state has been re-synced from the database.
-            if (!ruleEngine.isRegistered(rule.getId())) {
-                ruleEngine.registerRule(rule.getId(), rule.getExpression());
+            if (!ruleEngine.isRegistered(key)) {
+                ruleEngine.registerRule(key, rule.getExpression());
             }
             try {
-                if (!ruleEngine.evaluate(rule.getId(), entity)) {
+                if (!ruleEngine.evaluate(key, entity)) {
                     violations.add(new RuleViolation(
                             rule.getId(), rule.getName(), rule.getSeverity(),
                             messageFor(rule), rule.getTranslocoId()));

@@ -31,6 +31,8 @@ class RsqlSpecificationBuilderTest {
     static class TestConfig {
     }
 
+    private static final String ORG_KEY = "demo";
+
     @Autowired
     private RuleDefinitionRepository repository;
 
@@ -134,10 +136,12 @@ class RsqlSpecificationBuilderTest {
                 .toList();
     }
 
+    // All seeded rules share one organization: the tenant filter is FindAllRules' job, and this
+    // test is only about how the RSQL expression itself translates.
     private static RuleDefinition rule(String id, String name, String context,
                                         Severity severity, boolean enabled) {
         return new RuleDefinition(
-                id, name, "desc-" + id, context, "true",
+                ORG_KEY, id, name, "desc-" + id, context, "true",
                 severity, "msg", "transloco." + id, null, false, enabled, List.of());
     }
 }

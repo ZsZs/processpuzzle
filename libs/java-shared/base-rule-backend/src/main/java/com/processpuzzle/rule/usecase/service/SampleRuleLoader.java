@@ -14,11 +14,23 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Development convenience: imports the bundled sample rules on startup. Gated behind
+ * {@code base-rule.loadSamples=true}.
+ *
+ * <p>Rules are tenant-scoped, so every sample has to belong to <em>some</em> organization.
+ * The owning organization is part of the file name: {@code <orgKey>-rules.yaml} lands in
+ * {@code orgKey}, so {@code processpuzzle-testbed-rules.yaml} is imported into
+ * {@code processpuzzle-testbed} and {@code processpuzzle-rules.yaml} into
+ * {@code processpuzzle}. One deployment can therefore seed several organizations, and adding
+ * one is adding a file — no configuration change.
+ */
 @Component
 @ConditionalOnProperty(prefix = "base-rule", name = "loadSamples", havingValue = "true")
 public class SampleRuleLoader {
     private static final Logger LOG = LoggerFactory.getLogger(SampleRuleLoader.class);
-    private static final String SAMPLE_RULES_LOCATION = "classpath:sample-rules/*.yaml";
+    private static final String RULES_FILE_SUFFIX = "-rules.yaml";
+    private static final String SAMPLE_RULES_LOCATION = "classpath:sample-rules/*" + RULES_FILE_SUFFIX;
     private final ImportRules importRules;
     private final ResourcePatternResolver resourceResolver;
 
@@ -49,13 +61,28 @@ public class SampleRuleLoader {
 
     private void importSample(Resource resource) {
         String name = resource.getFilename();
+        String orgKey = orgKeyOf(name);
+        if (orgKey == null) {
+            LOG.warn("Skipping sample rule file '{}': the name does not follow the '<orgKey>{}' convention.",
+                    name, RULES_FILE_SUFFIX);
+            return;
+        }
         try (InputStream input = resource.getInputStream()) {
-            ImportOutcome outcome = importRules.execute(input);
-            LOG.info("Imported sample rules from {}: created={}, updated={}, errors={}",
-                    name, outcome.created(), outcome.updated(), outcome.errors().size());
+            ImportOutcome outcome = importRules.execute(orgKey, input);
+            LOG.info("Imported sample rules from {} into organization '{}': created={}, updated={}, errors={}",
+                    name, orgKey, outcome.created(), outcome.updated(), outcome.errors().size());
             outcome.errors().forEach(error -> LOG.warn("Sample rule import error in {}: {}", name, error));
         } catch (IOException e) {
             LOG.warn("Failed to import sample rules from {}", name, e);
         }
+    }
+
+    /** The part of {@code <orgKey>-rules.yaml} before the suffix, or {@code null} if there is none. */
+    private String orgKeyOf(String filename) {
+        if (filename == null || !filename.endsWith(RULES_FILE_SUFFIX)) {
+            return null;
+        }
+        String orgKey = filename.substring(0, filename.length() - RULES_FILE_SUFFIX.length());
+        return orgKey.isBlank() ? null : orgKey;
     }
 }

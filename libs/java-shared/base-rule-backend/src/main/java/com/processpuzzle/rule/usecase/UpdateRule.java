@@ -28,10 +28,10 @@ public class UpdateRule {
         this.mapper = mapper;
     }
 
-    public RuleDefinition execute(String id, RuleDefinitionInput input) {
-        RuleDefinition existing = repository.findById(id)
-                .orElseThrow(() -> new RuleNotFoundException(id));
-        extendsValidator.validate(id, input.getExtendsRuleId());
+    public RuleDefinition execute(String orgKey, String id, RuleDefinitionInput input) {
+        RuleDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+                .orElseThrow(() -> new RuleNotFoundException(orgKey, id));
+        extendsValidator.validate(orgKey, id, input.getExtendsRuleId());
 
         mapper.applyToDomain(input, existing);
 

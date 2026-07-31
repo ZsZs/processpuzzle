@@ -6,13 +6,31 @@ info:
     rule definitions. Intended as the source-of-truth contract — consistent with the
     existing convention of generating Spring server stubs and Angular TypeScript clients
     from OpenAPI YAML via openapi-generator-maven-plugin.
-  version: 0.1.0
+
+    ## Multi-tenancy
+
+    Every rule definition is scoped by an organization key, exactly as in base-app-api.yaml:
+    a rule id is unique only *within* its organization, so two tenants may both define a
+    rule called `positive-quantities` with different expressions. The key is carried as a
+    path segment so that it appears in logs, audit trails and cache keys — including the
+    rule engine's compiled-expression cache, which is keyed by `(orgKey, ruleId)`.
+
+    `extendsRuleId` resolves within the same organization only; cross-organization rule
+    inheritance is not a feature, since it would leak one tenant's expressions into
+    another's evaluation chain.
+
+    Tenant isolation is a server-side responsibility: `orgKey` must be verified against the
+    authenticated principal's `organization` claim and answered with 403 on mismatch. The
+    path segment alone is not an authorization decision.
+  version: 0.2.0
 
 servers:
   - url: 'http://localhost:8080/api/v1'
 
 paths:
-  /rules:
+  /organizations/{orgKey}/rules:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listRules
       summary: List rule definitions
@@ -58,11 +76,13 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /rules/{id}:
+  /organizations/{orgKey}/rules/{id}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - name: id
         in: path
         required: true
+        description: Rule definition id — unique within the organization.
         schema:
           type: string
     get:
@@ -114,10 +134,16 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /rules/import:
+  /organizations/{orgKey}/rules/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     post:
       operationId: importRules
       summary: Bulk-import rule definitions from a PPCL YAML file
+      description: >-
+        The imported rules are scoped to `{orgKey}` regardless of any organization key
+        present in the file, which is what makes an export from one organization importable
+        into another.
       tags:
         - Base Rule
       requestBody:
@@ -142,7 +168,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportResult"
 
-  /rules/export:
+  /organizations/{orgKey}/rules/export:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: exportRules
       summary: Export rule definitions as a PPCL YAML file
@@ -163,16 +191,19 @@ paths:
                 type: string
                 format: binary
 
-  /rules/evaluate:
+  /organizations/{orgKey}/rules/evaluate:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     post:
       operationId: evaluateObject
       summary: Evaluate rules against a JSON object
       tags:
         - Base Rule
       description: >-
-        Evaluates the enabled rules that match the given context against the supplied
-        entity payload and returns the aggregated outcome. `passed` is false when at
-        least one rule of severity ERROR is violated.
+        Evaluates the organization's enabled rules that match the given context against the
+        supplied entity payload and returns the aggregated outcome. `passed` is false when at
+        least one rule of severity ERROR is violated. Rules belonging to other organizations
+        are never applied.
       requestBody:
         required: true
         content:
@@ -191,13 +222,28 @@ paths:
 
 components:
   parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: >-
+        Tenant discriminator; also the public URL segment of the tenant's application. See
+        shared-api.yaml OrgKeyParam for the full contract. Must be verified against the
+        principal's `organization` claim — 403 on mismatch.
     WhereParam:
       name: where
       in: query
       required: false
       schema:
         type: string
-      description: RSQL filter expression. See shared-api.yaml WhereParam for the operator reference.
+      description: >
+        RSQL filter expression, applied *in addition to* the organization filter. Results are
+        always restricted to the `{orgKey}` in the path, so the expression never needs an
+        `orgKey` term — and cannot widen the scope with one, since the organization filter is
+        ANDed first (even a top-level `OR` stays inside the organization).
+        See shared-api.yaml WhereParam for the operator reference.
     OrderParam:
       name: order
       in: query
@@ -282,7 +328,9 @@ components:
         extendsRuleId:
           type: string
           nullable: true
-          description: Id of the rule this one extends/overrides, if any.
+          description: >-
+            Id of the rule this one extends/overrides, if any. Resolved within the same
+            organization; a rule cannot extend another organization's rule.
         override:
           type: boolean
           default: false
@@ -304,6 +352,10 @@ components:
         - $ref: "#/components/schemas/RuleDefinitionInput"
         - type: object
           properties:
+            # The owning organization. Response-only: the path segment is the single source of
+            # truth, so RuleDefinitionInput deliberately has no orgKey to contradict it.
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
             version:
               type: integer
               format: int64
@@ -375,6 +427,16 @@ components:
     # Shared shapes — kept as local duplicates because the openapi-generator
     # swagger-parser cannot resolve cross-file $refs on Windows. schemaMappings
     # in the pom.xml redirects the generated classes to com.processpuzzle.shared.model.
+    OrganizationKey:
+      type: string
+      description: >-
+        URL-safe tenant slug; canonical definition in shared-api.yaml. Reserved platform
+        segments must be rejected at provisioning even when they match the pattern.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
     ErrorResponse:
       type: object
       required: [ errorId, errorText ]

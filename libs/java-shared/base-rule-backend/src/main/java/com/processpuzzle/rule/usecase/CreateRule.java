@@ -28,13 +28,15 @@ public class CreateRule {
         this.mapper = mapper;
     }
 
-    public RuleDefinition execute(RuleDefinitionInput input) {
-        if (repository.existsById(input.getId())) {
-            throw new RuleAlreadyExistsException(input.getId());
+    public RuleDefinition execute(String orgKey, RuleDefinitionInput input) {
+        // An explicit existence check rather than relying on save(): with an assigned composite id
+        // save() merges, so a create would silently overwrite instead of conflicting.
+        if (repository.existsByOrgKeyAndId(orgKey, input.getId())) {
+            throw new RuleAlreadyExistsException(orgKey, input.getId());
         }
-        extendsValidator.validate(input.getId(), input.getExtendsRuleId());
+        extendsValidator.validate(orgKey, input.getId(), input.getExtendsRuleId());
 
-        RuleDefinition rule = mapper.toDomain(input);
+        RuleDefinition rule = mapper.toDomain(orgKey, input);
         RuleDefinition saved = repository.save(rule);
         ruleEngineSync.register(saved);
         return saved;

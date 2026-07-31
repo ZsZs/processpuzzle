@@ -26,18 +26,29 @@ public class FindAllRules {
         this.repository = repository;
     }
 
-    public Page<RuleDefinition> execute(String context, String where, String order, Integer page, Integer size) {
-        Specification<RuleDefinition> spec = contextSpec(context);
+    /**
+     * The tenant specification is ANDed <em>first</em> and is never optional. RSQL permits a
+     * top-level {@code OR}, which would otherwise escape the filter and return other
+     * organizations' rules — so there is deliberately no unfiltered {@code findAll} branch here.
+     */
+    public Page<RuleDefinition> execute(String orgKey, String context, String where,
+                                        String order, Integer page, Integer size) {
+        Specification<RuleDefinition> spec = orgKeySpec(orgKey);
+        Specification<RuleDefinition> contextSpec = contextSpec(context);
+        if (contextSpec != null) {
+            spec = spec.and(contextSpec);
+        }
         Specification<RuleDefinition> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {
-            spec = spec == null ? whereSpec : spec.and(whereSpec);
+            spec = spec.and(whereSpec);
         }
         Sort sort = SortParser.parse(order);
         Pageable pageable = PageRequest.of(page != null ? page : DEFAULT_PAGE, size != null ? size : DEFAULT_SIZE, sort);
-        if (spec == null) {
-            return repository.findAll(pageable);
-        }
         return repository.findAll(spec, pageable);
+    }
+
+    private static Specification<RuleDefinition> orgKeySpec(String orgKey) {
+        return (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
     }
 
     private static Specification<RuleDefinition> contextSpec(String context) {

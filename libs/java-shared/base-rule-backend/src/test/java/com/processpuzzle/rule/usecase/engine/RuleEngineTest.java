@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RuleEngineTest {
 
+    private static final String ORG = "demo";
+
     private RuleEngine ruleEngine;
 
     @BeforeEach
@@ -26,32 +28,33 @@ class RuleEngineTest {
 
     @Test
     void allQuantitiesPositive_passesWhenAllPositive() {
-        ruleEngine.registerRule("allQuantitiesPositive",
-                "entity.lineItems.every(li => li.quantity > 0)");
+        RuleKey key = RuleKey.of(ORG, "allQuantitiesPositive");
+        ruleEngine.registerRule(key, "entity.lineItems.every(li => li.quantity > 0)");
 
         Map<String, Object> order = orderWith(
                 lineItem("SKU-1", 2, 10.0),
                 lineItem("SKU-2", 1, 25.0)
         );
 
-        assertTrue(ruleEngine.evaluate("allQuantitiesPositive", order));
+        assertTrue(ruleEngine.evaluate(key, order));
     }
 
     @Test
     void allQuantitiesPositive_failsWhenOneIsZero() {
-        ruleEngine.registerRule("allQuantitiesPositive",
-                "entity.lineItems.every(li => li.quantity > 0)");
+        RuleKey key = RuleKey.of(ORG, "allQuantitiesPositive");
+        ruleEngine.registerRule(key, "entity.lineItems.every(li => li.quantity > 0)");
 
         Map<String, Object> order = orderWith(
                 lineItem("SKU-1", 0, 10.0)
         );
 
-        assertFalse(ruleEngine.evaluate("allQuantitiesPositive", order));
+        assertFalse(ruleEngine.evaluate(key, order));
     }
 
     @Test
     void totalMatchesLineItems() {
-        ruleEngine.registerRule("totalMatchesLineItems",
+        RuleKey key = RuleKey.of(ORG, "totalMatchesLineItems");
+        ruleEngine.registerRule(key,
                 "Math.abs(entity.total - "
                         + "entity.lineItems.reduce((sum, li) => sum + li.unitPrice * li.quantity, 0)) < 0.001");
 
@@ -61,39 +64,40 @@ class RuleEngineTest {
         );
 
         order.put("total", 45.0);
-        assertTrue(ruleEngine.evaluate("totalMatchesLineItems", order));
+        assertTrue(ruleEngine.evaluate(key, order));
 
         order.put("total", 50.0);
-        assertFalse(ruleEngine.evaluate("totalMatchesLineItems", order));
+        assertFalse(ruleEngine.evaluate(key, order));
     }
 
     @Test
     void shippedRequiresAddress_conditionalImpliesRule() {
         // PPCL "implies" translates naturally to JS: !condition || consequence
-        ruleEngine.registerRule("shippedRequiresAddress",
-                "entity.status !== 'SHIPPED' || entity.shippingAddress != null");
+        RuleKey key = RuleKey.of(ORG, "shippedRequiresAddress");
+        ruleEngine.registerRule(key, "entity.status !== 'SHIPPED' || entity.shippingAddress != null");
 
         Map<String, Object> draft = orderWith(lineItem("SKU-1", 1, 10.0));
         draft.put("status", "DRAFT");
         draft.put("shippingAddress", null);
-        assertTrue(ruleEngine.evaluate("shippedRequiresAddress", draft));
+        assertTrue(ruleEngine.evaluate(key, draft));
 
         Map<String, Object> shippedNoAddress = orderWith(lineItem("SKU-1", 1, 10.0));
         shippedNoAddress.put("status", "SHIPPED");
         shippedNoAddress.put("shippingAddress", null);
-        assertFalse(ruleEngine.evaluate("shippedRequiresAddress", shippedNoAddress));
+        assertFalse(ruleEngine.evaluate(key, shippedNoAddress));
 
         Map<String, Object> shippedWithAddress = orderWith(lineItem("SKU-1", 1, 10.0));
         shippedWithAddress.put("status", "SHIPPED");
         shippedWithAddress.put("shippingAddress", "123 Main St");
-        assertTrue(ruleEngine.evaluate("shippedRequiresAddress", shippedWithAddress));
+        assertTrue(ruleEngine.evaluate(key, shippedWithAddress));
     }
 
     @Test
     void hostAccessIsBlocked() {
         // Regardless of whether a `Java` global is visible at all, attempting to use it for
         // interop must fail, since the Context is built with allowHostAccess(HostAccess.NONE).
-        ruleEngine.registerRule("attemptsJavaInterop",
+        RuleKey key = RuleKey.of(ORG, "attemptsJavaInterop");
+        ruleEngine.registerRule(key,
                 "(() => { "
                         + "try { Java.type('java.lang.System').exit(1); return false; } "
                         + "catch (e) { return true; } "
@@ -101,13 +105,14 @@ class RuleEngineTest {
 
         Map<String, Object> order = orderWith(lineItem("SKU-1", 1, 10.0));
 
-        assertTrue(ruleEngine.evaluate("attemptsJavaInterop", order),
+        assertTrue(ruleEngine.evaluate(key, order),
                 "Java interop must be unreachable from within a rule expression");
     }
 
     @Test
     void rejectsAttemptsToMutateEntityData() {
-        ruleEngine.registerRule("attemptsMutation",
+        RuleKey key = RuleKey.of(ORG, "attemptsMutation");
+        ruleEngine.registerRule(key,
                 "(() => { "
                         + "try { entity.total = 0; return false; } "
                         + "catch (e) { return true; } "
@@ -116,20 +121,49 @@ class RuleEngineTest {
         Map<String, Object> order = orderWith(lineItem("SKU-1", 1, 10.0));
         order.put("total", 10.0);
 
-        assertTrue(ruleEngine.evaluate("attemptsMutation", order),
+        assertTrue(ruleEngine.evaluate(key, order),
                 "Entity data exposed to a rule must be read-only");
     }
 
     @Test
     void unregisterRuleRemovesIt() {
-        ruleEngine.registerRule("temp-rule", "true");
-        assertTrue(ruleEngine.isRegistered("temp-rule"));
+        RuleKey key = RuleKey.of(ORG, "temp-rule");
+        ruleEngine.registerRule(key, "true");
+        assertTrue(ruleEngine.isRegistered(key));
 
-        ruleEngine.unregisterRule("temp-rule");
+        ruleEngine.unregisterRule(key);
 
-        assertFalse(ruleEngine.isRegistered("temp-rule"));
+        assertFalse(ruleEngine.isRegistered(key));
         assertThrows(IllegalArgumentException.class,
-                () -> ruleEngine.evaluate("temp-rule", new HashMap<>()));
+                () -> ruleEngine.evaluate(key, new HashMap<>()));
+    }
+
+    @Test
+    void sameRuleIdInTwoOrganizations_keepsBothExpressions() {
+        // The cache is keyed by (orgKey, ruleId): a bare-id key would let whichever organization
+        // registered first decide the verdict for the other.
+        RuleKey demoKey = RuleKey.of("demo", "max-quantity");
+        RuleKey otherKey = RuleKey.of("other", "max-quantity");
+        ruleEngine.registerRule(demoKey, "entity.lineItems.every(li => li.quantity <= 1)");
+        ruleEngine.registerRule(otherKey, "entity.lineItems.every(li => li.quantity <= 5)");
+
+        Map<String, Object> order = orderWith(lineItem("SKU-1", 3, 10.0));
+
+        assertFalse(ruleEngine.evaluate(demoKey, order));
+        assertTrue(ruleEngine.evaluate(otherKey, order));
+
+        // Unregistering one organization's rule leaves the other's alone.
+        ruleEngine.unregisterRule(demoKey);
+        assertFalse(ruleEngine.isRegistered(demoKey));
+        assertTrue(ruleEngine.isRegistered(otherKey));
+    }
+
+    @Test
+    void unregisteredRule_namesTheOrganizationItBelongsTo() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> ruleEngine.evaluate(RuleKey.of("demo", "missing"), new HashMap<>()));
+
+        assertEquals("Rule not registered: demo/missing", thrown.getMessage());
     }
 
     private Map<String, Object> orderWith(Map<String, Object>... lineItems) {

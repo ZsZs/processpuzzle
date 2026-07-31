@@ -21,12 +21,13 @@ public class DeleteRule {
         this.ruleEngineSync = ruleEngineSync;
     }
 
-    public void execute(String id) {
-        RuleDefinition existing = repository.findById(id)
-                .orElseThrow(() -> new RuleNotFoundException(id));
+    public void execute(String orgKey, String id) {
+        RuleDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+                .orElseThrow(() -> new RuleNotFoundException(orgKey, id));
 
-        List<String> dependents = repository.findAll().stream()
-                .filter(r -> id.equals(r.getExtendsRuleId()))
+        // Only this organization's rules can extend this one, so a same-id rule in another
+        // organization is not a dependent and must not block the delete.
+        List<String> dependents = repository.findByOrgKeyAndExtendsRuleId(orgKey, id).stream()
                 .map(RuleDefinition::getId)
                 .toList();
         if (!dependents.isEmpty()) {
@@ -35,6 +36,6 @@ public class DeleteRule {
         }
 
         repository.delete(existing);
-        ruleEngineSync.unregister(id);
+        ruleEngineSync.unregister(orgKey, id);
     }
 }

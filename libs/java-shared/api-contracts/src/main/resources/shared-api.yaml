@@ -11,6 +11,26 @@ components:
 
   parameters:
 
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: |
+        Tenant discriminator. Every piece of ProcessPuzzle metadata — app definitions,
+        entity descriptors, rules, state and workflow definitions — is scoped by it, and
+        every metadata id is unique only *within* an organization.
+
+        The same value is the public URL segment of the tenant's application
+        (`https://processpuzzle.com/{orgKey}`), which is why it is constrained to a
+        URL-safe slug.
+
+        **The server must never trust this parameter on its own.** It has to be checked
+        against the `organization` claim of the authenticated principal and answered with
+        403 on mismatch — otherwise editing the path is enough to read another tenant's
+        metadata.
+
     WhereParam:
       name: where
       in: query
@@ -88,6 +108,15 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
+    Forbidden:
+      description: >-
+        The authenticated principal may not act on this organization — typically an
+        `orgKey` in the path that does not match the principal's `organization` claim.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
     NotFound:
       description: The requested resource does not exist.
       content:
@@ -103,6 +132,19 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
+
+    OrganizationKey:
+      type: string
+      description: >-
+        URL-safe tenant slug: lowercase letters, digits and single hyphens, not starting or
+        ending with a hyphen. Because it becomes a top-level path segment of the public
+        site it shares a namespace with the platform's own routes, so provisioning must
+        reject reserved segments (`api`, `assets`, `design`, `login`, `logout`, `admin`,
+        `docs`, `static`, `well-known`, …) even when they match the pattern.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
 
     ErrorResponse:
       type: object

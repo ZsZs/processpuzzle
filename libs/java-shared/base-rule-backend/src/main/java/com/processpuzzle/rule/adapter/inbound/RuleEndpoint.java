@@ -51,37 +51,38 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<RuleDefinition> createRule(RuleDefinitionInput input) {
-        com.processpuzzle.rule.domain.RuleDefinition created = createRule.execute(input);
+    public ResponseEntity<RuleDefinition> createRule(String orgKey, RuleDefinitionInput input) {
+        com.processpuzzle.rule.domain.RuleDefinition created = createRule.execute(orgKey, input);
         return new ResponseEntity<>(mapper.toModel(created), HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<RuleDefinition> updateRule(String id, RuleDefinitionInput input) {
-        com.processpuzzle.rule.domain.RuleDefinition updated = updateRule.execute(id, input);
+    public ResponseEntity<RuleDefinition> updateRule(String orgKey, String id, RuleDefinitionInput input) {
+        com.processpuzzle.rule.domain.RuleDefinition updated = updateRule.execute(orgKey, id, input);
         return ResponseEntity.ok(mapper.toModel(updated));
     }
 
     @Override
-    public ResponseEntity<Void> deleteRule(String id) {
-        deleteRule.execute(id);
+    public ResponseEntity<Void> deleteRule(String orgKey, String id) {
+        deleteRule.execute(orgKey, id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<RuleDefinition> getRule(String id) {
-        return ResponseEntity.ok(mapper.toModel(findRule.execute(id)));
+    public ResponseEntity<RuleDefinition> getRule(String orgKey, String id) {
+        return ResponseEntity.ok(mapper.toModel(findRule.execute(orgKey, id)));
     }
 
     @Override
-    public ResponseEntity<PageOfRuleDefinition> listRules(String context, String where, String order, Integer page, Integer size) {
-        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(context, where, order, page, size)));
+    public ResponseEntity<PageOfRuleDefinition> listRules(String orgKey, String context, String where,
+                                                          String order, Integer page, Integer size) {
+        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(orgKey, context, where, order, page, size)));
     }
 
     @Override
-    public ResponseEntity<ImportResult> importRules(MultipartFile file) {
+    public ResponseEntity<ImportResult> importRules(String orgKey, MultipartFile file) {
         try {
-            ImportOutcome outcome = importRules.execute(file.getInputStream());
+            ImportOutcome outcome = importRules.execute(orgKey, file.getInputStream());
             return ResponseEntity.ok(mapper.toModel(outcome));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -89,17 +90,18 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<EvaluationResult> evaluateObject(EvaluationRequest request) {
-        EvaluationOutcome outcome = evaluateObject.execute(request.getContext(), request.getEntity());
+    public ResponseEntity<EvaluationResult> evaluateObject(String orgKey, EvaluationRequest request) {
+        EvaluationOutcome outcome = evaluateObject.execute(orgKey, request.getContext(), request.getEntity());
         return ResponseEntity.ok(mapper.toModel(outcome));
     }
 
     @Override
-    public ResponseEntity<Resource> exportRules(String context) {
+    public ResponseEntity<Resource> exportRules(String orgKey, String context) {
         try {
-            byte[] yaml = exportRules.execute(context);
+            byte[] yaml = exportRules.execute(orgKey, context);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"rules-export.yaml\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + orgKey + "-rules-export.yaml\"")
                     .contentType(MediaType.parseMediaType("application/x-yaml"))
                     .body(new ByteArrayResource(yaml));
         } catch (IOException e) {
