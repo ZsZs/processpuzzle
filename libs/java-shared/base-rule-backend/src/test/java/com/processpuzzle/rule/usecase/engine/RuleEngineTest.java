@@ -126,6 +126,17 @@ class RuleEngineTest {
     }
 
     @Test
+    void anExpressionCanEnumerateTheEntitysOwnFields() {
+        // A rule that asserts on the shape of the entity rather than its values, which is what
+        // makes the proxy's key enumeration reachable.
+        RuleKey key = RuleKey.of(ORG, "hasExpectedFields");
+        ruleEngine.registerRule(key,
+                "Object.keys(entity).sort().join(',') === 'lineItems,total'");
+
+        assertTrue(ruleEngine.evaluate(key, orderWith(lineItem("SKU-1", 1, 10.0))));
+    }
+
+    @Test
     void unregisterRuleRemovesIt() {
         RuleKey key = RuleKey.of(ORG, "temp-rule");
         ruleEngine.registerRule(key, "true");

@@ -50,6 +50,7 @@ class RuleTenantIsolationTest {
     private RuleEngineSync ruleEngineSync;
     private EvaluateObject evaluateObject;
     private DeleteRule deleteRule;
+    private FindAllRules findAllRules;
 
     @BeforeEach
     void setUp() {
@@ -58,6 +59,7 @@ class RuleTenantIsolationTest {
         ruleEngineSync = new RuleEngineSync(ruleEngine);
         evaluateObject = new EvaluateObject(repository, ruleEngine);
         deleteRule = new DeleteRule(repository, ruleEngineSync);
+        findAllRules = new FindAllRules(repository);
     }
 
     @AfterEach
@@ -108,6 +110,33 @@ class RuleTenantIsolationTest {
 
         assertThat(outcome.passed()).isTrue();
         assertThat(outcome.violations()).isEmpty();
+    }
+
+    @Test
+    void listingNeverLeaksAnotherOrganizationsRules() {
+        save("demo", "own-order", "Order", "true");
+        save("demo", "own-invoice", "Invoice", "true");
+        save("other", RULE_ID, "Order", "true");
+
+        assertThat(findAllRules.execute("demo", null, null, null, null, null))
+                .extracting(RuleDefinition::getId)
+                .containsExactlyInAnyOrder("own-order", "own-invoice");
+        assertThat(findAllRules.execute("demo", "Order", null, null, null, null))
+                .extracting(RuleDefinition::getId)
+                .containsExactly("own-order");
+    }
+
+    @Test
+    void aTopLevelRsqlOrCannotEscapeTheTenantFilter() {
+        // RSQL permits a top-level OR; ANDing the tenant specification first is what stops it
+        // from widening the result set beyond this organization.
+        save("demo", "own-order", "Order", "true");
+        save("other", RULE_ID, "Order", "true");
+
+        assertThat(findAllRules.execute("demo", null, "id==own-order,id==" + RULE_ID,
+                "id,asc", null, null))
+                .extracting(RuleDefinition::getId)
+                .containsExactly("own-order");
     }
 
     @Test

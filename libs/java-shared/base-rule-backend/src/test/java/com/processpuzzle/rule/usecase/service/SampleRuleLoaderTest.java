@@ -96,6 +96,49 @@ class SampleRuleLoaderTest {
     }
 
     @Test
+    void loadSamples_skipsAFileThatDoesNotUseTheRulesSuffix() throws IOException {
+        when(resourceResolver.getResources(LOCATION))
+                .thenReturn(new Resource[]{new NamedByteArrayResource("README.md", "not yaml".getBytes())});
+
+        loader.loadSamples();
+
+        verify(importRules, never()).execute(any(String.class), any(InputStream.class));
+    }
+
+    @Test
+    void loadSamples_skipsAResourceWithoutAFilename() throws IOException {
+        // A Resource is not obliged to have one — ByteArrayResource itself returns null.
+        when(resourceResolver.getResources(LOCATION))
+                .thenReturn(new Resource[]{new ByteArrayResource("rules: []".getBytes())});
+
+        loader.loadSamples();
+
+        verify(importRules, never()).execute(any(String.class), any(InputStream.class));
+    }
+
+    @Test
+    void loadSamples_logsEveryErrorTheImportReported() throws IOException {
+        when(resourceResolver.getResources(LOCATION))
+                .thenReturn(new Resource[]{new NamedByteArrayResource("a-rules.yaml", "rules: []".getBytes())});
+        when(importRules.execute(any(String.class), any(InputStream.class)))
+                .thenReturn(new ImportOutcome(0, 0, List.of("first problem", "second problem")));
+
+        loader.loadSamples();
+
+        // A partially-rejected import must not abort startup.
+        verify(importRules).execute(eq("a"), any(InputStream.class));
+    }
+
+    @Test
+    void loadSamples_givesUpWhenTheClasspathCannotBeScanned() throws IOException {
+        when(resourceResolver.getResources(LOCATION)).thenThrow(new IOException("no classpath"));
+
+        loader.loadSamples();
+
+        verify(importRules, never()).execute(any(String.class), any(InputStream.class));
+    }
+
+    @Test
     void loadSamples_skipsWhenNoFilesFound() throws IOException {
         when(resourceResolver.getResources(LOCATION)).thenReturn(new Resource[0]);
 

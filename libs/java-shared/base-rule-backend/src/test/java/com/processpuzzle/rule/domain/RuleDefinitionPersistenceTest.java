@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,21 @@ class RuleDefinitionPersistenceTest {
         assertThat(reloaded.getVersion()).isZero();
         assertThat(reloaded.getCreatedAt()).isNotNull();
         assertThat(reloaded.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void anUpdateRestampsUpdatedAtButNotCreatedAt() {
+        RuleDefinition saved = repository.saveAndFlush(
+                rule("demo", "max-quantity", "Order", "true", List.of()));
+        Instant createdAt = saved.getCreatedAt();
+        Instant firstUpdatedAt = saved.getUpdatedAt();
+
+        saved.setExpression("false");
+        repository.saveAndFlush(saved);
+
+        assertThat(saved.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(saved.getUpdatedAt()).isAfterOrEqualTo(firstUpdatedAt);
+        assertThat(saved.getVersion()).isEqualTo(1L);
     }
 
     @Test
