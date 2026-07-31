@@ -116,4 +116,18 @@ class ProvisionOrganizationTest {
                 .extracting(ex -> ((OrganizationKeyInvalidException) ex).getErrorId())
                 .isEqualTo("organization.key.invalid");
     }
+
+    /**
+     * {@code key} is required by the contract, but bean validation runs on the adapter — the use case
+     * still has to answer with a reason rather than a {@link NullPointerException}.
+     */
+    @Test
+    void absentKey_isRejectedAsMissingRatherThanCrashing() {
+        assertThatThrownBy(() -> provisionOrganization.execute(new OrganizationInput(null, "My Org")))
+                .isInstanceOf(OrganizationKeyInvalidException.class)
+                .extracting(ex -> ((OrganizationKeyInvalidException) ex).getErrorId())
+                .isEqualTo("organization.key.missing");
+
+        verify(organizationRepository, never()).save(any(Organization.class));
+    }
 }

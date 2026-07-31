@@ -187,6 +187,16 @@ class PublishAppDefinitionTest {
                 .isInstanceOf(AppDefinitionNotFoundException.class);
     }
 
+    /** An update is a replace of an existing draft, not an upsert — there is no id to assign. */
+    @Test
+    void updatingAnUnknownDefinition_is404RatherThanCreatingIt() {
+        when(repository.findByOrgKeyAndId("my-org", "nope")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> updateAppDefinition.execute("my-org", "nope", emptyishInput()))
+                .isInstanceOf(AppDefinitionNotFoundException.class)
+                .hasMessageContaining("my-org/nope");
+    }
+
     /** Wires the rule module in for this test, with the given violations on every evaluation. */
     private void givenRuleViolations(RuleViolation... violations) {
         when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);

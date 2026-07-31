@@ -1,5 +1,8 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.adapter.inbound.AppMapper;
+import com.processpuzzle.app.usecase.FindAllAppDefinitions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -158,6 +162,44 @@ class AppDefinitionPersistenceTest {
         assertThat(reloaded.get().getDefaultLocale()).isEqualTo("en-GB");
         assertThat(reloaded.get().getCreatedAt()).isNotNull();
         assertThat(reloaded.get().getUpdatedAt()).isNotNull();
+    }
+
+    /**
+     * The tenant filter is a {@link Specification} lambda, so it is only really exercised against a
+     * database — a mocked repository would accept one that filtered on the wrong attribute.
+     */
+    @Test
+    void listingIsScopedToItsOrganizationByTheSpecificationItAlwaysApplies() {
+        repository.saveAndFlush(new AppDefinition("org-a", "claims-app", "Claims", null, null, AppGraph.empty()));
+        repository.saveAndFlush(new AppDefinition("org-a", "billing-app", "Billing", null, null, AppGraph.empty()));
+        repository.saveAndFlush(new AppDefinition("org-b", "claims-app", "Other", null, null, AppGraph.empty()));
+        FindAllAppDefinitions findAll =
+                new FindAllAppDefinitions(repository, AppTestFixtures.permissiveGuard());
+
+        assertThat(findAll.execute("org-a", null, "id,asc", null, null))
+                .extracting(AppDefinition::getId).containsExactly("billing-app", "claims-app");
+        assertThat(findAll.execute("org-a", "id==claims-app", null, null, null))
+                .extracting(AppDefinition::getId).containsExactly("claims-app");
+        assertThat(findAll.execute("org-c", null, null, null, null)).isEmpty();
+    }
+
+    /** The contract's timestamps are UTC offsets, and only a persisted entity has any to render. */
+    @Test
+    void persistedTimestampsMapOntoTheContractAsUtcOffsets() {
+        repository.saveAndFlush(new AppDefinition("my-org", "claims-app", "Claims", null, null, fullGraph()));
+        organizationRepository.saveAndFlush(new Organization("my-org", "My Org Ltd.", null, null, null, null));
+        AppMapper mapper = new AppMapper();
+
+        AppDefinition definition = repository.findByOrgKeyAndId("my-org", "claims-app").orElseThrow();
+        com.processpuzzle.app.model.AppDefinition model = mapper.toModel(definition);
+
+        assertThat(model.getCreatedAt()).isNotNull()
+                .satisfies(stamp -> assertThat(stamp.getOffset()).isEqualTo(ZoneOffset.UTC));
+        assertThat(model.getCreatedAt().toInstant()).isEqualTo(definition.getCreatedAt());
+        assertThat(model.getUpdatedAt()).isNotNull();
+        assertThat(mapper.toSummary(definition).getUpdatedAt()).isNotNull();
+        assertThat(mapper.toModel(organizationRepository.findById("my-org").orElseThrow()).getCreatedAt())
+                .isNotNull();
     }
 
     private static AppGraph fullGraph() {

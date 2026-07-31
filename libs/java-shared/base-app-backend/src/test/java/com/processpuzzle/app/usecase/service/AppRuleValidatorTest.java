@@ -154,6 +154,15 @@ class AppRuleValidatorTest {
                 .noneMatch(errorId -> errorId.startsWith("rule.organization."));
     }
 
+    /**
+     * The validator is called on the write paths, where a missing body is reported as a structural
+     * problem — so there is nothing for a rule expression to read and no rule may fire.
+     */
+    @Test
+    void nothingIsEvaluatedWhenThereIsNoDefinitionToEvaluate() {
+        assertThat(ruleValidator.validate(ORG, null)).isEmpty();
+    }
+
     // --- fixtures ------------------------------------------------------------------------
 
     /**

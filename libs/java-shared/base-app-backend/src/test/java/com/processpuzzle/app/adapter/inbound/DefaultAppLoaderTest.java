@@ -39,8 +39,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -175,6 +177,144 @@ class DefaultAppLoaderTest {
         assertThat(structuralValidator().validate(TESTBED_KEY, demo)).isEmpty();
     }
 
+    /**
+     * A convenience that refuses to boot would be worse than one that seeds nothing, so every failure
+     * below has to leave the application started.
+     */
+    @Test
+    void anUnscannableClasspath_isLoggedRatherThanFailingStartup() throws IOException {
+        when(resourceResolver.getResources(anyString())).thenThrow(new IOException("no such classpath"));
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        verify(endpoint, never()).checkOrganizationKey(anyString());
+    }
+
+    @Test
+    void aDeploymentBundlingNoDefaults_seedsNothing() {
+        resolvesTo();
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).checkOrganizationKey(anyString());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void anUnreadableFile_isSkippedWithoutTouchingTheTenant() {
+        resolvesTo(yamlFile("broken-apps.yaml", "appDefinitions: [\n"));
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        verify(endpoint, never()).provisionOrganization(any());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void aFailingKeyCheck_skipsTheFile() {
+        when(endpoint.checkOrganizationKey(anyString())).thenThrow(new IllegalStateException("no database"));
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void aKeyCheckThatAnswersNothing_skipsTheFile() {
+        when(endpoint.checkOrganizationKey(anyString())).thenReturn(ResponseEntity.ok(null));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void aFailingProvisioning_skipsTheFile() {
+        doThrow(new IllegalStateException("no database")).when(endpoint).provisionOrganization(any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    /** Provisioning answering without a starter app is odd but not a reason to stop loading. */
+    @Test
+    void provisioningThatAnswersNoStarterApp_stillLoadsTheDefinitions() {
+        doReturn(new ResponseEntity<>(new ProvisioningResult(), HttpStatus.CREATED))
+                .when(endpoint).provisionOrganization(any());
+        loader.loadDefaults();
+
+        doReturn(ResponseEntity.ok(null)).when(endpoint).provisionOrganization(any());
+        loader.loadDefaults();
+
+        verify(endpoint, times(2)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    /** A blank id is as unusable as an absent one: the id is the app's route path segment. */
+    @Test
+    void anEntryWithoutAUsableId_isRejectedWithoutReachingTheEndpoint() {
+        resolvesTo(yamlFile("other-org-apps.yaml",
+                "appDefinitions:\n  - name: Nameless\n  - id: \"   \"\n    name: Blank\n"));
+        keyIs(availableKey("other-org"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    /** An organization block that names nothing still has to yield a provisionable payload. */
+    @Test
+    void aFileWithAnUnnamedTenantAndNoDefinitions_provisionsUnderItsOwnKey() {
+        resolvesTo(yamlFile("other-org-apps.yaml", "organization:\n  description: Only a description.\n"));
+        keyIs(availableKey("other-org"));
+
+        loader.loadDefaults();
+
+        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
+        verify(endpoint).provisionOrganization(organization.capture());
+        assertThat(organization.getValue().getName()).isEqualTo("other-org");
+        assertThat(organization.getValue().getDescription()).isEqualTo("Only a description.");
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    @Test
+    void aCreationFailingForAnyOtherReason_isSurvived() {
+        doThrow(new IllegalStateException("constraint violation"))
+                .when(endpoint).createAppDefinition(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    /** The revision is only logged, so an answer without one must not become an exception. */
+    @Test
+    void aCreationAnsweringWithoutARevision_isSurvived() {
+        doReturn(new ResponseEntity<>(new AppDefinition(), HttpStatus.CREATED))
+                .when(endpoint).createAppDefinition(anyString(), any());
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        doReturn(ResponseEntity.ok(null)).when(endpoint).createAppDefinition(anyString(), any());
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aResourceWithoutAName_isSkipped() {
+        resolvesTo(new ByteArrayResource("appDefinitions: []".getBytes(StandardCharsets.UTF_8)));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).checkOrganizationKey(anyString());
+    }
+
+    /** {@code -apps.yaml} on its own names no organization, so there is nowhere to put its contents. */
+    @Test
+    void aFileNamedOnlyAfterTheSuffix_isSkipped() {
+        resolvesTo(yamlFile("-apps.yaml", "appDefinitions: []"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).checkOrganizationKey(anyString());
+    }
+
     // --- helpers -----------------------------------------------------------------------------
 
     private AppDefinitionInput capturedDefinition() {
@@ -209,9 +349,9 @@ class DefaultAppLoaderTest {
         when(endpoint.checkOrganizationKey(anyString())).thenReturn(ResponseEntity.ok(availability));
     }
 
-    private void resolvesTo(Resource resource) {
+    private void resolvesTo(Resource... resources) {
         try {
-            when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { resource });
+            when(resourceResolver.getResources(anyString())).thenReturn(resources);
         } catch (IOException e) {
             throw new AssertionError(e);
         }
