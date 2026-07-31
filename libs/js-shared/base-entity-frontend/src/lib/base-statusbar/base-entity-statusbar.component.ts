@@ -81,7 +81,7 @@ import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.sto
 export class BaseEntityStatusbarComponent implements OnInit {
   store!: BaseEntityStoreApi<BaseEntity>;
   entityDescriptor = input.required<BaseEntityDescriptor>();
-  entityTitle: Signal<string> = computed<string>(() => this.evaluateEntityTitle(this.entityDescriptor().entityTitle));
+  entityTitle: Signal<string> = computed<string>(() => this.resolveTitle());
   isVisible: Signal<boolean> = computed(() => this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1));
 
   private readonly violationsStore = inject(RuleViolationsSingletonStore);
@@ -101,6 +101,21 @@ export class BaseEntityStatusbarComponent implements OnInit {
   // endregion
 
   // protected, private helper methods
+  /**
+   * Explicit {@link BaseEntityDescriptor.entityTitle} wins when set; otherwise the title is the value of
+   * the current entity's identifying attribute ({@link BaseEntityDescriptor.titleAttrName}).
+   */
+  private resolveTitle(): string {
+    const descriptor = this.entityDescriptor();
+    const override = this.evaluateEntityTitle(descriptor.entityTitle);
+    if (override) return override;
+
+    const attrName = descriptor.titleAttrName();
+    const currentEntity = this.store?.currentEntity() as Record<string, unknown> | undefined;
+    const value = attrName ? currentEntity?.[attrName] : undefined;
+    return value != null ? String(value) : '';
+  }
+
   private evaluateEntityTitle(title: string | (() => string)): string {
     return typeof title === 'function' ? title() : title;
   }

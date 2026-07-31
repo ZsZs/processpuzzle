@@ -26,7 +26,7 @@ import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CON
 import { TestConfiguration } from './lib/test-configuration';
 import { BaseEntityTabsComponent } from './lib/base-tabs/base-entity-tabs.component';
 import { of, throwError } from 'rxjs';
-import { MockBreakpointObserver, provideTranslocoTesting } from '@processpuzzle/test-util';
+import { MockBreakpointObserver, provideTranslocoTesting, type TranslationsMap } from '@processpuzzle/test-util';
 import { FlexboxDescriptor } from './lib/base-entity/flexboxDescriptor';
 import { Mocked, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -165,6 +165,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
       { provide: TestEntityService, useValue: mockService },
       { provide: 'BASE_ENTITY_SERVICE', useValue: TestEntityService },
       { provide: CONFIGURATION_OPTIONS, useValue: { urlFactory: () => ['environments/config.common.json'], log: true } },
+      provideTranslocoTesting({ translations: {} }),
       {
         provide: ROUTER_OUTLET_DATA,
         useFactory: () => {
@@ -215,6 +216,7 @@ export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescri
       { provide: CONFIGURATION_OPTIONS, useValue: { urlFactory: () => ['environments/config.common.json'], log: true } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
       { provide: TestConfiguration, useValue: runtimeConfigMock },
+      provideTranslocoTesting({ translations: {} }),
       ...extraProviders,
     ],
   }).compileComponents();
@@ -243,7 +245,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 ) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],
-    providers: [provideLogger(LOGGING_CONFIGURATION), provideRouter([]), ...providers],
+    providers: [provideLogger(LOGGING_CONFIGURATION), provideRouter([]), provideTranslocoTesting({ translations: {} }), ...providers],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(MockControlContainerComponent<C>);
@@ -257,7 +259,14 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
   return { fixture, containerComponent, component };
 }
 
-export async function setupContainerComponentTest(componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>) {
+/**
+ * `translations` are registered before the first render on purpose: `TranslocoPipe` memoises per
+ * key + params, so translations installed after `detectChanges()` are not picked up.
+ */
+export async function setupContainerComponentTest(
+  componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>,
+  translations: TranslationsMap = {},
+) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
   const entityDescriptor = new BaseEntityDescriptor({
@@ -280,7 +289,7 @@ export async function setupContainerComponentTest(componentType: Type<BaseEntity
         { path: 'test-entity/:id/details', component: DummyComponent },
         { path: 'test-entity/list', component: DummyComponent },
       ]),
-      provideTranslocoTesting({ translations: {} }),
+      provideTranslocoTesting({ translations }),
       LayoutService,
       { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
       { provide: BreakpointObserver, useClass: MockBreakpointObserver },

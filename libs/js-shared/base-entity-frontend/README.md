@@ -267,6 +267,85 @@ expr.labelClass = 'muted';
 
 > **These classes must be defined in a global stylesheet** (your app's `styles.scss` / the `styles` array), **not** in a component's encapsulated `.css`. The classes land on the *library's* DOM elements; Angular's emulated view encapsulation scopes a component's own styles to that component's elements, so a component-scoped `.monospace` rule would be applied to the field but never match it. Global styles (or `ViewEncapsulation.None`) are the reliable seam — prefer this over reaching into the library's internal tags, which are not a stable contract.
 
+## Internationalisation
+
+Entity names (shown in the tabs) and attribute labels (column headers and form labels) can be translated by the **consuming application** through [Transloco](https://jsverse.github.io/transloco/). The library follows **convention over configuration**: the key root is derived from the `entityName`, and you only provide the matching translation files — no per-field wiring. When a key is missing, the raw `entityName` / `label` from the descriptor is used as the fallback, so translation is entirely opt-in.
+
+### 1. Key root is derived from the entity name
+
+The transloco key root is `snake_underscore(entityName)` — `"Trunk Data"` → `trunk_data`, `"OrderLine"` → `order_line`. No configuration is needed; just name the Transloco scope to match. Set `i18nScope` on the descriptor only to **override** the derived root (e.g. when the registered scope name differs from the convention, or when the derived root would collide with the library's own `base_entity` scope).
+
+```typescript
+new BaseEntityDescriptor({
+  entityName: 'Trunk Data',
+  attrDescriptors: createTrunkDataAttrDescriptors(),
+  // key root → 'trunk_data' (derived); pass i18nScope only to override
+});
+```
+
+### 2. Provide the Transloco scope on the route
+
+The scope must be provided where the components render (typically the routed feature). **Always set `alias` explicitly** — Transloco camelCases the default alias, which silently breaks names containing `-` or `_`.
+
+```typescript
+{
+  path: 'trunk_data',
+  providers: [provideTranslocoScope({ scope: 'trunk_data', alias: 'trunk_data' })],
+  // …
+}
+```
+
+### 3. Add the translation files
+
+Transloco loads scoped files from `assets/i18n/<scope>/<lang>.json`. Because the scope (= derived key root) already identifies the entity, keys are **rooted at the scope** (Transloco prepends the scope automatically, so the file content is flat — no entity wrapper):
+
+- **Entity name** → `<scope>._self` (the reserved `_self` avoids colliding with the attribute keys)
+- **Attribute label** → `<scope>.<attrName>`
+
+where `<attrName>` is the attribute's `attrName` (a code identifier — no spaces, no display strings). An attribute's `labelKey` overrides its own segment (replaces `attrName`); use plain identifiers — spaces are not valid in Transloco keys.
+
+```jsonc
+// assets/i18n/trunk_data/en.json  → keys trunk_data._self, trunk_data.key, …
+{
+  "_self": "Trunk Data",   // entity name in the tabs
+  "key": "Reference Key",  // attribute labels, keyed by attrName
+  "description": "Description",
+  "value": "Value"
+}
+```
+
+### The library's own strings
+
+Everything the library renders that is *not* derived from a descriptor — toolbar labels and tooltips, PDF-export
+and RSQL dialogs, and the list/details tab captions — lives in the `base_entity` scope shipped with the package
+(`assets/i18n/base_entity/<lang>.json`, copied into your build). Provide it once on the route that hosts the
+entity screens:
+
+```typescript
+providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })];
+```
+
+The tab captions take the resolved entity name as a parameter, so translators control the word order:
+
+```jsonc
+"tabs": {
+  "list": "{{ entity }} - list",      // → "Trunk Data - list"
+  "details": "{{ entity }} - details"
+}
+```
+
+## Status-bar title
+
+The status bar labels the selected entity with the value of one identifying attribute. That attribute
+is `titleKey` on the descriptor, defaulting to the `isLinkToDetails` attribute (the same one
+`componentIdentification()` returns). Set `titleKey` only to point at a different attribute; set the
+`entityTitle` string/function to override the displayed text entirely.
+
+```typescript
+new BaseEntityDescriptor({ entityName: 'Order Line', attrDescriptors, titleKey: 'productName' });
+// status bar shows currentEntity().productName
+```
+
 ## RSQL search
 
 The list toolbar carries two independent search inputs:

@@ -5,12 +5,13 @@ import { NgClass } from '@angular/common';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { ReactiveFormsModule } from '@angular/forms';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 @Component({
   selector: 'base-textarea',
   standalone: true,
   templateUrl: './textarea.component.html',
-  imports: [NgClass, MatFormField, MatInput, MatLabel, ReactiveFormsModule],
+  imports: [NgClass, MatFormField, MatInput, MatLabel, ReactiveFormsModule, EntityLabelPipe],
   styles: [
     `
       :host {

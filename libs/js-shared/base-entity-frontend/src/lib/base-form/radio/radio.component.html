@@ -1,7 +1,7 @@
 @if (config().visible) {
   <div class="row" [formGroup]="formGroup">
     @if (config().label) {
-      <label>{{ config().label }}</label>
+      <label>{{ config().i18nKey() | ppLabel: config().label }}</label>
     }
     @for (radio of config().getSelectables(); track radio.key; let i = $index) {
       <div [ngClass]="config().styleClass ? config().styleClass : ''">

@@ -24,7 +24,6 @@ export class FirestoreDocContainerComponent implements OnDestroy {
       entityName: 'Firestore Doc',
       store: this.store,
       attrDescriptors: firestoreDocDescriptors,
-      entityTitle: () => this.store.currentEntity()?.name ?? '',
     });
   }
 

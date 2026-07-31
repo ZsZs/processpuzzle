@@ -16,6 +16,7 @@ import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
 import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -78,6 +79,7 @@ describe('BaseEntityFormBuilder', () => {
         provideLogger({ level: 7 }),
         provideNativeDateAdapter(),
         provideRouter([]),
+        provideTranslocoTesting({ translations: {} }),
         TestEntityStore,
         { provide: TestEntityService, useValue: mockService },
       ],

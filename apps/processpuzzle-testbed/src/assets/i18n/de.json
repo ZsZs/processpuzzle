@@ -6,6 +6,7 @@
     "widgets": "ProcessPuzzle Testbed - Widgets",
     "auth": "ProcessPuzzle Testbed - Authentifizierung",
     "base-entity": "ProcessPuzzle Testbed - Basisentität",
+    "base-rule": "ProcessPuzzle Testbed - Basisregel",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
   "home": {
@@ -62,5 +63,18 @@
     "samples_tab_label": "Beispiele",
     "samples_desc_1": "Die Beispielentitäten zur Demonstration der Funktionalität dieser Bibliothek sind wie folgt:",
     "samples_desc_2": "Die unten stehenden Tabellen und Formulare werden zur Laufzeit aus den Entitäten und ihren Attributbeschreibungen generiert."
+  },
+  "base-rules": {
+    "overview_tab_label": "Übersicht",
+    "samples_tab_label": "Beispiele",
+    "samples_desc_1": "Die folgenden Beispielentitäten demonstrieren die Fähigkeiten der Regel-Engine:",
+    "samples_desc_2": "Wählen Sie unten ein Beispiel aus, um zu erkunden, wie Regeln definiert und dagegen ausgewertet werden.",
+    "intro_heading": "ProcessPuzzle Regel-Engine",
+    "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
+    "backend_heading": "Backend — base-rule-backend",
+    "intro_paragraph_1": "Die ProcessPuzzle Regel-Engine ermöglicht es Low-Code-Anwendungen, Geschäftsregeln zu erstellen, auszuwerten und zu visualisieren. Sie kombiniert eine Reihe von Angular-Bausteinen für die Benutzeroberfläche mit einem Spring-Boot-Backend, das die Regeldefinitionen speichert und ausführt.",
+    "intro_paragraph_2": "Die Engine ist in zwei sich ergänzende Bibliotheken aufgeteilt, die ein gemeinsames Domänenvokabular verwenden:",
+    "intro_frontend_desc": "Angular-Dienste, Stores und Komponenten zum Entwerfen, Bearbeiten und Visualisieren von Regeln im Browser.",
+    "intro_backend_desc": "Spring-Boot-Modul, das Regeldefinitionen speichert und serverseitig auswertet, gemäß der hexagonalen Architektur der Plattform."
   }
 }

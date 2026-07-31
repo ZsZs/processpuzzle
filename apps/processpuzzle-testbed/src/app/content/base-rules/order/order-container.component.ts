@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
 import { OrderStore } from './order.store';
 import { createOrderDescriptor } from './order.descriptors';
-import { Order } from './order';
 
 @Component({
   selector: 'order-container',
@@ -22,7 +21,6 @@ export class OrderContainerComponent implements OnDestroy {
   constructor() {
     this.entityDescriptor = createOrderDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.entityTitle = () => (this.store.currentEntity() as Order)?.orderNumber ?? '';
   }
 
   ngOnDestroy(): void {

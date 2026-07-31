@@ -1,0 +1,14 @@
+{
+  "_self": "Entidad de prueba",
+  "name": "Nombre",
+  "description": "Descripción",
+  "boolean": "Booleano",
+  "number": "Número",
+  "date": "Fecha",
+  "lookup": "Búsqueda",
+  "enumValue": "Enumeración",
+  "artifact": "Artefacto",
+  "tags": "Etiquetas",
+  "components": "Componentes",
+  "additionalProperties": "Propiedades adicionales"
+}

@@ -5,6 +5,10 @@
     "cancel_button": "Mégse",
     "delete_button": "Törlés"
   },
+  "tabs": {
+    "list": "{{ entity }} - lista",
+    "details": "{{ entity }} - részletek"
+  },
   "toolbar": {
     "query_label": "Lekérdezés",
     "query_tooltip": "Lista lekérdezése RSQL kifejezéssel",

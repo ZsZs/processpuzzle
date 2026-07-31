@@ -1,0 +1,7 @@
+{
+  "_self": "Auftragsposition",
+  "productName": "Produkt",
+  "quantity": "Menge",
+  "unitPrice": "Einzelpreis",
+  "orderId": "Auftrag"
+}

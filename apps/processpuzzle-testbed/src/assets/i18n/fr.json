@@ -6,6 +6,7 @@
     "widgets": "ProcessPuzzle Testbed - Widgets",
     "auth": "ProcessPuzzle Testbed - Authentification",
     "base-entity": "ProcessPuzzle Testbed - Entité de Base",
+    "base-rule": "ProcessPuzzle Testbed - Règle de Base",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
   "home": {
@@ -62,5 +63,18 @@
     "samples_tab_label": "Exemples",
     "samples_desc_1": "Les entités d'exemple, pour démontrer la fonctionnalité de cette bibliothèque sont les suivantes:",
     "samples_desc_2": "Les tableaux et formulaires ci-dessous sont générés à partir des entités et de leurs descripteurs d'attributs, en temps réel."
+  },
+  "base-rules": {
+    "overview_tab_label": "Aperçu",
+    "samples_tab_label": "Exemples",
+    "samples_desc_1": "Les entités d'exemple suivantes démontrent les capacités du moteur de règles:",
+    "samples_desc_2": "Choisissez un exemple ci-dessous pour explorer comment les règles sont définies et évaluées à son encontre.",
+    "intro_heading": "Moteur de Règles ProcessPuzzle",
+    "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
+    "backend_heading": "Backend — base-rule-backend",
+    "intro_paragraph_1": "Le Moteur de Règles ProcessPuzzle permet aux applications Low-Code de créer, évaluer et visualiser des règles métier. Il combine un ensemble de blocs de construction Angular pour l'interface utilisateur avec un backend Spring Boot qui stocke et exécute les définitions de règles.",
+    "intro_paragraph_2": "Le moteur est divisé en deux bibliothèques complémentaires qui partagent un vocabulaire de domaine commun:",
+    "intro_frontend_desc": "Services, stores et composants Angular utilisés pour concevoir, éditer et visualiser les règles dans le navigateur.",
+    "intro_backend_desc": "Module Spring Boot qui persiste les définitions de règles et les évalue côté serveur, suivant l'architecture hexagonale de la plateforme."
   }
 }

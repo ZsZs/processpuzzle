@@ -5,7 +5,7 @@ export default [
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
   {
-    ignores: ['**/dist', 'tools/mock-backend', 'tools/firebase/functions'],
+    ignores: ['**/dist', '**/reports', '**/coverage', 'tools/mock-backend', 'tools/firebase/functions'],
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],

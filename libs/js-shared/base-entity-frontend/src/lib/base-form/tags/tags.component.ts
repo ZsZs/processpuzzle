@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatChipEditedEvent, MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRemove, MatChipRow } from '@angular/material/chips';
 import { MatIcon } from '@angular/material/icon';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 @Component({
   selector: 'base-tags',
@@ -14,7 +15,7 @@ import { MatIcon } from '@angular/material/icon';
     @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
-          <mat-label>{{ config().label }}</mat-label>
+          <mat-label>{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
           <mat-chip-grid #chipGrid [id]="config().attrName">
             @for (tag of tags(); track $index; let i = $index) {
               <mat-chip-row [editable]="true" (edited)="edit(i, $event)" (removed)="remove(i)">
@@ -52,7 +53,7 @@ import { MatIcon } from '@angular/material/icon';
       }
     `,
   ],
-  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon],
+  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon, EntityLabelPipe],
 })
 export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];

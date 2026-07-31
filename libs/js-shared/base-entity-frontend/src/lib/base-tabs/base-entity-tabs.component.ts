@@ -9,21 +9,25 @@ import { BaseFormNavigatorSingletonStore, RouteSegments } from '../base-form-nav
 import { BaseEntityStatusbarComponent } from '../base-statusbar/base-entity-statusbar.component';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { translateLabel } from '../i18n/entity-label.pipe';
 
 @Component({
   selector: 'base-entity-tabs',
   standalone: true,
-  imports: [CommonModule, MatTabNav, MatTabLink, MatTabNavPanel, RouterOutlet, BaseEntityToolbarComponent, BaseEntityStatusbarComponent],
+  imports: [CommonModule, MatTabNav, MatTabLink, MatTabNavPanel, RouterOutlet, BaseEntityToolbarComponent, BaseEntityStatusbarComponent, TranslocoPipe],
   template: `
     <nav mat-tab-nav-bar [tabPanel]="tabPanel">
-      <a mat-tab-link [attr.data-testid]="entityDescriptor().createTestId('show-list')" (click)="onShowList()" [active]="store.currentTab() === listTabName()">{{ listTabName() }}</a>
+      <a mat-tab-link [attr.data-testid]="entityDescriptor().createTestId('show-list')" (click)="onShowList()" [active]="store.currentTab() === listTabName()"
+        >{{ 'base_entity.tabs.list' | transloco: { entity: entityLabel() } }}</a
+      >
       <a
         mat-tab-link
         [attr.data-testid]="entityDescriptor().createTestId('show-details')"
         [disabled]="store.currentEntity() === undefined"
         (click)="onShowDetails()"
         [active]="store.currentTab() === detailsTabName()"
-        >{{ detailsTabName() }}</a
+        >{{ 'base_entity.tabs.details' | transloco: { entity: entityLabel() } }}</a
       >
     </nav>
 
@@ -41,6 +45,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   detailsTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - details');
   listTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - list');
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
+  private readonly transloco = inject(TranslocoService);
 
   constructor() {
     this.registerEffects();
@@ -76,6 +81,16 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   // endregion
 
   // region protected, private helper methods
+  /**
+   * Translated entity name fed to the `base_entity.tabs.*` keys as the `entity` parameter. Plain method
+   * rather than a computed: the impure `transloco` pipe wrapping it already re-renders on language
+   * switch, and the translation is not a signal dependency.
+   */
+  protected entityLabel(): string {
+    const descriptor = this.entityDescriptor();
+    return translateLabel(this.transloco, descriptor.i18nKey(), descriptor.entityName);
+  }
+
   private registerEffects() {
     effect(() => {
       if (this.formNavigator.activeRouteSegment() === RouteSegments.DETAILS_ROUTE) {

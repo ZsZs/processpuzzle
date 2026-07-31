@@ -5,6 +5,10 @@
     "cancel_button": "Cancel",
     "delete_button": "Delete"
   },
+  "tabs": {
+    "list": "{{ entity }} - list",
+    "details": "{{ entity }} - details"
+  },
   "toolbar": {
     "query_label": "Query",
     "query_tooltip": "Query the list with an RSQL expression",

@@ -9,6 +9,7 @@ import { LookupTable } from './lookup-table';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
+import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 interface LookupStore {
   entities?: () => LookupTable[];
@@ -23,7 +24,7 @@ interface LookupStore {
     @if (config().visible) {
       <div class="row" [formGroup]="formGroup">
         <mat-form-field>
-          <mat-label>{{ config().label }}</mat-label>
+          <mat-label>{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
           <input type="text" matInput [formControl]="displayControl" [matAutocomplete]="lookupOptions" />
           <button type="button" mat-icon-button matSuffix [disabled]="!canNavigateToRelated()" (click)="navigateToRelated()" aria-label="Related entity">
             <mat-icon>link</mat-icon>
@@ -53,7 +54,7 @@ interface LookupStore {
       }
     `,
   ],
-  imports: [ReactiveFormsModule, MatLabel, MatFormField, MatInput, MatAutocompleteModule, MatIconButton, MatIcon, MatSuffix],
+  imports: [ReactiveFormsModule, MatLabel, MatFormField, MatInput, MatAutocompleteModule, MatIconButton, MatIcon, MatSuffix, EntityLabelPipe],
 })
 export class LookupComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   readonly displayControl = new FormControl<string>('', { nonNullable: true });
