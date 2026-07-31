@@ -1058,6 +1058,19 @@ components:
           type: string
           description: Human-readable message in the service's default language.
           example: No page with id 'page-claim-form' is declared in this app definition.
+        severity:
+          $ref: "#/components/schemas/Severity"
+
+    Severity:
+      type: string
+      description: >-
+        How badly a problem should be taken. `ERROR` blocks persisting; `WARNING` and `INFO`
+        are advice and never reject a write. Structural problems are always `ERROR`; the other
+        two arise from the organization's own base-rule records, whose severity is carried
+        through verbatim. Canonical definition in base-rule-api.yaml — a local duplicate for
+        the same reason as the shared shapes below.
+      enum: [ ERROR, WARNING, INFO ]
+      default: ERROR
 
     ValidationResult:
       type: object
@@ -1065,7 +1078,9 @@ components:
       properties:
         valid:
           type: boolean
-          description: True when `problems` contains no entry that would block persisting.
+          description: >-
+            True when `problems` contains no entry that would block persisting, i.e. none of
+            severity `ERROR`. A valid definition may still carry `WARNING` and `INFO` problems.
         problems:
           type: array
           items:

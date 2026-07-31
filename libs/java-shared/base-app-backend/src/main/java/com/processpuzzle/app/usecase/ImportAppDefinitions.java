@@ -81,8 +81,10 @@ public class ImportAppDefinitions {
             }
         }
 
+        // Blocking problems only: a warning from one of the organization's rules must not fail an
+        // otherwise importable file, or a tenant could not import its own export.
         for (AppDefinitionInput entry : byId.values()) {
-            validator.validate(orgKey, entry).forEach(problem ->
+            AppValidationProblem.blocking(validator.validate(orgKey, entry)).forEach(problem ->
                     errors.add("'" + entry.getId() + "' " + problem.path() + ": " + problem.errorText()));
         }
 

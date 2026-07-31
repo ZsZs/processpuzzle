@@ -53,9 +53,10 @@ public class UpdateAppDefinition {
         AppDefinition existing = repository.findByOrgKeyAndId(orgKey, appId)
                 .orElseThrow(() -> new AppDefinitionNotFoundException(orgKey, appId));
 
-        List<AppValidationProblem> problems = validator.validate(orgKey, input);
-        if (!problems.isEmpty()) {
-            throw new AppDefinitionInvalidException(orgKey, appId, problems);
+        List<AppValidationProblem> blockers =
+                AppValidationProblem.blocking(validator.validate(orgKey, input));
+        if (!blockers.isEmpty()) {
+            throw new AppDefinitionInvalidException(orgKey, appId, blockers);
         }
 
         existing.replaceDraft(input.getName(), input.getTranslocoId(), input.getDescription(),

@@ -17,10 +17,16 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.app.usecase.service.AppRuleValidator;
+import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.rule.usecase.EvaluateObject;
+import com.processpuzzle.rule.usecase.EvaluationOutcome;
+import com.processpuzzle.rule.usecase.RuleViolation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +47,8 @@ class PublishAppDefinitionTest {
     private PublishAppDefinition publishAppDefinition;
     private UpdateAppDefinition updateAppDefinition;
     private AppMapper mapper;
+    private EvaluateObject evaluateObject;
+    private ObjectProvider<EvaluateObject> evaluateObjectProvider;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -54,7 +62,13 @@ class PublishAppDefinitionTest {
         when(policyProvider.getIfUnique(any())).thenReturn(new com.processpuzzle.app.usecase.port
                 .PermitAllOrganizationAccessPolicy());
 
-        AppDefinitionValidator validator = new AppDefinitionValidator(entityRegistryProvider);
+        // No rule module wired by default; the rule-aware tests below opt in.
+        evaluateObject = mock(EvaluateObject.class);
+        evaluateObjectProvider = mock(ObjectProvider.class);
+        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
+
+        AppDefinitionValidator validator = new AppDefinitionValidator(
+                entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 
@@ -134,12 +148,51 @@ class PublishAppDefinitionTest {
         assertThat(definition.hasPublishedRevision()).isFalse();
     }
 
+    /**
+     * The reason severity is threaded through at all: several of the rules ProcessPuzzle ships are
+     * WARNING or INFO, and a draft is expected to trip them. If any problem blocked the write, an app
+     * could not be saved on its way to conforming — and a tenant that wants a convention enforced
+     * strictly says so by giving its rule ERROR severity.
+     */
+    @Test
+    void aDefinitionTrippingOnlyAWarningRule_isStillSavedAndPublished() {
+        givenRuleViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
+                Severity.WARNING, "This app declares no sidenav navigation.", null));
+        AppDefinition definition = stored(validGraph());
+        when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
+
+        assertThat(updateAppDefinition.execute("my-org", "claims-app", emptyishInput())).isNotNull();
+        assertThat(publishAppDefinition.execute("my-org", "claims-app").isPublished()).isTrue();
+    }
+
+    @Test
+    void aDefinitionTrippingAnErrorRule_isRejected() {
+        givenRuleViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
+                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.", null));
+        AppDefinition definition = stored(validGraph());
+        when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
+
+        assertThatThrownBy(() -> updateAppDefinition.execute("my-org", "claims-app", emptyishInput()))
+                .isInstanceOf(AppDefinitionInvalidException.class);
+        assertThatThrownBy(() -> publishAppDefinition.execute("my-org", "claims-app"))
+                .isInstanceOf(AppDefinitionInvalidException.class);
+        assertThat(definition.hasPublishedRevision()).isFalse();
+    }
+
     @Test
     void publishingAnUnknownDefinition_is404() {
         when(repository.findByOrgKeyAndId("my-org", "nope")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> publishAppDefinition.execute("my-org", "nope"))
                 .isInstanceOf(AppDefinitionNotFoundException.class);
+    }
+
+    /** Wires the rule module in for this test, with the given violations on every evaluation. */
+    private void givenRuleViolations(RuleViolation... violations) {
+        when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
+        boolean passed = Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
+        when(evaluateObject.execute(any(), any(), any()))
+                .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
     }
 
     private static AppDefinition stored(AppGraph graph) {

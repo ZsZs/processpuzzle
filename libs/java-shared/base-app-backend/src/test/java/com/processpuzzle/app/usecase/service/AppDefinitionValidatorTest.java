@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
+import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.PageDefinition;
@@ -9,6 +10,10 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.app.model.WidgetRef;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
+import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.rule.usecase.EvaluateObject;
+import com.processpuzzle.rule.usecase.EvaluationOutcome;
+import com.processpuzzle.rule.usecase.RuleViolation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -19,19 +24,26 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class AppDefinitionValidatorTest {
 
     private AppDefinitionValidator validator;
     private ObjectProvider<EntityNameRegistry> entityRegistryProvider;
+    private ObjectProvider<EvaluateObject> evaluateObjectProvider;
+    private EvaluateObject evaluateObject;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
         entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        validator = new AppDefinitionValidator(entityRegistryProvider);
+        evaluateObjectProvider = mock(ObjectProvider.class);
+        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
+        evaluateObject = mock(EvaluateObject.class);
+        validator = new AppDefinitionValidator(entityRegistryProvider,
+                new AppRuleValidator(evaluateObjectProvider));
     }
 
     @Test
@@ -230,6 +242,70 @@ class AppDefinitionValidatorTest {
         input.getPages().getFirst().setWidgets(List.of(grid));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    // --- rules of the organization -------------------------------------------------------
+
+    @Test
+    void violatedErrorRule_isReportedAndBlocksPersisting() {
+        givenViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
+                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.",
+                "rule.appDefinition.idIsRouteSafe"));
+
+        List<AppValidationProblem> problems = validator.validate("my-org", validInput());
+
+        assertThat(problems).hasSize(1);
+        assertThat(problems.getFirst().errorId()).isEqualTo("rule.appDefinition.idIsRouteSafe");
+        assertThat(problems.getFirst().path()).isEqualTo("/");
+        assertThat(AppValidationProblem.blocking(problems)).hasSize(1);
+    }
+
+    @Test
+    void violatedWarningRule_isReportedButDoesNotBlockPersisting() {
+        givenViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
+                Severity.WARNING, "This app declares no sidenav navigation.", null));
+
+        List<AppValidationProblem> problems = validator.validate("my-org", validInput());
+
+        assertThat(problems).hasSize(1);
+        assertThat(problems.getFirst().severity()).isEqualTo(Severity.WARNING);
+        assertThat(AppValidationProblem.blocking(problems)).isEmpty();
+    }
+
+    /** A rule author who declares no Transloco key still gets a stable, rule-specific identifier. */
+    @Test
+    void violationWithoutTranslocoId_getsAnErrorIdDerivedFromTheRuleId() {
+        givenViolations(new RuleViolation("titles-are-translatable", "Titles are translatable",
+                Severity.INFO, "Give every page title a Transloco id.", "  "));
+
+        assertThat(errorIds(validator.validate("my-org", validInput())))
+                .containsExactly("app.validation.rule.titles-are-translatable");
+    }
+
+    /** The stored-definition path publishing uses must consult the rules too. */
+    @Test
+    void storedDefinition_isAlsoEvaluatedAgainstTheRules() {
+        givenViolations(new RuleViolation("page-ids-are-route-safe", "Page ids are route-safe",
+                Severity.ERROR, "Every page id must be lowercase.", null));
+
+        AppDefinition stored = new AppDefinition("claims-app", "Claims Management");
+        stored.setPages(List.of(new PageDefinition("Page_One", "Claims", List.of())));
+
+        assertThat(errorIds(validator.validateStored("my-org", stored)))
+                .contains("app.validation.rule.page-ids-are-route-safe");
+    }
+
+    @Test
+    void rulesAreNotConsultedWhenNoRuleEngineIsWired() {
+        assertThat(validator.validate("my-org", validInput())).isEmpty();
+        verifyNoInteractions(evaluateObject);
+    }
+
+    private void givenViolations(RuleViolation... violations) {
+        when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
+        boolean passed = java.util.Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
+        when(evaluateObject.execute(any(), any(), any()))
+                .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
     }
 
     /** Mutable on purpose — every test above bends one part of it out of shape. */

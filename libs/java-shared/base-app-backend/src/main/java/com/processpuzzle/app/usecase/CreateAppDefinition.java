@@ -51,9 +51,12 @@ public class CreateAppDefinition {
             throw new AppDefinitionAlreadyExistsException(orgKey, input.getId());
         }
 
-        List<AppValidationProblem> problems = validator.validate(orgKey, input);
-        if (!problems.isEmpty()) {
-            throw new AppDefinitionInvalidException(orgKey, input.getId(), problems);
+        // Only ERROR-severity problems reject the write: the organization's own rules also report
+        // warnings and advice, which a draft is allowed to carry.
+        List<AppValidationProblem> blockers =
+                AppValidationProblem.blocking(validator.validate(orgKey, input));
+        if (!blockers.isEmpty()) {
+            throw new AppDefinitionInvalidException(orgKey, input.getId(), blockers);
         }
 
         return repository.save(new AppDefinition(

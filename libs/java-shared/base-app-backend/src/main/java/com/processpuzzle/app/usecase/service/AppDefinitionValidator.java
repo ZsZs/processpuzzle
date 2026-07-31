@@ -25,7 +25,7 @@ import java.util.Set;
  * validate endpoint and by every write, so an invalid definition can never be persisted or
  * published.
  *
- * <p>Deliberately out of scope:
+ * <p>Deliberately out of scope <em>here</em>:
  *
  * <ul>
  *   <li><b>Enum-valued fields.</b> {@code materialTheme}, {@code colorScheme}, {@code preset},
@@ -35,29 +35,45 @@ import java.util.Set;
  *   <li><b>Widget {@code props}.</b> Each widget type owns and validates its own props shape on the
  *       frontend; the only thing checked here is the {@code entityName} cross-reference, and only
  *       when an {@link EntityNameRegistry} is available.
+ *   <li><b>Conventions and policy.</b> Id shapes, navigation depth, role naming, CSS units,
+ *       translatability and anything else a tenant may want to decide for itself are
+ *       {@code base-rule} records, evaluated by {@link AppRuleValidator} as part of the same pass —
+ *       so tightening them is a database row rather than a change here.
  * </ul>
  *
  * <p>Cycles in the {@code children} trees need no dedicated check: the input arrives as JSON or
  * YAML, which cannot express one. Repeated ids — the observable symptom a designer would hit — are
  * caught by the uniqueness checks.
+ *
+ * <p>Structural problems are always {@code ERROR}; the organization's rules contribute their own
+ * severity, so a returned list may contain problems that do not reject the write — see
+ * {@link AppValidationProblem#blocking(List)}.
  */
 @Component
 public class AppDefinitionValidator {
 
     private final ObjectProvider<EntityNameRegistry> entityRegistryProvider;
+    private final AppRuleValidator ruleValidator;
 
-    public AppDefinitionValidator(ObjectProvider<EntityNameRegistry> entityRegistryProvider) {
+    public AppDefinitionValidator(ObjectProvider<EntityNameRegistry> entityRegistryProvider,
+                                  AppRuleValidator ruleValidator) {
         this.entityRegistryProvider = entityRegistryProvider;
+        this.ruleValidator = ruleValidator;
     }
 
-    /** Returns every problem found; an empty list means the definition may be persisted. */
+    /**
+     * Returns every problem found; no problem of severity {@code ERROR} means the definition may be
+     * persisted.
+     */
     public List<AppValidationProblem> validate(String orgKey, AppDefinitionInput input) {
         if (input == null) {
             return List.of(new AppValidationProblem("/", "app.validation.missing-body",
                     "No app definition was supplied."));
         }
-        return validateParts(orgKey, input.getId(), input.getName(), input.getTheme(), input.getRegions(),
-                input.getPages());
+        List<AppValidationProblem> problems = validateParts(orgKey, input.getId(), input.getName(),
+                input.getTheme(), input.getRegions(), input.getPages());
+        problems.addAll(ruleValidator.validate(orgKey, input));
+        return problems;
     }
 
     /**
@@ -73,8 +89,10 @@ public class AppDefinitionValidator {
             return List.of(new AppValidationProblem("/", "app.validation.missing-body",
                     "No app definition was supplied."));
         }
-        return validateParts(orgKey, definition.getId(), definition.getName(), definition.getTheme(),
-                definition.getRegions(), definition.getPages());
+        List<AppValidationProblem> problems = validateParts(orgKey, definition.getId(),
+                definition.getName(), definition.getTheme(), definition.getRegions(), definition.getPages());
+        problems.addAll(ruleValidator.validate(orgKey, definition));
+        return problems;
     }
 
     private List<AppValidationProblem> validateParts(String orgKey, String id, String name,

@@ -18,6 +18,10 @@ import java.util.List;
  * persisted by a path that skipped validation. Publishing does not bump the revision counter — see
  * {@link AppDefinition} for why that matters.
  *
+ * <p>Publishing applies the same bar as saving: only {@code ERROR} rejects. A tenant that wants a
+ * convention to stop a release rather than merely annotate a draft raises that rule's severity — the
+ * decision belongs in the rule record, not in a second threshold here.
+ *
  * <p>Publishing an already-published, unedited definition is a no-op rather than an error: it is
  * idempotent, which is the friendlier behaviour for a designer's Publish button.
  */
@@ -45,9 +49,10 @@ public class PublishAppDefinition {
         AppDefinition existing = repository.findByOrgKeyAndId(orgKey, appId)
                 .orElseThrow(() -> new AppDefinitionNotFoundException(orgKey, appId));
 
-        List<AppValidationProblem> problems = validator.validateStored(orgKey, mapper.toModel(existing));
-        if (!problems.isEmpty()) {
-            throw new AppDefinitionInvalidException(orgKey, appId, problems);
+        List<AppValidationProblem> blockers = AppValidationProblem.blocking(
+                validator.validateStored(orgKey, mapper.toModel(existing)));
+        if (!blockers.isEmpty()) {
+            throw new AppDefinitionInvalidException(orgKey, appId, blockers);
         }
 
         existing.publish();

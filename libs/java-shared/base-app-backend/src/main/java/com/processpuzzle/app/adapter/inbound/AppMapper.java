@@ -22,6 +22,7 @@ import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
+import com.processpuzzle.app.model.Severity;
 import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.app.model.ValidationProblem;
@@ -331,13 +332,18 @@ public class AppMapper {
 
     // --- outcomes ------------------------------------------------------------------------
 
+    /**
+     * {@code valid} reports whether the definition may be persisted, not whether the list is empty: a
+     * definition carrying only warnings and advice from the organization's rules is valid.
+     */
     public ValidationResult toModel(List<AppValidationProblem> problems) {
         List<ValidationProblem> models = problems.stream().map(problem -> {
             ValidationProblem model = new ValidationProblem(problem.errorId(), problem.errorText());
             model.setPath(problem.path());
+            model.setSeverity(Severity.fromValue(problem.severity().name()));
             return model;
         }).toList();
-        return new ValidationResult(problems.isEmpty(), models);
+        return new ValidationResult(AppValidationProblem.blocking(problems).isEmpty(), models);
     }
 
     public ImportResult toModel(ImportOutcome outcome) {
