@@ -2,6 +2,7 @@ package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.rule.domain.Severity;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -17,7 +18,10 @@ import java.util.List;
  * @param errorText human-readable message in the service's default language
  * @param severity whether this rejects the write or is merely advice — see {@link #blocksPersisting()}
  */
-public record AppValidationProblem(String path, String errorId, String errorText, Severity severity) {
+public record AppValidationProblem(String path, String errorId, String errorText, Severity severity)
+        implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * A blocking problem. Every structural problem uses this: referential integrity is not a matter

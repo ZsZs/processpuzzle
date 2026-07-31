@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 /**
  * Answers whether an organization key can be claimed, for live feedback on the sign-up form.
@@ -21,8 +20,6 @@ import java.util.regex.Pattern;
 @Transactional(readOnly = true)
 public class CheckOrganizationKey {
 
-    /** Mirrors the {@code OrganizationKey} pattern in shared-api.yaml. */
-    private static final Pattern KEY_PATTERN = Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*$");
     private static final int MIN_LENGTH = 2;
     private static final int MAX_LENGTH = 63;
     private static final int MAX_SUGGESTIONS = 3;
@@ -44,7 +41,7 @@ public class CheckOrganizationKey {
         if (candidate.length() < MIN_LENGTH || candidate.length() > MAX_LENGTH) {
             return KeyCheckOutcome.unavailable(candidate, "organization.key.length", List.of());
         }
-        if (!KEY_PATTERN.matcher(candidate).matches()) {
+        if (!matchesKeyPattern(candidate)) {
             return KeyCheckOutcome.unavailable(candidate, "organization.key.invalid", suggestionsFor(candidate));
         }
         if (reservedKeys.isReserved(candidate)) {
@@ -84,6 +81,32 @@ public class CheckOrganizationKey {
                 .distinct()
                 .limit(MAX_SUGGESTIONS)
                 .toList();
+    }
+
+    /**
+     * Mirrors the {@code OrganizationKey} pattern {@code ^[a-z0-9]+(-[a-z0-9]+)*$} in shared-api.yaml,
+     * scanned rather than matched: the nested repetition of that expression makes the JDK regex engine
+     * recurse per character, which overflows the stack on a long input.
+     */
+    private static boolean matchesKeyPattern(String candidate) {
+        if (candidate.charAt(0) == '-' || candidate.charAt(candidate.length() - 1) == '-') {
+            return false;
+        }
+        boolean previousWasHyphen = false;
+        for (int i = 0; i < candidate.length(); i++) {
+            char current = candidate.charAt(i);
+            if (current == '-') {
+                if (previousWasHyphen) {
+                    return false;
+                }
+                previousWasHyphen = true;
+            } else if ((current < 'a' || current > 'z') && (current < '0' || current > '9')) {
+                return false;
+            } else {
+                previousWasHyphen = false;
+            }
+        }
+        return true;
     }
 
     /** Coerces arbitrary input into the slug shape so a suggestion is always usable as-is. */

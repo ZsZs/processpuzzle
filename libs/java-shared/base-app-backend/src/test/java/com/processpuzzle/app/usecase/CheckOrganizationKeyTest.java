@@ -68,6 +68,15 @@ class CheckOrganizationKeyTest {
         assertThat(checkOrganizationKey.execute(null).errorId()).isEqualTo("organization.key.missing");
     }
 
+    /** The hyphen may only join slug words, so it can neither bound the key nor repeat. */
+    @Test
+    void hyphensAtAnEdgeOrDoubled_areRejected() {
+        assertThat(checkOrganizationKey.execute("-my-org").errorId()).isEqualTo("organization.key.invalid");
+        assertThat(checkOrganizationKey.execute("my-org-").errorId()).isEqualTo("organization.key.invalid");
+        assertThat(checkOrganizationKey.execute("my--org").errorId()).isEqualTo("organization.key.invalid");
+        assertThat(checkOrganizationKey.execute("my-2nd-org").available()).isTrue();
+    }
+
     @Test
     void malformedKey_isRejectedWithASlugifiedSuggestion() {
         KeyCheckOutcome outcome = checkOrganizationKey.execute("My Org Ltd.");

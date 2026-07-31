@@ -68,15 +68,10 @@ public class ImportAppDefinitions {
         List<String> errors = new ArrayList<>();
         Map<String, AppDefinitionInput> byId = new LinkedHashMap<>();
         for (AppDefinitionInput entry : document.appDefinitions()) {
-            if (entry == null) {
-                errors.add("An app definition entry is null and was skipped.");
-                continue;
-            }
-            if (entry.getId() == null || entry.getId().isBlank()) {
-                errors.add("An app definition entry is missing 'id' and was skipped.");
-                continue;
-            }
-            if (byId.put(entry.getId(), entry) != null) {
+            String skipReason = skipReason(entry);
+            if (skipReason != null) {
+                errors.add(skipReason);
+            } else if (byId.put(entry.getId(), entry) != null) {
                 errors.add("Duplicate app definition id within the import file: '" + entry.getId() + "'.");
             }
         }
@@ -111,5 +106,16 @@ public class ImportAppDefinitions {
         }
 
         return new ImportOutcome(created, updated, errors);
+    }
+
+    /** Why {@code entry} cannot be indexed by id, or {@code null} when it can. */
+    private static String skipReason(AppDefinitionInput entry) {
+        if (entry == null) {
+            return "An app definition entry is null and was skipped.";
+        }
+        if (entry.getId() == null || entry.getId().isBlank()) {
+            return "An app definition entry is missing 'id' and was skipped.";
+        }
+        return null;
     }
 }

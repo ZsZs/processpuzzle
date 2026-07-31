@@ -71,17 +71,18 @@ public class OrganizationGuard {
     private List<NavNode> filterNavItems(List<NavNode> navItems) {
         List<NavNode> visible = new ArrayList<>(navItems.size());
         for (NavNode item : navItems) {
-            if (!isVisible(item.roles())) {
-                continue;
+            if (isVisible(item.roles())) {
+                List<NavNode> children = filterNavItems(item.children());
+                if (!isEmptiedGroup(item, children)) {
+                    visible.add(item.withChildren(children));
+                }
             }
-            List<NavNode> children = filterNavItems(item.children());
-            boolean isEmptiedGroup = item.pageId() == null && !item.children().isEmpty() && children.isEmpty();
-            if (isEmptiedGroup) {
-                continue;
-            }
-            visible.add(item.withChildren(children));
         }
         return List.copyOf(visible);
+    }
+
+    private static boolean isEmptiedGroup(NavNode item, List<NavNode> visibleChildren) {
+        return item.pageId() == null && !item.children().isEmpty() && visibleChildren.isEmpty();
     }
 
     /**

@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Translates between the generated API models and the domain.
@@ -105,7 +106,7 @@ public class AppMapper {
         if (navItems == null) {
             return List.of();
         }
-        return navItems.stream().filter(item -> item != null)
+        return navItems.stream().filter(Objects::nonNull)
                 .map(item -> new NavNode(
                         item.getId(),
                         item.getLabel(),
@@ -121,7 +122,7 @@ public class AppMapper {
         if (widgets == null) {
             return List.of();
         }
-        return widgets.stream().filter(widget -> widget != null)
+        return widgets.stream().filter(Objects::nonNull)
                 .map(widget -> new Widget(
                         widget.getId(),
                         widget.getType(),
@@ -134,7 +135,7 @@ public class AppMapper {
         if (pages == null) {
             return List.of();
         }
-        return pages.stream().filter(page -> page != null)
+        return pages.stream().filter(Objects::nonNull)
                 .map(page -> new AppPage(
                         page.getId(),
                         page.getTitle(),
@@ -247,7 +248,7 @@ public class AppMapper {
         }
         return regions.stream()
                 .map(this::toModelRegion)
-                .filter(region -> region != null)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

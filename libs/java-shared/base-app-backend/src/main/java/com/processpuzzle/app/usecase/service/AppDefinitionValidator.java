@@ -52,6 +52,10 @@ import java.util.Set;
 @Component
 public class AppDefinitionValidator {
 
+    private static final String SEPARATOR = "/";
+    private static final String WIDGETS = "/widgets";
+    private static final String TYPE = "/type";
+
     private final ObjectProvider<EntityNameRegistry> entityRegistryProvider;
     private final AppRuleValidator ruleValidator;
 
@@ -156,7 +160,7 @@ public class AppDefinitionValidator {
                 problems.add(new AppValidationProblem(path + "/title", "app.validation.missing-page-title",
                         "A page needs a title."));
             }
-            validateWidgets(orgKey, page.getWidgets(), path + "/widgets", new HashSet<>(), problems);
+            validateWidgets(orgKey, page.getWidgets(), path + WIDGETS, new HashSet<>(), problems);
         }
         return pageIds;
     }
@@ -168,7 +172,7 @@ public class AppDefinitionValidator {
         }
         for (int i = 0; i < widgets.size(); i++) {
             WidgetRef widget = widgets.get(i);
-            String path = basePath + "/" + i;
+            String path = basePath + SEPARATOR + i;
             if (widget == null) {
                 problems.add(new AppValidationProblem(path, "app.validation.null-widget", "A widget entry is null."));
                 continue;
@@ -181,7 +185,7 @@ public class AppDefinitionValidator {
                         "More than one widget in this page or region uses the id '" + widget.getId() + "'."));
             }
             if (isBlank(widget.getType())) {
-                problems.add(new AppValidationProblem(path + "/type", "app.validation.missing-widget-type",
+                problems.add(new AppValidationProblem(path + TYPE, "app.validation.missing-widget-type",
                         "A widget needs a type; it is the key into the frontend widget registry."));
             }
             validateEntityName(orgKey, widget, path, problems);
@@ -220,18 +224,16 @@ public class AppDefinitionValidator {
             String path = "/regions/" + i;
             if (region == null) {
                 problems.add(new AppValidationProblem(path, "app.validation.null-region", "A region entry is null."));
-                continue;
-            }
-            if (region.getType() == null) {
-                problems.add(new AppValidationProblem(path + "/type", "app.validation.missing-region-type",
+            } else if (region.getType() == null) {
+                problems.add(new AppValidationProblem(path + TYPE, "app.validation.missing-region-type",
                         "A region needs a type."));
-                continue;
+            } else {
+                if (!seenTypes.add(region.getType())) {
+                    problems.add(new AppValidationProblem(path + TYPE, "app.validation.duplicate-region",
+                            "More than one '" + region.getType().getValue() + "' region is declared."));
+                }
+                validateRegionContents(orgKey, region, path, pageIds, navIds, referencedPageIds, problems);
             }
-            if (!seenTypes.add(region.getType())) {
-                problems.add(new AppValidationProblem(path + "/type", "app.validation.duplicate-region",
-                        "More than one '" + region.getType().getValue() + "' region is declared."));
-            }
-            validateRegionContents(orgKey, region, path, pageIds, navIds, referencedPageIds, problems);
         }
         return referencedPageIds;
     }
@@ -250,7 +252,7 @@ public class AppDefinitionValidator {
         }
         boolean staticContentAllowed = region.getType() == RegionType.HEADER || region.getType() == RegionType.FOOTER;
         if (hasWidgets && !staticContentAllowed) {
-            problems.add(new AppValidationProblem(path + "/widgets", "app.validation.widgets-not-allowed",
+            problems.add(new AppValidationProblem(path + WIDGETS, "app.validation.widgets-not-allowed",
                     "Only a header or footer region carries static widgets; the '"
                             + region.getType().getValue() + "' region declares "
                             + region.getWidgets().size() + ". Content-region widgets belong to a page."));
@@ -259,7 +261,7 @@ public class AppDefinitionValidator {
             validateNavItems(region.getNavItems(), path + "/navItems", pageIds, navIds, referencedPageIds, problems);
         }
         if (staticContentAllowed) {
-            validateWidgets(orgKey, region.getWidgets(), path + "/widgets", new HashSet<>(), problems);
+            validateWidgets(orgKey, region.getWidgets(), path + WIDGETS, new HashSet<>(), problems);
         }
     }
 
@@ -271,39 +273,48 @@ public class AppDefinitionValidator {
         }
         for (int i = 0; i < navItems.size(); i++) {
             NavItem item = navItems.get(i);
-            String path = basePath + "/" + i;
+            String path = basePath + SEPARATOR + i;
             if (item == null) {
                 problems.add(new AppValidationProblem(path, "app.validation.null-nav-item",
                         "A nav item entry is null."));
-                continue;
-            }
-            if (isBlank(item.getId())) {
-                problems.add(new AppValidationProblem(path + "/id", "app.validation.missing-nav-item-id",
-                        "A nav item needs an id."));
-            } else if (!navIds.add(item.getId())) {
-                problems.add(new AppValidationProblem(path + "/id", "app.validation.duplicate-nav-item-id",
-                        "More than one nav item uses the id '" + item.getId() + "'."));
-            }
-            if (isBlank(item.getLabel())) {
-                problems.add(new AppValidationProblem(path + "/label", "app.validation.missing-nav-item-label",
-                        "A nav item needs a label."));
-            }
-
-            boolean hasChildren = item.getChildren() != null && !item.getChildren().isEmpty();
-            if (isBlank(item.getPageId())) {
-                if (!hasChildren) {
-                    problems.add(new AppValidationProblem(path, "app.validation.dead-nav-item",
-                            "Nav item '" + item.getId() + "' has neither a pageId nor children, "
-                                    + "so it would render as an entry that does nothing."));
-                }
-            } else if (!pageIds.contains(item.getPageId())) {
-                problems.add(new AppValidationProblem(path + "/pageId", "app.validation.unknown-page-reference",
-                        "No page with id '" + item.getPageId() + "' is declared in this app definition."));
             } else {
-                referencedPageIds.add(item.getPageId());
+                validateNavItem(item, path, navIds, problems);
+                validatePageReference(item, path, pageIds, referencedPageIds, problems);
+                validateNavItems(item.getChildren(), path + "/children", pageIds, navIds, referencedPageIds,
+                        problems);
             }
+        }
+    }
 
-            validateNavItems(item.getChildren(), path + "/children", pageIds, navIds, referencedPageIds, problems);
+    private void validateNavItem(NavItem item, String path, Set<String> navIds,
+                                 List<AppValidationProblem> problems) {
+        if (isBlank(item.getId())) {
+            problems.add(new AppValidationProblem(path + "/id", "app.validation.missing-nav-item-id",
+                    "A nav item needs an id."));
+        } else if (!navIds.add(item.getId())) {
+            problems.add(new AppValidationProblem(path + "/id", "app.validation.duplicate-nav-item-id",
+                    "More than one nav item uses the id '" + item.getId() + "'."));
+        }
+        if (isBlank(item.getLabel())) {
+            problems.add(new AppValidationProblem(path + "/label", "app.validation.missing-nav-item-label",
+                    "A nav item needs a label."));
+        }
+    }
+
+    private void validatePageReference(NavItem item, String path, Set<String> pageIds,
+                                       Set<String> referencedPageIds, List<AppValidationProblem> problems) {
+        boolean hasChildren = item.getChildren() != null && !item.getChildren().isEmpty();
+        if (isBlank(item.getPageId())) {
+            if (!hasChildren) {
+                problems.add(new AppValidationProblem(path, "app.validation.dead-nav-item",
+                        "Nav item '" + item.getId() + "' has neither a pageId nor children, "
+                                + "so it would render as an entry that does nothing."));
+            }
+        } else if (!pageIds.contains(item.getPageId())) {
+            problems.add(new AppValidationProblem(path + "/pageId", "app.validation.unknown-page-reference",
+                    "No page with id '" + item.getPageId() + "' is declared in this app definition."));
+        } else {
+            referencedPageIds.add(item.getPageId());
         }
     }
 
