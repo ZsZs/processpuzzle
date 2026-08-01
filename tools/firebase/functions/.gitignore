@@ -9,6 +9,7 @@ typings/
 node_modules/
 *.local
 
-# Synced from tools/mock-backend/db.json by `npm run sync-db`
+# Synced from tools/mock-backend by `npm run sync-db`
 db.json
 lib/db.json
+org-scope.js

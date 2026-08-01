@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "module": "NodeNext",
     "esModuleInterop": true,
     "moduleResolution": "nodenext",
@@ -16,6 +17,7 @@
   "include": [
     "./**/*.ts",
     "./**/*.d.ts",
+    "./org-scope.js",
     "./package.json"
   ]
 }

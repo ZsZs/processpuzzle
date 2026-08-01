@@ -3,6 +3,7 @@
     "PIPELINE_STAGE": "prod",
     "BACKEND_SERVICE_PROVIDER": "firestore",
     "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed.cloudfunctions.net/jsonServer/api",
+    "RULE_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed.cloudfunctions.net/jsonServer/api/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {
       "authDomain": "processpuzzle-testbed.firebaseapp.com",
       "projectId": "processpuzzle-testbed",
