@@ -12,5 +12,7 @@ export interface BaseConfiguration {
   readonly BACKEND_SERVICE_ROOT: string;
   readonly OBJECT_STORE_SERVICE_ROOT: string;
   readonly RULE_SERVICE_ROOT: string;
+  /** Organization-scoped root of the base-app endpoints: `<host>/organizations/<orgKey>`. */
+  readonly APP_SERVICE_ROOT: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

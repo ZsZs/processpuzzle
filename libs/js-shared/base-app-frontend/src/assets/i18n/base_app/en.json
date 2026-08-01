@@ -1,0 +1,24 @@
+{
+  "app_definition": {
+    "_self": "Application",
+    "id": "Id",
+    "name": "Name",
+    "translocoId": "Transloco Id",
+    "description": "Description",
+    "status": "Status",
+    "version": "Version",
+    "publishedVersion": "Published Version",
+    "updatedAt": "Updated At",
+    "materialTheme": "Material Theme",
+    "colorScheme": "Color Scheme",
+    "preset": "Layout Preset",
+    "sidenavMode": "Sidenav Mode",
+    "contentMaxWidth": "Content Max Width",
+    "sidenavCollapsible": "Sidenav Collapsible",
+    "sidenavOpenByDefault": "Sidenav Open By Default"
+  },
+  "publish": {
+    "button": "Publish",
+    "tooltip": "Publish the saved definition: its version becomes the published version"
+  }
+}

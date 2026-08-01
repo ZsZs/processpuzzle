@@ -1,0 +1,24 @@
+{
+  "app_definition": {
+    "_self": "Alkalmazás",
+    "id": "Azonosító",
+    "name": "Név",
+    "translocoId": "Transloco azonosító",
+    "description": "Leírás",
+    "status": "Állapot",
+    "version": "Verzió",
+    "publishedVersion": "Közzétett verzió",
+    "updatedAt": "Módosítva",
+    "materialTheme": "Material téma",
+    "colorScheme": "Színséma",
+    "preset": "Elrendezés sablon",
+    "sidenavMode": "Oldalsáv mód",
+    "contentMaxWidth": "Tartalom maximális szélessége",
+    "sidenavCollapsible": "Összecsukható oldalsáv",
+    "sidenavOpenByDefault": "Oldalsáv alapból nyitva"
+  },
+  "publish": {
+    "button": "Közzététel",
+    "tooltip": "A mentett definíció közzététele: a verziója lesz a közzétett verzió"
+  }
+}
