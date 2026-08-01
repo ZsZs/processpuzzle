@@ -6,7 +6,9 @@ on:
     paths:
       - 'apps/processpuzzle-testbed/**'
       - 'tools/firebase/functions/**'
-      - 'tools/mock-backend/db.json'
+      - 'tools/mock-backend/**'
+      - 'libs/java-shared/base-rule-backend/src/main/resources/sample-rules/**'
+      - 'libs/java-shared/base-app-backend/src/main/resources/default-apps/**'
       - 'firebase.json'
 
 jobs:
