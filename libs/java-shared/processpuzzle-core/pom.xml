@@ -95,6 +95,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Annotations only, for the com.processpuzzle.core application module declaration -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

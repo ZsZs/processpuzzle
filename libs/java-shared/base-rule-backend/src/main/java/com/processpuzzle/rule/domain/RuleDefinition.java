@@ -8,18 +8,25 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Persisted PPCL rule definition.
+ * Persisted PPCL rule definition, identified by ({@code orgKey}, {@code id}) — see
+ * {@link RuleDefinitionKey}. A rule id is unique only within its organization.
  *
  * <p>{@code extendsRuleId} is deliberately a plain string column, not a JPA
  * {@code @ManyToOne} self-reference: a YAML import batch may contain a child rule in the
  * same file as (or even before) its parent, so enforcing this at the database level via a
  * foreign key would make import ordering matter. Referential integrity (the parent exists,
- * no cycles) is validated at the service layer instead — see {@code RuleDefinitionService}
- * and {@code RuleYamlService}.
+ * no cycles) is validated at the service layer instead — see {@code RuleExtendsValidator}
+ * and {@code ImportRules}. It resolves within {@code orgKey} only: cross-organization
+ * inheritance would leak one tenant's expressions into another's evaluation chain.
  */
 @Entity
 @Table(name = "rule_definitions")
+@IdClass(RuleDefinitionKey.class)
 public class RuleDefinition {
+
+    @Id
+    @Column(name = "org_key", length = 63)
+    private String orgKey;
 
     @Id
     @Column(length = 100)
@@ -57,8 +64,12 @@ public class RuleDefinition {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    // Both key columns are needed in the join: rule_id alone would collide across tenants.
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "rule_definition_fields", joinColumns = @JoinColumn(name = "rule_id"))
+    @CollectionTable(name = "rule_definition_fields", joinColumns = {
+            @JoinColumn(name = "org_key", referencedColumnName = "org_key"),
+            @JoinColumn(name = "rule_id", referencedColumnName = "id")
+    })
     @Column(name = "field_name", length = 100)
     private List<String> fields = new ArrayList<>();
 
@@ -75,18 +86,19 @@ public class RuleDefinition {
         // required by JPA
     }
 
-    public RuleDefinition(String id, String name, String description, String context,
+    public RuleDefinition(String orgKey, String id, String name, String description, String context,
                            String expression, Severity severity, String message,
                            String translocoId, String extendsRuleId,
                            boolean override, boolean enabled) {
-        this(id, name, description, context, expression, severity, message,
+        this(orgKey, id, name, description, context, expression, severity, message,
                 translocoId, extendsRuleId, override, enabled, null);
     }
 
-    public RuleDefinition(String id, String name, String description, String context,
+    public RuleDefinition(String orgKey, String id, String name, String description, String context,
                            String expression, Severity severity, String message,
                            String translocoId, String extendsRuleId,
                            boolean override, boolean enabled, List<String> fields) {
+        this.orgKey = orgKey;
         this.id = id;
         this.name = name;
         this.description = description;
@@ -111,6 +123,11 @@ public class RuleDefinition {
     @PreUpdate
     void onUpdate() {
         this.updatedAt = Instant.now();
+    }
+
+    /** The owning organization. Part of the identity, so there is deliberately no setter. */
+    public String getOrgKey() {
+        return orgKey;
     }
 
     public String getId() {

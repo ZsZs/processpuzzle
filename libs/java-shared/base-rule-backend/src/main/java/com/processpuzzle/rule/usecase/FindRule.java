@@ -16,8 +16,8 @@ public class FindRule {
         this.repository = repository;
     }
 
-    public RuleDefinition execute(String id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new RuleNotFoundException(id));
+    public RuleDefinition execute(String orgKey, String id) {
+        return repository.findByOrgKeyAndId(orgKey, id)
+                .orElseThrow(() -> new RuleNotFoundException(orgKey, id));
     }
 }

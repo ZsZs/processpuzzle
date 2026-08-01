@@ -30,7 +30,7 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,modulith
   endpoint:
     health:
       probes:
@@ -60,6 +60,9 @@ springdoc:
 
 base-rule:
   loadSamples: yes
+
+base-app:
+  loadDefaultApps: yes
 
 minio:
   endpoint: http://localhost:7000

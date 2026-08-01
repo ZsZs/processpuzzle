@@ -32,13 +32,16 @@ import java.util.concurrent.ConcurrentHashMap;
  *       whatever {@link EntityProxy} explicitly exposes.</li>
  *   <li><b>A statement limit</b> defends against accidental or malicious runaway expressions
  *       (e.g. an unbounded loop), independent of the read-only/no-host-access sandboxing.</li>
+ *   <li><b>Caches are keyed by {@link RuleKey}</b>, i.e. by ({@code orgKey}, {@code ruleId}) and
+ *       never by the bare rule id: rule ids are unique only within an organization, so a bare-id
+ *       cache would let one tenant's expression be evaluated for another.</li>
  * </ul>
  *
  */
 @Service
 public class RuleEngine implements AutoCloseable {
     private final Engine engine;
-    private final Map<String, Source> ruleSources = new ConcurrentHashMap<>();
+    private final Map<RuleKey, Source> ruleSources = new ConcurrentHashMap<>();
     private final ThreadLocal<ThreadContext> threadContext;
 
     public RuleEngine() {
@@ -71,26 +74,26 @@ public class RuleEngine implements AutoCloseable {
      * wrapped as a single-argument function, {@code (entity) => (<expression>)}, so it can
      * be compiled once and executed many times against different entity instances.
      */
-    public void registerRule(String ruleName, String expression) {
+    public void registerRule(RuleKey key, String expression) {
         // Strict mode ensures that failed writes to the read-only EntityProxy surface as a
         // catchable TypeError instead of silently no-op'ing (sloppy-mode [[Set]] behavior).
         String wrapped = "(entity) => { 'use strict'; return (" + expression + "); }";
-        Source source = Source.newBuilder("js", wrapped, ruleName + ".js")
+        Source source = Source.newBuilder("js", wrapped, key.asSourceName())
                 .buildLiteral();
-        ruleSources.put(ruleName, source);
+        ruleSources.put(key, source);
     }
 
     /**
      * Evaluates a previously-registered rule against the given entity data. Expects the
      * rule expression to resolve to a boolean.
      */
-    public boolean evaluate(String ruleName, Map<String, Object> entityData) {
-        Source source = ruleSources.get(ruleName);
+    public boolean evaluate(RuleKey key, Map<String, Object> entityData) {
+        Source source = ruleSources.get(key);
         if (source == null) {
-            throw new IllegalArgumentException("Rule not registered: " + ruleName);
+            throw new IllegalArgumentException("Rule not registered: " + key);
         }
         ThreadContext tc = threadContext.get();
-        Value ruleFn = tc.ruleFunctions.computeIfAbsent(ruleName, k -> tc.context.eval(source));
+        Value ruleFn = tc.ruleFunctions.computeIfAbsent(key, k -> tc.context.eval(source));
         Value result = ruleFn.execute(EntityProxy.wrap(entityData));
         return result.asBoolean();
     }
@@ -105,12 +108,12 @@ public class RuleEngine implements AutoCloseable {
      * {@code ruleSources}), but worth knowing about if you need an absolute guarantee that
      * an unregistered rule can never execute again on any thread.
      */
-    public void unregisterRule(String ruleName) {
-        ruleSources.remove(ruleName);
+    public void unregisterRule(RuleKey key) {
+        ruleSources.remove(key);
     }
 
-    public boolean isRegistered(String ruleName) {
-        return ruleSources.containsKey(ruleName);
+    public boolean isRegistered(RuleKey key) {
+        return ruleSources.containsKey(key);
     }
 
     @Override
@@ -125,7 +128,7 @@ public class RuleEngine implements AutoCloseable {
 
     private static final class ThreadContext {
         final Context context;
-        final Map<String, Value> ruleFunctions = new ConcurrentHashMap<>();
+        final Map<RuleKey, Value> ruleFunctions = new ConcurrentHashMap<>();
 
         ThreadContext(Context context) {
             this.context = context;

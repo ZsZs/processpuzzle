@@ -1,0 +1,237 @@
+# Rules of the 'processpuzzle' organization — the ProcessPuzzle UI (Low-Code designer).
+#
+# What the designer authors is base-app metadata, so these rules guard an Organization and an
+# App Definition as they are being edited. `context` is the entityName of the designer's
+# BaseEntityDescriptor, and an expression sees the whole form value — for an App Definition
+# that includes the nested theme, layout, regions and pages.
+#
+# Scope: these are the conventions and policies AppDefinitionValidator deliberately leaves
+# out, not a second copy of it. Referential integrity (duplicate ids, unknown pageId
+# references, orphan pages, dead nav items, region/type mismatches, unknown --pp-* theme
+# tokens) is already checked server-side on every write and needs no rule. Enum-valued
+# fields (materialTheme, colorScheme, preset, sidenavMode, region type) are rejected by
+# Jackson during deserialization, so they need none either.
+#
+# Every expression must resolve to a strict boolean: the backend engine calls
+# Value.asBoolean(), which throws on a truthy non-boolean.
+rules:
+  # ---------------------------------------------------------------- Organization
+  - id: organization-key-is-a-slug
+    name: Organization key is a URL-safe slug
+    description: >-
+      The key is the public URL segment of the tenant's app and the scope of every id it
+      owns, so it is immutable once claimed — worth getting right in the form rather than in
+      a 400 from the sign-up call. Mirrors the OrganizationKey pattern in base-app-api.yaml.
+    context: Organization
+    severity: ERROR
+    enabled: true
+    fields:
+      - key
+    expression: >-
+      /^[a-z0-9]+(-[a-z0-9]+)*$/.test(entity.key || '') &&
+      (entity.key || '').length >= 2 && (entity.key || '').length <= 63
+    message: An organization key is 2–63 characters of lowercase letters, digits and single hyphens.
+    translocoId: rule.organization.keyIsASlug
+
+  - id: organization-key-is-not-reserved
+    name: Organization key does not shadow a platform route
+    description: >-
+      A tenant called 'api' would shadow the REST API. The authoritative list lives in
+      ReservedOrganizationKeys and can be extended per deployment, so this copy is a WARNING
+      that saves a round trip — checkOrganizationKey decides.
+    context: Organization
+    severity: WARNING
+    enabled: true
+    fields:
+      - key
+    expression: >-
+      ['admin', 'api', 'assets', 'auth', 'callback', 'design', 'docs', 'health', 'help',
+      'images', 'login', 'logout', 'oauth2', 'public', 'signup', 'static', 'status',
+      'support', 'swagger', 'well-known', 'www'].indexOf((entity.key || '').toLowerCase()) < 0
+    message: This key is reserved for the platform's own routes.
+    translocoId: rule.organization.keyIsNotReserved
+
+  - id: organization-contact-email-looks-valid
+    name: Contact email is an address
+    description: The only channel for provisioning and billing notices, so a typo is silent data loss.
+    context: Organization
+    severity: ERROR
+    enabled: true
+    fields:
+      - contactEmail
+    expression: >-
+      entity.contactEmail == null || entity.contactEmail === '' ||
+      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(entity.contactEmail)
+    message: The contact email does not look like an address.
+    translocoId: rule.organization.contactEmailLooksValid
+
+  - id: organization-default-locale-is-bcp47
+    name: Default locale is a BCP-47 tag
+    description: >-
+      Handed to Transloco as the tenant's active language; an off-shape tag resolves to no
+      translation file and the app falls back to keys.
+    context: Organization
+    severity: WARNING
+    enabled: true
+    fields:
+      - defaultLocale
+    expression: >-
+      entity.defaultLocale == null || entity.defaultLocale === '' ||
+      /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$/.test(entity.defaultLocale)
+    message: A default locale looks like 'en' or 'en-GB'.
+    translocoId: rule.organization.defaultLocaleIsBcp47
+
+  # ------------------------------------------------------------- App Definition
+  - id: app-id-is-route-safe
+    name: App id is route-safe
+    description: >-
+      AppDefinitionValidator only requires the id to be present; it is used verbatim as a
+      route path segment, so anything needing URL-encoding breaks deep links.
+    context: App Definition
+    severity: ERROR
+    enabled: true
+    fields:
+      - id
+    expression: >-
+      /^[a-z0-9]+(-[a-z0-9]+)*$/.test(entity.id || '') && (entity.id || '').length <= 100
+    message: An app id is lowercase letters, digits and single hyphens, at most 100 characters.
+    translocoId: rule.appDefinition.idIsRouteSafe
+
+  - id: page-ids-are-route-safe
+    name: Page ids are route-safe
+    description: >-
+      Same reason as the app id: a page id becomes its route path segment verbatim. The
+      server checks presence and uniqueness, not shape.
+    context: App Definition
+    severity: ERROR
+    enabled: true
+    fields:
+      - pages
+    expression: "(entity.pages || []).every(p => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.id || ''))"
+    message: Every page id must be lowercase letters, digits and single hyphens.
+    translocoId: rule.appDefinition.pageIdsAreRouteSafe
+
+  - id: entity-widgets-declare-an-entity-name
+    name: Entity widgets name the entity they render
+    description: >-
+      'entity-grid' and 'entity-form' resolve a BaseEntityDescriptor by props.entityName.
+      The server verifies the name against the registry when one is given, but a missing
+      entityName is only noticed at render time, as an empty widget. Walks the whole widget
+      forest — page widgets and static header/footer widgets, children included.
+    context: App Definition
+    severity: ERROR
+    enabled: true
+    fields:
+      - pages
+      - regions
+    expression: >-
+      ((check) => (entity.pages || []).every(p => check(p.widgets || [])) &&
+      (entity.regions || []).every(r => check(r.widgets || [])))(
+      (widgets) => ((f, x) => f(f, x))((self, ws) => ws.every(w =>
+      (!(w.type === 'entity-grid' || w.type === 'entity-form') ||
+      (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')) &&
+      self(self, w.children || [])), widgets))
+    message: An 'entity-grid' or 'entity-form' widget needs props.entityName.
+    translocoId: rule.appDefinition.entityWidgetsDeclareAnEntityName
+
+  - id: app-declares-a-populated-sidenav
+    name: App has navigation
+    description: >-
+      Regions are optional in the contract — a freshly provisioned app has none — but an app
+      published without a populated sidenav gives end users a shell they cannot navigate.
+      A WARNING, because that is exactly the state a half-finished draft is in.
+    context: App Definition
+    severity: WARNING
+    enabled: true
+    fields:
+      - regions
+    expression: "(entity.regions || []).some(r => r.type === 'sidenav' && (r.navItems || []).length > 0)"
+    message: This app declares no sidenav navigation, so no page is reachable.
+    translocoId: rule.appDefinition.declaresAPopulatedSidenav
+
+  - id: sidenav-depth-at-most-two
+    name: Sidenav nests at most two levels
+    description: >-
+      The nav tree may nest arbitrarily deep; the Material sidenav it renders into stops
+      being usable past a group and its entries.
+    context: App Definition
+    severity: WARNING
+    enabled: true
+    fields:
+      - regions
+    expression: >-
+      (entity.regions || []).every(r => r.type !== 'sidenav' ||
+      ((f, x) => f(f, x, 1))((self, items, depth) => items.every(n =>
+      depth <= 2 && self(self, n.children || [], depth + 1)), r.navItems || []))
+    message: Sidenav entries nest more than two levels deep.
+    translocoId: rule.appDefinition.sidenavDepthAtMostTwo
+
+  - id: nav-item-roles-are-upper-snake-case
+    name: Nav item roles follow the role naming convention
+    description: >-
+      Roles are matched literally against the token's claims when getAppLayout filters the
+      tree, so a case mismatch hides the entry from everyone with no error anywhere.
+    context: App Definition
+    severity: WARNING
+    enabled: true
+    fields:
+      - regions
+    expression: >-
+      (entity.regions || []).every(r => r.type !== 'sidenav' ||
+      ((f, x) => f(f, x))((self, items) => items.every(n =>
+      (n.roles || []).every(role => /^[A-Z][A-Z0-9_]*$/.test(role)) &&
+      self(self, n.children || [])), r.navItems || []))
+    message: Roles are UPPER_SNAKE_CASE, e.g. CLAIMS_ADJUSTER.
+    translocoId: rule.appDefinition.navItemRolesAreUpperSnakeCase
+
+  - id: content-max-width-is-a-css-length
+    name: Content max width is a CSS length
+    description: >-
+      contentMaxWidth is an opaque string in the contract and lands in a style binding; a
+      bare number or a typo is dropped by the browser without a word.
+    context: App Definition
+    severity: WARNING
+    enabled: true
+    fields:
+      - layout
+    expression: >-
+      entity.layout == null || entity.layout.contentMaxWidth == null ||
+      entity.layout.contentMaxWidth === '' ||
+      /^[0-9]+(\.[0-9]+)?(px|rem|em|%|vw|vh|ch)$/.test(entity.layout.contentMaxWidth)
+    message: Content max width needs a CSS unit, e.g. 1280px.
+    translocoId: rule.appDefinition.contentMaxWidthIsACssLength
+
+  - id: navigable-nav-items-have-an-icon
+    name: Navigating entries carry an icon
+    description: >-
+      Icons are optional in the contract. A sidenav where only some entries have one reads
+      as broken, so flag the entries that navigate but have no icon.
+    context: App Definition
+    severity: INFO
+    enabled: true
+    fields:
+      - regions
+    expression: >-
+      (entity.regions || []).every(r => r.type !== 'sidenav' ||
+      ((f, x) => f(f, x))((self, items) => items.every(n =>
+      (n.pageId == null || n.pageId === '' || (n.icon != null && n.icon !== '')) &&
+      self(self, n.children || [])), r.navItems || []))
+    message: A nav entry that opens a page should have an icon.
+    translocoId: rule.appDefinition.navigableNavItemsHaveAnIcon
+
+  - id: titles-are-translatable
+    name: App name and page titles are translatable
+    description: >-
+      The frontend prefers translocoId over the literal name or title. Without one, a
+      multi-language tenant shows the designer's default language to everyone.
+    context: App Definition
+    severity: INFO
+    enabled: true
+    fields:
+      - translocoId
+      - pages
+    expression: >-
+      entity.translocoId != null && entity.translocoId !== '' &&
+      (entity.pages || []).every(p => p.translocoId != null && p.translocoId !== '')
+    message: Give the app name and every page title a Transloco id.
+    translocoId: rule.appDefinition.titlesAreTranslatable

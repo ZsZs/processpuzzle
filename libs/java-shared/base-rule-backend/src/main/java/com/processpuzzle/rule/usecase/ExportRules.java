@@ -25,10 +25,14 @@ public class ExportRules {
         this.repository = repository;
     }
 
-    public byte[] execute(String context) throws IOException {
+    /**
+     * The exported entries carry no {@code orgKey} — that is what makes an export from one
+     * organization importable into another.
+     */
+    public byte[] execute(String orgKey, String context) throws IOException {
         List<RuleDefinition> rules = context != null
-                ? repository.findByContext(context)
-                : repository.findAll();
+                ? repository.findByOrgKeyAndContext(orgKey, context)
+                : repository.findByOrgKey(orgKey);
 
         List<RuleYamlEntry> entries = rules.stream()
                 .map(r -> new RuleYamlEntry(

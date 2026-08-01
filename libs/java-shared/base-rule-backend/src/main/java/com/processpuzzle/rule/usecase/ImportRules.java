@@ -29,8 +29,13 @@ public class ImportRules {
         this.ruleEngineSync = ruleEngineSync;
     }
 
+    /**
+     * The imported rules are scoped to {@code orgKey} regardless of anything in the file — a YAML
+     * entry carries no organization key at all — so an export from one organization can be
+     * imported into another.
+     */
     @Transactional
-    public ImportOutcome execute(InputStream input) throws IOException {
+    public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
         RuleYamlDocument document = yamlMapper.readValue(input, RuleYamlDocument.class);
         List<RuleYamlEntry> entries = document.rules() == null ? List.of() : document.rules();
 
@@ -46,8 +51,9 @@ public class ImportRules {
             }
         }
 
+        // Only this organization's existing rules can satisfy an 'extends' reference.
         Map<String, String> extendsLinks = new HashMap<>();
-        for (RuleDefinition existing : repository.findAll()) {
+        for (RuleDefinition existing : repository.findByOrgKey(orgKey)) {
             extendsLinks.put(existing.getId(), existing.getExtendsRuleId());
         }
         for (RuleYamlEntry entry : byId.values()) {
@@ -75,7 +81,7 @@ public class ImportRules {
         int created = 0;
         int updated = 0;
         for (RuleYamlEntry entry : byId.values()) {
-            Optional<RuleDefinition> existingOpt = repository.findById(entry.id());
+            Optional<RuleDefinition> existingOpt = repository.findByOrgKeyAndId(orgKey, entry.id());
             RuleDefinition rule;
             if (existingOpt.isPresent()) {
                 rule = existingOpt.get();
@@ -83,7 +89,7 @@ public class ImportRules {
                 updated++;
             } else {
                 rule = new RuleDefinition(
-                        entry.id(), entry.name(), entry.description(), entry.context(),
+                        orgKey, entry.id(), entry.name(), entry.description(), entry.context(),
                         entry.expression(), parseSeverity(entry.severity()),
                         entry.message(), entry.translocoId(), entry.extendsRuleId(),
                         Boolean.TRUE.equals(entry.override()),

@@ -19,8 +19,13 @@ import java.util.List;
 @Component
 public class RuleMapper {
 
-    public RuleDefinition toDomain(RuleDefinitionInput input) {
+    /**
+     * {@code orgKey} comes from the path, not the body: {@code RuleDefinitionInput} deliberately
+     * carries no organization key that could contradict the URL.
+     */
+    public RuleDefinition toDomain(String orgKey, RuleDefinitionInput input) {
         return new RuleDefinition(
+                orgKey,
                 input.getId(),
                 input.getName(),
                 input.getDescription(),
@@ -56,6 +61,7 @@ public class RuleMapper {
                 rule.getContext(),
                 rule.getExpression(),
                 toModelSeverity(rule.getSeverity()));
+        model.setOrgKey(rule.getOrgKey());
         model.setDescription(rule.getDescription());
         model.setMessage(rule.getMessage());
         model.setTranslocoId(rule.getTranslocoId());
