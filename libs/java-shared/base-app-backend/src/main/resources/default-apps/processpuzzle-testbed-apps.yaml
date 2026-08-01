@@ -1,0 +1,103 @@
+# Default app definitions of the 'processpuzzle-testbed' organization — the tenant behind
+# apps/processpuzzle-testbed.
+#
+# DefaultAppLoader imports this file on startup when `base-app.loadDefaultApps` is true. The owning
+# organization is the part of the file name before `-apps.yaml`, exactly as `<orgKey>-rules.yaml`
+# works in base-rule, so seeding another tenant is adding another file rather than a configuration
+# change.
+#
+# The `organization` block provisions the tenant when it does not exist yet; its `key` is ignored,
+# because the file name decides where the definitions land. Everything under `appDefinitions` is
+# precisely the payload of `POST /organizations/{orgKey}/app-definitions`, so this file also feeds
+# the YAML import endpoint unchanged — the extra `organization` block is ignored there.
+#
+# Ids are lowercase-hyphen and every entity widget names its entity, so the definition satisfies the
+# 'App Definition' rules in base-rule's sample-rules as well as the structural validator.
+
+organization:
+  key: processpuzzle-testbed
+  name: ProcessPuzzle Testbed
+  description: >-
+    Tenant of the ProcessPuzzle Testbed application, which exercises and demonstrates the
+    capabilities of the ProcessPuzzle framework.
+  contactEmail: testbed@processpuzzle.com
+  defaultLocale: en
+
+appDefinitions:
+  # A deliberately basic shell: one Material theme, the default sidenav-left layout, all four
+  # regions, and three pages driven by the testbed's 'Order' and 'Order Line' descriptors. It is
+  # meant to be the smallest definition that still renders something navigable.
+  - id: demo
+    name: Demo
+    translocoId: demo.app.name
+    description: >-
+      Basic demonstration application: order management screens composed from the entity-driven
+      widgets, with nothing configured that the shell does not need.
+    theme:
+      materialTheme: azure-blue
+      colorScheme: light
+    layout:
+      preset: sidenav-left
+      sidenavMode: side
+      sidenavCollapsible: true
+      sidenavOpenByDefault: true
+      contentMaxWidth: 1280px
+    regions:
+      # header and footer are declared so the shell renders them, but carry no static widgets yet.
+      - type: header
+      - type: sidenav
+        navItems:
+          # A group node: no pageId, so it only expands its children.
+          - id: nav-orders
+            label: Orders
+            translocoId: demo.nav.orders
+            icon: receipt_long
+            children:
+              - id: nav-order-list
+                label: All orders
+                translocoId: demo.nav.orderList
+                icon: list_alt
+                pageId: order-list
+              - id: nav-order-entry
+                label: New order
+                translocoId: demo.nav.orderEntry
+                icon: add_circle
+                pageId: order-entry
+          - id: nav-order-lines
+            label: Order lines
+            translocoId: demo.nav.orderLines
+            icon: view_list
+            pageId: order-line-list
+      # content carries no widgets of its own — it is populated per route from a page.
+      - type: content
+      - type: footer
+    pages:
+      - id: order-list
+        title: Orders
+        translocoId: demo.page.orderList
+        widgets:
+          - id: order-grid
+            type: entity-grid
+            props:
+              entityName: Order
+              columns: [orderNumber, customerName, status, total]
+              rsqlFilter: "status!=CANCELLED"
+      - id: order-entry
+        title: New order
+        translocoId: demo.page.orderEntry
+        widgets:
+          - id: order-form
+            type: entity-form
+            props:
+              entityName: Order
+              submitLabel: Save order
+              submitTranslocoId: demo.action.saveOrder
+      - id: order-line-list
+        title: Order lines
+        translocoId: demo.page.orderLineList
+        widgets:
+          - id: order-line-grid
+            type: entity-grid
+            props:
+              entityName: Order Line
+              columns: [productName, quantity, unitPrice]

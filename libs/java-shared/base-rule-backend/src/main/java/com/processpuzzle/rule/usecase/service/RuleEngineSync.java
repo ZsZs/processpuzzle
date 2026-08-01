@@ -2,6 +2,7 @@ package com.processpuzzle.rule.usecase.service;
 
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
+import com.processpuzzle.rule.usecase.engine.RuleKey;
 import org.springframework.stereotype.Component;
 
 /**
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
  * rows as they're created, updated, or deleted.
  *
  * <p>Deliberately minimal for this PoC: registers a rule's raw expression under its own
- * id, nothing more. Resolving the <em>effective</em> expression for a given entity —
+ * tenant-scoped key, nothing more. Resolving the <em>effective</em> expression for a given entity —
  * walking the {@code extends}/{@code override} chain and reconciling it with
  * ProcessPuzzle's actual entity-type hierarchy (so a rule on {@code Order} is known to also
  * apply to {@code SpecialOrder} unless overridden) — is intentionally left out here. That
@@ -26,14 +27,15 @@ public class RuleEngineSync {
     }
 
     public void register(RuleDefinition rule) {
+        RuleKey key = RuleKey.of(rule.getOrgKey(), rule.getId());
         if (rule.isEnabled()) {
-            ruleEngine.registerRule(rule.getId(), rule.getExpression());
+            ruleEngine.registerRule(key, rule.getExpression());
         } else {
-            ruleEngine.unregisterRule(rule.getId());
+            ruleEngine.unregisterRule(key);
         }
     }
 
-    public void unregister(String ruleId) {
-        ruleEngine.unregisterRule(ruleId);
+    public void unregister(String orgKey, String ruleId) {
+        ruleEngine.unregisterRule(RuleKey.of(orgKey, ruleId));
     }
 }

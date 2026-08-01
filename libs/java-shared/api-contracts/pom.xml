@@ -53,6 +53,12 @@
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
         </dependency>
+
+        <!-- Annotations only, for the com.processpuzzle.shared application module declaration -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -136,11 +142,34 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/workflow-api.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/base-workflow-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <skipValidateSpec>true</skipValidateSpec>
                             <apiPackage>com.processpuzzle.workflow.api</apiPackage>
                             <modelPackage>com.processpuzzle.workflow.model</modelPackage>
+                            <schemaMappings>
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                            </schemaMappings>
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useTags>true</useTags>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-app-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/base-app-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <apiPackage>com.processpuzzle.app.api</apiPackage>
+                            <modelPackage>com.processpuzzle.app.model</modelPackage>
                             <schemaMappings>
                                 ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
                             </schemaMappings>

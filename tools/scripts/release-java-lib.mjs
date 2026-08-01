@@ -34,7 +34,7 @@ const GH = process.env.GH ?? 'gh';
 
 const PROJECTS = new Map([
   ['api-contracts', 'libs/java-shared/api-contracts'],
-  ['base-desktop-backend', 'libs/java-shared/base-desktop-backend'],
+  ['base-app-backend', 'libs/java-shared/base-app-backend'],
   ['base-rule-backend', 'libs/java-shared/base-rule-backend'],
   ['base-state-backend', 'libs/java-shared/base-state-backend'],
   ['base-workflow-backend', 'libs/java-shared/base-workflow-backend'],

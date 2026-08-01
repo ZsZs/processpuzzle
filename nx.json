@@ -107,7 +107,7 @@
   "release": {
     "projects": [
       "auth",
-      "base-desktop-frontend",
+      "base-app-frontend",
       "base-entity-frontend",
       "base-workflow-frontend",
       "base-rule-frontend",
