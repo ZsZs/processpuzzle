@@ -1,26 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AppDefinition, AppDefinitionStatus } from './app-definition';
 import { AppDefinitionMapper } from './app-definition.mapper';
+import { APP_DEFINITION_DTO } from './test-app-definition';
 
 describe('AppDefinitionMapper', () => {
   const mapper = new AppDefinitionMapper();
 
-  const dto = {
-    id: 'demo',
-    name: 'Demo',
-    translocoId: 'demo.app.name',
-    description: 'Basic demonstration application',
-    theme: { materialTheme: 'azure-blue', colorScheme: 'light', tokenOverrides: { '--pp-surface-sidenav': '#0d1b2a' }, logoUrl: 'logo.png' },
-    layout: { preset: 'sidenav-left', sidenavMode: 'side', sidenavCollapsible: true, sidenavOpenByDefault: false, contentMaxWidth: '1280px' },
-    regions: [{ type: 'sidenav', navItems: [{ id: 'nav-orders', label: 'Orders', pageId: 'order-list' }] }],
-    pages: [{ id: 'order-list', title: 'Orders', widgets: [{ id: 'order-grid', type: 'entity-grid', props: { entityName: 'Order' } }] }],
-    orgKey: 'processpuzzle-testbed',
-    status: 'DRAFT',
-    version: 3,
-    publishedVersion: 2,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-02-01T00:00:00Z',
-  };
+  const dto = APP_DEFINITION_DTO;
 
   describe('fromDto', () => {
     it('flattens the theme onto the entity', () => {
@@ -28,6 +14,9 @@ describe('AppDefinitionMapper', () => {
 
       expect(entity.materialTheme).toBe('azure-blue');
       expect(entity.colorScheme).toBe('light');
+      expect(entity.tokenOverrides).toEqual({ '--pp-surface-sidenav': '#0d1b2a' });
+      expect(entity.logoUrl).toBe('logo.png');
+      expect(entity.faviconUrl).toBeUndefined();
     });
 
     it('flattens the layout onto the entity', () => {
@@ -71,6 +60,18 @@ describe('AppDefinitionMapper', () => {
 
       expect(result.theme).toEqual({ materialTheme: 'azure-blue', colorScheme: 'dark', tokenOverrides: { '--pp-surface-sidenav': '#0d1b2a' }, logoUrl: 'logo.png' });
       expect(result.layout).toEqual({ preset: 'sidenav-left', sidenavMode: 'over', sidenavCollapsible: true, sidenavOpenByDefault: false, contentMaxWidth: '1280px' });
+    });
+
+    it('rebuilds the branding and the token map the theme controls edit', () => {
+      const entity = mapper.fromDto(dto);
+      entity.tokenOverrides = { '--pp-surface-header': '#a8e6cf' };
+      entity.faviconUrl = 'favicon.ico';
+
+      const result = mapper.toDto(entity);
+
+      expect(result.theme.tokenOverrides).toEqual({ '--pp-surface-header': '#a8e6cf' });
+      expect(result.theme.faviconUrl).toBe('favicon.ico');
+      expect(result.theme.logoUrl).toBe('logo.png');
     });
 
     it('keeps the parts of the graph the form never shows', () => {

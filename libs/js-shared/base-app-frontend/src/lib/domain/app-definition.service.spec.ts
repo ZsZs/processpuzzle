@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
-import { PersistedEntity } from '@processpuzzle/base-entity';
+import { BaseEntityLoadResponse, PersistedEntity } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition, AppDefinitionStatus } from './app-definition';
 import { AppDefinitionMapper } from './app-definition.mapper';
 import { AppDefinitionService } from './app-definition.service';
+import { APP_DEFINITION_DTO, pageOfAppDefinitions } from './test-app-definition';
 
 describe('AppDefinitionService', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';
@@ -28,16 +29,33 @@ describe('AppDefinitionService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  it('lists the app definitions of the configured organization', async () => {
+  // The backend answers PageOf_AppDefinition — a page envelope whose entries are complete
+  // definitions, not a header-only projection. The designer edits straight out of this list, so a
+  // listed entry has to carry the graph or the next full-replacement PUT writes back an empty one.
+  it('lists complete app definitions of the configured organization', async () => {
     const pending = firstValueFrom(service.findAll());
 
     const request = controller.expectOne(`${serviceRoot}/app-definitions`);
     expect(request.request.method).toBe('GET');
-    request.flush([{ id: 'demo', name: 'Demo', theme: { materialTheme: 'azure-blue' } }]);
+    request.flush(pageOfAppDefinitions(APP_DEFINITION_DTO));
+
+    const result = (await pending) as BaseEntityLoadResponse<PersistedEntity<AppDefinition>>;
+    expect(result.totalElements).toBe(1);
+    const listed = result.content[0];
+    expect(listed.id).toBe('demo');
+    expect(listed.materialTheme).toBe('azure-blue');
+    expect(listed.contentMaxWidth).toBe('1280px');
+    expect(listed.regions).toEqual(APP_DEFINITION_DTO.regions);
+    expect(listed.pages).toEqual(APP_DEFINITION_DTO.pages);
+  });
+
+  it('still reads the bare array the json-server mock returns', async () => {
+    const pending = firstValueFrom(service.findAll());
+
+    controller.expectOne(`${serviceRoot}/app-definitions`).flush([APP_DEFINITION_DTO]);
 
     const result = (await pending) as AppDefinition[];
-    expect(result[0].id).toBe('demo');
-    expect(result[0].materialTheme).toBe('azure-blue');
+    expect(result[0].pages).toEqual(APP_DEFINITION_DTO.pages);
   });
 
   it('addresses a single definition by its app id', () => {

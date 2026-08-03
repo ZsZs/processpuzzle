@@ -7,10 +7,11 @@ import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, Layo
  * generated form works with.
  *
  * Two invariants matter here. The form saves `{ ...entity, ...form.value }`, so every DTO field the
- * form does not show has to survive on the entity — `regions` and `pages` are therefore kept as-is.
- * And `PUT /app-definitions/{appId}` is a full replacement, so {@link toDto} rebuilds `theme` and
- * `layout` from the flattened controls *on top of* the parts of those objects the form never showed
- * (`tokenOverrides`, `logoUrl`, `faviconUrl`).
+ * form does not show has to survive on the entity — `regions` and `pages` are nested rather than
+ * flattened for exactly that reason, and the `COMPONENTS` controls edit them in place. And
+ * `PUT /app-definitions/{appId}` is a full replacement, so {@link toDto} rebuilds `theme` and
+ * `layout` from the flattened controls *on top of* the objects they were lifted out of, which keeps
+ * any field a later contract version adds before this mapper learns about it.
  */
 @Injectable({ providedIn: 'root' })
 export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
@@ -24,6 +25,9 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       description: dto?.description,
       materialTheme: theme?.materialTheme as MaterialTheme | undefined,
       colorScheme: theme?.colorScheme as ColorScheme | undefined,
+      tokenOverrides: theme?.tokenOverrides,
+      logoUrl: theme?.logoUrl,
+      faviconUrl: theme?.faviconUrl,
       preset: layout?.preset as LayoutPreset | undefined,
       sidenavMode: layout?.sidenavMode as SidenavMode | undefined,
       sidenavCollapsible: layout?.sidenavCollapsible,
@@ -63,7 +67,14 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
   }
 
   private mergeTheme(entity: AppDefinition): ThemeDefinition {
-    return { ...entity.theme, materialTheme: entity.materialTheme, colorScheme: entity.colorScheme };
+    return {
+      ...entity.theme,
+      materialTheme: entity.materialTheme,
+      colorScheme: entity.colorScheme,
+      tokenOverrides: entity.tokenOverrides,
+      logoUrl: entity.logoUrl,
+      faviconUrl: entity.faviconUrl,
+    };
   }
 
   private mergeLayout(entity: AppDefinition): LayoutDefinition {

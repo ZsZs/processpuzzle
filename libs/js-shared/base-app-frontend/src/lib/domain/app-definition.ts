@@ -1,10 +1,11 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
- * Frontend model of the `AppDefinition` schema of `base-app-api.yaml`. The nested graph — theme,
- * layout, regions and pages — is typed here but only `theme` and `layout` are surfaced on the
- * generated form (flattened by {@link AppDefinitionMapper}); `regions` and `pages` are carried
- * through untouched, because a full replacement PUT would otherwise drop them.
+ * Frontend model of the `AppDefinition` schema of `base-app-api.yaml`. `theme` and `layout` are
+ * flattened onto the entity by {@link AppDefinitionMapper} so that the generated form can offer a
+ * typed control per field; the original objects are kept alongside, because a full replacement PUT
+ * would otherwise drop the parts no control writes. `regions` and `pages` stay nested and are edited
+ * through the `COMPONENTS` controls of the `App Region` / `App Page` descriptors.
  */
 
 export const MATERIAL_THEMES = ['azure-blue', 'rose-red', 'magenta-violet', 'cyan-orange'] as const;
@@ -83,6 +84,9 @@ export class AppDefinition implements BaseEntity {
   // region flattened theme
   materialTheme: MaterialTheme | undefined;
   colorScheme: ColorScheme | undefined;
+  tokenOverrides: Record<string, string> | undefined;
+  logoUrl: string | undefined;
+  faviconUrl: string | undefined;
   // endregion
   // region flattened layout
   preset: LayoutPreset | undefined;
@@ -91,7 +95,7 @@ export class AppDefinition implements BaseEntity {
   sidenavOpenByDefault: boolean;
   contentMaxWidth: string | undefined;
   // endregion
-  /** Parts of `theme` / `layout` the form does not edit, preserved verbatim across a save. */
+  /** The objects the flattened fields came from, preserved so a save cannot drop a future field. */
   theme: ThemeDefinition | undefined;
   layout: LayoutDefinition | undefined;
   regions: RegionDefinition[] | undefined;
@@ -112,6 +116,9 @@ export class AppDefinition implements BaseEntity {
     this.description = init.description;
     this.materialTheme = init.materialTheme;
     this.colorScheme = init.colorScheme;
+    this.tokenOverrides = init.tokenOverrides;
+    this.logoUrl = init.logoUrl;
+    this.faviconUrl = init.faviconUrl;
     this.preset = init.preset;
     this.sidenavMode = init.sidenavMode;
     this.sidenavCollapsible = init.sidenavCollapsible ?? true;

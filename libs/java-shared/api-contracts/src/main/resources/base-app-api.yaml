@@ -182,11 +182,13 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listAppDefinitions
-      summary: List the organization's app definitions (summaries only)
+      summary: List the organization's app definitions
       description: >-
-        Returns lightweight summaries without theme, layout, regions or pages. `version` is
-        a monotonic revision counter, so a client holding a cached AppDefinition can
-        validate it with a single integer comparison instead of re-fetching the whole graph.
+        Returns complete definitions — theme, layout, every region and every page — exactly
+        as `getAppDefinition` does, one per page entry. This is the authoring/design-time
+        view: the Low-Code designer edits a definition straight out of the list rather than
+        re-fetching it, so a lighter shape here would leave it editing a truncated object
+        and writing that truncation back on the next full-replacement PUT.
       tags:
         - Base App
       parameters:
@@ -200,7 +202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageOf_AppDefinitionSummary"
+                $ref: "#/components/schemas/PageOf_AppDefinition"
         "403":
           $ref: "#/components/responses/Forbidden"
     post:
@@ -967,8 +969,8 @@ components:
               format: int64
               description: >-
                 Monotonic revision counter, bumped by the server on every successful write.
-                Doubles as the client-side cache validator (see `listAppDefinitions`) and as
-                the optimistic-locking token.
+                Doubles as the client-side cache validator and as the optimistic-locking
+                token.
             publishedVersion:
               type: integer
               format: int64
@@ -981,33 +983,6 @@ components:
             updatedAt:
               type: string
               format: date-time
-
-    AppDefinitionSummary:
-      type: object
-      description: Header fields of an app definition, without theme, layout, regions or pages.
-      required: [ id, name ]
-      properties:
-        id:
-          type: string
-        orgKey:
-          $ref: "#/components/schemas/OrganizationKey"
-        name:
-          type: string
-        translocoId:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: "#/components/schemas/AppDefinitionStatus"
-        version:
-          type: integer
-          format: int64
-        publishedVersion:
-          type: integer
-          format: int64
-        updatedAt:
-          type: string
-          format: date-time
 
     AppLayout:
       type: object
@@ -1086,13 +1061,13 @@ components:
           items:
             $ref: "#/components/schemas/ValidationProblem"
 
-    PageOf_AppDefinitionSummary:
+    PageOf_AppDefinition:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/AppDefinitionSummary"
+            $ref: "#/components/schemas/AppDefinition"
         totalElements:
           type: integer
           format: int64

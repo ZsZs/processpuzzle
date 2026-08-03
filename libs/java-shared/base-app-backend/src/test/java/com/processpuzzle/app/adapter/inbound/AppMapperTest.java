@@ -9,7 +9,6 @@ import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.AppDefinitionSummary;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.ColorScheme;
 import com.processpuzzle.app.model.LayoutDefinition;
@@ -18,7 +17,7 @@ import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.OrganizationStatus;
 import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
@@ -92,8 +91,8 @@ class AppMapperTest {
 
         entity.replaceDraft("Claims", null, null, AppGraph.empty());
         assertThat(mapper.toModelStatus(entity)).isEqualTo(AppDefinitionStatus.DRAFT);
-        assertThat(mapper.toSummary(entity).getVersion()).isEqualTo(2L);
-        assertThat(mapper.toSummary(entity).getPublishedVersion()).isEqualTo(1L);
+        assertThat(mapper.toModel(entity).getVersion()).isEqualTo(2L);
+        assertThat(mapper.toModel(entity).getPublishedVersion()).isEqualTo(1L);
     }
 
     @Test
@@ -395,14 +394,16 @@ class AppMapperTest {
     }
 
     @Test
-    void aPagedSummaryCarriesTheSpringPageMetadata() {
+    void aPagedListCarriesTheSpringPageMetadata() {
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", "claims.app.name", "Handles claims.", AppGraph.empty());
 
-        PageOfAppDefinitionSummary page = mapper.toModel(
+        PageOfAppDefinition page = mapper.toModel(
                 new PageImpl<>(List.of(entity), PageRequest.of(1, 5), 8L));
 
-        assertThat(page.getContent()).extracting(AppDefinitionSummary::getId).containsExactly("claims-app");
+        assertThat(page.getContent())
+                .extracting(com.processpuzzle.app.model.AppDefinition::getId)
+                .containsExactly("claims-app");
         assertThat(page.getContent().getFirst().getDescription()).isEqualTo("Handles claims.");
         // PageImpl caps the total at offset + content size, so the second page of five holding one
         // element reports six rather than the eight the query claimed.
@@ -410,6 +411,33 @@ class AppMapperTest {
         assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.getNumber()).isEqualTo(1);
         assertThat(page.getSize()).isEqualTo(5);
+    }
+
+    /**
+     * A page entry is mapped by the same {@code toModel} the single-GET uses, so it carries the
+     * whole graph. The designer edits out of the list rather than re-fetching by id; a projection
+     * that dropped theme, layout, regions or pages would be written back as empty by the next
+     * full-replacement PUT.
+     */
+    @Test
+    void aPagedEntryCarriesTheWholeGraphRatherThanHeaderFieldsOnly() {
+        AppGraph graph = new AppGraph(
+                new Theme("rose-red", "dark", Map.of(), null, null),
+                new Layout("top-nav", "over", null, null, "1280px"),
+                List.of(new Region("sidenav", List.of(), List.of())),
+                List.of(new AppPage("order-list", "Orders", null, List.of())));
+        com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
+                "my-org", "claims-app", "Claims", null, null, graph);
+
+        PageOfAppDefinition page = mapper.toModel(new PageImpl<>(List.of(entity)));
+
+        assertThat(page.getContent()).singleElement().satisfies(definition -> {
+            assertThat(definition.getTheme().getMaterialTheme()).isEqualTo(MaterialTheme.ROSE_RED);
+            assertThat(definition.getLayout().getContentMaxWidth()).isEqualTo("1280px");
+            assertThat(definition.getRegions()).extracting(RegionDefinition::getType)
+                    .containsExactly(RegionType.SIDENAV);
+            assertThat(definition.getPages()).extracting(PageDefinition::getId).containsExactly("order-list");
+        });
     }
 
     /** Blocking is what {@code valid} means, so a rejected write with no problems still maps. */

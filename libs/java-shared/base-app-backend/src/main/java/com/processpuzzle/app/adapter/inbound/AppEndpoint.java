@@ -9,7 +9,7 @@ import com.processpuzzle.app.model.Organization;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationUpdate;
 import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.CheckOrganizationKey;
@@ -150,9 +150,9 @@ public class AppEndpoint implements BaseAppApi {
     }
 
     @Override
-    public ResponseEntity<PageOfAppDefinitionSummary> listAppDefinitions(String orgKey, String where,
-                                                                         String order, Integer page,
-                                                                         Integer size) {
+    public ResponseEntity<PageOfAppDefinition> listAppDefinitions(String orgKey, String where,
+                                                                  String order, Integer page,
+                                                                  Integer size) {
         return ResponseEntity.ok(mapper.toModel(
                 findAllAppDefinitions.execute(orgKey, where, order, page, size)));
     }

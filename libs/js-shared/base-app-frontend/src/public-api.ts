@@ -22,8 +22,19 @@ export {
   type ThemeDefinition,
   type WidgetRef,
 } from './lib/domain/app-definition';
-export { APP_DEFINITION_I18N_SCOPE, BASE_APP_TRANSLOCO_SCOPE } from './lib/base-app.i18n';
+export {
+  APP_DEFINITION_I18N_SCOPE,
+  APP_NAV_ITEM_I18N_SCOPE,
+  APP_PAGE_I18N_SCOPE,
+  APP_REGION_I18N_SCOPE,
+  APP_WIDGET_I18N_SCOPE,
+  BASE_APP_TRANSLOCO_SCOPE,
+} from './lib/base-app.i18n';
 export { APP_DEFINITION_ENTITY_NAME, createAppDefinitionDescriptor } from './lib/domain/app-definition.descriptors';
+export { APP_NAV_ITEM_ENTITY_NAME, createNavItemDescriptor } from './lib/domain/nav-item.descriptors';
+export { APP_PAGE_ENTITY_NAME, createPageDefinitionDescriptor } from './lib/domain/page-definition.descriptors';
+export { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD, createRegionDefinitionDescriptor } from './lib/domain/region-definition.descriptors';
+export { APP_WIDGET_ENTITY_NAME, createWidgetRefDescriptor } from './lib/domain/widget-ref.descriptors';
 export { AppDefinitionMapper } from './lib/domain/app-definition.mapper';
 export { AppDefinitionService } from './lib/domain/app-definition.service';
 export { AppDefinitionStore } from './lib/domain/app-definition.store';

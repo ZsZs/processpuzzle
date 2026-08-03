@@ -23,6 +23,17 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 /** Key root of the `AppDefinition` entity name (`._self`) and of its attribute labels. */
 export const APP_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_definition`;
 
+/**
+ * Key roots of the nested definitions the `AppDefinition` form links to through `COMPONENTS`
+ * controls. They are children of {@link BASE_APP_TRANSLOCO_SCOPE} rather than scopes of their own,
+ * because the whole graph is edited under `BASE_APP_ROUTES` and one scope registration has to cover
+ * all of it.
+ */
+export const APP_REGION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_region`;
+export const APP_PAGE_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_page`;
+export const APP_NAV_ITEM_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_nav_item`;
+export const APP_WIDGET_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_widget`;
+
 /** Keys of the `Publish` form action contributed by `AppDefinitionContainerComponent`. */
 export const PUBLISH_BUTTON_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.button`;
 export const PUBLISH_TOOLTIP_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.tooltip`;

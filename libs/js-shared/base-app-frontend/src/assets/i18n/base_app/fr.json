@@ -11,11 +11,46 @@
     "updatedAt": "Modifié le",
     "materialTheme": "Thème Material",
     "colorScheme": "Schéma de couleurs",
+    "logoUrl": "URL du logo",
+    "faviconUrl": "URL du favicon",
+    "tokenOverrides": "Redéfinitions de jetons",
     "preset": "Modèle de mise en page",
     "sidenavMode": "Mode du menu latéral",
     "contentMaxWidth": "Largeur maximale du contenu",
     "sidenavCollapsible": "Menu latéral repliable",
-    "sidenavOpenByDefault": "Menu latéral ouvert par défaut"
+    "sidenavOpenByDefault": "Menu latéral ouvert par défaut",
+    "regions": "Régions",
+    "pages": "Pages"
+  },
+  "app_region": {
+    "_self": "Région",
+    "type": "Type",
+    "navItems": "Éléments de navigation",
+    "widgets": "Widgets"
+  },
+  "app_page": {
+    "_self": "Page",
+    "id": "Id",
+    "title": "Titre",
+    "translocoId": "Id Transloco",
+    "widgets": "Widgets"
+  },
+  "app_nav_item": {
+    "_self": "Élément de navigation",
+    "id": "Id",
+    "label": "Libellé",
+    "translocoId": "Id Transloco",
+    "icon": "Icône",
+    "pageId": "Page",
+    "roles": "Rôles",
+    "children": "Éléments enfants"
+  },
+  "app_widget": {
+    "_self": "Widget",
+    "id": "Id",
+    "type": "Type",
+    "props": "Propriétés",
+    "children": "Éléments enfants"
   },
   "publish": {
     "button": "Publier",

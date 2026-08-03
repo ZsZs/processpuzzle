@@ -197,7 +197,6 @@ class AppDefinitionPersistenceTest {
                 .satisfies(stamp -> assertThat(stamp.getOffset()).isEqualTo(ZoneOffset.UTC));
         assertThat(model.getCreatedAt().toInstant()).isEqualTo(definition.getCreatedAt());
         assertThat(model.getUpdatedAt()).isNotNull();
-        assertThat(mapper.toSummary(definition).getUpdatedAt()).isNotNull();
         assertThat(mapper.toModel(organizationRepository.findById("my-org").orElseThrow()).getCreatedAt())
                 .isNotNull();
     }

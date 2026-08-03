@@ -5,6 +5,7 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinitionStatus } from './app-definition';
 import { AppDefinitionStore } from './app-definition.store';
+import { APP_DEFINITION_DTO, OTHER_APP_DEFINITION_DTO, pageOfAppDefinitions } from './test-app-definition';
 
 describe('AppDefinitionStore', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';
@@ -17,14 +18,18 @@ describe('AppDefinitionStore', () => {
     });
     store = TestBed.inject(AppDefinitionStore);
     controller = TestBed.inject(HttpTestingController);
-    // the store loads its list on init; answering it here gives the publish tests an entity to work with
-    controller
-      .expectOne(`${serviceRoot}/app-definitions`)
-      .flush([
-        { id: 'demo', name: 'Demo', status: 'DRAFT', version: 3, publishedVersion: 2 },
-        { id: 'other', name: 'Other', status: 'DRAFT', version: 1 },
-      ]);
+    // The store loads its list on init; answering it here gives the publish tests an entity to work
+    // with. The payload is the page of complete definitions the backend answers with — the form
+    // reads `currentEntity` straight out of this list, so anything the list drops is lost.
+    controller.expectOne(`${serviceRoot}/app-definitions`).flush(pageOfAppDefinitions(APP_DEFINITION_DTO, OTHER_APP_DEFINITION_DTO));
     store.setCurrentEntity('demo');
+  });
+
+  it('exposes the whole definition graph as current entity, not just its header fields', () => {
+    expect(store.currentEntity()?.regions).toEqual(APP_DEFINITION_DTO.regions);
+    expect(store.currentEntity()?.pages).toEqual(APP_DEFINITION_DTO.pages);
+    expect(store.currentEntity()?.preset).toBe('sidenav-left');
+    expect(store.currentEntity()?.contentMaxWidth).toBe('1280px');
   });
 
   it('replaces the published definition in the list and as current entity', async () => {

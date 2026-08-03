@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { APP_DEFINITION_ENTITY_NAME, createAppDefinitionDescriptor } from './app-definition.descriptors';
+import { APP_PAGE_ENTITY_NAME } from './page-definition.descriptors';
+import { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD } from './region-definition.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -21,7 +23,7 @@ describe('createAppDefinitionDescriptor', () => {
     expect(byName('sidenavOpenByDefault')?.i18nKey()).toBe('base_app.app_definition.sidenavOpenByDefault');
   });
 
-  it('describes the identity, revision, theme and layout attributes', () => {
+  it('describes every part of the contract: identity, revision, theme, layout and the nested graph', () => {
     expect(attrs.map((attr) => attr.attrName)).toEqual([
       'id',
       'name',
@@ -33,11 +35,16 @@ describe('createAppDefinitionDescriptor', () => {
       'description',
       'materialTheme',
       'colorScheme',
+      'logoUrl',
+      'faviconUrl',
+      'tokenOverrides',
       'preset',
       'sidenavMode',
       'contentMaxWidth',
       'sidenavCollapsible',
       'sidenavOpenByDefault',
+      'regions',
+      'pages',
     ]);
   });
 
@@ -70,6 +77,22 @@ describe('createAppDefinitionDescriptor', () => {
     expect(byName('preset')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['sidenav-left', 'sidenav-right', 'top-nav']);
     expect(byName('sidenavMode')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['side', 'over', 'push']);
     expect(byName('status')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['DRAFT', 'PUBLISHED']);
+  });
+
+  it('edits the open token map through a key/value editor rather than a closed control', () => {
+    expect(byName('tokenOverrides')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
+  });
+
+  it('links the nested definitions to their own descriptors', () => {
+    expect(byName('regions')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('regions')?.linkedEntityType).toBe(APP_REGION_ENTITY_NAME);
+    expect(byName('pages')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('pages')?.linkedEntityType).toBe(APP_PAGE_ENTITY_NAME);
+  });
+
+  it('identifies a region by its type, the schema giving it no id', () => {
+    expect(byName('regions')?.referenceIdField).toBe(APP_REGION_ID_FIELD);
+    expect(byName('pages')?.referenceIdField).toBe('id');
   });
 
   it('keeps the list to the header fields', () => {
