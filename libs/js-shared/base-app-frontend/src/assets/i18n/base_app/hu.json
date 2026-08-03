@@ -1,0 +1,59 @@
+{
+  "app_definition": {
+    "_self": "Alkalmazás",
+    "id": "Azonosító",
+    "name": "Név",
+    "translocoId": "Transloco azonosító",
+    "description": "Leírás",
+    "status": "Állapot",
+    "version": "Verzió",
+    "publishedVersion": "Közzétett verzió",
+    "updatedAt": "Módosítva",
+    "materialTheme": "Material téma",
+    "colorScheme": "Színséma",
+    "logoUrl": "Logó URL",
+    "faviconUrl": "Favicon URL",
+    "tokenOverrides": "Token felülbírálatok",
+    "preset": "Elrendezés sablon",
+    "sidenavMode": "Oldalsáv mód",
+    "contentMaxWidth": "Tartalom maximális szélessége",
+    "sidenavCollapsible": "Összecsukható oldalsáv",
+    "sidenavOpenByDefault": "Oldalsáv alapból nyitva",
+    "regions": "Régiók",
+    "pages": "Oldalak"
+  },
+  "app_region": {
+    "_self": "Régió",
+    "type": "Típus",
+    "navItems": "Navigációs elemek",
+    "widgets": "Widgetek"
+  },
+  "app_page": {
+    "_self": "Oldal",
+    "id": "Azonosító",
+    "title": "Cím",
+    "translocoId": "Transloco azonosító",
+    "widgets": "Widgetek"
+  },
+  "app_nav_item": {
+    "_self": "Navigációs elem",
+    "id": "Azonosító",
+    "label": "Felirat",
+    "translocoId": "Transloco azonosító",
+    "icon": "Ikon",
+    "pageId": "Oldal",
+    "roles": "Szerepkörök",
+    "children": "Alelemek"
+  },
+  "app_widget": {
+    "_self": "Widget",
+    "id": "Azonosító",
+    "type": "Típus",
+    "props": "Tulajdonságok",
+    "children": "Alelemek"
+  },
+  "publish": {
+    "button": "Közzététel",
+    "tooltip": "A mentett definíció közzététele: a verziója lesz a közzétett verzió"
+  }
+}

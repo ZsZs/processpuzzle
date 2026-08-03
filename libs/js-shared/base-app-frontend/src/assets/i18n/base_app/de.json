@@ -1,0 +1,59 @@
+{
+  "app_definition": {
+    "_self": "Anwendung",
+    "id": "Id",
+    "name": "Name",
+    "translocoId": "Transloco-Id",
+    "description": "Beschreibung",
+    "status": "Status",
+    "version": "Version",
+    "publishedVersion": "Veröffentlichte Version",
+    "updatedAt": "Geändert am",
+    "materialTheme": "Material-Theme",
+    "colorScheme": "Farbschema",
+    "logoUrl": "Logo-URL",
+    "faviconUrl": "Favicon-URL",
+    "tokenOverrides": "Token-Überschreibungen",
+    "preset": "Layout-Vorlage",
+    "sidenavMode": "Modus der Seitennavigation",
+    "contentMaxWidth": "Maximale Inhaltsbreite",
+    "sidenavCollapsible": "Seitennavigation einklappbar",
+    "sidenavOpenByDefault": "Seitennavigation standardmäßig geöffnet",
+    "regions": "Bereiche",
+    "pages": "Seiten"
+  },
+  "app_region": {
+    "_self": "Bereich",
+    "type": "Typ",
+    "navItems": "Navigationseinträge",
+    "widgets": "Widgets"
+  },
+  "app_page": {
+    "_self": "Seite",
+    "id": "Id",
+    "title": "Titel",
+    "translocoId": "Transloco-Id",
+    "widgets": "Widgets"
+  },
+  "app_nav_item": {
+    "_self": "Navigationseintrag",
+    "id": "Id",
+    "label": "Bezeichnung",
+    "translocoId": "Transloco-Id",
+    "icon": "Symbol",
+    "pageId": "Seite",
+    "roles": "Rollen",
+    "children": "Untereinträge"
+  },
+  "app_widget": {
+    "_self": "Widget",
+    "id": "Id",
+    "type": "Typ",
+    "props": "Eigenschaften",
+    "children": "Unterelemente"
+  },
+  "publish": {
+    "button": "Veröffentlichen",
+    "tooltip": "Die gespeicherte Definition veröffentlichen: ihre Version wird zur veröffentlichten Version"
+  }
+}

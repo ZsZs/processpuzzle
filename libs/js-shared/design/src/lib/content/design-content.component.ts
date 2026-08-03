@@ -50,11 +50,11 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
-      icon: 'desktop_windows',
-      title: 'base-desktop_card_title',
-      subtitle: 'base-desktop_card_subtitle',
-      content: ['base-desktop_card_content', 'base-desktop_card_content_1', 'base-desktop_card_content_2', 'base-desktop_card_content_3'],
-      actions: [{ link: '/design/desktop', caption: 'base-desktop_card_button', colour: 'primary' }],
+      icon: 'web',
+      title: 'base-app_card_title',
+      subtitle: 'base-app_card_subtitle',
+      content: ['base-app_card_content', 'base-app_card_content_1', 'base-app_card_content_2', 'base-app_card_content_3'],
+      actions: [{ link: '/design/app-definition', caption: 'base-app_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
   ];

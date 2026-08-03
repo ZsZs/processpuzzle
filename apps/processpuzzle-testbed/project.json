@@ -39,6 +39,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/base-app-frontend/src/assets/i18n/base_app",
+            "output": "assets/i18n/base_app"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/base-entity-frontend/src/assets/i18n/base_entity",
             "output": "assets/i18n/base_entity"
           },

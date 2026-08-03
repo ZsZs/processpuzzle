@@ -9,7 +9,6 @@ import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.AppDefinitionSummary;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.ColorScheme;
 import com.processpuzzle.app.model.KeyAvailability;
@@ -18,7 +17,7 @@ import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
@@ -168,21 +167,17 @@ public class AppMapper {
         return model;
     }
 
-    public AppDefinitionSummary toSummary(com.processpuzzle.app.domain.AppDefinition definition) {
-        AppDefinitionSummary summary = new AppDefinitionSummary(definition.getId(), definition.getName());
-        summary.setOrgKey(definition.getOrgKey());
-        summary.setTranslocoId(definition.getTranslocoId());
-        summary.setDescription(definition.getDescription());
-        summary.setStatus(toModelStatus(definition));
-        summary.setVersion(definition.getRevision());
-        summary.setPublishedVersion(definition.getPublishedRevision());
-        summary.setUpdatedAt(toOffsetDateTime(definition.getUpdatedAt()));
-        return summary;
-    }
-
-    public PageOfAppDefinitionSummary toModel(Page<com.processpuzzle.app.domain.AppDefinition> page) {
-        List<AppDefinitionSummary> content = page.getContent().stream().map(this::toSummary).toList();
-        return new PageOfAppDefinitionSummary()
+    /**
+     * Maps a page of definitions with {@link #toModel(com.processpuzzle.app.domain.AppDefinition)},
+     * so a list entry is the same complete graph the single-GET returns. The designer edits an
+     * entity straight out of the list rather than re-fetching it by id, so a lighter projection
+     * here would hand it a truncated object and the next full-replacement PUT would persist the
+     * truncation.
+     */
+    public PageOfAppDefinition toModel(Page<com.processpuzzle.app.domain.AppDefinition> page) {
+        List<com.processpuzzle.app.model.AppDefinition> content =
+                page.getContent().stream().map(this::toModel).toList();
+        return new PageOfAppDefinition()
                 .content(content)
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())

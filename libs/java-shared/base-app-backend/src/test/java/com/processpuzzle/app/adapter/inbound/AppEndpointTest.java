@@ -10,8 +10,9 @@ import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationUpdate;
 import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
@@ -201,18 +202,39 @@ class AppEndpointTest {
     }
 
     @Test
-    void listingDefinitionsForwardsEveryQueryParameterAndAnswersAPagedSummary() {
+    void listingDefinitionsForwardsEveryQueryParameterAndAnswersAPagedDefinition() {
         when(findAllAppDefinitions.execute(ORG_KEY, "id==claims-app", "name,asc", 2, 10))
                 .thenReturn(new PageImpl<>(List.of(AppTestFixtures.storedDefinition())));
 
-        ResponseEntity<PageOfAppDefinitionSummary> response =
+        ResponseEntity<PageOfAppDefinition> response =
                 endpoint.listAppDefinitions(ORG_KEY, "id==claims-app", "name,asc", 2, 10);
 
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getContent()).singleElement()
-                .satisfies(summary -> assertThat(summary.getId()).isEqualTo(APP_ID));
+                .satisfies(definition -> assertThat(definition.getId()).isEqualTo(APP_ID));
         assertThat(response.getBody().getTotalElements()).isEqualTo(1L);
         verify(findAllAppDefinitions).execute(ORG_KEY, "id==claims-app", "name,asc", 2, 10);
+    }
+
+    /**
+     * The designer edits a definition straight out of the list instead of re-fetching it by id, so
+     * a list entry that dropped the graph would be silently written back as an empty one by the
+     * next full-replacement PUT.
+     */
+    @Test
+    void aListedDefinitionCarriesTheWholeGraphRatherThanHeaderFieldsOnly() {
+        when(findAllAppDefinitions.execute(ORG_KEY, null, null, null, null))
+                .thenReturn(new PageImpl<>(List.of(AppTestFixtures.storedDefinition())));
+
+        ResponseEntity<PageOfAppDefinition> response =
+                endpoint.listAppDefinitions(ORG_KEY, null, null, null, null);
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getContent()).singleElement().satisfies(definition -> {
+            assertThat(definition.getRegions()).extracting(RegionDefinition::getType)
+                    .containsExactly(RegionType.SIDENAV);
+            assertThat(definition.getPages()).extracting(PageDefinition::getId).containsExactly(PAGE_ID);
+        });
     }
 
     @Test

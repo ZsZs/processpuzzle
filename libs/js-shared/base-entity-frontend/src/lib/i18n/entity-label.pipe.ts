@@ -6,9 +6,15 @@ import { Subscription } from 'rxjs';
  * Resolves `key` through Transloco, returning `fallback` when the key is absent or unresolved. Shared
  * by {@link EntityLabelPipe} and the components that need the resolved label as a translation
  * parameter rather than as rendered text.
+ *
+ * The loaded translation is consulted before `translate()` — the same lookup transloco itself
+ * performs — because an absent key would otherwise go through the missing-key handler, which logs a
+ * warning. Falling back is normal here, not a defect: a descriptor may declare no `i18nScope` at all,
+ * and a lazily-loaded scope is still absent on the renders that precede its load.
  */
 export function translateLabel(transloco: TranslocoService, key: string | undefined, fallback: string): string {
   if (!key) return fallback;
+  if (!transloco.getTranslation(transloco.getActiveLang())[key]) return fallback;
   const translated = transloco.translate<string>(key);
   return translated && translated !== key ? translated : fallback;
 }
