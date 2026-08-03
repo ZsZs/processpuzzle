@@ -30,7 +30,8 @@ export { EmbeddedEntityFacade } from './lib/base-entity-facade/embedded-entity.f
 export { EmbeddedEntityService } from './lib/base-entity-service/embedded-entity.service';
 export { EmbeddedAggregateAccessor, type ResolvedEmbeddedAggregate } from './lib/base-entity-embedded/embedded-aggregate.accessor';
 export { embeddedAggregateGuard } from './lib/base-entity-embedded/embedded-aggregate.guard';
-export type { EmbeddedRouteContext, EmbeddedRouteLevel } from './lib/base-entity-embedded/embedded-route-context';
+export { EmbeddedEntityHostComponent } from './lib/base-entity-embedded/embedded-entity-host.component';
+export type { EmbeddedBreadcrumbLevel, EmbeddedRouteContext, EmbeddedRouteLevel } from './lib/base-entity-embedded/embedded-route-context';
 export type { EmbeddedPath, EmbeddedPathStep, EmbeddedRow } from './lib/base-entity-embedded/embedded-aggregate';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';

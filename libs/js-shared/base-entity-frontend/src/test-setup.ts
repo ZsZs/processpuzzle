@@ -21,7 +21,8 @@ import { BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ROUTER_OUTLET_DATA } from '@angular/router';
+import { provideRouter, ROUTER_OUTLET_DATA, RouterOutlet, Routes } from '@angular/router';
+import { ENTITY_NAME_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 import { TestEntityService } from './lib/base-entity-service/test-entity.service';
 import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { TestConfiguration } from './lib/test-configuration';
@@ -105,6 +106,41 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   standalone: true,
 })
 export class DummyComponent {}
+
+/** Stands in for a route that hosts nested screens, as an entity's details route hosts an embedded child's. */
+@Component({
+  selector: 'dummy-outlet-component',
+  template: ` <router-outlet /> `,
+  standalone: true,
+  imports: [RouterOutlet],
+})
+export class DummyOutletComponent {}
+
+/**
+ * The shape the framework's own routes have: the entity is named on the branch (`ENTITY_NAME_ROUTE_DATA_KEY`)
+ * and the row on its `:entityId/details` child, and an embedded child hangs below that details route. Both are
+ * what `readEmbeddedBreadcrumb` reads, so a spec that navigates these routes gets a real breadcrumb.
+ */
+export const TEST_ENTITY_ROUTES: Routes = [
+  {
+    path: 'test-entity',
+    data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'TestEntity' },
+    children: [
+      { path: BaseUrlSegments.ListForm, component: DummyComponent },
+      {
+        path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
+        component: DummyOutletComponent,
+        children: [
+          {
+            path: 'embedded-component',
+            data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'Embedded Component' },
+            children: [{ path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm, component: DummyComponent }],
+          },
+        ],
+      },
+    ],
+  },
+];
 
 function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
   const entityDescriptor = new BaseEntityDescriptor({
@@ -274,6 +310,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 export async function setupContainerComponentTest(
   componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>,
   translations: TranslationsMap = {},
+  extraProviders: Provider[] = [],
 ) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -293,16 +330,14 @@ export async function setupContainerComponentTest(
       provideHttpClient(),
       provideHttpClientTesting(),
       provideLogger(LOGGING_CONFIGURATION),
-      provideRouter([
-        { path: 'test-entity/:id/details', component: DummyComponent },
-        { path: 'test-entity/list', component: DummyComponent },
-      ]),
+      provideRouter(TEST_ENTITY_ROUTES),
       provideTranslocoTesting({ translations }),
       LayoutService,
       { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
       { provide: BreakpointObserver, useClass: MockBreakpointObserver },
       { provide: TestEntityService, useValue: mockService },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
+      ...extraProviders,
     ],
   }).compileComponents();
 

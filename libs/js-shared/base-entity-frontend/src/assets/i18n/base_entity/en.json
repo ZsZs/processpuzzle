@@ -11,6 +11,9 @@
     "cancel_button": "Cancel",
     "delete_button": "Delete"
   },
+  "statusbar": {
+    "breadcrumb_label": "Record hierarchy"
+  },
   "tabs": {
     "list": "{{ entity }} - list",
     "details": "{{ entity }} - details"

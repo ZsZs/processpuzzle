@@ -11,6 +11,9 @@
     "cancel_button": "Mégse",
     "delete_button": "Törlés"
   },
+  "statusbar": {
+    "breadcrumb_label": "Rekordok hierarchiája"
+  },
   "tabs": {
     "list": "{{ entity }} - lista",
     "details": "{{ entity }} - részletek"

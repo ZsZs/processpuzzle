@@ -1,4 +1,4 @@
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, RouterOutlet } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
@@ -7,6 +7,15 @@ import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.sto
 import { Component } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NavigatorCommand, type NavigationPayload } from './navigation-payload';
+
+/** A route host that can carry nested screens, as an entity's details route carries an embedded child's. */
+@Component({
+  selector: 'outlet-component',
+  template: ` <router-outlet /> `,
+  standalone: true,
+  imports: [RouterOutlet],
+})
+class OutletComponent {}
 
 describe('BaseFormNavigatorStore', () => {
   @Component({
@@ -209,5 +218,79 @@ describe('BaseFormNavigatorStore', () => {
     expect(otherStore.navigateTo()).toEqual('/application-property/1/details');
     expect(store.navigateTo()).toEqual('/application-property/1/details');
     expect(otherStore.entityName()).toEqual('ApplicationProperty');
+  });
+});
+
+/**
+ * The breadcrumb needs routes shaped the way the framework's own are: the entity named on the branch, the row
+ * on its `:entityId/details` child, and an embedded child hanging below that details route.
+ */
+describe('BaseFormNavigatorStore breadcrumb', () => {
+  const DEEP_URL = '/samples/test-entity/1/details/embedded-component/embedded_1_1/details';
+  const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('Test Entity'));
+  let store: InstanceType<typeof NavigatorStore>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [
+        provideLocationMocks(),
+        provideRouter([
+          { path: 'home', component: OutletComponent },
+          {
+            path: 'samples',
+            children: [
+              {
+                path: 'test-entity',
+                data: { entityName: 'Test Entity' },
+                children: [
+                  { path: 'list', component: OutletComponent },
+                  {
+                    path: ':entityId/details',
+                    component: OutletComponent,
+                    children: [
+                      {
+                        path: 'embedded-component',
+                        data: { entityName: 'Embedded Component' },
+                        children: [{ path: ':entityId/details', component: OutletComponent }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+        NavigatorStore,
+      ],
+    }).compileComponents();
+    await RouterTestingHarness.create('home');
+    store = TestBed.inject(NavigatorStore);
+  });
+
+  it('describes the levels the current URL walks through, outermost first.', async () => {
+    await store.navigateToUrl(DEEP_URL);
+
+    expect(store.breadcrumb().map((level) => [level.entityName, level.entityId])).toEqual([
+      ['Test Entity', '1'],
+      ['Embedded Component', 'embedded_1_1'],
+    ]);
+  });
+
+  it('navigateToBreadcrumbLevel() walks up to that level and leaves it its own back target.', async () => {
+    await store.navigateToUrl(DEEP_URL);
+
+    await store.navigateToBreadcrumbLevel(0);
+
+    expect(store.determineCurrentUrl()).toEqual('/samples/test-entity/1/details');
+    expect(store.returnTo()).toEqual('');
+  });
+
+  /** Counting segments up from the end would land in the middle of the embedded branch. */
+  it('builds a list URL from the entity’s own place in the breadcrumb, at any depth.', async () => {
+    await store.navigateToUrl(DEEP_URL);
+
+    await store.navigateToList();
+
+    expect(store.determineCurrentUrl()).toEqual('/samples/test-entity/list');
   });
 });

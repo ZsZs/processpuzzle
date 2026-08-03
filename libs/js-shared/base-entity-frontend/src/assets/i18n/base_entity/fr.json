@@ -11,6 +11,9 @@
     "cancel_button": "Annuler",
     "delete_button": "Supprimer"
   },
+  "statusbar": {
+    "breadcrumb_label": "Hiérarchie des enregistrements"
+  },
   "tabs": {
     "list": "{{ entity }} - liste",
     "details": "{{ entity }} - détails"

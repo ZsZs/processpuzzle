@@ -1,10 +1,11 @@
 import { patchState, signalStore, signalStoreFeature, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { inject } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { BaseUrlSegments } from './base-url-segments';
 import { type NavigationPayload } from './navigation-payload';
 import { EntityRouteRegistry } from './entity-route.registry';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
+import { type EmbeddedBreadcrumbLevel, readEmbeddedBreadcrumb } from '../base-entity-embedded/embedded-route-context';
 
 export enum RouteSegments {
   LIST_ROUTE = 'LIST_ROUTE',
@@ -15,6 +16,12 @@ const ROOT_PAYLOAD_KEY = '';
 
 export interface NavigationState {
   activeRouteSegment: RouteSegments | undefined;
+  /**
+   * The entities the current URL walks through, outermost first — what the status bar renders as a
+   * breadcrumb. Derived from the route, never remembered, so a deep link and a refresh describe the same
+   * hierarchy as a drill-down.
+   */
+  breadcrumb: EmbeddedBreadcrumbLevel[];
   entityName: string;
   navigationError?: string;
   navigateTo: string;
@@ -26,6 +33,7 @@ export interface NavigationState {
 
 const INITIAL_NAVIGATION_STATE: NavigationState = {
   activeRouteSegment: RouteSegments.LIST_ROUTE,
+  breadcrumb: [],
   entityName: '',
   navigationError: undefined,
   navigateTo: '',
@@ -96,6 +104,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       return snapshot;
     }
 
+    /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
       const currentUrl = Reflect.get(route, '_routerState').snapshot.url;
       if (currentUrl.endsWith(BaseUrlSegments.ListForm)) {
@@ -105,10 +114,28 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       } else {
         patchState(store, { activeRouteSegment: undefined });
       }
+      patchState(store, { breadcrumb: readEmbeddedBreadcrumb(deepestActivatedRoute()) });
     }
 
-    function determineBaseUrl(): string {
+    function deepestActivatedRoute(): ActivatedRouteSnapshot {
+      let snapshot = router.routerState.snapshot.root;
+      while (snapshot.firstChild) snapshot = snapshot.firstChild;
+      return snapshot;
+    }
+
+    /**
+     * The prefix a `<entity>/...` URL is built on.
+     *
+     * Taken from the breadcrumb when the entity is one the current URL walks through — which is what keeps
+     * the answer right at any depth, where counting segments up from the end is not: from an embedded
+     * child's form, the owner's list is not three levels up. Falls back to that count for an entity the
+     * URL says nothing about.
+     */
+    function determineBaseUrl(entityName?: string): string {
       determineActiveRouteSegment();
+      const level = store.breadcrumb().find((candidate) => candidate.entityName === entityName);
+      if (level) return level.baseUrl;
+
       const currentUrl = determineCurrentUrl();
       return store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
     }
@@ -165,12 +192,27 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       } else await navigateToList(store.entityName());
     }
 
+    /**
+     * Walks the breadcrumb back up to `index`.
+     *
+     * Deliberately without a `returnTo`: going *up* means the form landed on should fall back to its own
+     * back target — the owner's form for an embedded level, its own list for the root — rather than to the
+     * level the user just left, which would make Cancel come straight back down.
+     */
+    async function navigateToBreadcrumbLevel(index: number): Promise<void> {
+      const level = store.breadcrumb()[index];
+      if (!level) return;
+
+      patchState(store, { entityName: level.entityName, returnTo: '' });
+      await navigate(level.url);
+    }
+
     async function navigateToDetails(entityName: string, id: string, returnTo?: string, payload?: NavigationPayload) {
       patchState(store, { entityName });
       pushPayload(payload);
       if (store.activeRouteSegment() !== RouteSegments.DETAILS_ROUTE) {
         const snakeCaseEntityName = snakeCaseName(entityName);
-        const baseUrl = determineBaseUrl();
+        const baseUrl = determineBaseUrl(entityName);
         const detailsFormPath = baseUrl + '/' + snakeCaseEntityName + '/' + id + '/details';
         await navigateToUrl(detailsFormPath, returnTo);
       }
@@ -180,7 +222,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       patchState(store, { entityName });
       pushPayload(payload);
       const snakeCaseEntityName = snakeCaseName(entityName);
-      const baseUrl = determineBaseUrl();
+      const baseUrl = determineBaseUrl(entityName);
       const goToUrl = baseUrl + '/' + snakeCaseEntityName + '/list';
       if (store.activeRouteSegment() !== RouteSegments.LIST_ROUTE) {
         await navigateToUrl(goToUrl, returnTo);
@@ -284,6 +326,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       } else {
         patchState(store, { returnTo: router.url });
       }
+      await navigate(url);
+    }
+
+    /** The navigation itself, without the `returnTo` bookkeeping the callers differ on. */
+    async function navigate(url: string): Promise<void> {
       pendingNavigatorUrl = url;
       patchState(store, { navigateTo: url });
       await router
@@ -301,6 +348,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       determineOwnerUrl,
       determineActiveRouteSegment,
       navigateBack,
+      navigateToBreadcrumbLevel,
       navigateToDetails,
       navigateToEmbedded,
       navigateToList,
@@ -333,6 +381,7 @@ export function BaseFormNavigatorStore(entityName: string) {
       navigatorStore.setEntityName(entityName);
       return {
         activeRouteSegment: navigatorStore.activeRouteSegment,
+        breadcrumb: navigatorStore.breadcrumb,
         entityName: navigatorStore.entityName,
         navigationError: navigatorStore.navigationError,
         navigateTo: navigatorStore.navigateTo,
@@ -344,6 +393,7 @@ export function BaseFormNavigatorStore(entityName: string) {
         determineCurrentUrl: navigatorStore.determineCurrentUrl,
         determineOwnerUrl: navigatorStore.determineOwnerUrl,
         navigateBack: navigatorStore.navigateBack,
+        navigateToBreadcrumbLevel: navigatorStore.navigateToBreadcrumbLevel,
         navigateToDetails: (id: string, returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToDetails(entityName, id, returnTo, payload),
         navigateToEmbedded: navigatorStore.navigateToEmbedded,
         navigateToList: (returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToList(entityName, returnTo, payload),

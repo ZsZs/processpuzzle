@@ -1,7 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { BaseEntityContainerComponent } from './base-entity-container.component';
+import { EmbeddedEntityHostComponent } from './base-entity-embedded/embedded-entity-host.component';
 import { baseEntityRoutes, BASE_ENTITY_ROUTES, EmbeddedChildRoute } from './base-entity.routes';
 import { BaseEntityFormComponent } from './base-form/base-entity-form.component';
 import { EMBEDDED_ENTITY_ROUTE_DATA_KEY, ENTITY_NAME_ROUTE_DATA_KEY } from './base-form-navigator/entity-route.registry';
@@ -41,18 +41,22 @@ describe('baseEntityRoutes', () => {
     const [child] = expand(detailsRouteOf(routes));
 
     expect(child.path).toBe('embedded-component');
-    expect(child.component).toBe(BaseEntityContainerComponent);
+    expect(child.component).toBe(EmbeddedEntityHostComponent);
     expect(child.data).toMatchObject({ [ENTITY_NAME_ROUTE_DATA_KEY]: 'Embedded Component', [EMBEDDED_ENTITY_ROUTE_DATA_KEY]: true });
     expect(child.canActivate).toHaveLength(1);
   });
 
-  /** `.../test-entity/1/details/embedded-component/embedded_1_1/details` — the nesting carries the position. */
-  it('gives the embedded child its own list and details routes one level down', () => {
+  /**
+   * `.../test-entity/1/details/embedded-component/embedded_1_1/details` — the nesting carries the position.
+   * Only the details form: the rows are listed on the owner's form, which is also the only way here, so a
+   * list of its own would be a second door to the same room.
+   */
+  it('gives the embedded child a details route one level down, and no list', () => {
     const routes = baseEntityRoutes([{ entityName: 'Embedded Component', facade: embeddedComponentFacade }]);
 
     const [child] = expand(detailsRouteOf(routes));
 
-    expect(expand(child).map((route) => route.path)).toEqual(['', ':entityId/details', 'list']);
+    expect(expand(child).map((route) => route.path)).toEqual([':entityId/details']);
   });
 
   /**

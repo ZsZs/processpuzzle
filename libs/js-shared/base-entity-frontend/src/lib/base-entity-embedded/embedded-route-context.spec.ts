@@ -1,14 +1,20 @@
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, UrlSegment } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
-import { readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+import { snakeCaseName } from '../base-form-navigator/base-form-navigator.store';
+import { readEmbeddedBreadcrumb, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+
+function segments(...paths: string[]): UrlSegment[] {
+  return paths.map((path) => ({ path }) as UrlSegment);
+}
 
 /**
  * A stand-in for the snapshot chain the router builds. The entity name sits on the container route and the
  * id on its `:entityId/details` child — and the router **inherits** `data` down to that child, which the
- * stub reproduces because reconstructing the levels despite that repetition is the whole job.
+ * stub reproduces because reconstructing the levels despite that repetition is the whole job. Each route
+ * also carries the URL segments it matched, the way the router's own snapshots do.
  */
 function routeChain(...levels: Array<{ entityName?: string; entityId?: string }>): ActivatedRouteSnapshot {
   let deepest: ActivatedRouteSnapshot | null = null;
@@ -16,12 +22,13 @@ function routeChain(...levels: Array<{ entityName?: string; entityId?: string }>
   let params: Record<string, string> = {};
   for (const level of levels) {
     const data = level.entityName ? { entityName: level.entityName } : {};
+    const url = level.entityName ? segments(snakeCaseName(level.entityName)) : [];
     // The container inherits its ancestors' params, so it sees the *owner's* entityId without declaring one.
-    const container = { data, params, parent: deepest, routeConfig: { path: 'container' } } as unknown as ActivatedRouteSnapshot;
+    const container = { data, params, url, parent: deepest, routeConfig: { path: 'container' } } as unknown as ActivatedRouteSnapshot;
     deepest = container;
     if (level.entityId !== undefined) {
       params = { ...params, entityId: level.entityId };
-      deepest = { data, params, parent: container, routeConfig: { path: ':entityId/details' } } as unknown as ActivatedRouteSnapshot;
+      deepest = { data, params, url: segments(level.entityId, 'details'), parent: container, routeConfig: { path: ':entityId/details' } } as unknown as ActivatedRouteSnapshot;
     }
   }
 
@@ -98,6 +105,42 @@ describe('readEmbeddedRouteChain', () => {
 
   it('returns nothing for an empty chain', () => {
     expect(readEmbeddedRouteChain(null)).toEqual([]);
+  });
+});
+
+describe('readEmbeddedBreadcrumb', () => {
+  it('gives every level the URL of its own screen', () => {
+    const crumbs = readEmbeddedBreadcrumb(routeChain({ entityName: 'Test Entity', entityId: '1' }, { entityName: 'Embedded Component', entityId: 'embedded_1_1' }));
+
+    expect(crumbs.map((crumb) => crumb.url)).toEqual(['/test-entity/1/details', '/test-entity/1/details/embedded-component/embedded_1_1/details']);
+  });
+
+  /** What a sibling list or details URL is built on — and, for an embedded level, the owner's own form. */
+  it('stops each level’s base URL before its own entity segment', () => {
+    const crumbs = readEmbeddedBreadcrumb(routeChain({ entityName: 'Test Entity', entityId: '1' }, { entityName: 'Embedded Component', entityId: 'embedded_1_1' }));
+
+    expect(crumbs.map((crumb) => crumb.baseUrl)).toEqual(['', '/test-entity/1/details']);
+  });
+
+  it('ends a level with no row named at its own branch', () => {
+    const crumbs = readEmbeddedBreadcrumb(routeChain({ entityName: 'Test Entity', entityId: '1' }, { entityName: 'Embedded Component' }));
+
+    expect(crumbs[1]).toEqual({ entityName: 'Embedded Component', entityId: undefined, url: '/test-entity/1/details/embedded-component', baseUrl: '/test-entity/1/details' });
+  });
+
+  /** `App Nav Item` nests inside itself, so the repeated segment has to produce two distinct URLs. */
+  it('walks a self-nesting child one level at a time', () => {
+    const crumbs = readEmbeddedBreadcrumb(routeChain({ entityName: 'App Definition', entityId: 'demo' }, { entityName: 'App Nav Item', entityId: 'a' }, { entityName: 'App Nav Item', entityId: 'b' }));
+
+    expect(crumbs.map((crumb) => crumb.url)).toEqual([
+      '/app-definition/demo/details',
+      '/app-definition/demo/details/app-nav-item/a/details',
+      '/app-definition/demo/details/app-nav-item/a/details/app-nav-item/b/details',
+    ]);
+  });
+
+  it('returns nothing for an empty chain', () => {
+    expect(readEmbeddedBreadcrumb(null)).toEqual([]);
   });
 });
 

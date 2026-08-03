@@ -11,6 +11,9 @@
     "cancel_button": "Abbrechen",
     "delete_button": "Löschen"
   },
+  "statusbar": {
+    "breadcrumb_label": "Datensatz-Hierarchie"
+  },
   "tabs": {
     "list": "{{ entity }} - Liste",
     "details": "{{ entity }} - Details"
