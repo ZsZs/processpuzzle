@@ -9,6 +9,7 @@ import { BaseEntityToolbarComponent } from './lib/base-toolbar/base-entity-toolb
 import { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
+import { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 import { Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
@@ -58,6 +59,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   entity: Signal<TestEntity> = input.required<TestEntity>();
   protected baseEntityForm!: FormGroup;
   protected formBuilder = inject(FormBuilder);
+  protected entityFormBuilder = inject(BaseEntityFormBuilder);
 
   // region Angular lifacycle hooks
   ngOnInit(): void {
@@ -84,8 +86,14 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.componentRef.instance.entity = this.entity as unknown as InputSignal<TestEntity>;
     this.componentRef.instance.entityName = signal('TestEntity') as unknown as InputSignal<string>;
     this.componentRef.instance.value = signal(currentAttrValue) as unknown as InputSignal<unknown>;
-    const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
-    this.baseEntityForm.addControl(this.config().attrName, formControl);
+    // Mirrors what BaseEntityFormBuilder hands to every control it creates.
+    this.componentRef.instance.formBuilder = this.entityFormBuilder as unknown as BaseEntityFormBuilder<TestEntity>;
+    this.baseEntityForm.addControl(this.config().attrName, this.createControl(currentAttrValue));
+  }
+
+  /** Mirrors `BaseEntityFormBuilder`: every attribute, embedded children included, is a plain control. */
+  private createControl(currentAttrValue: unknown) {
+    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
   }
 
   // endregion

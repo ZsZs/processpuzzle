@@ -11,7 +11,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs';
-import { DeleteArtifactConfirmationDialog, DeleteArtifactConfirmationDialogData } from '../../dialogs/delete-artifact-confirmation.dialog';
+import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../../dialogs/delete-confirmation.dialog';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
 const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
@@ -163,7 +163,7 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
       return;
     }
 
-    const dialogData: DeleteArtifactConfirmationDialogData = {
+    const dialogData: DeleteConfirmationDialogData = {
       titleKey: 'base_entity.delete_artifact_confirmation_dialog.title',
       contentKey: 'base_entity.delete_artifact_confirmation_dialog.content',
       contentParams: { artifactName: artifact.name },
@@ -172,7 +172,7 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
     };
 
     this.dialog
-      .open(DeleteArtifactConfirmationDialog, { data: dialogData })
+      .open(DeleteConfirmationDialog, { data: dialogData })
       .afterClosed()
       .pipe(
         filter((confirmed): confirmed is true => confirmed === true),

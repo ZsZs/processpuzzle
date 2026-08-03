@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, input, InputSignal, OnDestroy, OnI
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ROUTER_OUTLET_DATA } from '@angular/router';
+import { ROUTER_OUTLET_DATA, RouterOutlet } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseFormHostDirective } from './base-form-host.directive';
 import { MatCard, MatCardActions, MatCardContent } from '@angular/material/card';
@@ -24,7 +24,7 @@ import { Subject, Subscription } from 'rxjs';
   standalone: true,
   templateUrl: 'base-entity-form.component.html',
   styleUrls: ['./base-entity-form.css'],
-  imports: [BaseFormHostDirective, NgTemplateOutlet, ReactiveFormsModule, MatCard, MatCardContent, MatCardActions, MatButton, MatIcon],
+  imports: [BaseFormHostDirective, NgTemplateOutlet, ReactiveFormsModule, MatCard, MatCardContent, MatCardActions, MatButton, MatIcon, RouterOutlet],
   providers: [{ provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } }],
 })
 export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit, OnDestroy {
@@ -37,6 +37,11 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
 
+  /**
+   * True while an embedded child's screen is open below this form. This form keeps running — that is what
+   * carries its unsaved edits across the round trip — but it gives up the surface to the child.
+   */
+  readonly hasActiveEmbeddedChild: WritableSignal<boolean> = signal(false);
   violations: WritableSignal<RuleEvaluationResult[]> = signal([]);
   hasErrorViolations = computed(() => this.violations().some((v) => v.severity === 'ERROR'));
   // Reactive Save-button state: recomputes on any form value/status/pristine change so it also refreshes under
@@ -84,12 +89,12 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // region event handlers
   async onCancel() {
     this.store().setCurrentEntity(undefined);
-    await this.formNavigator.navigateBack();
+    await this.navigateBack();
   }
 
   async onDelete() {
     await this.store().delete(this.entityId());
-    await this.formNavigator.navigateBack();
+    await this.navigateBack();
   }
 
   onFieldBlur(): void {
@@ -106,11 +111,20 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     } else {
       await this.store().update(objectToSave);
     }
-    await this.formNavigator.navigateBack();
+    await this.navigateBack();
   }
   // endregion
 
   // region protected, private helper methods
+  /**
+   * Leaving an embedded child goes to the form of the entity that contains it. Only a fallback: a drill-down
+   * already records where it came from. It is a page opened straight on its URL — a deep link, a reload —
+   * that has nothing recorded, and would otherwise land on the child's own list.
+   */
+  private async navigateBack(): Promise<void> {
+    await this.formNavigator.navigateBack(this.entityDescriptor().isEmbedded ? this.formNavigator.determineOwnerUrl() : undefined);
+  }
+
   private evaluateRules(candidate?: Entity | Record<string, unknown>): void {
     const ruleEngine = this.ruleEngine;
     if (!ruleEngine || this.rules.length === 0) return;

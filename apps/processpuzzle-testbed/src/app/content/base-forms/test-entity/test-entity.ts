@@ -1,7 +1,8 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
-import { TestEntityComponent } from '../test-entity-component/test-entity-component';
+import { EmbeddedComponent } from '../embedded-component/embedded-component';
+import { RelatedEntity } from '../related-entity/related-entity';
 
 export enum TestEnum {
   VALUE_ONE,
@@ -22,7 +23,11 @@ export class TestEntity implements BaseEntity {
   enumValue: TestEnum;
   artifact?: ArtifactAttr | undefined;
   tags: Array<string> | undefined;
-  components: Array<TestEntityComponent> | undefined;
+  /** Ids of the `Test Entity Component`s owned by this entity; the components themselves live in their own table. */
+  components: Array<string> | undefined;
+  /** Carried inside this entity's payload — an `Embedded Component` has no endpoint of its own. */
+  embeddedComponents: Array<EmbeddedComponent> | undefined;
+  relatedEntities: Array<RelatedEntity> | undefined;
   additionalProperties: Record<string, string> | undefined;
 
   constructor(
@@ -36,7 +41,9 @@ export class TestEntity implements BaseEntity {
     enumValue?: TestEnum,
     artifact?: ArtifactAttr,
     tags?: Array<string>,
-    components?: Array<TestEntityComponent>,
+    components?: Array<string>,
+    embeddedComponents?: Array<EmbeddedComponent>,
+    relatedEntities?: Array<RelatedEntity>,
     additionalProperties?: Record<string, string>,
   ) {
     this.id = id ? id : uuidv4();
@@ -50,6 +57,8 @@ export class TestEntity implements BaseEntity {
     this.artifact = artifact;
     this.tags = tags;
     this.components = components;
+    this.embeddedComponents = embeddedComponents;
+    this.relatedEntities = relatedEntities;
     this.additionalProperties = additionalProperties;
   }
 }

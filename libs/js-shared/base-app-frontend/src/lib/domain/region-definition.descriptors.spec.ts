@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { APP_DEFINITION_ENTITY_NAME } from './app-entity-names';
 import { APP_NAV_ITEM_ENTITY_NAME } from './nav-item.descriptors';
 import { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD, createRegionDefinitionDescriptor } from './region-definition.descriptors';
 import { APP_WIDGET_ENTITY_NAME } from './widget-ref.descriptors';
@@ -15,6 +16,12 @@ describe('createRegionDefinitionDescriptor', () => {
 
   it('names the entity so that the route segment follows from it', () => {
     expect(descriptor.entityName).toBe(APP_REGION_ENTITY_NAME);
+  });
+
+  it('is an embedded component of the app definition', () => {
+    expect(descriptor.componentParents).toEqual([APP_DEFINITION_ENTITY_NAME]);
+    expect(descriptor.isEmbedded).toBe(true);
+    expect(descriptor.parentReferenceAttrName()).toBeUndefined();
   });
 
   it('roots the labels under the library scope', () => {
@@ -39,9 +46,9 @@ describe('createRegionDefinitionDescriptor', () => {
   });
 
   it('links the nested definitions to their own descriptors', () => {
-    expect(byName('navItems')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('navItems')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('navItems')?.linkedEntityType).toBe(APP_NAV_ITEM_ENTITY_NAME);
-    expect(byName('widgets')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('widgets')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('widgets')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
   });
 

@@ -5,7 +5,7 @@ import { BaseEntity } from '@processpuzzle/base-entity';
  * flattened onto the entity by {@link AppDefinitionMapper} so that the generated form can offer a
  * typed control per field; the original objects are kept alongside, because a full replacement PUT
  * would otherwise drop the parts no control writes. `regions` and `pages` stay nested and are edited
- * through the `COMPONENTS` controls of the `App Region` / `App Page` descriptors.
+ * through the `RELATED_ENTITIES` controls of the `App Region` / `App Page` descriptors.
  */
 
 export const MATERIAL_THEMES = ['azure-blue', 'rose-red', 'magenta-violet', 'cyan-orange'] as const;

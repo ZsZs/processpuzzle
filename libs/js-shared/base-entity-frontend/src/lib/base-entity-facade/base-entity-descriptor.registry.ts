@@ -8,13 +8,15 @@ export class BaseEntityDescriptorRegistry {
   private readonly injector = inject(Injector);
 
   getDescriptor(entityName: string | undefined): BaseEntityDescriptor | undefined {
-    const facade = this.resolveFacade(entityName);
-    return facade?.descriptor;
+    return this.resolveFacade(entityName)?.descriptor;
   }
 
+  /**
+   * An embedded entity has a store too — see `EmbeddedEntityFacade`. It reads and writes the containing
+   * entity's document rather than an endpoint of its own, which is invisible from here.
+   */
   getStore<Store = unknown>(entityName: string | undefined): Store | undefined {
-    const facade = this.resolveFacade(entityName);
-    return facade?.store as Store | undefined;
+    return this.resolveFacade(entityName)?.store as Store | undefined;
   }
 
   private resolveFacade(entityName: string | undefined) {

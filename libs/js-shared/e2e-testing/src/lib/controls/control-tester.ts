@@ -435,6 +435,8 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
     case 'LABEL':
     case 'ARTIFACT':
     case 'COMPONENTS':
+    case 'EMBEDDED_COMPONENTS':
+    case 'RELATED_ENTITIES':
       return new NoopControlTester(attr, false);
     default:
       return new NoopControlTester(attr, true);

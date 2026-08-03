@@ -132,7 +132,7 @@ export const TestEntityStore = signalStore(
 
 ### 5. Describe the attributes
 
-Each visible field gets a `BaseEntityAttrDescriptor` whose `FormControlType` picks the control (full list and behavior in [Control types](#control-types)). Use `FlexboxDescriptor` to lay attributes out in rows and columns, and `linkedEntityType` (a string — the related entity's name) to point at a related entity (used by `LOOKUP`, `FOREIGN_KEY`, and nested `COMPONENTS`). The descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY`.
+Each visible field gets a `BaseEntityAttrDescriptor` whose `FormControlType` picks the control (full list and behavior in [Control types](#control-types)). Use `FlexboxDescriptor` to lay attributes out in rows and columns, and `linkedEntityType` (a string — the related entity's name) to point at another entity (used by `LOOKUP`, `FOREIGN_KEY`, `RELATED_ENTITIES`, `COMPONENTS`, and `EMBEDDED_COMPONENTS`). The descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY`.
 
 ```typescript
 function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
@@ -144,13 +144,17 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, { inputType: 'date' });
   const lookupAttr = new BaseEntityAttrDescriptor('lookup', FormControlType.LOOKUP, 'Lookup');
   const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
+  const relatedEntitiesAttr = new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES, 'Related Entities');
   const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
+  const embeddedComponentsAttr = new BaseEntityAttrDescriptor('embeddedComponents', FormControlType.EMBEDDED_COMPONENTS, 'Embedded Components');
 
   lookupAttr.linkedEntityType = 'Trunk Data';
+  relatedEntitiesAttr.linkedEntityType = 'Related Entity';
   componentsAttr.linkedEntityType = 'Test Entity Component';
+  embeddedComponentsAttr.linkedEntityType = 'Embedded Component';
 
   const column1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr], FlexDirection.COLUMN);
-  const column2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, componentsAttr], FlexDirection.COLUMN);
+  const column2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, relatedEntitiesAttr, componentsAttr, embeddedComponentsAttr], FlexDirection.COLUMN);
   const layout = new FlexboxDescriptor([column1, column2], FlexDirection.CONTAINER);
   layout.style = { 'column-gap': '20px' };
   return [layout];
@@ -229,11 +233,38 @@ Every attribute's `FormControlType` selects the component that renders it in the
 | `FLEX_BOX` | layout container | — (no control) | uses `FlexboxDescriptor` | Grouping only; recurses into children. See below. |
 | `LOOKUP` | autocomplete over a lookup table | lookup **`key`** (`string`) | **`linkedEntityType`** | Tricky — see below. |
 | `FOREIGN_KEY` | read-only field + Select/link buttons | related entity **`id`** (`string`) | **`linkedEntityType`** | To-one reference; picks via the navigator. |
-| `COMPONENTS` | list of related-entity rows | array of related **ids** | **`linkedEntityType`**, `referenceIdField` | To-many reference. |
+| `RELATED_ENTITIES` | list of related-entity rows | array of related **ids** | **`linkedEntityType`**, `referenceIdField` | To-many **association**; the related entities exist independently. |
+| `COMPONENTS` | list of component rows | array of component **ids** | **`linkedEntityType`**, `referenceIdField` | To-many **containment**, child in its own table. Attaching stamps the parent's id into the child's foreign key; deleting destroys the child. |
+| `EMBEDDED_COMPONENTS` | inline sub-form per component | array of the **children themselves** | **`linkedEntityType`** | To-many **containment**, child inside the parent's payload. Backed by a `FormArray`; saved and deleted with the parent. |
 | `ARTIFACT` | file thumbnail/icon + upload/delete | `ArtifactAttr` (or `null`) | `label`, `showThumbnail` | Tricky — see below. |
 | `ADDITIONAL_PROPERTIES` | editable key/value list | `Record<string,string>` | `label` | Free-form string map. |
 
-`linkedEntityType` is **mandatory** for `LOOKUP`, `FOREIGN_KEY`, and `COMPONENTS` — it names the related entity, whose descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY`; omitting it throws.
+`linkedEntityType` is **mandatory** for `LOOKUP`, `FOREIGN_KEY`, `RELATED_ENTITIES`, `COMPONENTS`, and `EMBEDDED_COMPONENTS` — it names the other entity, whose descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY` (or, for an embedded component, through `EMBEDDED_ENTITY_DESCRIPTOR_REGISTRY`); omitting it throws.
+
+### Association vs. containment
+
+Three control types render a to-many list, and which one is right follows from **who owns the rows**:
+
+| Control type | Relationship | Add | Delete | Persisted by |
+| --- | --- | --- | --- | --- |
+| `RELATED_ENTITIES` | **association** — the target lives on its own | picks an existing entity through the navigator | detaches the reference only | the target's own save, independently |
+| `COMPONENTS` | **containment**, child in its own table | picks/creates a child, then stamps this entity's id into the child's foreign key | destroys the child (after confirmation) | the child's own endpoint |
+| `EMBEDDED_COMPONENTS` | **containment**, child in this payload | appends an empty inline sub-form | drops the row | this entity's save |
+
+The two containment types are the two variations of a **component** — a part that belongs to exactly one
+parent — and the child's own descriptor says which it is through `componentParent` / `isEmbedded` (see
+[Component entities](#component-entities)). The declarations are on opposite sides of the relationship and are
+both hand-written, so each control **checks that they agree at first render** and throws, naming both sides,
+when they do not:
+
+- the child entity has no descriptor in either registry;
+- the child does not name this entity in its `componentParent`;
+- `COMPONENTS` points at an `isEmbedded` child (use `EMBEDDED_COMPONENTS`), or `EMBEDDED_COMPONENTS` points at
+  one that is not (use `COMPONENTS`).
+
+`Test Entity` in the [testbed](../../../apps/processpuzzle-testbed) demonstrates all three side by side —
+`relatedEntities` → `Related Entity`, `components` → `Test Entity Component`, `embeddedComponents` →
+`Embedded Component`.
 
 ### FLEX_BOX (layout)
 
@@ -243,12 +274,76 @@ Every attribute's `FormControlType` selects the component that renders it in the
 
 - **`LOOKUP`** uses a **two-control design**: the visible autocomplete text is a private `displayControl` decoupled from the real `FormControl`, which stores the lookup **key**. An `effect()` keeps them in sync. The lookup table (`{ key, value, description? }`) is loaded on init from the store resolved via `linkedEntityType`; the display shows `value`, the form holds `key`. The link icon navigates to the related entity.
 - **`FOREIGN_KEY`** shows the related entity's identifying text (read-only) with the real id in a hidden control. The **Select** button snapshots the form and navigates to the related list (`SELECT_OR_CREATE`); on return the chosen id is written back to both the entity and the control. A link icon navigates to the current reference.
-- **`COMPONENTS`** is the to-many analogue: it normalizes heterogeneous items (strings/objects) into `{ id }` using `referenceIdField`, appends via the same navigator round-trip, and each row has a link and a delete button.
+- **`RELATED_ENTITIES`** is the to-many analogue: it normalizes heterogeneous items (strings/objects) into `{ id }` using `referenceIdField`, appends via the same navigator round-trip, and each row has a link and a delete button that detaches the reference only.
+- **`COMPONENTS`** looks like `RELATED_ENTITIES` but owns its rows. It resolves each row's text through the child's store (loading it if the parent's form is the first screen opened) and falls back to the id; **Add** takes the same navigator round-trip and then writes the parent's id into the attribute named by the child's `parentReferenceAttrName()`; **Delete** confirms and then calls the child store's `delete`. Like `ARTIFACT`, it therefore has an **immediate backend side-effect**, before the parent is saved.
+- **`EMBEDDED_COMPONENTS`** is the only control backed by a **`FormArray`** rather than a `FormControl`: each row is a sub-form built from the child's descriptor with the same `BaseEntityFormBuilder`, so the children are already part of `form.value` (no imperative write-back) and a child's `required` attribute keeps the *parent's* Save disabled. The sub-forms are handed the **parent's** store — an embedded child has none of its own. Rows are seeded from the attribute's value, which is also what restores them from a form snapshot.
 - **`ARTIFACT`** binds an `ArtifactAttr` (`{ bucket, objectId, name, mimeType }`). It fetches a thumbnail only for `image/*` types when `showThumbnail !== false`, otherwise shows a MIME-type icon; upload delegates to `ArtifactSelectorComponent` and **delete actually removes the stored object** (after a confirmation dialog). With `isHeading` it degrades to a plain heading. Requires an `ObjectStoreService` provider.
 
-These value-editing controls (`ARTIFACT`, `LOOKUP`, `FOREIGN_KEY`, `COMPONENTS`, `TAGS`, `ADDITIONAL_PROPERTIES`) write to their `FormControl` **imperatively** (`setValue` + `markAsDirty`), which is why the form's Save button reacts to `form.events` rather than a plain dirty binding.
+These value-editing controls (`ARTIFACT`, `LOOKUP`, `FOREIGN_KEY`, `RELATED_ENTITIES`, `COMPONENTS`, `TAGS`, `ADDITIONAL_PROPERTIES`) write to their `FormControl` **imperatively** (`setValue` + `markAsDirty`), which is why the form's Save button reacts to `form.events` rather than a plain dirty binding. `EMBEDDED_COMPONENTS` is the exception: its `FormArray` is edited by the sub-forms themselves.
 
 > **Note.** `DATE` display/parse format follows Angular Material's ambient date adapter (`MAT_DATE_FORMATS`), configured app-wide rather than per field, so the descriptor's `format` property is not applied here.
+
+## Component entities
+
+Most entities are aggregate roots — they stand on their own and are reached from their own list. A
+**component** is a part: it belongs to exactly one parent, is created from the parent's form, and is deleted
+outright rather than merely detached when the user removes it there. Two `BaseEntityDescriptor` options
+declare that:
+
+| Option | Type | Meaning |
+| --- | --- | --- |
+| `componentParent` | `string \| string[]` | Entity name(s) that may aggregate this one. A list is allowed because one component *type* can be hosted by several parent types (an `App Widget` sits under `App Region`, `App Page` and `App Widget`) — the 1:N invariant holds per *instance*, not per type. Undefined for a stand-alone entity. |
+| `isEmbedded` | `boolean` | `true` when the payload travels inside the parent's payload — no endpoint and no store of its own, and the parent's save persists it. `false` (default) when the component is persisted on its own and points back at its parent through a `FOREIGN_KEY` attribute. Declaring it without `componentParent` throws. |
+
+```typescript
+// Embedded: an App Region has no endpoint; it is a slot inside the App Definition document.
+new BaseEntityDescriptor({ entityName: 'App Region', attrDescriptors, componentParent: 'App Definition', isEmbedded: true });
+
+// Not embedded: persisted through its own store, with `testEntityId` as the key back to the parent.
+new BaseEntityDescriptor({ entityName: 'Test Entity Component', attrDescriptors, componentParent: 'Test Entity', isEmbedded: false });
+```
+
+The parent points back at the component with a `COMPONENTS` (not embedded) or `EMBEDDED_COMPONENTS` (embedded)
+attribute — see [Association vs. containment](#association-vs-containment) for what the two control types do and
+for the errors thrown when the two declarations disagree.
+
+Derived from those two:
+
+- **`isComponent()`** / **`isComponentOf(entityName)`** — containment predicates.
+- **`parentReferenceAttrName()`** — the `FOREIGN_KEY` attribute pointing at one of the `componentParent`s,
+  found through nested `FlexboxDescriptor`s. `undefined` for a stand-alone entity, and for an embedded
+  component, which is located by its position in the parent's payload rather than by a key.
+
+> **`componentParent` is not `parentEntity`.** `parentEntity` names the **inheritance** supertype and pairs
+> with `isAbstract`; `componentParent` names the **aggregator**. An entity can legitimately have both.
+
+Both properties are serialized by `EntityRegistryComponent`, so a Low-Code designer reading the registry sees
+the containment graph alongside the inheritance one.
+
+### Registering an embedded component
+
+A non-embedded component is a normal entity: it has a service, a store and therefore a facade, and its
+descriptor is resolved through `BASE_ENTITY_FACADE_REGISTRY` like any other. An **embedded** one has nothing to
+put in a facade — no endpoint, no store — yet the parent's form still has to resolve its descriptor to render
+the sub-forms. It is registered instead in `EMBEDDED_ENTITY_DESCRIPTOR_REGISTRY`:
+
+```typescript
+{
+  provide: EMBEDDED_ENTITY_DESCRIPTOR_REGISTRY,
+  useValue: { 'Embedded Component': createEmbeddedComponentDescriptor },
+}
+```
+
+- The values are **factories** (`() => BaseEntityDescriptor`), not instances, because a containment graph may be
+  cyclic (`App Definition` → `App Region` → `App Widget` → `App Widget`), which eager values cannot express.
+  `BaseEntityDescriptorRegistry` memoizes what a factory returns, so the descriptor's identity is stable across
+  renders.
+- `BaseEntityDescriptorRegistry.getDescriptor()` consults the facade registry **first** and falls back to this
+  one; `getStore()` keeps returning `undefined` for an embedded entity.
+- Such an entity needs no route, container component, service or store — only the entity class, its mapper and
+  its descriptor. Its i18n scope is loaded on the **parent's** route, since its labels are rendered there.
+- `EntityRegistryComponent` serializes it too, with no `route`, and the generated e2e list/CRUD suites skip
+  `isEmbedded` entities because there is no page to visit.
 
 ## Per-field styling
 
@@ -317,7 +412,7 @@ where `<attrName>` is the attribute's `attrName` (a code identifier — no space
 ### The library's own strings
 
 Everything the library renders that is *not* derived from a descriptor — toolbar labels and tooltips, PDF-export
-and RSQL dialogs, and the list/details tab captions — lives in the `base_entity` scope shipped with the package
+and RSQL dialogs, the delete-confirmation dialogs, and the list/details tab captions — lives in the `base_entity` scope shipped with the package
 (`assets/i18n/base_entity/<lang>.json`, copied into your build). Provide it once on the route that hosts the
 entity screens:
 
@@ -377,7 +472,7 @@ The **✎ (`edit_note`)** button in the query field opens the **advanced query e
 - **Live linting** — structural validation (paren balance, clause ordering, unterminated strings) plus semantic checks (unknown field, operator not allowed for the field's type). **Apply** stays disabled while the expression is invalid.
 - A **sample query** inserted on <kbd>Tab</kbd> in an empty editor, plus a matching placeholder.
 
-Both the autocomplete and the linter are driven by field metadata derived from the entity's descriptor by `DescriptorBackedFieldMetadataProvider`: each `BaseEntityAttrDescriptor` maps to an RSQL field whose type (and therefore its allowed operators) comes from the `FormControlType` — `CHECKBOX`→boolean, `DATE`→date, `DROPDOWN`/`RADIO`→enum (enum values taken from the attribute's selectables), a numeric/date `TEXT_BOX` input type→number/date, everything else→string. Presentation-only controls (`ARTIFACT`, `COMPONENTS`, `FLEX_BOX`, `LABEL`, `TITLE`) are excluded from the searchable fields.
+Both the autocomplete and the linter are driven by field metadata derived from the entity's descriptor by `DescriptorBackedFieldMetadataProvider`: each `BaseEntityAttrDescriptor` maps to an RSQL field whose type (and therefore its allowed operators) comes from the `FormControlType` — `CHECKBOX`→boolean, `DATE`→date, `DROPDOWN`/`RADIO`→enum (enum values taken from the attribute's selectables), a numeric/date `TEXT_BOX` input type→number/date, everything else→string. Presentation-only controls (`ARTIFACT`, `FLEX_BOX`, `LABEL`, `RELATED_ENTITIES`, `TITLE`) are excluded from the searchable fields.
 
 To use the editor outside the entity toolbar, provide your own `RsqlFieldMetadataProvider` and bind `RsqlQueryEditorComponent` through a reactive `FormControl` (see `query-editor/example-usage.ts`).
 

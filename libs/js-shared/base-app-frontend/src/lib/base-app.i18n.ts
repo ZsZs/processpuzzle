@@ -24,7 +24,7 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const APP_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_definition`;
 
 /**
- * Key roots of the nested definitions the `AppDefinition` form links to through `COMPONENTS`
+ * Key roots of the nested definitions the `AppDefinition` form links to through `RELATED_ENTITIES`
  * controls. They are children of {@link BASE_APP_TRANSLOCO_SCOPE} rather than scopes of their own,
  * because the whole graph is edited under `BASE_APP_ROUTES` and one scope registration has to cover
  * all of it.

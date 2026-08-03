@@ -2,7 +2,7 @@ import { inject, Injectable, Signal, Type, ViewContainerRef } from '@angular/cor
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import { AdditionalPropertiesComponent } from './additional-properties/additional-properties.component';
 import { ArtifactComponent } from './artifact/artifact.component';
 import { LabelComponent } from './label/label.component';
@@ -17,7 +17,9 @@ import { FlexBoxComponent } from './flex-box/flex-box.component';
 import { TagsComponent } from './tags/tags.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
-import { EntityComponentsListComponent } from './components/entity-components-list.component';
+import { ComponentsListComponent } from './components/components-list.component';
+import { EmbeddedComponentsListComponent } from './embedded-components/embedded-components-list.component';
+import { RelatedEntitiesListComponent } from './related-entities/related-entities-list.component';
 import { NGXLogger } from 'ngx-logging-kit';
 import { LookupComponent } from './lookup/lookup.component';
 import { TitleComponent } from './title/title.component';
@@ -29,12 +31,14 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.ADDITIONAL_PROPERTIES]: AdditionalPropertiesComponent,
   [FormControlType.ARTIFACT]: ArtifactComponent,
   [FormControlType.CHECKBOX]: CheckboxComponent,
-  [FormControlType.COMPONENTS]: EntityComponentsListComponent,
+  [FormControlType.COMPONENTS]: ComponentsListComponent,
   [FormControlType.DATE]: DatepickerComponent,
   [FormControlType.DROPDOWN]: DropdownComponent,
+  [FormControlType.EMBEDDED_COMPONENTS]: EmbeddedComponentsListComponent,
   [FormControlType.LABEL]: LabelComponent,
   [FormControlType.LOOKUP]: LookupComponent,
   [FormControlType.RADIO]: RadioComponent,
+  [FormControlType.RELATED_ENTITIES]: RelatedEntitiesListComponent,
   [FormControlType.TEXTAREA]: TextareaComponent,
   [FormControlType.FLEX_BOX]: FlexBoxComponent,
   [FormControlType.FOREIGN_KEY]: ForeignKeyComponent,
@@ -65,8 +69,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
       if (formControlType) {
         if (column instanceof BaseEntityAttrDescriptor) {
           const currentAttrValue = initialValues != null && Object.hasOwn(initialValues, column.attrName) ? initialValues[column.attrName] : Reflect.get(entity(), column.attrName);
-          const formControl = new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
-          baseEntityForm.addControl(column.attrName, formControl);
+          baseEntityForm.addControl(column.attrName, this.createFormControlFor(column, currentAttrValue));
 
           const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
           componentRef.setInput('config', column);
@@ -75,6 +78,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           componentRef.setInput('value', currentAttrValue);
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
+          componentRef.instance.formBuilder = this;
         } else if (column instanceof FlexboxDescriptor) {
           const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
           componentRef.setInput('config', column as unknown as BaseEntityAttrDescriptor);
@@ -82,6 +86,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           componentRef.setInput('entityName', entityName);
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
+          componentRef.instance.formBuilder = this;
           this.buildForm((componentRef.instance as FlexBoxComponent<Entity>).flexBoxHost.viewContainerRef, baseEntityForm, store, column.attrDescriptors, entity, entityName, initialValues);
         } else throw new Error('Undefined subclass of AbstractAttrDescriptor');
       }
@@ -91,6 +96,10 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   // endregion
 
   // region protected, private helper methods
+  private createFormControlFor(column: BaseEntityAttrDescriptor, currentAttrValue: unknown): AbstractControl {
+    return new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
+  }
+
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
     const componentType = FORM_CONTROL_COMPONENTS[column.formControlType];
     if (!componentType) throw new Error('Undefined form control type');

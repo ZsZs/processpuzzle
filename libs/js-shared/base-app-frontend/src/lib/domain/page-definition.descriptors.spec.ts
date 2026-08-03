@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { APP_DEFINITION_ENTITY_NAME } from './app-entity-names';
 import { APP_PAGE_ENTITY_NAME, createPageDefinitionDescriptor } from './page-definition.descriptors';
 import { APP_WIDGET_ENTITY_NAME } from './widget-ref.descriptors';
 
@@ -14,6 +15,11 @@ describe('createPageDefinitionDescriptor', () => {
 
   it('names the entity so that the route segment follows from it', () => {
     expect(descriptor.entityName).toBe(APP_PAGE_ENTITY_NAME);
+  });
+
+  it('is an embedded component of the app definition', () => {
+    expect(descriptor.componentParents).toEqual([APP_DEFINITION_ENTITY_NAME]);
+    expect(descriptor.isEmbedded).toBe(true);
   });
 
   it('roots the labels under the library scope', () => {
@@ -37,7 +43,7 @@ describe('createPageDefinitionDescriptor', () => {
   });
 
   it('links the widgets to their own descriptor', () => {
-    expect(byName('widgets')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('widgets')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('widgets')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
   });
 

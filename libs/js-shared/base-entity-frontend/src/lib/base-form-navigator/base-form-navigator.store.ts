@@ -201,6 +201,32 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       await navigateToUrl(detailsFormPath, returnTo);
     }
 
+    /**
+     * Drills into an embedded child, whose screens hang below the form the user is on:
+     * `.../test-entity/1/details` + `embedded-component/embedded_1_1/details`.
+     *
+     * Deliberately not routed through {@link EntityRouteRegistry} the way {@link navigateToRelated} is — an
+     * embedded child has no absolute path, because the same child type appears under every owner that
+     * carries it. Appending to the current URL is what preserves the position that identifies the row.
+     */
+    /**
+     * The form of the entity an embedded child hangs under: its own `<entity>/<id>/details` tail removed.
+     * Derived from the URL rather than remembered, so it still holds after a reload — where nothing was
+     * remembered — and `navigateBack` does not fall through to the child's own list.
+     */
+    function determineOwnerUrl(): string {
+      const currentUrl = determineCurrentUrl();
+      return levelUpUrl(levelUpUrl(levelUpUrl(currentUrl)));
+    }
+
+    async function navigateToEmbedded(embeddedTypeName: string, id: string, payload?: NavigationPayload) {
+      patchState(store, { entityName: embeddedTypeName });
+      pushPayload(payload);
+      const currentUrl = determineCurrentUrl();
+      const embeddedFormPath = `${currentUrl}/${snakeCaseName(embeddedTypeName)}/${id}/${BaseUrlSegments.DetailsForm}`;
+      await navigateToUrl(embeddedFormPath, currentUrl);
+    }
+
     async function navigateToRelatedList(relatedTypeName: string, returnTo?: string, payload?: NavigationPayload) {
       patchState(store, { entityName: relatedTypeName });
       pushPayload(payload);
@@ -272,9 +298,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     return {
       captureFormSnapshot,
       determineCurrentUrl,
+      determineOwnerUrl,
       determineActiveRouteSegment,
       navigateBack,
       navigateToDetails,
+      navigateToEmbedded,
       navigateToList,
       navigateToRelated,
       navigateToRelatedList,
@@ -314,8 +342,10 @@ export function BaseFormNavigatorStore(entityName: string) {
         returnTo: navigatorStore.returnTo,
         determineActiveRouteSegment: navigatorStore.determineActiveRouteSegment,
         determineCurrentUrl: navigatorStore.determineCurrentUrl,
+        determineOwnerUrl: navigatorStore.determineOwnerUrl,
         navigateBack: navigatorStore.navigateBack,
         navigateToDetails: (id: string, returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToDetails(entityName, id, returnTo, payload),
+        navigateToEmbedded: navigatorStore.navigateToEmbedded,
         navigateToList: (returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToList(entityName, returnTo, payload),
         navigateToRelated: navigatorStore.navigateToRelated,
         navigateToRelatedList: navigatorStore.navigateToRelatedList,

@@ -3,7 +3,11 @@ import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { provideTranslocoScope, TranslocoService } from '@jsverse/transloco';
 
-export interface DeleteArtifactConfirmationDialogData {
+/**
+ * Confirmation for a destructive action. Fully key-driven, so the same dialog serves an artifact removal and
+ * the deletion of a component entity — the caller supplies the translation keys.
+ */
+export interface DeleteConfirmationDialogData {
   titleKey: string;
   contentKey: string;
   contentParams?: Record<string, string>;
@@ -12,7 +16,7 @@ export interface DeleteArtifactConfirmationDialogData {
 }
 
 @Component({
-  selector: 'app-delete-artifact-confirmation-dialog',
+  selector: 'app-delete-confirmation-dialog',
   standalone: true,
   imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton],
   providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
@@ -25,8 +29,8 @@ export interface DeleteArtifactConfirmationDialogData {
     </mat-dialog-actions>
   `,
 })
-export class DeleteArtifactConfirmationDialog {
-  protected readonly data = inject<DeleteArtifactConfirmationDialogData>(MAT_DIALOG_DATA);
+export class DeleteConfirmationDialog {
+  protected readonly data = inject<DeleteConfirmationDialogData>(MAT_DIALOG_DATA);
   private readonly translocoService = inject(TranslocoService);
 
   protected t(key: string, params?: Record<string, string>): string {

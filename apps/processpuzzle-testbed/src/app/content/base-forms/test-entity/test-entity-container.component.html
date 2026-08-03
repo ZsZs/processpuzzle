@@ -1,20 +1,35 @@
 <!-- @formatter:off -->
 <markdown clipboard mermaid ngPreserveWhitespaces>
-```typescript
-  const selectables = Object.keys(TestEnum)
-    .filter((key: any) => parseInt(key) >= 0)
-    .map((key: string) => (&#123; key: key, value: TestEnum[key as keyof typeof TestEnum] &#123;));
-  const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
-  const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
-  const booleanAttr = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX, 'Boolean');
-  const numberAttr = new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number', undefined, false, &#123; inputType: 'number' &#123;);
-  const dateAttr = new BaseEntityAttrDescriptor('date', FormControlType.DATE, 'Date', undefined, false, &#123; inputType: 'date' &#123;);
-  const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
-  const column_1 = new FlexboxContainer([nameAttr, descriptionAttr, booleanAttr], FlexDirection.COLUMN);
-  const column_2 = new FlexboxContainer([numberAttr, dateAttr, enumAttr], FlexDirection.COLUMN);
+### Three kinds of relationship, side by side
 
-  const flexBoxContainer = new FlexboxContainer([column_1, column_2], FlexDirection.CONTAINER); flexBoxContainer.style = &#123; 'column-gap': '20px' &#123;;
-  export const testEntityDescriptors: AbstractAttrDescriptor[] = [flexBoxContainer];
+| Attribute | Control type | Target | What the rows mean |
+| --- | --- | --- | --- |
+| `relatedEntities` | `RELATED_ENTITIES` | `Related Entity` | **Association.** The target lives on its own; **Add** picks an existing one and **Delete** only detaches the reference. |
+| `components` | `COMPONENTS` | `Test Entity Component` | **Containment, child table.** The component is persisted through its own endpoint and points back here through `testEntityId`; this attribute holds ids, and **Delete** destroys the component. |
+| `embeddedComponents` | `EMBEDDED_COMPONENTS` | `Embedded Component` | **Containment, same payload.** The child has no endpoint of its own — it travels inside this entity's document. The rows are listed here and a row opens the child's own form, on a route nested below this one. |
+
+All three list their rows the same way; what differs is what a row *is*, and so what **Add** and **Delete** do.
+
+An embedded child is addressed by its position in the containing document rather than by an id of its own, which is why its route nests:
+`test-entity/1/details/embedded-component/embedded_1_1/details`. The nesting carries that position, so a refresh or a
+deep link resolves to the same row — and it is also what makes the child unreachable except through the entity that contains it.
+`Embedded Component` in turn carries `Embedded Detail` rows, so the same mechanism works one level further down; saving at any
+level rewrites the one `Test Entity` document that carries them all.
+
+```typescript
+  const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
+  componentsAttr.linkedEntityType = 'Test Entity Component';
+
+  const embeddedComponentsAttr = new BaseEntityAttrDescriptor('embeddedComponents', FormControlType.EMBEDDED_COMPONENTS, 'Embedded Components');
+  embeddedComponentsAttr.linkedEntityType = 'Embedded Component';
+
+  const relatedEntitiesAttr = new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES, 'Related Entities');
+  relatedEntitiesAttr.linkedEntityType = 'Related Entity';
+
+  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, additionalPropertiesAttr], FlexDirection.COLUMN);
+  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr, embeddedComponentsAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
+  flexBoxContainer.style = &#123; 'column-gap': '20px' &#125;;
 ```
 </markdown>
 <!-- @formatter:on -->

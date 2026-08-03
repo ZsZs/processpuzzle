@@ -10,5 +10,7 @@
   "artifact": "Artefaktum",
   "tags": "Címkék",
   "components": "Komponensek",
+  "embeddedComponents": "Beágyazott komponensek",
+  "relatedEntities": "Kapcsolódó entitások",
   "additionalProperties": "További tulajdonságok"
 }

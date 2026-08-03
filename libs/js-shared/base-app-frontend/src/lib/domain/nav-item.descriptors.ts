@@ -1,8 +1,8 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { APP_NAV_ITEM_I18N_SCOPE } from '../base-app.i18n';
-import { APP_PAGE_ENTITY_NAME } from './page-definition.descriptors';
+import { APP_NAV_ITEM_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
 
-export const APP_NAV_ITEM_ENTITY_NAME = 'App Nav Item';
+export { APP_NAV_ITEM_ENTITY_NAME };
 
 function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id');
@@ -28,7 +28,7 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   rolesAttr.placeholder = 'Empty means any authenticated member of the organization';
   rolesAttr.hideInTable = true;
 
-  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.COMPONENTS, 'Children');
+  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.RELATED_ENTITIES, 'Children');
   childrenAttr.linkedEntityType = APP_NAV_ITEM_ENTITY_NAME;
   childrenAttr.hideInTable = true;
 
@@ -43,5 +43,12 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
 }
 
 export function createNavItemDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({ entityName: APP_NAV_ITEM_ENTITY_NAME, attrDescriptors: createNavItemAttrDescriptors(), i18nScope: APP_NAV_ITEM_I18N_SCOPE });
+  return new BaseEntityDescriptor({
+    entityName: APP_NAV_ITEM_ENTITY_NAME,
+    attrDescriptors: createNavItemAttrDescriptors(),
+    i18nScope: APP_NAV_ITEM_I18N_SCOPE,
+    // A nav item hangs off the sidenav region, or off another nav item as a group child.
+    componentParent: [APP_REGION_ENTITY_NAME, APP_NAV_ITEM_ENTITY_NAME],
+    isEmbedded: true,
+  });
 }

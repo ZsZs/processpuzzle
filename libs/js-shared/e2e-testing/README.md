@@ -168,7 +168,8 @@ test('custom flow', async ({ page }) => {
 ## Notes
 
 - The descriptor types are re-exported as **types only**. `@processpuzzle/base-entity` is an Angular library; evaluating it inside a Node.js / Playwright process fails because the Angular JIT compiler isn't loaded. Internally this library compares `formControlType` against string literals matching the `FormControlType` enum values.
-- Currently deferred control types: `ARTIFACT`, `LOOKUP`, `COMPONENTS`. They are skipped in both data generation and form interaction.
+- Currently deferred control types: `ARTIFACT`, `COMPONENTS`, `EMBEDDED_COMPONENTS`, `LOOKUP`, `RELATED_ENTITIES`. They are skipped in both data generation and form interaction.
+- Embedded entities (`isEmbedded`) are skipped by the CRUD and LIST suites: they have no list or detail route of their own, being edited inside their parent's form.
 - Foreign-key support depends on the application's `EntityRegistryComponent` serializing `linkedEntityType` (entity name) on `FOREIGN_KEY` attrs. If your serializer omits it, FK resolution will be silently no-op'd.
 
 ## License

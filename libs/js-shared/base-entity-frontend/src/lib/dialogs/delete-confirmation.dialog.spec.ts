@@ -3,10 +3,10 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { TranslocoService } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeleteArtifactConfirmationDialog, DeleteArtifactConfirmationDialogData } from './delete-artifact-confirmation.dialog';
+import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from './delete-confirmation.dialog';
 
-describe('DeleteArtifactConfirmationDialog', () => {
-  const dialogData: DeleteArtifactConfirmationDialogData = {
+describe('DeleteConfirmationDialog', () => {
+  const dialogData: DeleteConfirmationDialogData = {
     titleKey: 'delete.title',
     contentKey: 'delete.content',
     contentParams: { name: 'Artifact-1' },
@@ -33,7 +33,7 @@ describe('DeleteArtifactConfirmationDialog', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [DeleteArtifactConfirmationDialog, NoopAnimationsModule],
+      imports: [DeleteConfirmationDialog, NoopAnimationsModule],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: dialogData },
         { provide: MatDialogRef, useValue: dialogRefStub },
@@ -43,7 +43,7 @@ describe('DeleteArtifactConfirmationDialog', () => {
   });
 
   it('renders translated title, content and button labels', () => {
-    const fixture = TestBed.createComponent(DeleteArtifactConfirmationDialog);
+    const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
@@ -58,7 +58,7 @@ describe('DeleteArtifactConfirmationDialog', () => {
   });
 
   it('closes with false when the cancel button is clicked', () => {
-    const fixture = TestBed.createComponent(DeleteArtifactConfirmationDialog);
+    const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
     const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
 
@@ -68,7 +68,7 @@ describe('DeleteArtifactConfirmationDialog', () => {
   });
 
   it('closes with true when the confirm button is clicked', () => {
-    const fixture = TestBed.createComponent(DeleteArtifactConfirmationDialog);
+    const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
     const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
 
@@ -78,7 +78,7 @@ describe('DeleteArtifactConfirmationDialog', () => {
   });
 
   it('passes contentParams through to the translate call', () => {
-    const fixture = TestBed.createComponent(DeleteArtifactConfirmationDialog);
+    const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
 
     expect(translocoStub.translate).toHaveBeenCalledWith('delete.content', { name: 'Artifact-1' });

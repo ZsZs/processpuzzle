@@ -35,6 +35,8 @@ describe('BaseFormNavigatorStore', () => {
           { path: 'application-property/list', component: DummyComponent },
           { path: 'test-entity-component/:id/details', component: DummyComponent },
           { path: 'test-entity-component/list', component: DummyComponent },
+          // An embedded child's screens hang below the owner's details route, which is what carries its position.
+          { path: 'test-entity/:id/details/embedded-component/:embeddedId/details', component: DummyComponent },
         ]),
         NavigatorStore,
         OtherNavigatorStore,
@@ -84,6 +86,25 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.navigateTo()).toEqual('/test-entity-component/2/details');
     expect(store.returnTo()).toEqual('home');
     expect(store.activeRouteSegment()).toEqual(RouteSegments.DETAILS_ROUTE);
+  });
+
+  it('navigateToEmbedded() appends the child to the current URL rather than resolving an absolute path.', async () => {
+    await store.navigateToUrl('test-entity/1/details', 'home');
+
+    await store.navigateToEmbedded('EmbeddedComponent', 'embedded_1_1');
+
+    expect(store.determineCurrentUrl()).toEqual('/test-entity/1/details/embedded-component/embedded_1_1/details');
+    // Back goes to the owner's form, which is where the drill-down started.
+    expect(store.returnTo()).toEqual('/test-entity/1/details');
+  });
+
+  it('navigateToEmbedded() returns to the owner form on navigateBack().', async () => {
+    await store.navigateToUrl('test-entity/1/details', 'home');
+    await store.navigateToEmbedded('EmbeddedComponent', 'embedded_1_1');
+
+    await store.navigateBack();
+
+    expect(store.determineCurrentUrl()).toEqual('/test-entity/1/details');
   });
 
   it('navigateToRelatedList() navigates to related entities List route.', async () => {

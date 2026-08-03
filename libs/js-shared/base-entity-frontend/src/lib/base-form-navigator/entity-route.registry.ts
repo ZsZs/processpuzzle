@@ -3,6 +3,9 @@ import { Route, RouteConfigLoadEnd, Router, Routes } from '@angular/router';
 
 export const ENTITY_NAME_ROUTE_DATA_KEY = 'entityName';
 
+/** Marks a route branch as an embedded child, which is addressed relative to its owner rather than absolutely. */
+export const EMBEDDED_ENTITY_ROUTE_DATA_KEY = 'embeddedEntity';
+
 interface MaybeLoaded extends Route {
   _loadedRoutes?: Routes;
 }
@@ -46,7 +49,10 @@ export class EntityRouteRegistry {
     for (const route of routes) {
       const segment = this.append(prefix, route.path);
       const entityName = route.data?.[ENTITY_NAME_ROUTE_DATA_KEY];
-      if (typeof entityName === 'string' && entityName.length > 0) {
+      // An embedded entity has no single base path — the same child type hangs under every owner that
+      // carries it, at whatever depth — so it is addressed relative to the current URL instead. Registering
+      // it here would mean the last branch the router happened to expand wins.
+      if (typeof entityName === 'string' && entityName.length > 0 && route.data?.[EMBEDDED_ENTITY_ROUTE_DATA_KEY] !== true) {
         this.basePaths.set(entityName, segment);
       }
       this.walk(route.children, segment);

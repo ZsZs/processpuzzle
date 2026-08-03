@@ -5,6 +5,12 @@
     "cancel_button": "Cancelar",
     "delete_button": "Eliminar"
   },
+  "delete_component_confirmation_dialog": {
+    "title": "¿Eliminar componente?",
+    "content": "Esto eliminará permanentemente \"{{ componentName }}\": un componente pertenece solo a este registro.",
+    "cancel_button": "Cancelar",
+    "delete_button": "Eliminar"
+  },
   "tabs": {
     "list": "{{ entity }} - lista",
     "details": "{{ entity }} - detalles"
@@ -37,5 +43,8 @@
     "title": "Editor de consultas avanzado",
     "cancel_button": "Cancelar",
     "apply_button": "Aplicar"
+  },
+  "embedded_components": {
+    "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él."
   }
 }

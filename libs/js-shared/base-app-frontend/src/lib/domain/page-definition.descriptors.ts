@@ -1,8 +1,8 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { APP_PAGE_I18N_SCOPE } from '../base-app.i18n';
-import { APP_WIDGET_ENTITY_NAME } from './widget-ref.descriptors';
+import { APP_DEFINITION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
 
-export const APP_PAGE_ENTITY_NAME = 'App Page';
+export { APP_PAGE_ENTITY_NAME };
 
 function createPageDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id');
@@ -17,7 +17,7 @@ function createPageDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   translocoIdAttr.placeholder = 'Translation key of the page title';
   translocoIdAttr.hideInTable = true;
 
-  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.COMPONENTS, 'Widgets');
+  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.RELATED_ENTITIES, 'Widgets');
   widgetsAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   widgetsAttr.hideInTable = true;
 
@@ -30,5 +30,11 @@ function createPageDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 }
 
 export function createPageDefinitionDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({ entityName: APP_PAGE_ENTITY_NAME, attrDescriptors: createPageDefinitionAttrDescriptors(), i18nScope: APP_PAGE_I18N_SCOPE });
+  return new BaseEntityDescriptor({
+    entityName: APP_PAGE_ENTITY_NAME,
+    attrDescriptors: createPageDefinitionAttrDescriptors(),
+    i18nScope: APP_PAGE_I18N_SCOPE,
+    componentParent: APP_DEFINITION_ENTITY_NAME,
+    isEmbedded: true,
+  });
 }

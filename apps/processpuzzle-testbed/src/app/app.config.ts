@@ -23,6 +23,9 @@ import { BASE_ENTITY_FACADE_REGISTRY, provideEntityRouteRegistry } from '@proces
 import { APP_DEFINITION_ENTITY_NAME, AppDefinitionFacade } from '@processpuzzle/base-app';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
+import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
+import { EmbeddedComponentFacade } from './content/base-forms/embedded-component/embedded-component.facade';
+import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 import { OrderFacade } from './content/base-rules/order/order.facade';
@@ -48,21 +51,29 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideAppPropertyStore(Firestore),
       TestEntityFacade,
       TestEntityComponentFacade,
+      RelatedEntityFacade,
       TrunkDataFacade,
       FirestoreDocFacade,
       OrderFacade,
       OrderLineFacade,
       AppDefinitionFacade,
+      // Embedded entities are registered like any other: their facade gives them a store, which reads and
+      // writes the containing entity's document rather than an endpoint of their own.
+      EmbeddedComponentFacade,
+      EmbeddedDetailFacade,
       {
         provide: BASE_ENTITY_FACADE_REGISTRY,
         useValue: {
           'Test Entity': TestEntityFacade,
           'Test Entity Component': TestEntityComponentFacade,
+          'Related Entity': RelatedEntityFacade,
           'Trunk Data': TrunkDataFacade,
           'Firestore Doc': FirestoreDocFacade,
           Order: OrderFacade,
           'Order Line': OrderLineFacade,
           [APP_DEFINITION_ENTITY_NAME]: AppDefinitionFacade,
+          'Embedded Component': EmbeddedComponentFacade,
+          'Embedded Detail': EmbeddedDetailFacade,
         },
       },
       provideAnimations(),

@@ -49,7 +49,7 @@ describe('componentIdentification()', () => {
   });
 
   it('overwrites the linked entity name for a named attribute', () => {
-    const componentAttr = new BaseEntityAttrDescriptor('component', FormControlType.COMPONENTS);
+    const componentAttr = new BaseEntityAttrDescriptor('component', FormControlType.RELATED_ENTITIES);
     const entityDescriptor = new BaseEntityDescriptor({
       attrDescriptors: [componentAttr],
       entityName: 'testEntity',
@@ -99,6 +99,73 @@ describe('i18n keys', () => {
 
     expect(entityDescriptor.i18nKey()).toBe('addresses._self');
     expect(nestedAttr.i18nKey()).toBe('addresses.street');
+  });
+});
+
+describe('component containment', () => {
+  function componentDescriptor(options: { componentParent?: string | string[]; isEmbedded?: boolean } = {}) {
+    const parentRefAttr = new BaseEntityAttrDescriptor('orderId', FormControlType.FOREIGN_KEY, 'Order');
+    parentRefAttr.linkedEntityType = 'Order';
+    return new BaseEntityDescriptor({ attrDescriptors: [parentRefAttr], entityName: 'Order Line', ...options });
+  }
+
+  it('leaves an entity without a componentParent stand-alone', () => {
+    const descriptor = componentDescriptor();
+
+    expect(descriptor.componentParents).toEqual([]);
+    expect(descriptor.isComponent()).toBe(false);
+    expect(descriptor.isEmbedded).toBe(false);
+    expect(descriptor.parentReferenceAttrName()).toBeUndefined();
+  });
+
+  it('normalizes a single componentParent into a list', () => {
+    const descriptor = componentDescriptor({ componentParent: 'Order' });
+
+    expect(descriptor.componentParents).toEqual(['Order']);
+    expect(descriptor.isComponent()).toBe(true);
+    expect(descriptor.isComponentOf('Order')).toBe(true);
+    expect(descriptor.isComponentOf('Invoice')).toBe(false);
+  });
+
+  it('keeps every parent of a component that several entity types can aggregate', () => {
+    const descriptor = componentDescriptor({ componentParent: ['Order', 'Invoice'] });
+
+    expect(descriptor.componentParents).toEqual(['Order', 'Invoice']);
+    expect(descriptor.isComponentOf('Invoice')).toBe(true);
+  });
+
+  it('rejects an embedded declaration without a componentParent', () => {
+    expect(() => componentDescriptor({ isEmbedded: true })).toThrow(/isEmbedded without a componentParent/);
+  });
+
+  describe('parentReferenceAttrName()', () => {
+    it('finds the foreign key pointing at the parent', () => {
+      expect(componentDescriptor({ componentParent: 'Order' }).parentReferenceAttrName()).toBe('orderId');
+    });
+
+    it('searches through nested flexbox descriptors', () => {
+      const parentRefAttr = new BaseEntityAttrDescriptor('orderId', FormControlType.FOREIGN_KEY, 'Order');
+      parentRefAttr.linkedEntityType = 'Order';
+      const descriptor = new BaseEntityDescriptor({
+        attrDescriptors: [new FlexboxDescriptor([new FlexboxDescriptor([parentRefAttr], FlexDirection.ROW)], FlexDirection.COLUMN)],
+        entityName: 'Order Line',
+        componentParent: 'Order',
+      });
+
+      expect(descriptor.parentReferenceAttrName()).toBe('orderId');
+    });
+
+    it('ignores foreign keys pointing at anything other than the parent', () => {
+      const otherRefAttr = new BaseEntityAttrDescriptor('productId', FormControlType.FOREIGN_KEY, 'Product');
+      otherRefAttr.linkedEntityType = 'Product';
+      const descriptor = new BaseEntityDescriptor({ attrDescriptors: [otherRefAttr], entityName: 'Order Line', componentParent: 'Order' });
+
+      expect(descriptor.parentReferenceAttrName()).toBeUndefined();
+    });
+
+    it('returns undefined for an embedded component, which is located by position rather than by key', () => {
+      expect(componentDescriptor({ componentParent: 'Order', isEmbedded: true }).parentReferenceAttrName()).toBeUndefined();
+    });
   });
 });
 

@@ -20,6 +20,9 @@ export function defineEntityListSuite(options: DefineEntityListSuiteOptions): vo
   const routes = new RouteResolver(options.routePrefix);
 
   for (const descriptor of registry) {
+    // Embedded components have no list of their own — they are rows inside their parent's form.
+    if (descriptor.isEmbedded) continue;
+
     test.describe(`[${descriptor.entityName}] LIST`, () => {
       test('renders toolbar and rows', async ({ page }) => {
         const list = new EntityListPO(page, descriptor, routes);

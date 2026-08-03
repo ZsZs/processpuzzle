@@ -13,7 +13,7 @@ function createOrderAttrDescriptors(): AbstractAttrDescriptor[] {
   const statusAttr = new BaseEntityAttrDescriptor('status', FormControlType.DROPDOWN, 'Status', statusSelectables);
   const totalAttr = new BaseEntityAttrDescriptor('total', FormControlType.TEXT_BOX, 'Total', undefined, false, { inputType: 'number' });
   const shippingAddressAttr = new BaseEntityAttrDescriptor('shippingAddress', FormControlType.TEXTAREA, 'Shipping Address');
-  const lineItemsAttr = new BaseEntityAttrDescriptor('lineItems', FormControlType.COMPONENTS, 'Line Items');
+  const lineItemsAttr = new BaseEntityAttrDescriptor('lineItems', FormControlType.RELATED_ENTITIES, 'Line Items');
   lineItemsAttr.linkedEntityType = 'Order Line';
 
   const column_1 = new FlexboxDescriptor([orderNumberAttr, customerNameAttr, statusAttr, totalAttr], FlexDirection.COLUMN);

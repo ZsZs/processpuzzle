@@ -25,23 +25,51 @@
         "region": "eu-west-1"
       },
       "components": [
+        "1",
+        "2",
+        "3"
+      ],
+      "embeddedComponents": [
         {
-          "id": "1",
-          "name": "component_1",
-          "description": "component one",
-          "testEntityId": "3"
+          "id": "embedded_1_1",
+          "name": "embedded_one",
+          "description": "embedded component carried inside entity_1",
+          "embeddedDetails": [
+            {
+              "id": "detail_1_1_a",
+              "name": "detail_one",
+              "note": "nested two levels inside entity_1"
+            },
+            {
+              "id": "detail_1_1_b",
+              "name": "detail_two",
+              "note": "second detail of embedded_one"
+            }
+          ]
         },
         {
-          "id": "2",
-          "name": "component_2",
-          "description": "component two",
-          "testEntityId": "3"
+          "id": "embedded_1_2",
+          "name": "embedded_two",
+          "description": "second embedded component of entity_1",
+          "embeddedDetails": [
+            {
+              "id": "detail_1_2_a",
+              "name": "detail_three",
+              "note": "detail of embedded_two"
+            }
+          ]
+        }
+      ],
+      "relatedEntities": [
+        {
+          "id": "1",
+          "name": "related_1",
+          "description": "related entity one"
         },
         {
           "id": "3",
-          "name": "component_3",
-          "description": "component three",
-          "testEntityId": "3"
+          "name": "related_3",
+          "description": "related entity three"
         }
       ]
     },
@@ -67,17 +95,22 @@
         "mimeType": "application/pdf"
       },
       "components": [
+        "4",
+        "5"
+      ],
+      "embeddedComponents": [
         {
-          "id": "4",
-          "name": "component_4",
-          "description": "component four",
-          "testEntityId": "5"
-        },
+          "id": "embedded_2_1",
+          "name": "embedded_three",
+          "description": "embedded component carried inside entity_2",
+          "embeddedDetails": []
+        }
+      ],
+      "relatedEntities": [
         {
-          "id": "5",
-          "name": "component_5",
-          "description": "component five",
-          "testEntityId": "5"
+          "id": "2",
+          "name": "related_2",
+          "description": "related entity two"
         }
       ]
     },
@@ -136,25 +169,87 @@
       "id": "2",
       "name": "component_2",
       "description": "component two",
-      "testEntityId": "3"
+      "testEntityId": "1"
     },
     {
       "id": "3",
       "name": "component_3",
       "description": "component three",
-      "testEntityId": "3"
+      "testEntityId": "1"
     },
     {
       "id": "4",
       "name": "component_4",
       "description": "component four",
-      "testEntityId": "5"
+      "testEntityId": "2"
     },
     {
       "id": "5",
       "name": "component_5",
       "description": "component five",
-      "testEntityId": "5"
+      "testEntityId": "2"
+    }
+  ],
+  "related-entity": [
+    {
+      "id": "1",
+      "name": "related_1",
+      "description": "related entity one"
+    },
+    {
+      "id": "2",
+      "name": "related_2",
+      "description": "related entity two"
+    },
+    {
+      "id": "3",
+      "name": "related_3",
+      "description": "related entity three"
+    },
+    {
+      "id": "4",
+      "name": "related_4",
+      "description": "related entity four"
+    },
+    {
+      "id": "5",
+      "name": "related_5",
+      "description": "related entity five"
+    },
+    {
+      "id": "6",
+      "name": "related_6",
+      "description": "related entity six"
+    },
+    {
+      "id": "7",
+      "name": "related_7",
+      "description": "related entity seven"
+    },
+    {
+      "id": "8",
+      "name": "related_8",
+      "description": "related entity eight"
+    },
+    {
+      "id": "9",
+      "name": "related_9",
+      "description": "related entity nine"
+    },
+    {
+      "id": "10",
+      "name": "related_10",
+      "description": "related entity ten"
+    },
+    {
+      "id": "11",
+      "name": "related_11",
+      "description": "related entity eleven"
+    },
+    {
+      "id": "12",
+      "name": "related_12",
+      "description": "related entity twelve"
     }
   ],
   "trunk-data": [

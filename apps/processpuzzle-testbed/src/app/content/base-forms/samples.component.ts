@@ -21,6 +21,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <mat-button-toggle-group name="fontStyle" [value]="selectedButton()" aria-label="Font Style">
           <mat-button-toggle routerLink="test-entity" value="test-entity">Test Entity</mat-button-toggle>
           <mat-button-toggle routerLink="test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
+          <mat-button-toggle routerLink="related-entity" value="related-entity">Related Entity</mat-button-toggle>
           <mat-button-toggle routerLink="trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
           <mat-button-toggle routerLink="firestore-doc" value="firestore-doc">Firestore Document</mat-button-toggle>
         </mat-button-toggle-group>
@@ -50,6 +51,7 @@ export class SamplesComponent implements OnInit {
         if (currentUrl) {
           if (currentUrl.includes('test-entity-component')) this.selectedButton.set('test-entity-component');
           else if (currentUrl.includes('test-entity')) this.selectedButton.set('test-entity');
+          else if (currentUrl.includes('related-entity')) this.selectedButton.set('related-entity');
           else if (currentUrl.includes('trunk-data')) this.selectedButton.set('trunk-data');
           else this.selectedButton.set('');
         }

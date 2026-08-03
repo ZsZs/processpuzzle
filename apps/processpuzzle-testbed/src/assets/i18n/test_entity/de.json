@@ -10,5 +10,7 @@
   "artifact": "Artefakt",
   "tags": "Schlagwörter",
   "components": "Komponenten",
+  "embeddedComponents": "Eingebettete Komponenten",
+  "relatedEntities": "Verknüpfte Entitäten",
   "additionalProperties": "Zusätzliche Eigenschaften"
 }

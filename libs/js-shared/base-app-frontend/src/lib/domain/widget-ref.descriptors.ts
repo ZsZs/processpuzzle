@@ -1,7 +1,8 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
+import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
 
-export const APP_WIDGET_ENTITY_NAME = 'App Widget';
+export { APP_WIDGET_ENTITY_NAME };
 
 function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   // `id` rather than `type` identifies the widget: it is unique within its page or region, while a
@@ -22,7 +23,7 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   const propsAttr = new BaseEntityAttrDescriptor('props', FormControlType.ADDITIONAL_PROPERTIES, 'Props');
   propsAttr.hideInTable = true;
 
-  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.COMPONENTS, 'Children');
+  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.RELATED_ENTITIES, 'Children');
   childrenAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   childrenAttr.hideInTable = true;
 
@@ -35,5 +36,12 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
 }
 
 export function createWidgetRefDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({ entityName: APP_WIDGET_ENTITY_NAME, attrDescriptors: createWidgetRefAttrDescriptors(), i18nScope: APP_WIDGET_I18N_SCOPE });
+  return new BaseEntityDescriptor({
+    entityName: APP_WIDGET_ENTITY_NAME,
+    attrDescriptors: createWidgetRefAttrDescriptors(),
+    i18nScope: APP_WIDGET_I18N_SCOPE,
+    // A widget sits in a header/footer region, on a page, or nested inside another widget.
+    componentParent: [APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME],
+    isEmbedded: true,
+  });
 }

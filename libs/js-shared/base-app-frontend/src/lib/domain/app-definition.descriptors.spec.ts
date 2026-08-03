@@ -84,9 +84,9 @@ describe('createAppDefinitionDescriptor', () => {
   });
 
   it('links the nested definitions to their own descriptors', () => {
-    expect(byName('regions')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('regions')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('regions')?.linkedEntityType).toBe(APP_REGION_ENTITY_NAME);
-    expect(byName('pages')?.formControlType).toBe(FormControlType.COMPONENTS);
+    expect(byName('pages')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('pages')?.linkedEntityType).toBe(APP_PAGE_ENTITY_NAME);
   });
 
