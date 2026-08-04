@@ -24,8 +24,9 @@ export interface DeleteConfirmationDialogData {
     <h2 mat-dialog-title>{{ t(data.titleKey) }}</h2>
     <mat-dialog-content>{{ t(data.contentKey, data.contentParams) }}</mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button type="button" mat-button [mat-dialog-close]="false">{{ t(data.cancelButtonKey) }}</button>
-      <button type="button" mat-raised-button color="warn" [mat-dialog-close]="true">{{ t(data.confirmButtonKey) }}</button>
+      <!-- The labels are translated, so the test ids are what an e2e test can address the buttons by. -->
+      <button type="button" mat-button data-testid="delete-confirmation-cancel" [mat-dialog-close]="false">{{ t(data.cancelButtonKey) }}</button>
+      <button type="button" mat-raised-button color="warn" data-testid="delete-confirmation-confirm" [mat-dialog-close]="true">{{ t(data.confirmButtonKey) }}</button>
     </mat-dialog-actions>
   `,
 })

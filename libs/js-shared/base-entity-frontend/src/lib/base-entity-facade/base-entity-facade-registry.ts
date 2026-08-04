@@ -76,6 +76,8 @@ export class EntityRegistryComponent {
         options: attr.options,
         required: attr.required,
         linkedEntityType: attr.linkedEntityType,
+        // A to-many reference whose items are not keyed by `id` cannot be read back without this.
+        referenceIdField: attr.referenceIdField,
       }),
     };
   }

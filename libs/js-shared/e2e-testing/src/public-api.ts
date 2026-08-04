@@ -7,14 +7,18 @@ export type { BaseEntityDescriptor, BaseEntityAttrDescriptor, FormControlType } 
 // Control testers
 export {
   ControlTester,
+  RelationshipControlTester,
   createControlTester,
   controlTestersFor,
+  relationshipTestersFor,
   identificationAttrFromTesters,
   linkedFixtureAttrKey,
+  parentReferenceAttrName,
   type ControlDataContext,
   type ControlInteractionContext,
   type FillControlOptions,
   type LinkedEntityFixture,
+  type RelationshipKind,
 } from './lib/controls/control-tester';
 
 // Selectors
@@ -44,7 +48,9 @@ export { createGlobalSetup, type CreateGlobalSetupOptions } from './lib/setup/gl
 // Page objects
 export { EntityListPO } from './lib/pages/entity-list.po';
 export { EntityFormPO, type EntityFormContextOptions, type EntityFormPOOptions } from './lib/pages/entity-form.po';
+export { RelationshipFieldsetPO, type RelationshipFieldsetPOOptions } from './lib/pages/relationship-fieldset.po';
 
 // Suite factories
 export { defineEntityListSuite, type DefineEntityListSuiteOptions } from './lib/suites/entity-list.suite';
 export { defineEntityCrudSuite, type DefineEntityCrudSuiteOptions } from './lib/suites/entity-crud.suite';
+export { defineEntityRelationshipSuite, type DefineEntityRelationshipSuiteOptions } from './lib/suites/entity-relationship.suite';

@@ -105,9 +105,20 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
     return 'Add ' + this.linkedEntityName();
   }
 
-  /** An embedded row is stored inside its owner, so there is nowhere to put one until the owner exists. */
+  /**
+   * An embedded row is stored inside its owner, so there is nowhere to put one until the owner exists.
+   *
+   * Read off the route rather than off the entity: an id is no evidence of a document, because an entity type
+   * may well assign itself one at construction (`new TestEntity()` mints a uuid), which would make an unsaved
+   * owner look persisted and offer an add button writing into a document that is not there. The URL is what
+   * the child's own store resolves the rows through anyway, and it says `new` while the owner is unsaved.
+   * The entity's id remains the fallback for an application whose routes carry no entity name.
+   */
   ownerIsPersisted(): boolean {
-    return Boolean(this.entity()?.id);
+    const ownerLevel = this.formNavigator.breadcrumb().find((level) => level.entityName === this.entityName());
+    if (!ownerLevel) return Boolean(this.entity()?.id);
+
+    return ownerLevel.entityId !== undefined && ownerLevel.entityId !== BaseUrlSegments.NewEntity;
   }
 
   openComponent(row: EmbeddedRow): void {

@@ -57,23 +57,27 @@ describe('DeleteConfirmationDialog', () => {
     expect(translocoStub.translate).toHaveBeenCalledWith('delete.confirm', undefined);
   });
 
+  // Addressed by test id rather than by position: those ids are the contract the e2e relationship suite
+  // confirms a row deletion through, the button labels being translated.
   it('closes with false when the cancel button is clicked', () => {
     const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
-    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
+    const cancelButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="delete-confirmation-cancel"]');
 
-    (buttons[0] as HTMLButtonElement).click();
+    cancelButton?.click();
 
+    expect(cancelButton).not.toBeNull();
     expect(dialogRefStub.close).toHaveBeenCalledWith(false);
   });
 
   it('closes with true when the confirm button is clicked', () => {
     const fixture = TestBed.createComponent(DeleteConfirmationDialog);
     fixture.detectChanges();
-    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
+    const confirmButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="delete-confirmation-confirm"]');
 
-    (buttons[1] as HTMLButtonElement).click();
+    confirmButton?.click();
 
+    expect(confirmButton).not.toBeNull();
     expect(dialogRefStub.close).toHaveBeenCalledWith(true);
   });
 

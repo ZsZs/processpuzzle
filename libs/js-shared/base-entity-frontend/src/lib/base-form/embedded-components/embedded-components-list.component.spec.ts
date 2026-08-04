@@ -9,6 +9,7 @@ import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
 import { EmbeddedRow } from '../../base-entity-embedded/embedded-aggregate';
+import type { EmbeddedBreadcrumbLevel } from '../../base-entity-embedded/embedded-route-context';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 import { TestEntity } from '../../test-entity';
@@ -61,6 +62,7 @@ async function setupList({
   registered = true,
   store = makeEmbeddedStore(),
   ownerPersisted = true,
+  breadcrumb = [],
   navigator,
   dialog,
 }: {
@@ -71,6 +73,8 @@ async function setupList({
   store?: ReturnType<typeof makeEmbeddedStore>;
   /** False models an owner the user has not saved yet, which therefore has no id. */
   ownerPersisted?: boolean;
+  /** What the URL says about the owner; empty leaves the entity's own id as the only evidence. */
+  breadcrumb?: EmbeddedBreadcrumbLevel[];
   navigator?: Partial<Record<'navigateToEmbedded', unknown>>;
   dialog?: MockProxy<MatDialog>;
 } = {}) {
@@ -78,7 +82,8 @@ async function setupList({
   // TestEntity mints an id of its own, so an unsaved owner has to have it cleared.
   if (!ownerPersisted) Reflect.set(entity, 'id', undefined);
   const providers: Provider[] = [...provideEmbeddedFacade(registered ? descriptor : undefined, store)];
-  if (navigator) providers.push({ provide: BaseFormNavigatorSingletonStore, useValue: navigator });
+  // The stub stands in for the whole navigator, so it has to carry the breadcrumb the control reads as well.
+  if (navigator) providers.push({ provide: BaseFormNavigatorSingletonStore, useValue: { breadcrumb: signal(breadcrumb), ...navigator } });
   if (dialog) providers.push({ provide: MatDialog, useValue: dialog });
 
   const harness = await setupFormControlTest(EmbeddedComponentsListComponent, config, entity, providers);
@@ -187,6 +192,32 @@ describe('EmbeddedComponentsListComponent', () => {
       expect(component.ownerIsPersisted()).toBe(false);
       component.addComponent();
       expect(navigateToEmbedded).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The id is no evidence: an entity type that mints one at construction — `TestEntity` does — would
+     * otherwise make every unsaved owner look persisted, and the guard above would never fire in an
+     * application at all. The route is what says whether a document exists to store a row in.
+     */
+    it('refuses an owner the route addresses as new, however the entity came by its id', async () => {
+      const navigateToEmbedded = vi.fn();
+      const { component } = await setupList({
+        breadcrumb: [{ entityName: PARENT_ENTITY_NAME, entityId: 'new', url: '', baseUrl: '' }],
+        navigator: { navigateToEmbedded },
+      });
+
+      expect(component.ownerIsPersisted()).toBe(false);
+      component.addComponent();
+      expect(navigateToEmbedded).not.toHaveBeenCalled();
+    });
+
+    it('accepts an owner the route names by id', async () => {
+      const { component } = await setupList({
+        breadcrumb: [{ entityName: PARENT_ENTITY_NAME, entityId: 'parent-1', url: '', baseUrl: '' }],
+        navigator: { navigateToEmbedded: vi.fn() },
+      });
+
+      expect(component.ownerIsPersisted()).toBe(true);
     });
   });
 
