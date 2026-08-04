@@ -5,6 +5,15 @@
     "cancel_button": "Abbrechen",
     "delete_button": "Löschen"
   },
+  "delete_component_confirmation_dialog": {
+    "title": "Komponente löschen?",
+    "content": "Dadurch wird „{{ componentName }}\" dauerhaft gelöscht – eine Komponente gehört ausschließlich zu diesem Datensatz.",
+    "cancel_button": "Abbrechen",
+    "delete_button": "Löschen"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Datensatz-Hierarchie"
+  },
   "tabs": {
     "list": "{{ entity }} - Liste",
     "details": "{{ entity }} - Details"
@@ -37,5 +46,8 @@
     "title": "Erweiterter Abfrage-Editor",
     "cancel_button": "Abbrechen",
     "apply_button": "Übernehmen"
+  },
+  "embedded_components": {
+    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert."
   }
 }

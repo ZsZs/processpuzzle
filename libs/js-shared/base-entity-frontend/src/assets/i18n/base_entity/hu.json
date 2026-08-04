@@ -5,6 +5,15 @@
     "cancel_button": "Mégse",
     "delete_button": "Törlés"
   },
+  "delete_component_confirmation_dialog": {
+    "title": "Komponens törlése?",
+    "content": "Ez véglegesen törli a(z) „{{ componentName }}\" komponenst – a komponens kizárólag ehhez a rekordhoz tartozik.",
+    "cancel_button": "Mégse",
+    "delete_button": "Törlés"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Rekordok hierarchiája"
+  },
   "tabs": {
     "list": "{{ entity }} - lista",
     "details": "{{ entity }} - részletek"
@@ -37,5 +46,8 @@
     "title": "Speciális lekérdezés-szerkesztő",
     "cancel_button": "Mégse",
     "apply_button": "Alkalmaz"
+  },
+  "embedded_components": {
+    "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik."
   }
 }

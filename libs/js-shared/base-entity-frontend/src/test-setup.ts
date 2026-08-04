@@ -9,6 +9,7 @@ import { BaseEntityToolbarComponent } from './lib/base-toolbar/base-entity-toolb
 import { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
+import { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 import { Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
@@ -20,7 +21,8 @@ import { BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ROUTER_OUTLET_DATA } from '@angular/router';
+import { provideRouter, ROUTER_OUTLET_DATA, RouterOutlet, Routes } from '@angular/router';
+import { ENTITY_NAME_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 import { TestEntityService } from './lib/base-entity-service/test-entity.service';
 import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { TestConfiguration } from './lib/test-configuration';
@@ -58,6 +60,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   entity: Signal<TestEntity> = input.required<TestEntity>();
   protected baseEntityForm!: FormGroup;
   protected formBuilder = inject(FormBuilder);
+  protected entityFormBuilder = inject(BaseEntityFormBuilder);
 
   // region Angular lifacycle hooks
   ngOnInit(): void {
@@ -84,8 +87,14 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.componentRef.instance.entity = this.entity as unknown as InputSignal<TestEntity>;
     this.componentRef.instance.entityName = signal('TestEntity') as unknown as InputSignal<string>;
     this.componentRef.instance.value = signal(currentAttrValue) as unknown as InputSignal<unknown>;
-    const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
-    this.baseEntityForm.addControl(this.config().attrName, formControl);
+    // Mirrors what BaseEntityFormBuilder hands to every control it creates.
+    this.componentRef.instance.formBuilder = this.entityFormBuilder as unknown as BaseEntityFormBuilder<TestEntity>;
+    this.baseEntityForm.addControl(this.config().attrName, this.createControl(currentAttrValue));
+  }
+
+  /** Mirrors `BaseEntityFormBuilder`: every attribute, embedded children included, is a plain control. */
+  private createControl(currentAttrValue: unknown) {
+    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
   }
 
   // endregion
@@ -97,6 +106,41 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   standalone: true,
 })
 export class DummyComponent {}
+
+/** Stands in for a route that hosts nested screens, as an entity's details route hosts an embedded child's. */
+@Component({
+  selector: 'dummy-outlet-component',
+  template: ` <router-outlet /> `,
+  standalone: true,
+  imports: [RouterOutlet],
+})
+export class DummyOutletComponent {}
+
+/**
+ * The shape the framework's own routes have: the entity is named on the branch (`ENTITY_NAME_ROUTE_DATA_KEY`)
+ * and the row on its `:entityId/details` child, and an embedded child hangs below that details route. Both are
+ * what `readEmbeddedBreadcrumb` reads, so a spec that navigates these routes gets a real breadcrumb.
+ */
+export const TEST_ENTITY_ROUTES: Routes = [
+  {
+    path: 'test-entity',
+    data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'TestEntity' },
+    children: [
+      { path: BaseUrlSegments.ListForm, component: DummyComponent },
+      {
+        path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
+        component: DummyOutletComponent,
+        children: [
+          {
+            path: 'embedded-component',
+            data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'Embedded Component' },
+            children: [{ path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm, component: DummyComponent }],
+          },
+        ],
+      },
+    ],
+  },
+];
 
 function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
   const entityDescriptor = new BaseEntityDescriptor({
@@ -266,6 +310,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 export async function setupContainerComponentTest(
   componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>,
   translations: TranslationsMap = {},
+  extraProviders: Provider[] = [],
 ) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -285,16 +330,14 @@ export async function setupContainerComponentTest(
       provideHttpClient(),
       provideHttpClientTesting(),
       provideLogger(LOGGING_CONFIGURATION),
-      provideRouter([
-        { path: 'test-entity/:id/details', component: DummyComponent },
-        { path: 'test-entity/list', component: DummyComponent },
-      ]),
+      provideRouter(TEST_ENTITY_ROUTES),
       provideTranslocoTesting({ translations }),
       LayoutService,
       { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
       { provide: BreakpointObserver, useClass: MockBreakpointObserver },
       { provide: TestEntityService, useValue: mockService },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
+      ...extraProviders,
     ],
   }).compileComponents();
 

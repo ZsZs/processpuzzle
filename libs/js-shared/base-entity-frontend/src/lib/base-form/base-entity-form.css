@@ -62,6 +62,19 @@ mat-card-actions {
     display: none;
 }
 
+/* Stands in for the Add button while the owner is unsaved, so it follows the same reveal-on-focus rule. */
+.base-entity-form-hint {
+    display: none;
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-style: italic;
+    opacity: 0.75;
+}
+
+.base-entity-form-field:focus-within .base-entity-form-hint {
+    display: revert;
+}
+
 .base-entity-form-field:focus-within .base-entity-form-focus-action {
     display: revert;
 }
@@ -121,4 +134,9 @@ mat-card-actions {
     border-left-color: #1976d2;
     background-color: rgba(25, 118, 210, 0.08);
     color: #051f47;
+}
+
+/* An embedded child's screen has taken over; this form stays alive behind it, holding its unsaved edits. */
+.base-entity-form-superseded {
+    display: none;
 }

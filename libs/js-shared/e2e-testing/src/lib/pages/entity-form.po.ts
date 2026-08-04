@@ -1,6 +1,6 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { buttonTestId } from '../selectors/selector.builder';
+import { buttonTestId, toTestId } from '../selectors/selector.builder';
 import {
   type ControlInteractionContext,
   type FillControlOptions,
@@ -49,6 +49,11 @@ export class EntityFormPO {
     await this.page.waitForURL(/\/details$/);
   }
 
+  /** The URL of the form currently open — the anchor an embedded drill-down returns to. */
+  currentUrl(): string {
+    return this.page.url();
+  }
+
   // Form interactions
 
   async fillForm(
@@ -68,12 +73,24 @@ export class EntityFormPO {
 
   /** Save navigates back to the list. */
   async save() {
-    if (this.descriptor.isAbstract) {
-      throw new Error(`[${this.descriptor.entityName}] is abstract; form save is not applicable`);
-    }
-
-    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'save')).click();
+    await this.clickSave();
     await this.page.waitForURL(/\/list$/);
+  }
+
+  /**
+   * Save on an embedded child's form, which returns to the form of the entity containing it rather than to a
+   * list — an embedded child has no list of its own. The owner's URL has to be captured before the
+   * drill-down: it ends in `/details` just as the child's does, so no pattern tells the two apart.
+   */
+  async saveReturningTo(returnUrl: string) {
+    await this.clickSave();
+    await this.page.waitForURL(returnUrl);
+  }
+
+  /** Delete on an embedded child's form; returns to the containing entity's form. See {@link saveReturningTo}. */
+  async deleteReturningTo(returnUrl: string) {
+    await this.clickDelete();
+    await this.page.waitForURL(returnUrl);
   }
 
   async edit() {
@@ -86,11 +103,7 @@ export class EntityFormPO {
 
   /** Delete navigates back to the list. */
   async delete() {
-    if (this.descriptor.isAbstract) {
-      throw new Error(`[${this.descriptor.entityName}] is abstract; form delete is not applicable`);
-    }
-
-    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'delete')).click();
+    await this.clickDelete();
     await this.page.waitForURL(/\/list$/);
   }
 
@@ -106,6 +119,35 @@ export class EntityFormPO {
       const value = data[tester.attr.attrName] ?? '';
       await tester.assertValue(context, value);
     }
+  }
+
+  /**
+   * The status bar's breadcrumb, outermost entity first. On an embedded child's form it is the only thing
+   * naming the chain of entities the row is reached through, the child's own screens carrying no list.
+   */
+  async assertBreadcrumb(entityNames: string[], contextOptions: EntityFormContextOptions = {}) {
+    const timeout = contextOptions.expectTimeoutMs ?? this.options.expectTimeoutMs;
+    const expectOptions = timeout === undefined ? undefined : { timeout };
+
+    for (const entityName of entityNames) {
+      await expect(this.page.getByTestId(`${toTestId(entityName)}-breadcrumb`)).toBeVisible(expectOptions);
+    }
+  }
+
+  private async clickSave() {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; form save is not applicable`);
+    }
+
+    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'save')).click();
+  }
+
+  private async clickDelete() {
+    if (this.descriptor.isAbstract) {
+      throw new Error(`[${this.descriptor.entityName}] is abstract; form delete is not applicable`);
+    }
+
+    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'delete')).click();
   }
 
   private controlContext(

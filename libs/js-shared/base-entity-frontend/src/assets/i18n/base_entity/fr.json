@@ -5,6 +5,15 @@
     "cancel_button": "Annuler",
     "delete_button": "Supprimer"
   },
+  "delete_component_confirmation_dialog": {
+    "title": "Supprimer le composant ?",
+    "content": "Cela supprimera définitivement « {{ componentName }} » : un composant n'appartient qu'à cet enregistrement.",
+    "cancel_button": "Annuler",
+    "delete_button": "Supprimer"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Hiérarchie des enregistrements"
+  },
   "tabs": {
     "list": "{{ entity }} - liste",
     "details": "{{ entity }} - détails"
@@ -37,5 +46,8 @@
     "title": "Éditeur de requêtes avancé",
     "cancel_button": "Annuler",
     "apply_button": "Appliquer"
+  },
+  "embedded_components": {
+    "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké."
   }
 }

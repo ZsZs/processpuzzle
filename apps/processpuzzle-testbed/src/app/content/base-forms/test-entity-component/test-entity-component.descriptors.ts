@@ -13,5 +13,12 @@ function createTestEntityComponentAttrDescriptors(): BaseEntityAttrDescriptor[] 
 }
 
 export function createTestEntityComponentDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({ entityName: 'Test Entity Component', attrDescriptors: createTestEntityComponentAttrDescriptors() });
+  // Not embedded: it is persisted through its own store and endpoint, and `testEntityId` above is the
+  // foreign key back to the parent that `parentReferenceAttrName()` resolves.
+  return new BaseEntityDescriptor({
+    entityName: 'Test Entity Component',
+    attrDescriptors: createTestEntityComponentAttrDescriptors(),
+    componentParent: 'Test Entity',
+    isEmbedded: false,
+  });
 }

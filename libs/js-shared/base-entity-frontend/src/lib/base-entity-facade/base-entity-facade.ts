@@ -23,7 +23,7 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   protected readonly endpoint?: string;
   protected readonly backendRoot?: string;
 
-  private readonly injector = inject(Injector);
+  protected readonly injector = inject(Injector);
   private _mapper?: BaseEntityMapper<Entity>;
   private _service?: BaseEntityService<Entity>;
   private _storeClass?: Type<unknown>;
@@ -51,15 +51,19 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   }
 
   get descriptor(): BaseEntityDescriptor {
-    if (!this._descriptor) {
-      this._descriptor = this.createDescriptor();
-      this._descriptor.store = this.store;
-    }
-    return this._descriptor;
+    const descriptor = this.declaredDescriptor();
+    descriptor.store ??= this.store;
+    return descriptor;
   }
 
+  /**
+   * Deliberately does not go through {@link descriptor}: the store is created with a repository, and a
+   * repository may need to know which entity it serves — as an embedded one does. Binding the store into the
+   * descriptor only when the descriptor itself is asked for keeps that from re-entering the store getter and
+   * building a second store.
+   */
   get entityName(): string {
-    return this.descriptor.entityName;
+    return this.declaredDescriptor().entityName;
   }
 
   get attrDescriptors(): AbstractAttrDescriptor[] {
@@ -88,6 +92,12 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
       }
       return new BaseEntityFirestoreService<Entity>(mapper, this.endpoint);
     });
+  }
+
+  /** The descriptor as declared, before the store is bound into it. See {@link entityName}. */
+  private declaredDescriptor(): BaseEntityDescriptor {
+    this._descriptor ??= this.createDescriptor();
+    return this._descriptor;
   }
 
   protected createStoreClass(): Type<unknown> {

@@ -1,11 +1,21 @@
 <!-- @formatter:off -->
 <markdown clipboard mermaid ngPreserveWhitespaces>
+**Containment, child in a table of its own.** A `Test Entity Component` belongs to exactly one `Test Entity`,
+but it is persisted through its own endpoint and points back at its parent through the `testEntityId` foreign
+key — the way an RDBMS models a child table. The parent's `components` attribute therefore holds ids, and
+deleting a row there deletes the component itself.
+
 ```typescript
-const column_1 = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
-const column_2 = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
-const column_3 = new BaseEntityAttrDescriptor('testEntityId', FormControlType.FOREIGN_KEY, 'Test Entity');
-column_3.disabled = true;
-column_3.linkedEntityType = 'TestEntity'; export const testEntityComponentDescriptors: BaseEntityAttrDescriptor[] = [column_1, column_2, column_3];
+  // Test Entity Component
+  const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+  const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
+  const testEntityAttr = new BaseEntityAttrDescriptor('testEntityId', FormControlType.FOREIGN_KEY, 'Test Entity');
+  testEntityAttr.linkedEntityType = 'Test Entity';
+  new BaseEntityDescriptor(&#123; entityName: 'Test Entity Component', attrDescriptors, componentParent: 'Test Entity', isEmbedded: false &#125;);
+
+  // on Test Entity
+  const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
+  componentsAttr.linkedEntityType = 'Test Entity Component';
 ```
 </markdown>
 <!-- @formatter:on -->

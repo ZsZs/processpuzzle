@@ -30,6 +30,9 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
 
   for (const descriptor of registry) {
     if (descriptor.isAbstract) continue;
+    // An embedded component has no endpoint and no route: it is created, edited and deleted inside its
+    // parent's form, and is covered by the parent's CRUD test.
+    if (descriptor.isEmbedded) continue;
 
     test.describe(`[${descriptor.entityName}] CRUD`, () => {
       test.describe.configure({ timeout: timeoutMs });

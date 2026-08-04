@@ -229,8 +229,19 @@ class DropdownControlTester extends ControlTester {
     return String(resolveSelectables(this.attr)?.[1]?.value ?? original[this.attr.attrName] ?? '');
   }
 
+  /**
+   * Opened from the keyboard rather than by clicking.
+   *
+   * While a `mat-select` holds no value its label has not floated yet and sits over the middle of the
+   * control, so a click there has the label as its hit target and Playwright refuses it — indefinitely, since
+   * the element it was asked to click stays "visible, enabled and stable" throughout. The layout is not itself
+   * a defect: a user's click on that label does open the select. `Enter` on the focused select is what a
+   * keyboard user does, and it does not depend on which element owns a coordinate.
+   */
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
-    await this.inner(context.page, context.descriptor).click();
+    const select = this.inner(context.page, context.descriptor);
+    await select.focus();
+    await select.press('Enter');
     await context.page.locator('mat-option').filter({ hasText: value }).first().click();
   }
 
@@ -395,6 +406,61 @@ class LookupControlTester extends ControlTester {
   }
 }
 
+/** The three to-many relationship control types, which differ in what a row *means*. */
+export type RelationshipKind = 'RELATED_ENTITIES' | 'COMPONENTS' | 'EMBEDDED_COMPONENTS';
+
+/**
+ * A to-many relationship control: a `fieldset` listing rows, not a value the form can be filled with.
+ *
+ * `isInput` stays false, which keeps these controls out of `fillForm`, `assertFieldValues` and
+ * `buildCreateData` — and, just as deliberately, out of the linked-fixture resolution that
+ * `EntityCrudFixtureManager` and `resolveDependencyOrder` drive off `isLinked`: a component is created from
+ * its parent's form *after* the parent is saved, and its foreign key points back at that parent, so
+ * pre-creating one would ask for a cycle. The relationship suite drives these testers instead.
+ */
+export abstract class RelationshipControlTester extends ControlTester {
+  override readonly isInput = false;
+  abstract readonly kind: RelationshipKind;
+  /** `aria-label` of the per-row delete button, as authored on the row component. */
+  abstract readonly rowDeleteAriaLabel: string;
+  /** Whether deleting a row opens {@link DeleteConfirmationDialog} — true wherever a row destroys something. */
+  readonly confirmsDelete: boolean = true;
+
+  /** The row list; the fieldset around it is what {@link ControlTester.control} addresses. */
+  innerLocator(): string {
+    return 'ul';
+  }
+
+  /** Title of the control's add button, built as `'Add ' + linkedEntityName` by every one of the three. */
+  addButtonName(): string {
+    return `Add ${this.linkedEntityName() ?? ''}`;
+  }
+
+  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
+    void context;
+    void value;
+  }
+}
+
+/** Association: a row points at an entity that lives on its own, so removing it only detaches the reference. */
+class RelatedEntitiesControlTester extends RelationshipControlTester {
+  override readonly kind = 'RELATED_ENTITIES' as const;
+  override readonly rowDeleteAriaLabel = 'Delete related entity reference';
+  override readonly confirmsDelete = false;
+}
+
+/** Containment with the child in a table of its own: removing a row destroys the child. */
+class ComponentsControlTester extends RelationshipControlTester {
+  override readonly kind = 'COMPONENTS' as const;
+  override readonly rowDeleteAriaLabel = 'Delete component';
+}
+
+/** Containment inside the owner's document: the row is edited on a route nested below the owner's. */
+class EmbeddedComponentsControlTester extends RelationshipControlTester {
+  override readonly kind = 'EMBEDDED_COMPONENTS' as const;
+  override readonly rowDeleteAriaLabel = 'Delete embedded component';
+}
+
 class NoopControlTester extends ControlTester {
   override readonly isInput: boolean;
 
@@ -431,21 +497,52 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
       return new ForeignKeyControlTester(attr);
     case 'LOOKUP':
       return new LookupControlTester(attr);
+    case 'RELATED_ENTITIES':
+      return new RelatedEntitiesControlTester(attr);
+    case 'COMPONENTS':
+      return new ComponentsControlTester(attr);
+    case 'EMBEDDED_COMPONENTS':
+      return new EmbeddedComponentsControlTester(attr);
     case 'FLEX_BOX':
     case 'LABEL':
     case 'ARTIFACT':
-    case 'COMPONENTS':
       return new NoopControlTester(attr, false);
     default:
       return new NoopControlTester(attr, true);
   }
 }
 
+/** The attributes a test can act on at all: the invisible and the disabled ones offer no interaction. */
+function testableAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
+  return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).filter((attr) => attr.visible !== false && attr.disabled !== true);
+}
+
 export function controlTestersFor(descriptor: BaseEntityDescriptor): ControlTester[] {
-  return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[])
-    .filter((attr) => attr.visible !== false && attr.disabled !== true)
+  return testableAttrs(descriptor)
     .map((attr) => createControlTester(attr))
     .filter((tester) => tester.isInput);
+}
+
+/**
+ * The to-many relationship controls of an entity. Complements {@link controlTestersFor}, which returns the
+ * scalar inputs: the two sets are disjoint, and together they cover every attribute a test can act on.
+ */
+export function relationshipTestersFor(descriptor: BaseEntityDescriptor): RelationshipControlTester[] {
+  return testableAttrs(descriptor)
+    .map((attr) => createControlTester(attr))
+    .filter((tester): tester is RelationshipControlTester => tester instanceof RelationshipControlTester);
+}
+
+/**
+ * The attribute holding a non-embedded component's foreign key back to `ownerEntityName`.
+ *
+ * The plain-data twin of `BaseEntityDescriptor.parentReferenceAttrName()`: registry descriptors arrive as
+ * JSON, so the class's own method is not available on them.
+ */
+export function parentReferenceAttrName(childDescriptor: BaseEntityDescriptor, ownerEntityName: string): string | undefined {
+  return (childDescriptor.attrDescriptors as BaseEntityAttrDescriptor[]).find(
+    (attr) => (attr.formControlType as string) === 'FOREIGN_KEY' && attr.linkedEntityType === ownerEntityName,
+  )?.attrName;
 }
 
 export function identificationAttrFromTesters(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor | undefined {

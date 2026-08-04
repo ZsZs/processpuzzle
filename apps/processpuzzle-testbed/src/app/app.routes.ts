@@ -1,8 +1,11 @@
 import { Route } from '@angular/router';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { ACTIVE_ENTITY_FACADE, BASE_ENTITY_ROUTES } from '@processpuzzle/base-entity';
+import { ACTIVE_ENTITY_FACADE, BASE_ENTITY_ROUTES, baseEntityRoutes } from '@processpuzzle/base-entity';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
+import { EmbeddedComponentFacade } from './content/base-forms/embedded-component/embedded-component.facade';
+import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
+import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
@@ -60,7 +63,10 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Base Entity',
     data: { icon: 'checkbook', menuTitle: 'base-entity' },
     loadComponent: () => import('./content/base-forms/base-forms.component').then((comp) => comp.BaseFormsComponent),
-    providers: [LayoutService, TestEntityFacade, TestEntityComponentFacade, TrunkDataFacade, FirestoreDocFacade, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    // The facades are provided once, in `app.config.ts`. Re-providing them here would give this route its own
+    // instances — and so its own stores — while `BaseEntityDescriptorRegistry`, which is root-provided, would
+    // still resolve the root ones: an embedded child would then read a document nobody has loaded.
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
     children: [
       {
         path: '',
@@ -79,14 +85,37 @@ export const appRoutes: Route[] = [
             path: 'test-entity',
             data: { entityName: 'Test Entity' },
             loadComponent: () => import('./content/base-forms/test-entity/test-entity-container.component').then((comp) => comp.TestEntityContainerComponent),
-            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityFacade }, provideTranslocoScope({ scope: 'test_entity', alias: 'test_entity' })],
-            children: BASE_ENTITY_ROUTES,
+            providers: [
+              { provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityFacade },
+              provideTranslocoScope({ scope: 'test_entity', alias: 'test_entity' }),
+              // The embedded component's label is rendered on this form's row list, so its scope loads here.
+              provideTranslocoScope({ scope: 'embedded_component', alias: 'embedded_component' }),
+            ],
+            // The embedded children have no route of their own: they hang below this entity's details route,
+            // at `test-entity/:id/details/embedded-component/:id/details`. That nesting is what carries the
+            // position identifying a row — an embedded entity is not stored anywhere else — and what makes
+            // the child unreachable except through the entity that contains it.
+            children: baseEntityRoutes([
+              {
+                entityName: 'Embedded Component',
+                facade: EmbeddedComponentFacade,
+                providers: [provideTranslocoScope({ scope: 'embedded_detail', alias: 'embedded_detail' })],
+                children: () => [{ entityName: 'Embedded Detail', facade: EmbeddedDetailFacade }],
+              },
+            ]),
           },
           {
             path: 'test-entity-component',
             data: { entityName: 'Test Entity Component' },
             loadComponent: () => import('./content/base-forms/test-entity-component/test-entity-component-container.component').then((comp) => comp.TestEntityComponentContainerComponent),
             providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TestEntityComponentFacade }, provideTranslocoScope({ scope: 'test_entity_component', alias: 'test_entity_component' })],
+            children: BASE_ENTITY_ROUTES,
+          },
+          {
+            path: 'related-entity',
+            data: { entityName: 'Related Entity' },
+            loadComponent: () => import('./content/base-forms/related-entity/related-entity-container.component').then((comp) => comp.RelatedEntityContainerComponent),
+            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: RelatedEntityFacade }, provideTranslocoScope({ scope: 'related_entity', alias: 'related_entity' })],
             children: BASE_ENTITY_ROUTES,
           },
           {
@@ -112,7 +141,7 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Base Rule',
     data: { icon: 'gavel', menuTitle: 'base-rule' },
     loadComponent: () => import('./content/base-rules/base-rules.component').then((comp) => comp.BaseRulesComponent),
-    providers: [LayoutService, OrderFacade, OrderLineFacade, provideBaseRuleEngine(), provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideBaseRuleEngine(), provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
     children: [
       {
         path: '',

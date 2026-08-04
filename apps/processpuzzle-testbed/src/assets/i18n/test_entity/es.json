@@ -10,5 +10,7 @@
   "artifact": "Artefacto",
   "tags": "Etiquetas",
   "components": "Componentes",
+  "embeddedComponents": "Componentes incrustados",
+  "relatedEntities": "Entidades relacionadas",
   "additionalProperties": "Propiedades adicionales"
 }

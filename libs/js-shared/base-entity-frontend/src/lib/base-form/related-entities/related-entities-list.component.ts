@@ -1,29 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { assertPersistedEntity, BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
+import { normalizeEntityReferences } from '../entity-references';
 import { NgClass, NgStyle } from '@angular/common';
-import { ComponentNameAttr, EntityComponentRefComponent } from './entity-component-ref.component';
+import { RelatedEntityNameAttr, RelatedEntityRefComponent } from './related-entity-ref.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 
+/**
+ * To-many **association**: the rows point at entities that exist independently of this one, so adding
+ * picks an existing entity from the related list and deleting only detaches the reference. Containment —
+ * where the related entity has exactly one owner and dies with the reference — is a different control type
+ * (`COMPONENTS`), so do not extend this one with delete-the-entity behavior.
+ */
 @Component({
-  selector: 'app-component-list',
+  selector: 'app-related-entities-list',
   standalone: true,
-  imports: [NgClass, NgStyle, EntityComponentRefComponent, MatButton, MatIcon, EntityLabelPipe],
+  imports: [NgClass, NgStyle, RelatedEntityRefComponent, MatButton, MatIcon, EntityLabelPipe],
   template: `
     @if (config().visible) {
       <div class="row">
         <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
           <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
           <ul [id]="config().attrName" class="base-entity-form-list">
-            @for (component of components(); track component.id) {
+            @for (relatedEntity of relatedEntities(); track relatedEntity.id) {
               <li>
-                <app-entity-component-ref
+                <app-related-entity-ref
                   [entity]="entity()"
-                  [component]="component"
-                  [componentNameAttr]="componentNameAttr()"
+                  [relatedEntity]="relatedEntity"
+                  [relatedEntityNameAttr]="relatedEntityNameAttr()"
                   [disabled]="config().disabled"
                   [formGroup]="formGroup"
                   [linkedEntityType]="linkedEntityName()"
@@ -32,9 +39,9 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
             }
           </ul>
           @if (!config().disabled) {
-            <button type="button" mat-button class="base-entity-form-focus-action" [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="navigateToRelatedList()">
+            <button type="button" mat-button class="base-entity-form-focus-action" [title]="addRelatedEntityTitle()" [attr.aria-label]="addRelatedEntityTitle()" (click)="navigateToRelatedList()">
               <mat-icon>add</mat-icon>
-              {{ addComponentTitle() }}
+              {{ addRelatedEntityTitle() }}
             </button>
           }
         </fieldset>
@@ -43,37 +50,24 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
   `,
   styleUrls: ['../base-entity-form.css'],
 })
-export class EntityComponentsListComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
+export class RelatedEntitiesListComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   ngOnInit(): void {
-    this.addSelectedComponentFromNavigatorResponse();
+    this.addSelectedEntityFromNavigatorResponse();
   }
 
-  componentNameAttr(): ComponentNameAttr {
+  relatedEntityNameAttr(): RelatedEntityNameAttr {
     return {
       attrName: this.linkedEntityDescriptor()?.componentIdentification() ?? '',
       name: this.config().attrName,
     };
   }
 
-  components(): PersistedEntity<BaseEntity>[] {
+  relatedEntities(): PersistedEntity<BaseEntity>[] {
     const value = this.formGroup.get(this.config().attrName)?.value ?? this.value();
-    if (!Array.isArray(value)) return [];
-
-    const idField = this.config().referenceIdField ?? 'id';
-    const normalized = value.map((item) => {
-      if (typeof item === 'string' || typeof item === 'number') {
-        return { id: String(item) };
-      }
-      if (idField !== 'id' && item && typeof item === 'object' && !('id' in item)) {
-        return { ...item, id: String((item as Record<string, unknown>)[idField] ?? '') };
-      }
-      return item;
-    });
-    normalized.forEach((component) => assertPersistedEntity(component));
-    return normalized;
+    return normalizeEntityReferences(value, this.config().referenceIdField);
   }
 
-  addComponentTitle(): string {
+  addRelatedEntityTitle(): string {
     return 'Add ' + this.linkedEntityName();
   }
 
@@ -86,11 +80,11 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
     this.formNavigator.navigateToRelatedList(this.linkedEntityName(), this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.config().attrName,
-      context: this.components(),
+      context: this.relatedEntities(),
     });
   }
 
-  private addSelectedComponentFromNavigatorResponse(): void {
+  private addSelectedEntityFromNavigatorResponse(): void {
     if (this.config().disabled) {
       return;
     }
@@ -100,27 +94,27 @@ export class EntityComponentsListComponent<Entity extends BaseEntity> extends Ba
       return;
     }
 
-    const selectedComponent = responsePayload.payload as BaseEntity;
-    assertPersistedEntity(selectedComponent);
+    const selectedEntity = responsePayload.payload as BaseEntity;
+    assertPersistedEntity(selectedEntity);
 
-    const previousComponents = Array.isArray(responsePayload.context) ? (responsePayload.context as PersistedEntity<BaseEntity>[]) : this.components();
-    const components = [...previousComponents, selectedComponent];
+    const previousEntities = Array.isArray(responsePayload.context) ? (responsePayload.context as PersistedEntity<BaseEntity>[]) : this.relatedEntities();
+    const relatedEntities = [...previousEntities, selectedEntity];
     const attrName = this.config().attrName;
     const entity = this.entity() as Record<string, unknown>;
-    entity[attrName] = components;
+    entity[attrName] = relatedEntities;
 
     const control = this.formGroup.get(attrName);
     if (!control) {
-      this.logger.warn('Unable to add selected component to form control because the control is missing.', this.describeFormState(attrName));
+      this.logger.warn('Unable to add selected entity to form control because the control is missing.', this.describeFormState(attrName));
       return;
     }
 
-    control.setValue(components);
+    control.setValue(relatedEntities);
     control.markAsDirty();
     control.markAsTouched();
     this.formGroup.markAsDirty();
     this.formGroup.markAsTouched();
-    this.logger.info('Added selected component from navigator response.', this.describeFormState(attrName));
+    this.logger.info('Added selected entity from navigator response.', this.describeFormState(attrName));
   }
 
   private describeFormState(attrName: string): Record<string, unknown> {

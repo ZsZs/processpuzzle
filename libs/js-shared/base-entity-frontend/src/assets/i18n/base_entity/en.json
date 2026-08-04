@@ -5,6 +5,15 @@
     "cancel_button": "Cancel",
     "delete_button": "Delete"
   },
+  "delete_component_confirmation_dialog": {
+    "title": "Delete component?",
+    "content": "This will permanently delete \"{{ componentName }}\" — a component belongs to this record only.",
+    "cancel_button": "Cancel",
+    "delete_button": "Delete"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Record hierarchy"
+  },
   "tabs": {
     "list": "{{ entity }} - list",
     "details": "{{ entity }} - details"
@@ -37,5 +46,8 @@
     "title": "Advanced query editor",
     "cancel_button": "Cancel",
     "apply_button": "Apply"
+  },
+  "embedded_components": {
+    "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it."
   }
 }

@@ -31,16 +31,22 @@ export class EntityRegistryComponent {
   });
 
   private buildDescriptors() {
-    return Object.values(this.registry).map((facadeToken) => {
-      const facade = this.injector.get(facadeToken);
-      const descriptor = facade.descriptor;
-      const attrDescriptors = filterAttributeDescriptors(facade.descriptor.attrDescriptors);
+    // Embedded entities are registered here too — they have a facade like any other, it just reads and
+    // writes the containing entity's document — so the whole containment graph is serialized in one pass.
+    const descriptors = Object.values(this.registry).map((facadeToken) => this.injector.get(facadeToken).descriptor);
+
+    return descriptors.map((descriptor) => {
+      const attrDescriptors = filterAttributeDescriptors(descriptor.attrDescriptors);
       const entityTitle = typeof descriptor.entityTitle === 'function' ? descriptor.entityTitle() : descriptor.entityTitle;
       return {
         entityName: descriptor.entityName,
         entityTitle,
         isAbstract: descriptor.isAbstract,
+        // `parentEntityName` is the *inheritance* supertype; `componentParents` are the entities that may
+        // aggregate this one as a part. An entity can have both.
         parentEntityName: descriptor.parentEntity,
+        componentParents: descriptor.componentParents,
+        isEmbedded: descriptor.isEmbedded,
         route: this.entityRouteRegistry.basePath(descriptor.entityName),
         attrDescriptors: attrDescriptors.map((attr) => this.serializeAttr(attr)),
       };
@@ -70,6 +76,8 @@ export class EntityRegistryComponent {
         options: attr.options,
         required: attr.required,
         linkedEntityType: attr.linkedEntityType,
+        // A to-many reference whose items are not keyed by `id` cannot be read back without this.
+        referenceIdField: attr.referenceIdField,
       }),
     };
   }

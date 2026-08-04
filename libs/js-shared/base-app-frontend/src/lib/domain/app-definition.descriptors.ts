@@ -1,11 +1,11 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { AppDefinitionStatus, COLOR_SCHEMES, LAYOUT_PRESETS, MATERIAL_THEMES, SIDENAV_MODES } from './app-definition';
-import { APP_PAGE_ENTITY_NAME } from './page-definition.descriptors';
-import { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD } from './region-definition.descriptors';
+import { APP_DEFINITION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
+import { APP_REGION_ID_FIELD } from './region-definition.descriptors';
 import { toSelectables } from './selectables';
 
-export const APP_DEFINITION_ENTITY_NAME = 'App Definition';
+export { APP_DEFINITION_ENTITY_NAME };
 
 const statusSelectables = toSelectables(Object.keys(AppDefinitionStatus));
 
@@ -79,13 +79,13 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // endregion
 
   // region nested graph — kept on the entity as-is by AppDefinitionMapper, so the full-replacement PUT preserves it
-  const regionsAttr = new BaseEntityAttrDescriptor('regions', FormControlType.COMPONENTS, 'Regions');
+  const regionsAttr = new BaseEntityAttrDescriptor('regions', FormControlType.RELATED_ENTITIES, 'Regions');
   regionsAttr.linkedEntityType = APP_REGION_ENTITY_NAME;
   // A region has no `id` in the contract; `type` is what identifies it. See APP_REGION_ID_FIELD.
   regionsAttr.referenceIdField = APP_REGION_ID_FIELD;
   regionsAttr.hideInTable = true;
 
-  const pagesAttr = new BaseEntityAttrDescriptor('pages', FormControlType.COMPONENTS, 'Pages');
+  const pagesAttr = new BaseEntityAttrDescriptor('pages', FormControlType.RELATED_ENTITIES, 'Pages');
   pagesAttr.linkedEntityType = APP_PAGE_ENTITY_NAME;
   pagesAttr.hideInTable = true;
   // endregion

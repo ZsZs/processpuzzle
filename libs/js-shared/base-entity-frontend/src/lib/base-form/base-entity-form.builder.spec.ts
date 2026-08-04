@@ -1,11 +1,13 @@
-import { Component, inject, signal, Signal, ViewChild } from '@angular/core';
+import { Component, inject, InjectionToken, signal, Signal, ViewChild } from '@angular/core';
 import { BaseFormHostDirective } from './base-form-host.directive';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BaseEntityFormBuilder } from './base-entity-form.builder';
 import { TestEntity } from '../test-entity';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 import { TestEntityStore } from '../test-entity.store';
 import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
@@ -38,8 +40,34 @@ describe('BaseEntityFormBuilder', () => {
     }
   }
 
-  const componentDescriptor = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS);
+  const componentDescriptor = new BaseEntityAttrDescriptor('components', FormControlType.RELATED_ENTITIES);
   componentDescriptor.linkedEntityType = 'TestEntityComponent';
+
+  const ownedComponentDescriptor = new BaseEntityAttrDescriptor('ownedComponents', FormControlType.COMPONENTS);
+  ownedComponentDescriptor.linkedEntityType = 'TestEntityComponent';
+
+  // `COMPONENTS` resolves the child's descriptor at first render and refuses to draw a containment list for
+  // an entity that does not declare this one as its `componentParent`.
+  const componentEntityFacade = new InjectionToken<unknown>('COMPONENT_ENTITY_FACADE');
+  const componentEntityDescriptor = new BaseEntityDescriptor({
+    attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, undefined, undefined, true)],
+    entityName: 'TestEntityComponent',
+    componentParent: 'Test Entity',
+  });
+
+  const embeddedComponentDescriptor = new BaseEntityAttrDescriptor('embeddedComponents', FormControlType.EMBEDDED_COMPONENTS);
+  embeddedComponentDescriptor.linkedEntityType = 'EmbeddedComponent';
+
+  // An embedded child is registered through a facade like any other; its store is what its own list and
+  // form run on, and it reads the rows out of the containing entity's payload.
+  const embeddedEntityFacade = new InjectionToken<unknown>('EMBEDDED_ENTITY_FACADE');
+  const embeddedEntityStore = { entities: signal([]), load: () => undefined };
+  const embeddedEntityDescriptor = new BaseEntityDescriptor({
+    attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, undefined, undefined, true)],
+    entityName: 'EmbeddedComponent',
+    componentParent: 'Test Entity',
+    isEmbedded: true,
+  });
 
   const foreignKeyDescriptor = new BaseEntityAttrDescriptor('id', FormControlType.FOREIGN_KEY);
   foreignKeyDescriptor.linkedEntityType = 'TestEntityComponent';
@@ -59,6 +87,8 @@ describe('BaseEntityFormBuilder', () => {
         new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN),
         lookupDescriptor,
         componentDescriptor,
+        ownedComponentDescriptor,
+        embeddedComponentDescriptor,
       ],
       FlexDirection.CONTAINER,
     ),
@@ -82,6 +112,9 @@ describe('BaseEntityFormBuilder', () => {
         provideTranslocoTesting({ translations: {} }),
         TestEntityStore,
         { provide: TestEntityService, useValue: mockService },
+        { provide: componentEntityFacade, useValue: { descriptor: componentEntityDescriptor } },
+        { provide: embeddedEntityFacade, useValue: { descriptor: embeddedEntityDescriptor, store: embeddedEntityStore } },
+        { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { TestEntityComponent: componentEntityFacade, EmbeddedComponent: embeddedEntityFacade } },
       ],
     }).compileComponents();
 
@@ -108,8 +141,10 @@ describe('BaseEntityFormBuilder', () => {
     expect(fixture.debugElement.query(By.css('flex-box base-radio')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box base-dropdown')).nativeElement).toBeTruthy();
     expect(fixture.debugElement.query(By.css('flex-box lookup-control')).nativeElement).toBeTruthy();
-    expect(fixture.debugElement.query(By.css('flex-box app-component-list')).nativeElement).toBeTruthy();
-    expect(fixture.debugElement.query(By.css('flex-box app-component-list button[title="Add TestEntityComponent"]')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-related-entities-list')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-related-entities-list button[title="Add TestEntityComponent"]')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-components-list')).nativeElement).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('flex-box app-embedded-components-list')).nativeElement).toBeTruthy();
   });
 
   it('buildForm() adds created controls to the FormGroup', () => {
@@ -122,6 +157,13 @@ describe('BaseEntityFormBuilder', () => {
     expect(component.form.controls['enumValue']).toBeTruthy();
     expect(component.form.controls['lookupValue']).toBeTruthy();
     expect(component.form.controls['components']).toBeTruthy();
+    expect(component.form.controls['ownedComponents']).toBeTruthy();
+  });
+
+  // The rows are edited on the child's own form now, not inline, so the attribute is an ordinary control
+  // holding the array — the same shape COMPONENTS uses.
+  it('buildForm() backs an EMBEDDED_COMPONENTS attribute with a plain FormControl', () => {
+    expect(component.form.controls['embeddedComponents']).toBeInstanceOf(FormControl);
   });
 
   it('buildForm() throws Error if a descriptor class is unknown.', () => {
