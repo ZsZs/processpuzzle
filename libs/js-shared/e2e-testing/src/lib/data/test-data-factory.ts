@@ -73,6 +73,14 @@ export function buildLinkedIdentificationsForContext(context: ControlDataContext
   return result;
 }
 
+/**
+ * The entity's own identity, which an update can never carry: `BaseEntity.id` is `readonly`, and the URL a
+ * detail form saves to already names it. Most entities never put it on a form at all, but one with a natural
+ * key does — `App Definition` asks the designer for `claims-app` on create — and there a PUT is answered 200
+ * with the id unchanged, so an update that renamed it would fail on the read-back rather than on the write.
+ */
+const IDENTITY_ATTR_NAME = 'id';
+
 /** Builds an updated payload. */
 export function buildUpdateData(descriptor: BaseEntityDescriptor, original: Record<string, string>): Record<string, string> {
   return buildUpdateDataForContext(createControlDataContext(descriptor), original);
@@ -82,6 +90,7 @@ export function buildUpdateDataForContext(context: ControlDataContext, original:
   const updated = { ...original };
   for (const tester of controlTestersFor(context.descriptor)) {
     if (tester.attr.isLinkToDetails) continue;
+    if (tester.attr.attrName === IDENTITY_ATTR_NAME) continue;
     updated[tester.attr.attrName] = tester.updateValue(context, original);
   }
   return updated;

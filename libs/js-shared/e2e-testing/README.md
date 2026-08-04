@@ -86,6 +86,12 @@ Override the default `/entity-registry` route if your app uses a different path:
 createGlobalSetup({ registryPath: REGISTRY_PATH, registryUrl: '/my-registry' });
 ```
 
+The registry derives each entity's base path by walking the router's configuration, and a `loadChildren` branch that has never been entered is not in it — the registry endpoint is a page load of its own. An entity mounted there arrives without a route, and the suites would fall back to guessing `<routePrefix>/<kebab-name>`, which the router answers with `NG04002`. Name its base path yourself; setup warns about every entity it had to leave unrouted, so a missing entry is reported next to its cause rather than three layers away:
+
+```ts
+createGlobalSetup({ registryPath: REGISTRY_PATH, routeOverrides: { 'App Definition': '/design/app-definition' } });
+```
+
 ### 3. Spec files — one line each
 
 ```ts
@@ -136,6 +142,8 @@ spec import time ──► reads registryPath
 ```
 
 The CRUD suite runs in **serial** mode and records each created entity's id in a shared map (`createdIds`). Later entities whose descriptor contains a `FOREIGN_KEY` attr referencing an earlier entity get the recorded id substituted in `buildCreateData`. This is why dependency ordering matters.
+
+`buildUpdateData` changes every control's value except two: the identification attr (`isLinkToDetails`), which is how the test finds its own row, and `id`. `BaseEntity.id` is `readonly` and the URL a detail form saves to already names it, so an update that renamed an entity would be answered `200` with the id unchanged — and fail on the read-back rather than on the write. Most entities never put `id` on a form, but one with a natural key does: `App Definition` asks the designer for `claims-app` on create, and is thereafter addressed by it. Note that the framework does not yet stop a *user* from typing in such a box on an existing entity; the change is silently discarded on save.
 
 ## The relationship suite
 

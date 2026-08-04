@@ -229,8 +229,19 @@ class DropdownControlTester extends ControlTester {
     return String(resolveSelectables(this.attr)?.[1]?.value ?? original[this.attr.attrName] ?? '');
   }
 
+  /**
+   * Opened from the keyboard rather than by clicking.
+   *
+   * While a `mat-select` holds no value its label has not floated yet and sits over the middle of the
+   * control, so a click there has the label as its hit target and Playwright refuses it — indefinitely, since
+   * the element it was asked to click stays "visible, enabled and stable" throughout. The layout is not itself
+   * a defect: a user's click on that label does open the select. `Enter` on the focused select is what a
+   * keyboard user does, and it does not depend on which element owns a coordinate.
+   */
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
-    await this.inner(context.page, context.descriptor).click();
+    const select = this.inner(context.page, context.descriptor);
+    await select.focus();
+    await select.press('Enter');
     await context.page.locator('mat-option').filter({ hasText: value }).first().click();
   }
 
