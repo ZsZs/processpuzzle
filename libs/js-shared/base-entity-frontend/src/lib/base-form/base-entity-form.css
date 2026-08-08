@@ -2,6 +2,16 @@
     display: block;
 }
 
+/* Every generated control is `width: 100%` of its host, so a form without a width of its own stretches them
+   across the whole content area — a lone text box ends up as wide as the screen. Shrink-to-fit instead: the
+   width the widest row actually needs, never more than the space there is. Descriptors that lay their
+   attributes out in a flexbox already reach this width on their own, so their forms are unchanged.
+   Set `--pp-form-width` (globally, or on a single `base-form`) to pin an explicit width instead. */
+form {
+    width: var(--pp-form-width, fit-content);
+    max-width: 100%;
+}
+
 /* Small gap between the form action buttons. */
 mat-card-actions {
     gap: 3px;
