@@ -4,12 +4,18 @@ on:
     branches:
       - "feature/**"
     paths:
+      # This workflow is the only one that runs the Playwright suite, so what the suite is made of has to
+      # trigger it too — the e2e project and the library its tests are generated from.
       - 'apps/processpuzzle-testbed/**'
+      - 'apps/processpuzzle-testbed-e2e/**'
+      - 'libs/js-shared/e2e-testing/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
       - 'apps/processpuzzle-testbed/**'
+      - 'apps/processpuzzle-testbed-e2e/**'
+      - 'libs/js-shared/e2e-testing/**'
   workflow_run:
     workflows: [ "Build-Auth", "Build-Base-Entity-Frontend", "Build-Util", "Build-Widgets" ]
     types:
