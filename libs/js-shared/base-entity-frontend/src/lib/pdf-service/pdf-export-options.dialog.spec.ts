@@ -1,6 +1,6 @@
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialogRef } from '@angular/material/dialog';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PdfExportOptionsDialog } from './pdf-export-options.dialog';
@@ -12,8 +12,12 @@ describe('PdfExportOptionsDialog', () => {
     dialogRefStub = { close: vi.fn() };
 
     await TestBed.configureTestingModule({
-      imports: [PdfExportOptionsDialog, NoopAnimationsModule],
-      providers: [provideTranslocoTesting({ translations: {} }), { provide: MatDialogRef, useValue: dialogRefStub }],
+      imports: [PdfExportOptionsDialog],
+      providers: [
+        provideTranslocoTesting({ translations: {} }),
+        { provide: MatDialogRef, useValue: dialogRefStub },
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
+      ],
     }).compileComponents();
   });
 

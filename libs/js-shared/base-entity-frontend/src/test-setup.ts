@@ -1,7 +1,6 @@
 import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BaseEntityListComponent } from './lib/base-list/base-entity-list.component';
 import { BaseUrlSegments } from './lib/base-form-navigator/base-url-segments';
 import { BaseEntityStatusbarComponent } from './lib/base-statusbar/base-entity-statusbar.component';
@@ -10,7 +9,7 @@ import { BaseEntityContainerComponent } from './lib/base-entity-container.compon
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
 import { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
-import { Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
@@ -194,8 +193,9 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   mockService.findByQuery.mockReturnValue(of(entities));
 
   await TestBed.configureTestingModule({
-    imports: [BaseEntityListComponent, NoopAnimationsModule],
+    imports: [BaseEntityListComponent],
     providers: [
+      { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
       provideLogger(LOGGING_CONFIGURATION),
       provideHttpClient(),
       provideHttpClientTesting(),
@@ -325,8 +325,9 @@ export async function setupContainerComponentTest(
   const mockService = setupMockService();
 
   await TestBed.configureTestingModule({
-    imports: [componentType, NoopAnimationsModule],
+    imports: [componentType],
     providers: [
+      { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
       provideHttpClient(),
       provideHttpClientTesting(),
       provideLogger(LOGGING_CONFIGURATION),

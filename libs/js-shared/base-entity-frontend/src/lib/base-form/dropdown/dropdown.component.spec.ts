@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { MatSelect } from '@angular/material/select';
 import { TestEntity } from '../../test-entity';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
@@ -34,7 +34,7 @@ describe('DropdownComponent', () => {
     const entity = new TestEntity('1', 'dropdown', undefined, true);
     entity.selectable = 4;
 
-    const { fixture } = await setupFormControlTest(DropdownComponent, factoryConfig, entity, [provideNoopAnimations()]);
+    const { fixture } = await setupFormControlTest(DropdownComponent, factoryConfig, entity, [{ provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }]);
     await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();

@@ -1,7 +1,6 @@
 import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { centralHttpErrorInterceptor, LayoutService, provideCentralErrorHandler, provideLoggingService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
@@ -76,7 +75,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Embedded Detail': EmbeddedDetailFacade,
         },
       },
-      provideAnimations(),
       { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },
       { provide: AUTHENTICATION_CONFIGURATION, useValue: runtimeConfiguration.AUTHENTICATION_CONFIGURATION },

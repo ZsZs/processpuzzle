@@ -1,6 +1,5 @@
-import { signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -13,8 +12,12 @@ describe('EmbeddedEntityHostComponent', () => {
 
   async function setup() {
     await TestBed.configureTestingModule({
-      imports: [EmbeddedEntityHostComponent, NoopAnimationsModule],
-      providers: [provideRouter([]), { provide: ACTIVE_ENTITY_FACADE, useValue: { descriptor, store } }],
+      imports: [EmbeddedEntityHostComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ACTIVE_ENTITY_FACADE, useValue: { descriptor, store } },
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
+      ],
     }).compileComponents();
 
     const fixture = TestBed.createComponent(EmbeddedEntityHostComponent);

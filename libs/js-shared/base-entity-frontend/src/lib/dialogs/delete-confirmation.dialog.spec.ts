@@ -1,6 +1,6 @@
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { TranslocoService } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from './delete-confirmation.dialog';
@@ -33,8 +33,9 @@ describe('DeleteConfirmationDialog', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [DeleteConfirmationDialog, NoopAnimationsModule],
+      imports: [DeleteConfirmationDialog],
       providers: [
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: MAT_DIALOG_DATA, useValue: dialogData },
         { provide: MatDialogRef, useValue: dialogRefStub },
         { provide: TranslocoService, useValue: translocoStub },
