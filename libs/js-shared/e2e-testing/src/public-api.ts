@@ -22,7 +22,7 @@ export {
 } from './lib/controls/control-tester';
 
 // Selectors
-export { toTestId, attrSelector, buttonTestId, buttonSelector, formControlSelector, formControlLocator } from './lib/selectors/selector.builder';
+export { toTestId, attrSelector, blockingViolationsSelector, buttonTestId, buttonSelector, formControlSelector, formControlLocator } from './lib/selectors/selector.builder';
 
 // Data
 export {
@@ -53,4 +53,4 @@ export { RelationshipFieldsetPO, type RelationshipFieldsetPOOptions } from './li
 // Suite factories
 export { defineEntityListSuite, type DefineEntityListSuiteOptions } from './lib/suites/entity-list.suite';
 export { defineEntityCrudSuite, type DefineEntityCrudSuiteOptions } from './lib/suites/entity-crud.suite';
-export { defineEntityRelationshipSuite, type DefineEntityRelationshipSuiteOptions } from './lib/suites/entity-relationship.suite';
+export { defineEntityRelationshipSuite, type DefineEntityRelationshipSuiteOptions, type ExcludedRelationship } from './lib/suites/entity-relationship.suite';

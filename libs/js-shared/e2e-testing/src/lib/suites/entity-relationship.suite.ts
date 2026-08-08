@@ -23,6 +23,20 @@ export interface DefineEntityRelationshipSuiteOptions {
    * which is the case the nesting exists for; deeper structures repeat the same flow.
    */
   maxEmbeddedDepth?: number;
+  /**
+   * Relationships whose flow the consuming application's own business rules make unreachable with the
+   * synthetic fixture data — an aggregate rule tying an owner's field to the sum of its rows, say, which no
+   * generic value satisfies. The test is still registered, and skipped with the reason, so the gap stays
+   * visible in the report rather than disappearing from it.
+   */
+  excludedRelationships?: ExcludedRelationship[];
+}
+
+/** One `<entity>.<attribute>` the suite is told not to exercise, and why. */
+export interface ExcludedRelationship {
+  entityName: string;
+  attrName: string;
+  reason: string;
 }
 
 /**
@@ -74,6 +88,8 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
         });
 
         test(tester.kind, async ({ page }, testInfo) => {
+          const excluded = excludedRelationship(options.excludedRelationships, descriptor.entityName, tester.attr.attrName);
+          test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
           test.skip(linkedDescriptor === undefined, `'${linkedName}' is not in the registry`);
           test.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
           // A row is addressed by the text it shows, which is the child's identification attribute.
@@ -109,6 +125,10 @@ interface RelationshipTestContext {
   manager: EntityCrudFixtureManager;
   options: DefineEntityRelationshipSuiteOptions;
   suffix: string;
+}
+
+function excludedRelationship(exclusions: ExcludedRelationship[] | undefined, entityName: string, attrName: string): ExcludedRelationship | undefined {
+  return exclusions?.find((exclusion) => exclusion.entityName === entityName && exclusion.attrName === attrName);
 }
 
 function uniqueSuffix(descriptor: BaseEntityDescriptor, tester: RelationshipControlTester, retry: number): string {
