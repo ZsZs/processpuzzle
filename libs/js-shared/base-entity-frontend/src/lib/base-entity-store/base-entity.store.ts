@@ -66,7 +66,19 @@ export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   tabIsInactive(tabName: string): void;
 }
 
-export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, getRepository: () => BaseEntityService<Entity>) {
+/**
+ * What identifies a row of this store, as it appears in a URL segment.
+ *
+ * Defaults to {@link entityKeyById}, and every entity persisted through an endpoint of its own keeps
+ * that default. An **embedded** entity may be keyed by something else — `App Region` has no `id` at all
+ * and is identified by `type` — and its store is built with a resolver reading the `referenceIdField`
+ * its owner's attribute declares. See `EmbeddedEntityFacade`.
+ */
+export type EntityKeyResolver<Entity extends BaseEntity> = (entity: Entity) => string | undefined;
+
+export const entityKeyById = <Entity extends BaseEntity>(entity: Entity): string | undefined => entity.id;
+
+export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () => Entity, getRepository: () => BaseEntityService<Entity>, keyOf: EntityKeyResolver<Entity> = entityKeyById) {
   return signalStoreFeature(
     withState<EntityStoreState<Entity>>({
       entities: [],
@@ -84,13 +96,13 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
       add: addEntity(store, repository),
-      delete: deleteEntity(store, repository),
+      delete: deleteEntity(store, repository, keyOf),
       deleteAll: deleteAllEntities(store, repository),
       deselectAll: () => {
         patchState(store, { selectedEntities: [] });
       },
       deselectEntity: (id: string) => {
-        const subjectEntity = store.selectedEntities().find((entity) => entity.id === id);
+        const subjectEntity = store.selectedEntities().find((entity) => keyOf(entity) === id);
         if (subjectEntity) {
           const index = store.selectedEntities().indexOf(subjectEntity, 0);
           if (index > -1) {
@@ -102,22 +114,22 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       },
       load: findByQuery(store, repository),
       loadById: (id: string): Entity | undefined => {
-        return store.entities().find((entity) => entity.id === id);
+        return store.entities().find((entity) => keyOf(entity) === id);
       },
       resetErrorState: () => patchState(store, { error: undefined }),
       selectEntity: (id: string) => {
-        const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
+        const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
         if (foundEntity?.length === 1 && !store.selectedEntities().includes(foundEntity[0])) {
           patchState(store, { selectedEntities: store.selectedEntities().concat(foundEntity) });
         }
       },
       setCurrentEntity: (id: string | undefined): void => {
-        const foundEntity = id != null && store.entities().length > 0 ? store.entities().filter((entity) => entity.id === id) : undefined;
+        const foundEntity = id != null && store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
         if (foundEntity && foundEntity.length > 0) {
-          patchState(store, { currentEntity: foundEntity[0], currentId: foundEntity[0].id });
+          patchState(store, { currentEntity: foundEntity[0], currentId: keyOf(foundEntity[0]) });
         } else patchState(store, { currentEntity: undefined, currentId: undefined });
       },
-      update: updateEntity(store, repository),
+      update: updateEntity(store, repository, keyOf),
     })),
     withHooks((store) => ({
       onInit: () => {

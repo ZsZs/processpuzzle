@@ -45,11 +45,18 @@ describe('createRegionDefinitionDescriptor', () => {
     expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['header', 'sidenav', 'content', 'footer']);
   });
 
-  it('links the nested definitions to their own descriptors', () => {
-    expect(byName('navItems')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+  it('contains the nested definitions, which have no endpoint of their own', () => {
+    expect(byName('navItems')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('navItems')?.linkedEntityType).toBe(APP_NAV_ITEM_ENTITY_NAME);
-    expect(byName('widgets')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+    expect(byName('widgets')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('widgets')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
+  });
+
+  // The URL segment of an embedded level names the entity, so a child type carried by two attributes
+  // could not be addressed; `embeddedAttrFor` throws on that, and this is where it would surface.
+  it('carries each embedded child type on exactly one attribute', () => {
+    expect(descriptor.embeddedAttrFor(APP_NAV_ITEM_ENTITY_NAME)?.attrName).toBe('navItems');
+    expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)?.attrName).toBe('widgets');
   });
 
   it('keeps the list to the slot itself', () => {

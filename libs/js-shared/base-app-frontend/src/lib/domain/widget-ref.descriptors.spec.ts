@@ -47,9 +47,10 @@ describe('createWidgetRefDescriptor', () => {
     expect(byName('props')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
   });
 
-  it('nests widgets in themselves', () => {
-    expect(byName('children')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+  it('contains widgets of its own, nested in itself', () => {
+    expect(byName('children')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('children')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
+    expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)?.attrName).toBe('children');
   });
 
   it('keeps the list to the identifying fields', () => {

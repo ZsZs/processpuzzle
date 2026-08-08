@@ -8,7 +8,7 @@ import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, Layo
  *
  * Two invariants matter here. The form saves `{ ...entity, ...form.value }`, so every DTO field the
  * form does not show has to survive on the entity — `regions` and `pages` are nested rather than
- * flattened for exactly that reason, and the `RELATED_ENTITIES` controls edit them in place. And
+ * flattened for exactly that reason, and the `EMBEDDED_COMPONENTS` controls edit them in place. And
  * `PUT /app-definitions/{appId}` is a full replacement, so {@link toDto} rebuilds `theme` and
  * `layout` from the flattened controls *on top of* the objects they were lifted out of, which keeps
  * any field a later contract version adds before this mapper learns about it.

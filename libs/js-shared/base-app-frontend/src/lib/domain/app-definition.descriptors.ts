@@ -79,13 +79,16 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // endregion
 
   // region nested graph — kept on the entity as-is by AppDefinitionMapper, so the full-replacement PUT preserves it
-  const regionsAttr = new BaseEntityAttrDescriptor('regions', FormControlType.RELATED_ENTITIES, 'Regions');
+  // Containment, not association: the contract nests `RegionDefinition` and `PageDefinition` inside the
+  // AppDefinition document, and neither has an endpoint of its own, so the rows travel inside this entity's
+  // payload and are saved with it.
+  const regionsAttr = new BaseEntityAttrDescriptor('regions', FormControlType.EMBEDDED_COMPONENTS, 'Regions');
   regionsAttr.linkedEntityType = APP_REGION_ENTITY_NAME;
   // A region has no `id` in the contract; `type` is what identifies it. See APP_REGION_ID_FIELD.
   regionsAttr.referenceIdField = APP_REGION_ID_FIELD;
   regionsAttr.hideInTable = true;
 
-  const pagesAttr = new BaseEntityAttrDescriptor('pages', FormControlType.RELATED_ENTITIES, 'Pages');
+  const pagesAttr = new BaseEntityAttrDescriptor('pages', FormControlType.EMBEDDED_COMPONENTS, 'Pages');
   pagesAttr.linkedEntityType = APP_PAGE_ENTITY_NAME;
   pagesAttr.hideInTable = true;
   // endregion

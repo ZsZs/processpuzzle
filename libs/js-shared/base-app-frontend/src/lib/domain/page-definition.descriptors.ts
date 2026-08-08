@@ -17,7 +17,9 @@ function createPageDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   translocoIdAttr.placeholder = 'Translation key of the page title';
   translocoIdAttr.hideInTable = true;
 
-  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.RELATED_ENTITIES, 'Widgets');
+  // Contained, not referenced: `PageDefinition.widgets` is an inline array of the page, which is
+  // itself an inline array of the app definition's document.
+  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.EMBEDDED_COMPONENTS, 'Widgets');
   widgetsAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   widgetsAttr.hideInTable = true;
 

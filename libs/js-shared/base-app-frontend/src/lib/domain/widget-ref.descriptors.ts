@@ -23,7 +23,9 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   const propsAttr = new BaseEntityAttrDescriptor('props', FormControlType.ADDITIONAL_PROPERTIES, 'Props');
   propsAttr.hideInTable = true;
 
-  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.RELATED_ENTITIES, 'Children');
+  // A container widget contains its children rather than pointing at them — they are an inline array of
+  // this widget, and the widget itself is nested in the app definition's document.
+  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.EMBEDDED_COMPONENTS, 'Children');
   childrenAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   childrenAttr.hideInTable = true;
 

@@ -28,7 +28,9 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   rolesAttr.placeholder = 'Empty means any authenticated member of the organization';
   rolesAttr.hideInTable = true;
 
-  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.RELATED_ENTITIES, 'Children');
+  // A group node contains its children rather than pointing at them — they are an inline array of this
+  // entry, and the entry itself is nested in the app definition's document.
+  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.EMBEDDED_COMPONENTS, 'Children');
   childrenAttr.linkedEntityType = APP_NAV_ITEM_ENTITY_NAME;
   childrenAttr.hideInTable = true;
 
