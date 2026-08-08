@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
-import { signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -36,9 +35,10 @@ describe('BaseRuleContainerComponent', () => {
     navigator.navigateToRelatedList.mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
-      imports: [BaseRuleContainerComponent, NoopAnimationsModule],
+      imports: [BaseRuleContainerComponent],
       providers: [
         provideRouter([]),
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: MatDialog, useValue: dialog },
         { provide: BaseRuleStore, useValue: storeStub },
         { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: {} },

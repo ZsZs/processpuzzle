@@ -1,6 +1,6 @@
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, type MockProxy } from 'vitest-mock-extended';
@@ -43,7 +43,7 @@ describe('ArtifactComponent', () => {
   let objectStore: MockProxy<ObjectStoreService>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [NoopAnimationsModule] }).compileComponents();
+    await TestBed.configureTestingModule({ providers: [{ provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }] }).compileComponents();
     dialog = mock<MatDialog>();
     objectStore = mock<ObjectStoreService>();
     objectStore.getThumbnailUriByID.mockReturnValue(of(null));

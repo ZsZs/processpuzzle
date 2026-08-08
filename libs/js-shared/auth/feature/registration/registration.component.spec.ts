@@ -4,7 +4,7 @@ import { screen } from '@testing-library/angular';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavigateBackService } from '@processpuzzle/widgets';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
@@ -38,7 +38,7 @@ describe('RegistrationComponent', () => {
     const result = await setUpTranslocoTestBed(RegistrationComponent, testConfig, {
       imports: [ReactiveFormsModule],
       providers: [
-        provideNoopAnimations(),
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         provideRouter([]),
         { provide: MatSnackBar, useValue: snackBar },
         { provide: NavigateBackService, useValue: navigateBack },

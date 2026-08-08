@@ -1,7 +1,6 @@
-import { InjectionToken, Provider, signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, InjectionToken, Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, type MockProxy } from 'vitest-mock-extended';
@@ -92,7 +91,7 @@ async function setupList({
 
 describe('EmbeddedComponentsListComponent', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [NoopAnimationsModule] }).compileComponents();
+    await TestBed.configureTestingModule({ providers: [{ provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }] }).compileComponents();
   });
 
   describe('containment contract', () => {

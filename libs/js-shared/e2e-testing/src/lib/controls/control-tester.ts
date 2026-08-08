@@ -242,7 +242,17 @@ class DropdownControlTester extends ControlTester {
     const select = this.inner(context.page, context.descriptor);
     await select.focus();
     await select.press('Enter');
-    await context.page.locator('mat-option').filter({ hasText: value }).first().click();
+    await expect(select).toHaveAttribute('aria-expanded', 'true', expectOptions(context));
+
+    // The overlay panel this select owns, named by the `aria-controls` Material sets while it is open. Scoping
+    // the option lookup to it keeps a neighbouring select's options out of the match: a panel animating shut
+    // still has its options in the DOM, and `mat-option` is page-global, so an unscoped click can land on the
+    // previous panel's leftover — leaving this select open with no value, and Save behind its backdrop.
+    const panelId = await select.getAttribute('aria-controls');
+    const panel = panelId ? context.page.locator(`[id="${panelId}"]`) : context.page.locator('.mat-mdc-select-panel');
+    await panel.locator('mat-option').filter({ hasText: value }).first().click();
+
+    await expect(select).toHaveAttribute('aria-expanded', 'false', expectOptions(context));
   }
 
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {

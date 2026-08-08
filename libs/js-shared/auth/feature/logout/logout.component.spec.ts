@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, screen } from '@testing-library/angular';
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
 import { NavigateBackService } from '@processpuzzle/widgets';
@@ -36,7 +36,7 @@ describe('LogoutComponent', () => {
     const result = await setUpTranslocoTestBed(LogoutComponent, testConfig, {
       imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton],
       providers: [
-        provideNoopAnimations(),
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: AUTHENTICATION_SERVICE, useValue: setupMockAuthService() },
         { provide: MatDialogRef, useValue: matDialogRefStub },
         { provide: NavigateBackService, useValue: navigateBack },

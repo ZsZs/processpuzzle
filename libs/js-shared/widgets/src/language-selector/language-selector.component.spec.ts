@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -23,8 +23,11 @@ describe('LanguageSelectorComponent', () => {
       LanguageSelectorComponent,
       { scope: 'widgets', translations: { en: {}, de: {}, 'widgets/en': widgetsEn, 'widgets/de': widgetsDe } },
       {
-        imports: [MatIconModule, MatButtonModule, MatMenuModule, NoopAnimationsModule],
-        providers: [{ provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig }],
+        imports: [MatIconModule, MatButtonModule, MatMenuModule],
+        providers: [
+          { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
+          { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
+        ],
       },
     );
     fixture = testVars.fixture;
