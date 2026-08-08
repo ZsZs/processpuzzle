@@ -108,3 +108,6 @@ tools/docker/**/pubsub-debug.log
 /.junie/
 
 /**/.scannerwork/
+
+# local credentials
+/.sonar-token
