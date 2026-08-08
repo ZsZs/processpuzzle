@@ -29,6 +29,9 @@ interface LeaveFormOutcome {
 /** How long a save is given to navigate once ERROR verdicts are on screen. See `leaveFormAfterSave`. */
 const BLOCKED_SAVE_GRACE_MS = 3_000;
 
+/** How long Save is given to enable before the form's state is reported instead. See `clickSave`. */
+const SAVE_ENABLED_TIMEOUT_MS = 15_000;
+
 export interface EntityFormPOOptions {
   /** Default expect timeout used when a method call does not provide one in context options. */
   expectTimeoutMs?: number;
@@ -197,7 +200,16 @@ export class EntityFormPO {
       throw new Error(`[${this.descriptor.entityName}] is abstract; form save is not applicable`);
     }
 
-    await this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'save')).click();
+    // Save stays disabled while the form is pristine or invalid, and a plain click would sit out the whole
+    // test budget waiting for it — reporting a timeout on the click rather than the state that caused it.
+    const saveButton = this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'save'));
+    try {
+      await expect(saveButton).toBeEnabled({ timeout: SAVE_ENABLED_TIMEOUT_MS });
+    } catch {
+      throw new Error(`[${this.descriptor.entityName}] Save stayed disabled: the form is pristine, invalid, or holding an ERROR rule violation`);
+    }
+
+    await saveButton.click();
   }
 
   private async clickDelete() {

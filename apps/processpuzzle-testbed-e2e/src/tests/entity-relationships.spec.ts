@@ -16,5 +16,14 @@ defineEntityRelationshipSuite({
       // relatedEntities and by [App Definition] pages / regions, neither of which carries an aggregate rule.
       reason: "the 'total-matches-line-items' ERROR rule rejects an order whose total does not match its line items",
     },
+    {
+      entityName: 'App Definition',
+      attrName: 'pages',
+      // The backend answers the PUT with 400 app.validation.orphan-page: a page has to be reachable, and
+      // nothing references one until a sidenav nav item points at it — two embedded levels away, in a
+      // different region's array, which the single-row flow here cannot reach. EMBEDDED_COMPONENTS stays
+      // covered by [App Definition] regions and by [Test Entity] embeddedComponents.
+      reason: "the backend's 'app.validation.orphan-page' check rejects a page that no nav item references",
+    },
   ],
 });
