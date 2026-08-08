@@ -46,9 +46,10 @@ describe('createNavItemDescriptor', () => {
     expect(byName('pageId')?.required).toBeFalsy();
   });
 
-  it('nests navigation entries in themselves', () => {
-    expect(byName('children')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+  it('contains navigation entries of its own, nested in itself', () => {
+    expect(byName('children')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('children')?.linkedEntityType).toBe(APP_NAV_ITEM_ENTITY_NAME);
+    expect(descriptor.embeddedAttrFor(APP_NAV_ITEM_ENTITY_NAME)?.attrName).toBe('children');
   });
 
   it('collects the authorizing roles as tags', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppDefinition, AppDefinitionStatus } from './app-definition';
+import { AppDefinition, AppDefinitionStatus, NavItem, PageDefinition, RegionDefinition, WidgetRef } from './app-definition';
 
 describe('AppDefinition', () => {
   it('is constructible without arguments, as the entity store requires', () => {
@@ -61,5 +61,98 @@ describe('AppDefinition', () => {
     expect(definition.publishedVersion).toBe(7);
     expect(definition.createdAt).toBe('2026-01-01T00:00:00Z');
     expect(definition.updatedAt).toBe('2026-02-01T00:00:00Z');
+  });
+});
+
+/**
+ * The nested definitions are entities in their own right, and their store mints a blank row with
+ * `new <type>()` — so what an argument-less construction produces is what the `Add` button opens the
+ * child's form on, and what a save would append to the aggregate if the form were submitted untouched.
+ */
+describe('RegionDefinition', () => {
+  it('starts without a slot, the required dropdown being what fills it', () => {
+    const region = new RegionDefinition();
+
+    expect(region.type).toBeUndefined();
+    expect(region.navItems).toBeUndefined();
+    expect(region.widgets).toBeUndefined();
+  });
+
+  it('carries no id, a region being identified by the slot it fills', () => {
+    expect(Object.keys(new RegionDefinition())).toEqual(['type', 'navItems', 'widgets']);
+  });
+
+  it('exposes every property it was created with', () => {
+    const region = new RegionDefinition({ type: 'sidenav', navItems: [new NavItem({ id: 'nav-claims', label: 'Claims' })], widgets: [] });
+
+    expect(region.type).toBe('sidenav');
+    expect(region.navItems?.[0].id).toBe('nav-claims');
+    expect(region.widgets).toEqual([]);
+  });
+});
+
+describe('PageDefinition', () => {
+  it('starts with the empty widget list the contract requires', () => {
+    const page = new PageDefinition();
+
+    expect(page.id).toBe('');
+    expect(page.title).toBe('');
+    expect(page.translocoId).toBeUndefined();
+    expect(page.widgets).toEqual([]);
+  });
+
+  it('exposes every property it was created with', () => {
+    const page = new PageDefinition({ id: 'claims-list', title: 'Claims', translocoId: 'claims.page.list.title', widgets: [new WidgetRef({ id: 'grid', type: 'entity-grid' })] });
+
+    expect(page.id).toBe('claims-list');
+    expect(page.title).toBe('Claims');
+    expect(page.translocoId).toBe('claims.page.list.title');
+    expect(page.widgets[0].type).toBe('entity-grid');
+  });
+});
+
+describe('NavItem', () => {
+  it('starts as a blank entry with neither a target nor children', () => {
+    const navItem = new NavItem();
+
+    expect(navItem.id).toBe('');
+    expect(navItem.label).toBe('');
+    expect(navItem.translocoId).toBeUndefined();
+    expect(navItem.icon).toBeUndefined();
+    expect(navItem.pageId).toBeUndefined();
+    expect(navItem.roles).toBeUndefined();
+    expect(navItem.children).toBeUndefined();
+  });
+
+  it('exposes every property it was created with', () => {
+    const navItem = new NavItem({ id: 'nav-claims', label: 'Claims', translocoId: 'claims.nav.list', icon: 'description', pageId: 'page-claims-list', roles: ['CLAIMS_ADJUSTER'], children: [new NavItem({ id: 'nav-open' })] });
+
+    expect(navItem.id).toBe('nav-claims');
+    expect(navItem.label).toBe('Claims');
+    expect(navItem.translocoId).toBe('claims.nav.list');
+    expect(navItem.icon).toBe('description');
+    expect(navItem.pageId).toBe('page-claims-list');
+    expect(navItem.roles).toEqual(['CLAIMS_ADJUSTER']);
+    expect(navItem.children?.[0].id).toBe('nav-open');
+  });
+});
+
+describe('WidgetRef', () => {
+  it('starts as a leaf, so a new widget carries no empty children array', () => {
+    const widget = new WidgetRef();
+
+    expect(widget.id).toBe('');
+    expect(widget.type).toBe('');
+    expect(widget.props).toBeUndefined();
+    expect(widget.children).toBeUndefined();
+  });
+
+  it('exposes every property it was created with', () => {
+    const widget = new WidgetRef({ id: 'claims-grid', type: 'entity-grid', props: { entityName: 'Claim' }, children: [new WidgetRef({ id: 'nested' })] });
+
+    expect(widget.id).toBe('claims-grid');
+    expect(widget.type).toBe('entity-grid');
+    expect(widget.props).toEqual({ entityName: 'Claim' });
+    expect(widget.children?.[0].id).toBe('nested');
   });
 });

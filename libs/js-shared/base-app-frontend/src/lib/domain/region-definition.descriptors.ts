@@ -20,12 +20,13 @@ function createRegionDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
   // Per the contract, `navItems` applies to `sidenav` and `widgets` to `header` / `footer`; the
   // schema models them as optional siblings rather than a discriminated union, so both are offered
-  // and it is the region's type that decides which one is meaningful.
-  const navItemsAttr = new BaseEntityAttrDescriptor('navItems', FormControlType.RELATED_ENTITIES, 'Nav Items');
+  // and it is the region's type that decides which one is meaningful. Both are contained: the rows
+  // are nested arrays of this region, which is itself nested in the app definition's document.
+  const navItemsAttr = new BaseEntityAttrDescriptor('navItems', FormControlType.EMBEDDED_COMPONENTS, 'Nav Items');
   navItemsAttr.linkedEntityType = APP_NAV_ITEM_ENTITY_NAME;
   navItemsAttr.hideInTable = true;
 
-  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.RELATED_ENTITIES, 'Widgets');
+  const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.EMBEDDED_COMPONENTS, 'Widgets');
   widgetsAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   widgetsAttr.hideInTable = true;
 

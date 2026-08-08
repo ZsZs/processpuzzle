@@ -20,6 +20,14 @@ export function buttonSelector(entityName: string, action: 'new' | 'save' | 'del
   return `[data-testid="${toTestId(entityName)}-${action}"]`;
 }
 
+/**
+ * The list of rule verdicts a form renders when a write is rejected. Not entity-scoped: one form is open at a
+ * time, and the list belongs to the form rather than to the entity it edits.
+ */
+export function blockingViolationsSelector(): string {
+  return '[data-testid="rule-violations"] .severity-error';
+}
+
 export function formControlSelector(entityName: string, attrName: string): string {
   return formControlTestId(entityName, attrName);
 }

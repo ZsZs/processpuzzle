@@ -19,7 +19,7 @@ import { shareIcons } from 'ngx-sharebuttons/icons';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_ENTITY_FACADE_REGISTRY, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { APP_DEFINITION_ENTITY_NAME, AppDefinitionFacade } from '@processpuzzle/base-app';
+import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from '@processpuzzle/base-app';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
@@ -55,9 +55,11 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       FirestoreDocFacade,
       OrderFacade,
       OrderLineFacade,
-      AppDefinitionFacade,
       // Embedded entities are registered like any other: their facade gives them a store, which reads and
-      // writes the containing entity's document rather than an endpoint of their own.
+      // writes the containing entity's document rather than an endpoint of their own. base-app ships the
+      // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
+      // one list, so a consuming application cannot register half of it.
+      ...BASE_APP_FACADE_PROVIDERS,
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {
@@ -70,7 +72,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Firestore Doc': FirestoreDocFacade,
           Order: OrderFacade,
           'Order Line': OrderLineFacade,
-          [APP_DEFINITION_ENTITY_NAME]: AppDefinitionFacade,
+          ...BASE_APP_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },

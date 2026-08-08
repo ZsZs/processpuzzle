@@ -42,9 +42,10 @@ describe('createPageDefinitionDescriptor', () => {
     expect(descriptor.componentIdentification()).toBe('title');
   });
 
-  it('links the widgets to their own descriptor', () => {
-    expect(byName('widgets')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+  it('contains the widgets, which have no endpoint of their own', () => {
+    expect(byName('widgets')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('widgets')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
+    expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)?.attrName).toBe('widgets');
   });
 
   it('keeps the list to the identifying fields', () => {

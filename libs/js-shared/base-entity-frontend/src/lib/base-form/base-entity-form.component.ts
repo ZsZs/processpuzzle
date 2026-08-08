@@ -190,8 +190,11 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
         });
     });
 
+    // Keyed by the route segment, not by `entity().id`: the two agree for every entity the store keys by
+    // `id` — the row was found by that segment — but an embedded row may carry no id at all, and passing
+    // its `undefined` would clear the selection instead of making the row current.
     effect(() => {
-      if (this.entity()) this.store().setCurrentEntity(this.entity().id);
+      if (this.entity()) this.store().setCurrentEntity(this.entityId());
     });
   }
   // endregion

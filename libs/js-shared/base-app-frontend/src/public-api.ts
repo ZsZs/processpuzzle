@@ -8,19 +8,19 @@ export {
   COLOR_SCHEMES,
   LAYOUT_PRESETS,
   MATERIAL_THEMES,
+  NavItem,
+  PageDefinition,
   REGION_TYPES,
+  RegionDefinition,
   SIDENAV_MODES,
+  WidgetRef,
   type ColorScheme,
   type LayoutDefinition,
   type LayoutPreset,
   type MaterialTheme,
-  type NavItem,
-  type PageDefinition,
-  type RegionDefinition,
   type RegionType,
   type SidenavMode,
   type ThemeDefinition,
-  type WidgetRef,
 } from './lib/domain/app-definition';
 export {
   APP_DEFINITION_I18N_SCOPE,
@@ -39,5 +39,10 @@ export { AppDefinitionMapper } from './lib/domain/app-definition.mapper';
 export { AppDefinitionService } from './lib/domain/app-definition.service';
 export { AppDefinitionStore } from './lib/domain/app-definition.store';
 export { AppDefinitionFacade } from './lib/feature/app-definition.facade';
+export { AppNavItemFacade } from './lib/feature/app-nav-item.facade';
+export { AppPageFacade } from './lib/feature/app-page.facade';
+export { AppRegionFacade } from './lib/feature/app-region.facade';
+export { AppWidgetFacade } from './lib/feature/app-widget.facade';
 export { AppDefinitionContainerComponent } from './lib/feature/app-definition-container.component';
+export { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './lib/base-app.providers';
 export { BASE_APP_ROUTES } from './lib/base-app.routes';

@@ -83,10 +83,10 @@ describe('createAppDefinitionDescriptor', () => {
     expect(byName('tokenOverrides')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
   });
 
-  it('links the nested definitions to their own descriptors', () => {
-    expect(byName('regions')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+  it('contains the nested definitions, which have no endpoint of their own', () => {
+    expect(byName('regions')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('regions')?.linkedEntityType).toBe(APP_REGION_ENTITY_NAME);
-    expect(byName('pages')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+    expect(byName('pages')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('pages')?.linkedEntityType).toBe(APP_PAGE_ENTITY_NAME);
   });
 
