@@ -28,6 +28,9 @@ export interface DefineEntityRelationshipSuiteOptions {
    * synthetic fixture data — an aggregate rule tying an owner's field to the sum of its rows, say, which no
    * generic value satisfies. The test is still registered, and skipped with the reason, so the gap stays
    * visible in the report rather than disappearing from it.
+   *
+   * An entry naming an embedded child's own attribute excludes that nested level instead: the level has no
+   * test of its own, so the enclosing test runs, records the reason as an annotation, and skips the descent.
    */
   excludedRelationships?: ExcludedRelationship[];
 }
@@ -391,6 +394,16 @@ async function exerciseEmbeddedLevel(
   if (depth < maxDepth) {
     for (const nestedTester of relationshipTestersFor(childDescriptor)) {
       if (nestedTester.kind !== 'EMBEDDED_COMPONENTS') continue;
+      // An exclusion holds wherever the attribute is reached, not only where a test is named after it: a
+      // nested level has no test of its own to skip, so it is recorded as an annotation on the one running.
+      const excluded = excludedRelationship(context.options.excludedRelationships, childDescriptor.entityName, nestedTester.attr.attrName);
+      if (excluded) {
+        test.info().annotations.push({
+          type: 'excluded-relationship',
+          description: `${childDescriptor.entityName}.${nestedTester.attr.attrName}: ${excluded.reason}`,
+        });
+        continue;
+      }
       await exerciseEmbeddedLevel(context, childDescriptor, childUrl, nestedTester, [...breadcrumbTrail, childDescriptor.entityName], depth + 1, maxDepth);
     }
   }
