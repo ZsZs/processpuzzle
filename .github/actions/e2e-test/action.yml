@@ -15,9 +15,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v5
       with:
-        node-version: lts/*
+        node-version: 24.x
 
     - name: Install dependencies
       run: npm ci --legacy-peer-deps
@@ -38,7 +38,7 @@ runs:
       env:
         ENVIRONMENT: ${{inputs.target_environment}}
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}
       with:
         name: playwright-report-${{ github.sha }}

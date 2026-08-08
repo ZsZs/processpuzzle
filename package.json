@@ -107,6 +107,9 @@
     "test-widgets-ui": "nx run widgets:test --ui"
   },
   "private": false,
+  "engines": {
+    "node": "^24.15.0 || >=26.0.0"
+  },
   "dependencies": {
     "@angular-architects/ngrx-toolkit": "^21.0.1",
     "@angular/cdk": "^22.1.1",
