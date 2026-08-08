@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
-import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { of } from 'rxjs';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
