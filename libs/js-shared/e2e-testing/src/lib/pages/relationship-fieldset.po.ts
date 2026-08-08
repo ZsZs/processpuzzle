@@ -95,13 +95,22 @@ export class RelationshipFieldsetPO {
 
   /** Removes a row, confirming when the control's delete destroys something rather than detaching it. */
   async removeRow(name: string): Promise<void> {
-    await this.row(name).getByRole('button', { name: this.tester.rowDeleteAriaLabel }).first().click();
-    if (this.tester.confirmsDelete) await this.confirmDelete();
-  }
+    const deleteButton = this.row(name).getByRole('button', { name: this.tester.rowDeleteAriaLabel }).first();
+    if (!this.tester.confirmsDelete) {
+      await deleteButton.click();
+      return;
+    }
 
-  async confirmDelete(): Promise<void> {
+    // The click is retried until the dialog is up, because the row it lands on may not be the row that is
+    // there a frame later: an embedded list re-renders when its store finishes reloading after a navigation,
+    // and a click dispatched on the node being replaced reaches no handler. Waiting for the dialog instead of
+    // for the click is what tells the two apart.
     const confirmButton = this.page.getByTestId('delete-confirmation-confirm');
-    await expect(confirmButton).toBeVisible(this.expectOptions());
+    await expect(async () => {
+      await deleteButton.click();
+      await expect(confirmButton).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: this.options.expectTimeoutMs ?? 15000 });
+
     await confirmButton.click();
     await expect(confirmButton).toBeHidden(this.expectOptions());
   }
