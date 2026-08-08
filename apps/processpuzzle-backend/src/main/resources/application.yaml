@@ -41,7 +41,11 @@ management:
 
 app:
   cors:
-    allowed-origins: http://localhost:4200
+    # 4200 is the Angular dev server; 9090 is where tools/docker/docker-compose-ci.yaml publishes the testbed,
+    # which calls this backend cross-origin at localhost:8080. An origin missing here is rejected with a bare
+    # 403 carrying no CORS headers, so the browser reports only a blocked request and the frontend sees
+    # HTTP status 0 — name every origin that reaches this backend directly.
+    allowed-origins: http://localhost:4200,http://localhost:9090
     allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
     allowed-headers: "*"
     exposed-headers: Location,X-Object-Name,X-Object-Bucket
