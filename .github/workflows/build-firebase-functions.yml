@@ -1,0 +1,64 @@
+name: Build-Firebase-Functions
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "develop"
+    paths:
+      - 'tools/firebase/functions/**'
+      # The bucket-naming parity spec reads this file; a change there can break the build
+      # without anything under tools/firebase/functions being touched.
+      - 'libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ "develop" ]
+    paths:
+      - 'tools/firebase/functions/**'
+      - 'libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      RUNNER: ${{ runner.name }}
+    strategy:
+      matrix:
+        node-version: [ 24.x ]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            package-lock.json
+            tools/firebase/functions/package-lock.json
+
+      # The functions codebase has its own package.json and is installed by the Nx
+      # `install` target that lint, test and build all depend on.
+      - name: Install workspace dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Lint the functions
+        run: npm run lint-firebase-functions
+
+      - name: Test the functions
+        run: npm run test-firebase-functions
+
+      - name: Build the functions
+        run: npm run build-firebase-functions
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v5
+        with:
+          name: firebase-functions-coverage-${{ github.sha }}
+          path: tools/firebase/functions/reports/coverage/lcov-report
+          retention-days: 30

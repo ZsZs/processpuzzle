@@ -4,6 +4,13 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/store/**",
+        "function": {
+          "functionId": "objectStore",
+          "region": "europe-central2"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "jsonServer",
