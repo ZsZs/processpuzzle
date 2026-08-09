@@ -6,6 +6,7 @@
     "lint": "eslint --ext .js,.ts .",
     "sync-db": "node -e \"const fs=require('fs');fs.copyFileSync('../../mock-backend/db.json','db.json');fs.copyFileSync('../../mock-backend/org-scope.js','org-scope.js');fs.mkdirSync('lib',{recursive:true});fs.copyFileSync('db.json','lib/db.json')\"",
     "build": "npm run sync-db && tsc",
+    "typecheck": "tsc -p tsconfig.spec.json",
     "build:watch": "npm run sync-db && tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",

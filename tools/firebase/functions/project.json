@@ -40,7 +40,8 @@
       "cache": true,
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
-        "command": "npx vitest run --config tools/firebase/functions/vitest.config.ts"
+        "parallel": false,
+        "commands": ["npm --prefix tools/firebase/functions run typecheck", "npx vitest run --config tools/firebase/functions/vitest.config.ts"]
       },
       "configurations": {
         "ci": {}
