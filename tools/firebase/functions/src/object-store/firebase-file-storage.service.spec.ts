@@ -234,6 +234,55 @@ describe('getObjectUri', () => {
     expect(uri).toContain('?alt=media');
     expect(uri).not.toContain('token=');
   });
+
+  it('still answers a media URL when the object has no readable metadata at all', async () => {
+    process.env.STORAGE_EMULATOR_HOST = '127.0.0.1:9199';
+    file.getMetadata.mockRejectedValue(NOT_FOUND);
+
+    expect(await storage.getObjectUri('images', 'obj-1')).toBe('http://127.0.0.1:9199/v0/b/test-bucket.appspot.com/o/images%2Fobj-1?alt=media');
+  });
+});
+
+// Signing is the one operation whose prerequisite lives outside this repository, so the
+// only thing the code can do about a missing grant is say which grant is missing.
+describe('getObjectUri signing failures', () => {
+  const denied = () => Object.assign(new Error("Permission 'iam.serviceAccounts.signBlob' denied on resource (or it may not exist)."), { code: 403 });
+
+  it('names the role the runtime service account is missing', async () => {
+    file.getSignedUrl.mockRejectedValue(denied());
+
+    await expect(storage.getObjectUri('documents', 'obj-1')).rejects.toThrow(/roles\/iam\.serviceAccountTokenCreator/);
+  });
+
+  it('says which object could not be signed, and keeps the original failure as the cause', async () => {
+    const original = denied();
+    file.getSignedUrl.mockRejectedValue(original);
+
+    const error = await storage.getObjectUri('documents', 'obj-1').then(
+      () => undefined,
+      (thrown: unknown) => thrown as Error & { cause?: unknown },
+    );
+
+    expect(error?.message).toContain("'documents/obj-1'");
+    expect(error?.message).toContain(original.message);
+    expect(error?.cause).toBe(original);
+  });
+
+  it('recognises the denial by its status alone, since the SDK reports it either way', async () => {
+    file.getSignedUrl.mockRejectedValue(Object.assign(new Error('Forbidden'), { status: 403 }));
+
+    await expect(storage.getObjectUri('documents', 'obj-1')).rejects.toThrow(/roles\/iam\.serviceAccountTokenCreator/);
+  });
+
+  it.each([
+    ['a transport error', Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' })],
+    ['a denial of something else', Object.assign(new Error('Forbidden'), { code: 404 })],
+    ['a rejection that is not an Error', 'just a string'],
+  ])('passes %s through untouched', async (_case, thrown) => {
+    file.getSignedUrl.mockRejectedValue(thrown);
+
+    expect(await storage.getObjectUri('documents', 'obj-1').catch((error: unknown) => error)).toBe(thrown);
+  });
 });
 
 describe('deleteObject', () => {

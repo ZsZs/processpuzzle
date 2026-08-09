@@ -88,6 +88,14 @@ describe('parseMultipart', () => {
     await expect(parseMultipart(bufferedRequest(await serialize(formWith(Buffer.alloc(64, 0x61)))))).rejects.toBeInstanceOf(PayloadTooLargeError);
   });
 
+  // Not the same path as an unparseable body: the content type is valid, so busboy is
+  // constructed and reports the failure asynchronously through its `error` event.
+  it('rejects a body that ends in the middle of the form', async () => {
+    const { headers, rawBody } = await serialize(formWith(Buffer.from('hello')));
+
+    await expect(parseMultipart(bufferedRequest({ headers, rawBody: rawBody.subarray(0, rawBody.length - 20) }))).rejects.toThrow();
+  });
+
   it('rejects a body that is not parseable as multipart', async () => {
     const request = { headers: { 'content-type': 'text/plain' }, rawBody: Buffer.from('nonsense') } as unknown as Request;
 

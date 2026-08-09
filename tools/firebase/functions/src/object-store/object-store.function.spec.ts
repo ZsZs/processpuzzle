@@ -75,4 +75,25 @@ describe('error handling', () => {
 
     expect(logger.error).toHaveBeenCalledWith('Object store request failed', expect.any(Error));
   });
+
+  // A 500 body cannot be appended to a response whose status and headers are already on the
+  // wire — express hands it to the default handler, which tears the connection down instead.
+  it('does not try to answer 500 once the response has begun', async () => {
+    const handlers = new ObjectStoreHandlers(storage.service);
+    handlers.getObjectUriByID = async (_request, response) => {
+      response.status(200).write('{"uri":');
+      throw new Error('failed after the response started');
+    };
+    const started = await serve(createObjectStoreApp(handlers));
+
+    try {
+      const response = await fetch(`${started.base}/objects/documents/obj-1/uri`);
+
+      expect(response.status).toBe(200);
+      await expect(response.text()).rejects.toThrow();
+      expect(logger.error).toHaveBeenCalledWith('Object store request failed', expect.any(Error));
+    } finally {
+      await started.close();
+    }
+  });
 });

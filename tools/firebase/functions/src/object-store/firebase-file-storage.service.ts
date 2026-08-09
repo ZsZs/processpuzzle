@@ -21,6 +21,7 @@ export class FirebaseFileStorageService {
   private static readonly DOWNLOAD_TOKEN_KEY = 'firebaseStorageDownloadTokens';
   /** Default Storage bucket of a Firebase project; `.appspot.com` is the pre-October-2024 spelling. */
   private static readonly DEFAULT_BUCKET_SUFFIX = '.firebasestorage.app';
+  private static readonly TOKEN_CREATOR_ROLE = 'roles/iam.serviceAccountTokenCreator';
 
   async uploadObject(bucketName: string, objectName: string, content: Buffer, contentType: string, metadata: Record<string, string>): Promise<void> {
     await this.file(bucketName, objectName).save(content, {
@@ -64,8 +65,12 @@ export class FirebaseFileStorageService {
     const emulatorHost = FirebaseFileStorageService.emulatorHost();
     if (emulatorHost) return this.emulatorDownloadUri(file, emulatorHost);
 
-    const [uri] = await file.getSignedUrl({ action: 'read', expires: Date.now() + SIGNED_URI_TTL_MS });
-    return uri;
+    try {
+      const [uri] = await file.getSignedUrl({ action: 'read', expires: Date.now() + SIGNED_URI_TTL_MS });
+      return uri;
+    } catch (error) {
+      throw FirebaseFileStorageService.signingFailure(error, file);
+    }
   }
 
   async deleteObject(bucketName: string, objectName: string): Promise<void> {
@@ -84,6 +89,30 @@ export class FirebaseFileStorageService {
       if (FirebaseFileStorageService.isNotFound(error)) return undefined;
       throw error;
     }
+  }
+
+  /**
+   * The grant that lets the runtime service account sign lives in the project's IAM policy,
+   * not in this repository, so a project that was never given it fails here — reported by the
+   * SDK as a bare 403 from an API the caller never knowingly called. Name the missing role
+   * instead of leaving that to be rediscovered; anything else is passed through untouched.
+   */
+  private static signingFailure(error: unknown, file: File): unknown {
+    const reason = error instanceof Error ? error.message : String(error);
+    if (!FirebaseFileStorageService.isSigningDenied(error, reason)) return error;
+
+    const role = FirebaseFileStorageService.TOKEN_CREATOR_ROLE;
+    const message = `Cannot sign a read URI for '${file.name}': the runtime service account needs ${role} on itself to call the IAM signBlob API. ${reason}`;
+    return Object.assign(new Error(message), { cause: error });
+  }
+
+  /** `getSignedUrl` goes to the network only to sign, so a 403 out of it is a signing denial. */
+  private static isSigningDenied(error: unknown, message: string): boolean {
+    if (message.includes('signBlob')) return true;
+    if (typeof error !== 'object' || error === null) return false;
+
+    const { code, status } = error as { code?: unknown; status?: unknown };
+    return code === 403 || status === 403;
   }
 
   private async emulatorDownloadUri(file: File, emulatorHost: string): Promise<string> {

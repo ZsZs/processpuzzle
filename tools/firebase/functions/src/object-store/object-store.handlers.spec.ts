@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
+import { Readable } from 'node:stream';
 import type { RunningApp, StorageStub } from './test-support.js';
 
 vi.mock('firebase-functions', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
@@ -8,6 +9,7 @@ vi.mock('./multipart.js', async (importOriginal) => {
   return { ...actual, parseMultipart: vi.fn(actual.parseMultipart) };
 });
 
+const { logger } = await import('firebase-functions');
 const { parseMultipart, PayloadTooLargeError } = await import('./multipart.js');
 const { ObjectStoreHandlers } = await import('./object-store.handlers.js');
 const { createObjectStoreApp } = await import('./object-store.function.js');
@@ -147,6 +149,31 @@ describe('getObjectByID', () => {
 
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ errorId: 'store.object.not-found', errorText: expect.any(String) });
+  });
+
+  it('leaves the content type to the client when the object records none', async () => {
+    vi.spyOn(storage.service, 'getObject').mockResolvedValue({ stream: Readable.from([Buffer.from('body')]), metadata: {} });
+
+    const response = await fetch(`${app.base}/objects/documents/obj-1`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-Object-Name')).toBe('obj-1');
+    expect(await response.text()).toBe('body');
+  });
+
+  // The status line is written the moment the stream yields, so a failure after that cannot
+  // become a 500 — the response is destroyed, leaving the client with a broken read rather
+  // than a body it would mistake for the object.
+  it('destroys the response when the object stream fails', async () => {
+    const stream = new Readable({
+      read() {
+        this.destroy(new Error('stream broke'));
+      },
+    });
+    vi.spyOn(storage.service, 'getObject').mockResolvedValue({ stream, contentType: 'text/plain', metadata: {} });
+
+    await expect(fetch(`${app.base}/objects/documents/obj-1`)).rejects.toThrow();
+    expect(logger.error).toHaveBeenCalledWith('Failed to stream documents/obj-1', expect.any(Error));
   });
 });
 
