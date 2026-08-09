@@ -5,6 +5,17 @@ export function toRoutePath(entityName: string): string {
   return entityName.toLowerCase().replace(/\s+/g, '-');
 }
 
+/**
+ * The id in a `.../<entity>/<id>/details` URL — how a screen the test navigated to names the row it is showing.
+ *
+ * The inverse of {@link RouteResolver.detailRoute}, and the only way to learn an id the application assigned:
+ * a row created through a form is identified by nothing the test chose. Callers reach it having already waited
+ * for a details URL, so the segment is there; a URL short of one yields `''`.
+ */
+export function entityIdFromDetailUrl(url: string): string {
+  return new URL(url).pathname.split('/').at(-2) ?? '';
+}
+
 export class RouteResolver {
   constructor(private readonly routePrefix: string) {}
 

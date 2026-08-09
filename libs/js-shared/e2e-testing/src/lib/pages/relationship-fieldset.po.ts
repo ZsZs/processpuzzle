@@ -2,14 +2,11 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import type { RelationshipControlTester } from '../controls/control-tester';
 import { formControlTestId } from '../selectors/test-id';
+import { exactText } from '../selectors/text-match';
 
 export interface RelationshipFieldsetPOOptions {
   /** Overrides Playwright's default expect timeout — rows arrive through a store reload after a save. */
   expectTimeoutMs?: number;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -71,7 +68,7 @@ export class RelationshipFieldsetPO {
   /** The row whose link text is exactly `name` — a row's text is the child's identification value. */
   row(name: string): Locator {
     return this.rows()
-      .filter({ has: this.page.locator('a').filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) }) })
+      .filter({ has: this.page.locator('a').filter({ hasText: exactText(name) }) })
       .first();
   }
 

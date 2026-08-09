@@ -25,6 +25,7 @@ export {
 
 // Selectors
 export { toTestId, attrSelector, blockingViolationsSelector, buttonTestId, buttonSelector, formControlSelector, formControlLocator } from './lib/selectors/selector.builder';
+export { escapeRegExp, exactText } from './lib/selectors/text-match';
 
 // Data
 export {
@@ -43,7 +44,7 @@ export { resolveDependencyOrder } from './lib/data/dependency.resolver';
 export { createPngBuffer, createTextBuffer } from './lib/data/binary-fixtures';
 
 // Routing
-export { RouteResolver, toRoutePath } from './lib/routing/route.resolver';
+export { RouteResolver, toRoutePath, entityIdFromDetailUrl } from './lib/routing/route.resolver';
 
 // Setup
 export { createGlobalSetup, type CreateGlobalSetupOptions } from './lib/setup/global-setup';

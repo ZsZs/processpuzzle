@@ -44,9 +44,9 @@ export class EntityFormPO {
   private readonly options: EntityFormPOOptions;
 
   constructor(
-    private page: Page,
-    private descriptor: BaseEntityDescriptor,
-    private routes: RouteResolver,
+    private readonly page: Page,
+    private readonly descriptor: BaseEntityDescriptor,
+    private readonly routes: RouteResolver,
     descriptorMapOrOptions: EntityFormPODependencyOptions = new Map(),
     options: EntityFormPOOptions = {},
   ) {

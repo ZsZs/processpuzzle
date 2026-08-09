@@ -28,6 +28,11 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.cts', '**/*.mts', '**/*.js', '**/*.jsx', '**/*.cjs', '**/*.mjs'],
     // Override or add rules here
-    rules: {},
+    rules: {
+      // A leading underscore marks a binding that is declared but deliberately unused — a parameter an override
+      // must keep in its signature but has no use for, chiefly. Without this the only way to say so is
+      // `void param;`, which `@typescript-eslint/no-unused-expressions` tolerates but Sonar flags (S3735).
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+    },
   },
 ];

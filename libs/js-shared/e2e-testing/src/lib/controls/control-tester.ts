@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType, Selectable } from '@processpuzzle/base-entity';
 import { RouteResolver } from '../routing/route.resolver';
 import { formControlTestId, toTestId } from '../selectors/test-id';
+import { exactText } from '../selectors/text-match';
 
 export interface LinkedEntityFixture {
   entityName: string;
@@ -38,12 +39,8 @@ export function linkedFixtureAttrKey(entityName: string, attrName: string): stri
 function sameCalendarDay(a: string, b: string): boolean {
   const da = new Date(a);
   const db = new Date(b);
-  if (isNaN(da.getTime()) || isNaN(db.getTime())) return false;
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function expectOptions(context: ControlInteractionContext): { timeout?: number } | undefined {
@@ -57,6 +54,20 @@ function resolveSelectables(attr: BaseEntityAttrDescriptor): Array<Selectable> |
   return typeof raw === 'function' ? raw() : raw;
 }
 
+/**
+ * The `index`-th dropdown option's stored value, as the form data carries it — a string.
+ *
+ * `Selectable.value` is declared `unknown`, so this narrows rather than stringifies blindly: an object there
+ * has no text form a `mat-option` could be matched by, and `String()` would turn it into `[object Object]` and
+ * make the test fail somewhere far from the descriptor that caused it. Such a value is reported as absent, and
+ * the caller falls back the same way it does for a dropdown with too few options.
+ */
+function selectableValue(attr: BaseEntityAttrDescriptor, index: number): string | undefined {
+  const value = resolveSelectables(attr)?.[index]?.value;
+  if (value === null || value === undefined || typeof value === 'object' || typeof value === 'function') return undefined;
+  return String(value);
+}
+
 export abstract class ControlTester {
   readonly isInput: boolean = true;
   readonly isLinked: boolean = false;
@@ -66,8 +77,7 @@ export abstract class ControlTester {
 
   abstract innerLocator(): string;
 
-  createValue(context: ControlDataContext): string {
-    void context;
+  createValue(_context: ControlDataContext): string {
     return '';
   }
 
@@ -91,10 +101,8 @@ export abstract class ControlTester {
     return this.control(page, descriptor).locator(this.innerLocator()).first();
   }
 
-  async fill(context: ControlInteractionContext, value: string, options: FillControlOptions = {}): Promise<void> {
-    void context;
-    void value;
-    void options;
+  async fill(_context: ControlInteractionContext, _value: string, _options: FillControlOptions = {}): Promise<void> {
+    // intentionally empty: a control type with no fill of its own is left as the form rendered it
   }
 
   async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
@@ -132,8 +140,7 @@ class TextBoxControlTester extends ControlTester {
     return `Test ${this.attr.label ?? this.attr.attrName}${suffix}`;
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     if (this.inputType() === 'number') return String(Number(original[this.attr.attrName] ?? 0) + 1);
 
     return `Updated ${original[this.attr.attrName] ?? this.attr.attrName}`;
@@ -161,13 +168,11 @@ class CheckboxControlTester extends ControlTester {
     return 'input[type="checkbox"]';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return 'true';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     return original[this.attr.attrName] === 'true' ? 'false' : 'true';
   }
 
@@ -189,14 +194,11 @@ class DateControlTester extends ControlTester {
     return 'input[matInput]';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return '2026-01-15';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
-    void original;
+  override updateValue(_context: ControlDataContext, _original: Record<string, string>): string {
     return '2026-02-20';
   }
 
@@ -219,14 +221,12 @@ class DropdownControlTester extends ControlTester {
     return 'mat-select';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
-    return String(resolveSelectables(this.attr)?.[0]?.value ?? '');
+  override createValue(_context: ControlDataContext): string {
+    return selectableValue(this.attr, 0) ?? '';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
-    return String(resolveSelectables(this.attr)?.[1]?.value ?? original[this.attr.attrName] ?? '');
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
+    return selectableValue(this.attr, 1) ?? original[this.attr.attrName] ?? '';
   }
 
   /**
@@ -265,13 +265,11 @@ class TagsControlTester extends ControlTester {
     return 'mat-chip-grid input';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return 'alpha,beta';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     return `${original[this.attr.attrName] ?? ''},gamma`;
   }
 
@@ -312,8 +310,7 @@ class ForeignKeyControlTester extends ControlTester {
     return fixture?.id ?? (linkedName ? (context.createdIdsByEntity?.[linkedName] ?? '') : '');
   }
 
-  override displayValue(context: ControlDataContext, value: string): string {
-    void value;
+  override displayValue(context: ControlDataContext, _value: string): string {
     const displayOverride = context.linkedDisplayValuesByAttr?.[this.attr.attrName];
     if (displayOverride) return displayOverride;
 
@@ -350,7 +347,7 @@ class ForeignKeyControlTester extends ControlTester {
 
     const row = context.page
       .locator('mat-row')
-      .filter({ has: context.page.locator('mat-cell').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) }) })
+      .filter({ has: context.page.locator('mat-cell').filter({ hasText: exactText(identificationValue) }) })
       .first();
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
     await context.page.getByTestId(`${toTestId(linkedName)}-select`).click();
@@ -375,8 +372,7 @@ class LookupControlTester extends ControlTester {
     return linkedRow ? this.lookupKey(linkedRow) : '';
   }
 
-  override displayValue(context: ControlDataContext, value: string): string {
-    void value;
+  override displayValue(context: ControlDataContext, _value: string): string {
     const displayOverride = context.linkedDisplayValuesByAttr?.[this.attr.attrName];
     if (displayOverride) return displayOverride;
 
@@ -446,8 +442,8 @@ export abstract class RelationshipControlTester extends ControlTester {
     return `Add ${this.linkedEntityName() ?? ''}`;
   }
 
-  /** No-op, and declared without parameters so that saying so needs no `void` on each one: a relationship has no
-   * value to read back off the form. The rows are asserted by `RelationshipFieldsetPO` instead. */
+  /** No-op, and declared without parameters because there is nothing to read: a relationship has no value on
+   * the form. The rows are asserted by `RelationshipFieldsetPO` instead. */
   override async assertValue(): Promise<void> {
     // intentionally empty
   }

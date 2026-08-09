@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import type { ArtifactControlTester } from '../controls/control-tester';
 import { formControlTestId } from '../selectors/test-id';
+import { exactText } from '../selectors/text-match';
 
 export interface ArtifactFieldsetPOOptions {
   /** Overrides Playwright's default expect timeout — an upload is a round trip to the object store. */
@@ -13,10 +14,6 @@ export interface ArtifactUpload {
   name: string;
   mimeType: string;
   buffer: Buffer;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 /**
@@ -50,7 +47,7 @@ export class ArtifactFieldsetPO {
   /** The row naming `fileName` — a row's link text is the artifact's display name. */
   row(fileName: string): Locator {
     return this.rows()
-      .filter({ has: this.page.locator('a').filter({ hasText: new RegExp(`^${escapeRegExp(fileName)}$`) }) })
+      .filter({ has: this.page.locator('a').filter({ hasText: exactText(fileName) }) })
       .first();
   }
 
