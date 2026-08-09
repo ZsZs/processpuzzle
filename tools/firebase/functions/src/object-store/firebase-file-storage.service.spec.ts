@@ -41,6 +41,9 @@ beforeEach(() => {
   delete process.env.STORAGE_EMULATOR_HOST;
   delete process.env.FIREBASE_STORAGE_EMULATOR_HOST;
   delete process.env.OBJECT_STORE_BUCKET;
+  delete process.env.GCLOUD_PROJECT;
+  delete process.env.GOOGLE_CLOUD_PROJECT;
+  delete process.env.FIREBASE_CONFIG;
   storage = new FirebaseFileStorageService();
 });
 
@@ -59,9 +62,34 @@ describe('bucket resolution', () => {
     expect(initializeApp).toHaveBeenCalledOnce();
   });
 
-  it('uses the project default bucket', async () => {
+  it('names the project default bucket, rather than letting FIREBASE_CONFIG offer the legacy one', async () => {
     const bucketOf = vi.fn(() => bucket);
     getStorage.mockReturnValue({ bucket: bucketOf });
+    process.env.GCLOUD_PROJECT = 'a-project';
+
+    await storage.objectExists('documents', 'obj-1');
+
+    expect(bucketOf).toHaveBeenCalledWith('a-project.firebasestorage.app');
+  });
+
+  it('falls back to GOOGLE_CLOUD_PROJECT, then to FIREBASE_CONFIG, for the project id', async () => {
+    const bucketOf = vi.fn(() => bucket);
+    getStorage.mockReturnValue({ bucket: bucketOf });
+
+    process.env.GOOGLE_CLOUD_PROJECT = 'from-gcp-env';
+    await storage.objectExists('documents', 'obj-1');
+    expect(bucketOf).toHaveBeenLastCalledWith('from-gcp-env.firebasestorage.app');
+
+    delete process.env.GOOGLE_CLOUD_PROJECT;
+    process.env.FIREBASE_CONFIG = JSON.stringify({ projectId: 'from-config' });
+    await storage.objectExists('documents', 'obj-1');
+    expect(bucketOf).toHaveBeenLastCalledWith('from-config.firebasestorage.app');
+  });
+
+  it('leaves the name to the admin SDK when no project id is discoverable', async () => {
+    const bucketOf = vi.fn(() => bucket);
+    getStorage.mockReturnValue({ bucket: bucketOf });
+    process.env.FIREBASE_CONFIG = 'not json';
 
     await storage.objectExists('documents', 'obj-1');
 
@@ -71,6 +99,7 @@ describe('bucket resolution', () => {
   it('honours the OBJECT_STORE_BUCKET override', async () => {
     const bucketOf = vi.fn(() => bucket);
     getStorage.mockReturnValue({ bucket: bucketOf });
+    process.env.GCLOUD_PROJECT = 'a-project';
     process.env.OBJECT_STORE_BUCKET = 'explicit-bucket';
 
     await storage.objectExists('documents', 'obj-1');

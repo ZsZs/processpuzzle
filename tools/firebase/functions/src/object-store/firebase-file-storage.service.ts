@@ -19,6 +19,8 @@ export interface StoredObject {
  */
 export class FirebaseFileStorageService {
   private static readonly DOWNLOAD_TOKEN_KEY = 'firebaseStorageDownloadTokens';
+  /** Default Storage bucket of a Firebase project; `.appspot.com` is the pre-October-2024 spelling. */
+  private static readonly DEFAULT_BUCKET_SUFFIX = '.firebasestorage.app';
 
   async uploadObject(bucketName: string, objectName: string, content: Buffer, contentType: string, metadata: Record<string, string>): Promise<void> {
     await this.file(bucketName, objectName).save(content, {
@@ -94,8 +96,36 @@ export class FirebaseFileStorageService {
 
   private static bucket(): Bucket {
     if (!getApps().length) initializeApp();
-    const bucketName = process.env.OBJECT_STORE_BUCKET;
+    const bucketName = FirebaseFileStorageService.bucketName();
     return bucketName ? getStorage().bucket(bucketName) : getStorage().bucket();
+  }
+
+  /**
+   * `getStorage().bucket()` takes its name from `FIREBASE_CONFIG`, which still advertises the
+   * legacy `<projectId>.appspot.com` — a bucket that does not exist in projects created after
+   * October 2024, so every call 404s with "The specified bucket does not exist". Name the
+   * modern default explicitly instead, and keep `OBJECT_STORE_BUCKET` as the override for a
+   * project whose bucket follows neither convention.
+   */
+  private static bucketName(): string | undefined {
+    const explicit = process.env.OBJECT_STORE_BUCKET;
+    if (explicit) return explicit;
+
+    const projectId = FirebaseFileStorageService.projectId();
+    return projectId ? `${projectId}${FirebaseFileStorageService.DEFAULT_BUCKET_SUFFIX}` : undefined;
+  }
+
+  /** Both the functions runtime and the emulator suite set these; `FIREBASE_CONFIG` is the last resort. */
+  private static projectId(): string | undefined {
+    const fromEnv = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT;
+    if (fromEnv) return fromEnv;
+
+    try {
+      const config = JSON.parse(process.env.FIREBASE_CONFIG ?? '{}') as { projectId?: string };
+      return config.projectId;
+    } catch {
+      return undefined;
+    }
   }
 
   /** `STORAGE_EMULATOR_HOST` is set by the emulator suite, with or without a scheme. */
