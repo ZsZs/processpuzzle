@@ -4,6 +4,8 @@ import { create, defaults, router } from 'json-server';
 import db from './db.json';
 import orgScopeRewrite from './org-scope.js';
 
+export { objectStore } from './src/object-store/object-store.function.js';
+
 setGlobalOptions({ region: 'europe-central2' });
 
 export const helloWorld = onRequest({ region: 'europe-central2' }, (request, response) => {
