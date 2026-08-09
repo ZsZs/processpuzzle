@@ -1,6 +1,7 @@
 {
   "BASE_CONFIGURATION": {
     "BACKEND_SERVICE_PROVIDER": "rest",
+    "DEPLOYMENT_ENVIRONMENT": "firebase",
     "BACKEND_SERVICE_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
     "APP_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",

@@ -121,6 +121,15 @@ import { REGISTRY_PATH } from '../support/global-setup';
 defineEntityRelationshipSuite({ registryPath: REGISTRY_PATH, routePrefix: testConfig.routePrefix });
 ```
 
+```ts
+// src/tests/entity-artifact.spec.ts
+import { defineEntityArtifactSuite } from '@processpuzzle/e2e-testing';
+import { testConfig } from '../../playwright.config';
+import { REGISTRY_PATH } from '../support/global-setup';
+
+defineEntityArtifactSuite({ registryPath: REGISTRY_PATH, routePrefix: testConfig.routePrefix });
+```
+
 Run with `nx e2e <your-e2e-project>`. The number of generated test cases scales automatically with the number of entities exposed by your application.
 
 `expectTimeoutMs` is optional. When omitted, form control assertions use the Playwright configured expect timeout.
@@ -165,6 +174,30 @@ Describe titles are `[<Entity>] RELATIONSHIP <attrName> (<KIND>)`, so a `E2E_SUI
 
 Requirements on the application: the row list must render as the generated controls do — a `fieldset` carrying the `<entity>-<attrName>` test id, `<li>` rows whose `<a>` shows the child's identification value, an `Add <Entity Name>` button, and a per-row delete button labelled `Delete related entity reference` / `Delete component` / `Delete embedded component`. A deletion that destroys something is confirmed through `DeleteConfirmationDialog`, whose buttons carry `delete-confirmation-confirm` / `-cancel`.
 
+## The artifact suite
+
+An `ARTIFACT` attribute is the one control whose value does not live in the entity. The form holds a *reference* — `{bucket, objectId, name, mimeType}` — and the bytes it names live in an object store the entity's own endpoint knows nothing about. So it is not a value the generated data can carry, and it gets its own suite for the same reason the relationships do, one test per artifact attribute.
+
+The test walks the whole round trip and asserts at each point that the reference and the object are still the same thing:
+
+| Step | What it proves |
+|---|---|
+| upload | an object reached the store; the row that appears names it |
+| owner's Save, then reload | the reference travels in the **owner's** payload — the row came back from the entity, not from the component's state |
+| following the row's link | the URI the store resolves serves back **exactly the bytes uploaded** (length-checked), which is what separates a working store from a form field holding a plausible object id |
+| row delete | the delete reaches the store, not just the form: the URI stops serving |
+| image vs. text payload | a raster image renders a **thumbnail** — the one place the control needs the store to have *derived* something — and anything else a MIME icon |
+
+The payloads are built in memory by `createPngBuffer` / `createTextBuffer` and handed to `setInputFiles` as bytes, so nothing has to be resolved relative to whichever app runs the suite. The PNG is 320×240, larger than the 200 px thumbnail box in both directions, so the downscale is real.
+
+Both object-store adapters must pass this suite — `processpuzzle-store` over MinIO and the `objectStore` Cloud Function over Firebase Storage — which is what keeps them interchangeable. Where they legitimately differ the suite claims only what both do: a delete asserts the **object** is gone and says nothing about the thumbnail, because MinIO leaves it behind where the Cloud Function cascades to it.
+
+The link is opened with `window.open(…, 'noopener')`, so the new tab has no opener and arrives on the browser *context* rather than as a popup — `ArtifactFieldsetPO.openArtifact` waits on `context.waitForEvent('page')` accordingly.
+
+Describe titles are `[<Entity>] ARTIFACT <attrName>`, so an `E2E_SUITE`-style grep on `ARTIFACT` selects the suite as `CRUD`, `LIST` and `RELATIONSHIP` do.
+
+Requirements on the application: the control must render as the generated one does — a host carrying the `<entity>-<attrName>` test id around a `fieldset.base-entity-form-field`, `<li>` rows whose `<a>` shows the file name, an `Upload file` button revealed by focus opening a selector with a file input, `Artifact name` / `MIME type` placeholders and an `Upload` button, `img.artifact-thumbnail` / `mat-icon.artifact-icon`, and a row delete button labelled `Delete artifact reference` confirmed through `DeleteConfirmationDialog`.
+
 ## Custom tests with the page objects
 
 If a particular entity needs scenarios beyond the generic suites, instantiate the page objects directly:
@@ -197,20 +230,28 @@ test('custom flow', async ({ page }) => {
 | `defineEntityListSuite(options)` | suite factory | Registers `[entity] LIST › renders toolbar and rows` for every descriptor. |
 | `defineEntityCrudSuite(options)` | suite factory | Registers `[entity] CRUD › CREATE/READ/UPDATE/DELETE` for every descriptor, in serial mode. |
 | `defineEntityRelationshipSuite(options)` | suite factory | Registers `[entity] RELATIONSHIP <attr> (<KIND>)` for every to-many relationship attribute. |
+| `defineEntityArtifactSuite(options)` | suite factory | Registers `[entity] ARTIFACT <attr>` for every `ARTIFACT` attribute — the round trip through the object store. |
 | `RouteResolver` | class | Builds list/detail routes, plus `embeddedDetailRoute` for a row nested below its owner's form. Uses `descriptor.route` from the registry when present; otherwise falls back to `${routePrefix}/${kebab(entityName)}`. |
-| `EntityListPO`, `EntityFormPO`, `RelationshipFieldsetPO` | classes | Page objects for list views, detail/edit forms, and the row list of one relationship attribute. |
+| `EntityListPO`, `EntityFormPO`, `RelationshipFieldsetPO`, `ArtifactFieldsetPO` | classes | Page objects for list views, detail/edit forms, the row list of one relationship attribute, and the fieldset of one artifact attribute. |
 | `EntityCrudFixtureManager` | class | Creates the fixtures a test needs and removes them in teardown. `trackFixture` adopts an entity the test created through another entity's form — a component, which has no list to start from. |
-| `relationshipTestersFor`, `parentReferenceAttrName` | functions | The relationship attributes of a descriptor, and a component's foreign key back to a given parent. |
+| `relationshipTestersFor`, `artifactTestersFor`, `parentReferenceAttrName` | functions | The relationship attributes of a descriptor, its artifact attributes, and a component's foreign key back to a given parent. |
+| `createPngBuffer`, `createTextBuffer` | functions | In-memory upload payloads for the artifact suite — no fixture file to resolve on disk. |
 | `toTestId`, `attrSelector`, `buttonTestId`, `buttonSelector`, `formControlSelector`, `formControlLocator` | functions | Selector helpers that encode the `data-testid` conventions. |
 | `inputAttrs`, `identificationAttr`, `buildCreateData`, `buildUpdateData` | functions | Data-shape helpers driven by descriptors. |
 | `resolveDependencyOrder` | function | Topological sort by `FOREIGN_KEY` links. |
 | `BaseEntityDescriptor`, `BaseEntityAttrDescriptor`, `FormControlType` | re-exported types | Type-only re-exports from `@processpuzzle/base-entity` for consumer convenience. |
 
+## Testing this library
+
+`nx test e2e-testing` runs Vitest over the parts that are not a browser — descriptor interpretation, selector and route construction, generated test data, the binary fixtures. Those are where a failing assertion means something.
+
+The page objects, the suite factories and the global setup are **excluded from coverage** rather than covered. A page object is correct when its selectors match the DOM the application renders, and only a real run answers that; a test asserting it called `getByRole('button', {name: 'Upload'})` on a mocked `Locator` would pass just as happily when the button says something else. What verifies those files is the generated suites running green against a real application — which is what `nx e2e processpuzzle-testbed-e2e` does in CI. The exclusion list lives in both `vitest.config.ts` and `sonar-project.properties`; keep them in step.
+
 ## Notes
 
 - The descriptor types are re-exported as **types only**. `@processpuzzle/base-entity` is an Angular library; evaluating it inside a Node.js / Playwright process fails because the Angular JIT compiler isn't loaded. Internally this library compares `formControlType` against string literals matching the `FormControlType` enum values.
-- Currently deferred control types: `ARTIFACT`, `ADDITIONAL_PROPERTIES`, `FLEX_BOX` and `LABEL`. They are skipped in both data generation and form interaction.
-- The three relationship control types take no part in data generation or form filling either — a relationship is not a scalar — but they are covered by the relationship suite above, and by nothing in the CRUD suite.
+- Currently deferred control types: `ADDITIONAL_PROPERTIES`, `FLEX_BOX` and `LABEL`. They are skipped in both data generation and form interaction.
+- The three relationship control types and `ARTIFACT` take no part in data generation or form filling either — neither a relationship nor a stored file is a scalar — but they are covered by the relationship and artifact suites above, and by nothing in the CRUD suite. Keeping `ARTIFACT` out of `fillForm` also keeps the object store off the critical path of a suite that otherwise never touches it.
 - Embedded entities (`isEmbedded`) are skipped by the CRUD, LIST and RELATIONSHIP suites as owners: they have no list or detail route of their own. Their own relationships are reached through the owner that carries them, which is what the embedded flow recurses into.
 - Foreign-key support depends on the application's `EntityRegistryComponent` serializing `linkedEntityType` (entity name) on `FOREIGN_KEY` attrs. If your serializer omits it, FK resolution will be silently no-op'd.
 

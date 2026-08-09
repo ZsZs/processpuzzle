@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { parentReferenceAttrName, relationshipTestersFor, type RelationshipControlTester } from '../controls/control-tester';
 import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';

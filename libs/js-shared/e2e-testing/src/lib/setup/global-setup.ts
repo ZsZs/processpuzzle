@@ -1,6 +1,6 @@
 import { chromium, type FullConfig } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { resolveDependencyOrder } from '../data/dependency.resolver';
 
@@ -33,7 +33,12 @@ export function createGlobalSetup(options: CreateGlobalSetupOptions): (config: F
     const page = await browser.newPage();
 
     console.log(`[global-setup] Navigating to entity registry at ${baseURL}${registryUrl}`);
-    await page.goto(`${baseURL}${registryUrl}`);
+    // `domcontentloaded` rather than the default `load`: the registry page's contract is the `<pre>` waited for
+    // on the next line, and `load` additionally waits out everything the application shell starts on the side —
+    // the Firestore listen stream, and the hidden session-status iframe the OIDC client mounts against the
+    // identity provider. Neither has anything to do with the descriptors, and either can outlive the timeout on
+    // a loaded machine, failing the whole run before a single test is registered.
+    await page.goto(`${baseURL}${registryUrl}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('pre');
 
     const json = await page.locator('pre').textContent();

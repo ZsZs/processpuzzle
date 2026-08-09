@@ -22,6 +22,18 @@
         "assets": ["libs/js-shared/e2e-testing/*.md"]
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "options": {
+        "command": "vitest run --config libs/js-shared/e2e-testing/vitest.config.ts"
+      },
+      "configurations": {
+        "ci": {
+          "command": "vitest run --config libs/js-shared/e2e-testing/vitest.config.ts --reporter=default"
+        }
+      }
+    },
     "lint": {
       "configurations": {
         "ci": {

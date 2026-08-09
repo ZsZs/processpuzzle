@@ -446,9 +446,10 @@ export abstract class RelationshipControlTester extends ControlTester {
     return `Add ${this.linkedEntityName() ?? ''}`;
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op, and declared without parameters so that saying so needs no `void` on each one: a relationship has no
+   * value to read back off the form. The rows are asserted by `RelationshipFieldsetPO` instead. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -471,6 +472,48 @@ class EmbeddedComponentsControlTester extends RelationshipControlTester {
   override readonly rowDeleteAriaLabel = 'Delete embedded component';
 }
 
+/**
+ * A single stored file attached to an entity: a fieldset holding at most one row, and the selector that puts
+ * one there.
+ *
+ * `isInput` stays false for the same reason it does on the relationship controls, and with the same
+ * consequence — the control is out of `fillForm`, `assertFieldValues` and `buildCreateData`. An artifact is not
+ * a string the generated form data can carry: it is `{bucket, objectId, name, mimeType}`, and the object it
+ * names lives in the object store rather than in the entity's own payload. Treating it as a value would also
+ * make every CRUD test of every entity that has an artifact attribute upload a file, putting the object store
+ * on the critical path of a suite that otherwise never touches it. The artifact suite drives this tester
+ * instead.
+ */
+export class ArtifactControlTester extends ControlTester {
+  override readonly isInput = false;
+  /** `aria-label` of the row's delete button, as authored on `ArtifactComponent`. */
+  readonly rowDeleteAriaLabel = 'Delete artifact reference';
+  /** Label of the button that reveals the upload inputs — itself revealed only while the fieldset has focus. */
+  readonly revealSelectorButtonName = 'Upload file';
+  /** Label of the button that performs the upload, once the selector is open. */
+  readonly uploadButtonName = 'Upload';
+
+  /** The single-row list; the fieldset around it is what {@link ControlTester.control} addresses. */
+  innerLocator(): string {
+    return 'ul';
+  }
+
+  /** Whether the control renders a thumbnail rather than a MIME icon for `mimeType`. */
+  showsThumbnailFor(mimeType: string): boolean {
+    return this.showThumbnail() && mimeType.startsWith('image/');
+  }
+
+  /** `showThumbnail` is opt-out: `ArtifactComponent` suppresses the thumbnail only on an explicit `false`. */
+  private showThumbnail(): boolean {
+    return (this.attr as { showThumbnail?: boolean }).showThumbnail !== false;
+  }
+
+  /** No-op for the same reason the relationship testers' is: what the control holds is not a form value. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
+  }
+}
+
 class NoopControlTester extends ControlTester {
   override readonly isInput: boolean;
 
@@ -483,9 +526,9 @@ class NoopControlTester extends ControlTester {
     return '';
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op: a control type the suites do not yet drive has nothing to assert. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -513,9 +556,10 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
       return new ComponentsControlTester(attr);
     case 'EMBEDDED_COMPONENTS':
       return new EmbeddedComponentsControlTester(attr);
+    case 'ARTIFACT':
+      return new ArtifactControlTester(attr);
     case 'FLEX_BOX':
     case 'LABEL':
-    case 'ARTIFACT':
       return new NoopControlTester(attr, false);
     default:
       return new NoopControlTester(attr, true);
@@ -541,6 +585,13 @@ export function relationshipTestersFor(descriptor: BaseEntityDescriptor): Relati
   return testableAttrs(descriptor)
     .map((attr) => createControlTester(attr))
     .filter((tester): tester is RelationshipControlTester => tester instanceof RelationshipControlTester);
+}
+
+/** The artifact attributes of an entity — like {@link relationshipTestersFor}, disjoint from the scalar inputs. */
+export function artifactTestersFor(descriptor: BaseEntityDescriptor): ArtifactControlTester[] {
+  return testableAttrs(descriptor)
+    .map((attr) => createControlTester(attr))
+    .filter((tester): tester is ArtifactControlTester => tester instanceof ArtifactControlTester);
 }
 
 /**

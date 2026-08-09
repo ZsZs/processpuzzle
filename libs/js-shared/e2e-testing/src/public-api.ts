@@ -8,9 +8,11 @@ export type { BaseEntityDescriptor, BaseEntityAttrDescriptor, FormControlType } 
 export {
   ControlTester,
   RelationshipControlTester,
+  ArtifactControlTester,
   createControlTester,
   controlTestersFor,
   relationshipTestersFor,
+  artifactTestersFor,
   identificationAttrFromTesters,
   linkedFixtureAttrKey,
   parentReferenceAttrName,
@@ -38,6 +40,7 @@ export {
 } from './lib/data/test-data-factory';
 export { EntityCrudFixtureManager, type EntityFixture } from './lib/data/entity-crud-fixture-manager';
 export { resolveDependencyOrder } from './lib/data/dependency.resolver';
+export { createPngBuffer, createTextBuffer } from './lib/data/binary-fixtures';
 
 // Routing
 export { RouteResolver, toRoutePath } from './lib/routing/route.resolver';
@@ -49,8 +52,10 @@ export { createGlobalSetup, type CreateGlobalSetupOptions } from './lib/setup/gl
 export { EntityListPO } from './lib/pages/entity-list.po';
 export { EntityFormPO, type EntityFormContextOptions, type EntityFormPOOptions } from './lib/pages/entity-form.po';
 export { RelationshipFieldsetPO, type RelationshipFieldsetPOOptions } from './lib/pages/relationship-fieldset.po';
+export { ArtifactFieldsetPO, type ArtifactFieldsetPOOptions, type ArtifactUpload } from './lib/pages/artifact-fieldset.po';
 
 // Suite factories
 export { defineEntityListSuite, type DefineEntityListSuiteOptions } from './lib/suites/entity-list.suite';
 export { defineEntityCrudSuite, type DefineEntityCrudSuiteOptions } from './lib/suites/entity-crud.suite';
 export { defineEntityRelationshipSuite, type DefineEntityRelationshipSuiteOptions, type ExcludedRelationship } from './lib/suites/entity-relationship.suite';
+export { defineEntityArtifactSuite, type DefineEntityArtifactSuiteOptions, type ExcludedArtifact } from './lib/suites/entity-artifact.suite';
