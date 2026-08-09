@@ -190,8 +190,9 @@ paths:
       description: >-
         Position is implicit in array order — there is no stored position field. The
         submitted list must be a permutation of the artifact's current block ids.
-        Reordering an INLINE widget block has no visible effect until it is also
-        re-referenced inside the Tiptap content that embeds it.
+        Reordering a REFERENCED widget block has no visible effect on its own — its
+        position is determined entirely by whatever points at its id (a widgetEmbed
+        node or a container widget's props.childIds), not by its array position.
       tags:
         - Base Artifact
       requestBody:
@@ -249,8 +250,8 @@ paths:
     delete:
       operationId: deleteArtifactBlock
       summary: >-
-        Remove a block. If it is an INLINE widget block still referenced by a
-        widgetEmbed node in some TEXT block's Tiptap content, the backend rejects the
+        Remove a block. If it is a REFERENCED widget block still pointed at by a
+        widgetEmbed node or another widget's props.childIds, the backend rejects the
         delete with 409 rather than leaving a dangling reference.
       tags:
         - Base Artifact
@@ -273,13 +274,15 @@ paths:
       operationId: validateArtifact
       summary: Validate a candidate artifact without persisting it
       description: >-
-        Checks referential integrity: unique block ids, every widgetEmbed node's
-        blockId resolving to a declared WIDGET block with placement INLINE (ERROR if
-        not), every inputBindings/outputBindings value naming a declared port (ERROR if
-        not), and an INLINE widget block never referenced by any widgetEmbed node
-        (WARNING, not ERROR — a widget can be declared before it's placed in the text).
-        Widget props are not validated here, same as base-app — each widget owns its own
-        props shape. Used by the frontend for live feedback before writing.
+        Checks referential integrity: unique block ids; every widgetEmbed node's
+        blockId, and every WIDGET block's props.childIds entries, resolving to a
+        declared WIDGET block with placement REFERENCED (ERROR if not); every
+        inputBindings/outputBindings value naming a declared port (ERROR if not); and a
+        REFERENCED widget block pointed at by nothing at all (WARNING, not ERROR — a
+        widget can be declared before it's placed in the text or wired into a
+        container). Widget props are otherwise not validated here, same as base-app —
+        each widget owns its own props shape, including how it interprets childIds.
+        Used by the frontend for live feedback before writing.
       tags:
         - Base Artifact
       requestBody:
@@ -474,8 +477,9 @@ components:
           type: array
           description: >-
             Ordered, flat list of blocks. Array order is the display order for
-            STANDALONE blocks. INLINE widget blocks are positioned by their widgetEmbed
-            reference inside a TEXT block's Tiptap content instead.
+            STANDALONE blocks. REFERENCED widget blocks have no position of their own —
+            they render wherever a widgetEmbed node (Tiptap) or a props.childIds entry
+            (container widget composition) points at their id.
           items:
             $ref: "#/components/schemas/ArtifactBlockInput"
 
@@ -531,9 +535,9 @@ components:
       enum: [ STANDALONE, REFERENCED ]
       default: STANDALONE
       description: >-
-        WIDGET blocks only. Canonical definition shared with base-app-api.yaml's
-        WidgetRef.placement — same enum, same meaning, applied here to a block instead
-        of a WidgetRef. STANDALONE renders as its own full-width entry at its position
+        WIDGET blocks only. Same enum and meaning as shared-api.yaml's canonical
+        WidgetRef.placement, applied here to a block instead of a standalone WidgetRef —
+        an ArtifactBlock's type/props/placement together are structurally that shape. STANDALONE renders as its own full-width entry at its position
         in the flat block list. REFERENCED means this widget does not render at its own
         list position — it renders only where something else points at its block id:
         either a container widget's props.childIds (composition, e.g. a tab group), or
@@ -619,8 +623,9 @@ components:
         Opaque ProseMirror/Tiptap JSON document. base-artifact-backend stores and
         returns this verbatim — it is never parsed or interpreted server-side, with one
         narrow exception: on write, the backend scans for widgetEmbed nodes to verify
-        every referenced blockId exists in this artifact's blocks as an INLINE WIDGET
-        block, purely for referential integrity.
+        every referenced blockId exists in this artifact's blocks as a REFERENCED
+        WIDGET block, purely for referential integrity (the same check also applied to
+        every WIDGET block's props.childIds).
       additionalProperties: true
 
     ReorderBlocksRequest:
@@ -731,7 +736,7 @@ components:
           example: artifact.validation.dangling-widget-embed
         errorText:
           type: string
-          example: "widgetEmbed references block 'widget-chart-1', which is not an INLINE WIDGET block in this artifact."
+          example: "widgetEmbed references block 'widget-chart-1', which is not a REFERENCED WIDGET block in this artifact."
         severity:
           $ref: "#/components/schemas/Severity"
 
