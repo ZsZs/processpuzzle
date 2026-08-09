@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { artifactTestersFor, type ArtifactControlTester } from '../controls/control-tester';
 import { createPngBuffer, createTextBuffer } from '../data/binary-fixtures';

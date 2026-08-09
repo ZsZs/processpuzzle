@@ -446,9 +446,10 @@ export abstract class RelationshipControlTester extends ControlTester {
     return `Add ${this.linkedEntityName() ?? ''}`;
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op, and declared without parameters so that saying so needs no `void` on each one: a relationship has no
+   * value to read back off the form. The rows are asserted by `RelationshipFieldsetPO` instead. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -507,9 +508,9 @@ export class ArtifactControlTester extends ControlTester {
     return (this.attr as { showThumbnail?: boolean }).showThumbnail !== false;
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op for the same reason the relationship testers' is: what the control holds is not a form value. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -525,9 +526,9 @@ class NoopControlTester extends ControlTester {
     return '';
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op: a control type the suites do not yet drive has nothing to assert. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 

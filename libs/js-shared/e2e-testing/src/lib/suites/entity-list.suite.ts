@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { EntityListPO } from '../pages/entity-list.po';
 import { RouteResolver } from '../routing/route.resolver';

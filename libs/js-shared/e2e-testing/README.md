@@ -241,6 +241,12 @@ test('custom flow', async ({ page }) => {
 | `resolveDependencyOrder` | function | Topological sort by `FOREIGN_KEY` links. |
 | `BaseEntityDescriptor`, `BaseEntityAttrDescriptor`, `FormControlType` | re-exported types | Type-only re-exports from `@processpuzzle/base-entity` for consumer convenience. |
 
+## Testing this library
+
+`nx test e2e-testing` runs Vitest over the parts that are not a browser — descriptor interpretation, selector and route construction, generated test data, the binary fixtures. Those are where a failing assertion means something.
+
+The page objects, the suite factories and the global setup are **excluded from coverage** rather than covered. A page object is correct when its selectors match the DOM the application renders, and only a real run answers that; a test asserting it called `getByRole('button', {name: 'Upload'})` on a mocked `Locator` would pass just as happily when the button says something else. What verifies those files is the generated suites running green against a real application — which is what `nx e2e processpuzzle-testbed-e2e` does in CI. The exclusion list lives in both `vitest.config.ts` and `sonar-project.properties`; keep them in step.
+
 ## Notes
 
 - The descriptor types are re-exported as **types only**. `@processpuzzle/base-entity` is an Angular library; evaluating it inside a Node.js / Playwright process fails because the Angular JIT compiler isn't loaded. Internally this library compares `formControlType` against string literals matching the `FormControlType` enum values.

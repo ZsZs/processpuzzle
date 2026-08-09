@@ -108,7 +108,7 @@
     "test-base-state-backend": "nx run base-state-backend:test --configuration=ci --no-cloud",
     "test-base-state-frontend": "nx run base-state-frontend:test --configuration=ci --coverage --no-cloud",
     "test-design": "nx run design:test --configuration=ci --coverage --no-cloud",
-    "test-e2e-testing": "echo 'No unit tests for e2e-testing'",
+    "test-e2e-testing": "nx run e2e-testing:test --configuration=ci --no-cloud",
     "test-firebase-functions": "nx run firebase-functions:test --configuration=ci --no-cloud",
     "test-processpuzzle-core": "nx run processpuzzle-core:test --configuration=ci --no-cloud",
     "test-processpuzzle-store": "nx run processpuzzle-store:test --configuration=ci --no-cloud",
