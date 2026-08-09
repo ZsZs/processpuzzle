@@ -108,6 +108,7 @@
     "projects": [
       "auth",
       "base-app-frontend",
+      "base-artifact-frontend",
       "base-entity-frontend",
       "base-workflow-frontend",
       "base-rule-frontend",
