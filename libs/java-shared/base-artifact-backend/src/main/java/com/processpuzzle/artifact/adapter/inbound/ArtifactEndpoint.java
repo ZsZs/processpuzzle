@@ -25,6 +25,7 @@ public class ArtifactEndpoint implements BaseArtifactApi {
 
     private final CreateArtifact createArtifact;
     private final UpdateArtifact updateArtifact;
+    private final UpdateArtifactProperties updateArtifactProperties;
     private final DeleteArtifact deleteArtifact;
     private final FindArtifact findArtifact;
     private final FindAllArtifacts findAllArtifacts;
@@ -39,6 +40,7 @@ public class ArtifactEndpoint implements BaseArtifactApi {
 
     public ArtifactEndpoint(CreateArtifact createArtifact,
                              UpdateArtifact updateArtifact,
+                             UpdateArtifactProperties updateArtifactProperties,
                              DeleteArtifact deleteArtifact,
                              FindArtifact findArtifact,
                              FindAllArtifacts findAllArtifacts,
@@ -52,6 +54,7 @@ public class ArtifactEndpoint implements BaseArtifactApi {
                              ArtifactMapper mapper) {
         this.createArtifact = createArtifact;
         this.updateArtifact = updateArtifact;
+        this.updateArtifactProperties = updateArtifactProperties;
         this.deleteArtifact = deleteArtifact;
         this.findArtifact = findArtifact;
         this.findAllArtifacts = findAllArtifacts;
@@ -74,6 +77,13 @@ public class ArtifactEndpoint implements BaseArtifactApi {
     @Override
     public ResponseEntity<Artifact> updateArtifact(String orgKey, String artifactId, ArtifactInput input) {
         var updated = updateArtifact.execute(orgKey, artifactId, input);
+        return ResponseEntity.ok(mapper.toModel(updated));
+    }
+
+    @Override
+    public ResponseEntity<Artifact> updateArtifactProperties(
+            String orgKey, String artifactId, ArtifactPropertiesInput input) {
+        var updated = updateArtifactProperties.execute(orgKey, artifactId, input);
         return ResponseEntity.ok(mapper.toModel(updated));
     }
 

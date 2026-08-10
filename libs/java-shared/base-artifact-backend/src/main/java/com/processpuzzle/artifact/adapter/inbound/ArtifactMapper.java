@@ -10,6 +10,7 @@ import com.processpuzzle.artifact.domain.PortType;
 import com.processpuzzle.artifact.domain.WidgetPlacement;
 import com.processpuzzle.artifact.model.ArtifactBlockInput;
 import com.processpuzzle.artifact.model.ArtifactInput;
+import com.processpuzzle.artifact.model.ArtifactPropertiesInput;
 import com.processpuzzle.artifact.model.ArtifactSummary;
 import com.processpuzzle.artifact.model.PageOfArtifactSummary;
 import com.processpuzzle.artifact.usecase.ArtifactValidationProblem;
@@ -49,6 +50,19 @@ public class ArtifactMapper {
                 // only the block-level use cases (Append/Replace) generate/pin an id explicitly.
                 : input.getBlocks().stream().map(b -> toBlock(b.getId(), b)).toList();
         return new ArtifactGraph(inputPorts, outputPorts, blocks);
+    }
+
+    /**
+     * The ports half of {@link #toGraph(ArtifactInput)}, merged onto the blocks already stored.
+     * {@code ArtifactPropertiesInput} has no blocks field at all — that is the whole point of the
+     * separate schema — so the caller supplies the current graph and only the ports are replaced.
+     */
+    public ArtifactGraph toGraph(ArtifactPropertiesInput input, ArtifactGraph current) {
+        List<ArtifactInputPort> inputPorts = input.getInputPorts() == null ? List.of()
+                : input.getInputPorts().stream().map(this::toDomainInputPort).toList();
+        List<ArtifactOutputPort> outputPorts = input.getOutputPorts() == null ? List.of()
+                : input.getOutputPorts().stream().map(this::toDomainOutputPort).toList();
+        return current.withPorts(inputPorts, outputPorts);
     }
 
     public ArtifactBlock toBlock(String id, ArtifactBlockInput input) {
@@ -134,7 +148,10 @@ public class ArtifactMapper {
 
     public ArtifactBlockInput toModelInput(ArtifactBlock block) {
         ArtifactBlockInput model = new ArtifactBlockInput();
-        applyCommon(block, id -> {}, model::setKind, model::setEditable, model::setContent,
+        // Carries the id now that ArtifactBlockInput has one: this is the shape export writes and
+        // import reads back, and widgetEmbed / props.childIds references would not survive a
+        // round trip that dropped it.
+        applyCommon(block, model::setId, model::setKind, model::setEditable, model::setContent,
                 model::setPlacement, model::setType, model::setProps,
                 model::setInputBindings, model::setOutputBindings);
         return model;
@@ -146,7 +163,7 @@ public class ArtifactMapper {
             java.util.function.Consumer<String> setId,
             java.util.function.Consumer<com.processpuzzle.artifact.model.BlockKind> setKind,
             java.util.function.Consumer<Boolean> setEditable,
-            java.util.function.Consumer<Object> setContent,
+            java.util.function.Consumer<com.fasterxml.jackson.databind.JsonNode> setContent,
             java.util.function.Consumer<com.processpuzzle.artifact.model.WidgetPlacement> setPlacement,
             java.util.function.Consumer<String> setType,
             java.util.function.Consumer<java.util.Map<String, Object>> setProps,

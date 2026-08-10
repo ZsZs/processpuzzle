@@ -34,4 +34,12 @@ public record ArtifactGraph(
     public ArtifactGraph withBlocks(List<ArtifactBlock> replacement) {
         return new ArtifactGraph(inputPorts, outputPorts, replacement);
     }
+
+    /**
+     * The mirror image of {@link #withBlocks}: both port lists replaced, blocks carried over
+     * untouched. Used by {@code UpdateArtifactProperties}, which by contract cannot receive blocks.
+     */
+    public ArtifactGraph withPorts(List<ArtifactInputPort> newInputPorts, List<ArtifactOutputPort> newOutputPorts) {
+        return new ArtifactGraph(newInputPorts, newOutputPorts, blocks);
+    }
 }

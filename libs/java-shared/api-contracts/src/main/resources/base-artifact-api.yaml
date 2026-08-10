@@ -149,6 +149,43 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /organizations/{orgKey}/artifacts/{artifactId}/properties:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ArtifactIdParam"
+    put:
+      operationId: updateArtifactProperties
+      summary: Update title, description and ports without touching blocks
+      description: >-
+        For editors of the generic Properties form, which has no business overwriting
+        content maintained separately through the block-level endpoints. Structurally
+        cannot send blocks — ArtifactPropertiesInput has no such field — so this is safe
+        to call regardless of what block-level edits have happened concurrently. Bumps
+        the same version as updateArtifact; both endpoints write the one Artifact row.
+      tags:
+        - Base Artifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactPropertiesInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   # ── Blocks (fine-grained editing) ────────────────────────────
 
   /organizations/{orgKey}/artifacts/{artifactId}/blocks:
@@ -450,6 +487,30 @@ components:
 
     # ── Artifact ──────────────────────────────────────────────
 
+    ArtifactPropertiesInput:
+      type: object
+      required: [ title ]
+      description: >-
+        Same title/description/inputPorts/outputPorts fields as ArtifactInput, minus id
+        (already in the path) and blocks (structurally absent, not merely optional — see
+        updateArtifactProperties). Kept as its own schema rather than an ArtifactInput
+        subset via allOf, so generated clients see a type that has no blocks field to
+        accidentally populate.
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        inputPorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactInputPort"
+        outputPorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactOutputPort"
+
     ArtifactInput:
       type: object
       required: [ id, title ]
@@ -479,7 +540,13 @@ components:
             Ordered, flat list of blocks. Array order is the display order for
             STANDALONE blocks. REFERENCED widget blocks have no position of their own —
             they render wherever a widgetEmbed node (Tiptap) or a props.childIds entry
-            (container widget composition) points at their id.
+            (container widget composition) points at their id. Whenever present on
+            updateArtifact it fully replaces the stored list — a client that only wants to
+            touch title/description/ports should call updateArtifactProperties instead, whose
+            schema has no blocks field at all, rather than relying on any
+            omitted-vs-empty convention here (Jackson can't tell those apart on a plain
+            List without JsonNullable-wrapping every nullable field in this contract,
+            which is a bigger change than this problem is worth).
           items:
             $ref: "#/components/schemas/ArtifactBlockInput"
 
@@ -554,6 +621,17 @@ components:
         left null. Which fields are required for a given kind is validated server-side
         (see validateArtifact), not enforced structurally.
       properties:
+        id:
+          type: string
+          nullable: true
+          description: >-
+            Absent on createArtifact — the server assigns one. Must be supplied on
+            updateArtifact and on import, because widgetEmbed nodes inside a TEXT block's
+            content and every container widget's props.childIds reference blocks by id, so
+            a whole-artifact write that dropped the ids would orphan every one of those
+            references. ArtifactReferentialIntegrityChecker currently only verifies that
+            referenced ids resolve, not that each block carries one — supplying no id on
+            update is an NPE there today rather than a clean 400.
         kind:
           $ref: "#/components/schemas/BlockKind"
 
@@ -626,7 +704,10 @@ components:
         every referenced blockId exists in this artifact's blocks as a REFERENCED
         WIDGET block, purely for referential integrity (the same check also applied to
         every WIDGET block's props.childIds).
-      additionalProperties: true
+      # No `additionalProperties: true` — that is already the OpenAPI 3.0 default for an object
+      # with no declared properties, and spelling it out makes openapi-generator treat this as a
+      # free-form map and emit a `new HashMap<>()` initializer, which does not compile against the
+      # JsonNode this schema is mapped to (see the artifact schemaMappings in api-contracts/pom.xml).
 
     ReorderBlocksRequest:
       type: object

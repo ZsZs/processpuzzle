@@ -7,6 +7,7 @@ export { BaseEntityContainerStore } from './lib/base-entity-container.store'; //
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
 export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
 export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
+export { toSelectables } from './lib/base-entity/selectables';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
@@ -40,6 +41,7 @@ export { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY, EMBEDDED_ENTITY_ROUTE_
 export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-route-registry.providers';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
+export { WIDGET_REGISTRY, provideWidget } from './lib/widget-registry/widget-registry.token';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES, baseEntityRoutes, type EmbeddedChildRoute } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';

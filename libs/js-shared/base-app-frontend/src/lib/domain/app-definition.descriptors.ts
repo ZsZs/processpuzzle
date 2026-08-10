@@ -1,9 +1,8 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { AppDefinitionStatus, COLOR_SCHEMES, LAYOUT_PRESETS, MATERIAL_THEMES, SIDENAV_MODES } from './app-definition';
 import { APP_DEFINITION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
 import { APP_REGION_ID_FIELD } from './region-definition.descriptors';
-import { toSelectables } from './selectables';
 
 export { APP_DEFINITION_ENTITY_NAME };
 

@@ -1,8 +1,7 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
 import { WIDGET_PLACEMENTS } from './app-definition';
 import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
-import { toSelectables } from './selectables';
 
 export { APP_WIDGET_ENTITY_NAME };
 
