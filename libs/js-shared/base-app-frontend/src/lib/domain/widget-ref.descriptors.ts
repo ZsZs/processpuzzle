@@ -1,5 +1,6 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
+import { WIDGET_PLACEMENTS } from './app-definition';
 import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
 
 export { APP_WIDGET_ENTITY_NAME };
@@ -23,16 +24,16 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   const propsAttr = new BaseEntityAttrDescriptor('props', FormControlType.ADDITIONAL_PROPERTIES, 'Props');
   propsAttr.hideInTable = true;
 
-  // A container widget contains its children rather than pointing at them — they are an inline array of
-  // this widget, and the widget itself is nested in the app definition's document.
-  const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.EMBEDDED_COMPONENTS, 'Children');
-  childrenAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
-  childrenAttr.hideInTable = true;
+  // Widgets do not nest: a container widget type lists the ids of siblings in `props.childIds`, and each
+  // of those siblings is marked REFERENCED so it is placed by the container instead of rendering twice.
+  // That is the whole of composition here — there is no child collection to edit.
+  const placementAttr = new BaseEntityAttrDescriptor('placement', FormControlType.DROPDOWN, 'Placement', toSelectables(WIDGET_PLACEMENTS));
+  placementAttr.hideInTable = true;
 
-  const identityRow = new FlexboxDescriptor([idAttr, typeAttr], FlexDirection.ROW);
+  const identityRow = new FlexboxDescriptor([idAttr, typeAttr, placementAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, propsAttr, childrenAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, propsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }
@@ -42,8 +43,9 @@ export function createWidgetRefDescriptor(): BaseEntityDescriptor {
     entityName: APP_WIDGET_ENTITY_NAME,
     attrDescriptors: createWidgetRefAttrDescriptors(),
     i18nScope: APP_WIDGET_I18N_SCOPE,
-    // A widget sits in a header/footer region, on a page, or nested inside another widget.
-    componentParent: [APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME],
+    // A widget sits in a header/footer region or on a page — and only there, since it cannot be nested
+    // in another widget.
+    componentParent: [APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME],
     isEmbedded: true,
   });
 }

@@ -50,7 +50,7 @@
     "id": "Azonosító",
     "type": "Típus",
     "props": "Tulajdonságok",
-    "children": "Alelemek"
+    "placement": "Elhelyezés"
   },
   "publish": {
     "button": "Közzététel",

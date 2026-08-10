@@ -102,11 +102,18 @@ class AppGraphValuesTest {
     }
 
     @Test
-    void aWidgetWithoutPropsOrChildrenCarriesEmptyCollections() {
+    void aWidgetWithoutPropsOrPlacementRendersStandaloneWithNoConfiguration() {
         Widget widget = new Widget("widget-1", "entity-grid", null, null);
 
         assertThat(widget.props()).isEmpty();
-        assertThat(widget.children()).isEmpty();
+        assertThat(widget.placement()).isEqualTo(WidgetPlacement.STANDALONE);
+        assertThat(widget.isReferenced()).isFalse();
+    }
+
+    /** The flag the renderer and {@code AppDefinitionValidator} branch on, so it is worth pinning. */
+    @Test
+    void aReferencedWidgetReportsItself() {
+        assertThat(new Widget("widget-1", "entity-grid", null, WidgetPlacement.REFERENCED).isReferenced()).isTrue();
     }
 
     /**
@@ -118,7 +125,7 @@ class AppGraphValuesTest {
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("entityName", "Claim");
         props.put("pageSize", 20);
-        Widget widget = new Widget("widget-1", "entity-grid", props, List.of());
+        Widget widget = new Widget("widget-1", "entity-grid", props, WidgetPlacement.STANDALONE);
 
         props.put("addedLater", true);
 
@@ -174,6 +181,6 @@ class AppGraphValuesTest {
     }
 
     private static Widget widget(String id) {
-        return new Widget(id, "markdown", Map.of(), List.of());
+        return new Widget(id, "markdown", Map.of(), WidgetPlacement.STANDALONE);
     }
 }

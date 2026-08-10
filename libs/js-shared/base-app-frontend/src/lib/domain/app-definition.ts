@@ -28,6 +28,9 @@ export type SidenavMode = (typeof SIDENAV_MODES)[number];
 export const REGION_TYPES = ['header', 'sidenav', 'content', 'footer'] as const;
 export type RegionType = (typeof REGION_TYPES)[number];
 
+export const WIDGET_PLACEMENTS = ['STANDALONE', 'REFERENCED'] as const;
+export type WidgetPlacement = (typeof WIDGET_PLACEMENTS)[number];
+
 export enum AppDefinitionStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
@@ -55,15 +58,24 @@ export class WidgetRef implements BaseEntity {
   id: string;
   /** Widget registry key, an open string by contract. */
   type: string;
+  /**
+   * A container widget type composes through `props.childIds` — the ids of siblings in this same
+   * list — rather than by nesting, so this stays the only place a widget's structure is expressed.
+   */
   props?: Record<string, unknown>;
-  /** Left undefined rather than empty, so a leaf widget's payload stays the leaf the schema describes. */
-  children?: WidgetRef[];
+  /**
+   * `REFERENCED` opts the widget out of rendering at its own position, leaving it to be placed by
+   * whatever names it in `props.childIds`. Left undefined rather than defaulted, so a widget the
+   * designer never touched keeps the payload the schema describes — the server reads an absent
+   * value as `STANDALONE`.
+   */
+  placement?: WidgetPlacement;
 
   constructor(init: Partial<WidgetRef> = {}) {
     this.id = init.id ?? '';
     this.type = init.type ?? '';
     this.props = init.props;
-    this.children = init.children;
+    this.placement = init.placement;
   }
 }
 

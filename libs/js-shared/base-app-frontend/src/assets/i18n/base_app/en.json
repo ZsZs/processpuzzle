@@ -50,7 +50,7 @@
     "id": "Id",
     "type": "Type",
     "props": "Props",
-    "children": "Children"
+    "placement": "Placement"
   },
   "publish": {
     "button": "Publish",

@@ -54,7 +54,11 @@ function navItemRoute(): EmbeddedChildRoute {
   return { entityName: APP_NAV_ITEM_ENTITY_NAME, facade: AppNavItemFacade, children: () => [navItemRoute()] };
 }
 
-/** Likewise a container widget's children are widgets. */
+/**
+ * A widget, unlike a nav item, is a leaf branch: widgets do not nest, so there is no deeper level to
+ * expand. A container widget places its siblings by id through `props.childIds`, and those siblings are
+ * rows of this same list — reachable at this level, not below it.
+ */
 function widgetRoute(): EmbeddedChildRoute {
-  return { entityName: APP_WIDGET_ENTITY_NAME, facade: AppWidgetFacade, children: () => [widgetRoute()] };
+  return { entityName: APP_WIDGET_ENTITY_NAME, facade: AppWidgetFacade };
 }

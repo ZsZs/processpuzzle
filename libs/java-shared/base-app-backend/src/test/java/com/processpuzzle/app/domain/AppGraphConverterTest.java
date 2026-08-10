@@ -28,7 +28,7 @@ class AppGraphConverterTest {
                         List.of())),
                 List.of(new AppPage("page-claims", "Claims", null,
                         List.of(new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"),
-                                List.of())))));
+                                WidgetPlacement.REFERENCED)))));
 
         String column = converter.convertToDatabaseColumn(graph);
 
@@ -91,7 +91,7 @@ class AppGraphConverterTest {
     void aGraphThatCannotBeSerialized_failsTheWrite() {
         AppGraph unserializable = new AppGraph(null, null, List.of(),
                 List.of(new AppPage("page-1", "One", null,
-                        List.of(new Widget("widget-1", "custom", Map.of("opaque", new Object()), List.of())))));
+                        List.of(new Widget("widget-1", "custom", Map.of("opaque", new Object()), WidgetPlacement.STANDALONE)))));
 
         assertThatThrownBy(() -> converter.convertToDatabaseColumn(unserializable))
                 .isInstanceOf(IllegalStateException.class)

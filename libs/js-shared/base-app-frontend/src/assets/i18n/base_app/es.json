@@ -50,7 +50,7 @@
     "id": "Id",
     "type": "Tipo",
     "props": "Propiedades",
-    "children": "Elementos hijos"
+    "placement": "Ubicación"
   },
   "publish": {
     "button": "Publicar",

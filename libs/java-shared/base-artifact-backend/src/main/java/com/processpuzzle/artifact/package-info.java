@@ -1,12 +1,9 @@
 /**
- * Base Artifact: interprets artifact descriptors to store, retrieve and describe the documents,
- * media and generated output an application produces and consumes.
+ * Base Artifact — structural persistence for wiki-style textual artifacts.
  *
- * <p>Still a scaffold. {@code allowedDependencies} is declared empty rather than left off: the
- * feature genuinely depends on no other module today, and stating that means the first undeclared
- * edge someone adds fails the modularity test instead of passing unnoticed.
+ * <p>Owns artifact/block structure, widget references and their static props, declared
+ * input/output ports, and opaque Tiptap JSON content. Deliberately knows nothing about
+ * runtime data binding, base-entity, or base-rule beyond the shared {@code Severity} scale
+ * (see {@code com.processpuzzle.artifact.usecase.ArtifactValidationProblem}).
  */
-@ApplicationModule(displayName = "Base Artifact", allowedDependencies = {})
 package com.processpuzzle.artifact;
-
-import org.springframework.modulith.ApplicationModule;
