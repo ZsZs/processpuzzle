@@ -14,6 +14,7 @@ import { OrderFacade } from './content/base-rules/order/order.facade';
 import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
+import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -171,6 +172,99 @@ export const appRoutes: Route[] = [
             children: BASE_ENTITY_ROUTES,
           },
         ],
+      },
+    ],
+  },
+  {
+    path: 'base-artifact',
+    title: 'ProcessPuzzle Testbed - Base Artifact',
+    data: { icon: 'article', menuTitle: 'base-artifact' },
+    loadComponent: () => import('./content/base-artifacts/base-artifacts.component').then((comp) => comp.BaseArtifactsComponent),
+    providers: [LayoutService],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-artifacts/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-artifacts/samples.component').then((comp) => comp.SamplesComponent),
+      },
+    ],
+  },
+  {
+    path: 'base-state',
+    title: 'ProcessPuzzle Testbed - Base State',
+    data: { icon: 'flag_circle', menuTitle: 'base-state' },
+    loadComponent: () => import('./content/base-states/base-states.component').then((comp) => comp.BaseStatesComponent),
+    providers: [LayoutService],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-states/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-states/samples.component').then((comp) => comp.SamplesComponent),
+      },
+    ],
+  },
+  {
+    path: 'base-workflow',
+    title: 'ProcessPuzzle Testbed - Base Workflow',
+    data: { icon: 'schema', menuTitle: 'base-workflow' },
+    loadComponent: () => import('./content/base-workflows/base-workflows.component').then((comp) => comp.BaseWorkflowsComponent),
+    providers: [LayoutService],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-workflows/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-workflows/samples.component').then((comp) => comp.SamplesComponent),
+      },
+    ],
+  },
+  {
+    path: 'base-app',
+    title: 'ProcessPuzzle Testbed - Base App',
+    data: { icon: 'web', menuTitle: 'base-app' },
+    loadComponent: () => import('./content/base-apps/base-apps.component').then((comp) => comp.BaseAppsComponent),
+    // The `App Definition` facades are provided once, in `app.config.ts` — see the note on `base-entity`
+    // above for why re-providing them per route would give this branch its own, unregistered, stores.
+    providers: [LayoutService],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-apps/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-apps/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_APP_ROUTES` brings the whole `app-definition` branch — the routable definition plus the
+        // four embedded levels below it — and declares its own transloco scopes, so nothing is added here.
+        children: BASE_APP_ROUTES,
       },
     ],
   },
