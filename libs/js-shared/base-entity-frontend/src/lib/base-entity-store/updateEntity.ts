@@ -2,7 +2,6 @@ import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
-import { HttpErrorResponse } from '@angular/common/http';
 import { EntityKeyResolver, entityKeyById, EntityStoreHandle } from './base-entity.store';
 
 export const updateEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>, keyOf: EntityKeyResolver<Entity> = entityKeyById) => {
@@ -18,7 +17,13 @@ export const updateEntity = <Entity extends BaseEntity>(store: EntityStoreHandle
       patchState(store, { entities: currentEntities, isLoading: false });
       return updatedEntity;
     } catch (error) {
-      patchState(store, { error: (error as HttpErrorResponse).message, isLoading: false });
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'message' in error && typeof (error as Record<string, unknown>)['message'] === 'string') {
+        errorMessage = (error as Record<string, unknown>)['message'] as string;
+      }
+      patchState(store, { error: errorMessage, isLoading: false });
       return undefined;
     }
   };

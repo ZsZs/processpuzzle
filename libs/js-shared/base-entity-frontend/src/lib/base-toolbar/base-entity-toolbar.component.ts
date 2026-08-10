@@ -92,7 +92,7 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
     if (!dialogResult) return; // user cancelled
 
     const columns = entityDescriptorToPdfColumns(this.entityDescriptor().attrDescriptors);
-    const entities = this.store.entities() as unknown as Record<string, unknown>[];
+    const entities = this.store.entities() as Record<string, unknown>[];
     const result = await this.pdfExportService.export(entities, columns, {
       ...dialogResult,
       title: this.resolveTitle(),
