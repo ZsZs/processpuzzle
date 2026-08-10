@@ -21,7 +21,7 @@ describe('provideAuthenticationService', () => {
     vi.restoreAllMocks();
   });
 
-  function setupTestBed(runtimeConfig: any) {
+  function setupTestBed(runtimeConfig: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     TestBed.configureTestingModule({
       providers: [{ provide: RUNTIME_CONFIGURATION, useValue: runtimeConfig }, provideAuthenticationService(runtimeConfig)],
     });
