@@ -73,9 +73,10 @@ class AppDefinitionPersistenceTest {
         AppPage page = reloaded.findPage("page-claims-list");
         assertThat(page).isNotNull();
         Widget container = page.widgets().getFirst();
-        assertThat(container.children()).hasSize(1);
-        Widget grid = container.children().getFirst();
+        assertThat(container.props()).containsEntry("childIds", List.of("widget-claims-grid"));
+        Widget grid = page.widgets().getLast();
         assertThat(grid.type()).isEqualTo("entity-grid");
+        assertThat(grid.placement()).isEqualTo(WidgetPlacement.REFERENCED);
         assertThat(grid.props()).containsEntry("entityName", "Claim");
         assertThat(grid.props().get("columns")).isEqualTo(List.of("claimNumber", "claimant"));
     }
@@ -203,9 +204,11 @@ class AppDefinitionPersistenceTest {
 
     private static AppGraph fullGraph() {
         Widget grid = new Widget("widget-claims-grid", "entity-grid",
-                Map.of("entityName", "Claim", "columns", List.of("claimNumber", "claimant")), List.of());
-        Widget tabs = new Widget("widget-tabs", "tab-group", Map.of(), List.of(grid));
-        AppPage page = new AppPage("page-claims-list", "Claims", "claims.page.list.title", List.of(tabs));
+                Map.of("entityName", "Claim", "columns", List.of("claimNumber", "claimant")),
+                WidgetPlacement.REFERENCED);
+        Widget tabs = new Widget("widget-tabs", "tab-group",
+                Map.of("childIds", List.of("widget-claims-grid")), WidgetPlacement.STANDALONE);
+        AppPage page = new AppPage("page-claims-list", "Claims", "claims.page.list.title", List.of(tabs, grid));
 
         NavNode leaf = new NavNode("nav-claims-new", "New Claim", null, "add_circle",
                 "page-claims-list", List.of("CLAIMS_ADJUSTER"), List.of());

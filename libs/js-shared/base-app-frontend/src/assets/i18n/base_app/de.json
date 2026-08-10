@@ -50,7 +50,7 @@
     "id": "Id",
     "type": "Typ",
     "props": "Eigenschaften",
-    "children": "Unterelemente"
+    "placement": "Platzierung"
   },
   "publish": {
     "button": "Veröffentlichen",

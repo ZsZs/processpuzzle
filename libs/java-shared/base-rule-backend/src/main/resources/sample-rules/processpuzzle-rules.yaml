@@ -116,8 +116,9 @@ rules:
     description: >-
       'entity-grid' and 'entity-form' resolve a BaseEntityDescriptor by props.entityName.
       The server verifies the name against the registry when one is given, but a missing
-      entityName is only noticed at render time, as an empty widget. Walks the whole widget
-      forest — page widgets and static header/footer widgets, children included.
+      entityName is only noticed at render time, as an empty widget. Covers every widget list —
+      page widgets and static header/footer widgets. No recursion: widgets do not nest, a
+      container places siblings by id through props.childIds, so each list is already complete.
     context: App Definition
     severity: ERROR
     enabled: true
@@ -127,10 +128,9 @@ rules:
     expression: >-
       ((check) => (entity.pages || []).every(p => check(p.widgets || [])) &&
       (entity.regions || []).every(r => check(r.widgets || [])))(
-      (widgets) => ((f, x) => f(f, x))((self, ws) => ws.every(w =>
-      (!(w.type === 'entity-grid' || w.type === 'entity-form') ||
-      (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')) &&
-      self(self, w.children || [])), widgets))
+      (widgets) => widgets.every(w =>
+      !(w.type === 'entity-grid' || w.type === 'entity-form') ||
+      (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')))
     message: An 'entity-grid' or 'entity-form' widget needs props.entityName.
     translocoId: rule.appDefinition.entityWidgetsDeclareAnEntityName
 

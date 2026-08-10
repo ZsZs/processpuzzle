@@ -8,6 +8,7 @@ import com.processpuzzle.app.domain.AppPage;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Widget;
+import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
 import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
@@ -148,7 +149,7 @@ class GetPageDefinitionTest {
     /** A group node whose only child navigates to a role-restricted page. */
     private static AppGraph nestedGraph() {
         AppPage page = new AppPage(HIDDEN_PAGE_ID, "Audit", null,
-                List.of(new Widget("widget-audit", "entity-grid", Map.of("entityName", "Claim"), List.of())));
+                List.of(new Widget("widget-audit", "entity-grid", Map.of("entityName", "Claim"), WidgetPlacement.STANDALONE)));
         NavNode child = new NavNode("nav-audit", "Audit", null, null, HIDDEN_PAGE_ID,
                 List.of("CLAIMS_AUDITOR"), List.of());
         NavNode group = new NavNode("nav-group", "Claims", null, null, null, List.of(), List.of(child));

@@ -7,6 +7,7 @@ import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
+import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
 import com.processpuzzle.app.model.AppLayout;
@@ -126,8 +127,12 @@ public class AppMapper {
                         widget.getId(),
                         widget.getType(),
                         widget.getProps(),
-                        toDomainWidgets(widget.getChildren())))
+                        toDomainPlacement(widget.getPlacement())))
                 .toList();
+    }
+
+    private WidgetPlacement toDomainPlacement(WidgetRef.PlacementEnum placement) {
+        return placement == null ? WidgetPlacement.STANDALONE : WidgetPlacement.valueOf(placement.name());
     }
 
     private List<AppPage> toDomainPages(List<PageDefinition> pages) {
@@ -280,7 +285,7 @@ public class AppMapper {
         return widgets.stream().map(widget -> {
             WidgetRef model = new WidgetRef(widget.id(), widget.type());
             model.setProps(widget.props());
-            model.setChildren(toModelWidgets(widget.children()));
+            model.setPlacement(WidgetRef.PlacementEnum.fromValue(widget.placement().name()));
             return model;
         }).toList();
     }
