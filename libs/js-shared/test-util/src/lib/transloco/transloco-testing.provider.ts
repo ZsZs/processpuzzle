@@ -1,8 +1,8 @@
 import { provideTransloco, Translation, TRANSLOCO_LOADER, TranslocoLoader, TranslocoLoaderData, TranslocoService, TranslocoTestingModule, TranslocoTestingOptions } from '@jsverse/transloco';
-import { Observable, of } from 'rxjs';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { EnvironmentProviders, inject, Injectable, InjectionToken, makeEnvironmentProviders } from '@angular/core';
 import { ComponentType } from '@angular/cdk/portal';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, TestModuleMetadata } from '@angular/core/testing';
 
 export const mockLanguageConfig = {
   LANGUAGE_CONFIGURATION: {
@@ -15,7 +15,7 @@ export const mockLanguageConfig = {
   },
 };
 
-export type TranslationsMap = { [lang: string]: Record<string, any> | { [scope: string]: Record<string, any> } };
+export type TranslationsMap = Record<string, Translation>;
 
 export interface TranslocoTestConfig {
   availableLanguages?: { code: string; flag: string; label: string }[];
@@ -26,14 +26,13 @@ export interface TranslocoTestConfig {
 
 export const TRANSLOCO_TEST_CONFIG = new InjectionToken<TranslocoTestConfig>('TRANSLOCO_TEST_CONFIG');
 
-type AnyMap = Record<string, any>;
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
-function pickNonObjects<T extends AnyMap>(obj: T): Partial<T> {
-  const out: Partial<T> = {};
-  for (const [k, v] of Object.entries(obj) as [keyof T, unknown][]) {
-    if (!isPlainObject(v)) out[k] = v as T[keyof T];
+function pickNonObjects(obj: Translation): Translation {
+  const out: Translation = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (!isPlainObject(value)) out[key] = value;
   }
   return out;
 }
@@ -44,7 +43,7 @@ export class TestTranslocoLoader implements TranslocoLoader {
   private readonly translations = this.config.translations;
   private readonly scope = this.config.scope;
 
-  getTranslation(lang = 'en', data?: TranslocoLoaderData): Observable<Translation> | Promise<Translation> {
+  getTranslation(lang = 'en', _data?: TranslocoLoaderData): Observable<Translation> {
     const langEntry = this.translations[lang];
     if (langEntry && typeof langEntry === 'object' && this.scope) {
       const scoped = (langEntry as Translation)[this.scope];
@@ -81,8 +80,8 @@ export async function setUpTranslocoTestBed<T>(
   componentType: ComponentType<T>,
   testConfig: TranslocoTestConfig,
   opts: {
-    imports?: any[];
-    providers?: any[];
+    imports?: TestModuleMetadata['imports'];
+    providers?: TestModuleMetadata['providers'];
     defaultLang?: string;
   } = {},
 ) {
@@ -91,7 +90,7 @@ export async function setUpTranslocoTestBed<T>(
       componentType,
       TranslocoTestingModule.forRoot({
         langs: testConfig.translations,
-        translocoConfig: { availableLangs: ['en', 'de'], defaultLang: 'en' },
+        translocoConfig: { availableLangs: ['en', 'de'], defaultLang: opts.defaultLang ?? 'en' },
         preloadLangs: true,
       }),
       ...(opts.imports ?? []),
@@ -110,7 +109,7 @@ export async function setUpTranslocoTestBed<T>(
     fixture: fixture,
     translocoService,
     setActiveLang: async (lang: string) => {
-      await translocoService.load(lang).toPromise?.();
+      await firstValueFrom(translocoService.load(lang));
       translocoService.setActiveLang(lang);
       fixture.detectChanges();
       await fixture.whenStable();
