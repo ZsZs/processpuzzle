@@ -17,6 +17,13 @@ export interface ArtifactUpload {
 }
 
 /**
+ * Every adapter posts an upload to `<base>/objects` — `ObjectStoreService` appends that path to whichever base
+ * URL the runtime configuration names — so one pattern covers `processpuzzle-store` and the Cloud Function
+ * alike. Longer paths (`/objects/:bucket/:id`) do not match, and the handler checks the method as well.
+ */
+const UPLOAD_ROUTE_GLOB = '**/objects';
+
+/**
  * The `fieldset` an `ARTIFACT` attribute renders: at most one row naming the stored file, and the selector that
  * uploads a new one.
  *
@@ -92,6 +99,15 @@ export class ArtifactFieldsetPO {
     return this.fieldset().getByRole('button', { name: 'Cancel', exact: true });
   }
 
+  /** The snackbar the control reports a failed store call through — an overlay, so page-level rather than in the fieldset. */
+  notification(): Locator {
+    return this.page.locator('mat-snack-bar-container');
+  }
+
+  private notificationDismissButton(): Locator {
+    return this.notification().getByRole('button', { name: 'Close', exact: true });
+  }
+
   // ── Actions ─────────────────────────────────────────────────────
 
   /**
@@ -133,6 +149,53 @@ export class ArtifactFieldsetPO {
   async cancelSelector(): Promise<void> {
     await this.cancelButton().click();
     await expect(this.fileInput()).toHaveCount(0, this.expectOptions());
+  }
+
+  /**
+   * Attempts an upload with the store made to refuse it, and asserts the control reports the failure instead of
+   * closing the selector as though the user had cancelled.
+   *
+   * Worth a step of its own because the two outcomes are otherwise indistinguishable on screen: an object store
+   * that is unreachable — a private Cloud Run service, a wrong base URL, an expired credential — leaves exactly
+   * the display a cancelled upload does, so nothing in the suite would fail on the difference. The refusal is
+   * injected in the browser, which is what lets it hold for both adapters without either being misconfigured.
+   *
+   * Leaves the fieldset as it was found: notification dismissed, selector closed, no artifact.
+   */
+  async assertUploadFailureIsReported(upload: ArtifactUpload): Promise<void> {
+    await this.page.route(UPLOAD_ROUTE_GLOB, async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      await route.fulfill({ status: 401, contentType: 'text/plain', body: 'e2e: the object store refused this upload' });
+    });
+
+    try {
+      await this.openSelector();
+      await this.chooseFile(upload);
+      await expect(this.uploadButton()).toBeEnabled(this.expectOptions());
+      await this.uploadButton().click();
+
+      await expect(this.notification()).toBeVisible(this.expectOptions());
+      // The selection survives, so the user can retry without picking the file again.
+      await expect(this.fileInput()).toBeVisible(this.expectOptions());
+      await expect(this.uploadButton()).toBeEnabled(this.expectOptions());
+      await this.assertNoArtifact();
+    } finally {
+      await this.page.unroute(UPLOAD_ROUTE_GLOB);
+    }
+
+    await this.dismissNotification();
+    await this.cancelSelector();
+  }
+
+  /**
+   * Closes the notification so it cannot overlay the controls beneath it — tolerantly, because the snackbar
+   * also dismisses itself on a timer and may well be gone already.
+   */
+  async dismissNotification(): Promise<void> {
+    await expect(async () => {
+      if (await this.notification().count()) await this.notificationDismissButton().click({ timeout: 1000 });
+      await expect(this.notification()).toHaveCount(0, { timeout: 1000 });
+    }).toPass({ timeout: this.options.expectTimeoutMs ?? 15_000 });
   }
 
   /**

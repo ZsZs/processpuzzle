@@ -1,4 +1,7 @@
 {
+  "artifact": {
+    "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Elem törlése?",
     "content": "Ez véglegesen törli a(z) „{{ artifactName }}\" elemet az objektumtárból.",

@@ -1,4 +1,7 @@
 {
+  "artifact": {
+    "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Artefakt löschen?",
     "content": "Dadurch wird „{{ artifactName }}\" dauerhaft aus dem Objektspeicher gelöscht.",

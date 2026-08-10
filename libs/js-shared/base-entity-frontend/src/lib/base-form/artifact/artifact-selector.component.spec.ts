@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslocoService } from '@jsverse/transloco';
 import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, type MockProxy } from 'vitest-mock-extended';
@@ -23,10 +25,16 @@ function emptyFileEvent(): Event {
   return { target: { files: { item: () => null } } } as unknown as Event;
 }
 
+let snackBar: { open: ReturnType<typeof vi.fn> };
+
 async function setupSelector(objectStore: MockProxy<ObjectStoreService>, initialState?: InitialState) {
   await TestBed.configureTestingModule({
     imports: [ArtifactSelectorComponent],
-    providers: [{ provide: ObjectStoreService, useValue: objectStore }],
+    providers: [
+      { provide: ObjectStoreService, useValue: objectStore },
+      { provide: MatSnackBar, useValue: snackBar },
+      { provide: TranslocoService, useValue: { translate: vi.fn((key: string) => key) } },
+    ],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(ArtifactSelectorComponent);
@@ -43,6 +51,7 @@ describe('ArtifactSelectorComponent', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     objectStore = mock<ObjectStoreService>();
+    snackBar = { open: vi.fn() };
   });
 
   it('renders the upload trigger while the selector is hidden', async () => {
@@ -177,20 +186,31 @@ describe('ArtifactSelectorComponent', () => {
     expect(component.isUploading()).toBe(false);
   });
 
-  it('returns to display mode without emitting when the upload fails', async () => {
+  it('reports the failure and keeps the selection for a retry when the upload fails', async () => {
     objectStore.uploadObject.mockReturnValue(throwError(() => new Error('boom')));
     const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
     const emit = vi.fn();
     component.artifactUploaded.subscribe(emit);
 
-    component.onFileSelected(fileSelectEvent(createFile('a.txt', 'text/plain')));
+    const file = createFile('a.txt', 'text/plain');
+    component.onFileSelected(fileSelectEvent(file));
     component.uploadSelectedFile();
 
+    expect(snackBar.open).toHaveBeenCalledOnce();
     expect(component.isUploading()).toBe(false);
-    expect(component.isSelectorVisible()).toBe(false);
-    expect(component.artifactName).toBe('');
-    expect(component.mimeType).toBe('');
+    // Left open with the selection intact — a silent close would be indistinguishable from a cancel.
+    expect(component.isSelectorVisible()).toBe(true);
+    expect(component.artifactName).toBe('a.txt');
+    expect(component.mimeType).toBe('text/plain');
+    expect(component.canUpload()).toBe(true);
     expect(emit).not.toHaveBeenCalled();
+
+    objectStore.uploadObject.mockReturnValue(of({ objectID: 'oid-retry', fileName: 'a.txt', mimeType: 'text/plain', bucketName: 'bucket-a' }));
+    component.uploadSelectedFile();
+
+    expect(objectStore.uploadObject).toHaveBeenLastCalledWith(file, 'a.txt', 'text/plain');
+    expect(emit).toHaveBeenCalledWith({ bucket: 'bucket-a', objectId: 'oid-retry', name: 'a.txt', mimeType: 'text/plain' });
+    expect(component.isSelectorVisible()).toBe(false);
   });
 
   it('resets to display mode when cancel() is called', async () => {
