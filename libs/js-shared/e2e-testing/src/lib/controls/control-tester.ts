@@ -57,15 +57,17 @@ function resolveSelectables(attr: BaseEntityAttrDescriptor): Array<Selectable> |
 /**
  * The `index`-th dropdown option's stored value, as the form data carries it — a string.
  *
- * `Selectable.value` is declared `unknown`, so this narrows rather than stringifies blindly: an object there
- * has no text form a `mat-option` could be matched by, and `String()` would turn it into `[object Object]` and
- * make the test fail somewhere far from the descriptor that caused it. Such a value is reported as absent, and
- * the caller falls back the same way it does for a dropdown with too few options.
+ * `Selectable.value` is declared `unknown`, so this admits only the primitives that have a text form a
+ * `mat-option` could be matched by, rather than stringifying blindly. Anything else — an object, a function, a
+ * symbol — would stringify into text no option carries (`[object Object]`, say) and make the test fail somewhere
+ * far from the descriptor that caused it. Such a value is reported as absent, and the caller falls back the same
+ * way it does for a dropdown with too few options.
  */
 function selectableValue(attr: BaseEntityAttrDescriptor, index: number): string | undefined {
   const value = resolveSelectables(attr)?.[index]?.value;
-  if (value === null || value === undefined || typeof value === 'object' || typeof value === 'function') return undefined;
-  return String(value);
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  return undefined;
 }
 
 export abstract class ControlTester {

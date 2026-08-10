@@ -107,6 +107,55 @@ describe('createControlTester', () => {
   });
 });
 
+describe('DROPDOWN option values', () => {
+  const dropdown = (fixture: Record<string, unknown>) => createControlTester(attr({ attrName: 'status', formControlType: 'DROPDOWN', ...fixture }));
+  const noContext = {} as never;
+
+  it('fills with the first option and updates to the second', () => {
+    const tester = dropdown({ selectables: [{ value: 'OPEN' }, { value: 'CLOSED' }] });
+
+    expect(tester.createValue(noContext)).toBe('OPEN');
+    expect(tester.updateValue(noContext, { status: 'OPEN' })).toBe('CLOSED');
+  });
+
+  it.each([
+    [1, '1'],
+    [true, 'true'],
+    [10n, '10'],
+  ])('carries a %s option value as the string the form data holds', (value, expected) => {
+    expect(dropdown({ selectables: [{ value }] }).createValue(noContext)).toBe(expected);
+  });
+
+  it.each([['an object', {}] as const, ['a function', () => 'x'] as const, ['null', null] as const, ['undefined', undefined] as const])(
+    'reports %s option value as absent rather than stringifying it into text no option carries',
+    (_label, value) => {
+      // Falling back is what a dropdown with too few options does, and it fails on the form rather than on a
+      // value like "[object Object]" that no mat-option could ever match.
+      const tester = dropdown({ selectables: [{ value }] });
+
+      expect(tester.createValue(noContext)).toBe('');
+      expect(tester.updateValue(noContext, { status: 'OPEN' })).toBe('OPEN');
+    },
+  );
+
+  it('resolves selectables declared as a factory', () => {
+    expect(dropdown({ selectables: () => [{ value: 'OPEN' }] }).createValue(noContext)).toBe('OPEN');
+  });
+
+  it('prefers the descriptor’s getSelectables over the raw property', () => {
+    const tester = dropdown({ selectables: [{ value: 'RAW' }], getSelectables: () => [{ value: 'RESOLVED' }] });
+
+    expect(tester.createValue(noContext)).toBe('RESOLVED');
+  });
+
+  it('has no value to offer when the descriptor declares no selectables', () => {
+    const tester = dropdown({});
+
+    expect(tester.createValue(noContext)).toBe('');
+    expect(tester.updateValue(noContext, {})).toBe('');
+  });
+});
+
 describe('ArtifactControlTester', () => {
   const artifactAttr = attr({ attrName: 'artifact', formControlType: 'ARTIFACT' });
 
