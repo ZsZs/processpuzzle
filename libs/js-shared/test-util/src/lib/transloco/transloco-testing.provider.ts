@@ -80,8 +80,8 @@ export async function setUpTranslocoTestBed<T>(
   componentType: ComponentType<T>,
   testConfig: TranslocoTestConfig,
   opts: {
-    imports?: TestModuleMetadata['imports'];
-    providers?: TestModuleMetadata['providers'];
+    imports?: NonNullable<TestModuleMetadata['imports']>;
+    providers?: NonNullable<TestModuleMetadata['providers']>;
     defaultLang?: string;
   } = {},
 ) {
