@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 
 /**
  * Where a {@link Widget} renders. Same enum and meaning as shared-api.yaml's canonical
- * {@code WidgetRef.placement}, and as base-artifact's block-level equivalent.
+ * {@code WidgetRef.placement}, and as base-document's block-level equivalent.
  *
  * <p>STANDALONE renders at the widget's own position in the enclosing flat {@code widgets}
  * list. REFERENCED means it does not render there — only where something else points at its

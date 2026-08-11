@@ -9,7 +9,6 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
   selector: 'app-content',
   templateUrl: './content.component.html',
   imports: [TranslocoDirective, MatCardsGridComponent],
-  styleUrls: ['./content.component.scss'],
 })
 export class ContentComponent {
   readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
@@ -71,11 +70,11 @@ export class ContentComponent {
     },
     {
       icon: 'article',
-      title: 'base-artifact_card_title',
-      subtitle: 'base-artifact_card_subtitle',
-      content: ['base-artifact_card_content', 'base-artifact_card_content_1', 'base-artifact_card_content_2', 'base-artifact_card_content_3'],
-      actions: [{ link: '/base-artifact', caption: 'base-artifact_card_button', colour: 'primary' }],
-      menuItems: [{ icon: 'open_in_new', label: 'base-artifact_card_button', link: '/base-artifact' }],
+      title: 'base-document_card_title',
+      subtitle: 'base-document_card_subtitle',
+      content: ['base-document_card_content', 'base-document_card_content_1', 'base-document_card_content_2', 'base-document_card_content_3'],
+      actions: [{ link: '/base-document', caption: 'base-document_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-document_card_button', link: '/base-document' }],
       translocoPrefix: 'home',
     },
     {

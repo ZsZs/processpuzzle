@@ -21,8 +21,8 @@ function mergeFirebaseApiKey(env: EnvironmentVariables, runtimeConfig: RuntimeCo
   let baseConfig: BaseConfiguration = runtimeConfig.BASE_CONFIGURATION;
   const apiKey = { apiKey: env.FIREBASE_API_KEY ?? '' };
   const firebaseConfig: FirebaseConfig = { ...baseConfig.FIREBASE_CONFIGURATION, ...apiKey };
-  baseConfig = { ...baseConfig, ...{ FIREBASE_CONFIGURATION: firebaseConfig } };
-  return { ...runtimeConfig, ...{ BASE_CONFIGURATION: baseConfig } };
+  baseConfig = { ...baseConfig, FIREBASE_CONFIGURATION: firebaseConfig };
+  return { ...runtimeConfig, BASE_CONFIGURATION: baseConfig };
 }
 
 async function bootstrap() {

@@ -17,9 +17,9 @@ export class EmbeddedComponent implements BaseEntity {
   embeddedDetails: EmbeddedDetail[];
 
   constructor(id?: string, name?: string, description?: string, embeddedDetails?: EmbeddedDetail[]) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'EmbeddedComponent';
-    this.description = description != undefined ? description : '';
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'EmbeddedComponent';
+    this.description = description ?? '';
     this.embeddedDetails = embeddedDetails ?? [];
   }
 }

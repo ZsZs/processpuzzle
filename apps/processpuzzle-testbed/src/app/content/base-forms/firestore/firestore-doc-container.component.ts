@@ -14,9 +14,9 @@ import { MarkdownComponent } from 'ngx-markdown';
   styles: ``,
 })
 export class FirestoreDocContainerComponent implements OnDestroy {
-  private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
+  private readonly containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
-  private store = inject(FirestoreDocStore);
+  private readonly store = inject(FirestoreDocStore);
   baseEntityListOptions: BaseEntityDescriptor;
 
   constructor() {

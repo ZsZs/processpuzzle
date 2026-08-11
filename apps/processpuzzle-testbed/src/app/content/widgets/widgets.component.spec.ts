@@ -29,10 +29,9 @@ describe('WidgetsComponent', () => {
     const componentInstance = fixture.componentInstance;
     const onLoadSpy = vi.spyOn(componentInstance, 'onLoad');
 
-    const mockEvent = 'Sample load event';
-    componentInstance.onLoad(mockEvent);
+    componentInstance.onLoad();
 
-    expect(onLoadSpy).toHaveBeenCalledWith(mockEvent);
+    expect(onLoadSpy).toHaveBeenCalled();
   });
 
   it('should call the onError method when triggered', async () => {
@@ -40,9 +39,8 @@ describe('WidgetsComponent', () => {
     const componentInstance = fixture.componentInstance;
     const onErrorSpy = vi.spyOn(componentInstance, 'onError');
 
-    const mockErrorEvent = new Error('Sample error');
-    componentInstance.onError(mockErrorEvent);
+    componentInstance.onError();
 
-    expect(onErrorSpy).toHaveBeenCalledWith(mockErrorEvent);
+    expect(onErrorSpy).toHaveBeenCalled();
   });
 });

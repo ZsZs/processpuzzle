@@ -3,7 +3,7 @@
     "PIPELINE_STAGE": "ci",
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
-    "ARTIFACT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {
       "projectId": "demo-processpuzzle-testbed",

@@ -176,10 +176,10 @@ export const appRoutes: Route[] = [
     ],
   },
   {
-    path: 'base-artifact',
-    title: 'ProcessPuzzle Testbed - Base Artifact',
-    data: { icon: 'article', menuTitle: 'base-artifact' },
-    loadComponent: () => import('./content/base-artifacts/base-artifacts.component').then((comp) => comp.BaseArtifactsComponent),
+    path: 'base-document',
+    title: 'ProcessPuzzle Testbed - Base Document',
+    data: { icon: 'article', menuTitle: 'base-document' },
+    loadComponent: () => import('./content/base-documents/base-documents.component').then((comp) => comp.BaseDocumentsComponent),
     providers: [LayoutService],
     children: [
       {
@@ -189,11 +189,11 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'overview',
-        loadComponent: () => import('./content/base-artifacts/overview.component').then((comp) => comp.OverviewComponent),
+        loadComponent: () => import('./content/base-documents/overview.component').then((comp) => comp.OverviewComponent),
       },
       {
         path: 'samples',
-        loadComponent: () => import('./content/base-artifacts/samples.component').then((comp) => comp.SamplesComponent),
+        loadComponent: () => import('./content/base-documents/samples.component').then((comp) => comp.SamplesComponent),
       },
     ],
   },

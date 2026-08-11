@@ -3,13 +3,16 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { TestEntityComponent } from './test-entity-component';
 
+type TestEntityComponentDto = Partial<TestEntityComponent>;
+
 @Injectable({ providedIn: 'root' })
 export class TestEntityComponentMapper implements BaseEntityMapper<TestEntityComponent> {
-  fromDto(dto: any): TestEntityComponent {
-    return new TestEntityComponent(dto.id, dto.name, dto.description, dto.testEntityId);
+  fromDto(dto: unknown): TestEntityComponent {
+    const source = dto as TestEntityComponentDto;
+    return new TestEntityComponent(source.id, source.name, source.description, source.testEntityId);
   }
 
-  toDto(entity: TestEntityComponent): any {
+  toDto(entity: TestEntityComponent): unknown {
     return entity;
   }
 }

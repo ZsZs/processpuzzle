@@ -1,0 +1,1585 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Document API (base-document)
+  description: >-
+    Structural API for wiki-style textual documents (project plans, design docs, reports)
+    composed of a flat, ordered list of blocks. Each block is either a TEXT block (static
+    or Tiptap-editable rich text) or a WIDGET block — a reference into the same widget
+    registry `base-app-api.yaml`'s WidgetRef resolves against. base-document is expected
+    to become base-app's primary content type: an app-shell route that renders a
+    document is modeled as an ordinary WidgetRef (e.g. `type: document-viewer`,
+    `props.slug`), the same way base-app already references `entityName`s into the
+    organization's entity registry. base-document never needs to know about routes,
+    regions or navigation — that stays entirely base-app's concern.
+
+    base-document-backend owns ONLY: document/block structure, widget component
+    references and their static props, declared input/output ports, and opaque Tiptap
+    JSON content. It has no knowledge of the runtime data flowing through a widget's
+    bindings — resolving inputBindings/outputBindings to actual values happens entirely
+    in the frontend runtime interpreter. base-document never queries base-entity,
+    evaluates rules, or fetches data itself; it only records that a wiring exists.
+
+    Multi-tenancy: every resource here is scoped by `{orgKey}`, exactly as in base-app-api.yaml:
+    tenant discriminator, public URL segment, and the scope every id is unique within.
+    `OrganizationKey` and `OrgKeyParam` in shared-api.yaml are canonical; verification
+    against the authenticated principal's `organization` claim (403 on mismatch) is a
+    server-side responsibility, not a decision the path segment makes on its own.
+
+    ## Identity and addressing
+
+    A document is identified by a server-assigned `id` (UUID), so it is handled like any
+    other ProcessPuzzle entity. Its public route key is a separate human-readable `slug`,
+    unique within the organization. The two are deliberately distinct: `/docs/getting-started`
+    is what a reader links to, while the UUID is what every internal reference uses and is
+    stable across a rename of the slug.
+
+    ## Multi-language
+
+    Metadata (title, subject, description, author, slug, ports, access) is
+    **language-invariant** — it is editor-facing. Only the block list is per locale, held
+    in a `DocumentTranslation` addressed by a BCP-47 tag. There is therefore ONE URL per
+    document; the reader's language is negotiated by the application (active language,
+    falling back to `sourceLocale`) rather than encoded in the URL, and the reader-facing
+    heading comes from the content's own first heading block, not from `title`.
+
+    ## Editorial publishing
+
+    Content is served to readers only after an explicit publish, and publishing is **per
+    locale** so one language can go live while another is still being translated. Each
+    translation carries a plain `revision` counter (bumped on every content write) and,
+    once published, a `publishedRevision` — `status` is derived by comparing them and is
+    never stored. `basedOnRevision` records which revision of the source locale a
+    translation was made from, so a stale translation is detectable.
+
+    Unlike base-app's AppDefinition, which keeps its draft and published snapshots side by
+    side in one record, a published translation here is its own resource. That is what makes
+    "a draft is never publicly readable" structural rather than conditional: the public read
+    path below reads published content only and has no access to a draft. It also survives
+    the port to a rules-based store such as Firestore, where authorization can only allow or
+    deny a whole record and cannot hide a draft field from an anonymous reader.
+
+    ## Public read
+
+    `GET /organizations/{orgKey}/content/{slug}` is the anonymous surface. It returns
+    published content only, through its own response schema that carries no draft, no role
+    lists and no audit fields — a separate operation rather than conditional field-stripping
+    on `getDocument`, so what an unauthenticated caller can observe is auditable by reading
+    one schema. A document is anonymously readable only when `isPublic` is true.
+
+  version: 0.2.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  # ── Documents ──────────────────────────────────────────────
+
+  /organizations/{orgKey}/documents:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listDocuments
+      summary: List the organization's documents
+      description: >-
+        Returns every invariant field, omitting only the per-locale block lists (each
+        translation is reduced to its locale, status and block count). The omission stops
+        there on purpose: the frontend's generic list feeds the edit form directly from the
+        listed object, so a field missing here is a field the next save writes back as null.
+        Blocks are safe to omit only because they are never edited through that form — they
+        are loaded and written through the translation sub-resources below.
+      tags:
+        - Base Document
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of documents (all metadata, no block content)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_DocumentSummary"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createDocument
+      summary: Create a new document
+      description: >-
+        `id` is server-assigned and must be absent. A draft translation is created for
+        `sourceLocale`, holding whatever blocks the request carried for it (an empty list
+        when it carried none). Nothing is published — see publishDocumentTranslation.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: The slug is already taken within this organization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/documents/{documentId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    get:
+      operationId: getDocument
+      summary: Get a document with its metadata, ports and one locale's block list
+      description: >-
+        `locale` selects which translation's blocks are returned; it defaults to the
+        document's `sourceLocale`. `draft` selects the editable content over the published
+        snapshot. Requesting a locale that has no translation is a 404 on the translation,
+        not on the document — use getDocumentTranslation when that distinction matters, or
+        listDocumentTranslations to discover which locales exist.
+      tags:
+        - Base Document
+      parameters:
+        - $ref: "#/components/parameters/LocaleQueryParam"
+        - $ref: "#/components/parameters/DraftParam"
+      responses:
+        "200":
+          description: Full document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateDocument
+      summary: Replace a document's metadata, ports and every translation's block list
+      description: >-
+        Whole-document replace, including the draft block list of every translation named
+        in the request. Translations the request does not name are left untouched;
+        removing one is removeDocumentTranslation. Published snapshots are never written
+        here — an edit lands in the draft and becomes visible only on publish. For
+        fine-grained content edits (a single Tiptap autosave) prefer the block-level
+        endpoints, which don't require resending the entire block list.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteDocument
+      summary: Delete a document with every translation, draft and published
+      tags:
+        - Base Document
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/documents/{documentId}/properties:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    put:
+      operationId: updateDocumentProperties
+      summary: Update the language-invariant metadata, ports and access without touching content
+      description: >-
+        What the generic Properties form saves. Structurally cannot carry block content —
+        DocumentPropertiesInput has no translations field — so it is safe to call regardless
+        of what block-level edits happened concurrently, and cannot silently revert a
+        Tiptap autosave. Editing metadata is not publishing: this endpoint takes effect for
+        readers immediately, because metadata is not part of the published content snapshot.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentPropertiesInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Translations ─────────────────────────────────────────────
+
+  /organizations/{orgKey}/documents/{documentId}/translations:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    get:
+      operationId: listDocumentTranslations
+      summary: List which locales this document exists in, and their publication state
+      description: >-
+        Block content is omitted — this is what the design UI's locale selector and the
+        list's per-locale status indicator read.
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: One entry per existing translation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentTranslationSummary"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: addDocumentTranslation
+      summary: Start a translation in a new locale
+      description: >-
+        Creates an unpublished draft for the locale. When the request carries no blocks,
+        the source locale's current draft blocks are copied as a starting point, which is
+        what a translator wants far more often than an empty page; `basedOnRevision` is set
+        to the source revision that was copied either way, so the translation can later be
+        reported as out of date.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentTranslationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: A translation already exists for this locale.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    get:
+      operationId: getDocumentTranslation
+      summary: Get one locale's block list
+      tags:
+        - Base Document
+      parameters:
+        - $ref: "#/components/parameters/DraftParam"
+      responses:
+        "200":
+          description: The translation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: >-
+            No translation exists for this locale, or `draft` was false and it has never
+            been published.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: removeDocumentTranslation
+      summary: Remove a locale entirely, draft and published snapshot alike
+      description: >-
+        Rejected with 409 for the document's `sourceLocale`: every other translation's
+        `basedOnRevision` refers to it, and a document with no source language has no
+        fallback for a reader whose language is missing. Change `sourceLocale` through
+        updateDocumentProperties first.
+      tags:
+        - Base Document
+      responses:
+        "204":
+          description: Removed
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Publishing ───────────────────────────────────────────────
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/publish:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    post:
+      operationId: publishDocumentTranslation
+      summary: Publish this locale's current draft
+      description: >-
+        Copies the draft block list into the published snapshot and sets
+        `publishedRevision` to the draft's current `revision`, leaving `revision` alone so
+        a freshly published translation does not immediately report unpublished edits. The
+        document's `publishedAt` is set on the first publish of any locale and never moves
+        afterwards — it is the document's publication date, while each translation carries
+        its own. Requires a publisher role; see readerRoles/editorRoles/publisherRoles.
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            The draft has validation problems of severity ERROR, so there is nothing
+            publishable. The problems themselves are not returned here — the schema stays
+            ErrorResponse so this operation keeps a single concrete response type, and the
+            frontend already calls validateDocument for live feedback, which is where the
+            detail belongs and where it is available before the publish is even offered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/unpublish:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    post:
+      operationId: unpublishDocumentTranslation
+      summary: Withdraw this locale from public view, keeping the draft
+      description: >-
+        Discards the published snapshot; the draft is untouched, so `status` derives back
+        to DRAFT and the content can be republished later. There is no stored "withdrawn"
+        state — the absence of a published snapshot *is* that state.
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/discard-draft:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    post:
+      operationId: discardDocumentDraft
+      summary: Revert this locale's draft to the published snapshot
+      description: >-
+        Abandons unpublished edits by copying the published blocks back over the draft and
+        setting `revision` to `publishedRevision`. Rejected with 409 when the translation
+        has never been published — there would be nothing to revert to, and silently
+        emptying the draft would destroy the only copy of the content.
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: Reverted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Blocks (fine-grained editing of one locale's draft) ───────
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/blocks:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    post:
+      operationId: appendDocumentBlock
+      summary: Append a new block to the end of this locale's draft
+      description: >-
+        Writes the draft and bumps its `revision`. Published content is unaffected until
+        publishDocumentTranslation. The same is true of every block operation below.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentBlockInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentBlock"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/blocks/reorder:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+    put:
+      operationId: reorderDocumentBlocks
+      summary: Reorder this locale's draft blocks
+      description: >-
+        Position is implicit in array order — there is no stored position field. The
+        submitted list must be a permutation of this translation's current block ids.
+        Reordering a REFERENCED widget block has no visible effect on its own — its
+        position is determined entirely by whatever points at its id (a widgetEmbed
+        node or a container widget's props.childIds), not by its array position.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderBlocksRequest"
+      responses:
+        "200":
+          description: New block order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentBlock"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/documents/{documentId}/translations/{locale}/blocks/{blockId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - $ref: "#/components/parameters/LocaleParam"
+      - $ref: "#/components/parameters/BlockIdParam"
+    put:
+      operationId: replaceDocumentBlock
+      summary: Replace a single block's content (e.g. Tiptap autosave, widget prop edit)
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentBlockInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentBlock"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteDocumentBlock
+      summary: >-
+        Remove a block. If it is a REFERENCED widget block still pointed at by a
+        widgetEmbed node or another widget's props.childIds, the backend rejects the
+        delete with 409 rather than leaving a dangling reference.
+      tags:
+        - Base Document
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Public read ──────────────────────────────────────────────
+
+  /organizations/{orgKey}/content/{slug}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/SlugParam"
+    get:
+      operationId: getPublishedContent
+      summary: Read a document's published content by slug
+      description: >-
+        The anonymous surface, reachable without authentication when the document's
+        `isPublic` is true; otherwise the reader roles apply as everywhere else. Serves
+        published snapshots only — a draft is not reachable through this operation at all,
+        which is a property of what it reads rather than a check it performs.
+
+        `locale` requests a language and defaults to the caller's negotiated one. When that
+        locale has no published snapshot the document's `sourceLocale` is served instead
+        and `isFallback` is true, so the UI can say so rather than appearing to have no
+        content; `availableLocales` lists what a language switcher may offer.
+      tags:
+        - Base Document
+      parameters:
+        - $ref: "#/components/parameters/LocaleQueryParam"
+      responses:
+        "200":
+          description: Published content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishedContent"
+        "403":
+          description: >-
+            The document is not public and the caller holds none of its reader roles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: >-
+            No document with this slug, or it has no published snapshot in any locale.
+            Deliberately indistinguishable from a document the caller may not see, so the
+            existence of unpublished or restricted content does not leak.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Validation, import, export ────────────────────────────────
+
+  /organizations/{orgKey}/documents/validate:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: validateDocument
+      summary: Validate a candidate document without persisting it
+      description: >-
+        Checks referential integrity within each translation: unique block ids; every
+        widgetEmbed node's blockId, and every WIDGET block's props.childIds entries,
+        resolving to a declared WIDGET block with placement REFERENCED (ERROR if not);
+        every inputBindings/outputBindings value naming a declared port (ERROR if not);
+        and a REFERENCED widget block pointed at by nothing at all (WARNING, not ERROR — a
+        widget can be declared before it's placed in the text or wired into a container).
+
+        Across translations it also reports a WIDGET block present in the source locale but
+        absent from another translation (WARNING). Deliberately not an ERROR: translators
+        legitimately split and merge text, so an identical block skeleton per locale is not
+        a constraint worth enforcing — but a widget silently missing from one language is
+        worth telling someone about.
+
+        Widget props are otherwise not validated here, same as base-app — each widget owns
+        its own props shape, including how it interprets childIds. Used by the frontend for
+        live feedback before writing, and by publishDocumentTranslation as its gate.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "200":
+          description: Validation outcome — 200 even when valid is false.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/documents/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: importDocuments
+      summary: Bulk-import documents from a YAML file
+      description: >-
+        Imported documents are scoped to {orgKey} regardless of any organization
+        reference in the file, so an export from one organization is directly
+        importable into another. Entries are matched on `slug`, not `id`: ids are
+        organization-local UUIDs, so importing by id into a second organization would
+        either collide or fabricate identity. Any `id` in the file is ignored.
+        All-or-nothing: if any entry fails validation, nothing is persisted.
+
+        Imported content lands in the draft of each translation. Publication state is not
+        importable — a fresh import of a document is unpublished, because publishing is an
+        editorial act in the target organization, not a property of the file.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/documents/{documentId}/export:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    get:
+      operationId: exportDocument
+      summary: Export a document, with every translation's draft content, as a YAML file
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: YAML file
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: >-
+        Tenant discriminator; also the public URL segment of the tenant's application.
+        See shared-api.yaml OrgKeyParam for the full contract. Must be verified against
+        the principal's `organization` claim — 403 on mismatch.
+    DocumentIdParam:
+      name: documentId
+      in: path
+      required: true
+      description: >-
+        Server-assigned document id, unique within the organization. A UUID rather than a
+        readable key so it is stable across a rename — the readable key is `slug`.
+      schema:
+        type: string
+        format: uuid
+    SlugParam:
+      name: slug
+      in: path
+      required: true
+      description: The document's human-readable route key, unique within the organization.
+      schema:
+        $ref: "#/components/schemas/DocumentSlug"
+    LocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag identifying one translation of the document.
+      schema:
+        $ref: "#/components/schemas/Locale"
+    LocaleQueryParam:
+      name: locale
+      in: query
+      required: false
+      description: >-
+        BCP-47 language tag. Defaults to the document's `sourceLocale` on the design
+        endpoints, and to the caller's negotiated language on the public read.
+      schema:
+        $ref: "#/components/schemas/Locale"
+    DraftParam:
+      name: draft
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: >-
+        When true, return the editable draft instead of the published snapshot. Requires
+        an editor role; there is no anonymous path that accepts this parameter at all.
+    BlockIdParam:
+      name: blockId
+      in: path
+      required: true
+      schema:
+        type: string
+    WhereParam:
+      name: where
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        RSQL filter expression, applied in addition to the organization filter. See
+        shared-api.yaml WhereParam for the operator reference. Filterable and sortable
+        properties are the invariant ones — `title`, `subject`, `author`, `slug`,
+        `sourceLocale`, `isPublic` and the timestamps — because those are real columns on
+        the document itself rather than fields of a translation.
+    OrderParam:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Sort criteria. Format `property,(asc|desc)`; multiple criteria separated by comma.
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: Zero-based page index for paged list endpoints.
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+      description: Number of elements per page for paged list endpoints.
+
+  responses:
+    BadRequest:
+      description: Validation error — the request payload or parameters are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: >-
+        The authenticated principal may not act on this organization or on this document —
+        typically an orgKey that does not match the principal's organization claim, or a
+        document whose reader/editor/publisher roles the principal does not hold.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource (e.g. stale version, dangling reference).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    # ── Document ──────────────────────────────────────────────
+
+    DocumentPropertiesInput:
+      type: object
+      required: [ slug, title, sourceLocale ]
+      description: >-
+        Every language-invariant field, minus `id` (already in the path) and minus
+        translations (structurally absent, not merely optional — see
+        updateDocumentProperties). Kept as its own schema rather than a DocumentInput
+        subset via allOf, so generated clients see a type that has no content field to
+        accidentally populate.
+      properties:
+        slug:
+          $ref: "#/components/schemas/DocumentSlug"
+        title:
+          type: string
+          description: >-
+            Editor-facing label, invariant across locales. Not the reader-facing heading —
+            that comes from the content's own first heading block, which is per locale.
+        subject:
+          type: string
+          nullable: true
+          description: >-
+            What the document is about, one line. Free text for now; a controlled
+            vocabulary would make this a reference whose label comes from the taxonomy's
+            own translations, which is why it is not an enum here.
+        description:
+          type: string
+          nullable: true
+          description: Abstract or summary. Distinct from `subject`, which is the topic.
+        author:
+          type: string
+          nullable: true
+          description: >-
+            Editable byline, defaulting to `createdBy` on create. Deliberately separate
+            from `createdBy`, which is immutable audit data — a corporate or ghost-written
+            byline is a normal thing to want and must not overwrite who typed it.
+        sourceLocale:
+          $ref: "#/components/schemas/Locale"
+        isPublic:
+          type: boolean
+          default: false
+          description: >-
+            When true, the published content is readable without authentication through
+            the public read operation. `readerRoles` is then irrelevant. Held on the
+            document as data rather than enforced only in code so a rules-based store can
+            evaluate it with no server in the path.
+        readerRoles:
+          type: array
+          description: >-
+            Roles allowed to read this document. Empty means any authenticated member of
+            the organization — the same convention as base-app's NavNode.roles. Ignored
+            when `isPublic` is true. Plain role names, with no referential link to a role
+            registry, so that sourcing them from base-workflow definitions later is a new
+            source for the picker rather than a schema change.
+          items:
+            type: string
+        editorRoles:
+          type: array
+          description: Roles allowed to edit metadata and draft content. Empty means any authenticated member.
+          items:
+            type: string
+        publisherRoles:
+          type: array
+          description: >-
+            Roles allowed to publish, unpublish and discard drafts. Empty falls back to
+            `editorRoles`: publishing is a distinct authority from editing, but a
+            deployment that does not care to separate them should not have to.
+          items:
+            type: string
+        inputPorts:
+          type: array
+          description: >-
+            Data this document expects to receive from its hosting context. Invariant:
+            ports are structural wiring, not content, so every translation's widget
+            bindings resolve against the same declarations.
+          items:
+            $ref: "#/components/schemas/DocumentInputPort"
+        outputPorts:
+          type: array
+          description: Data this document can emit to its hosting context.
+          items:
+            $ref: "#/components/schemas/DocumentOutputPort"
+
+    DocumentInput:
+      description: >-
+        A document with content — the properties above plus the block list of one or more
+        translations. Used by createDocument, updateDocument, validateDocument and the
+        YAML import/export format.
+      allOf:
+        - $ref: "#/components/schemas/DocumentPropertiesInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              nullable: true
+              description: >-
+                Absent on createDocument — the server assigns one — and ignored on import,
+                which matches on `slug`. Required only on updateDocument, where the path
+                supplies it anyway.
+            translations:
+              type: array
+              description: >-
+                Draft content per locale. On updateDocument, a translation named here has
+                its block list fully replaced; one not named is left untouched. Must
+                include an entry for `sourceLocale` on create.
+              items:
+                $ref: "#/components/schemas/DocumentTranslationInput"
+
+    Document:
+      description: >-
+        A persisted document. Carries the metadata, the ports, the publication state of
+        every locale, and the block list of whichever single locale was requested.
+      allOf:
+        - $ref: "#/components/schemas/DocumentPropertiesInput"
+        - type: object
+          required: [ id, orgKey ]
+          properties:
+            id:
+              type: string
+              format: uuid
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            translation:
+              allOf:
+                - $ref: "#/components/schemas/DocumentTranslation"
+              nullable: true
+              description: >-
+                The requested locale's content — draft or published according to `draft`.
+                Null when the document has no translation in the requested locale.
+            translations:
+              type: array
+              description: Publication state of every locale, without block content.
+              items:
+                $ref: "#/components/schemas/DocumentTranslationSummary"
+            lockVersion:
+              type: integer
+              format: int64
+              description: >-
+                Optimistic-locking token for the metadata record, incremented on every
+                successful write to it. Distinct from a translation's `revision`, which
+                counts content edits and is an editorial counter rather than a lock — the
+                two cannot be the same field, because publishing writes the row and would
+                otherwise bump the counter it just matched.
+            createdBy:
+              type: string
+              nullable: true
+              description: The principal that created the document. Immutable; see `author`.
+            createdAt:
+              type: string
+              format: date-time
+            publishedAt:
+              type: string
+              format: date-time
+              nullable: true
+              description: >-
+                When any locale of this document was first published; null until then, and
+                unchanged by later publishes. The document's publication date — each
+                translation reports its own.
+            updatedAt:
+              type: string
+              format: date-time
+
+    DocumentSummary:
+      description: >-
+        A document as it appears in a list: every invariant field, plus per-locale status,
+        minus block content. Intentionally the full metadata rather than a narrow
+        projection — see listDocuments.
+      allOf:
+        - $ref: "#/components/schemas/DocumentPropertiesInput"
+        - type: object
+          required: [ id, orgKey ]
+          properties:
+            id:
+              type: string
+              format: uuid
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            translations:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentTranslationSummary"
+            lockVersion:
+              type: integer
+              format: int64
+            createdBy:
+              type: string
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            publishedAt:
+              type: string
+              format: date-time
+              nullable: true
+            updatedAt:
+              type: string
+              format: date-time
+
+    # ── Translations ──────────────────────────────────────────
+
+    DocumentStatus:
+      type: string
+      description: >-
+        Derived from the revision counters, never stored: DRAFT when there is no published
+        snapshot; PUBLISHED when `publishedRevision` equals `revision`;
+        PUBLISHED_WITH_DRAFT_CHANGES when it is lower. A withdrawn translation reports
+        DRAFT again, because unpublishing discards the snapshot rather than setting a flag.
+      enum: [ DRAFT, PUBLISHED, PUBLISHED_WITH_DRAFT_CHANGES ]
+
+    DocumentTranslationInput:
+      type: object
+      required: [ locale ]
+      properties:
+        locale:
+          $ref: "#/components/schemas/Locale"
+        blocks:
+          type: array
+          nullable: true
+          description: >-
+            Ordered, flat list of blocks. Array order is the display order for
+            STANDALONE blocks. REFERENCED widget blocks have no position of their own —
+            they render wherever a widgetEmbed node (Tiptap) or a props.childIds entry
+            (container widget composition) points at their id. Whenever present it fully
+            replaces this translation's draft block list; a client that only wants to touch
+            metadata should call updateDocumentProperties instead, whose schema has no
+            content field at all, rather than relying on any omitted-vs-empty convention
+            here (Jackson can't tell those apart on a plain List without JsonNullable-
+            wrapping every nullable field in this contract, which is a bigger change than
+            this problem is worth). On addDocumentTranslation, omitting it copies the
+            source locale's blocks; an explicit empty array starts from a blank page.
+          items:
+            $ref: "#/components/schemas/DocumentBlockInput"
+
+    # Plain object rather than a single-element `allOf`: openapi-generator degrades a
+    # composed schema that has no parent $ref to `Object` when it appears as a response
+    # type, so every operation returning a translation would lose its type.
+    DocumentTranslation:
+      type: object
+      required: [ locale, status ]
+      description: One locale's content and its publication state.
+      properties:
+        locale:
+          $ref: "#/components/schemas/Locale"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentBlock"
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        revision:
+          type: integer
+          format: int64
+          description: >-
+            Plain counter over content edits, bumped on every draft write. Not an
+            optimistic-locking version — see Document.lockVersion.
+        publishedRevision:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The `revision` currently served to readers; null until first published.
+            Lower than `revision` means unpublished edits exist.
+        basedOnRevision:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The source locale's `revision` this translation was made from. Null for the
+            source locale itself. Compared against the source's current revision to
+            decide `outOfDate`.
+        outOfDate:
+          type: boolean
+          description: >-
+            True when the source locale has been edited since this translation was
+            made — `basedOnRevision` is behind the source's `revision`. Derived, and
+            the single most useful signal in a multi-language document.
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    DocumentTranslationSummary:
+      type: object
+      required: [ locale, status ]
+      description: A translation without its block content.
+      properties:
+        locale:
+          $ref: "#/components/schemas/Locale"
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        revision:
+          type: integer
+          format: int64
+        publishedRevision:
+          type: integer
+          format: int64
+          nullable: true
+        outOfDate:
+          type: boolean
+        blockCount:
+          type: integer
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Public read ───────────────────────────────────────────
+
+    PublishedContent:
+      type: object
+      required: [ slug, locale, blocks ]
+      description: >-
+        What an anonymous reader may observe. A separate schema from Document rather than a
+        filtered view of it: no draft, no role lists, no `createdBy`, no lockVersion, no
+        revision counters. Adding a field to Document therefore cannot widen the public
+        surface by accident.
+      properties:
+        slug:
+          $ref: "#/components/schemas/DocumentSlug"
+        title:
+          type: string
+          description: Included for the page's document title and meta tags, not as the rendered heading.
+        subject:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        author:
+          type: string
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        locale:
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+          description: The locale actually served, which may differ from the one requested.
+        isFallback:
+          type: boolean
+          default: false
+          description: >-
+            True when the requested locale had no published snapshot and `sourceLocale` was
+            served instead, so the UI can say the page is not yet available in that
+            language rather than silently showing another one.
+        availableLocales:
+          type: array
+          description: Locales with a published snapshot — what a language switcher may offer.
+          items:
+            $ref: "#/components/schemas/Locale"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentBlock"
+        inputPorts:
+          type: array
+          description: >-
+            Included because a widget block's inputBindings name these ports, so the
+            renderer cannot resolve a binding without them. Declarations only — no values.
+          items:
+            $ref: "#/components/schemas/DocumentInputPort"
+        outputPorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentOutputPort"
+
+    # ── Blocks ────────────────────────────────────────────────
+
+    BlockKind:
+      type: string
+      enum: [ TEXT, WIDGET ]
+
+    WidgetPlacement:
+      type: string
+      enum: [ STANDALONE, REFERENCED ]
+      default: STANDALONE
+      description: >-
+        WIDGET blocks only. Same enum and meaning as shared-api.yaml's canonical
+        WidgetRef.placement, applied here to a block instead of a standalone WidgetRef —
+        a DocumentBlock's type/props/placement together are structurally that shape. STANDALONE renders as its own full-width entry at its position
+        in the flat block list. REFERENCED means this widget does not render at its own
+        list position — it renders only where something else points at its block id:
+        either a container widget's props.childIds (composition, e.g. a tab group), or
+        a custom Tiptap "widgetEmbed" node (attrs.blockId) inside a TEXT block's content
+        (mid-paragraph embedding). A REFERENCED block with nothing pointing at it is a
+        orphaned widget — flagged by validateDocument as a WARNING, not an ERROR. TEXT
+        blocks are always effectively STANDALONE; the field is omitted for them.
+
+    DocumentBlockInput:
+      type: object
+      required: [ kind ]
+      description: >-
+        Flat shape shared by both block kinds — fields relevant to the other kind are
+        left null. Which fields are required for a given kind is validated server-side
+        (see validateDocument), not enforced structurally.
+      properties:
+        id:
+          type: string
+          nullable: true
+          description: >-
+            Absent on createDocument — the server assigns one. Must be supplied on
+            updateDocument and on import, because widgetEmbed nodes inside a TEXT block's
+            content and every container widget's props.childIds reference blocks by id, so
+            a whole-document write that dropped the ids would orphan every one of those
+            references. Block ids are scoped to one translation: two locales may reuse the
+            same id for corresponding blocks, and a reference never crosses a locale
+            boundary. DocumentReferentialIntegrityChecker currently only verifies that
+            referenced ids resolve, not that each block carries one — supplying no id on
+            update is an NPE there today rather than a clean 400.
+        kind:
+          $ref: "#/components/schemas/BlockKind"
+
+        # ── TEXT fields ──
+        editable:
+          type: boolean
+          nullable: true
+          default: true
+          description: >-
+            TEXT only. True = Tiptap-editable in the frontend; false = static, rendered
+            read-only (e.g. imported boilerplate, generated summary).
+        content:
+          $ref: "#/components/schemas/TiptapDocument"
+
+        # ── WIDGET fields ──
+        placement:
+          $ref: "#/components/schemas/WidgetPlacement"
+        type:
+          type: string
+          nullable: true
+          description: >-
+            WIDGET only. Registry key — the same key space as base-app's WidgetRef.type,
+            resolved against the shared frontend widget registry.
+          example: entity-grid
+        props:
+          type: object
+          nullable: true
+          description: >-
+            WIDGET only. Static configuration passed to the component as-is. Container
+            widget types (tab groups, split panels) express composition here, not
+            structurally: e.g. props.childIds: [block-tab-1, block-tab-2] references
+            other WIDGET blocks in this same document by id. Those referenced blocks
+            should have placement REFERENCED so they aren't also rendered at their own
+            position. Interpreting childIds is that widget type's own concern, the same
+            way any other prop is — base-document only validates that the ids resolve.
+          additionalProperties: true
+        inputBindings:
+          type: object
+          nullable: true
+          description: >-
+            WIDGET only. Maps a widget prop name to one of this document's inputPort
+            names. Keys are widget prop names, values are inputPort names. Resolving
+            the bound value at runtime is entirely a frontend concern.
+          additionalProperties:
+            type: string
+        outputBindings:
+          type: object
+          nullable: true
+          description: >-
+            WIDGET only. Maps a widget's emitted event name to one of this document's
+            outputPort names. Keys are widget event names, values are outputPort names.
+          additionalProperties:
+            type: string
+
+    DocumentBlock:
+      allOf:
+        - $ref: "#/components/schemas/DocumentBlockInput"
+        - type: object
+          required: [ id ]
+          properties:
+            id:
+              type: string
+
+    TiptapDocument:
+      type: object
+      description: >-
+        Opaque ProseMirror/Tiptap JSON document. base-document-backend stores and
+        returns this verbatim — it is never parsed or interpreted server-side, with one
+        narrow exception: on write, the backend scans for widgetEmbed nodes to verify
+        every referenced blockId exists in this translation's blocks as a REFERENCED
+        WIDGET block, purely for referential integrity (the same check also applied to
+        every WIDGET block's props.childIds).
+      # No `additionalProperties: true` — that is already the OpenAPI 3.0 default for an object
+      # with no declared properties, and spelling it out makes openapi-generator treat this as a
+      # free-form map and emit a `new HashMap<>()` initializer, which does not compile against the
+      # JsonNode this schema is mapped to (see the document schemaMappings in api-contracts/pom.xml).
+
+    ReorderBlocksRequest:
+      type: object
+      required: [ blockIds ]
+      properties:
+        blockIds:
+          type: array
+          items:
+            type: string
+
+    # ── Ports ─────────────────────────────────────────────────
+
+    PortType:
+      type: string
+      enum: [ STRING, NUMBER, BOOLEAN, DATE, OBJECT, ARRAY, ENTITY_REF, ENTITY_COLLECTION ]
+      description: >-
+        Lightweight type tag for UI hinting and basic validation only.
+        ENTITY_REF: a single base-entity instance (entityType + entityId).
+        ENTITY_COLLECTION: a filtered set of base-entity instances (entityType + RSQL
+        filter), e.g. for a table/grid widget bound to "all open claims." Neither
+        variant requires base-document to know the entity's schema. entityType values
+        resolve within the enclosing organization, same as base-app's WidgetRef props.
+
+    AttributeVisibility:
+      type: object
+      description: >-
+        Attribute projection applied to entity data carried through an ENTITY_REF or
+        ENTITY_COLLECTION port. base-document stores this as a plain allow/deny list —
+        it does not validate attribute names against base-entity's schema. Unrelated to
+        the document-level access control in DocumentPropertiesInput: this projects the
+        data flowing through a port, not who may read the document.
+      properties:
+        mode:
+          type: string
+          enum: [ ALL, INCLUDE, EXCLUDE ]
+          default: ALL
+        attributes:
+          type: array
+          items:
+            type: string
+          description: Used when mode is INCLUDE or EXCLUDE; ignored when mode is ALL.
+
+    DocumentInputPort:
+      type: object
+      required: [ name, type ]
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PortType"
+        required:
+          type: boolean
+          default: false
+        description:
+          type: string
+          nullable: true
+        defaultValue:
+          nullable: true
+          description: Used when required is false and the hosting context supplies nothing.
+        entityType:
+          type: string
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. The base-entity type this port carries.
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. Optional default projection.
+        defaultRsqlFilter:
+          type: string
+          nullable: true
+          description: >-
+            ENTITY_COLLECTION only. Fallback filter used when the hosting context binds
+            this port without supplying its own filter.
+
+    DocumentOutputPort:
+      type: object
+      required: [ name, type ]
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PortType"
+        description:
+          type: string
+          nullable: true
+        entityType:
+          type: string
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only.
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. Projection applied to emitted data.
+
+    # ── Validation ────────────────────────────────────────────
+
+    ValidationProblem:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        path:
+          type: string
+          description: >-
+            JSON-pointer-like location of the offending node, relative to the content of the
+            translation named by `locale` — not to the request body. Validation runs per
+            locale against one block list, so a path that walked the whole payload would
+            describe a shape the checker never sees.
+          example: /blocks/3/inputBindings/entityId
+        errorId:
+          type: string
+          example: document.validation.dangling-widget-embed
+        errorText:
+          type: string
+          example: "widgetEmbed references block 'widget-chart-1', which is not a REFERENCED WIDGET block in this translation."
+        severity:
+          $ref: "#/components/schemas/Severity"
+        locale:
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+          nullable: true
+          description: >-
+            The translation the problem was found in; null for a problem about the document
+            as a whole.
+
+    Severity:
+      type: string
+      description: >-
+        Canonical definition in base-rule-api.yaml — a local duplicate for the same
+        reason as the other shared shapes below.
+      enum: [ ERROR, WARNING, INFO ]
+      default: ERROR
+
+    ValidationResult:
+      type: object
+      required: [ valid, problems ]
+      properties:
+        valid:
+          type: boolean
+          description: True when problems contains no entry of severity ERROR.
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationProblem"
+
+    # ── Paging / shared ───────────────────────────────────────
+
+    PageOf_DocumentSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentSummary"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    DocumentSlug:
+      type: string
+      description: >-
+        URL-safe, human-readable route key, unique within the organization. Invariant
+        across locales: there is one URL per document and the language is negotiated by
+        the application, so a slug never carries a language tag.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 100
+      example: getting-started
+
+    Locale:
+      type: string
+      description: >-
+        BCP-47 language tag — a bare language (`en`, `hu`) or language-region (`en-GB`).
+        Matched case-sensitively in the canonical form the pattern describes, so one
+        translation cannot be addressed by two spellings.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    # Shared shapes — kept as local duplicates because the openapi-generator
+    # swagger-parser cannot resolve cross-file $refs on Windows. schemaMappings
+    # in the pom.xml redirects the generated classes to com.processpuzzle.shared.model.
+    OrganizationKey:
+      type: string
+      description: >-
+        URL-safe tenant slug; canonical definition in shared-api.yaml. Reserved platform
+        segments must be rejected at provisioning even when they match the pattern.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string
+
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Request, type Response } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import type { ArtifactControlTester } from '../controls/control-tester';
 import { formControlTestId } from '../selectors/test-id';
@@ -22,6 +22,53 @@ export interface ArtifactUpload {
  * alike. Longer paths (`/objects/:bucket/:id`) do not match, and the handler checks the method as well.
  */
 const UPLOAD_ROUTE_GLOB = '**/objects';
+
+/** The same endpoint as {@link UPLOAD_ROUTE_GLOB}, as a matcher for the URL an observed request was sent to. */
+const UPLOAD_URL_PATTERN = /\/objects(?:\?.*)?$/;
+
+/** How much of a refused upload's response body is worth quoting in a failure message. */
+const BODY_EXCERPT_LENGTH = 200;
+
+/**
+ * Collects whatever went wrong with an upload, so that a row which never appears can say *why*. Registered
+ * around the click that uploads and read back if the wait for the row then fails.
+ */
+interface RefusedUploadWatch {
+  /** What was seen, plus whatever the application is saying on screen — `undefined` if there is nothing to add. */
+  diagnose(): Promise<string | undefined>;
+  dispose(): void;
+}
+
+/** `POST …/objects → 401 Unauthorized: Invalid IAP credentials: empty token` — status, and the body that names the cause. */
+async function describeRefusal(response: Response): Promise<string> {
+  const body = await response
+    .text()
+    .then((text) => text.replace(/\s+/g, ' ').trim())
+    .catch(() => '');
+  const excerpt = body.length > BODY_EXCERPT_LENGTH ? `${body.slice(0, BODY_EXCERPT_LENGTH)}…` : body;
+  return `POST ${response.url()} → ${response.status()} ${response.statusText()}${excerpt ? `: ${excerpt}` : ''}`;
+}
+
+/**
+ * An upload that got no response at all — the case a status code cannot describe: a CORS pre-flight the backend's
+ * allow-list does not cover, a refused connection, an unresolvable host. The browser reports these to the
+ * application as HTTP status `0`, which is how they reach the same snackbar a genuine rejection does.
+ */
+function describeNetworkFailure(request: Request): string {
+  return `POST ${request.url()} → no response: ${request.failure()?.errorText ?? 'unknown network failure'}`;
+}
+
+/**
+ * Prepends `diagnosis` to a Playwright assertion failure, keeping the locator, the call log and the code frame
+ * the original carries — the reporter prints `stack`, so a message left un-prefixed there would not be shown.
+ */
+function annotate(error: unknown, diagnosis: string): unknown {
+  if (!(error instanceof Error)) return error;
+  const prefix = `${diagnosis}\n\n`;
+  error.message = prefix + error.message;
+  if (error.stack) error.stack = prefix + error.stack;
+  return error;
+}
 
 /**
  * The `fieldset` an `ARTIFACT` attribute renders: at most one row naming the stored file, and the selector that
@@ -151,13 +198,29 @@ export class ArtifactFieldsetPO {
     await this.fileInput().setInputFiles({ name: upload.name, mimeType: upload.mimeType, buffer: upload.buffer });
   }
 
-  /** Opens the selector, picks the file, uploads it, and waits for the row the upload produces. */
+  /**
+   * Opens the selector, picks the file, uploads it, and waits for the row the upload produces.
+   *
+   * The wait is watched rather than plain because a refused upload and a broken control look the same from here —
+   * no row — and the bare assertion reports only `element(s) not found`, which sent a reader of a CI failure to
+   * the Playwright trace to find a `401` from the object store that the browser had known all along. A refusal is
+   * now named in the failure message instead.
+   */
   async uploadFile(upload: ArtifactUpload): Promise<void> {
     await this.openSelector();
     await this.chooseFile(upload);
     await expect(this.uploadButton()).toBeEnabled(this.expectOptions());
-    await this.uploadButton().click();
-    await this.assertArtifact(upload.name);
+
+    const watch = this.watchForRefusedUpload();
+    try {
+      await this.uploadButton().click();
+      await this.assertArtifact(upload.name);
+    } catch (error) {
+      const diagnosis = await watch.diagnose();
+      throw diagnosis === undefined ? error : annotate(error, diagnosis);
+    } finally {
+      watch.dispose();
+    }
   }
 
   async cancelSelector(): Promise<void> {
@@ -199,6 +262,63 @@ export class ArtifactFieldsetPO {
 
     await this.dismissNotification();
     await this.cancelSelector();
+  }
+
+  /**
+   * Starts collecting refused uploads. The responses are captured as they arrive rather than looked for after the
+   * failure, because the snackbar reporting them lives five seconds and the wait for the row outlasts it — read
+   * late, the screen has often gone quiet again and the screenshot shows an ordinary form.
+   */
+  private watchForRefusedUpload(): RefusedUploadWatch {
+    const isUpload = (request: Request) => request.method() === 'POST' && UPLOAD_URL_PATTERN.test(request.url());
+    const refused: Response[] = [];
+    const failed: Request[] = [];
+
+    const onResponse = (response: Response) => {
+      if (isUpload(response.request()) && response.status() >= 400) refused.push(response);
+    };
+    const onRequestFailed = (request: Request) => {
+      if (isUpload(request)) failed.push(request);
+    };
+    this.page.on('response', onResponse);
+    this.page.on('requestfailed', onRequestFailed);
+
+    return {
+      dispose: () => {
+        this.page.off('response', onResponse);
+        this.page.off('requestfailed', onRequestFailed);
+      },
+      diagnose: async () => {
+        const problems = [...(await Promise.all(refused.map(describeRefusal))), ...failed.map(describeNetworkFailure)];
+        const reported = await this.notificationText();
+        if (!problems.length && reported === undefined) return undefined;
+
+        return [
+          problems.length
+            ? `The upload did not succeed: ${problems.join('; ')}`
+            : 'No upload was refused and none failed to reach the store, so suspect the control rather than the backend.',
+          reported === undefined ? undefined : `The application reported: "${reported}"`,
+        ]
+          .filter((line) => line !== undefined)
+          .join('\n');
+      },
+    };
+  }
+
+  /**
+   * Whatever the snackbars are saying, the central error handler's included — its message names the HTTP status,
+   * the control's names the failed upload, and either is worth quoting. `allInnerTexts` rather than a locator
+   * assertion so that two open snackbars are not a strict-mode violation while the first animates out.
+   */
+  private async notificationText(): Promise<string | undefined> {
+    const texts = await this.anyNotification()
+      .allInnerTexts()
+      .catch(() => [] as string[]);
+    const joined = texts
+      .map((text) => text.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join(' | ');
+    return joined || undefined;
   }
 
   /**

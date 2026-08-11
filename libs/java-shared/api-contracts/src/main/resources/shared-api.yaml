@@ -139,7 +139,7 @@ components:
         A reference to a registered widget, resolved via the frontend widget registry at
         render time and instantiated with `NgComponentOutlet` / `ViewContainerRef`. Shared
         by base-app-api.yaml (PageDefinition/RegionDefinition.widgets) and
-        base-artifact-api.yaml (a WIDGET-kind ArtifactBlock's type/props/placement fields
+        base-document-api.yaml (a WIDGET-kind DocumentBlock's type/props/placement fields
         mirror this shape) so a widget tree renders identically wherever it's hosted. Not
         recursive: container widget types (tab groups, split panels) compose via
         props.childIds referencing sibling ids, not via nested WidgetRefs — see placement.
@@ -172,7 +172,7 @@ components:
           description: >-
             STANDALONE renders at this widget's own position in the enclosing flat list.
             REFERENCED means it renders only where something else points at its id — a
-            container widget's props.childIds, or (base-artifact only) a Tiptap
+            container widget's props.childIds, or (base-document only) a Tiptap
             widgetEmbed node. A REFERENCED widget nothing points at is an orphan, flagged
             by validation as a warning, not an error.
 

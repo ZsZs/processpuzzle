@@ -3,7 +3,7 @@ import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor,
 import { TestEnum } from './test-entity';
 
 const selectables = Object.keys(TestEnum)
-  .filter((key: any) => parseInt(key) >= 0)
+  .filter((key) => Number.parseInt(key, 10) >= 0)
   .map((key: string) => ({ key: key, value: TestEnum[key as keyof typeof TestEnum] }));
 
 function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {

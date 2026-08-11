@@ -6,16 +6,15 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-utils',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './util.component.html',
-  styleUrl: './util.component.scss',
 })
 export class UtilsComponent {
   // region event handling methods
-  onLoad($event: string) {
-    // TODO: find out the use of this event
+  onLoad(): void {
+    return;
   }
 
-  onError($event: string | Error) {
-    // TODO: find out the use of this event
+  onError(): void {
+    return;
   }
 
   // endregion

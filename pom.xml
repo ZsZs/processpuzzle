@@ -45,7 +45,7 @@
         <module>apps/processpuzzle-backend</module>
         <module>libs/java-shared/api-contracts</module>
         <module>libs/java-shared/base-app-backend</module>
-        <module>libs/java-shared/base-artifact-backend</module>
+        <module>libs/java-shared/base-document-backend</module>
         <module>libs/java-shared/base-entity-backend</module>
         <module>libs/java-shared/base-workflow-backend</module>
         <module>libs/java-shared/base-rule-backend</module>
@@ -77,7 +77,7 @@
              flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
         <api-contracts.version>1.1.0</api-contracts.version>
         <base-app-backend.version>1.1.0</base-app-backend.version>
-        <base-artifact-backend.version>0.1.0</base-artifact-backend.version>
+        <base-document-backend.version>0.1.0</base-document-backend.version>
         <base-entity-backend.version>0.1.0</base-entity-backend.version>
         <base-rule-backend.version>1.1.0</base-rule-backend.version>
         <base-state-backend.version>1.0.5</base-state-backend.version>
@@ -113,8 +113,8 @@
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>base-artifact-backend</artifactId>
-                <version>${base-artifact-backend.version}</version>
+                <artifactId>base-document-backend</artifactId>
+                <version>${base-document-backend.version}</version>
             </dependency>
 
             <dependency>

@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+// Sass requires every @use to precede any other rule, so the plain-CSS import cannot be hoisted above them.
 @use '@angular/material' as mat;
 @use 'ngx-sharebuttons/themes/default';
 @import 'material-symbols/outlined.css';
@@ -51,7 +52,6 @@ body {
 }
 
 @function cmyk($c, $m, $y, $k) {
-
   $c: calc($c / 100);
   $m: calc($m / 100);
   $y: calc($y / 100);
@@ -62,5 +62,4 @@ body {
   $b: 255 * (1 - $y) * (1 - $k);
 
   @return rgb($r, $g, $b);
-
 }

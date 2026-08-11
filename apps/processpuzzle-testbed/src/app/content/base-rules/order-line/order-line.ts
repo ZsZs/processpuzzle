@@ -10,10 +10,10 @@ export class OrderLine implements BaseEntity {
   orderId: string;
 
   constructor(id?: string, productName?: string, quantity?: number, unitPrice?: number, orderId?: string) {
-    this.id = id ? id : uuidv4();
-    this.productName = productName != undefined ? productName : 'Product';
-    this.quantity = quantity != undefined ? quantity : 1;
-    this.unitPrice = unitPrice != undefined ? unitPrice : 0;
+    this.id = id ?? uuidv4();
+    this.productName = productName ?? 'Product';
+    this.quantity = quantity ?? 1;
+    this.unitPrice = unitPrice ?? 0;
     this.orderId = orderId ?? '';
   }
 }
