@@ -99,8 +99,22 @@ export class ArtifactFieldsetPO {
     return this.fieldset().getByRole('button', { name: 'Cancel', exact: true });
   }
 
-  /** The snackbar the control reports a failed store call through — an overlay, so page-level rather than in the fieldset. */
+  /**
+   * The snackbar the control reports a failed store call through — an overlay, so page-level rather than in the
+   * fieldset.
+   *
+   * Scoped away from `.error-snackbar` because a refused upload raises two snackbars, not one:
+   * `centralHttpErrorInterceptor` reports the response through `CentralErrorHandler` (panel class
+   * `error-snackbar`) and the control reports the upload. `MatSnackBar` shows one at a time, so opening the
+   * second dismisses the first — but the first stays in the DOM for the length of its exit animation, and an
+   * unscoped `mat-snack-bar-container` is a strict-mode violation for as long as that window lasts.
+   */
   notification(): Locator {
+    return this.page.locator('mat-snack-bar-container:not(.error-snackbar)');
+  }
+
+  /** Every snackbar, the central error handler's included — what has to be gone before the controls beneath are clickable. */
+  private anyNotification(): Locator {
     return this.page.locator('mat-snack-bar-container');
   }
 
@@ -190,11 +204,14 @@ export class ArtifactFieldsetPO {
   /**
    * Closes the notification so it cannot overlay the controls beneath it — tolerantly, because the snackbar
    * also dismisses itself on a timer and may well be gone already.
+   *
+   * Waits on every snackbar rather than only the control's: the central error handler's carries no dismiss
+   * action, so it goes on its own, and it overlays the controls just the same until it does.
    */
   async dismissNotification(): Promise<void> {
     await expect(async () => {
       if (await this.notification().count()) await this.notificationDismissButton().click({ timeout: 1000 });
-      await expect(this.notification()).toHaveCount(0, { timeout: 1000 });
+      await expect(this.anyNotification()).toHaveCount(0, { timeout: 1000 });
     }).toPass({ timeout: this.options.expectTimeoutMs ?? 15_000 });
   }
 
