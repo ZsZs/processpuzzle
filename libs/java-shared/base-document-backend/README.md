@@ -39,6 +39,14 @@ Identity itself is supplied by the deploying application through the `DocumentAc
 
 A reader who may not see a document gets **404, not 403** — telling them it exists is what a restricted document is meant to withhold. 403 is reserved for a caller who demonstrably knows it exists, such as an editor without publish rights.
 
+## Sample documents
+
+`SampleDocumentLoader` imports the bundled samples on `ApplicationReadyEvent` when `base-document.loadSamples` is true (it is, in `processpuzzle-backend`). The owning organization is the part of the file name before `-documents.yaml`, so `sample-documents/processpuzzle-testbed-documents.yaml` lands in `processpuzzle-testbed` — the same convention `SampleRuleLoader` and `DefaultAppLoader` use, and the reason seeding another tenant is adding a file rather than changing configuration. The scan is `classpath*:`, so a host application can contribute its own `sample-documents/` directory.
+
+The file is the YAML import format unchanged, so it also feeds `POST /organizations/{orgKey}/documents:import`. It carries two documents at opposite ends of the editorial lifecycle: `platform-overview` — complete, two locales, declared ports, one standalone and one embedded widget, public — and `testbed-release-notes`, a prose-only sketch that is neither public nor published.
+
+**The loader publishes; the import deliberately does not.** A public document is not actually readable anonymously until a snapshot exists, so a sample marked `isPublic` would be a 404 on the public path and demonstrate the opposite of what it is for. The loader therefore publishes every locale of a public sample — but only for documents *that run created*, decided before the import writes anything. Restarting against a persistent database cannot re-publish what an editor unpublished or overwrite a snapshot they have since edited, and nothing is published from a file that imported with errors.
+
 ## Technologies
 
 - **Java 25**
@@ -51,7 +59,7 @@ A reader who may not see a document gets **404, not 403** — telling them it ex
 
 Under construction. The domain, the use cases and the inbound adapter are in place, and the REST surface is generated from `base-document-api.yaml` in `api-contracts` — 21 operations covering CRUD, per-locale translations, per-locale publishing, block-level editing, validation, YAML import/export and the anonymous public read.
 
-Not yet done: the frontend half is still on the previous shape (`@processpuzzle/base-document` needs the metadata form, a Content tab and a persistence-agnostic content port), there is no sample data loader, and no `DocumentAccessPolicy` implementation exists anywhere yet — so role checks currently permit everything, by design, until an identity provider is wired into the backend.
+Not yet done: the frontend half is still on the previous shape (`@processpuzzle/base-document` needs the metadata form, a Content tab and a persistence-agnostic content port), and no `DocumentAccessPolicy` implementation exists anywhere yet — so role checks currently permit everything, by design, until an identity provider is wired into the backend.
 
 ## Development
 

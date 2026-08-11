@@ -1,0 +1,345 @@
+# Sample documents of the 'processpuzzle-testbed' organization — the tenant behind
+# apps/processpuzzle-testbed.
+#
+# SampleDocumentLoader imports this file on startup when `base-document.loadSamples` is true. The
+# owning organization is the part of the file name before `-documents.yaml`, exactly as
+# `<orgKey>-rules.yaml` works in base-rule and `<orgKey>-apps.yaml` in base-app, so seeding another
+# tenant is adding another file rather than a configuration change.
+#
+# Everything under `documents` is precisely the YAML import format, so this file also feeds
+# POST /organizations/{orgKey}/documents:import unchanged.
+#
+# The two entries are deliberately at opposite ends of the editorial lifecycle:
+#
+#   platform-overview     complete, multi-locale, ported, widget-bearing and public — the loader
+#                         publishes it on first import, so an anonymous reader gets content
+#   testbed-release-notes a sketch: one locale, prose only, not public and never published, so the
+#                         Documents list has something that is genuinely still being written
+
+documents:
+  # ── 1. Full-fledged, publicly readable ──────────────────────────────────────────────────
+  - slug: platform-overview
+    title: ProcessPuzzle Platform Overview
+    subject: Platform architecture
+    description: >-
+      What the five base features are, how metadata drives them and how they integrate through
+      events. Exercises every part of the document model: two locales, declared ports, a
+      standalone widget bound to a port, and a widget embedded mid-document.
+    author: ProcessPuzzle Team
+    sourceLocale: en
+    isPublic: true
+    # isPublic decides who may *read*; editing and publishing never take that rung, so both role
+    # lists still apply. Publisher is separate from editor to exercise the distinction.
+    editorRoles:
+      - documentation-editor
+    publisherRoles:
+      - documentation-publisher
+
+    # Ports are language-invariant: both locales' widget bindings resolve against these.
+    inputPorts:
+      - name: highlightedOrder
+        type: ENTITY_REF
+        entityType: Order
+        required: false
+        description: The single order the hosting context wants called out inside the prose.
+      - name: openOrders
+        type: ENTITY_COLLECTION
+        entityType: Order
+        required: false
+        description: Orders to list; the host may narrow the filter, otherwise the default applies.
+        defaultRsqlFilter: "status!=CANCELLED"
+        attributeVisibility:
+          mode: INCLUDE
+          attributes: [orderNumber, customerName, status, total]
+    outputPorts:
+      - name: selectedOrder
+        type: ENTITY_REF
+        entityType: Order
+        description: Emitted when a reader picks a row in the orders grid.
+
+    translations:
+      - locale: en
+        blocks:
+          - id: intro
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 1 }
+                  content:
+                    - type: text
+                      text: ProcessPuzzle Platform Overview
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        ProcessPuzzle is a Low-Code platform for content management and business
+                        workflow based applications. It is organized around five features —
+                        base-entity, base-rule, base-state, base-workflow and base-app — each of
+                        which has a frontend and a backend half.
+
+          - id: metadata-driven
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 2 }
+                  content:
+                    - type: text
+                      text: Metadata-driven by design
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        No feature hard-codes what your application is about. Each one interprets a
+                        declarative description at run-time, which is why extension is configuration
+                        rather than code.
+                - type: bulletList
+                  content:
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: A descriptor yields a form, a table, an RSQL search and a PDF export.
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: A business rule is a database row, not a release.
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: The modelling tool and the runtime read the same metadata, so they cannot drift.
+
+          - id: event-flow
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 2 }
+                  content:
+                    - type: text
+                      text: Event-driven feature integration
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Features publish and observe domain events instead of calling one another, so
+                        a rule guards a change whether it came from a user in a form or from a
+                        workflow step. The order below is the one the host handed us:
+                # widgetEmbed is a block-level atom node, so it sits among the doc's top-level
+                # nodes and names the REFERENCED widget block declared right after this one.
+                - type: widgetEmbed
+                  attrs:
+                    blockId: order-highlight
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        The event stream doubles as the history of why an entity reached its current
+                        state.
+
+          # REFERENCED: renders where the widgetEmbed above points at it, not at its own position.
+          - id: order-highlight
+            kind: WIDGET
+            placement: REFERENCED
+            type: entity-form
+            props:
+              entityName: Order
+              readOnly: true
+            inputBindings:
+              entity: highlightedOrder
+
+          # STANDALONE: renders as its own full-width entry, here at the end of the prose.
+          - id: open-orders
+            kind: WIDGET
+            placement: STANDALONE
+            type: entity-grid
+            props:
+              entityName: Order
+              columns: [orderNumber, customerName, status, total]
+            inputBindings:
+              rows: openOrders
+            outputBindings:
+              rowSelected: selectedOrder
+
+          - id: colophon
+            kind: TEXT
+            # Static boilerplate: rendered read-only rather than offered to the Tiptap editor.
+            editable: false
+            content:
+              type: doc
+              content:
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Sample content shipped with base-document-backend. Licensed under the
+                        Apache License 2.0.
+
+      # The Hungarian translation deliberately merges two English sections into one: translators
+      # legitimately restructure prose, and only widget blocks are expected to correspond
+      # one-to-one across locales — which is why both widget ids reappear here unchanged.
+      - locale: hu
+        blocks:
+          - id: intro
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 1 }
+                  content:
+                    - type: text
+                      text: A ProcessPuzzle platform áttekintése
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        A ProcessPuzzle egy Low-Code platform tartalomkezelő és üzleti folyamatokra
+                        épülő alkalmazásokhoz. Öt funkció köré szerveződik — base-entity, base-rule,
+                        base-state, base-workflow és base-app —, amelyek mindegyike metaadatokat
+                        értelmez futásidőben.
+
+          - id: event-flow
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 2 }
+                  content:
+                    - type: text
+                      text: Eseményvezérelt együttműködés
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        A funkciók események közzétételével és megfigyelésével működnek együtt, nem
+                        egymás hívásával. Az alábbi rendelést a befoglaló környezet adta át:
+                - type: widgetEmbed
+                  attrs:
+                    blockId: order-highlight
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Az eseményfolyam egyben annak a története is, hogy egy entitás miért került a
+                        jelenlegi állapotába.
+
+          - id: order-highlight
+            kind: WIDGET
+            placement: REFERENCED
+            type: entity-form
+            props:
+              entityName: Order
+              readOnly: true
+            inputBindings:
+              entity: highlightedOrder
+
+          - id: open-orders
+            kind: WIDGET
+            placement: STANDALONE
+            type: entity-grid
+            props:
+              entityName: Order
+              columns: [orderNumber, customerName, status, total]
+            inputBindings:
+              rows: openOrders
+            outputBindings:
+              rowSelected: selectedOrder
+
+          - id: colophon
+            kind: TEXT
+            editable: false
+            content:
+              type: doc
+              content:
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        A base-document-backend mintatartalma. Apache License 2.0 alatt.
+
+  # ── 2. A sketch, still in editorial state ───────────────────────────────────────────────
+  - slug: testbed-release-notes
+    title: Testbed Release Notes (sketch)
+    subject: Release notes
+    description: >-
+      An outline someone started and has not finished. Not public and never published, so the
+      testbed has a document that exercises the unpublished-draft path — the Documents list shows
+      it, the public read does not serve it.
+    author: ProcessPuzzle Team
+    sourceLocale: en
+    isPublic: false
+    # Non-public, so readerRoles applies: reviewers may see the draft, editors may change it.
+    readerRoles:
+      - documentation-reviewer
+    editorRoles:
+      - documentation-editor
+    # No ports and no widgets: a sketch is prose first, wiring later.
+
+    translations:
+      - locale: en
+        blocks:
+          - id: heading
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 1 }
+                  content:
+                    - type: text
+                      text: Release notes — draft
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Rough notes for the next testbed release. Nothing here is final and none of
+                        it has been reviewed yet.
+
+          - id: todo
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 2 }
+                  content:
+                    - type: text
+                      text: Still to write
+                - type: bulletList
+                  content:
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: What changed in the entity-driven screens.
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: Which sample rules were added, and why each one exists.
+                    - type: listItem
+                      content:
+                        - type: paragraph
+                          content:
+                            - type: text
+                              text: Upgrade notes — is anything here breaking?
