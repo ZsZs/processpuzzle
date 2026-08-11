@@ -12,6 +12,23 @@ export enum TestEnum {
   VALUE_FIVE,
 }
 
+export interface TestEntityOptions {
+  id?: string;
+  name?: string;
+  description?: string;
+  boolean?: boolean;
+  number?: number;
+  date?: Date;
+  lookup?: string;
+  enumValue?: TestEnum;
+  artifact?: ArtifactAttr;
+  tags?: string[];
+  components?: string[];
+  embeddedComponents?: EmbeddedComponent[];
+  relatedEntities?: RelatedEntity[];
+  additionalProperties?: Record<string, string>;
+}
+
 export class TestEntity implements BaseEntity {
   readonly id: string;
   name: string;
@@ -30,35 +47,20 @@ export class TestEntity implements BaseEntity {
   relatedEntities: Array<RelatedEntity> | undefined;
   additionalProperties: Record<string, string> | undefined;
 
-  constructor(
-    id?: string,
-    name?: string,
-    description?: string,
-    boolean?: boolean,
-    number?: number,
-    date?: Date,
-    lookup?: string,
-    enumValue?: TestEnum,
-    artifact?: ArtifactAttr,
-    tags?: Array<string>,
-    components?: Array<string>,
-    embeddedComponents?: Array<EmbeddedComponent>,
-    relatedEntities?: Array<RelatedEntity>,
-    additionalProperties?: Record<string, string>,
-  ) {
-    this.id = id ?? uuidv4();
-    this.name = name ?? 'TestEntity';
-    this.description = description ?? '';
-    this.boolean = boolean ?? true;
-    this.number = number ?? 1;
-    this.date = date ?? new Date();
-    this.lookup = lookup ?? '';
-    this.enumValue = enumValue ?? TestEnum.VALUE_ONE;
-    this.artifact = artifact;
-    this.tags = tags;
-    this.components = components;
-    this.embeddedComponents = embeddedComponents;
-    this.relatedEntities = relatedEntities;
-    this.additionalProperties = additionalProperties;
+  constructor(options: TestEntityOptions = {}) {
+    this.id = options.id ?? uuidv4();
+    this.name = options.name ?? 'TestEntity';
+    this.description = options.description ?? '';
+    this.boolean = options.boolean ?? true;
+    this.number = options.number ?? 1;
+    this.date = options.date ?? new Date();
+    this.lookup = options.lookup ?? '';
+    this.enumValue = options.enumValue ?? TestEnum.VALUE_ONE;
+    this.artifact = options.artifact;
+    this.tags = options.tags;
+    this.components = options.components;
+    this.embeddedComponents = options.embeddedComponents;
+    this.relatedEntities = options.relatedEntities;
+    this.additionalProperties = options.additionalProperties;
   }
 }

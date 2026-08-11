@@ -9,7 +9,6 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
   selector: 'app-content',
   templateUrl: './content.component.html',
   imports: [TranslocoDirective, MatCardsGridComponent],
-  styleUrls: ['./content.component.scss'],
 })
 export class ContentComponent {
   readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;

@@ -6,7 +6,6 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-widgets',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './widgets.component.html',
-  styleUrl: './widgets.component.scss',
 })
 export class WidgetsComponent {
   // region event handling methods

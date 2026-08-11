@@ -6,7 +6,6 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-test-utils',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './test-util.component.html',
-  styleUrl: './test-util.component.css',
 })
 export class TestUtilsComponent {
   // region event handling methods

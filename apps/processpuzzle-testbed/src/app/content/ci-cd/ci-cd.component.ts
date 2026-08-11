@@ -6,7 +6,6 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-ci-cd',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './ci-cd.component.html',
-  styleUrl: './ci-cd.component.scss',
 })
 export class CiCdComponent {
   // region event handling methods

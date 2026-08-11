@@ -1,6 +1,6 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { ArtifactAttr, BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
-import { TestEntity, TestEnum } from './test-entity';
+import { TestEntity, TestEntityOptions, TestEnum } from './test-entity';
 import { inject, Injectable } from '@angular/core';
 import { EmbeddedComponentMapper } from '../embedded-component/embedded-component.mapper';
 import { RelatedEntityMapper } from '../related-entity/related-entity.mapper';
@@ -29,24 +29,25 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
 
   fromDto(dto: unknown): TestEntity {
     const source = dto as TestEntityDto;
-    return new TestEntity(
-      source.id,
-      source.name,
-      source.description,
-      source.boolean,
-      source.number,
-      source.date,
-      source.lookup,
-      source.enumValue === undefined ? undefined : getEnumKeyByValue<TestEnum>(TestEnum, source.enumValue),
-      source.artifact,
-      source.tags,
+    const options: TestEntityOptions = {
+      id: source.id,
+      name: source.name,
+      description: source.description,
+      boolean: source.boolean,
+      number: source.number,
+      date: source.date,
+      lookup: source.lookup,
+      enumValue: source.enumValue === undefined ? undefined : getEnumKeyByValue<TestEnum>(TestEnum, source.enumValue),
+      artifact: source.artifact,
+      tags: source.tags,
       // Components are referenced by id: their payload belongs to the `test-entity-component` endpoint.
-      source.components?.map((component) => (typeof component === 'string' ? component : component.id)),
+      components: source.components?.map((component) => (typeof component === 'string' ? component : component.id)).filter((id): id is string => id !== undefined),
       // Embedded components arrive whole, inside this payload.
-      source.embeddedComponents?.map((embeddedComponent) => this.embeddedComponentMapper.fromDto(embeddedComponent)),
-      source.relatedEntities?.map((relatedEntity) => this.relatedEntityMapper.fromDto(relatedEntity)),
-      source.additionalProperties,
-    );
+      embeddedComponents: source.embeddedComponents?.map((embeddedComponent) => this.embeddedComponentMapper.fromDto(embeddedComponent)),
+      relatedEntities: source.relatedEntities?.map((relatedEntity) => this.relatedEntityMapper.fromDto(relatedEntity)),
+      additionalProperties: source.additionalProperties,
+    };
+    return new TestEntity(options);
   }
 
   toDto(entity: TestEntity): unknown {

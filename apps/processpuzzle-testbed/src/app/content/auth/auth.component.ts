@@ -6,7 +6,6 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-auth',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './auth.component.html',
-  styleUrl: './auth.component.scss',
 })
 export class AuthComponent {
   // region event handling methods
