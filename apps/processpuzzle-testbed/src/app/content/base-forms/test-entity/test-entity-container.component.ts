@@ -16,7 +16,7 @@ import { MarkdownComponent } from 'ngx-markdown';
 export class TestEntityContainerComponent implements OnDestroy {
   private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
-  private store = inject(TestEntityStore);
+  private readonly store = inject(TestEntityStore);
   baseEntityDescriptor: BaseEntityDescriptor;
 
   constructor() {

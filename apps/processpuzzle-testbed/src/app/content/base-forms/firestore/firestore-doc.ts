@@ -8,8 +8,8 @@ export class FirestoreDoc implements BaseEntity {
   description: string;
 
   constructor(id?: string, name?: string, description?: string) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'TestEntity';
-    this.description = description != undefined ? description : '';
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'TestEntity';
+    this.description = description ?? '';
   }
 }

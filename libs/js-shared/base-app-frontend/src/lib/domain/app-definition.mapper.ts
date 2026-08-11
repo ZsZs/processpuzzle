@@ -2,6 +2,23 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, LayoutPreset, MaterialTheme, SidenavMode, ThemeDefinition } from './app-definition';
 
+interface AppDefinitionDto {
+  id?: string;
+  name?: string;
+  translocoId?: string;
+  description?: string;
+  theme?: ThemeDefinition;
+  layout?: LayoutDefinition;
+  regions?: AppDefinition['regions'];
+  pages?: AppDefinition['pages'];
+  orgKey?: string;
+  status?: AppDefinitionStatus;
+  version?: number;
+  publishedVersion?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /**
  * Translates between the `AppDefinition` DTO of `base-app-api.yaml` and the flat entity the
  * generated form works with.
@@ -15,14 +32,15 @@ import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, Layo
  */
 @Injectable({ providedIn: 'root' })
 export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
-  fromDto(dto: any): AppDefinition {
-    const theme: ThemeDefinition | undefined = dto?.theme;
-    const layout: LayoutDefinition | undefined = dto?.layout;
+  fromDto(dto: unknown): AppDefinition {
+    const source = dto as AppDefinitionDto;
+    const theme = source.theme;
+    const layout = source.layout;
     return new AppDefinition({
-      id: dto?.id,
-      name: dto?.name,
-      translocoId: dto?.translocoId,
-      description: dto?.description,
+      id: source.id,
+      name: source.name,
+      translocoId: source.translocoId,
+      description: source.description,
       materialTheme: theme?.materialTheme as MaterialTheme | undefined,
       colorScheme: theme?.colorScheme as ColorScheme | undefined,
       tokenOverrides: theme?.tokenOverrides,
@@ -35,18 +53,18 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       contentMaxWidth: layout?.contentMaxWidth,
       theme,
       layout,
-      regions: dto?.regions,
-      pages: dto?.pages,
-      orgKey: dto?.orgKey,
-      status: dto?.status as AppDefinitionStatus | undefined,
-      version: dto?.version,
-      publishedVersion: dto?.publishedVersion,
-      createdAt: dto?.createdAt,
-      updatedAt: dto?.updatedAt,
+      regions: source.regions,
+      pages: source.pages,
+      orgKey: source.orgKey,
+      status: source.status,
+      version: source.version,
+      publishedVersion: source.publishedVersion,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
     });
   }
 
-  toDto(entity: AppDefinition): any {
+  toDto(entity: AppDefinition): unknown {
     // Listed field by field rather than spread, so the flattened controls never reach the payload.
     return {
       id: entity.id,

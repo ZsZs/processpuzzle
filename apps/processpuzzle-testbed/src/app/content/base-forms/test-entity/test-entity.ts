@@ -21,7 +21,7 @@ export class TestEntity implements BaseEntity {
   date;
   lookup: string;
   enumValue: TestEnum;
-  artifact?: ArtifactAttr | undefined;
+  artifact?: ArtifactAttr;
   tags: Array<string> | undefined;
   /** Ids of the `Test Entity Component`s owned by this entity; the components themselves live in their own table. */
   components: Array<string> | undefined;
@@ -46,14 +46,14 @@ export class TestEntity implements BaseEntity {
     relatedEntities?: Array<RelatedEntity>,
     additionalProperties?: Record<string, string>,
   ) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'TestEntity';
-    this.description = description != undefined ? description : '';
-    this.boolean = boolean != undefined ? boolean : true;
-    this.number = number != undefined ? number : 1;
-    this.date = date != undefined ? date : new Date();
-    this.lookup = lookup != undefined ? lookup : '';
-    this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'TestEntity';
+    this.description = description ?? '';
+    this.boolean = boolean ?? true;
+    this.number = number ?? 1;
+    this.date = date ?? new Date();
+    this.lookup = lookup ?? '';
+    this.enumValue = enumValue ?? TestEnum.VALUE_ONE;
     this.artifact = artifact;
     this.tags = tags;
     this.components = components;

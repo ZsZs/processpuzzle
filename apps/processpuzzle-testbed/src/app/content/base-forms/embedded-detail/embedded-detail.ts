@@ -13,8 +13,8 @@ export class EmbeddedDetail implements BaseEntity {
   note: string;
 
   constructor(id?: string, name?: string, note?: string) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'EmbeddedDetail';
-    this.note = note != undefined ? note : '';
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'EmbeddedDetail';
+    this.note = note ?? '';
   }
 }

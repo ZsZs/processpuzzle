@@ -3,13 +3,16 @@ import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { Injectable } from '@angular/core';
 import { Order } from './order';
 
+type OrderDto = Partial<Order>;
+
 @Injectable({ providedIn: 'root' })
 export class OrderMapper implements BaseEntityMapper<Order> {
-  fromDto(dto: any): Order {
-    return new Order(dto.id, dto.orderNumber, dto.customerName, dto.status, dto.total, dto.shippingAddress, dto.lineItems);
+  fromDto(dto: unknown): Order {
+    const source = dto as OrderDto;
+    return new Order(source.id, source.orderNumber, source.customerName, source.status, source.total, source.shippingAddress, source.lineItems);
   }
 
-  toDto(entity: Order): any {
+  toDto(entity: Order): unknown {
     return entity;
   }
 }

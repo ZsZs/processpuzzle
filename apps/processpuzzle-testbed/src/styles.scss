@@ -51,7 +51,6 @@ body {
 }
 
 @function cmyk($c, $m, $y, $k) {
-
   $c: calc($c / 100);
   $m: calc($m / 100);
   $y: calc($y / 100);
@@ -62,5 +61,4 @@ body {
   $b: 255 * (1 - $y) * (1 - $k);
 
   @return rgb($r, $g, $b);
-
 }

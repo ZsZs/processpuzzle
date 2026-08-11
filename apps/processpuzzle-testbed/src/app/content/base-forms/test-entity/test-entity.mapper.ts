@@ -1,38 +1,56 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
 import { TestEntity, TestEnum } from './test-entity';
 import { inject, Injectable } from '@angular/core';
 import { EmbeddedComponentMapper } from '../embedded-component/embedded-component.mapper';
 import { RelatedEntityMapper } from '../related-entity/related-entity.mapper';
+
+interface TestEntityDto {
+  id?: string;
+  name?: string;
+  description?: string;
+  boolean?: boolean;
+  number?: number;
+  date?: Date;
+  lookup?: string;
+  enumValue?: number;
+  artifact?: ArtifactAttr;
+  tags?: string[];
+  components?: Array<string | { id?: string }>;
+  embeddedComponents?: unknown[];
+  relatedEntities?: unknown[];
+  additionalProperties?: Record<string, string>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
   private readonly embeddedComponentMapper = inject(EmbeddedComponentMapper);
   private readonly relatedEntityMapper = inject(RelatedEntityMapper);
 
-  fromDto(dto: any): TestEntity {
+  fromDto(dto: unknown): TestEntity {
+    const source = dto as TestEntityDto;
     return new TestEntity(
-      dto.id,
-      dto.name,
-      dto.description,
-      dto.boolean,
-      dto.number,
-      dto.date,
-      dto.lookup,
-      getEnumKeyByValue<TestEnum>(TestEnum, dto.enumValue),
-      dto.artifact,
-      dto.tags,
+      source.id,
+      source.name,
+      source.description,
+      source.boolean,
+      source.number,
+      source.date,
+      source.lookup,
+      source.enumValue === undefined ? undefined : getEnumKeyByValue<TestEnum>(TestEnum, source.enumValue),
+      source.artifact,
+      source.tags,
       // Components are referenced by id: their payload belongs to the `test-entity-component` endpoint.
-      dto.components?.map((component: any) => (typeof component === 'string' ? component : component?.id)),
+      source.components?.map((component) => (typeof component === 'string' ? component : component.id)),
       // Embedded components arrive whole, inside this payload.
-      dto.embeddedComponents?.map((embeddedComponent: any) => this.embeddedComponentMapper.fromDto(embeddedComponent)),
-      dto.relatedEntities?.map((relatedEntity: any) => this.relatedEntityMapper.fromDto(relatedEntity)),
-      dto.additionalProperties,
+      source.embeddedComponents?.map((embeddedComponent) => this.embeddedComponentMapper.fromDto(embeddedComponent)),
+      source.relatedEntities?.map((relatedEntity) => this.relatedEntityMapper.fromDto(relatedEntity)),
+      source.additionalProperties,
     );
   }
 
-  toDto(entity: TestEntity): any {
-    const dto = { ...entity } as any;
+  toDto(entity: TestEntity): unknown {
+    const dto = { ...entity };
 
     return { ...dto, enumValue: getEnumValueByKey<TestEnum>(TestEnum, dto.enumValue) };
   }

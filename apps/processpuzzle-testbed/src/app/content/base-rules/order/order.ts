@@ -29,11 +29,11 @@ export class Order implements BaseEntity {
     shippingAddress?: string,
     lineItems?: Array<OrderLine>,
   ) {
-    this.id = id ? id : uuidv4();
-    this.orderNumber = orderNumber != undefined ? orderNumber : 'ORD-000';
-    this.customerName = customerName != undefined ? customerName : '';
-    this.status = status != undefined ? status : OrderStatus.DRAFT;
-    this.total = total != undefined ? total : 0;
+    this.id = id ?? uuidv4();
+    this.orderNumber = orderNumber ?? 'ORD-000';
+    this.customerName = customerName ?? '';
+    this.status = status ?? OrderStatus.DRAFT;
+    this.total = total ?? 0;
     this.shippingAddress = shippingAddress;
     this.lineItems = lineItems;
   }

@@ -17,7 +17,7 @@ export class TestEntityComponentContainerComponent implements OnDestroy {
   private containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   private store = inject(TestEntityComponentStore);
-  entityDescriptor: BaseEntityDescriptor;
+  readonly entityDescriptor: BaseEntityDescriptor;
 
   constructor() {
     this.entityDescriptor = createTestEntityComponentDescriptor();
