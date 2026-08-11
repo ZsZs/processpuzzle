@@ -260,6 +260,85 @@ class SampleDocumentLoaderTest {
         verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
     }
 
+    @Test
+    void loadSamples_publishesNothingFromAFileWithNoDocumentsKeyAtAll() throws IOException {
+        givenFiles(new NamedByteArrayResource("testbed-documents.yaml", "documents:\n"));
+        givenImportSucceeds();
+
+        loader.loadSamples();
+
+        verify(importDocuments).execute(eq("testbed"), any(InputStream.class));
+        verify(publishTranslation, never()).execute(any(), any(), any());
+    }
+
+    @Test
+    void loadSamples_ignoresAnEntryWithoutASlugWhenDecidingWhatAlreadyExisted() throws IOException {
+        // The import will reject the file for it; asking the repository about a null slug beforehand
+        // would fail first, and for a worse reason.
+        givenFiles(new NamedByteArrayResource("testbed-documents.yaml", """
+                documents:
+                  - title: No slug
+                    sourceLocale: en
+                    isPublic: true
+                """));
+        givenImportSucceeds();
+
+        loader.loadSamples();
+
+        verify(repository, never()).existsByOrgKeyAndSlug(any(), any());
+        verify(publishTranslation, never()).execute(any(), any(), any());
+    }
+
+    @Test
+    void loadSamples_saysSoWhenADocumentReportedImportedCannotBeFound() throws IOException {
+        givenFiles(new NamedByteArrayResource("testbed-documents.yaml", PUBLIC_DOCUMENT));
+        givenImportSucceeds();
+        when(repository.existsByOrgKeyAndSlug("testbed", "platform-overview")).thenReturn(false);
+        when(repository.findByOrgKeyAndSlug("testbed", "platform-overview")).thenReturn(Optional.empty());
+
+        loader.loadSamples();
+
+        verify(publishTranslation, never()).execute(any(), any(), any());
+    }
+
+    @Test
+    void loadSamples_publishesTheSourceLocaleEvenWhenTheFileNamesNoTranslationForIt() throws IOException {
+        // ImportDocuments materializes the source locale as an empty draft either way, so there is
+        // always something to publish.
+        givenFiles(new NamedByteArrayResource("testbed-documents.yaml", """
+                documents:
+                  - slug: platform-overview
+                    title: Platform overview
+                    sourceLocale: en
+                    isPublic: true
+                    translations:
+                """));
+        givenImportSucceeds();
+        givenDocumentImported("testbed", "platform-overview", "doc-1");
+
+        loader.loadSamples();
+
+        verify(publishTranslation).execute("testbed", "doc-1", "en");
+    }
+
+    @Test
+    void loadSamples_hasNoLocaleToPublishWhenTheEntryNamesNone() throws IOException {
+        givenFiles(new NamedByteArrayResource("testbed-documents.yaml", """
+                documents:
+                  - slug: platform-overview
+                    title: Platform overview
+                    isPublic: true
+                    translations:
+                      - blocks: []
+                """));
+        givenImportSucceeds();
+        givenDocumentImported("testbed", "platform-overview", "doc-1");
+
+        loader.loadSamples();
+
+        verify(publishTranslation, never()).execute(any(), any(), any());
+    }
+
     private void givenFiles(Resource... resources) throws IOException {
         when(resourceResolver.getResources(LOCATION)).thenReturn(resources);
     }

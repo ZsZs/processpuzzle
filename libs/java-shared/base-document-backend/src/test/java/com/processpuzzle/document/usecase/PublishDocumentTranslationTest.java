@@ -15,6 +15,7 @@ import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.domain.WidgetPlacement;
 import com.processpuzzle.document.domain.event.DocumentPublished;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
+import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
@@ -130,6 +131,14 @@ class PublishDocumentTranslationTest {
                 .hasMessageContaining("cannot be published");
         verify(publishedRepository, never()).save(any());
         assertThat(publishedEvents).isEmpty();
+    }
+
+    @Test
+    void unknownDocumentIsNotFound() {
+        when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> publisher(permitAll()).execute(ORG, "missing", "en"))
+                .isInstanceOf(DocumentNotFoundException.class);
     }
 
     @Test

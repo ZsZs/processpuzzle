@@ -98,6 +98,69 @@ class DocumentReferentialIntegrityCheckerTest {
     }
 
     @Test
+    void anUnknownOutputPortIsNamedAsAnOutputRatherThanAnInput() {
+        DocumentBlock chart = new DocumentBlock("chart-1", BlockKind.WIDGET, null, null,
+                WidgetPlacement.STANDALONE, "entity-grid", Map.of(), Map.of(),
+                Map.of("selected", "not-a-declared-port"));
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(chart))))
+                .singleElement().satisfies(problem -> {
+                    assertThat(problem.errorId()).isEqualTo("document.validation.unknown-port");
+                    assertThat(problem.errorText()).contains("is not a declared output port");
+                    assertThat(problem.path()).isEqualTo("/blocks/0/outputBindings/selected");
+                });
+    }
+
+    @Test
+    void aChildIdPointingAtAStandaloneWidgetIsAsDanglingAsOneThatPointsNowhere() {
+        // Only REFERENCED widgets are legal targets — the same rule widgetEmbed obeys.
+        DocumentBlock tabGroup = widget("tabs", WidgetPlacement.STANDALONE, Map.of("childIds", List.of("tab-1")));
+        DocumentBlock tab1 = widget("tab-1", WidgetPlacement.STANDALONE, Map.of());
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(tabGroup, tab1))))
+                .extracting(DocumentValidationProblem::errorId)
+                .containsExactly("document.validation.dangling-child-id");
+    }
+
+    @Test
+    void childIdEntriesThatAreNotStringsAreIgnoredRatherThanCrashingTheCheck() {
+        // props are a widget's own business and arrive from JSON, so the list can hold anything.
+        DocumentBlock tabGroup = widget("tabs", WidgetPlacement.STANDALONE,
+                Map.of("childIds", List.of(42, "tab-1")));
+        DocumentBlock tab1 = widget("tab-1", WidgetPlacement.REFERENCED, Map.of());
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(tabGroup, tab1)))).isEmpty();
+    }
+
+    @Test
+    void aChildIdsPropThatIsNotAListIsIgnoredToo() {
+        DocumentBlock tabGroup = widget("tabs", WidgetPlacement.STANDALONE, Map.of("childIds", "tab-1"));
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(tabGroup)))).isEmpty();
+    }
+
+    @Test
+    void aWidgetEmbedWithoutABlockIdIsMalformedRatherThanDangling() {
+        JsonNode noAttrs = docContaining(json.createObjectNode().put("type", "widgetEmbed"));
+        JsonNode nullBlockId = docContaining(json.createObjectNode().put("type", "widgetEmbed")
+                .set("attrs", json.createObjectNode().putNull("blockId")));
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(text("a", noAttrs)))))
+                .extracting(DocumentValidationProblem::errorId)
+                .containsExactly("document.validation.malformed-widget-embed");
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(text("b", nullBlockId)))))
+                .extracting(DocumentValidationProblem::errorId)
+                .containsExactly("document.validation.malformed-widget-embed");
+    }
+
+    @Test
+    void aBlockWhoseContentNodeIsMissingIsSimplyNotScanned() {
+        DocumentBlock block = text("intro", com.fasterxml.jackson.databind.node.MissingNode.getInstance());
+
+        assertThat(checker.check(DocumentPorts.empty(), DocumentContent.of(List.of(block)))).isEmpty();
+    }
+
+    @Test
     void referencesToFindsBothEmbedAndChildIdPointers() {
         DocumentBlock target = widget("chart-1", WidgetPlacement.REFERENCED, Map.of());
         DocumentBlock tabGroup = widget("tabs", WidgetPlacement.STANDALONE, Map.of("childIds", List.of("chart-1")));
@@ -105,6 +168,45 @@ class DocumentReferentialIntegrityCheckerTest {
         DocumentContent content = DocumentContent.of(List.of(target, tabGroup, text));
 
         assertThat(checker.referencesTo(content, "chart-1")).containsExactlyInAnyOrder("tabs", "intro");
+    }
+
+    @Test
+    void referencesToFindsNothingWhenNoBlockPointsAtIt() {
+        // Walks the same shapes as the matching case — prose, an unrelated embed, a widget with no
+        // content at all — and has to come back empty for the delete to be allowed.
+        DocumentBlock target = widget("chart-1", WidgetPlacement.REFERENCED, Map.of());
+        DocumentBlock unrelatedWidget = widget("tabs", WidgetPlacement.STANDALONE, Map.of());
+        DocumentBlock elsewhere = textBlockEmbedding("intro", "some-other-block");
+        DocumentBlock attrsWithoutBlockId = text("odd",
+                docContaining(json.createObjectNode().put("type", "widgetEmbed")));
+
+        assertThat(checker.referencesTo(
+                DocumentContent.of(List.of(target, unrelatedWidget, elsewhere, attrsWithoutBlockId)), "chart-1"))
+                .isEmpty();
+    }
+
+    @Test
+    void widgetCoverageReportsOnlyTheWidgetsATranslationIsMissing() {
+        DocumentContent source = DocumentContent.of(List.of(
+                widget("chart-1", WidgetPlacement.STANDALONE, Map.of()),
+                widget("grid-1", WidgetPlacement.STANDALONE, Map.of())));
+        DocumentContent translation = DocumentContent.of(List.of(
+                widget("chart-1", WidgetPlacement.STANDALONE, Map.of())));
+
+        assertThat(checker.checkWidgetCoverage(source, "en", translation)).singleElement()
+                .satisfies(problem -> {
+                    assertThat(problem.errorId()).isEqualTo("document.validation.widget-missing-from-translation");
+                    assertThat(problem.errorText()).contains("grid-1").contains("'en'");
+                    assertThat(problem.severity()).isEqualTo(Severity.WARNING);
+                });
+    }
+
+    private JsonNode docContaining(JsonNode node) {
+        return json.createObjectNode().put("type", "doc").set("content", json.createArrayNode().add(node));
+    }
+
+    private DocumentBlock text(String id, JsonNode content) {
+        return new DocumentBlock(id, BlockKind.TEXT, true, content, null, null, Map.of(), Map.of(), Map.of());
     }
 
     private DocumentBlock widget(String id, WidgetPlacement placement, Map<String, Object> props) {

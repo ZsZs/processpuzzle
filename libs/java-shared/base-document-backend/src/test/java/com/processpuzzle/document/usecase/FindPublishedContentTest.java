@@ -98,6 +98,16 @@ class FindPublishedContentTest {
     }
 
     @Test
+    void aDocumentPublishedOnlyInSomeThirdLanguageIsNotFoundEither() {
+        // The fallback is to the source locale specifically, not to whatever happens to be published:
+        // serving an arbitrary language would be worse than saying there is nothing to read.
+        stub(publicDocument(), List.of(snapshot("hu", "intro-hu")));
+
+        assertThatThrownBy(() -> useCase(anonymous()).execute(ORG, SLUG, "de"))
+                .isInstanceOf(DocumentNotFoundException.class);
+    }
+
+    @Test
     void anUnknownSlugIsNotFound() {
         when(repository.findByOrgKeyAndSlug(ORG, "nope")).thenReturn(Optional.empty());
 

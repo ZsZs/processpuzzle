@@ -116,6 +116,16 @@ class UpdateDocumentPropertiesTest {
     }
 
     @Test
+    void renamingToASlugNobodyElseUsesGoesThrough() {
+        Document existing = existing();
+        stubFound(existing, draft(List.of()));
+
+        DocumentDetails details = updateDocumentProperties.execute(ORG, ID, input("Renamed").slug("renamed"));
+
+        assertThat(details.document().getSlug()).isEqualTo("renamed");
+    }
+
+    @Test
     void keepingItsOwnSlugIsNotASlugCollision() {
         // Guards against the obvious off-by-one in the uniqueness check: saving a document without
         // renaming it must not trip over its own slug.
