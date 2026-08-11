@@ -18,6 +18,15 @@ public interface DocumentRepository
 
     boolean existsByOrgKeyAndId(String orgKey, String id);
 
+    /**
+     * The slug lookup the public read path resolves against. Returns at most one row: a unique
+     * constraint on ({@code org_key}, {@code slug}) backs it, so a duplicate is rejected by the
+     * database rather than silently shadowing another document.
+     */
+    Optional<Document> findByOrgKeyAndSlug(String orgKey, String slug);
+
+    boolean existsByOrgKeyAndSlug(String orgKey, String slug);
+
     List<Document> findByOrgKey(String orgKey);
 
     void deleteByOrgKey(String orgKey);

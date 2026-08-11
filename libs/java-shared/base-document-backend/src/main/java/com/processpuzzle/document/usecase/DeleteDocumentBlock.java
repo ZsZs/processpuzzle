@@ -1,11 +1,10 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
-import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockReferencedException;
-import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
+import com.processpuzzle.document.usecase.service.DocumentDraftEditor;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,35 +16,31 @@ import java.util.List;
 @Transactional
 public class DeleteDocumentBlock {
 
-    private final DocumentRepository repository;
+    private final DocumentDraftEditor draftEditor;
     private final DocumentReferentialIntegrityChecker integrityChecker;
 
-    public DeleteDocumentBlock(DocumentRepository repository,
-                                DocumentReferentialIntegrityChecker integrityChecker) {
-        this.repository = repository;
+    public DeleteDocumentBlock(DocumentDraftEditor draftEditor, DocumentReferentialIntegrityChecker integrityChecker) {
+        this.draftEditor = draftEditor;
         this.integrityChecker = integrityChecker;
     }
 
-    public void execute(String orgKey, String documentId, String blockId) {
-        Document document = repository.findByOrgKeyAndId(orgKey, documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
+    public void execute(String orgKey, String documentId, String locale, String blockId) {
+        draftEditor.apply(orgKey, documentId, locale, current -> {
+            if (current.stream().noneMatch(block -> block.id().equals(blockId))) {
+                throw new DocumentBlockNotFoundException(orgKey, documentId, blockId);
+            }
 
-        List<DocumentBlock> blocks = document.getGraph().blocks();
-        boolean exists = blocks.stream().anyMatch(b -> b.id().equals(blockId));
-        if (!exists) {
-            throw new DocumentBlockNotFoundException(orgKey, documentId, blockId);
-        }
+            // The referenced-by check runs against the content as it stands, before removal —
+            // taking the block out first would make it invisible to its own referrers' childIds
+            // and widgetEmbed scan, and the delete would silently leave dangling references.
+            List<String> referencingBlockIds = integrityChecker.referencesTo(DocumentContent.of(current), blockId);
+            if (!referencingBlockIds.isEmpty()) {
+                throw new DocumentBlockReferencedException(blockId, referencingBlockIds);
+            }
 
-        // Referenced-by check runs against the *current* graph, before removal — deleting the
-        // block first would make it invisible to its own referrers' childIds/widgetEmbed scan.
-        List<String> referencingBlockIds = integrityChecker.referencesTo(document.getGraph(), blockId);
-        if (!referencingBlockIds.isEmpty()) {
-            throw new DocumentBlockReferencedException(blockId, referencingBlockIds);
-        }
-
-        List<DocumentBlock> remaining = new ArrayList<>(blocks);
-        remaining.removeIf(b -> b.id().equals(blockId));
-        document.replaceBlocks(remaining);
-        repository.save(document);
+            List<DocumentBlock> remaining = new ArrayList<>(current);
+            remaining.removeIf(block -> block.id().equals(blockId));
+            return remaining;
+        });
     }
 }

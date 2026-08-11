@@ -21,17 +21,17 @@ class DocumentReferentialIntegrityCheckerTest {
     void cleanGraphHasNoProblems() {
         DocumentBlock chart = widget("chart-1", WidgetPlacement.REFERENCED, Map.of());
         DocumentBlock text = textBlockEmbedding("intro", "chart-1");
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(text, chart));
+        DocumentContent content = DocumentContent.of(List.of(text, chart));
 
-        assertThat(checker.check(graph)).isEmpty();
+        assertThat(checker.check(DocumentPorts.empty(), content)).isEmpty();
     }
 
     @Test
     void danglingWidgetEmbedIsAnError() {
         DocumentBlock text = textBlockEmbedding("intro", "does-not-exist");
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(text));
+        DocumentContent content = DocumentContent.of(List.of(text));
 
-        List<DocumentValidationProblem> problems = checker.check(graph);
+        List<DocumentValidationProblem> problems = checker.check(DocumentPorts.empty(), content);
         assertThat(problems).hasSize(1);
         assertThat(problems.get(0).errorId()).isEqualTo("document.validation.dangling-widget-embed");
         assertThat(problems.get(0).severity()).isEqualTo(Severity.ERROR);
@@ -43,9 +43,9 @@ class DocumentReferentialIntegrityCheckerTest {
         // definition, since only REFERENCED widgets are legal targets.
         DocumentBlock chart = widget("chart-1", WidgetPlacement.STANDALONE, Map.of());
         DocumentBlock text = textBlockEmbedding("intro", "chart-1");
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(text, chart));
+        DocumentContent content = DocumentContent.of(List.of(text, chart));
 
-        assertThat(checker.check(graph))
+        assertThat(checker.check(DocumentPorts.empty(), content))
                 .extracting(DocumentValidationProblem::errorId)
                 .containsExactly("document.validation.dangling-widget-embed");
     }
@@ -53,9 +53,9 @@ class DocumentReferentialIntegrityCheckerTest {
     @Test
     void orphanedReferencedWidgetIsOnlyAWarning() {
         DocumentBlock chart = widget("chart-1", WidgetPlacement.REFERENCED, Map.of());
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(chart));
+        DocumentContent content = DocumentContent.of(List.of(chart));
 
-        List<DocumentValidationProblem> problems = checker.check(graph);
+        List<DocumentValidationProblem> problems = checker.check(DocumentPorts.empty(), content);
         assertThat(problems).hasSize(1);
         assertThat(problems.get(0).severity()).isEqualTo(Severity.WARNING);
         assertThat(DocumentValidationProblem.blocking(problems)).isEmpty();
@@ -67,9 +67,9 @@ class DocumentReferentialIntegrityCheckerTest {
                 Map.of("childIds", List.of("tab-1", "tab-2")));
         DocumentBlock tab1 = widget("tab-1", WidgetPlacement.REFERENCED, Map.of());
         // tab-2 is missing entirely.
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(tabGroup, tab1));
+        DocumentContent content = DocumentContent.of(List.of(tabGroup, tab1));
 
-        assertThat(checker.check(graph))
+        assertThat(checker.check(DocumentPorts.empty(), content))
                 .extracting(DocumentValidationProblem::errorId)
                 .containsExactly("document.validation.dangling-child-id");
     }
@@ -79,9 +79,9 @@ class DocumentReferentialIntegrityCheckerTest {
         DocumentBlock chart = new DocumentBlock("chart-1", BlockKind.WIDGET, null, null,
                 WidgetPlacement.STANDALONE, "entity-grid", Map.of(),
                 Map.of("rsqlFilter", "not-a-declared-port"), Map.of());
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(chart));
+        DocumentContent content = DocumentContent.of(List.of(chart));
 
-        assertThat(checker.check(graph))
+        assertThat(checker.check(DocumentPorts.empty(), content))
                 .extracting(DocumentValidationProblem::errorId)
                 .containsExactly("document.validation.unknown-port");
     }
@@ -90,9 +90,9 @@ class DocumentReferentialIntegrityCheckerTest {
     void duplicateBlockIdIsAnError() {
         DocumentBlock a = widget("dup", WidgetPlacement.STANDALONE, Map.of());
         DocumentBlock b = widget("dup", WidgetPlacement.STANDALONE, Map.of());
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(a, b));
+        DocumentContent content = DocumentContent.of(List.of(a, b));
 
-        assertThat(checker.check(graph))
+        assertThat(checker.check(DocumentPorts.empty(), content))
                 .extracting(DocumentValidationProblem::errorId)
                 .contains("document.validation.duplicate-block-id");
     }
@@ -102,9 +102,9 @@ class DocumentReferentialIntegrityCheckerTest {
         DocumentBlock target = widget("chart-1", WidgetPlacement.REFERENCED, Map.of());
         DocumentBlock tabGroup = widget("tabs", WidgetPlacement.STANDALONE, Map.of("childIds", List.of("chart-1")));
         DocumentBlock text = textBlockEmbedding("intro", "chart-1");
-        DocumentGraph graph = new DocumentGraph(List.of(), List.of(), List.of(target, tabGroup, text));
+        DocumentContent content = DocumentContent.of(List.of(target, tabGroup, text));
 
-        assertThat(checker.referencesTo(graph, "chart-1")).containsExactlyInAnyOrder("tabs", "intro");
+        assertThat(checker.referencesTo(content, "chart-1")).containsExactlyInAnyOrder("tabs", "intro");
     }
 
     private DocumentBlock widget(String id, WidgetPlacement placement, Map<String, Object> props) {

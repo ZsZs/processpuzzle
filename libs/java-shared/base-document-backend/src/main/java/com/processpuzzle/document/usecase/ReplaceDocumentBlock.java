@@ -1,14 +1,10 @@
 package com.processpuzzle.document.usecase;
 
 import com.processpuzzle.document.adapter.inbound.DocumentMapper;
-import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
-import com.processpuzzle.document.domain.DocumentGraph;
-import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
-import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
-import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
+import com.processpuzzle.document.usecase.service.DocumentDraftEditor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,37 +15,21 @@ import java.util.List;
 @Transactional
 public class ReplaceDocumentBlock {
 
-    private final DocumentRepository repository;
-    private final DocumentReferentialIntegrityChecker integrityChecker;
+    private final DocumentDraftEditor draftEditor;
     private final DocumentMapper mapper;
 
-    public ReplaceDocumentBlock(DocumentRepository repository,
-                                 DocumentReferentialIntegrityChecker integrityChecker,
-                                 DocumentMapper mapper) {
-        this.repository = repository;
-        this.integrityChecker = integrityChecker;
+    public ReplaceDocumentBlock(DocumentDraftEditor draftEditor, DocumentMapper mapper) {
+        this.draftEditor = draftEditor;
         this.mapper = mapper;
     }
 
-    public DocumentBlock execute(String orgKey, String documentId, String blockId, DocumentBlockInput input) {
-        Document document = repository.findByOrgKeyAndId(orgKey, documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
-
-        List<DocumentBlock> blocks = new ArrayList<>(document.getGraph().blocks());
-        int index = indexOf(blocks, blockId, orgKey, documentId);
-
+    public DocumentBlock execute(String orgKey, String documentId, String locale, String blockId, DocumentBlockInput input) {
         DocumentBlock replacement = mapper.toBlock(blockId, input);
-        blocks.set(index, replacement);
-        DocumentGraph candidate = document.getGraph().withBlocks(blocks);
-
-        List<DocumentValidationProblem> blocking =
-                DocumentValidationProblem.blocking(integrityChecker.check(candidate));
-        if (!blocking.isEmpty()) {
-            throw new IllegalArgumentException("Invalid block: " + blocking);
-        }
-
-        document.replaceBlocks(blocks);
-        repository.save(document);
+        draftEditor.apply(orgKey, documentId, locale, current -> {
+            List<DocumentBlock> blocks = new ArrayList<>(current);
+            blocks.set(indexOf(blocks, blockId, orgKey, documentId), replacement);
+            return blocks;
+        });
         return replacement;
     }
 

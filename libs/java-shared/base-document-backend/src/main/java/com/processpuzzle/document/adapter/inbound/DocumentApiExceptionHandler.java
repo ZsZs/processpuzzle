@@ -1,9 +1,14 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockReferencedException;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
+import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
+import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
+import com.processpuzzle.document.usecase.exception.DocumentTranslationAlreadyExistsException;
+import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,9 +43,39 @@ public class DocumentApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(DocumentTranslationNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTranslationNotFound(DocumentTranslationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    }
+
     @ExceptionHandler(DocumentAlreadyExistsException.class)
     public ResponseEntity<Map<String, String>> handleConflict(DocumentAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DocumentSlugAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleSlugConflict(DocumentSlugAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DocumentTranslationAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleTranslationConflict(DocumentTranslationAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DocumentPublishingConflictException.class)
+    public ResponseEntity<Map<String, String>> handlePublishingConflict(DocumentPublishingConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * 403 — and note what does <em>not</em> arrive here: a reader who may not see a document at all
+     * gets {@link DocumentNotFoundException} instead, so 404 above. See
+     * {@link DocumentAccessDeniedException} for why the two cases answer differently.
+     */
+    @ExceptionHandler(DocumentAccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(DocumentAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(DocumentBlockReferencedException.class)
@@ -52,9 +87,11 @@ public class DocumentApiExceptionHandler {
     }
 
     /**
-     * A stale {@code updateDocument}/block write. Core doesn't handle this one generically —
-     * {@code Document.version} is a real {@code @Version}, so Hibernate raises this on flush
-     * rather than the use case throwing anything itself.
+     * A stale metadata or content write. Core doesn't handle this one generically — both
+     * {@code Document.lockVersion} and {@code DocumentDraft.lockVersion} are real
+     * {@code @Version} fields, so Hibernate raises this on flush rather than the use case
+     * throwing anything itself. The two locks are independent: editing metadata cannot make a
+     * concurrent Tiptap autosave in some other locale fail.
      */
     @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<Map<String, String>> handleStaleWrite(OptimisticLockingFailureException ex) {

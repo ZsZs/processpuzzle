@@ -6,7 +6,11 @@ import java.util.Objects;
 /**
  * The {@code @IdClass} for {@link Document}: a document id is unique only within its
  * organization, exactly as {@code RuleDefinitionKey} and {@code AppDefinitionKey} establish
- * for their own modules. JPA requires this class to have a public no-arg constructor,
+ * for their own modules. The id itself is a UUID, so the pair is unique in practice regardless —
+ * but it stays composite because {@code orgKey} is the tenancy scope every query filters on, and
+ * dropping it from the key would make an unscoped read expressible.
+ *
+ * <p>JPA requires this class to have a public no-arg constructor,
  * {@code equals}/{@code hashCode} over the same fields as the {@code @Id} fields, and to
  * implement {@link Serializable}.
  */

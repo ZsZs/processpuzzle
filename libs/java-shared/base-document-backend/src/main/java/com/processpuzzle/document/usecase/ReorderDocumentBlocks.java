@@ -1,9 +1,8 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
-import com.processpuzzle.document.domain.DocumentRepository;
-import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
+import com.processpuzzle.document.domain.DocumentDraft;
+import com.processpuzzle.document.usecase.service.DocumentDraftEditor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,39 +17,35 @@ import java.util.stream.Collectors;
 @Transactional
 public class ReorderDocumentBlocks {
 
-    private final DocumentRepository repository;
+    private final DocumentDraftEditor draftEditor;
 
-    public ReorderDocumentBlocks(DocumentRepository repository) {
-        this.repository = repository;
+    public ReorderDocumentBlocks(DocumentDraftEditor draftEditor) {
+        this.draftEditor = draftEditor;
     }
 
     /**
-     * {@code blockIds} must be a permutation of the document's current block ids — no
+     * {@code blockIds} must be a permutation of this translation's current block ids — no
      * position field exists to fall back on, so an omitted or added id is rejected outright
      * rather than silently dropping or ignoring blocks.
      */
-    public List<DocumentBlock> execute(String orgKey, String documentId, List<String> blockIds) {
-        Document document = repository.findByOrgKeyAndId(orgKey, documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
+    public List<DocumentBlock> execute(String orgKey, String documentId, String locale, List<String> blockIds) {
+        DocumentDraft draft = draftEditor.apply(orgKey, documentId, locale, current -> {
+            Map<String, DocumentBlock> byId = current.stream()
+                    .collect(Collectors.toMap(DocumentBlock::id, block -> block));
 
-        List<DocumentBlock> current = document.getGraph().blocks();
-        Map<String, DocumentBlock> byId = current.stream()
-                .collect(Collectors.toMap(DocumentBlock::id, b -> b));
+            Set<String> currentIds = new HashSet<>(byId.keySet());
+            Set<String> requestedIds = new HashSet<>(blockIds);
+            if (!currentIds.equals(requestedIds) || blockIds.size() != current.size()) {
+                throw new IllegalArgumentException(
+                        "blockIds must be an exact permutation of this translation's current block ids");
+            }
 
-        Set<String> currentIds = new HashSet<>(byId.keySet());
-        Set<String> requestedIds = new HashSet<>(blockIds);
-        if (!currentIds.equals(requestedIds) || blockIds.size() != current.size()) {
-            throw new IllegalArgumentException(
-                    "blockIds must be an exact permutation of this document's current block ids");
-        }
-
-        List<DocumentBlock> reordered = new ArrayList<>(blockIds.size());
-        for (String id : blockIds) {
-            reordered.add(byId.get(id));
-        }
-
-        document.replaceBlocks(reordered);
-        repository.save(document);
-        return reordered;
+            List<DocumentBlock> reordered = new ArrayList<>(blockIds.size());
+            for (String id : blockIds) {
+                reordered.add(byId.get(id));
+            }
+            return reordered;
+        });
+        return draft.getBlocks();
     }
 }
