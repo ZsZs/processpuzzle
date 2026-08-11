@@ -74,6 +74,7 @@ graph TD
     core[processpuzzle-core]
     contracts[api-contracts]
     store[processpuzzle-store]
+    entityBE[base-entity-backend]
     ruleBE[base-rule-backend]
     stateBE[base-state-backend]
     workflowBE[base-workflow-backend]
@@ -81,6 +82,8 @@ graph TD
 
     store --> core
     store --> contracts
+    entityBE --> core
+    entityBE --> contracts
     ruleBE --> core
     ruleBE --> contracts
     stateBE --> core
@@ -94,6 +97,7 @@ graph TD
   end
 
   entityFE -. "REST / Firestore" .-> store
+  entityFE -. REST .-> entityBE
   ruleFE -. "REST: /rules" .-> ruleBE
   stateFE -. REST .-> stateBE
   workflowFE -. REST .-> workflowBE
@@ -166,7 +170,7 @@ different stages:
 
 | Feature | Frontend | Backend |
 | --- | --- | --- |
-| `base-entity` | production-ready | served by `processpuzzle-store` / REST / Firestore |
+| `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | scaffold | scaffold |
 | `base-workflow` | scaffold | scaffold |

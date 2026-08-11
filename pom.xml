@@ -46,6 +46,7 @@
         <module>libs/java-shared/api-contracts</module>
         <module>libs/java-shared/base-app-backend</module>
         <module>libs/java-shared/base-artifact-backend</module>
+        <module>libs/java-shared/base-entity-backend</module>
         <module>libs/java-shared/base-workflow-backend</module>
         <module>libs/java-shared/base-rule-backend</module>
         <module>libs/java-shared/base-state-backend</module>
@@ -77,6 +78,7 @@
         <api-contracts.version>1.1.0</api-contracts.version>
         <base-app-backend.version>1.1.0</base-app-backend.version>
         <base-artifact-backend.version>0.1.0</base-artifact-backend.version>
+        <base-entity-backend.version>0.1.0</base-entity-backend.version>
         <base-rule-backend.version>1.1.0</base-rule-backend.version>
         <base-state-backend.version>1.0.5</base-state-backend.version>
         <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
@@ -113,6 +115,12 @@
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-artifact-backend</artifactId>
                 <version>${base-artifact-backend.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-entity-backend</artifactId>
+                <version>${base-entity-backend.version}</version>
             </dependency>
 
             <dependency>
