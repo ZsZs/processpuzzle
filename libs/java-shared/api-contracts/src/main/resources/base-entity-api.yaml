@@ -20,7 +20,7 @@ info:
     consumer of this API, existing or new, needs to know rows exist underneath it.
 
     Both layers are tenant-scoped by {orgKey}, exactly as base-app-api.yaml and
-    base-artifact-api.yaml establish. Component composition (COMPOSITION-relationship
+    base-document-api.yaml establish. Component composition (COMPOSITION-relationship
     attributes) reuses the operation layer's own object model recursively — an embedded
     component is an ordinary object with parentObjectId/parentAttrName set, not a separate
     concept, so nesting depth is unbounded by construction, the same way
@@ -105,7 +105,7 @@ paths:
       operationId: updateEntityDefinition
       summary: Replace a definition's label/embedding/component-parent and full attribute list
       description: >-
-        Whole-document replace, same shape as base-artifact's updateArtifact. For adding or
+        Whole-document replace, same shape as base-document's updateDocument. For adding or
         editing a single attribute — the common schema-evolution operation — prefer the
         attribute-level endpoints below, which don't require resending every other attribute.
       tags: [ Base Entity - Knowledge ]
@@ -187,7 +187,7 @@ paths:
     put:
       operationId: reorderEntityAttributes
       summary: Reorder attributes (displayOrder)
-      description: Same permutation contract as base-artifact's reorderArtifactBlocks — the submitted list must be an exact permutation of the definition's current attrNames.
+      description: Same permutation contract as base-document's reorderDocumentBlocks — the submitted list must be an exact permutation of the definition's current attrNames.
       tags: [ Base Entity - Knowledge ]
       requestBody:
         required: true
@@ -409,10 +409,10 @@ paths:
       summary: Replace an object's attribute values
       description: >-
         Whole-document replace of `attributes`, same optimistic-locking contract as
-        base-artifact (version bumped on success, 409 on a stale write). A COMPOSITION list
+        base-document (version bumped on success, 409 on a stale write). A COMPOSITION list
         that omits a previously-present child deletes that child object (cascade); this is
         the one case where "whole-document replace" has a real destructive edge, worth
-        surfacing in the frontend the same deliberate way base-artifact's Properties/Content
+        surfacing in the frontend the same deliberate way base-document's Properties/Content
         split exists to avoid the equivalent hazard there.
       tags: [ Base Entity - Operation ]
       requestBody:
@@ -440,7 +440,7 @@ paths:
     delete:
       operationId: deleteEntityObject
       summary: Delete an object
-      description: Cascades to any COMPOSITION-owned children (parentObjectId). Rejected with 409 if another object holds an ASSOCIATION reference to this one — same "don't leave a dangling reference" stance base-artifact's block deletion takes.
+      description: Cascades to any COMPOSITION-owned children (parentObjectId). Rejected with 409 if another object holds an ASSOCIATION reference to this one — same "don't leave a dangling reference" stance base-document's block deletion takes.
       tags: [ Base Entity - Operation ]
       responses:
         "204":
@@ -663,7 +663,7 @@ components:
     EntityDefinition:
       description: >-
         Frontend descriptor compatibility: base-entity-frontend's existing
-        create*Descriptor() factories (createWidgetRefDescriptor, createArtifactInputPort
+        create*Descriptor() factories (createWidgetRefDescriptor, createDocumentInputPort
         Descriptor, etc.) become thin adapters over this shape rather than literal
         BaseEntityDescriptor constructions — a factory fetches/caches its EntityDefinition
         and maps attributes -> AbstractAttrDescriptor once, so existing components
@@ -787,7 +787,7 @@ components:
         size:
           type: integer
 
-    # ── Validation / shared (local duplicates — see base-artifact-api.yaml's note on why) ──
+    # ── Validation / shared (local duplicates — see base-document-api.yaml's note on why) ──
 
     OrganizationKey:
       type: string

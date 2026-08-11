@@ -5,7 +5,7 @@
     "BACKEND_SERVICE_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
     "APP_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
-    "ARTIFACT_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {
       "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",

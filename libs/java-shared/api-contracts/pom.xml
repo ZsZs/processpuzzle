@@ -183,19 +183,19 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>generate-artifact-api</id>
+                        <id>generate-document-api</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-artifact-api.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/base-document-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.artifact.api</apiPackage>
-                            <modelPackage>com.processpuzzle.artifact.model</modelPackage>
+                            <apiPackage>com.processpuzzle.document.api</apiPackage>
+                            <modelPackage>com.processpuzzle.document.model</modelPackage>
                             <!-- TiptapDocument stays a raw JsonNode: the contract calls it opaque and
-                                 ArtifactBlock.content is a JsonNode for the same reason, so mapping it
-                                 here keeps ArtifactMapper a field-for-field copy instead of forcing a
+                                 DocumentBlock.content is a JsonNode for the same reason, so mapping it
+                                 here keeps DocumentMapper a field-for-field copy instead of forcing a
                                  Map<String, Object> round-trip through ObjectMapper on every block. -->
                             <schemaMappings>
                                 ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,TiptapDocument=com.fasterxml.jackson.databind.JsonNode

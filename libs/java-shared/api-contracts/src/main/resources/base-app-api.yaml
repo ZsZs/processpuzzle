@@ -810,7 +810,7 @@ components:
             Container widget types (e.g. `tab-group`, `split-panel`) express composition
             here too, via `childIds` — a list of sibling `WidgetRef.id`s within the same
             `widgets` array to render inside the container. Interpreting `childIds` is
-            that widget type's own concern, the same as any other prop; base-artifact and
+            that widget type's own concern, the same as any other prop; base-document and
             base-app only validate that the ids resolve and flag orphans.
 
             Ids referenced here resolve within the enclosing organization — an
