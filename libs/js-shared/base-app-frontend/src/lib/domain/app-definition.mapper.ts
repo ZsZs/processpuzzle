@@ -19,6 +19,9 @@ interface AppDefinitionDto {
   updatedAt?: string;
 }
 
+/** What `PUT /app-definitions/{appId}` receives: the DTO with `theme` and `layout` always rebuilt. */
+type AppDefinitionPayload = AppDefinitionDto & { theme: ThemeDefinition; layout: LayoutDefinition };
+
 /**
  * Translates between the `AppDefinition` DTO of `base-app-api.yaml` and the flat entity the
  * generated form works with.
@@ -64,7 +67,7 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
     });
   }
 
-  toDto(entity: AppDefinition): unknown {
+  toDto(entity: AppDefinition): AppDefinitionPayload {
     // Listed field by field rather than spread, so the flattened controls never reach the payload.
     return {
       id: entity.id,

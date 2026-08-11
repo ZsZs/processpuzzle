@@ -53,6 +53,7 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
   toDto(entity: TestEntity): unknown {
     const dto = { ...entity };
 
-    return { ...dto, enumValue: getEnumValueByKey<TestEnum>(TestEnum, dto.enumValue) };
+    // `fromDto` stores the enum *key*, so the round trip goes back through the key, whatever its declared type says.
+    return { ...dto, enumValue: getEnumValueByKey<TestEnum>(TestEnum, String(dto.enumValue)) };
   }
 }
