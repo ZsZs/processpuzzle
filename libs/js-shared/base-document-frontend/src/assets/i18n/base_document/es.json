@@ -1,0 +1,28 @@
+{
+  "document": {
+    "_self": "Documento",
+    "title": "Título",
+    "description": "Descripción",
+    "inputPorts": "Puertos de entrada",
+    "outputPorts": "Puertos de salida"
+  },
+  "document_input_port": {
+    "_self": "Puerto de entrada",
+    "name": "Nombre",
+    "type": "Tipo",
+    "required": "Obligatorio",
+    "description": "Descripción",
+    "entityType": "Tipo de entidad",
+    "attributeVisibility": "Visibilidad de atributos",
+    "defaultValue": "Valor predeterminado",
+    "defaultRsqlFilter": "Filtro RSQL predeterminado"
+  },
+  "document_output_port": {
+    "_self": "Puerto de salida",
+    "name": "Nombre",
+    "type": "Tipo",
+    "description": "Descripción",
+    "entityType": "Tipo de entidad",
+    "attributeVisibility": "Visibilidad de atributos"
+  }
+}

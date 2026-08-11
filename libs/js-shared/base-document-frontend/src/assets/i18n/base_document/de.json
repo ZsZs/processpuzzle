@@ -1,0 +1,28 @@
+{
+  "document": {
+    "_self": "Dokument",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "inputPorts": "Eingangsports",
+    "outputPorts": "Ausgangsports"
+  },
+  "document_input_port": {
+    "_self": "Eingangsport",
+    "name": "Name",
+    "type": "Typ",
+    "required": "Erforderlich",
+    "description": "Beschreibung",
+    "entityType": "Entitätstyp",
+    "attributeVisibility": "Attributsichtbarkeit",
+    "defaultValue": "Standardwert",
+    "defaultRsqlFilter": "Standard-RSQL-Filter"
+  },
+  "document_output_port": {
+    "_self": "Ausgangsport",
+    "name": "Name",
+    "type": "Typ",
+    "description": "Beschreibung",
+    "entityType": "Entitätstyp",
+    "attributeVisibility": "Attributsichtbarkeit"
+  }
+}

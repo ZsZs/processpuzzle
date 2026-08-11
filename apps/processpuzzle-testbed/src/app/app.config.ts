@@ -20,6 +20,7 @@ import { shareIcons } from 'ngx-sharebuttons/icons';
 import { BASE_ENTITY_FACADE_REGISTRY, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from '@processpuzzle/base-app';
+import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS } from '@processpuzzle/base-document';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
@@ -60,6 +61,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
       // one list, so a consuming application cannot register half of it.
       ...BASE_APP_FACADE_PROVIDERS,
+      // Same shape for base-document: the routable `Document` plus the two embedded port lists its form
+      // carries, which the design section's document route renders.
+      ...BASE_DOCUMENT_FACADE_PROVIDERS,
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {
@@ -73,6 +77,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           Order: OrderFacade,
           'Order Line': OrderLineFacade,
           ...BASE_APP_ENTITY_FACADES,
+          ...BASE_DOCUMENT_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },

@@ -5,10 +5,11 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { UnderConstructionComponent } from '@processpuzzle/design';
 
 /**
- * No live sample yet: `@processpuzzle/base-document` ships a container component but no facade, and
- * none for its two embedded port entities either — an Document list needs all three registered in
- * `BASE_ENTITY_FACADE_REGISTRY` before it can render. See the base-app samples tab for the shape
- * this one will take once those exist.
+ * No sample of its own yet. The blocker is gone — `@processpuzzle/base-document` now ships
+ * `DocumentFacade` and the two port facades, which `app.config.ts` registers in
+ * `BASE_ENTITY_FACADE_REGISTRY` — so the live screen is reachable at `/design/document`, mounted by
+ * `BASE_DOCUMENT_ROUTES`. What is left for this tab is a testbed-local sample document to drive it,
+ * shaped like the base-app samples tab.
  */
 @Component({
   selector: 'base-documents-samples',

@@ -1,0 +1,28 @@
+{
+  "document": {
+    "_self": "Document",
+    "title": "Title",
+    "description": "Description",
+    "inputPorts": "Input ports",
+    "outputPorts": "Output ports"
+  },
+  "document_input_port": {
+    "_self": "Input port",
+    "name": "Name",
+    "type": "Type",
+    "required": "Required",
+    "description": "Description",
+    "entityType": "Entity type",
+    "attributeVisibility": "Attribute visibility",
+    "defaultValue": "Default value",
+    "defaultRsqlFilter": "Default RSQL filter"
+  },
+  "document_output_port": {
+    "_self": "Output port",
+    "name": "Name",
+    "type": "Type",
+    "description": "Description",
+    "entityType": "Entity type",
+    "attributeVisibility": "Attribute visibility"
+  }
+}

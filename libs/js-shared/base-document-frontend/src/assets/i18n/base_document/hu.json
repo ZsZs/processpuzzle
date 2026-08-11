@@ -1,0 +1,28 @@
+{
+  "document": {
+    "_self": "Dokumentum",
+    "title": "Cím",
+    "description": "Leírás",
+    "inputPorts": "Bemeneti portok",
+    "outputPorts": "Kimeneti portok"
+  },
+  "document_input_port": {
+    "_self": "Bemeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "required": "Kötelező",
+    "description": "Leírás",
+    "entityType": "Entitástípus",
+    "attributeVisibility": "Attribútum-láthatóság",
+    "defaultValue": "Alapértelmezett érték",
+    "defaultRsqlFilter": "Alapértelmezett RSQL-szűrő"
+  },
+  "document_output_port": {
+    "_self": "Kimeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "description": "Leírás",
+    "entityType": "Entitástípus",
+    "attributeVisibility": "Attribútum-láthatóság"
+  }
+}

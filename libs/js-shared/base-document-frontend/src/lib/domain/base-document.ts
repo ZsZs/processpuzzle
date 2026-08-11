@@ -32,9 +32,17 @@ export enum WidgetPlacement {
   REFERENCED = 'REFERENCED',
 }
 
-// Embedded, not a BaseEntity of its own: a DocumentInputPort has no id/version/endpoint —
-// it travels inside DocumentPropertiesInput the way EMBEDDED_COMPONENTS expects.
-export class DocumentInputPort {
+// Embedded, not an aggregate root of its own: a DocumentInputPort has no id/version/endpoint — it travels
+// inside DocumentPropertiesInput the way EMBEDDED_COMPONENTS expects.
+export class DocumentInputPort implements BaseEntity {
+  /**
+   * Declared, never assigned. The contract gives a port no `id` — `name` identifies it, see
+   * `DOCUMENT_PORT_ID_FIELD` — but `BaseEntity`'s only property is an optional `id`, and TypeScript's
+   * weak-type rule rejects a type that shares no property with it. `declare` emits nothing, so the payload
+   * stays exactly the shape the schema describes.
+   */
+  declare readonly id?: string;
+
   constructor(
     public name = '',
     public type: PortType = PortType.STRING,
@@ -47,7 +55,10 @@ export class DocumentInputPort {
   ) {}
 }
 
-export class DocumentOutputPort {
+/** The output side of {@link DocumentInputPort}, embedded for the same reason and identified the same way. */
+export class DocumentOutputPort implements BaseEntity {
+  declare readonly id?: string;
+
   constructor(
     public name = '',
     public type: PortType = PortType.STRING,
