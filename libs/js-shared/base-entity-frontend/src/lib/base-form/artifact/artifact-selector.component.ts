@@ -1,5 +1,7 @@
 import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { provideTranslocoScope, TranslocoService } from '@jsverse/transloco';
 import { ObjectStoreService } from '../../object-store/object-store.service';
 import { ArtifactAttr } from './artifact-attr';
 
@@ -34,9 +36,12 @@ import { ArtifactAttr } from './artifact-attr';
       }
     `,
   ],
+  providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
 })
 export class ArtifactSelectorComponent {
   private readonly objectStoreService = inject(ObjectStoreService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translocoService = inject(TranslocoService);
 
   @Output() artifactUploaded = new EventEmitter<ArtifactAttr>();
 
@@ -87,8 +92,12 @@ export class ArtifactSelectorComponent {
         this.artifactUploaded.emit(artifact);
         this.resetToDisplayMode();
       },
+      // A failed upload leaves the selector open with the selection intact, so it is distinguishable from a
+      // cancel and can be retried without picking the file again. Closing it silently — as this once did —
+      // renders an unreachable object store indistinguishable from an upload nobody asked for.
       error: () => {
-        this.resetToDisplayMode();
+        this.isUploading.set(false);
+        this.snackBar.open(this.translocoService.translate<string>('base_entity.artifact.upload_failure'), 'Close', { duration: 5000 });
       },
     });
   }

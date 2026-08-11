@@ -1,5 +1,9 @@
 # ProcessPuzzle :: Store
 
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-processpuzzle-store.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_store&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_store)
+[![Maven Central](https://img.shields.io/maven-central/v/com.processpuzzle/processpuzzle-store?style=flat)](https://central.sonatype.com/artifact/com.processpuzzle/processpuzzle-store)
+
 ProcessPuzzle Store is a Spring Boot-based library designed to provide a unified interface for file storage operations, specifically integrating with [MinIO](https://min.io/). It follows a clean architecture (Hexagonal) to decouple storage logic from external storage providers and API protocols.
 
 ## Features

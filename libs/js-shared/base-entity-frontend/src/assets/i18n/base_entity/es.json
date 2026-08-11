@@ -1,4 +1,7 @@
 {
+  "artifact": {
+    "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "¿Eliminar artefacto?",
     "content": "Esto eliminará permanentemente \"{{ artifactName }}\" del almacén de objetos.",

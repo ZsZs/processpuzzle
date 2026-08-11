@@ -40,6 +40,8 @@ const TEXT_MIME_ICON = 'article';
  * are chosen to fail if the reference and the object ever came apart —
  *
  * - **Upload** puts an object in the store, and the row that appears names it.
+ * - **A refused upload says so** rather than closing the selector as a cancel would, which is the only thing
+ *   that tells an unreachable store from a user who changed their mind.
  * - **The reference travels in the owner's payload**, so it takes the owner's Save, and a reload proves it.
  * - **The link resolves to the stored bytes** — the URI the control opens serves back exactly what was
  *   uploaded, which is what tells a working store from a form field holding a plausible-looking object id.
@@ -94,6 +96,7 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
           await fieldset.assertNoArtifact();
           await fieldset.assertSelectorRevealedOnFocus();
 
+          await fieldset.assertUploadFailureIsReported({ name: `${suffix}-rejected.txt`, mimeType: 'text/plain', buffer: createTextBuffer(`rejected fixture ${suffix}`) });
           await exerciseImageArtifact(page, form, fieldset, tester, owner.id, suffix);
           await exerciseNonImageArtifact(form, fieldset, suffix);
         });

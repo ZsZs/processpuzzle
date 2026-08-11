@@ -44,4 +44,11 @@ export function createObjectStoreApp(handlers?: ObjectStoreHandlers): Express {
   return app;
 }
 
-export const objectStore = onRequest({ region: 'europe-central2', memory: '512MiB', timeoutSeconds: 120 }, createObjectStoreApp());
+/**
+ * `invoker` is stated rather than left to default because the default only applies when the function is
+ * *created*: on an update `firebase deploy` re-applies the Cloud Run IAM policy only for an explicitly declared
+ * invoker, so a service that never got the `allUsers` grant stays private through every later deploy — and an
+ * anonymous browser upload is then rejected by IAP ("Invalid IAP credentials: empty token") before the handler
+ * runs. Declaring it makes each deploy assert the grant.
+ */
+export const objectStore = onRequest({ region: 'europe-central2', memory: '512MiB', timeoutSeconds: 120, invoker: 'public' }, createObjectStoreApp());
