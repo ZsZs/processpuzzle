@@ -8,7 +8,7 @@ fresh project needs all three before the `ARTIFACT` control works end to end. Su
 | --- | --- | --- |
 | 1 | Default **Storage bucket** provisioned | `firebase deploy --only storage` fails: *Firebase Storage has not been set up on project …* |
 | 2 | `roles/iam.serviceAccountTokenCreator` on the functions runtime SA, **granted to itself** | `objectStore` returns 500 `signingFailure` from `/objects/:bucket/:id/uri`; artifact thumbnails silently fall back to a MIME icon |
-| 3 | `allUsers` holds `roles/run.invoker` on the **`objectstore`** Cloud Run service | Upload 401s with `Invalid IAP credentials: empty token` before the handler runs; the artifact row never appears |
+| 3 | `allUsers` holds `roles/run.invoker` on the **`objectstore`** Cloud Run service, and **IAP is off** on it | Upload 401s with `Invalid IAP credentials: empty token` before the handler runs; the artifact row never appears |
 
 **1 — Storage bucket.** The CLI enables `firebasestorage.googleapis.com` but cannot create the bucket. Click
 *Get Started* on the console's Storage page, or:
@@ -40,6 +40,20 @@ role, or repair a project by hand once:
 ```sh
 gcloud run services add-iam-policy-binding objectstore --region europe-central2 --project <p> \
   --member allUsers --role roles/run.invoker
+```
+
+**3b — Identity-Aware Proxy must be off on `objectstore`.** IAP sits *in front of* Cloud Run's IAM check, so a
+service with IAP enabled rejects the anonymous browser upload with the same `401 Invalid IAP credentials: empty
+token` even when `allUsers` does hold `roles/run.invoker` — the `invoker: 'public'` declaration cannot repair
+it, and `firebase deploy` neither sets nor clears IAP. Tell the two apart from the response alone: an
+IAP-guarded service answers a plain `GET` with `302` to `accounts.google.com/o/oauth2/…` plus a
+`GCP_IAP_XSRF_NONCE_*` cookie, whereas a merely private one answers `403` with no redirect and no cookie.
+Confirmed on `processpuzzle-testbed-stage` 2026-08-11: `objectstore` was IAP-guarded while `jsonserver` and
+`helloworld` in the same project were not.
+```sh
+gcloud run services describe objectstore --region europe-central2 --project <p> \
+  --format='value(metadata.annotations."run.googleapis.com/iap-enabled")'   # expect empty / false
+gcloud beta run services update objectstore --region europe-central2 --project <p> --no-iap
 ```
 
 The deploy service account behind `FIREBASE_SERVICE_ACCOUNT` consequently needs `roles/firebase.admin`,
