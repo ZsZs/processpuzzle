@@ -1,4 +1,4 @@
-import type { TemplateRef } from '@angular/core';
+import type { TemplateRef, Type } from '@angular/core';
 import { FormControlType, type AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import type { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
@@ -7,12 +7,35 @@ import { createTestId, toI18nKey } from './base-entity-utility';
 export type EntityTitle = string | (() => string);
 export type ExtraFormActionsTemplate = () => TemplateRef<unknown> | undefined;
 
+/**
+ * A screen of this entity beyond the generic List and Details, contributed by the feature that owns the
+ * entity: `Document` adds a content editor, and a workflow definition is expected to add its diagram.
+ *
+ * Declared on the descriptor rather than wired into `BaseEntityTabsComponent` so the framework stays
+ * ignorant of what any one feature needs a third screen *for* — the same reason
+ * {@link ExtraFormActionsTemplate} lives here. One and the same value has to be handed to
+ * `baseEntityRoutes` (which mounts `:entityId/<segment>`) and to the descriptor (which renders the link),
+ * so that the URL a tab navigates to and the URL that resolves a component cannot drift apart.
+ */
+export interface EntityTabDescriptor {
+  /** Last URL segment of the tab's route, appended to `<entity>/<id>/`. Lower-case, no slashes. */
+  segment: string;
+  /** Transloco key of the tab's label. Resolved with `{ entity }`, as the generic tab labels are. */
+  i18nKey: string;
+  /** Component the route mounts. */
+  component: Type<unknown>;
+  /** Suffix for the link's `data-testid`; defaults to `show-<segment>`. */
+  testIdSuffix?: string;
+}
+
 export interface BaseEntityDescriptorOptions {
   store?: unknown;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle?: EntityTitle;
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
+  /** Screens beyond List and Details. See {@link EntityTabDescriptor}. */
+  extraTabs?: EntityTabDescriptor[];
   /**
    * Optional override for the transloco key root of this entity and its attributes. Defaults to the
    * value derived from {@link entityName} (`"Base Entity"` → `base_entity`); set it only when the
@@ -53,6 +76,7 @@ export class BaseEntityDescriptor {
   entityName: string;
   entityTitle: EntityTitle;
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
+  extraTabs: EntityTabDescriptor[];
   i18nScope?: string;
   titleKey?: string;
   parentEntity: string | undefined;
@@ -68,6 +92,7 @@ export class BaseEntityDescriptor {
     entityName,
     entityTitle,
     extraFormActionsTemplate,
+    extraTabs,
     i18nScope,
     titleKey,
     isAbstract,
@@ -81,6 +106,7 @@ export class BaseEntityDescriptor {
     this.entityName = entityName;
     this.entityTitle = entityTitle ?? '';
     this.extraFormActionsTemplate = extraFormActionsTemplate;
+    this.extraTabs = extraTabs ?? [];
     this.i18nScope = i18nScope;
     this.titleKey = titleKey;
     this.isAbstract = isAbstract ?? false;

@@ -17,7 +17,8 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
       (dto.outputPorts ?? []).map((p: any) => new DocumentOutputPort(
         p.name, p.type, p.description, p.entityType, p.attributeVisibility,
       )),
-      dto.blocks ?? [],
+      dto.translations ?? [],
+      dto.translation ?? undefined,
       dto.version,
       dto.createdAt,
       dto.updatedAt,

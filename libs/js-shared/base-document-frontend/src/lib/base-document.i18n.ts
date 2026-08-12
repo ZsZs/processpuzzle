@@ -22,6 +22,14 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const DOCUMENT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.document`;
 
 /**
+ * Label of the Content tab. Under this library's own scope rather than `base_entity.tabs.*`: the generic
+ * tabs are List and Details, and a content editor is this feature's contribution, not the framework's.
+ * Resolved with `{ entity }` like the generic tab labels, so a translation may name the entity if it reads
+ * better that way.
+ */
+export const DOCUMENT_CONTENT_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.content`;
+
+/**
  * Key roots of the two port shapes the `Document` form carries through `EMBEDDED_COMPONENTS` controls.
  * They are children of {@link BASE_DOCUMENT_TRANSLOCO_SCOPE} rather than scopes of their own, because
  * the whole graph is edited under `BASE_DOCUMENT_ROUTES` and one scope registration has to cover all of

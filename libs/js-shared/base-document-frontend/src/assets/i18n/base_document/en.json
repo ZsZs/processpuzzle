@@ -4,7 +4,15 @@
     "title": "Title",
     "description": "Description",
     "inputPorts": "Input ports",
-    "outputPorts": "Output ports"
+    "outputPorts": "Output ports",
+    "tabs": {
+      "content": "{{ entity }} - content"
+    },
+    "content": {
+      "loading": "Loading content…",
+      "add_text_block": "Add text block",
+      "add_widget_block": "Add widget"
+    }
   },
   "document_input_port": {
     "_self": "Input port",

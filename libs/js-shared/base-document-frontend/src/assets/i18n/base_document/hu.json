@@ -4,7 +4,15 @@
     "title": "Cím",
     "description": "Leírás",
     "inputPorts": "Bemeneti portok",
-    "outputPorts": "Kimeneti portok"
+    "outputPorts": "Kimeneti portok",
+    "tabs": {
+      "content": "{{ entity }} - tartalom"
+    },
+    "content": {
+      "loading": "Tartalom betöltése…",
+      "add_text_block": "Szövegblokk hozzáadása",
+      "add_widget_block": "Widget hozzáadása"
+    }
   },
   "document_input_port": {
     "_self": "Bemeneti port",

@@ -17,29 +17,35 @@ export class DocumentContentService {
   };
   private readonly baseUrl = inject<{ BASE_CONFIGURATION: BaseConfiguration }>(RUNTIME_CONFIGURATION).BASE_CONFIGURATION.DOCUMENT_SERVICE_ROOT;
 
-  private documentUrl(documentId: string): string {
-    return `${this.baseUrl}/documents/${documentId}`;
+  /**
+   * Blocks belong to a *locale's* draft, not to the document — the contract scopes every block operation to
+   * `translations/{locale}` and the writes land on that locale's draft, leaving published content alone
+   * until publishDocumentTranslation. Which is why `locale` is a parameter of all four calls rather than
+   * state of this service: one editor session edits one locale, but nothing here should assume that.
+   */
+  private blocksUrl(documentId: string, locale: string): string {
+    return `${this.baseUrl}/documents/${documentId}/translations/${locale}/blocks`;
   }
 
-  appendBlock(documentId: string, block: Omit<DocumentBlock, 'id'>): Promise<DocumentBlock> {
+  appendBlock(documentId: string, locale: string, block: Omit<DocumentBlock, 'id'>): Promise<DocumentBlock> {
     return firstValueFrom(
-      this.httpClient.post<DocumentBlock>(`${this.documentUrl(documentId)}/blocks`, block, { headers: this.headers }),
+      this.httpClient.post<DocumentBlock>(this.blocksUrl(documentId, locale), block, { headers: this.headers }),
     );
   }
 
-  replaceBlock(documentId: string, blockId: string, block: Omit<DocumentBlock, 'id'>): Promise<DocumentBlock> {
+  replaceBlock(documentId: string, locale: string, blockId: string, block: Omit<DocumentBlock, 'id'>): Promise<DocumentBlock> {
     return firstValueFrom(
-      this.httpClient.put<DocumentBlock>(`${this.documentUrl(documentId)}/blocks/${blockId}`, block, { headers: this.headers }),
+      this.httpClient.put<DocumentBlock>(`${this.blocksUrl(documentId, locale)}/${blockId}`, block, { headers: this.headers }),
     );
   }
 
-  deleteBlock(documentId: string, blockId: string): Promise<void> {
-    return firstValueFrom(this.httpClient.delete<void>(`${this.documentUrl(documentId)}/blocks/${blockId}`));
+  deleteBlock(documentId: string, locale: string, blockId: string): Promise<void> {
+    return firstValueFrom(this.httpClient.delete<void>(`${this.blocksUrl(documentId, locale)}/${blockId}`));
   }
 
-  reorderBlocks(documentId: string, blockIds: string[]): Promise<DocumentBlock[]> {
+  reorderBlocks(documentId: string, locale: string, blockIds: string[]): Promise<DocumentBlock[]> {
     return firstValueFrom(
-      this.httpClient.put<DocumentBlock[]>(`${this.documentUrl(documentId)}/blocks/reorder`, { blockIds }, { headers: this.headers }),
+      this.httpClient.put<DocumentBlock[]>(`${this.blocksUrl(documentId, locale)}/reorder`, { blockIds }, { headers: this.headers }),
     );
   }
 }

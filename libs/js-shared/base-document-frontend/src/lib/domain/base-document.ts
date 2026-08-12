@@ -87,6 +87,38 @@ export interface DocumentBlock {
   outputBindings?: Record<string, string>;
 }
 
+export enum DocumentStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  PUBLISHED_WITH_DRAFT_CHANGES = 'PUBLISHED_WITH_DRAFT_CHANGES',
+}
+
+/**
+ * One locale's block list plus its publication state — the unit every block operation is scoped to.
+ * `revision` is an editorial counter over content edits, not an optimistic-locking token; the document's
+ * own lock version is a separate field, see the contract's note on `Document.lockVersion`.
+ */
+export interface DocumentTranslation {
+  locale: string;
+  blocks: DocumentBlock[];
+  status: DocumentStatus;
+  revision?: number;
+  publishedRevision?: number | null;
+  basedOnRevision?: number | null;
+}
+
+/** A translation as it appears in `Document.translations`: the state of a locale, without its blocks. */
+export interface DocumentTranslationSummary {
+  locale: string;
+  status: DocumentStatus;
+  revision?: number;
+  publishedRevision?: number | null;
+  outOfDate?: boolean;
+  blockCount?: number;
+  publishedAt?: string | null;
+  updatedAt?: string;
+}
+
 export class Document implements BaseEntity {
   constructor(
     public id?: string,
@@ -95,10 +127,16 @@ export class Document implements BaseEntity {
     public description?: string,
     public inputPorts: DocumentInputPort[] = [],
     public outputPorts: DocumentOutputPort[] = [],
-    // Present on the entity because getDocument returns it, but never written through the
-    // generic BaseEntityStore save path — see DocumentContentStore for how blocks are actually
-    // persisted, and UpdateDocumentProperties for why the Properties form's PUT can't touch it.
-    public blocks: DocumentBlock[] = [],
+    /**
+     * Publication state of every locale, without block content — what a locale picker would list.
+     * Deliberately *not* a `blocks` field: the contract gives the document no root block list, and
+     * `listDocuments` returns summaries with no content at all, so an entity loaded through the generic
+     * store never carries blocks. The content editor fetches the translation it edits itself; see
+     * DocumentContentTabComponent and BaseDocumentService.getTranslation.
+     */
+    public translations: DocumentTranslationSummary[] = [],
+    /** The one locale `getDocument` was asked for, when the entity came from that call rather than the list. */
+    public translation?: DocumentTranslation,
     public version?: number,
     public createdAt?: string,
     public updatedAt?: string,

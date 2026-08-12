@@ -4,7 +4,15 @@
     "title": "Titel",
     "description": "Beschreibung",
     "inputPorts": "Eingangsports",
-    "outputPorts": "Ausgangsports"
+    "outputPorts": "Ausgangsports",
+    "tabs": {
+      "content": "{{ entity }} - Inhalt"
+    },
+    "content": {
+      "loading": "Inhalt wird geladen…",
+      "add_text_block": "Textblock hinzufügen",
+      "add_widget_block": "Widget hinzufügen"
+    }
   },
   "document_input_port": {
     "_self": "Eingangsport",

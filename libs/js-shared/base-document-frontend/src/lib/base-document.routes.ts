@@ -4,6 +4,7 @@ import { baseEntityRoutes, type EmbeddedChildRoute } from '@processpuzzle/base-e
 import { BASE_DOCUMENT_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from './base-document.i18n';
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
 import { BaseDocumentContainerComponent } from './feature/base-document-container.component';
+import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
 import { DocumentInputPortFacade } from './feature/document-input-port.facade';
 import { DocumentOutputPortFacade } from './feature/document-output-port.facade';
 
@@ -27,7 +28,10 @@ export const BASE_DOCUMENT_ROUTES: Routes = [
     // The embedded branches below need none of their own: `base_document.document_input_port.*` and its
     // sibling are keys of the scope already registered here.
     providers: [provideTranslocoScope({ scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE }, { scope: BASE_DOCUMENT_TRANSLOCO_SCOPE, alias: BASE_DOCUMENT_TRANSLOCO_SCOPE })],
-    children: baseEntityRoutes(embeddedPortRoutes()),
+    // The content tab's own route, `document/<id>/content`, comes from the second argument — the same
+    // constant BaseDocumentContainerComponent puts on the descriptor, so the tab link and the route that
+    // answers it are one declaration.
+    children: baseEntityRoutes(embeddedPortRoutes(), [DOCUMENT_CONTENT_TAB]),
   },
 ];
 

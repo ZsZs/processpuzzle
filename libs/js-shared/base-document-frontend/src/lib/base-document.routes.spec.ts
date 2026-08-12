@@ -1,6 +1,7 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_DOCUMENT_ROUTES } from './base-document.routes';
+import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -38,9 +39,22 @@ describe('BASE_DOCUMENT_ROUTES', () => {
     ]);
   });
 
-  it('nests the generic list and details routes below the container that stacks the content editor', () => {
+  it('nests the generic list and details routes below the container', () => {
     expect(documentRoute.component).toBeDefined();
-    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']);
+    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/content', 'list']);
+  });
+
+  /**
+   * A sibling of the details route, sharing its `<entity>/<id>` prefix — that shape is what
+   * BaseFormNavigatorSingletonStore counts back over to build every other URL of this entity, and what makes
+   * the content of one document addressable on its own. Same constant the container puts on the descriptor,
+   * so the tab link and this route cannot name different segments.
+   */
+  it('gives the content editor a route of its own', () => {
+    const contentRoute = documentRoute.children?.find((child) => child.path === ':entityId/content');
+
+    expect(contentRoute?.component).toBe(DOCUMENT_CONTENT_TAB.component);
+    expect(DOCUMENT_CONTENT_TAB.segment).toBe('content');
   });
 
   it('hangs both port lists below the document being edited', async () => {
