@@ -26,6 +26,10 @@ describe('toRoutePath', () => {
   it('breaks an acronym before the word that follows it', () => {
     expect(toRoutePath('ITVariant')).toBe('it-variant');
   });
+
+  it('preserves the route shape when whitespace and camel-case boundaries mix', () => {
+    expect(toRoutePath('HTTP Response Code')).toBe('http-response-code');
+  });
 });
 
 describe('RouteResolver', () => {

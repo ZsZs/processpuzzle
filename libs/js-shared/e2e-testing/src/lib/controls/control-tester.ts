@@ -140,10 +140,22 @@ export abstract class ControlTester {
  * {@link TextBoxControlTester.patternedValue}, which checks the result and says so instead.
  */
 function toDashedToken(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  let token = '';
+  let separatorPending = false;
+
+  for (const character of value.toLowerCase()) {
+    const isAlphaNumeric = (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9');
+    if (!isAlphaNumeric) {
+      separatorPending = token.length > 0;
+      continue;
+    }
+
+    if (separatorPending) token += '-';
+    token += character;
+    separatorPending = false;
+  }
+
+  return token;
 }
 
 class TextBoxControlTester extends ControlTester {

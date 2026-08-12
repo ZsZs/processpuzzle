@@ -125,6 +125,12 @@ describe('TEXT_BOX fixture values', () => {
     expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
   });
 
+  it('does not leave separators from punctuation at either end of a dashed token', () => {
+    const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug!!!', pattern: slugPattern }));
+
+    expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
+  });
+
   it('keeps the update value inside the pattern too', () => {
     const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug', pattern: slugPattern }));
 

@@ -15,11 +15,27 @@ import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
  * invisible until a library names one camelCase, as base-document names its two port types.
  */
 export function toRoutePath(entityName: string): string {
-  return entityName
-    .replace(/\s+/g, '')
-    .replace(/([A-Z]+)(?=[A-Z][a-z])/g, '$1-')
-    .replace(/([a-z\d])([A-Z])/g, '$1-$2')
-    .toLowerCase();
+  let path = '';
+
+  for (let index = 0; index < entityName.length; index++) {
+    const character = entityName[index];
+    if (character.trim() === '') continue;
+
+    const previous = path.at(-1);
+    const next = entityName[index + 1];
+    const isUpperCase = character >= 'A' && character <= 'Z';
+    const previousIsLowerCaseOrDigit = previous !== undefined && ((previous >= 'a' && previous <= 'z') || (previous >= '0' && previous <= '9'));
+    const previousIsUpperCase = previous !== undefined && previous >= 'A' && previous <= 'Z';
+    const nextIsLowerCase = next !== undefined && next >= 'a' && next <= 'z';
+
+    if (isUpperCase && (previousIsLowerCaseOrDigit || (previousIsUpperCase && nextIsLowerCase))) {
+      path += '-';
+    }
+
+    path += character;
+  }
+
+  return path.toLowerCase();
 }
 
 /**
