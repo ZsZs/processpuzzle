@@ -71,6 +71,41 @@ describe('CentralErrorHandler', () => {
     expect(reporter.showErrorMessage).toHaveBeenCalledWith('Unexpected failure', error);
   });
 
+  /**
+   * The status alone does not say *which* refusal it was — an endpoint has several 409s. Both backends
+   * now name it in `errorText`, so the log line carries it too.
+   */
+  it('appends the server errorText to the HTTP log line', () => {
+    const error = new HttpErrorResponse({
+      error: { errorId: 'document.slug.already-exists', errorText: "A document with slug 'q3-plan' already exists." },
+      status: 409,
+      url: '/api/organizations/acme/documents',
+    });
+
+    errorHandler.handleError(error);
+
+    expect(logger.error).toHaveBeenCalledWith("HTTP 409 /api/organizations/acme/documents A document with slug 'q3-plan' already exists.", error);
+  });
+
+  it('shows the server errorText rather than Angular synthesized failure text', () => {
+    const reporter: ErrorMessageReporter = { showErrorMessage: vi.fn() };
+    const error = new HttpErrorResponse({
+      error: { errorId: 'document.block.referenced', errorText: "Block 'text-1' is still referenced by: [grid-1]" },
+      status: 409,
+      url: '/api/organizations/acme/documents',
+    });
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [CentralErrorHandler, { provide: NGXLogger, useValue: logger }, { provide: ERROR_MESSAGE_REPORTER, useValue: reporter }],
+    });
+
+    TestBed.inject(CentralErrorHandler).handleError(error);
+
+    expect(reporter.showErrorMessage).toHaveBeenCalledWith("Block 'text-1' is still referenced by: [grid-1]", error);
+  });
+
+  /** Kept as the documented fallback for errors that are not ours: Firebase, a proxy, Boot's own `/error`. */
   it('shows HTTP response body messages when available', () => {
     const reporter: ErrorMessageReporter = { showErrorMessage: vi.fn() };
     const error = new HttpErrorResponse({

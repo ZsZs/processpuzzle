@@ -8,6 +8,8 @@ export { ConfigurationService } from './lib/runtime-configuration/configuration.
 export { CentralErrorHandler } from './lib/error-handler/central-error-handler';
 export { ERROR_MESSAGE_REPORTER } from './lib/error-handler/error-message-reporter';
 export type { ErrorMessageReporter } from './lib/error-handler/error-message-reporter';
+export { formatHttpError, httpErrorBodyMessage, httpErrorId, httpErrorMessage, isErrorResponse } from './lib/error-handler/error-response';
+export type { ErrorResponse } from './lib/error-handler/error-response';
 export { getEnvironment } from './lib/runtime-configuration/get-environment';
 export { LayoutService } from './lib/layout-service/layout.service';
 export type { LoggingConfiguration } from './lib/logging/logging.service';

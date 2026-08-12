@@ -5,7 +5,7 @@
     "BACKEND_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api",
     "OBJECT_STORE_SERVICE_ROOT": "/api/store",
     "APP_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api/organizations/processpuzzle-testbed",
-    "DOCUMENT_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "https://europe-central2-processpuzzle-testbed-stage.cloudfunctions.net/jsonServer/api/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {
       "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",

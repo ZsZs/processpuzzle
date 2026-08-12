@@ -6,15 +6,19 @@ on:
       - "develop"
     paths:
       - 'tools/firebase/functions/**'
-      # The bucket-naming parity spec reads this file; a change there can break the build
+      # The parity and contract specs read these files; a change to one can break the build
       # without anything under tools/firebase/functions being touched.
       - 'libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml'
+      - 'libs/java-shared/api-contracts/src/main/resources/processpuzzle-store-api.yaml'
+      - 'libs/java-shared/api-contracts/src/main/resources/base-document-api.yaml'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
       - 'tools/firebase/functions/**'
       - 'libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml'
+      - 'libs/java-shared/api-contracts/src/main/resources/processpuzzle-store-api.yaml'
+      - 'libs/java-shared/api-contracts/src/main/resources/base-document-api.yaml'
 
 jobs:
   build:

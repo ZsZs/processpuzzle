@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { patchState, signalStore, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { BaseEntityContainerStore, BaseEntityStore, BaseEntityTabsStore, PersistedEntity } from '@processpuzzle/base-entity';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { AppDefinition } from './app-definition';
 import { AppDefinitionService } from './app-definition.service';
@@ -36,7 +36,7 @@ export function AppDefinitionPublishStore() {
           patchState(store, { entities, currentEntity, isLoading: false });
           return publishedEntity;
         } catch (error) {
-          patchState(store, { error: (error as HttpErrorResponse).message, isLoading: false });
+          patchState(store, { error: httpErrorMessage(error), isLoading: false });
           return undefined;
         }
       },

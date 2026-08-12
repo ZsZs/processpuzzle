@@ -165,6 +165,11 @@ export class ArtifactFieldsetPO {
     return this.page.locator('mat-snack-bar-container');
   }
 
+  /** The central error handler's snackbar — the one carrying the server's `errorText`, as opposed to the control's own wording. */
+  private errorNotification(): Locator {
+    return this.page.locator('mat-snack-bar-container.error-snackbar');
+  }
+
   private notificationDismissButton(): Locator {
     return this.notification().getByRole('button', { name: 'Close', exact: true });
   }
@@ -237,12 +242,18 @@ export class ArtifactFieldsetPO {
    * the display a cancelled upload does, so nothing in the suite would fail on the difference. The refusal is
    * injected in the browser, which is what lets it hold for both adapters without either being misconfigured.
    *
+   * The refusal is injected as the `{errorId, errorText}` body both backends actually return, so the step also
+   * covers the path production takes: the error snackbar has to show the server's own `errorText` rather than
+   * Angular's synthesized "Http failure response for …". A `text/plain` body would exercise a fallback branch
+   * instead, and passed for years while every real server message was being discarded.
+   *
    * Leaves the fieldset as it was found: notification dismissed, selector closed, no artifact.
    */
   async assertUploadFailureIsReported(upload: ArtifactUpload): Promise<void> {
+    const errorText = 'e2e: the object store refused this upload';
     await this.page.route(UPLOAD_ROUTE_GLOB, async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      await route.fulfill({ status: 401, contentType: 'text/plain', body: 'e2e: the object store refused this upload' });
+      await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errorId: 'store.access-denied', errorText }) });
     });
 
     try {
@@ -252,6 +263,7 @@ export class ArtifactFieldsetPO {
       await this.uploadButton().click();
 
       await expect(this.notification()).toBeVisible(this.expectOptions());
+      await expect(this.errorNotification()).toContainText(errorText, this.expectOptions());
       // The selection survives, so the user can retry without picking the file again.
       await expect(this.fileInput()).toBeVisible(this.expectOptions());
       await expect(this.uploadButton()).toBeEnabled(this.expectOptions());
@@ -325,8 +337,8 @@ export class ArtifactFieldsetPO {
    * Closes the notification so it cannot overlay the controls beneath it — tolerantly, because the snackbar
    * also dismisses itself on a timer and may well be gone already.
    *
-   * Waits on every snackbar rather than only the control's: the central error handler's carries no dismiss
-   * action, so it goes on its own, and it overlays the controls just the same until it does.
+   * Waits on every snackbar rather than only the control's: the central error handler's has its own `Close`
+   * button which this does not press, so it goes on its own timer, and it overlays the controls until it does.
    */
   async dismissNotification(): Promise<void> {
     await expect(async () => {

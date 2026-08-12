@@ -9,7 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The messages are the API here: they are what {@code DocumentApiExceptionHandler} puts in the
- * {@code error} field of the response body, so they are read by people rather than by code.
+ * {@code errorText} field of the response body, so they are read by people rather than by code. What
+ * code branches on is the {@code errorId} beside them, asserted in
+ * {@code DocumentApiExceptionHandlerTest}.
  */
 class DocumentExceptionsTest {
 
@@ -68,7 +70,17 @@ class DocumentExceptionsTest {
         assertThat(DocumentPublishingConflictException.sourceLocaleNotRemovable(ID, "en"))
                 .hasMessageContaining("is the source locale")
                 .hasMessageContaining("change sourceLocale first");
-        assertThat(new DocumentPublishingConflictException("custom")).hasMessage("custom");
+        assertThat(new DocumentPublishingConflictException("custom.id", "custom")).hasMessage("custom");
+    }
+
+    @Test
+    void eachPublishingConflictCarriesItsOwnErrorIdBecauseTheyShareAStatus() {
+        assertThat(DocumentPublishingConflictException.notPublishable(ID, "en", List.of("a problem")).getErrorId())
+                .isEqualTo("document.publish.not-publishable");
+        assertThat(DocumentPublishingConflictException.nothingToRevertTo(ID, "en").getErrorId())
+                .isEqualTo("document.draft.nothing-to-revert-to");
+        assertThat(DocumentPublishingConflictException.sourceLocaleNotRemovable(ID, "en").getErrorId())
+                .isEqualTo("document.translation.source-locale-not-removable");
     }
 
     @Test

@@ -5,6 +5,10 @@ import db from './db.json';
 import orgScopeRewrite from './org-scope.js';
 
 export { objectStore } from './src/object-store/object-store.function.js';
+// Serves base-document-api.yaml from Firestore. It must be matched ahead of `jsonServer` in the
+// `firebase.json` rewrites, which still owns the rest of `/api/**` — rules, app-definitions and the
+// base-entity sample collections in `db.json`.
+export { baseDocument } from './src/base-document/base-document.function.js';
 
 setGlobalOptions({ region: 'europe-central2' });
 

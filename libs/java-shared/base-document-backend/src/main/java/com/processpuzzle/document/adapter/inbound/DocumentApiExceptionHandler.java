@@ -9,14 +9,14 @@ import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictEx
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
+import com.processpuzzle.core.exception.ApiAdviceOrder;
+import com.processpuzzle.shared.model.ErrorResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Same shape as {@code RuleApiExceptionHandler} — module-specific exceptions only.
@@ -24,48 +24,53 @@ import java.util.Map;
  * {@code IllegalStateException} are already handled generically by core's
  * {@code ApiExceptionHandler}, so nothing here duplicates those.
  *
- * <p>Note the response body key is {@code error}, matching the actual convention every
- * existing handler in this codebase uses — not {@code errorId}/{@code errorText} as
- * base-document-api.yaml's {@code ErrorResponse} schema currently documents. That schema
- * and the real response body have drifted apart across the whole codebase, not just here;
- * worth reconciling one way or the other rather than this module inventing a third shape.
+ * <p>Bodies are the {@code ErrorResponse} of base-document-api.yaml: {@code errorId} plus
+ * {@code errorText}. The ids are the same strings the Cloud Function emits for the same refusals
+ * (see {@code tools/firebase/functions/src/base-document/base-document.handlers.ts}) — that is the
+ * point of them. A client is served by whichever backend the deployment binds, and an id that differed
+ * between the two would make the platform visible in exactly the place a client branches on it.
+ *
+ * <p>{@link ApiAdviceOrder#FEATURE} is not decoration: without it this advice ties with core's on
+ * precedence, and core's catch-all answered every refusal below with {@code 500 internal-error}.
  */
 @RestControllerAdvice
+@Order(ApiAdviceOrder.FEATURE)
 public class DocumentApiExceptionHandler {
 
     @ExceptionHandler(DocumentNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleNotFound(DocumentNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleNotFound(DocumentNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "document.not-found", ex.getMessage());
     }
 
     @ExceptionHandler(DocumentBlockNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleBlockNotFound(DocumentBlockNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleBlockNotFound(DocumentBlockNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "document.block.not-found", ex.getMessage());
     }
 
     @ExceptionHandler(DocumentTranslationNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleTranslationNotFound(DocumentTranslationNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleTranslationNotFound(DocumentTranslationNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "document.translation.not-found", ex.getMessage());
     }
 
     @ExceptionHandler(DocumentAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleConflict(DocumentAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleConflict(DocumentAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "document.already-exists", ex.getMessage());
     }
 
     @ExceptionHandler(DocumentSlugAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleSlugConflict(DocumentSlugAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleSlugConflict(DocumentSlugAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "document.slug.already-exists", ex.getMessage());
     }
 
     @ExceptionHandler(DocumentTranslationAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleTranslationConflict(DocumentTranslationAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleTranslationConflict(DocumentTranslationAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "document.translation.already-exists", ex.getMessage());
     }
 
+    /** The id comes from the exception: three distinct refusals share this status. */
     @ExceptionHandler(DocumentPublishingConflictException.class)
-    public ResponseEntity<Map<String, String>> handlePublishingConflict(DocumentPublishingConflictException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handlePublishingConflict(DocumentPublishingConflictException ex) {
+        return error(HttpStatus.CONFLICT, ex.getErrorId(), ex.getMessage());
     }
 
     /**
@@ -74,16 +79,19 @@ public class DocumentApiExceptionHandler {
      * {@link DocumentAccessDeniedException} for why the two cases answer differently.
      */
     @ExceptionHandler(DocumentAccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDenied(DocumentAccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleAccessDenied(DocumentAccessDeniedException ex) {
+        return error(HttpStatus.FORBIDDEN, "document.access-denied", ex.getMessage());
     }
 
+    /**
+     * The referring block ids stay inside {@code errorText}, where the exception message already names
+     * them. They used to be a second {@code referencingBlockIds} key, which no contract declared and no
+     * client read — an undeclared key is not an extension point, it is a shape only one implementation
+     * knows about.
+     */
     @ExceptionHandler(DocumentBlockReferencedException.class)
-    public ResponseEntity<Map<String, Object>> handleBlockReferenced(DocumentBlockReferencedException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", ex.getMessage());
-        body.put("referencingBlockIds", ex.getReferencingBlockIds());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    public ResponseEntity<ErrorResponse> handleBlockReferenced(DocumentBlockReferencedException ex) {
+        return error(HttpStatus.CONFLICT, "document.block.referenced", ex.getMessage());
     }
 
     /**
@@ -94,8 +102,11 @@ public class DocumentApiExceptionHandler {
      * concurrent Tiptap autosave in some other locale fail.
      */
     @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<Map<String, String>> handleStaleWrite(OptimisticLockingFailureException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", "This document was modified by someone else — reload and retry."));
+    public ResponseEntity<ErrorResponse> handleStaleWrite(OptimisticLockingFailureException ex) {
+        return error(HttpStatus.CONFLICT, "document.stale-write", "This document was modified by someone else — reload and retry.");
+    }
+
+    private ResponseEntity<ErrorResponse> error(HttpStatus status, String errorId, String errorText) {
+        return ResponseEntity.status(status).body(new ErrorResponse(errorId, errorText));
     }
 }
