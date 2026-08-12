@@ -1,19 +1,14 @@
 package com.processpuzzle.core.exception;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.core.JsonParseException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.ExceptionHandlerMethodResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,23 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ApiExceptionHandlerTest {
 
     private final ApiExceptionHandler handler = new ApiExceptionHandler();
-
-    private Logger logger;
-    private ListAppender<ILoggingEvent> appender;
-
-    @BeforeEach
-    void captureLogging() {
-        logger = (Logger) LoggerFactory.getLogger(ApiExceptionHandler.class);
-        appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
-    }
-
-    @AfterEach
-    void releaseLogging() {
-        logger.detachAppender(appender);
-        appender.stop();
-    }
 
     @Test
     void anIllegalArgumentIs400() {
@@ -85,13 +63,33 @@ class ApiExceptionHandlerTest {
         assertThat(response.getBody().errorText()).isEqualTo("already published");
     }
 
+    /**
+     * The HTTP-layer half of the same refusal, and the reason it is declared on Spring's exception
+     * instead of relying on the cause fallback into {@link #anUnparseablePayloadIs400AndSaysSo}'s
+     * handler: Boot 4 reads bodies with Jackson 3, whose exceptions are in {@code tools.jackson.core}
+     * and share no supertype with Jackson 2's. The cause here is deliberately <em>not</em> a
+     * {@code JsonProcessingException} — that is the whole case, and it was answered 500 in a live run
+     * until this handler existed.
+     */
+    @Test
+    void anUnreadableRequestBodyIs400EvenWhenItsCauseIsNotAJackson2Exception() {
+        var foreignParseFailure = new RuntimeException("Unexpected end-of-input within/between Object entries");
+        var response = handler.handleUnreadableBody(new HttpMessageNotReadableException("JSON parse error", foreignParseFailure, null));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().errorId()).isEqualTo("request.malformed-payload");
+        assertThat(response.getBody().errorText()).contains("Unexpected end-of-input");
+    }
+
     @Test
     void anUnparseablePayloadIs400AndSaysSo() {
         var response = handler.handleParseError(new JsonParseException(null, "unexpected character"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().errorId()).isEqualTo("request.malformed-payload");
-        assertThat(response.getBody().errorText()).startsWith("Could not parse YAML: ");
+        // Format-neutral on purpose: the same handler answers a malformed JSON request body, which
+        // reaches it as the cause of HttpMessageNotReadableException.
+        assertThat(response.getBody().errorText()).startsWith("Could not parse the request payload: ");
     }
 
     /**
@@ -107,23 +105,23 @@ class ApiExceptionHandlerTest {
         assertThat(response.getBody().errorText()).isEqualTo("slug: must not be blank; title: must not be blank");
     }
 
+    /**
+     * The invariant every other test here is blind to, because each one calls a handler directly.
+     * Spring resolves a wrapping exception through its <em>cause</em> only when no handler in this class
+     * matches the wrapper itself, so a {@code @ExceptionHandler(Exception.class)} added here would
+     * silently take over both of the cases below — which is exactly how a malformed request body and an
+     * invalid {@code UUID} path variable came back as 500 instead of 400. The catch-all belongs to
+     * {@link UnhandledExceptionHandler}; this test fails if it moves back.
+     */
     @Test
-    void anUnexpectedExceptionIs500WithAGenericTextSoNothingInternalLeaks() {
-        var response = handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"));
+    void thisAdviceHasNoCatchAllSoWrappedExceptionsStillResolveThroughTheirCause() {
+        var resolver = new ExceptionHandlerMethodResolver(ApiExceptionHandler.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody().errorId()).isEqualTo("internal-error");
-        assertThat(response.getBody().errorText()).isEqualTo("Unexpected server error.");
-        assertThat(response.getBody().errorText()).doesNotContain("secret-host");
-    }
-
-    @Test
-    void anUnexpectedExceptionIsStillLoggedInFullSoOperatorsLoseNothing() {
-        handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"));
-
-        assertThat(appender.list).hasSize(1);
-        assertThat(appender.list.getFirst().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(appender.list.getFirst().getThrowableProxy().getMessage()).contains("secret-host");
+        assertThat(resolver.resolveMethodByThrowable(new RuntimeException("body unreadable", new JsonParseException(null, "unexpected character"))))
+                .extracting(java.lang.reflect.Method::getName).isEqualTo("handleParseError");
+        assertThat(resolver.resolveMethodByThrowable(new RuntimeException("bad path variable", new IllegalArgumentException("Invalid UUID string"))))
+                .extracting(java.lang.reflect.Method::getName).isEqualTo("handleBadRequest");
+        assertThat(resolver.resolveMethodByThrowable(new RuntimeException("nothing claims this"))).isNull();
     }
 
     private static MethodArgumentNotValidException validationFailure() throws Exception {

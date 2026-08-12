@@ -59,9 +59,28 @@ export function createBaseDocumentApp(handlers?: BaseDocumentHandlers): Express 
     }
     // A malformed JSON body is the one client error that reaches here, because express's own parser
     // throws before any handler runs and cannot be validated earlier.
-    const status = isBodyParseFailure(error) ? 400 : 500;
-    const errorId = status === 400 ? 'document.input.malformed-json' : 'document.internal-error';
-    response.status(status).json({ errorId, errorText: error.message });
+    //
+    // Neither id is feature-namespaced, and both match core's `ApiExceptionHandler`: an unparseable
+    // payload and an unexpected failure are not document concerns, and a client that branches on either
+    // must not be able to tell which backend served it.
+    if (isBodyParseFailure(error)) {
+      // express's parse message quotes the caller's own body, so echoing it tells them nothing they
+      // did not send.
+      //
+      // Reachable only when this app is served directly, which is to say in its own specs. Verified
+      // against the emulator on 2026-08-12: the Cloud Functions runtime installs its own body parser
+      // ahead of the user handler, so a malformed JSON body is answered by *its* default error page —
+      // 400 text/html with a SyntaxError — and nothing here runs. Left in place because it is correct
+      // for the direct-mount path and would otherwise have to be rediscovered; the deployed gap is
+      // real and is not ours to close from inside the handler.
+      response.status(400).json({ errorId: 'request.malformed-payload', errorText: error.message });
+      return;
+    }
+
+    // Generic on purpose, for the reason core's `handleUnexpected` gives: an unexpected failure's
+    // message is the likeliest place for an internal detail — a Firestore path, a host, a query — to
+    // leak to a caller. It is logged in full above, so nothing is lost to whoever operates the service.
+    response.status(500).json({ errorId: 'internal-error', errorText: 'Unexpected server error.' });
   });
 
   return app;

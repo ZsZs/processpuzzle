@@ -1,11 +1,11 @@
 package com.processpuzzle.core.exception;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -14,17 +14,20 @@ import java.util.stream.Collectors;
 
 /**
  * Generic exceptions, for every module. Feature-specific advice lives beside its own endpoint
- * ({@code DocumentApiExceptionHandler}, {@code RuleApiExceptionHandler}, {@code AppApiExceptionHandler});
- * because this advice is unordered and already claims the exceptions below, declaring any of them a
- * second time in a feature advice would make which one wins depend on bean ordering.
+ * ({@code DocumentApiExceptionHandler}, {@code RuleApiExceptionHandler}, {@code AppApiExceptionHandler})
+ * and runs first, at {@link ApiAdviceOrder#FEATURE}; because this advice already claims the exceptions
+ * below, declaring any of them a second time in a feature advice would make which one wins depend on
+ * bean ordering.
+ *
+ * <p>The catch-all for everything not listed here is {@link UnhandledExceptionHandler}, in a class of
+ * its own and last — see there for what happened when it sat in this one.
  *
  * <p>Every body is an {@link ApiError} — see that record for why it is not the generated
  * {@code ErrorResponse}.
  */
 @RestControllerAdvice
+@Order(ApiAdviceOrder.GENERIC)
 public class ApiExceptionHandler {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleBadRequest(IllegalArgumentException ex) {
@@ -49,9 +52,33 @@ public class ApiExceptionHandler {
         return error(HttpStatus.CONFLICT, "request.illegal-state", ex.getMessage());
     }
 
+    /**
+     * An unparseable request body, declared on Spring's own exception rather than on the parser's.
+     * It cannot rely on the {@code JsonProcessingException} handler below via Spring's fallback to the
+     * cause: Spring Boot 4 reads bodies with <strong>Jackson 3</strong>, whose exceptions live in
+     * {@code tools.jackson.core} and are unrelated to Jackson 2's {@code com.fasterxml.jackson.core}
+     * hierarchy. Nothing matched, so the catch-all answered {@code 500} for what is plainly a caller's
+     * mistake — visible only over HTTP, which is where it was found.
+     *
+     * <p>The parser's own message is passed through: it describes the caller's payload, not ours.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        return error(HttpStatus.BAD_REQUEST, "request.malformed-payload", "Could not parse the request payload: " + ex.getMostSpecificCause().getMessage());
+    }
+
+    /**
+     * Jackson 2 parse failures raised by our own code — reading a YAML sample document, say — rather than
+     * by the HTTP layer, which {@link #handleUnreadableBody} serves. Same id for both: to a caller,
+     * "your payload does not parse" is one refusal, and it is the id the Cloud Function emits for it too.
+     *
+     * <p>Spring's fallback to an exception's <em>cause</em> is why the catch-all cannot live in this
+     * class: a handler for {@code Exception} here would match first and answer 500. {@code handleBadRequest}
+     * depends on that fallback for an invalid {@code UUID} path variable.
+     */
     @ExceptionHandler(JsonProcessingException.class)
     public ResponseEntity<ApiError> handleParseError(JsonProcessingException ex) {
-        return error(HttpStatus.BAD_REQUEST, "request.malformed-payload", "Could not parse YAML: " + ex.getOriginalMessage());
+        return error(HttpStatus.BAD_REQUEST, "request.malformed-payload", "Could not parse the request payload: " + ex.getOriginalMessage());
     }
 
     /**
@@ -68,22 +95,6 @@ public class ApiExceptionHandler {
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         return error(HttpStatus.BAD_REQUEST, "request.validation-failed", fieldErrors);
-    }
-
-    /**
-     * Anything not handled above, so that a 500 carries the same shape as every other status rather
-     * than Spring Boot's default {@code {timestamp, status, error, path}} — whose {@code error} holds a
-     * reason phrase, not a message, and would therefore mean something different from ours.
-     *
-     * <p>{@code errorText} is deliberately generic rather than {@code ex.getMessage()}: an unexpected
-     * exception's message is the likeliest place for an internal detail — a query, a path, a host — to
-     * leak to a caller. The exception itself is logged in full, so nothing is lost to whoever operates
-     * the service.
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpected(Exception ex) {
-        LOG.error("Unhandled exception while serving a request", ex);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "internal-error", "Unexpected server error.");
     }
 
     private ResponseEntity<ApiError> error(HttpStatus status, String errorId, String errorText) {

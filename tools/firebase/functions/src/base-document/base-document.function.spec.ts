@@ -46,15 +46,24 @@ describe('createBaseDocumentApp', () => {
 
     const response = await fetch(`${app.base}/organizations/${ORG_KEY}/documents`);
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ errorId: 'document.internal-error', errorText: 'Firestore is unreachable' });
+    expect(await response.json()).toEqual({ errorId: 'internal-error', errorText: 'Unexpected server error.' });
     expect(logger.error).toHaveBeenCalledWith('Base document request failed', expect.any(Error));
+  });
+
+  /** The operator sees the cause in the log; the caller must not see it in the body. */
+  it('keeps the internal failure detail out of the 500 body', async () => {
+    stub.failWith(new Error('connect ECONNREFUSED 10.3.0.7:8081 (firestore-internal)'));
+
+    const response = await fetch(`${app.base}/organizations/${ORG_KEY}/documents`);
+
+    expect(JSON.stringify(await response.json())).not.toContain('10.3.0.7');
   });
 
   it('answers a malformed JSON body with 400, not the 500 express would default to', async () => {
     const response = await fetch(`${app.base}/organizations/${ORG_KEY}/documents`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{ "slug": ' });
 
     expect(response.status).toBe(400);
-    expect((await response.json()).errorId).toBe('document.input.malformed-json');
+    expect((await response.json()).errorId).toBe('request.malformed-payload');
   });
 
   it('allows the Access-Control-* request headers BaseEntityRestService sends, which would fail preflight', async () => {

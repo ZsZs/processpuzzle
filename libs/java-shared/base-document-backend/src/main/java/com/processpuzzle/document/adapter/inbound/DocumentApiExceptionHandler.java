@@ -9,7 +9,9 @@ import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictEx
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
+import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +29,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * (see {@code tools/firebase/functions/src/base-document/base-document.handlers.ts}) — that is the
  * point of them. A client is served by whichever backend the deployment binds, and an id that differed
  * between the two would make the platform visible in exactly the place a client branches on it.
+ *
+ * <p>{@link ApiAdviceOrder#FEATURE} is not decoration: without it this advice ties with core's on
+ * precedence, and core's catch-all answered every refusal below with {@code 500 internal-error}.
  */
 @RestControllerAdvice
+@Order(ApiAdviceOrder.FEATURE)
 public class DocumentApiExceptionHandler {
 
     @ExceptionHandler(DocumentNotFoundException.class)

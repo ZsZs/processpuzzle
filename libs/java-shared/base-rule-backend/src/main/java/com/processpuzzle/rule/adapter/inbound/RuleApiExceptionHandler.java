@@ -2,7 +2,9 @@ package com.processpuzzle.rule.adapter.inbound;
 
 import com.processpuzzle.rule.usecase.exception.RuleAlreadyExistsException;
 import com.processpuzzle.rule.usecase.exception.RuleNotFoundException;
+import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,8 +13,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * Module-specific exceptions only; the generic ones belong to core's {@code ApiExceptionHandler}.
  * Bodies are the {@code ErrorResponse} of base-rule-api.yaml — {@code errorId} plus {@code errorText}.
+ *
+ * <p>{@link ApiAdviceOrder#FEATURE} keeps this advice ahead of core's, whose catch-all would otherwise
+ * answer these refusals with {@code 500 internal-error} — see {@link ApiAdviceOrder}.
  */
 @RestControllerAdvice
+@Order(ApiAdviceOrder.FEATURE)
 public class RuleApiExceptionHandler {
 
     @ExceptionHandler(RuleNotFoundException.class)
