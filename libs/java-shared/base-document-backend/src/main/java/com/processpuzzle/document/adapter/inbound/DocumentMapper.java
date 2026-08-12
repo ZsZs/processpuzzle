@@ -49,6 +49,13 @@ import java.util.UUID;
 @Component
 public class DocumentMapper {
 
+    /**
+     * Tree conversion only — no configuration to share with anything, and static rather than
+     * injected because Spring Boot 4 no longer contributes a Jackson 2 {@code ObjectMapper} bean.
+     * Same reasoning as {@code JsonColumnConverter}'s.
+     */
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+
     // ── model -> domain ─────────────────────────────────────────
 
     /**
@@ -108,7 +115,7 @@ public class DocumentMapper {
                 id,
                 BlockKind.valueOf(input.getKind().getValue()),
                 input.getEditable(),
-                input.getContent(),
+                toContentNode(input.getContent()),
                 input.getPlacement() == null ? null : WidgetPlacement.valueOf(input.getPlacement().getValue()),
                 input.getType(),
                 input.getProps(),
@@ -406,7 +413,7 @@ public class DocumentMapper {
             java.util.function.Consumer<String> setId,
             java.util.function.Consumer<com.processpuzzle.document.model.BlockKind> setKind,
             java.util.function.Consumer<Boolean> setEditable,
-            java.util.function.Consumer<com.fasterxml.jackson.databind.JsonNode> setContent,
+            java.util.function.Consumer<Object> setContent,
             java.util.function.Consumer<com.processpuzzle.document.model.WidgetPlacement> setPlacement,
             java.util.function.Consumer<String> setType,
             java.util.function.Consumer<java.util.Map<String, Object>> setProps,
@@ -415,13 +422,33 @@ public class DocumentMapper {
         setId.accept(block.id());
         setKind.accept(com.processpuzzle.document.model.BlockKind.fromValue(block.kind().name()));
         setEditable.accept(block.editable());
-        setContent.accept(block.content());
+        setContent.accept(toContentValue(block.content()));
         setPlacement.accept(block.placement() == null ? null
                 : com.processpuzzle.document.model.WidgetPlacement.fromValue(block.placement().name()));
         setType.accept(block.type());
         setProps.accept(block.props());
         setInputBindings.accept(block.inputBindings());
         setOutputBindings.accept(block.outputBindings());
+    }
+
+    /**
+     * A block's Tiptap content as the domain holds it. The generated models type it as a plain
+     * {@code Object} — a Map/List/scalar tree — while the domain keeps a Jackson 2 {@link
+     * com.fasterxml.jackson.databind.JsonNode}, so this is where the two meet.
+     *
+     * <p>The DTO is not simply typed as that JsonNode, which would make both directions a no-op,
+     * because Spring Boot 4 reads and writes HTTP with Jackson 3: to it a Jackson 2 node is an
+     * ordinary bean, serialized as {@code {"array":false,"bigDecimal":false,…}} and impossible to
+     * deserialize at all. The conversion here is the price of keeping the domain, the JSON column
+     * converter and the import/export path on Jackson 2 while the wire is Jackson 3.
+     */
+    private static com.fasterxml.jackson.databind.JsonNode toContentNode(Object content) {
+        return content == null ? null : JSON.valueToTree(content);
+    }
+
+    /** The inverse of {@link #toContentNode}; an explicit JSON null in the column maps back to absent. */
+    private static Object toContentValue(com.fasterxml.jackson.databind.JsonNode content) {
+        return content == null || content.isNull() ? null : JSON.convertValue(content, Object.class);
     }
 
     private static UUID toUuid(String id) {

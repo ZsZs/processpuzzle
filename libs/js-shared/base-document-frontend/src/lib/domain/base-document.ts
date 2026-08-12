@@ -119,12 +119,51 @@ export interface DocumentTranslationSummary {
   updatedAt?: string;
 }
 
+/**
+ * The locales a document may declare as its source. A closed list rather than free text on the form, because
+ * `Locale`'s BCP-47 pattern admits far more than an application ships translations for, and the ones it does
+ * ship are the honest choice — the same five `LANGUAGE_CONFIGURATION` offers.
+ *
+ * Key and value are both the bare tag on purpose: what the picker shows is what the contract stores, so a
+ * document's source locale reads the same on the form as in the payload and in the editor's locale tab.
+ */
+export const DOCUMENT_SOURCE_LOCALES = ['en', 'de', 'es', 'fr', 'hu'] as const;
+
+/**
+ * `DocumentSlug`'s pattern, verbatim from the contract. Carried here rather than inlined in the descriptor so
+ * that the form validator and any client-side slug handling cannot drift from each other.
+ */
+export const DOCUMENT_SLUG_PATTERN = '^[a-z0-9]+(-[a-z0-9]+)*$';
+
+/**
+ * Every language-invariant field of `DocumentPropertiesInput`, in the contract's own order.
+ *
+ * All twelve, not the four the generic form used to carry: `PUT /documents/{id}/properties` *replaces* the
+ * properties block, so a body short of a field blanks it — and `slug` and `sourceLocale` are required, so a
+ * body short of those is a 400 rather than a quiet loss. The document's content is deliberately absent; it
+ * hangs off {@link translations} and is edited through the block endpoints. See BaseDocumentService.
+ */
 export class Document implements BaseEntity {
   constructor(
     public id?: string,
     public orgKey?: string,
+    /** URL-safe route key, unique within the organization and invariant across locales. Required by the contract. */
+    public slug = '',
     public title = 'Untitled document',
+    /** What the document is about, one line — distinct from {@link description}, which summarizes it. */
+    public subject?: string,
     public description?: string,
+    /** Editable byline. Defaults to `createdBy` server-side, and never overwrites it. */
+    public author?: string,
+    /** The locale the document is authored in; every other translation is a translation *of* this one. Required. */
+    public sourceLocale = 'en',
+    /** When true the published content is readable without authentication, and {@link readerRoles} is irrelevant. */
+    public isPublic = false,
+    /** Empty means any authenticated member of the organization — base-app's NavNode.roles convention. */
+    public readerRoles: string[] = [],
+    public editorRoles: string[] = [],
+    /** Empty falls back to {@link editorRoles}: publishing is a distinct authority, but need not be separated. */
+    public publisherRoles: string[] = [],
     public inputPorts: DocumentInputPort[] = [],
     public outputPorts: DocumentOutputPort[] = [],
     /**
@@ -142,3 +181,15 @@ export class Document implements BaseEntity {
     public updatedAt?: string,
   ) {}
 }
+
+/**
+ * `DocumentPropertiesInput` as a type: exactly the fields `PUT /documents/{id}/properties` accepts, derived
+ * from {@link Document} so that a field added to one is a compile error in whatever builds the other.
+ *
+ * A `Pick` and not an interface of its own — the point is that the two cannot diverge, and that the content
+ * fields are excluded by construction rather than by remembering to leave them out.
+ */
+export type DocumentProperties = Pick<
+  Document,
+  'slug' | 'title' | 'subject' | 'description' | 'author' | 'sourceLocale' | 'isPublic' | 'readerRoles' | 'editorRoles' | 'publisherRoles' | 'inputPorts' | 'outputPorts'
+>;

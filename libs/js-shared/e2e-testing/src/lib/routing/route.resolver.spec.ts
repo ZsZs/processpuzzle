@@ -12,6 +12,20 @@ describe('toRoutePath', () => {
   it('lower-cases a single-word name', () => {
     expect(toRoutePath('Address')).toBe('address');
   });
+
+  /**
+   * Where lower-casing alone would give `documentinputport` — not where `baseEntityRoutes` mounted it, and a
+   * URL the router answers with NG04002. base-document names both its port types this way.
+   */
+  it('kebab-cases a camelCase name, as snakeCaseName does', () => {
+    expect(toRoutePath('DocumentInputPort')).toBe('document-input-port');
+    expect(toRoutePath('DocumentOutputPort')).toBe('document-output-port');
+  });
+
+  /** The acronym clause of `snakeCaseName`, transcribed with it so the two cannot drift. */
+  it('breaks an acronym before the word that follows it', () => {
+    expect(toRoutePath('ITVariant')).toBe('it-variant');
+  });
 });
 
 describe('RouteResolver', () => {

@@ -130,6 +130,22 @@ export abstract class ControlTester {
   }
 }
 
+/**
+ * A value the sentence-shaped fixture text cannot be: lower-cased, with every run of anything else collapsed
+ * to a single dash. `Test Slug e2e-mspt0-document-r0` becomes `test-slug-e2e-mspt0-document-r0`.
+ *
+ * This is the one shape worth deriving, because it is the one the platform's patterned fields actually have —
+ * a URL slug, a route key, an identifier. Generating a string for an arbitrary regular expression is a
+ * different problem, and pretending to solve it would produce fixtures that fail far from their cause; see
+ * {@link TextBoxControlTester.patternedValue}, which checks the result and says so instead.
+ */
+function toDashedToken(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 class TextBoxControlTester extends ControlTester {
   innerLocator(): string {
     return 'input, textarea';
@@ -139,13 +155,36 @@ class TextBoxControlTester extends ControlTester {
     if (this.inputType() === 'number') return '123';
 
     const suffix = context.uniqueSuffix ? ` ${context.uniqueSuffix}` : '';
-    return `Test ${this.attr.label ?? this.attr.attrName}${suffix}`;
+    return this.patternedValue(`Test ${this.attr.label ?? this.attr.attrName}${suffix}`);
   }
 
   override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     if (this.inputType() === 'number') return String(Number(original[this.attr.attrName] ?? 0) + 1);
 
-    return `Updated ${original[this.attr.attrName] ?? this.attr.attrName}`;
+    return this.patternedValue(`Updated ${original[this.attr.attrName] ?? this.attr.attrName}`);
+  }
+
+  /**
+   * `value` where the attribute declares no pattern, its dashed form where it does.
+   *
+   * A patterned field is one the form itself rejects — `BaseEntityFormBuilder` applies
+   * `Validators.pattern` — so a fixture that ignored the pattern would leave Save disabled and the test
+   * would report a missing row rather than an invalid value. Throwing when even the dashed form does not
+   * match keeps that honest: the suites cannot invent a value for every pattern, and the descriptor is where
+   * the mismatch has to be fixed.
+   */
+  private patternedValue(value: string): string {
+    const pattern = (this.attr as { pattern?: string }).pattern;
+    if (!pattern) return value;
+
+    const dashed = toDashedToken(value);
+    if (!new RegExp(pattern).test(dashed)) {
+      throw new Error(
+        `[${this.attr.attrName}] the generated fixture value '${dashed}' does not satisfy the declared pattern ${pattern}. ` +
+          `The generated suites derive only a dashed-token value for a patterned text box — give the attribute a pattern that shape satisfies, or drive it from a test of its own.`,
+      );
+    }
+    return dashed;
   }
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {

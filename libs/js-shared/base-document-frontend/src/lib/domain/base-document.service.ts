@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { firstValueFrom, from, Observable } from 'rxjs';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
-import { Document, DocumentBlock, DocumentInputPort, DocumentOutputPort, DocumentTranslation } from './base-document';
+import { Document, DocumentBlock, DocumentProperties, DocumentTranslation } from './base-document';
 import { BaseDocumentMapper } from './base-document.mapper';
 
 @Injectable({ providedIn: 'root' })
@@ -24,17 +24,38 @@ export class BaseDocumentService extends BaseEntityRestService<Document> {
    * a container that could intervene instead.
    */
   override update(entity: PersistedEntity<Document>): Observable<PersistedEntity<Document>> {
-    return from(this.updateProperties(entity.id, entity.title, entity.description, entity.inputPorts, entity.outputPorts));
+    return from(this.updateProperties(entity.id, entity));
   }
 
-  /** Hits `PUT .../documents/{id}/properties`. Also callable directly, outside the form flow. */
-  async updateProperties(id: string, title: string, description: string | undefined,
-                          inputPorts: DocumentInputPort[], outputPorts: DocumentOutputPort[]): Promise<PersistedEntity<Document>> {
+  /**
+   * Hits `PUT .../documents/{id}/properties`. Also callable directly, outside the form flow.
+   *
+   * Takes the whole properties object rather than a field list, because the endpoint *replaces* the properties
+   * block: a body short of a field blanks it, and one short of `slug` or `sourceLocale` — both required — is a
+   * 400. Naming twelve parameters would make the next field added to the contract a silent omission here;
+   * taking the object makes it a compile error in {@link Document} instead.
+   */
+  async updateProperties(id: string, properties: DocumentProperties): Promise<PersistedEntity<Document>> {
     const pathParams = new Map<string, string>([['id', id]]);
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/properties', { pathParams });
     if (!fullUrl) throw new Error('Could not determine the full url');
 
-    const body = { title, description, inputPorts, outputPorts };
+    // Spelled out rather than spread from `properties`, so that `translations`, `translation` and the audit
+    // fields a Document also carries cannot reach a body the contract describes as having none of them.
+    const body: DocumentProperties = {
+      slug: properties.slug,
+      title: properties.title,
+      subject: properties.subject,
+      description: properties.description,
+      author: properties.author,
+      sourceLocale: properties.sourceLocale,
+      isPublic: properties.isPublic,
+      readerRoles: properties.readerRoles,
+      editorRoles: properties.editorRoles,
+      publisherRoles: properties.publisherRoles,
+      inputPorts: properties.inputPorts,
+      outputPorts: properties.outputPorts,
+    };
     const dto = await firstValueFrom(this.httpClient.put(fullUrl, body, { headers: this.headers }));
     return this.entityMapper.fromDto(dto) as PersistedEntity<Document>;
   }

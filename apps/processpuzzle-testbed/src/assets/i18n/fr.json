@@ -113,7 +113,7 @@
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
     "samples_desc_1": "Les documents sont du contenu textuel de type wiki — plans de projet, documents de conception, rapports — composés d'une liste plate et ordonnée de blocs de texte et de widgets.",
-    "samples_desc_2": "Aucun exemple en direct n'est encore câblé — la bibliothèque fournit l'éditeur et les descripteurs, mais pas encore de façade qu'une application pourrait enregistrer.",
+    "samples_desc_2": "Le tableau et le formulaire ci-dessous sont générés à l'exécution à partir des descripteurs de Document ; l'onglet Contenu ouvre l'éditeur de blocs.",
     "intro_heading": "Gestion des Documents ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-document",
     "backend_heading": "Backend — base-document-backend",

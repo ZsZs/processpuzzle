@@ -149,7 +149,7 @@ export class DocumentEditorComponent implements OnChanges {
     try {
       await appendBlock();
     } catch (error) {
-      this.appendError.set(error instanceof Error ? error.message : String(error));
+      this.appendError.set(describeError(error));
     } finally {
       this.isAppending.set(false);
     }
@@ -160,4 +160,14 @@ export class DocumentEditorComponent implements OnChanges {
     const blockId = await this.contentStore.appendReferencedWidget(widgetType, props);
     textBlock.embedWidget(blockId);
   }
+}
+
+/**
+ * What went wrong, in the one line the alert has room for. A failed append is almost always an
+ * `HttpErrorResponse`, which carries a `message` but is not an `Error` — so testing for `Error` alone left
+ * the user reading `[object Object]` in place of the status the request came back with.
+ */
+function describeError(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'message' in error) return String((error as { message: unknown }).message);
+  return String(error);
 }

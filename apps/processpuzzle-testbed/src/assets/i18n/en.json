@@ -120,7 +120,7 @@
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
     "samples_desc_1": "Documents are wiki-style textual content — project plans, design docs, reports — composed of a flat, ordered list of text and widget blocks.",
-    "samples_desc_2": "A live sample is not wired up yet — the library ships the editor and the descriptors, but no facade an application could register.",
+    "samples_desc_2": "The table and form below are generated run-time from the Document descriptors; the Content tab opens the block editor.",
     "intro_heading": "ProcessPuzzle Document Management",
     "frontend_heading": "Frontend — @processpuzzle/base-document",
     "backend_heading": "Backend — base-document-backend",

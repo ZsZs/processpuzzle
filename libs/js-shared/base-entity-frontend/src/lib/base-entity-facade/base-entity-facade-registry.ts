@@ -75,6 +75,9 @@ export class EntityRegistryComponent {
         lines: attr.lines,
         options: attr.options,
         required: attr.required,
+        // The generated e2e suites fill every text box from the descriptor alone; without the pattern here a
+        // fixture value the form would reject looks like a server-side failure three layers later.
+        pattern: attr.pattern,
         linkedEntityType: attr.linkedEntityType,
         // A to-many reference whose items are not keyed by `id` cannot be read back without this.
         referenceIdField: attr.referenceIdField,

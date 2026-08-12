@@ -1,8 +1,16 @@
 {
   "document": {
     "_self": "Dokumentum",
+    "slug": "Slug",
     "title": "Cím",
+    "subject": "Tárgy",
     "description": "Leírás",
+    "author": "Szerző",
+    "sourceLocale": "Forrásnyelv",
+    "isPublic": "Nyilvános",
+    "readerRoles": "Olvasó szerepkörök",
+    "editorRoles": "Szerkesztő szerepkörök",
+    "publisherRoles": "Közzétevő szerepkörök",
     "inputPorts": "Bemeneti portok",
     "outputPorts": "Kimeneti portok",
     "tabs": {

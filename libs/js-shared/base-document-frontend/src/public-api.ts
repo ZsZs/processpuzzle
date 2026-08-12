@@ -2,8 +2,19 @@
  * Public API Surface of @processpuzzle/base-document
  */
 
-export { Document, DocumentInputPort, DocumentOutputPort, AttributeVisibilityMode, BlockKind, DocumentStatus, PortType, WidgetPlacement } from './lib/domain/base-document';
-export type { AttributeVisibility, DocumentBlock, DocumentTranslation, DocumentTranslationSummary } from './lib/domain/base-document';
+export {
+  Document,
+  DocumentInputPort,
+  DocumentOutputPort,
+  AttributeVisibilityMode,
+  BlockKind,
+  DocumentStatus,
+  DOCUMENT_SLUG_PATTERN,
+  DOCUMENT_SOURCE_LOCALES,
+  PortType,
+  WidgetPlacement,
+} from './lib/domain/base-document';
+export type { AttributeVisibility, DocumentBlock, DocumentProperties, DocumentTranslation, DocumentTranslationSummary } from './lib/domain/base-document';
 export { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './lib/domain/document-entity-names';
 export { createDocumentDescriptor } from './lib/domain/base-document.descriptors';
 export { createDocumentInputPortDescriptor, createDocumentOutputPortDescriptor, DOCUMENT_PORT_ID_FIELD } from './lib/domain/document-port.descriptors';

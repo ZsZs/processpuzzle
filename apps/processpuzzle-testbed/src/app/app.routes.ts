@@ -15,6 +15,7 @@ import { OrderLineFacade } from './content/base-rules/order-line/order-line.faca
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
+import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -194,6 +195,11 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-documents/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_DOCUMENT_ROUTES` brings the whole `document` branch — the routable document, its content tab
+        // and the two embedded port lists below it — and declares its own transloco scopes, so nothing is
+        // added here. Static children rather than `loadChildren`: see the note on SamplesComponent for why
+        // the generated e2e suites cannot address an entity mounted behind a lazy branch.
+        children: BASE_DOCUMENT_ROUTES,
       },
     ],
   },

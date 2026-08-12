@@ -96,6 +96,25 @@ describe('DocumentEditorComponent', () => {
     expect(renderedBlockIds()).toEqual(['first']);
   });
 
+  /**
+   * A rejected append has to say what happened. The rejection is an `HttpErrorResponse`, which carries a
+   * message but is not an `Error` — asserting on the status is what keeps the alert from going back to
+   * reading `[object Object]`, which is what a bare `String(error)` produced.
+   */
+  it('reports why an append failed', async () => {
+    fixture.componentRef.setInput('documentId', 'empty-doc');
+    fixture.componentRef.setInput('blocks', []);
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="document-add-text-block"]').click();
+    const request = TestBed.inject(HttpTestingController).expectOne('http://localhost:3000/organizations/processpuzzle-testbed/documents/empty-doc/translations/en/blocks');
+    request.flush({ error: 'nope' }, { status: 500, statusText: 'Server Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.pp-document-editor__error').textContent).toContain('500');
+  });
+
   /** The widget menu appears only where a WIDGET_REGISTRY has something to offer. */
   it('offers no widget menu without a widget registry', () => {
     fixture.componentRef.setInput('documentId', 'empty-doc');

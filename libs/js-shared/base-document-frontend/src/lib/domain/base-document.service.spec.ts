@@ -32,8 +32,16 @@ describe('BaseDocumentService', () => {
     new Document(
       'q3-plan',
       'demo',
+      'q3-plan',
       'Q3 plan',
+      'Planning',
       'The plan',
+      'Jane Doe',
+      'en',
+      true,
+      ['reader'],
+      ['editor'],
+      ['publisher'],
       [new DocumentInputPort('customer', PortType.ENTITY_REF, true)],
       [],
       [{ locale: 'en', status: DocumentStatus.DRAFT, blockCount: 1 }],
@@ -61,6 +69,32 @@ describe('BaseDocumentService', () => {
     expect(request.request.body).not.toHaveProperty('translations');
     expect(request.request.body.title).toBe('Q3 plan');
     expect(request.request.body.inputPorts).toHaveLength(1);
+    request.flush({ id: 'q3-plan', title: 'Q3 plan' });
+  });
+
+  /**
+   * The endpoint *replaces* the properties block, so a body short of a field blanks it — and `slug` and
+   * `sourceLocale` are required, so a body short of those is a 400 rather than a quiet loss. This is the test
+   * that would have caught the four-field body the form used to submit.
+   */
+  it('sends every language-invariant field a properties save replaces', () => {
+    service.update(persisted()).subscribe();
+
+    const request = controller.expectOne(`${serviceRoot}/documents/q3-plan/properties`);
+    expect(request.request.body).toEqual({
+      slug: 'q3-plan',
+      title: 'Q3 plan',
+      subject: 'Planning',
+      description: 'The plan',
+      author: 'Jane Doe',
+      sourceLocale: 'en',
+      isPublic: true,
+      readerRoles: ['reader'],
+      editorRoles: ['editor'],
+      publisherRoles: ['publisher'],
+      inputPorts: [new DocumentInputPort('customer', PortType.ENTITY_REF, true)],
+      outputPorts: [],
+    });
     request.flush({ id: 'q3-plan', title: 'Q3 plan' });
   });
 

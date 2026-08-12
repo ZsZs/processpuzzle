@@ -8,8 +8,19 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
     return new Document(
       dto.id,
       dto.orgKey,
+      dto.slug,
       dto.title,
+      dto.subject,
       dto.description,
+      dto.author,
+      dto.sourceLocale,
+      dto.isPublic ?? false,
+      // The three role lists are `nullable` on a summary and absent from an older payload; a form control
+      // bound to `undefined` renders as an empty chip grid, but saving it back would send `null` where the
+      // contract wants a list. Normalizing here keeps that out of every caller.
+      dto.readerRoles ?? [],
+      dto.editorRoles ?? [],
+      dto.publisherRoles ?? [],
       (dto.inputPorts ?? []).map((p: any) => new DocumentInputPort(
         p.name, p.type, p.required, p.description, p.defaultValue,
         p.entityType, p.attributeVisibility, p.defaultRsqlFilter,
@@ -25,11 +36,15 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
     );
   }
 
-  // Used only by the generic BaseEntityStore's create() path (there is no document create
-  // form in this sketch, but BaseEntityRestService requires the mapper regardless) and, more
-  // relevantly, is deliberately NOT what the Properties form submits — see
-  // BaseDocumentService.updateProperties, which builds a DocumentPropertiesInput-shaped body
-  // by hand rather than routing through this toDto/PUT-the-whole-entity path.
+  /**
+   * Used by the generic `BaseEntityStore.create()` path, which POSTs it as a `DocumentInput`. Every
+   * language-invariant field the form carries is on the entity, so spreading it is enough — and `translations`
+   * travels with it as the empty list, which the server answers by starting a draft in `sourceLocale`.
+   *
+   * Deliberately NOT what a Properties *save* submits — see BaseDocumentService.updateProperties, which builds
+   * a `DocumentPropertiesInput`-shaped body by hand so that a save cannot reach the block list even by
+   * accident.
+   */
   toDto(entity: Document): any {
     return { ...entity };
   }

@@ -1,8 +1,16 @@
 {
   "document": {
     "_self": "Document",
+    "slug": "Slug",
     "title": "Title",
+    "subject": "Subject",
     "description": "Description",
+    "author": "Author",
+    "sourceLocale": "Source locale",
+    "isPublic": "Public",
+    "readerRoles": "Reader roles",
+    "editorRoles": "Editor roles",
+    "publisherRoles": "Publisher roles",
     "inputPorts": "Input ports",
     "outputPorts": "Output ports",
     "tabs": {

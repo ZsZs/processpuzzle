@@ -93,7 +93,11 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
 
   /** Mirrors `BaseEntityFormBuilder`: every attribute, embedded children included, is a plain control. */
   private createControl(currentAttrValue: unknown) {
-    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
+    const validators = [];
+    if (this.config().required) validators.push(Validators.required);
+    if (this.config().pattern) validators.push(Validators.pattern(this.config().pattern as string));
+
+    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, validators);
   }
 
   // endregion
