@@ -156,7 +156,7 @@ export class DocumentTextBlockToolbarComponent {
   protected readonly disabledActions = computed(() => this.namesMatching((action, editor) => action.enabledWhen?.(editor) === false));
 
   protected testIdOf(action: ToolbarAction): string {
-    return `document-text-block-${action.name.replace(/_/g, '-')}`;
+    return `document-text-block-${action.name.replaceAll('_', '-')}`;
   }
 
   protected onApply(action: ToolbarAction): void {

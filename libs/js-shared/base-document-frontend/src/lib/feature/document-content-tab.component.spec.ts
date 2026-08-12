@@ -39,10 +39,7 @@ describe('DocumentContentTabComponent', () => {
     await fixture.whenStable();
   }
 
-  /**
-   * `ngOnInit` is async and Angular does not track the promise it returns, so `whenStable()` alone does not
-   * wait for the fetch's continuation — the view would still be on its loading branch.
-   */
+  /** The fire-and-forget initial fetch settles on the following event-loop turn. */
   async function settleAndRender() {
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();

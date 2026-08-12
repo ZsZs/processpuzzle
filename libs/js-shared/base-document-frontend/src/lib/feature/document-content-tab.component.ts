@@ -77,11 +77,11 @@ export class DocumentContentTabComponent implements OnInit {
 
   protected readonly title = computed(() => (this.store.currentEntity() as Document | undefined)?.title ?? '');
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     // Also sets the current entity, so the tab bar's Details link stays enabled and the status bar keeps
     // naming the record — arriving here directly, nothing else has selected it.
     this.store.setCurrentEntity(this.entityId());
-    await this.loadTranslation();
+    void this.loadTranslation();
   }
 
   private async loadTranslation(): Promise<void> {
