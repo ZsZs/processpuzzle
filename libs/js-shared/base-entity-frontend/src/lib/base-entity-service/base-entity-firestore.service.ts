@@ -7,6 +7,31 @@ import { collection, deleteDoc, doc, DocumentData, Firestore, getDoc, getDocs, l
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/firestore';
 
+/**
+ * Talks to Firestore straight from the browser, bypassing the OpenAPI contract entirely.
+ *
+ * @deprecated Use `BaseEntityRestService` against the contract on every platform. Firebase is
+ * now served by Cloud Functions that implement the same yaml the Java backend generates from — see
+ * `tools/firebase/functions/src/base-document` for the first of them — so the platform choice is a
+ * deployment concern rather than an application one.
+ *
+ * Why this path is being retired rather than kept as an option:
+ * - **It is a second seam.** With an adapter chosen in the client, every feature has to be built
+ *   twice, and only the REST half is covered by a contract test. Drift on this side is undetectable
+ *   until it reaches a user.
+ * - **Its paging is a fiction.** `findByQueryAsync` reports `totalPages: 1` and
+ *   `totalElements: content.length`, so a paginator tells the truth on REST and guesses here.
+ * - **Firestore cannot answer the query language.** `createQuery` maps a
+ *   {@link BaseEntityQueryCondition} onto Firestore constraints, which have no substring or
+ *   case-insensitive compare, and silently drop documents that lack the `orderBy` field.
+ * - **Authorization ends up in two dialects** — `firestore.rules` here, server-side policy there —
+ *   so tenant isolation has to be got right twice.
+ *
+ * Nothing about it is broken today and no removal date is set: `ApplicationPropertyService` in
+ * `widgets` and the testbed's `FirestoreDocService` still extend it, and `BaseEntityFacade.createService`
+ * still returns it when `BACKEND_SERVICE_PROVIDER` is not `rest`. Those are the call sites to migrate
+ * before it can go.
+ */
 export class BaseEntityFirestoreService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   protected collection;
   protected readonly firestore = inject(Firestore);

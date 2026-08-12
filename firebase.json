@@ -11,6 +11,27 @@
         }
       },
       {
+        "source": "/api/organizations/*/documents",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
+        "source": "/api/organizations/*/documents/**",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
+        "source": "/api/organizations/*/content/**",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "jsonServer",
