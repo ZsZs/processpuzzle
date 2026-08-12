@@ -1,4 +1,5 @@
 import { patchState } from '@ngrx/signals';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
@@ -12,13 +13,7 @@ export const addEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<En
       patchState(store, { entities: store.entities().concat([savedEntity]), isLoading: false });
       return savedEntity;
     } catch (error) {
-      let errorMessage = 'Unknown error';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (error && typeof error === 'object' && 'message' in error && typeof (error as Record<string, unknown>)['message'] === 'string') {
-        errorMessage = (error as Record<string, unknown>)['message'] as string;
-      }
-      patchState(store, { error: errorMessage, isLoading: false });
+      patchState(store, { error: httpErrorMessage(error), isLoading: false });
       return undefined;
     }
   };

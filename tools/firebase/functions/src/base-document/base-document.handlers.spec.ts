@@ -607,7 +607,10 @@ describe('deleteDocumentBlock', () => {
 
     const body = await response.json();
     expect(body.errorId).toBe('document.block.referenced');
-    expect(body.referencingBlockIds).toEqual(['text-1']);
+    // The referrers are named in `errorText`, the only place the contract gives them: `ErrorResponse`
+    // is exactly these two keys, and the wording matches DocumentBlockReferencedException's message.
+    expect(body.errorText).toBe("Block 'widget-1' is still referenced by: [text-1]");
+    expect(Object.keys(body).sort()).toEqual(['errorId', 'errorText']);
     expect(stub.drafts.get(`${ORG_KEY}/${DOCUMENT_ID}/en`)?.blocks).toHaveLength(2);
   });
 

@@ -17,6 +17,12 @@ public class DocumentBlockReferencedException extends RuntimeException {
         this.referencingBlockIds = List.copyOf(referencingBlockIds);
     }
 
+    /**
+     * The referring ids, structured. Note the HTTP body no longer carries them as a separate key — the
+     * contract's {@code ErrorResponse} is exactly {@code errorId} plus {@code errorText}, and the message
+     * above already names them. This accessor stays because it is the only structured form, and because
+     * it is where a future declared {@code details} schema would read from.
+     */
     public List<String> getReferencingBlockIds() {
         return referencingBlockIds;
     }

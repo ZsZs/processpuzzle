@@ -3,7 +3,7 @@ import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { pipe, switchMap } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { tapResponse } from '@ngrx/operators';
-import { HttpErrorResponse } from '@angular/common/http';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EntityStoreHandle } from './base-entity.store';
 
@@ -15,7 +15,7 @@ export const deleteAllEntities = <Entity extends BaseEntity>(store: EntityStoreH
         return repository.deleteAll().pipe(
           tapResponse({
             next: () => patchState(store, { entities: [], isLoading: false }),
-            error: (error: HttpErrorResponse) => patchState(store, { error: error.message }),
+            error: (error: unknown) => patchState(store, { error: httpErrorMessage(error) }),
             finalize: () => patchState(store, { isLoading: false }),
           }),
         );

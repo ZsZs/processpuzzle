@@ -5,7 +5,7 @@ import { BaseEntityLoadResponse, BaseEntityQueryCondition } from '../base-entity
 import { pipe, switchMap, tap } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { tapResponse } from '@ngrx/operators';
-import { HttpErrorResponse } from '@angular/common/http';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityStoreHandle } from './base-entity.store';
 
 export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
@@ -40,7 +40,7 @@ export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<
                 });
               }
             },
-            error: (error: HttpErrorResponse) => patchState(store, { error: error.message }),
+            error: (error: unknown) => patchState(store, { error: httpErrorMessage(error) }),
             finalize: () => patchState(store, { isLoading: false }),
           }),
         ),

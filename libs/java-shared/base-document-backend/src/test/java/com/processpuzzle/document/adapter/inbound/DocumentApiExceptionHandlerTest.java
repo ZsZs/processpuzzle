@@ -18,9 +18,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * What matters here is the status each exception maps to — that is the module's half of the HTTP
- * contract — plus the {@code error} body key, which every other handler in the codebase uses and
- * which the contract's own schema disagrees with (see the handler's own note).
+ * Two things matter here: the status each exception maps to, and the {@code errorId} — because the
+ * Cloud Function in {@code tools/firebase/functions/src/base-document} answers the same refusals with
+ * the same ids, and a client must not be able to tell which backend served it. The ids asserted below
+ * are therefore a cross-implementation contract, not an internal detail.
  */
 class DocumentApiExceptionHandlerTest {
 
@@ -30,33 +31,55 @@ class DocumentApiExceptionHandlerTest {
     private final DocumentApiExceptionHandler handler = new DocumentApiExceptionHandler();
 
     @Test
-    void aMissingDocumentTranslationOrBlockIs404() {
-        assertThat(handler.handleNotFound(new DocumentNotFoundException(ORG, ID)).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(handler.handleBlockNotFound(new DocumentBlockNotFoundException(ORG, ID, "intro")).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(handler.handleTranslationNotFound(new DocumentTranslationNotFoundException(ORG, ID, "de"))
-                .getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    void aMissingDocumentTranslationOrBlockIs404WithItsOwnId() {
+        var document = handler.handleNotFound(new DocumentNotFoundException(ORG, ID));
+        var block = handler.handleBlockNotFound(new DocumentBlockNotFoundException(ORG, ID, "intro"));
+        var translation = handler.handleTranslationNotFound(new DocumentTranslationNotFoundException(ORG, ID, "de"));
+
+        assertThat(document.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(block.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(translation.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(document.getBody().getErrorId()).isEqualTo("document.not-found");
+        assertThat(block.getBody().getErrorId()).isEqualTo("document.block.not-found");
+        assertThat(translation.getBody().getErrorId()).isEqualTo("document.translation.not-found");
     }
 
     @Test
-    void theBodyKeyIsErrorAndCarriesTheExceptionsOwnMessage() {
+    void errorTextCarriesTheExceptionsOwnMessage() {
         var response = handler.handleNotFound(new DocumentNotFoundException(ORG, ID));
 
-        assertThat(response.getBody()).containsEntry("error", "No document '" + ID + "' in organization '" + ORG + "'");
+        assertThat(response.getBody().getErrorText()).isEqualTo("No document '" + ID + "' in organization '" + ORG + "'");
     }
 
     @Test
-    void everyFlavourOfAlreadyExistsIs409() {
-        assertThat(handler.handleConflict(new DocumentAlreadyExistsException(ORG, ID)).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
-        assertThat(handler.handleSlugConflict(new DocumentSlugAlreadyExistsException(ORG, "taken")).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
-        assertThat(handler.handleTranslationConflict(new DocumentTranslationAlreadyExistsException(ID, "de"))
-                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(handler.handlePublishingConflict(
-                DocumentPublishingConflictException.nothingToRevertTo(ID, "en")).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
+    void everyFlavourOfAlreadyExistsIs409WithItsOwnId() {
+        var document = handler.handleConflict(new DocumentAlreadyExistsException(ORG, ID));
+        var slug = handler.handleSlugConflict(new DocumentSlugAlreadyExistsException(ORG, "taken"));
+        var translation = handler.handleTranslationConflict(new DocumentTranslationAlreadyExistsException(ID, "de"));
+
+        assertThat(document.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(slug.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(translation.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(document.getBody().getErrorId()).isEqualTo("document.already-exists");
+        assertThat(slug.getBody().getErrorId()).isEqualTo("document.slug.already-exists");
+        assertThat(translation.getBody().getErrorId()).isEqualTo("document.translation.already-exists");
+    }
+
+    /**
+     * The three publishing refusals share a status, so the id is the only thing that tells them apart —
+     * "fix the content first" is a different instruction to the user than "there is nothing to revert to".
+     */
+    @Test
+    void eachPublishingConflictKeepsItsOwnIdDespiteSharingTheStatus() {
+        var nothingToRevert = handler.handlePublishingConflict(DocumentPublishingConflictException.nothingToRevertTo(ID, "en"));
+        var notPublishable = handler.handlePublishingConflict(DocumentPublishingConflictException.notPublishable(ID, "en", List.of("problem")));
+        var sourceLocale = handler.handlePublishingConflict(DocumentPublishingConflictException.sourceLocaleNotRemovable(ID, "en"));
+
+        assertThat(nothingToRevert.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(nothingToRevert.getBody().getErrorId()).isEqualTo("document.draft.nothing-to-revert-to");
+        assertThat(notPublishable.getBody().getErrorId()).isEqualTo("document.publish.not-publishable");
+        // Matches the Cloud Function's id for the same refusal.
+        assertThat(sourceLocale.getBody().getErrorId()).isEqualTo("document.translation.source-locale-not-removable");
     }
 
     @Test
@@ -66,17 +89,21 @@ class DocumentApiExceptionHandlerTest {
         var response = handler.handleAccessDenied(DocumentAccessDeniedException.lacksRole("edit", ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).containsEntry("error", "The current principal may not edit document '" + ID + "'");
+        assertThat(response.getBody().getErrorId()).isEqualTo("document.access-denied");
+        assertThat(response.getBody().getErrorText()).isEqualTo("The current principal may not edit document '" + ID + "'");
     }
 
+    /**
+     * The referrers stay in {@code errorText} rather than a second key: an undeclared
+     * {@code referencingBlockIds} was a shape only this implementation knew about, and no client read it.
+     */
     @Test
-    void aStillReferencedBlockAnswers409WithTheReferrersSoTheUiCanPointAtThem() {
-        var response = handler.handleBlockReferenced(
-                new DocumentBlockReferencedException("grid-1", List.of("intro", "outro")));
+    void aStillReferencedBlockAnswers409NamingTheReferrersInErrorText() {
+        var response = handler.handleBlockReferenced(new DocumentBlockReferencedException("grid-1", List.of("intro", "outro")));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).containsEntry("referencingBlockIds", List.of("intro", "outro"));
-        assertThat(response.getBody().get("error").toString()).contains("grid-1");
+        assertThat(response.getBody().getErrorId()).isEqualTo("document.block.referenced");
+        assertThat(response.getBody().getErrorText()).contains("grid-1").contains("intro").contains("outro");
     }
 
     @Test
@@ -84,7 +111,7 @@ class DocumentApiExceptionHandlerTest {
         var response = handler.handleStaleWrite(new OptimisticLockingFailureException("Row was updated or deleted"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).containsEntry(
-                "error", "This document was modified by someone else — reload and retry.");
+        assertThat(response.getBody().getErrorId()).isEqualTo("document.stale-write");
+        assertThat(response.getBody().getErrorText()).isEqualTo("This document was modified by someone else — reload and retry.");
     }
 }

@@ -340,7 +340,7 @@ export class BaseDocumentHandlers {
         translationNotFound(response, locale);
         return;
       case 'failed':
-        respondToFailure(response, outcome.failure, outcome.detail);
+        respondToFailure(response, outcome.failure, pathParam(request, 'blockId'), outcome.detail);
         return;
       case 'applied':
         respond(outcome.result);
@@ -477,15 +477,17 @@ function blocksOf(translations: readonly DocumentTranslationInput[] | undefined,
   return translations?.find((translation) => translation.locale === locale)?.blocks ?? undefined;
 }
 
-function respondToFailure(response: Response, failure: BlockMutationFailure, detail: readonly string[] | undefined): void {
+function respondToFailure(response: Response, failure: BlockMutationFailure, blockId: string, detail: readonly string[] | undefined): void {
   switch (failure) {
     case 'block-not-found':
       notFound(response, 'document.block.not-found', 'No such block in this translation.');
       return;
     case 'block-referenced':
-      // `referencingBlockIds` is an extra key the contract does not declare, matching what
-      // DocumentBlockReferencedException puts on the wire so the editor can name the culprits.
-      response.status(409).json({ errorId: 'document.block.referenced', errorText: `Block is still referenced by ${detail?.join(', ')}.`, referencingBlockIds: detail });
+      // The referring ids live in `errorText`, not in a second key: `ErrorResponse` is exactly
+      // `errorId` + `errorText`, and an undeclared key is the one thing a client cannot rely on. The
+      // wording matches DocumentBlockReferencedException's message so the two backends are
+      // indistinguishable here, which is the whole point of implementing one contract twice.
+      conflict(response, 'document.block.referenced', `Block '${blockId}' is still referenced by: [${(detail ?? []).join(', ')}]`);
       return;
     case 'not-a-permutation':
       badRequest(response, 'document.blocks.not-a-permutation', "'blockIds' must be an exact permutation of the translation's current block ids.");
