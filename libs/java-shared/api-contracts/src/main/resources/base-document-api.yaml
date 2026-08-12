@@ -1361,8 +1361,9 @@ components:
         every WIDGET block's props.childIds).
       # No `additionalProperties: true` — that is already the OpenAPI 3.0 default for an object
       # with no declared properties, and spelling it out makes openapi-generator treat this as a
-      # free-form map and emit a `new HashMap<>()` initializer, which does not compile against the
-      # JsonNode this schema is mapped to (see the document schemaMappings in api-contracts/pom.xml).
+      # free-form map and emit a `new HashMap<>()` initializer, which would turn "this block has no
+      # content" into an empty object in every response. The schema is mapped to a bare Object
+      # instead (see the document schemaMappings in api-contracts/pom.xml).
 
     ReorderBlocksRequest:
       type: object

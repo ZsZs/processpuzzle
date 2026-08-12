@@ -13,7 +13,7 @@ export { ComponentsListComponent } from './lib/base-form/components/components-l
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
 export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-components/embedded-component-ref.component';
 export { RelatedEntitiesListComponent } from './lib/base-form/related-entities/related-entities-list.component';
-export { BaseEntityDescriptor, type BaseEntityDescriptorOptions } from './lib/base-entity/base-entity.descriptor';
+export { BaseEntityDescriptor, type BaseEntityDescriptorOptions, type EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 export { EntityLabelPipe } from './lib/i18n/entity-label.pipe';
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
 export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';

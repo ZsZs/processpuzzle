@@ -166,6 +166,40 @@ describe('BaseEntityFormBuilder', () => {
     expect(component.form.controls['embeddedComponents']).toBeInstanceOf(FormControl);
   });
 
+  // A field the backend constrains beyond "not empty" — a slug, a locale tag — is rejected on the form the
+  // user typed it into rather than by a 400 whose message comes from the server's validation locale.
+  it('buildForm() applies the pattern declared on an attribute as a validator', () => {
+    const slugAttr = new BaseEntityAttrDescriptor('slug', FormControlType.TEXT_BOX);
+    slugAttr.pattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
+    const form: FormGroup = new FormGroup({});
+
+    formBuilder.buildForm(component.formHost.viewContainerRef, form, store, [slugAttr], testEntity, 'Test Entity');
+
+    const control = form.controls['slug'];
+    control.setValue('Getting Started');
+    expect(control.hasError('pattern')).toBe(true);
+    control.setValue('getting-started');
+    expect(control.valid).toBe(true);
+  });
+
+  // `Validators.pattern` passes on an empty value, so the two validators have to compose: a patterned field
+  // that is also required must reject blank, and one that is not must accept it.
+  it('buildForm() composes required with pattern rather than letting one imply the other', () => {
+    const optional = new BaseEntityAttrDescriptor('optionalSlug', FormControlType.TEXT_BOX);
+    optional.pattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
+    const mandatory = new BaseEntityAttrDescriptor('mandatorySlug', FormControlType.TEXT_BOX);
+    mandatory.pattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
+    mandatory.required = true;
+    const form: FormGroup = new FormGroup({});
+
+    formBuilder.buildForm(component.formHost.viewContainerRef, form, store, [optional, mandatory], testEntity, 'Test Entity');
+
+    form.controls['optionalSlug'].setValue('');
+    expect(form.controls['optionalSlug'].valid).toBe(true);
+    form.controls['mandatorySlug'].setValue('');
+    expect(form.controls['mandatorySlug'].hasError('required')).toBe(true);
+  });
+
   it('buildForm() throws Error if a descriptor class is unknown.', () => {
     class DummySubclass extends AbstractAttrDescriptor {
       constructor() {

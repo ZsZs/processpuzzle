@@ -107,6 +107,52 @@ describe('createControlTester', () => {
   });
 });
 
+describe('TEXT_BOX fixture values', () => {
+  const context = { descriptor: descriptor('Document', []), descriptorMap: new Map(), uniqueSuffix: 'e2e-mspt0-document-r0' };
+  const slugPattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
+
+  it('writes sentence-shaped text where the attribute declares no pattern', () => {
+    const tester = createControlTester(attr({ attrName: 'title', formControlType: 'TEXT_BOX', label: 'Title' }));
+
+    expect(tester.createValue(context)).toBe('Test Title e2e-mspt0-document-r0');
+  });
+
+  // The form itself rejects a value the pattern does not match, so a fixture that ignored the pattern would
+  // leave Save disabled and the test would report a missing row rather than an invalid value.
+  it('derives a dashed token where the attribute declares a pattern', () => {
+    const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug', pattern: slugPattern }));
+
+    expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
+  });
+
+  it('does not leave separators from punctuation at either end of a dashed token', () => {
+    const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug!!!', pattern: slugPattern }));
+
+    expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
+  });
+
+  it('keeps the update value inside the pattern too', () => {
+    const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug', pattern: slugPattern }));
+
+    expect(tester.updateValue(context, { slug: 'test-slug-e2e-mspt0-document-r0' })).toBe('updated-test-slug-e2e-mspt0-document-r0');
+  });
+
+  // Deriving a string for an arbitrary regular expression is a different problem; failing here names the
+  // descriptor, rather than leaving a save to fail for reasons the suite cannot explain.
+  it('refuses to guess for a pattern the dashed token cannot satisfy', () => {
+    const tester = createControlTester(attr({ attrName: 'code', formControlType: 'TEXT_BOX', label: 'Code', pattern: '^[0-9]{4}$' }));
+
+    expect(() => tester.createValue(context)).toThrow(/does not satisfy the declared pattern/);
+  });
+
+  it('leaves a numeric text box numeric, pattern or not', () => {
+    const tester = createControlTester(attr({ attrName: 'total', formControlType: 'TEXT_BOX', options: { inputType: 'number' } }));
+
+    expect(tester.createValue(context)).toBe('123');
+    expect(tester.updateValue(context, { total: '123' })).toBe('124');
+  });
+});
+
 describe('DROPDOWN option values', () => {
   const dropdown = (fixture: Record<string, unknown>) => createControlTester(attr({ attrName: 'status', formControlType: 'DROPDOWN', ...fixture }));
   const noContext = {} as never;

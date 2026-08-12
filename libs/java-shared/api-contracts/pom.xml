@@ -193,12 +193,16 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <apiPackage>com.processpuzzle.document.api</apiPackage>
                             <modelPackage>com.processpuzzle.document.model</modelPackage>
-                            <!-- TiptapDocument stays a raw JsonNode: the contract calls it opaque and
-                                 DocumentBlock.content is a JsonNode for the same reason, so mapping it
-                                 here keeps DocumentMapper a field-for-field copy instead of forcing a
-                                 Map<String, Object> round-trip through ObjectMapper on every block. -->
+                            <!-- TiptapDocument is opaque per the contract, so it maps to a bare Object rather
+                                 than to a generated model class that would drop every property it does not
+                                 declare. Deliberately NOT to com.fasterxml.jackson.databind.JsonNode, which is
+                                 what the domain uses: Spring Boot 4 reads and writes HTTP with Jackson 3
+                                 (tools.jackson), to which a Jackson 2 node is an ordinary bean — it serialized
+                                 as {"array":false,"bigDecimal":false,...} and failed deserialization outright
+                                 with a 500. An Object is a Map/List/scalar tree both Jackson versions handle
+                                 natively; DocumentMapper converts it to and from the domain's JsonNode. -->
                             <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,TiptapDocument=com.fasterxml.jackson.databind.JsonNode
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,TiptapDocument=java.lang.Object
                             </schemaMappings>
                             <configOptions>
                                 <delegatePattern>false</delegatePattern>

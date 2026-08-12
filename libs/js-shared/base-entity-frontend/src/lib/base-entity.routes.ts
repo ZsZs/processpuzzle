@@ -1,6 +1,7 @@
 import type { EnvironmentProviders, Provider, ProviderToken } from '@angular/core';
 import { Route, Routes } from '@angular/router';
 import { BaseEntity } from './base-entity/base-entity';
+import type { EntityTabDescriptor } from './base-entity/base-entity.descriptor';
 import { ACTIVE_ENTITY_FACADE } from './base-entity-facade/active-entity-facade.token';
 import { BaseEntityFacade } from './base-entity-facade/base-entity-facade';
 import { embeddedAggregateGuard } from './base-entity-embedded/embedded-aggregate.guard';
@@ -41,7 +42,7 @@ export interface EmbeddedChildRoute {
  * navigation. A child that names itself would otherwise be an infinite structure; lazily, it is finite at
  * any moment and Angular memoizes each level it has expanded.
  */
-export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = []): Routes {
+export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = [], extraTabs: EntityTabDescriptor[] = []): Routes {
   return [
     { path: '', redirectTo: BaseUrlSegments.ListForm, pathMatch: 'full' },
     {
@@ -49,6 +50,11 @@ export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = []): R
       component: BaseEntityFormComponent,
       ...(embeddedChildren.length > 0 ? { loadChildren: () => embeddedChildren.map(embeddedChildRoute) } : {}),
     },
+    // Siblings of the details route rather than children of it: an extra tab is another screen *of the
+    // entity*, addressed by the same `<entity>/<id>` prefix, not a part of the details form. The prefix is
+    // what BaseFormNavigatorSingletonStore.determineBaseUrl counts back over, which is why the shape has
+    // to match the details route's exactly.
+    ...extraTabs.map((tab) => ({ path: ':' + BaseUrlSegments.EntityID + '/' + tab.segment, component: tab.component })),
     { path: BaseUrlSegments.ListForm, component: BaseEntityListComponent },
   ];
 }

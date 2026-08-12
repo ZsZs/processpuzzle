@@ -1,6 +1,13 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
-import { DOCUMENT_I18N_SCOPE } from '../base-document.i18n';
+import { DOCUMENT_INPUT_PORT_I18N_SCOPE, DOCUMENT_OUTPUT_PORT_I18N_SCOPE } from '../base-document.i18n';
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './document-entity-names';
+
+/**
+ * Attribute that identifies a port row in a URL segment, and that the embedded store keys its rows by.
+ * A port has no `id` in the contract — `name` is what names it to the host, and what a binding refers to —
+ * so both ends of that have to be told, here and on the owning `EMBEDDED_COMPONENTS` attribute.
+ */
+export const DOCUMENT_PORT_ID_FIELD = 'name';
 
 const PORT_TYPES = ['STRING', 'NUMBER', 'BOOLEAN', 'DATE', 'OBJECT', 'ARRAY', 'ENTITY_REF', 'ENTITY_COLLECTION'];
 const ENTITY_PORT_TYPES = ['ENTITY_REF', 'ENTITY_COLLECTION'];
@@ -70,7 +77,7 @@ export function createDocumentInputPortDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: DOCUMENT_INPUT_PORT_ENTITY_NAME,
     attrDescriptors: createDocumentInputPortAttrDescriptors(),
-    i18nScope: DOCUMENT_I18N_SCOPE,
+    i18nScope: DOCUMENT_INPUT_PORT_I18N_SCOPE,
     componentParent: DOCUMENT_ENTITY_NAME,
     isEmbedded: true,
   });
@@ -80,7 +87,7 @@ export function createDocumentOutputPortDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: DOCUMENT_OUTPUT_PORT_ENTITY_NAME,
     attrDescriptors: createDocumentOutputPortAttrDescriptors(),
-    i18nScope: DOCUMENT_I18N_SCOPE,
+    i18nScope: DOCUMENT_OUTPUT_PORT_I18N_SCOPE,
     componentParent: DOCUMENT_ENTITY_NAME,
     isEmbedded: true,
   });

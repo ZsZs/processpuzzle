@@ -16,7 +16,7 @@ import { TestEntity, TestEnum } from './lib/test-entity';
 import { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 import { TestBed } from '@angular/core/testing';
-import { BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
+import { BaseEntityDescriptor, EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -93,7 +93,11 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
 
   /** Mirrors `BaseEntityFormBuilder`: every attribute, embedded children included, is a plain control. */
   private createControl(currentAttrValue: unknown) {
-    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
+    const validators = [];
+    if (this.config().required) validators.push(Validators.required);
+    if (this.config().pattern) validators.push(Validators.pattern(this.config().pattern as string));
+
+    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, validators);
   }
 
   // endregion
@@ -120,12 +124,18 @@ export class DummyOutletComponent {}
  * and the row on its `:entityId/details` child, and an embedded child hangs below that details route. Both are
  * what `readEmbeddedBreadcrumb` reads, so a spec that navigates these routes gets a real breadcrumb.
  */
+/** URL segment of the extra tab the test entity offers. */
+export const TEST_ENTITY_TAB_SEGMENT = 'preview';
+
 export const TEST_ENTITY_ROUTES: Routes = [
   {
     path: 'test-entity',
     data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'TestEntity' },
     children: [
       { path: BaseUrlSegments.ListForm, component: DummyComponent },
+      // Stands in for an entity's extra tab (see EntityTabDescriptor) — a sibling of the details route,
+      // sharing its `<entity>/<id>` prefix, which is the shape the navigator counts back over.
+      { path: ':' + BaseUrlSegments.EntityID + '/' + TEST_ENTITY_TAB_SEGMENT, component: DummyComponent },
       {
         path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
         component: DummyOutletComponent,
@@ -311,6 +321,7 @@ export async function setupContainerComponentTest(
   componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>,
   translations: TranslationsMap = {},
   extraProviders: Provider[] = [],
+  extraTabs: EntityTabDescriptor[] = [],
 ) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -319,6 +330,9 @@ export async function setupContainerComponentTest(
     attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
+    // Declared before the first change detection below, because BaseEntityTabsComponent registers the
+    // segments in ngOnInit — a tab added afterwards would render but never be recognized in a URL.
+    extraTabs,
   });
   const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1', LOGGING_CONFIGURATION };
 

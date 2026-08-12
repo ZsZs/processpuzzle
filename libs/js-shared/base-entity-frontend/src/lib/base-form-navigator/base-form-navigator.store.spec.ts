@@ -39,6 +39,7 @@ describe('BaseFormNavigatorStore', () => {
         provideRouter([
           { path: 'home', component: DummyComponent },
           { path: 'test-entity/:id/details', component: DummyComponent },
+          { path: 'test-entity/:id/content', component: DummyComponent },
           { path: 'test-entity/list', component: DummyComponent },
           { path: 'application-property/:id/details', component: DummyComponent },
           { path: 'application-property/list', component: DummyComponent },
@@ -79,6 +80,68 @@ describe('BaseFormNavigatorStore', () => {
     expect(store.navigateTo()).toEqual('/test-entity/1/details');
     expect(store.returnTo()).toEqual('home');
     expect(store.activeRouteSegment()).toEqual(RouteSegments.DETAILS_ROUTE);
+  });
+
+  /**
+   * An extra tab is a screen of the entity beside its details form — see `EntityTabDescriptor`. Which URL
+   * tails count as one is registered by whoever renders the tabs, because the store has no descriptors: an
+   * unregistered tail is not a tab and must keep classifying as it always did.
+   */
+  describe('extra tab routes', () => {
+    it('classifies a registered tab segment, and nothing else', async () => {
+      await store.navigateToUrl('test-entity/1/content', 'home');
+      expect(store.activeRouteSegment()).toBeUndefined();
+      expect(store.activeTabSegment()).toBeUndefined();
+
+      store.registerTabSegments(['content']);
+
+      expect(store.activeRouteSegment()).toEqual(RouteSegments.ENTITY_TAB_ROUTE);
+      expect(store.activeTabSegment()).toEqual('content');
+    });
+
+    it('navigateToTab() builds <entity>/<id>/<segment> on the details route prefix', async () => {
+      store.registerTabSegments(['content']);
+
+      await store.navigateToTab('1', 'content', 'home');
+
+      expect(store.determineCurrentUrl()).toEqual('/test-entity/1/content');
+      expect(store.returnTo()).toEqual('home');
+      expect(store.activeRouteSegment()).toEqual(RouteSegments.ENTITY_TAB_ROUTE);
+    });
+
+    /**
+     * The prefix every other URL of this entity is built on. A tab URL has the details route's shape, so it
+     * counts back the same three levels; read as the two-level list shape it would leave a segment of the
+     * entity's own path in the prefix, and the List tab would navigate to `/test-entity/1/test-entity/list`.
+     */
+    it('leaves the list reachable from a tab', async () => {
+      store.registerTabSegments(['content']);
+      await store.navigateToTab('1', 'content');
+
+      await store.navigateToList();
+
+      expect(store.determineCurrentUrl()).toEqual('/test-entity/list');
+    });
+
+    it('is inert when the tab it would navigate to is already open', async () => {
+      store.registerTabSegments(['content']);
+      await store.navigateToTab('1', 'content', 'home');
+
+      await store.navigateToTab('1', 'content', 'elsewhere');
+
+      expect(store.returnTo()).toEqual('home');
+    });
+
+    it('clears the tab segment again on a details or list route', async () => {
+      store.registerTabSegments(['content']);
+      await store.navigateToTab('1', 'content');
+      expect(store.activeTabSegment()).toEqual('content');
+
+      await store.navigateToDetails('1');
+
+      expect(store.activeRouteSegment()).toEqual(RouteSegments.DETAILS_ROUTE);
+      expect(store.activeTabSegment()).toBeUndefined();
+    });
   });
 
   it('navigateToList() navigates from current route to List route', async () => {

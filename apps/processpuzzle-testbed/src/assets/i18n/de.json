@@ -113,7 +113,7 @@
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
     "samples_desc_1": "Dokumente sind wiki-artige Textinhalte – Projektpläne, Entwurfsdokumente, Berichte – aufgebaut aus einer flachen, geordneten Liste von Text- und Widget-Blöcken.",
-    "samples_desc_2": "Ein lauffähiges Beispiel ist noch nicht eingerichtet – die Bibliothek liefert den Editor und die Deskriptoren, aber noch keine Fassade, die eine Anwendung registrieren könnte.",
+    "samples_desc_2": "Die Tabelle und das Formular unten werden zur Laufzeit aus den Dokument-Deskriptoren generiert; der Inhalt-Tab öffnet den Blockeditor.",
     "intro_heading": "ProcessPuzzle Dokumentenverwaltung",
     "frontend_heading": "Frontend — @processpuzzle/base-document",
     "backend_heading": "Backend — base-document-backend",

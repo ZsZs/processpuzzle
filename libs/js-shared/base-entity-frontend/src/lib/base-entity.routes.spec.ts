@@ -35,6 +35,22 @@ describe('baseEntityRoutes', () => {
     expect(detailsRouteOf(BASE_ENTITY_ROUTES).loadChildren).toBeUndefined();
   });
 
+  /**
+   * An extra tab is a screen *of the entity*, so its route is a sibling of the details form sharing the same
+   * `<entity>/<id>` prefix — not a child of it. The prefix is what
+   * BaseFormNavigatorSingletonStore.determineBaseUrl counts back over, so the shape has to match exactly.
+   */
+  it('mounts a sibling route per extra tab, on the details route prefix', () => {
+    const routes = baseEntityRoutes([], [{ segment: 'content', i18nKey: 'x.tabs.content', component: BaseEntityListComponent }]);
+
+    expect(routes.map((route) => route.path)).toEqual(['', ':entityId/details', ':entityId/content', 'list']);
+    expect(routes.find((route) => route.path === ':entityId/content')?.component).toBe(BaseEntityListComponent);
+  });
+
+  it('adds nothing for a caller that declares no extra tab', () => {
+    expect(baseEntityRoutes().map((route) => route.path)).toEqual(['', ':entityId/details', 'list']);
+  });
+
   it('hangs an embedded child below the details route, under its snake-cased entity name', () => {
     const routes = baseEntityRoutes([{ entityName: 'Embedded Component', facade: embeddedComponentFacade }]);
 

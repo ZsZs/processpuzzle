@@ -113,7 +113,7 @@
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Példák",
     "samples_desc_1": "A dokumentumok wiki jellegű szöveges tartalmak – projekttervek, tervezési dokumentumok, jelentések –, amelyeket szöveg- és widgetblokkok lapos, rendezett listája alkot.",
-    "samples_desc_2": "Élő példa még nincs bekötve – a könyvtár szállítja a szerkesztőt és a leírókat, de még nincs olyan fasszád, amelyet egy alkalmazás regisztrálhatna.",
+    "samples_desc_2": "Az alábbi táblázat és űrlap futásidőben generálódik a Dokumentum leírókból; a Tartalom fül nyitja meg a blokkszerkesztőt.",
     "intro_heading": "ProcessPuzzle Dokumentumkezelés",
     "frontend_heading": "Frontend — @processpuzzle/base-document",
     "backend_heading": "Backend — base-document-backend",

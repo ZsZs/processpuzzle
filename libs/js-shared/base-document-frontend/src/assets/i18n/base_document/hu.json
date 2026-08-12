@@ -1,0 +1,60 @@
+{
+  "document": {
+    "_self": "Dokumentum",
+    "slug": "Slug",
+    "title": "Cím",
+    "subject": "Tárgy",
+    "description": "Leírás",
+    "author": "Szerző",
+    "sourceLocale": "Forrásnyelv",
+    "isPublic": "Nyilvános",
+    "readerRoles": "Olvasó szerepkörök",
+    "editorRoles": "Szerkesztő szerepkörök",
+    "publisherRoles": "Közzétevő szerepkörök",
+    "inputPorts": "Bemeneti portok",
+    "outputPorts": "Kimeneti portok",
+    "tabs": {
+      "content": "{{ entity }} - tartalom"
+    },
+    "content": {
+      "loading": "Tartalom betöltése…",
+      "add_text_block": "Szövegblokk hozzáadása",
+      "add_widget_block": "Widget hozzáadása",
+      "toolbar": {
+        "label": "Szövegformázás",
+        "bold": "Félkövér",
+        "italic": "Dőlt",
+        "strike": "Áthúzott",
+        "code": "Beágyazott kód",
+        "heading_1": "Címsor 1",
+        "heading_2": "Címsor 2",
+        "heading_3": "Címsor 3",
+        "bullet_list": "Felsorolás",
+        "ordered_list": "Számozott lista",
+        "blockquote": "Idézet",
+        "horizontal_rule": "Elválasztó",
+        "undo": "Visszavonás",
+        "redo": "Újra"
+      }
+    }
+  },
+  "document_input_port": {
+    "_self": "Bemeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "required": "Kötelező",
+    "description": "Leírás",
+    "entityType": "Entitástípus",
+    "attributeVisibility": "Attribútum-láthatóság",
+    "defaultValue": "Alapértelmezett érték",
+    "defaultRsqlFilter": "Alapértelmezett RSQL-szűrő"
+  },
+  "document_output_port": {
+    "_self": "Kimeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "description": "Leírás",
+    "entityType": "Entitástípus",
+    "attributeVisibility": "Attribútum-láthatóság"
+  }
+}

@@ -1,8 +1,41 @@
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 
-/** "Test Entity Component" → "test-entity-component" */
+/**
+ * The path segment an entity's routes are mounted at: `"Test Entity Component"` → `test-entity-component`,
+ * `"DocumentInputPort"` → `document-input-port`.
+ *
+ * A transcription of `snakeCaseName` in base-entity's `BaseFormNavigatorStore`, which is what actually builds
+ * these URLs — `baseEntityRoutes` mounts each branch under it and the navigator store re-appends it when
+ * moving between list and details. The two have to agree exactly: where they don't, the suites navigate to a
+ * URL the router answers with NG04002 and the failure reads as a missing button on a blank page.
+ *
+ * The camelCase clause is the part that is easy to get wrong and was: lower-casing alone maps
+ * `DocumentInputPort` to `documentinputport`, which is not where the application mounted it. Entity names in
+ * this platform are usually space-separated, for which both spellings agree — so the divergence stays
+ * invisible until a library names one camelCase, as base-document names its two port types.
+ */
 export function toRoutePath(entityName: string): string {
-  return entityName.toLowerCase().replace(/\s+/g, '-');
+  let path = '';
+
+  for (let index = 0; index < entityName.length; index++) {
+    const character = entityName[index];
+    if (character.trim() === '') continue;
+
+    const previous = path.at(-1);
+    const next = entityName[index + 1];
+    const isUpperCase = character >= 'A' && character <= 'Z';
+    const previousIsLowerCaseOrDigit = previous !== undefined && ((previous >= 'a' && previous <= 'z') || (previous >= '0' && previous <= '9'));
+    const previousIsUpperCase = previous !== undefined && previous >= 'A' && previous <= 'Z';
+    const nextIsLowerCase = next !== undefined && next >= 'a' && next <= 'z';
+
+    if (isUpperCase && (previousIsLowerCaseOrDigit || (previousIsUpperCase && nextIsLowerCase))) {
+      path += '-';
+    }
+
+    path += character;
+  }
+
+  return path.toLowerCase();
 }
 
 /**
@@ -35,9 +68,8 @@ export class RouteResolver {
    *
    * `rowId` is the row's id, or `new` for a row being created.
    *
-   * The segment matches `baseEntityRoutes()`, which builds it with `snakeCaseName`. That agrees with
-   * {@link toRoutePath} for the space-separated entity names a descriptor declares; the two would diverge
-   * only for a camelCase name, which is not how entities are named.
+   * The segment matches `baseEntityRoutes()`, which builds it with `snakeCaseName` — see {@link toRoutePath},
+   * which transcribes that function for exactly this reason.
    */
   embeddedDetailRoute(ownerDetailUrl: string, embeddedDescriptor: BaseEntityDescriptor, rowId: string): string {
     return `${ownerDetailUrl}/${toRoutePath(embeddedDescriptor.entityName)}/${rowId}/details`;

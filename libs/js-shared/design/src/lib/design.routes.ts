@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
+import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_RULE_ROUTES } from '@processpuzzle/base-rule';
 import { DesignContentComponent } from './content/design-content.component';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
@@ -12,16 +13,12 @@ export const DESIGN_ROUTES: Routes = [
     data: { icon: 'checkbook', menuTitle: 'design.entities' },
     component: UnderConstructionComponent,
   },
-  // Under construction rather than BaseDocumentContainerComponent: `@processpuzzle/base-document`
-  // has no facade for Document nor for its two embedded port entities, and a base-entity list needs
-  // all three in BASE_ENTITY_FACADE_REGISTRY before it renders — see the testbed's base-documents
-  // samples tab for the same reason. Swap the component once those facades exist.
-  {
-    path: 'documents',
-    title: 'ProcessPuzzle Design - Documents',
-    data: { icon: 'article', menuTitle: 'design.documents' },
-    component: UnderConstructionComponent,
-  },
+  // Mounted at `document`, singular, because the path segment is the snake-cased entity name — see the
+  // comment on BASE_DOCUMENT_ROUTES. The hosting application still has to spread
+  // BASE_DOCUMENT_FACADE_PROVIDERS and BASE_DOCUMENT_ENTITY_FACADES into its own providers, exactly as it
+  // does for base-app: a base-entity list resolves the entity and its two embedded ports through
+  // BASE_ENTITY_FACADE_REGISTRY, and this library cannot contribute to that token without replacing it.
+  ...BASE_DOCUMENT_ROUTES,
   ...BASE_RULE_ROUTES,
   {
     path: 'states',
