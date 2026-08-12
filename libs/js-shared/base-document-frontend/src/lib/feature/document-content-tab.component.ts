@@ -21,15 +21,33 @@ import { DocumentEditorComponent } from './document-editor/document-editor.compo
   standalone: true,
   imports: [DocumentEditorComponent, TranslocoPipe],
   template: `
-    @if (isLoading()) {
-      <p>{{ 'base_document.document.content.loading' | transloco }}</p>
-    } @else if (loadError(); as error) {
-      <p role="alert">{{ error }}</p>
-    } @else {
-      <h2>{{ title() }}</h2>
-      <pp-document-editor [documentId]="entityId()" [locale]="locale()" [blocks]="blocks()" [translationExists]="translationExists()" />
-    }
+    <div class="pp-document-content">
+      @if (isLoading()) {
+        <p>{{ 'base_document.document.content.loading' | transloco }}</p>
+      } @else if (loadError(); as error) {
+        <p role="alert">{{ error }}</p>
+      } @else {
+        <h2 class="pp-document-content__title">{{ title() }}</h2>
+        <pp-document-editor [documentId]="entityId()" [locale]="locale()" [blocks]="blocks()" [translationExists]="translationExists()" />
+      }
+    </div>
   `,
+  styles: [
+    `
+      /* The reading/writing surface, matching the status bar above it — same white, same corner radius. */
+      .pp-document-content {
+        background-color: #ffffff;
+        border-radius: 6px;
+        padding: 16px 20px 24px;
+      }
+      .pp-document-content__title {
+        margin: 0 0 8px;
+      }
+      .pp-document-content > p {
+        margin: 0;
+      }
+    `,
+  ],
 })
 export class DocumentContentTabComponent implements OnInit {
   /**

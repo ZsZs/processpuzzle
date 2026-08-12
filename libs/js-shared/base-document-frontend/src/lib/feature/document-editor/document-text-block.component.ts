@@ -1,9 +1,10 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, viewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { WIDGET_REGISTRY } from '@processpuzzle/base-entity';
 import { DocumentBlock } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
+import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';
 import { createWidgetEmbedExtension } from './widget-embed-node';
 
 /**
@@ -16,10 +17,57 @@ import { createWidgetEmbedExtension } from './widget-embed-node';
 @Component({
   selector: 'pp-document-text-block',
   standalone: true,
-  template: `<div #editorHost class="pp-document-text-block" [class.pp-document-text-block--readonly]="!block().editable"></div>`,
+  imports: [DocumentTextBlockToolbarComponent],
+  template: `
+    @if (isToolbarVisible()) {
+      <pp-document-text-block-toolbar [editor]="editorInstance()!" />
+    }
+    <div #editorHost class="pp-document-text-block" [class.pp-document-text-block--readonly]="!block().editable"></div>
+  `,
+  styles: [
+    `
+      /*
+       * The reserved top strip is what the toolbar is drawn into. Reserving it unconditionally — rather than
+       * letting the toolbar take flow space when it appears — is what keeps the prose from jumping down under
+       * the caret the moment the block is focused; it doubles as the gap between blocks.
+       */
+      :host {
+        display: block;
+        position: relative;
+        padding: 32px 8px 8px;
+        border-radius: 4px;
+        /* An outline rather than a border: it is drawn outside the box, so lighting it up moves nothing. */
+        outline: 1px solid transparent;
+        transition: outline-color 120ms ease-in-out;
+      }
+      :host(:hover) {
+        outline-color: rgba(0, 0, 0, 0.12);
+      }
+      :host(:focus-within) {
+        outline-color: rgba(0, 0, 0, 0.24);
+      }
+      /*
+       * ::ng-deep is unavoidable here: ProseMirror creates its own contenteditable element imperatively, so it
+       * carries none of this component's emulated-encapsulation attributes. Suppresses the browser's own focus
+       * ring, which would otherwise draw a second frame inside the block frame above.
+       */
+      :host ::ng-deep .ProseMirror:focus {
+        outline: none;
+      }
+      /* An empty block still has to be a visible, clickable extent rather than a zero-height line. */
+      :host ::ng-deep .ProseMirror {
+        min-height: 1.5em;
+      }
+    `,
+  ],
 })
 export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
   readonly block = input.required<DocumentBlock>();
+
+  /** Set once the Editor exists, so the toolbar — which needs one — can only render after ngAfterViewInit. */
+  protected readonly editorInstance = signal<Editor | null>(null);
+  protected readonly isEditing = signal(false);
+  protected readonly isToolbarVisible = computed(() => this.isEditing() && this.editorInstance() !== null);
 
   private readonly editorHost = viewChild.required<ElementRef<HTMLElement>>('editorHost');
   private readonly environmentInjector = inject(EnvironmentInjector);
@@ -47,7 +95,12 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
       onUpdate: ({ editor }) => {
         this.contentStore.saveTextBlockContent(block.id, editor.getJSON());
       },
+      // Focus, not hover, is what "being edited" means — the toolbar has to stay up while the pointer travels
+      // to it, and buttons cancel their mousedown so reaching for one does not blur the editor.
+      onFocus: () => this.isEditing.set(true),
+      onBlur: () => this.isEditing.set(false),
     });
+    this.editorInstance.set(this.editor);
 
     this.destroyRef.onDestroy(() => this.editor?.destroy());
   }
