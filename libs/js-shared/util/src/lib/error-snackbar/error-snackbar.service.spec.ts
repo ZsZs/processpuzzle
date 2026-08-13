@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ERROR_MESSAGE_REPORTER } from '@processpuzzle/util';
+import { ERROR_MESSAGE_REPORTER } from '../error-handler/error-message-reporter';
 import { describe, expect, it, vi } from 'vitest';
 import { ErrorSnackbarComponent } from './error-snackbar.component';
 import { ErrorSnackbarService, provideErrorSnackbar } from './error-snackbar.service';

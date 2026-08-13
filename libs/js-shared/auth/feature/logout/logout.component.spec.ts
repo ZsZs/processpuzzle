@@ -5,7 +5,7 @@ import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
-import { NavigateBackService } from '@processpuzzle/base-widget';
+import { NavigateBackService } from '@processpuzzle/util';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';

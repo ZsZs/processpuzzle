@@ -32,7 +32,8 @@
         "runner": "vitest",
         "runnerConfig": "libs/js-shared/util/vitest.config.ts",
         "coverage": true,
-        "tsConfig": "libs/js-shared/util/tsconfig.spec.json"
+        "tsConfig": "libs/js-shared/util/tsconfig.spec.json",
+        "setupFiles": ["libs/js-shared/util/test-setup.ts"]
       },
       "configurations": {
         "ci": {

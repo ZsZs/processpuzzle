@@ -11,7 +11,8 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { provideAppPropertyStore, provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/base-widget';
+import { provideAppPropertyStore } from '@processpuzzle/base-widget';
+import { provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/util';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';

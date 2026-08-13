@@ -26,7 +26,6 @@
     "@processpuzzle/base-entity": "^0.8.0",
     "@processpuzzle/test-util": "^0.8.0",
     "@processpuzzle/util": "^0.8.0",
-    "@processpuzzle/base-widget": "^0.9.1",
     "angular-auth-oidc-client": "^21.0.2",
     "firebase-admin": "^14.0.0",
     "keycloak-js": "^26.2.4",

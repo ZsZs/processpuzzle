@@ -94,9 +94,9 @@ across the three libs, lint (0 errors), and all three library builds.
 
 ## Phase 2 — `base-widget-frontend` (rename + split)
 
-**Progress: 2a (rename) ✅ · 2b (registry move) ✅ · 2c (infrastructure split) todo · 2d (widget
-registration) todo.** Split into four independently verifiable steps rather than one commit, because
-the infrastructure split changes `util`'s dependency surface and is worth isolating.
+**Progress: 2a (rename) ✅ · 2b (registry move) ✅ · 2c (infrastructure split) ✅ · 2d (widget
+registration) ✅ — Phase 2 complete (2026-08-13).** Split into four independently verifiable steps
+rather than one commit, because the infrastructure split changes `util`'s dependency surface.
 
 - **2a — pure rename.** `widgets` → `base-widget-frontend`, `@processpuzzle/widgets` →
   `@processpuzzle/base-widget`. All 9 registration sites, both workflows (renamed), the Sonar key,
@@ -109,6 +109,43 @@ the infrastructure split changes `util`'s dependency surface and is worth isolat
   `@processpuzzle/base-widget` peer dep. `base-entity-frontend` now has **no** widget
   responsibility, which is what the token's placement comment had been asking for. Layering
   verified: `base-widget-frontend` imports nothing from base-app or base-document.
+
+- **2c — infrastructure split.** `navigate-back`, `error-snackbar` and `transloco/*` moved to `util`,
+  which gained `@angular/material`, `@angular/router` and `@jsverse/transloco` peer deps and its
+  first `test-setup.ts` (it had no component specs before, so jest-dom's matchers were unregistered
+  and both moved specs failed on `toHaveClass` / `toHaveTextContent`). `auth` now depends only on
+  `util` and dropped `@processpuzzle/base-widget` entirely.
+- **2d — widget registration.** Six widgets registered in `base-widget.providers.ts` under semantic
+  keys (`cards-grid`, not `mat-cards-grid` — that it is built from Material cards is not something a
+  designer picking a widget should have to know). Per-widget `provide*Widget()` plus a
+  `provideBaseWidgets()` convenience, because an app should be able to allow a share button without
+  a language selector. **The keys are contract**: renaming one orphans every stored `WidgetInstance`
+  that references it.
+
+### Two deviations from the plan, both from reading the code
+
+1. **`app-property` stays in `base-widget-frontend`.** The plan said move it to `util`; that is
+   impossible. It is a full base-entity domain entity (`BaseEntityStore`, `BaseEntityContainerStore`,
+   `BaseEntityTabsStore`), so `util` would have to depend on `base-entity`, which already depends on
+   `util` — a cycle. It is not a widget and does not really belong here either; a proper home is an
+   open question, not urgent.
+2. **`design-button` stays too.** The plan said move it to `design`. Reading it, it is a
+   `/home` ⇄ `/design` toggle for the app-shell header whose only consumer is the testbed — it knows
+   nothing of the `design` lib's domain, and moving it there would make the shell header depend on a
+   feature lib for a button. It also hardcodes both routes, which is really app configuration; that
+   smell is worth revisiting, but not by relocating it into the wrong library.
+
+### Defect found and fixed: `provideWidget` did not compose within one injector
+
+`provideWidget` merged via `@Optional() @SkipSelf()` alone, and its doc claimed "multiple calls
+compose". `SkipSelf` skips the *injector*, not the sibling provider — so N calls in the **same**
+injector each resolved an empty parent and the last one won. Registering all six widgets yielded a
+registry containing exactly one. It stayed invisible because nothing had ever been registered.
+
+Fixed by adding an internal `multi: true` `WIDGET_REGISTRATIONS` token: `multi` collects siblings
+within an injector, `@SkipSelf()` still chains across injectors, so both directions now compose.
+`provideWidget` returns `Provider[]` instead of `Provider` (assignable, so callers are unaffected).
+Covered by three specs, including the cross-injector merge an aggregator relies on.
 
 ⚠️ **The transloco scope is deliberately still `widgets`**, not renamed with the library. It is a
 runtime i18n namespace with a deployment footprint — it names the served asset path

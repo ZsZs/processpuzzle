@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, AuthenticationConfiguration, User } from '@processpuzzle/auth/domain';
-import { NavigateBackService } from '@processpuzzle/base-widget';
+import { NavigateBackService } from '@processpuzzle/util';
 
 export const loginResolver: ResolveFn<User | undefined> = async () => {
   const authConfig: AuthenticationConfiguration = inject(AUTHENTICATION_CONFIGURATION);

@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
-import { NavigateBackService } from '@processpuzzle/base-widget';
+import { NavigateBackService } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 

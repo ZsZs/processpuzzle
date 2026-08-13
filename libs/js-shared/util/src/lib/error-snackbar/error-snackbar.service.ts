@@ -1,6 +1,6 @@
 import { EnvironmentProviders, Injectable, makeEnvironmentProviders, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ERROR_MESSAGE_REPORTER, ErrorMessageReporter } from '@processpuzzle/util';
+import { ERROR_MESSAGE_REPORTER, type ErrorMessageReporter } from '../error-handler/error-message-reporter';
 import { ErrorSnackbarComponent, ErrorSnackbarData } from './error-snackbar.component';
 
 @Injectable()

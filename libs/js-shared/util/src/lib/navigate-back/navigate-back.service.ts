@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Stack } from '@processpuzzle/util';
+import { Stack } from '../stack';
 import { NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
