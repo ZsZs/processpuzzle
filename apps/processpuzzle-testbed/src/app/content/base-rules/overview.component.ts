@@ -39,6 +39,19 @@ import { TranslocoDirective } from '@jsverse/transloco';
     .intro img {
       margin-top: 16px;
     }
+    /* The README renders inside MarkdownComponent's own view, so emulated encapsulation keeps a plain
+       'markdown h1' selector from ever matching it — hence ::ng-deep. Without this the README's title
+       (browser default 2em) outsizes the section heading above it, which is a bare h2 at 1.5em. */
+    :host ::ng-deep markdown h1 {
+      font-size: 1.25rem;
+      margin: 0 0 8px;
+    }
+    :host ::ng-deep markdown h2 {
+      font-size: 1.1rem;
+    }
+    :host ::ng-deep markdown h3 {
+      font-size: 1rem;
+    }
   `,
 })
 export class OverviewComponent {}

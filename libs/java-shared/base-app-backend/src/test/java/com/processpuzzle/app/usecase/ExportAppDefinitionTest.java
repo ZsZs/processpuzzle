@@ -12,6 +12,7 @@ import com.processpuzzle.app.domain.OrganizationRepository;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
+import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,7 +124,7 @@ class ExportAppDefinitionTest {
 
     /** Every optional part of the graph populated, so the round-trip has something to lose. */
     private static AppDefinition richDefinition() {
-        Widget grid = new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"), List.of());
+        Widget grid = new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"), WidgetPlacement.STANDALONE);
         AppPage page = new AppPage(PAGE_ID, "Claims", "claims.page.list", List.of(grid));
         NavNode nav = new NavNode(AppTestFixtures.NAV_ID, "Claims", "claims.nav", "list_alt", PAGE_ID,
                 List.of("CLAIMS_ADJUSTER"), List.of());

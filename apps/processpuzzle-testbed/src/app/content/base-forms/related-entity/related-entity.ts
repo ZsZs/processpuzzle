@@ -14,8 +14,8 @@ export class RelatedEntity implements BaseEntity {
   description: string;
 
   constructor(id?: string, name?: string, description?: string) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'RelatedEntity';
-    this.description = description != undefined ? description : '';
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'RelatedEntity';
+    this.description = description ?? '';
   }
 }

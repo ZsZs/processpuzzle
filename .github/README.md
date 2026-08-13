@@ -121,6 +121,7 @@ Every release workflow finishes by creating a tag and release via `elgohr/Github
 - **STAGE** — used by `deploy-testbed.yml`; gates STAGE Firebase deploys.
 - **PROD** — used by `release-testbed.yml`; gates PROD Firebase deploys and npm publish.
 
+
 ### Tool versions
 Node `24.x`, Java `25` (Temurin), Maven `3.9.14`. All runners are `ubuntu-latest`.
 

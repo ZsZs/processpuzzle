@@ -1,0 +1,60 @@
+{
+  "document": {
+    "_self": "Document",
+    "slug": "Slug",
+    "title": "Titre",
+    "subject": "Sujet",
+    "description": "Description",
+    "author": "Auteur",
+    "sourceLocale": "Langue source",
+    "isPublic": "Public",
+    "readerRoles": "Rôles de lecture",
+    "editorRoles": "Rôles d'édition",
+    "publisherRoles": "Rôles de publication",
+    "inputPorts": "Ports d'entrée",
+    "outputPorts": "Ports de sortie",
+    "tabs": {
+      "content": "{{ entity }} - contenu"
+    },
+    "content": {
+      "loading": "Chargement du contenu…",
+      "add_text_block": "Ajouter un bloc de texte",
+      "add_widget_block": "Ajouter un widget",
+      "toolbar": {
+        "label": "Mise en forme du texte",
+        "bold": "Gras",
+        "italic": "Italique",
+        "strike": "Barré",
+        "code": "Code en ligne",
+        "heading_1": "Titre 1",
+        "heading_2": "Titre 2",
+        "heading_3": "Titre 3",
+        "bullet_list": "Liste à puces",
+        "ordered_list": "Liste numérotée",
+        "blockquote": "Citation",
+        "horizontal_rule": "Séparateur",
+        "undo": "Annuler",
+        "redo": "Rétablir"
+      }
+    }
+  },
+  "document_input_port": {
+    "_self": "Port d'entrée",
+    "name": "Nom",
+    "type": "Type",
+    "required": "Obligatoire",
+    "description": "Description",
+    "entityType": "Type d'entité",
+    "attributeVisibility": "Visibilité des attributs",
+    "defaultValue": "Valeur par défaut",
+    "defaultRsqlFilter": "Filtre RSQL par défaut"
+  },
+  "document_output_port": {
+    "_self": "Port de sortie",
+    "name": "Nom",
+    "type": "Type",
+    "description": "Description",
+    "entityType": "Type d'entité",
+    "attributeVisibility": "Visibilité des attributs"
+  }
+}

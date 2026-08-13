@@ -3,14 +3,17 @@ import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { Injectable } from '@angular/core';
 import { EmbeddedDetail } from './embedded-detail';
 
+type EmbeddedDetailDto = Partial<EmbeddedDetail>;
+
 /** Mapped by its owner's mapper: an embedded detail arrives inside the `Test Entity` payload. */
 @Injectable({ providedIn: 'root' })
 export class EmbeddedDetailMapper implements BaseEntityMapper<EmbeddedDetail> {
-  fromDto(dto: any): EmbeddedDetail {
-    return new EmbeddedDetail(dto.id, dto.name, dto.note);
+  fromDto(dto: unknown): EmbeddedDetail {
+    const source = dto as EmbeddedDetailDto;
+    return new EmbeddedDetail(source.id, source.name, source.note);
   }
 
-  toDto(entity: EmbeddedDetail): any {
+  toDto(entity: EmbeddedDetail): unknown {
     return entity;
   }
 }

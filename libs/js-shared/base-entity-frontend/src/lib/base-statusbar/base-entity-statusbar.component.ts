@@ -244,7 +244,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
     if (level.entityId === undefined) return currentEntity;
 
     const referenceIdField = ownerDescriptor?.embeddedAttrFor(level.entityName)?.referenceIdField;
-    const rows = (store?.entities() ?? []) as unknown as Record<string, unknown>[];
+    const rows = (store?.entities() ?? []) as Record<string, unknown>[];
     return rows.find((row) => rowId(row, referenceIdField) === level.entityId) ?? currentEntity;
   }
 

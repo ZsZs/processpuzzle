@@ -1,4 +1,7 @@
 {
+  "artifact": {
+    "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Supprimer l'artefact ?",
     "content": "Cela supprimera définitivement « {{ artifactName }} » du magasin d'objets.",

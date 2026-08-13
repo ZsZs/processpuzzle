@@ -2,7 +2,7 @@ import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
-import { HttpErrorResponse } from '@angular/common/http';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityKeyResolver, entityKeyById, EntityStoreHandle } from './base-entity.store';
 
 export const deleteEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>, keyOf: EntityKeyResolver<Entity> = entityKeyById) => {
@@ -20,7 +20,7 @@ export const deleteEntity = <Entity extends BaseEntity>(store: EntityStoreHandle
         isLoading: false,
       });
     } catch (error) {
-      patchState(store, { error: (error as HttpErrorResponse).message, isLoading: false });
+      patchState(store, { error: httpErrorMessage(error), isLoading: false });
     }
   };
 };

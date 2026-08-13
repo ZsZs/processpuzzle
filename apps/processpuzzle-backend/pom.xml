@@ -37,6 +37,16 @@
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
+            <artifactId>base-document-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-entity-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
             <artifactId>base-state-backend</artifactId>
         </dependency>
 

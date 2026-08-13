@@ -130,15 +130,82 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
-    void duplicateWidgetIdsWithinAPage_areReportedIncludingNestedChildren() {
+    void duplicateWidgetIdsWithinAPage_areReported() {
         AppDefinitionInput input = validInput();
-        WidgetRef nested = new WidgetRef("widget-grid", "entity-grid");
-        WidgetRef container = new WidgetRef("widget-container", "tab-group");
-        container.setChildren(List.of(nested));
-        input.getPages().getFirst().setWidgets(List.of(new WidgetRef("widget-grid", "entity-grid"), container));
+        input.getPages().getFirst().setWidgets(List.of(new WidgetRef("widget-grid", "entity-grid"),
+                new WidgetRef("widget-grid", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.duplicate-widget-id");
+    }
+
+    @Test
+    void containerWidgetComposingReferencedSiblings_isAccepted() {
+        AppDefinitionInput input = validInput();
+        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-grid"), referencedGrid("widget-grid")));
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void childIdNamingNoWidgetAtAll_isReported() {
+        AppDefinitionInput input = validInput();
+        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-absent")));
+
+        assertThat(errorIds(validator.validate("my-org", input)))
+                .contains("app.validation.dangling-child-id");
+    }
+
+    /**
+     * A STANDALONE target is as wrong as a missing one: it renders at its own position, so placing it
+     * in a container too would show it twice.
+     */
+    @Test
+    void childIdNamingAStandaloneWidget_isReported() {
+        AppDefinitionInput input = validInput();
+        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-grid"),
+                new WidgetRef("widget-grid", "entity-grid")));
+
+        assertThat(errorIds(validator.validate("my-org", input)))
+                .contains("app.validation.dangling-child-id");
+    }
+
+    /** A declared-but-unplaced widget is a half-finished draft, so it must not reject the write. */
+    @Test
+    void referencedWidgetNothingPointsAt_isAWarningRatherThanAnError() {
+        AppDefinitionInput input = validInput();
+        input.getPages().getFirst().setWidgets(List.of(referencedGrid("widget-grid")));
+
+        List<AppValidationProblem> problems = validator.validate("my-org", input);
+
+        assertThat(errorIds(problems)).containsExactly("app.validation.orphan-widget");
+        assertThat(AppValidationProblem.blocking(problems)).isEmpty();
+    }
+
+    /**
+     * {@code props} is an open map, so {@code childIds} may hold anything at all. Whatever is not an
+     * id is the widget type's own problem, not a referential-integrity failure.
+     */
+    @Test
+    void childIdsThatIsNotAListOfIds_isLeftToTheWidgetType() {
+        AppDefinitionInput input = validInput();
+        WidgetRef container = new WidgetRef("widget-container", "tab-group");
+        container.setProps(Map.of("childIds", "widget-grid"));
+        input.getPages().getFirst().setWidgets(List.of(container));
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    private static WidgetRef tabGroup(String... childIds) {
+        WidgetRef container = new WidgetRef("widget-container", "tab-group");
+        container.setProps(Map.of("childIds", List.of(childIds)));
+        return container;
+    }
+
+    private static WidgetRef referencedGrid(String id) {
+        WidgetRef grid = new WidgetRef(id, "entity-grid");
+        grid.setPlacement(WidgetRef.PlacementEnum.REFERENCED);
+        return grid;
     }
 
     @Test

@@ -28,6 +28,7 @@ class FacadeWithStringTitle {
     nameAttr.placeholder = 'enter name';
     nameAttr.lines = 1;
     nameAttr.required = true;
+    nameAttr.pattern = '^[a-z0-9-]+$';
     nameAttr.linkedEntityType = 'OtherEntity';
 
     const groupedAttr = new BaseEntityAttrDescriptor('group', FormControlType.TEXT_BOX);
@@ -170,6 +171,7 @@ describe('EntityRegistryComponent', () => {
       placeholder: 'enter name',
       lines: 1,
       required: true,
+      pattern: '^[a-z0-9-]+$',
       linkedEntityType: 'OtherEntity',
     });
   });

@@ -4,6 +4,34 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/store/**",
+        "function": {
+          "functionId": "objectStore",
+          "region": "europe-central2"
+        }
+      },
+      {
+        "source": "/api/organizations/*/documents",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
+        "source": "/api/organizations/*/documents/**",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
+        "source": "/api/organizations/*/content/**",
+        "function": {
+          "functionId": "baseDocument",
+          "region": "europe-central2"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "jsonServer",
@@ -99,7 +127,20 @@
     {
       "source": "tools/firebase/functions",
       "codebase": "default",
-      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local",
+        "**/*.spec.ts",
+        "src/**/test-support.ts",
+        "vitest.config.ts",
+        "tsconfig.spec.json",
+        "reports",
+        "scripts",
+        "lib/scripts"
+      ],
       "predeploy": ["npm --prefix \"tools/firebase/functions\" run lint", "npm --prefix \"tools/firebase/functions\" run build"]
     }
   ]

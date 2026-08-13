@@ -12,6 +12,23 @@ export enum TestEnum {
   VALUE_FIVE,
 }
 
+export interface TestEntityOptions {
+  id?: string;
+  name?: string;
+  description?: string;
+  boolean?: boolean;
+  number?: number;
+  date?: Date;
+  lookup?: string;
+  enumValue?: TestEnum;
+  artifact?: ArtifactAttr;
+  tags?: string[];
+  components?: string[];
+  embeddedComponents?: EmbeddedComponent[];
+  relatedEntities?: RelatedEntity[];
+  additionalProperties?: Record<string, string>;
+}
+
 export class TestEntity implements BaseEntity {
   readonly id: string;
   name: string;
@@ -21,7 +38,7 @@ export class TestEntity implements BaseEntity {
   date;
   lookup: string;
   enumValue: TestEnum;
-  artifact?: ArtifactAttr | undefined;
+  artifact?: ArtifactAttr;
   tags: Array<string> | undefined;
   /** Ids of the `Test Entity Component`s owned by this entity; the components themselves live in their own table. */
   components: Array<string> | undefined;
@@ -30,35 +47,20 @@ export class TestEntity implements BaseEntity {
   relatedEntities: Array<RelatedEntity> | undefined;
   additionalProperties: Record<string, string> | undefined;
 
-  constructor(
-    id?: string,
-    name?: string,
-    description?: string,
-    boolean?: boolean,
-    number?: number,
-    date?: Date,
-    lookup?: string,
-    enumValue?: TestEnum,
-    artifact?: ArtifactAttr,
-    tags?: Array<string>,
-    components?: Array<string>,
-    embeddedComponents?: Array<EmbeddedComponent>,
-    relatedEntities?: Array<RelatedEntity>,
-    additionalProperties?: Record<string, string>,
-  ) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'TestEntity';
-    this.description = description != undefined ? description : '';
-    this.boolean = boolean != undefined ? boolean : true;
-    this.number = number != undefined ? number : 1;
-    this.date = date != undefined ? date : new Date();
-    this.lookup = lookup != undefined ? lookup : '';
-    this.enumValue = enumValue != undefined ? enumValue : TestEnum.VALUE_ONE;
-    this.artifact = artifact;
-    this.tags = tags;
-    this.components = components;
-    this.embeddedComponents = embeddedComponents;
-    this.relatedEntities = relatedEntities;
-    this.additionalProperties = additionalProperties;
+  constructor(options: TestEntityOptions = {}) {
+    this.id = options.id ?? uuidv4();
+    this.name = options.name ?? 'TestEntity';
+    this.description = options.description ?? '';
+    this.boolean = options.boolean ?? true;
+    this.number = options.number ?? 1;
+    this.date = options.date ?? new Date();
+    this.lookup = options.lookup ?? '';
+    this.enumValue = options.enumValue ?? TestEnum.VALUE_ONE;
+    this.artifact = options.artifact;
+    this.tags = options.tags;
+    this.components = options.components;
+    this.embeddedComponents = options.embeddedComponents;
+    this.relatedEntities = options.relatedEntities;
+    this.additionalProperties = options.additionalProperties;
   }
 }

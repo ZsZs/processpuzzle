@@ -10,12 +10,26 @@ import { type EmbeddedBreadcrumbLevel, readEmbeddedBreadcrumb } from '../base-en
 export enum RouteSegments {
   LIST_ROUTE = 'LIST_ROUTE',
   DETAILS_ROUTE = 'DETAILS_ROUTE',
+  /**
+   * One of an entity's extra tabs (see `EntityTabDescriptor`) — `<entity>/<id>/content` and the like.
+   * Which segments count is registered by {@link BaseEntityTabsComponent}, because the store has no
+   * descriptors of its own: a URL tail is only a tab if some entity on screen declared it as one, and an
+   * unregistered tail stays `undefined` exactly as before.
+   */
+  ENTITY_TAB_ROUTE = 'ENTITY_TAB_ROUTE',
 }
 
 const ROOT_PAYLOAD_KEY = '';
 
 export interface NavigationState {
   activeRouteSegment: RouteSegments | undefined;
+  /**
+   * The extra tab the current URL ends in, when {@link activeRouteSegment} is `ENTITY_TAB_ROUTE`. Which
+   * tab is open cannot be read off the enum, since every extra tab shares that one value.
+   */
+  activeTabSegment: string | undefined;
+  /** Extra tab segments the entities currently on screen declare. See {@link RouteSegments.ENTITY_TAB_ROUTE}. */
+  tabSegments: string[];
   /**
    * The entities the current URL walks through, outermost first — what the status bar renders as a
    * breadcrumb. Derived from the route, never remembered, so a deep link and a refresh describe the same
@@ -33,6 +47,8 @@ export interface NavigationState {
 
 const INITIAL_NAVIGATION_STATE: NavigationState = {
   activeRouteSegment: RouteSegments.LIST_ROUTE,
+  activeTabSegment: undefined,
+  tabSegments: [],
   breadcrumb: [],
   entityName: '',
   navigationError: undefined,
@@ -107,14 +123,32 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
       const currentUrl = Reflect.get(route, '_routerState').snapshot.url;
+      const tabSegment = store.tabSegments().find((segment) => currentUrl.endsWith('/' + segment));
       if (currentUrl.endsWith(BaseUrlSegments.ListForm)) {
-        patchState(store, { activeRouteSegment: RouteSegments.LIST_ROUTE });
+        patchState(store, { activeRouteSegment: RouteSegments.LIST_ROUTE, activeTabSegment: undefined });
       } else if (currentUrl.endsWith(BaseUrlSegments.DetailsForm)) {
-        patchState(store, { activeRouteSegment: RouteSegments.DETAILS_ROUTE });
+        patchState(store, { activeRouteSegment: RouteSegments.DETAILS_ROUTE, activeTabSegment: undefined });
+      } else if (tabSegment) {
+        patchState(store, { activeRouteSegment: RouteSegments.ENTITY_TAB_ROUTE, activeTabSegment: tabSegment });
       } else {
-        patchState(store, { activeRouteSegment: undefined });
+        patchState(store, { activeRouteSegment: undefined, activeTabSegment: undefined });
       }
       patchState(store, { breadcrumb: readEmbeddedBreadcrumb(deepestActivatedRoute()) });
+    }
+
+    /**
+     * Extra tab segments to recognize from here on, added to whatever is already registered — several
+     * entities can be on screen at once (an embedded child below its owner), and the outer one's tabs must
+     * not disappear when the inner one registers none.
+     */
+    function registerTabSegments(segments: string[]): void {
+      const known = store.tabSegments();
+      const merged = segments.filter((segment) => !known.includes(segment));
+      if (merged.length === 0) return;
+      patchState(store, { tabSegments: known.concat(merged) });
+      // The URL may already be on one of the segments just registered — a reload straight onto
+      // `<entity>/<id>/content` classifies before any tab is known, and would otherwise stay `undefined`.
+      determineActiveRouteSegment();
     }
 
     function deepestActivatedRoute(): ActivatedRouteSnapshot {
@@ -137,7 +171,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       if (level) return level.baseUrl;
 
       const currentUrl = determineCurrentUrl();
-      return store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
+      // An extra tab's URL has the details route's shape — `<base>/<entity>/<id>/<segment>` — so it counts
+      // back the same three levels. Reading it as the two-level list shape would leave one segment of the
+      // entity's own path in the prefix, and every URL built on it would be wrong.
+      const isEntityScopedRoute = store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE || store.activeRouteSegment() === RouteSegments.ENTITY_TAB_ROUTE;
+      return isEntityScopedRoute ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
     }
 
     function determineCurrentUrl(): string {
@@ -216,6 +254,20 @@ export const BaseFormNavigatorSingletonStore = signalStore(
         const detailsFormPath = baseUrl + '/' + snakeCaseEntityName + '/' + id + '/details';
         await navigateToUrl(detailsFormPath, returnTo);
       }
+    }
+
+    /**
+     * One of the entity's extra tabs, built on the same prefix as its details form so both tabs of one row
+     * address the same record. Guarded against re-navigating to the tab already open, as
+     * {@link navigateToDetails} is — clicking the active link should be inert, not a reload.
+     */
+    async function navigateToTab(entityName: string, id: string, segment: string, returnTo?: string, payload?: NavigationPayload) {
+      patchState(store, { entityName });
+      pushPayload(payload);
+      if (store.activeRouteSegment() === RouteSegments.ENTITY_TAB_ROUTE && store.activeTabSegment() === segment) return;
+
+      const baseUrl = determineBaseUrl(entityName);
+      await navigateToUrl(`${baseUrl}/${snakeCaseName(entityName)}/${id}/${segment}`, returnTo);
     }
 
     async function navigateToList(entityName: string, returnTo?: string, payload?: NavigationPayload) {
@@ -354,7 +406,9 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       navigateToList,
       navigateToRelated,
       navigateToRelatedList,
+      navigateToTab,
       navigateToUrl,
+      registerTabSegments,
       destroyNavigationTracking,
       initializeNavigationTracking,
       popFormSnapshot,
@@ -381,6 +435,7 @@ export function BaseFormNavigatorStore(entityName: string) {
       navigatorStore.setEntityName(entityName);
       return {
         activeRouteSegment: navigatorStore.activeRouteSegment,
+        activeTabSegment: navigatorStore.activeTabSegment,
         breadcrumb: navigatorStore.breadcrumb,
         entityName: navigatorStore.entityName,
         navigationError: navigatorStore.navigationError,
@@ -399,7 +454,9 @@ export function BaseFormNavigatorStore(entityName: string) {
         navigateToList: (returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToList(entityName, returnTo, payload),
         navigateToRelated: navigatorStore.navigateToRelated,
         navigateToRelatedList: navigatorStore.navigateToRelatedList,
+        navigateToTab: (id: string, segment: string, returnTo?: string, payload?: NavigationPayload) => navigatorStore.navigateToTab(entityName, id, segment, returnTo, payload),
         navigateToUrl: navigatorStore.navigateToUrl,
+        registerTabSegments: navigatorStore.registerTabSegments,
         popRequestPayload: navigatorStore.popRequestPayload,
         popResponsePayload: navigatorStore.popResponsePayload,
         pushResponsePayload: navigatorStore.pushResponsePayload,

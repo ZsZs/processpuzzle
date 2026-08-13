@@ -54,12 +54,13 @@ describe('BASE_APP_ROUTES', () => {
     expect((await embeddedBranchesOf(await deepestDetailsOf(pageBranch))).map((branch) => branch.path)).toEqual(['app-widget']);
   });
 
-  it('lets a nav item and a widget nest in themselves, as a group node and a container widget do', async () => {
+  it('lets a nav item nest in itself, as a group node does, and stops the widget branch at one level', async () => {
     const [regionBranch] = await embeddedBranchesOf(detailsRoute);
     const [navItemBranch, widgetBranch] = await embeddedBranchesOf(await deepestDetailsOf(regionBranch));
 
     expect((await embeddedBranchesOf(await deepestDetailsOf(navItemBranch))).map((branch) => branch.path)).toEqual(['app-nav-item']);
-    expect((await embeddedBranchesOf(await deepestDetailsOf(widgetBranch))).map((branch) => branch.path)).toEqual(['app-widget']);
+    // A container widget places siblings of this same level by id, so there is no widget-in-widget URL.
+    expect(await embeddedBranchesOf(await deepestDetailsOf(widgetBranch))).toEqual([]);
   });
 
   it('gives an embedded level a details form and no list of its own', async () => {

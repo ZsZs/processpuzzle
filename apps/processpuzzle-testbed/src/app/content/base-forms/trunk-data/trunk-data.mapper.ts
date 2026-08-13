@@ -3,13 +3,16 @@ import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { Injectable } from '@angular/core';
 import { TrunkData } from './trunk-data';
 
+type TrunkDataDto = Partial<TrunkData>;
+
 @Injectable({ providedIn: 'root' })
 export class TrunkDataMapper implements BaseEntityMapper<TrunkData> {
-  fromDto(dto: any): TrunkData {
-    return new TrunkData(dto.id, dto.key, dto.value, dto.description);
+  fromDto(dto: unknown): TrunkData {
+    const source = dto as TrunkDataDto;
+    return new TrunkData(source.id, source.key, source.value, source.description);
   }
 
-  toDto(entity: TrunkData): any {
+  toDto(entity: TrunkData): unknown {
     return entity;
   }
 }

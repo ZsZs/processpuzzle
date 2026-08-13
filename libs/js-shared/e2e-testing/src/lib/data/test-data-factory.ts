@@ -1,10 +1,5 @@
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import {
-  type ControlDataContext,
-  controlTestersFor,
-  identificationAttrFromTesters,
-  linkedFixtureAttrKey,
-} from '../controls/control-tester';
+import { type ControlDataContext, controlTestersFor, identificationAttrFromTesters } from '../controls/control-tester';
 
 /** Returns only attrs that represent actual form inputs. */
 export function inputAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
@@ -96,4 +91,4 @@ export function buildUpdateDataForContext(context: ControlDataContext, original:
   return updated;
 }
 
-export { linkedFixtureAttrKey };
+export { linkedFixtureAttrKey } from '../controls/control-tester';

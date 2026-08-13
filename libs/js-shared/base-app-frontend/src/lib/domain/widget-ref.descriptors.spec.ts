@@ -17,7 +17,7 @@ describe('createWidgetRefDescriptor', () => {
   });
 
   it('is an embedded component of a region, a page or another widget', () => {
-    expect(descriptor.componentParents).toEqual([APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME]);
+    expect(descriptor.componentParents).toEqual([APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);
   });
 
@@ -27,8 +27,8 @@ describe('createWidgetRefDescriptor', () => {
     expect(byName('props')?.i18nKey()).toBe('base_app.app_widget.props');
   });
 
-  it('describes the widget key, its configuration and its children', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'type', 'props', 'children']);
+  it('describes the widget key, its configuration and where it renders', () => {
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'type', 'placement', 'props']);
   });
 
   it('links to the details form from the id, two widgets of one type sharing a label otherwise', () => {
@@ -47,10 +47,10 @@ describe('createWidgetRefDescriptor', () => {
     expect(byName('props')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
   });
 
-  it('contains widgets of its own, nested in itself', () => {
-    expect(byName('children')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
-    expect(byName('children')?.linkedEntityType).toBe(APP_WIDGET_ENTITY_NAME);
-    expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)?.attrName).toBe('children');
+  it('offers the two placements and embeds no widget of its own', () => {
+    expect(byName('placement')?.formControlType).toBe(FormControlType.DROPDOWN);
+    expect(byName('placement')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['STANDALONE', 'REFERENCED']);
+    expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)).toBeUndefined();
   });
 
   it('keeps the list to the identifying fields', () => {

@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType, Selectable } from '@processpuzzle/base-entity';
 import { RouteResolver } from '../routing/route.resolver';
 import { formControlTestId, toTestId } from '../selectors/test-id';
+import { exactText } from '../selectors/text-match';
 
 export interface LinkedEntityFixture {
   entityName: string;
@@ -38,12 +39,8 @@ export function linkedFixtureAttrKey(entityName: string, attrName: string): stri
 function sameCalendarDay(a: string, b: string): boolean {
   const da = new Date(a);
   const db = new Date(b);
-  if (isNaN(da.getTime()) || isNaN(db.getTime())) return false;
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function expectOptions(context: ControlInteractionContext): { timeout?: number } | undefined {
@@ -57,6 +54,22 @@ function resolveSelectables(attr: BaseEntityAttrDescriptor): Array<Selectable> |
   return typeof raw === 'function' ? raw() : raw;
 }
 
+/**
+ * The `index`-th dropdown option's stored value, as the form data carries it — a string.
+ *
+ * `Selectable.value` is declared `unknown`, so this admits only the primitives that have a text form a
+ * `mat-option` could be matched by, rather than stringifying blindly. Anything else — an object, a function, a
+ * symbol — would stringify into text no option carries (`[object Object]`, say) and make the test fail somewhere
+ * far from the descriptor that caused it. Such a value is reported as absent, and the caller falls back the same
+ * way it does for a dropdown with too few options.
+ */
+function selectableValue(attr: BaseEntityAttrDescriptor, index: number): string | undefined {
+  const value = resolveSelectables(attr)?.[index]?.value;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  return undefined;
+}
+
 export abstract class ControlTester {
   readonly isInput: boolean = true;
   readonly isLinked: boolean = false;
@@ -66,8 +79,7 @@ export abstract class ControlTester {
 
   abstract innerLocator(): string;
 
-  createValue(context: ControlDataContext): string {
-    void context;
+  createValue(_context: ControlDataContext): string {
     return '';
   }
 
@@ -91,10 +103,8 @@ export abstract class ControlTester {
     return this.control(page, descriptor).locator(this.innerLocator()).first();
   }
 
-  async fill(context: ControlInteractionContext, value: string, options: FillControlOptions = {}): Promise<void> {
-    void context;
-    void value;
-    void options;
+  async fill(_context: ControlInteractionContext, _value: string, _options: FillControlOptions = {}): Promise<void> {
+    // intentionally empty: a control type with no fill of its own is left as the form rendered it
   }
 
   async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
@@ -120,6 +130,34 @@ export abstract class ControlTester {
   }
 }
 
+/**
+ * A value the sentence-shaped fixture text cannot be: lower-cased, with every run of anything else collapsed
+ * to a single dash. `Test Slug e2e-mspt0-document-r0` becomes `test-slug-e2e-mspt0-document-r0`.
+ *
+ * This is the one shape worth deriving, because it is the one the platform's patterned fields actually have —
+ * a URL slug, a route key, an identifier. Generating a string for an arbitrary regular expression is a
+ * different problem, and pretending to solve it would produce fixtures that fail far from their cause; see
+ * {@link TextBoxControlTester.patternedValue}, which checks the result and says so instead.
+ */
+function toDashedToken(value: string): string {
+  let token = '';
+  let separatorPending = false;
+
+  for (const character of value.toLowerCase()) {
+    const isAlphaNumeric = (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9');
+    if (!isAlphaNumeric) {
+      separatorPending = token.length > 0;
+      continue;
+    }
+
+    if (separatorPending) token += '-';
+    token += character;
+    separatorPending = false;
+  }
+
+  return token;
+}
+
 class TextBoxControlTester extends ControlTester {
   innerLocator(): string {
     return 'input, textarea';
@@ -129,14 +167,36 @@ class TextBoxControlTester extends ControlTester {
     if (this.inputType() === 'number') return '123';
 
     const suffix = context.uniqueSuffix ? ` ${context.uniqueSuffix}` : '';
-    return `Test ${this.attr.label ?? this.attr.attrName}${suffix}`;
+    return this.patternedValue(`Test ${this.attr.label ?? this.attr.attrName}${suffix}`);
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     if (this.inputType() === 'number') return String(Number(original[this.attr.attrName] ?? 0) + 1);
 
-    return `Updated ${original[this.attr.attrName] ?? this.attr.attrName}`;
+    return this.patternedValue(`Updated ${original[this.attr.attrName] ?? this.attr.attrName}`);
+  }
+
+  /**
+   * `value` where the attribute declares no pattern, its dashed form where it does.
+   *
+   * A patterned field is one the form itself rejects — `BaseEntityFormBuilder` applies
+   * `Validators.pattern` — so a fixture that ignored the pattern would leave Save disabled and the test
+   * would report a missing row rather than an invalid value. Throwing when even the dashed form does not
+   * match keeps that honest: the suites cannot invent a value for every pattern, and the descriptor is where
+   * the mismatch has to be fixed.
+   */
+  private patternedValue(value: string): string {
+    const pattern = (this.attr as { pattern?: string }).pattern;
+    if (!pattern) return value;
+
+    const dashed = toDashedToken(value);
+    if (!new RegExp(pattern).test(dashed)) {
+      throw new Error(
+        `[${this.attr.attrName}] the generated fixture value '${dashed}' does not satisfy the declared pattern ${pattern}. ` +
+          `The generated suites derive only a dashed-token value for a patterned text box — give the attribute a pattern that shape satisfies, or drive it from a test of its own.`,
+      );
+    }
+    return dashed;
   }
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
@@ -161,13 +221,11 @@ class CheckboxControlTester extends ControlTester {
     return 'input[type="checkbox"]';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return 'true';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     return original[this.attr.attrName] === 'true' ? 'false' : 'true';
   }
 
@@ -189,14 +247,11 @@ class DateControlTester extends ControlTester {
     return 'input[matInput]';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return '2026-01-15';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
-    void original;
+  override updateValue(_context: ControlDataContext, _original: Record<string, string>): string {
     return '2026-02-20';
   }
 
@@ -219,14 +274,12 @@ class DropdownControlTester extends ControlTester {
     return 'mat-select';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
-    return String(resolveSelectables(this.attr)?.[0]?.value ?? '');
+  override createValue(_context: ControlDataContext): string {
+    return selectableValue(this.attr, 0) ?? '';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
-    return String(resolveSelectables(this.attr)?.[1]?.value ?? original[this.attr.attrName] ?? '');
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
+    return selectableValue(this.attr, 1) ?? original[this.attr.attrName] ?? '';
   }
 
   /**
@@ -265,13 +318,11 @@ class TagsControlTester extends ControlTester {
     return 'mat-chip-grid input';
   }
 
-  override createValue(context: ControlDataContext): string {
-    void context;
+  override createValue(_context: ControlDataContext): string {
     return 'alpha,beta';
   }
 
-  override updateValue(context: ControlDataContext, original: Record<string, string>): string {
-    void context;
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     return `${original[this.attr.attrName] ?? ''},gamma`;
   }
 
@@ -312,8 +363,7 @@ class ForeignKeyControlTester extends ControlTester {
     return fixture?.id ?? (linkedName ? (context.createdIdsByEntity?.[linkedName] ?? '') : '');
   }
 
-  override displayValue(context: ControlDataContext, value: string): string {
-    void value;
+  override displayValue(context: ControlDataContext, _value: string): string {
     const displayOverride = context.linkedDisplayValuesByAttr?.[this.attr.attrName];
     if (displayOverride) return displayOverride;
 
@@ -350,7 +400,7 @@ class ForeignKeyControlTester extends ControlTester {
 
     const row = context.page
       .locator('mat-row')
-      .filter({ has: context.page.locator('mat-cell').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) }) })
+      .filter({ has: context.page.locator('mat-cell').filter({ hasText: exactText(identificationValue) }) })
       .first();
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
     await context.page.getByTestId(`${toTestId(linkedName)}-select`).click();
@@ -375,8 +425,7 @@ class LookupControlTester extends ControlTester {
     return linkedRow ? this.lookupKey(linkedRow) : '';
   }
 
-  override displayValue(context: ControlDataContext, value: string): string {
-    void value;
+  override displayValue(context: ControlDataContext, _value: string): string {
     const displayOverride = context.linkedDisplayValuesByAttr?.[this.attr.attrName];
     if (displayOverride) return displayOverride;
 
@@ -446,9 +495,10 @@ export abstract class RelationshipControlTester extends ControlTester {
     return `Add ${this.linkedEntityName() ?? ''}`;
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op, and declared without parameters because there is nothing to read: a relationship has no value on
+   * the form. The rows are asserted by `RelationshipFieldsetPO` instead. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -471,6 +521,48 @@ class EmbeddedComponentsControlTester extends RelationshipControlTester {
   override readonly rowDeleteAriaLabel = 'Delete embedded component';
 }
 
+/**
+ * A single stored file attached to an entity: a fieldset holding at most one row, and the selector that puts
+ * one there.
+ *
+ * `isInput` stays false for the same reason it does on the relationship controls, and with the same
+ * consequence — the control is out of `fillForm`, `assertFieldValues` and `buildCreateData`. An artifact is not
+ * a string the generated form data can carry: it is `{bucket, objectId, name, mimeType}`, and the object it
+ * names lives in the object store rather than in the entity's own payload. Treating it as a value would also
+ * make every CRUD test of every entity that has an artifact attribute upload a file, putting the object store
+ * on the critical path of a suite that otherwise never touches it. The artifact suite drives this tester
+ * instead.
+ */
+export class ArtifactControlTester extends ControlTester {
+  override readonly isInput = false;
+  /** `aria-label` of the row's delete button, as authored on `ArtifactComponent`. */
+  readonly rowDeleteAriaLabel = 'Delete artifact reference';
+  /** Label of the button that reveals the upload inputs — itself revealed only while the fieldset has focus. */
+  readonly revealSelectorButtonName = 'Upload file';
+  /** Label of the button that performs the upload, once the selector is open. */
+  readonly uploadButtonName = 'Upload';
+
+  /** The single-row list; the fieldset around it is what {@link ControlTester.control} addresses. */
+  innerLocator(): string {
+    return 'ul';
+  }
+
+  /** Whether the control renders a thumbnail rather than a MIME icon for `mimeType`. */
+  showsThumbnailFor(mimeType: string): boolean {
+    return this.showThumbnail() && mimeType.startsWith('image/');
+  }
+
+  /** `showThumbnail` is opt-out: `ArtifactComponent` suppresses the thumbnail only on an explicit `false`. */
+  private showThumbnail(): boolean {
+    return (this.attr as { showThumbnail?: boolean }).showThumbnail !== false;
+  }
+
+  /** No-op for the same reason the relationship testers' is: what the control holds is not a form value. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
+  }
+}
+
 class NoopControlTester extends ControlTester {
   override readonly isInput: boolean;
 
@@ -483,9 +575,9 @@ class NoopControlTester extends ControlTester {
     return '';
   }
 
-  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    void context;
-    void value;
+  /** No-op: a control type the suites do not yet drive has nothing to assert. */
+  override async assertValue(): Promise<void> {
+    // intentionally empty
   }
 }
 
@@ -513,9 +605,10 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
       return new ComponentsControlTester(attr);
     case 'EMBEDDED_COMPONENTS':
       return new EmbeddedComponentsControlTester(attr);
+    case 'ARTIFACT':
+      return new ArtifactControlTester(attr);
     case 'FLEX_BOX':
     case 'LABEL':
-    case 'ARTIFACT':
       return new NoopControlTester(attr, false);
     default:
       return new NoopControlTester(attr, true);
@@ -541,6 +634,13 @@ export function relationshipTestersFor(descriptor: BaseEntityDescriptor): Relati
   return testableAttrs(descriptor)
     .map((attr) => createControlTester(attr))
     .filter((tester): tester is RelationshipControlTester => tester instanceof RelationshipControlTester);
+}
+
+/** The artifact attributes of an entity — like {@link relationshipTestersFor}, disjoint from the scalar inputs. */
+export function artifactTestersFor(descriptor: BaseEntityDescriptor): ArtifactControlTester[] {
+  return testableAttrs(descriptor)
+    .map((attr) => createControlTester(attr))
+    .filter((tester): tester is ArtifactControlTester => tester instanceof ArtifactControlTester);
 }
 
 /**

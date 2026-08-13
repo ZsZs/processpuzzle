@@ -10,11 +10,13 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.app.model.WidgetRef;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
+import com.processpuzzle.rule.domain.Severity;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,17 +35,22 @@ import java.util.Set;
  *       invalid value is already rejected by Jackson during deserialization — for the REST path and
  *       the YAML import path alike.
  *   <li><b>Widget {@code props}.</b> Each widget type owns and validates its own props shape on the
- *       frontend; the only thing checked here is the {@code entityName} cross-reference, and only
- *       when an {@link EntityNameRegistry} is available.
+ *       frontend, including how it interprets {@code childIds} beyond "these ids must resolve". The
+ *       only other thing checked here is the {@code entityName} cross-reference, and only when an
+ *       {@link EntityNameRegistry} is available.
  *   <li><b>Conventions and policy.</b> Id shapes, navigation depth, role naming, CSS units,
  *       translatability and anything else a tenant may want to decide for itself are
  *       {@code base-rule} records, evaluated by {@link AppRuleValidator} as part of the same pass —
  *       so tightening them is a database row rather than a change here.
  * </ul>
  *
- * <p>Cycles in the {@code children} trees need no dedicated check: the input arrives as JSON or
+ * <p>Cycles in the {@code navItems} tree need no dedicated check: the input arrives as JSON or
  * YAML, which cannot express one. Repeated ids — the observable symptom a designer would hit — are
- * caught by the uniqueness checks.
+ * caught by the uniqueness checks. Widgets no longer nest, so no widget tree can cycle
+ * structurally either — but {@code props.childIds} can now express a cycle between two
+ * {@code REFERENCED} widgets, and the contract deliberately leaves that unchecked here: what a
+ * container widget does with its {@code childIds} is that widget type's own concern, and only it
+ * knows whether repeating an id is a loop or a legitimate second placement.
  *
  * <p>Structural problems are always {@code ERROR}; the organization's rules contribute their own
  * severity, so a returned list may contain problems that do not reject the write — see
@@ -55,6 +62,7 @@ public class AppDefinitionValidator {
     private static final String SEPARATOR = "/";
     private static final String WIDGETS = "/widgets";
     private static final String TYPE = "/type";
+    private static final String CHILD_IDS = "childIds";
 
     private final ObjectProvider<EntityNameRegistry> entityRegistryProvider;
     private final AppRuleValidator ruleValidator;
@@ -160,16 +168,22 @@ public class AppDefinitionValidator {
                 problems.add(new AppValidationProblem(path + "/title", "app.validation.missing-page-title",
                         "A page needs a title."));
             }
-            validateWidgets(orgKey, page.getWidgets(), path + WIDGETS, new HashSet<>(), problems);
+            validateWidgets(orgKey, page.getWidgets(), path + WIDGETS, problems);
         }
         return pageIds;
     }
 
+    /**
+     * The widgets of one page or region. The list is flat — container widget types compose through
+     * {@code props.childIds} rather than nesting — so the id scope of a {@code childIds} entry is
+     * exactly this list, and both passes below can work off one index.
+     */
     private void validateWidgets(String orgKey, List<WidgetRef> widgets, String basePath,
-                                 Set<String> seenIds, List<AppValidationProblem> problems) {
+                                 List<AppValidationProblem> problems) {
         if (widgets == null) {
             return;
         }
+        Map<String, WidgetRef> byId = new LinkedHashMap<>();
         for (int i = 0; i < widgets.size(); i++) {
             WidgetRef widget = widgets.get(i);
             String path = basePath + SEPARATOR + i;
@@ -180,7 +194,7 @@ public class AppDefinitionValidator {
             if (isBlank(widget.getId())) {
                 problems.add(new AppValidationProblem(path + "/id", "app.validation.missing-widget-id",
                         "A widget needs an id."));
-            } else if (!seenIds.add(widget.getId())) {
+            } else if (byId.putIfAbsent(widget.getId(), widget) != null) {
                 problems.add(new AppValidationProblem(path + "/id", "app.validation.duplicate-widget-id",
                         "More than one widget in this page or region uses the id '" + widget.getId() + "'."));
             }
@@ -189,8 +203,68 @@ public class AppDefinitionValidator {
                         "A widget needs a type; it is the key into the frontend widget registry."));
             }
             validateEntityName(orgKey, widget, path, problems);
-            validateWidgets(orgKey, widget.getChildren(), path + "/children", seenIds, problems);
         }
+        validateComposition(widgets, basePath, byId, problems);
+    }
+
+    /**
+     * The two checks that replace the old nesting: every {@code props.childIds} entry naming a
+     * sibling that is actually available to be placed, and every widget that opted out of rendering
+     * at its own position having something that places it.
+     *
+     * <p>The orphan case is a {@code WARNING} rather than an {@code ERROR} on purpose — declaring a
+     * widget before wiring it into its container is a legitimate state for a draft to be saved in.
+     */
+    private void validateComposition(List<WidgetRef> widgets, String basePath,
+                                     Map<String, WidgetRef> byId, List<AppValidationProblem> problems) {
+        Set<String> referencedIds = new HashSet<>();
+        for (int i = 0; i < widgets.size(); i++) {
+            WidgetRef widget = widgets.get(i);
+            if (widget == null) {
+                continue;
+            }
+            for (String childId : childIdsOf(widget)) {
+                WidgetRef target = byId.get(childId);
+                if (target == null || target.getPlacement() != WidgetRef.PlacementEnum.REFERENCED) {
+                    problems.add(new AppValidationProblem(
+                            basePath + SEPARATOR + i + "/props/" + CHILD_IDS,
+                            "app.validation.dangling-child-id",
+                            "props.childIds references widget '" + childId + "', which is not a widget with "
+                                    + "placement REFERENCED in this page or region."));
+                } else {
+                    referencedIds.add(childId);
+                }
+            }
+        }
+        reportOrphanWidgets(widgets, basePath, referencedIds, problems);
+    }
+
+    private void reportOrphanWidgets(List<WidgetRef> widgets, String basePath, Set<String> referencedIds,
+                                     List<AppValidationProblem> problems) {
+        for (int i = 0; i < widgets.size(); i++) {
+            WidgetRef widget = widgets.get(i);
+            if (widget == null || widget.getPlacement() != WidgetRef.PlacementEnum.REFERENCED) {
+                continue;
+            }
+            if (!referencedIds.contains(widget.getId())) {
+                problems.add(new AppValidationProblem(basePath + SEPARATOR + i, "app.validation.orphan-widget",
+                        "Widget '" + widget.getId() + "' is REFERENCED but nothing points at it yet, "
+                                + "so it would not be rendered.", Severity.WARNING));
+            }
+        }
+    }
+
+    /**
+     * {@code childIds} is read out of the open {@code props} map rather than being a field of its
+     * own: composition is one widget type's convention, and the contract keeps {@code props} loose.
+     * Anything that is not a list of strings is left to the widget type to reject.
+     */
+    private List<String> childIdsOf(WidgetRef widget) {
+        Map<String, Object> props = widget.getProps();
+        if (props == null || !(props.get(CHILD_IDS) instanceof List<?> raw)) {
+            return List.of();
+        }
+        return raw.stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
 
     private void validateEntityName(String orgKey, WidgetRef widget, String path,
@@ -261,7 +335,7 @@ public class AppDefinitionValidator {
             validateNavItems(region.getNavItems(), path + "/navItems", pageIds, navIds, referencedPageIds, problems);
         }
         if (staticContentAllowed) {
-            validateWidgets(orgKey, region.getWidgets(), path + WIDGETS, new HashSet<>(), problems);
+            validateWidgets(orgKey, region.getWidgets(), path + WIDGETS, problems);
         }
     }
 

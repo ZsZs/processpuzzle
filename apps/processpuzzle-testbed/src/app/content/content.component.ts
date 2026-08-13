@@ -9,7 +9,6 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
   selector: 'app-content',
   templateUrl: './content.component.html',
   imports: [TranslocoDirective, MatCardsGridComponent],
-  styleUrls: ['./content.component.scss'],
 })
 export class ContentComponent {
   readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
@@ -67,6 +66,42 @@ export class ContentComponent {
       content: ['base-rule_card_content', 'base-rule_card_content_1', 'base-rule_card_content_2', 'base-rule_card_content_3'],
       actions: [{ link: '/base-rule', caption: 'base-rule_card_button', colour: 'primary' }],
       menuItems: [{ icon: 'open_in_new', label: 'base-rule_card_button', link: '/base-rule' }],
+      translocoPrefix: 'home',
+    },
+    {
+      icon: 'article',
+      title: 'base-document_card_title',
+      subtitle: 'base-document_card_subtitle',
+      content: ['base-document_card_content', 'base-document_card_content_1', 'base-document_card_content_2', 'base-document_card_content_3'],
+      actions: [{ link: '/base-document', caption: 'base-document_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-document_card_button', link: '/base-document' }],
+      translocoPrefix: 'home',
+    },
+    {
+      icon: 'flag_circle',
+      title: 'base-state_card_title',
+      subtitle: 'base-state_card_subtitle',
+      content: ['base-state_card_content', 'base-state_card_content_1', 'base-state_card_content_2', 'base-state_card_content_3'],
+      actions: [{ link: '/base-state', caption: 'base-state_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-state_card_button', link: '/base-state' }],
+      translocoPrefix: 'home',
+    },
+    {
+      icon: 'schema',
+      title: 'base-workflow_card_title',
+      subtitle: 'base-workflow_card_subtitle',
+      content: ['base-workflow_card_content', 'base-workflow_card_content_1', 'base-workflow_card_content_2', 'base-workflow_card_content_3'],
+      actions: [{ link: '/base-workflow', caption: 'base-workflow_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-workflow_card_button', link: '/base-workflow' }],
+      translocoPrefix: 'home',
+    },
+    {
+      icon: 'web',
+      title: 'base-app_card_title',
+      subtitle: 'base-app_card_subtitle',
+      content: ['base-app_card_content', 'base-app_card_content_1', 'base-app_card_content_2', 'base-app_card_content_3'],
+      actions: [{ link: '/base-app', caption: 'base-app_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-app_card_button', link: '/base-app' }],
       translocoPrefix: 'home',
     },
     {

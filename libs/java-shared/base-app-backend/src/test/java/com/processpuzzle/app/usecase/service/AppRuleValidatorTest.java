@@ -123,15 +123,16 @@ class AppRuleValidatorTest {
                 .contains("rule.appDefinition.entityWidgetsDeclareAnEntityName");
     }
 
-    /** Proves nested widget children are walked, and that a conforming grid is left alone. */
+    /** Proves a grid placed by a container — a sibling, not a child — is left alone when it conforms. */
     @Test
-    void entityGridNestedInAContainer_isAcceptedWhenItNamesItsEntity() {
+    void entityGridComposedByAContainer_isAcceptedWhenItNamesItsEntity() {
         AppDefinitionInput input = conformingInput();
         WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
+        grid.setPlacement(WidgetRef.PlacementEnum.REFERENCED);
         WidgetRef container = new WidgetRef("widget-tabs", "tab-group");
-        container.setChildren(List.of(grid));
-        input.getPages().getFirst().setWidgets(List.of(container));
+        container.setProps(Map.of("childIds", List.of("widget-grid")));
+        input.getPages().getFirst().setWidgets(List.of(container, grid));
 
         assertThat(ruleValidator.validate(ORG, input)).isEmpty();
     }

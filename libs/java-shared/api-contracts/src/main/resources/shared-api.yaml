@@ -133,6 +133,49 @@ components:
 
   schemas:
 
+    WidgetRef:
+      type: object
+      description: >-
+        A reference to a registered widget, resolved via the frontend widget registry at
+        render time and instantiated with `NgComponentOutlet` / `ViewContainerRef`. Shared
+        by base-app-api.yaml (PageDefinition/RegionDefinition.widgets) and
+        base-document-api.yaml (a WIDGET-kind DocumentBlock's type/props/placement fields
+        mirror this shape) so a widget tree renders identically wherever it's hosted. Not
+        recursive: container widget types (tab groups, split panels) compose via
+        props.childIds referencing sibling ids, not via nested WidgetRefs — see placement.
+      required: [ id, type ]
+      properties:
+        id:
+          type: string
+          description: Unique within the enclosing flat list; used as the render loop's trackBy key.
+          example: widget-claims-grid
+        type:
+          type: string
+          description: >-
+            Widget registry key. Intentionally an open string rather than an enum — new
+            widget types register into the frontend map without a contract change.
+          example: entity-grid
+        props:
+          type: object
+          description: >-
+            Widget-specific configuration, passed to the resolved component as inputs.
+            Loose by design: each widget type owns and validates its own props shape.
+            Container widget types express composition here via childIds — a list of
+            sibling WidgetRef.id values within the same enclosing array — rather than
+            through structural nesting. Interpreting childIds is that widget type's own
+            concern; consumers only validate that the ids resolve and flag orphans.
+          additionalProperties: true
+        placement:
+          type: string
+          enum: [ STANDALONE, REFERENCED ]
+          default: STANDALONE
+          description: >-
+            STANDALONE renders at this widget's own position in the enclosing flat list.
+            REFERENCED means it renders only where something else points at its id — a
+            container widget's props.childIds, or (base-document only) a Tiptap
+            widgetEmbed node. A REFERENCED widget nothing points at is an orphan, flagged
+            by validation as a warning, not an error.
+
     OrganizationKey:
       type: string
       description: >-

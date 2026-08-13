@@ -1,4 +1,7 @@
 {
+  "artifact": {
+    "upload_failure": "Artifact upload failed. Please try again."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Delete artifact?",
     "content": "This will permanently delete \"{{ artifactName }}\" from the object store.",

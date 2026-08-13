@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
 import { identificationAttr } from '../data/test-data-factory';

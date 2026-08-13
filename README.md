@@ -74,6 +74,7 @@ graph TD
     core[processpuzzle-core]
     contracts[api-contracts]
     store[processpuzzle-store]
+    entityBE[base-entity-backend]
     ruleBE[base-rule-backend]
     stateBE[base-state-backend]
     workflowBE[base-workflow-backend]
@@ -81,6 +82,8 @@ graph TD
 
     store --> core
     store --> contracts
+    entityBE --> core
+    entityBE --> contracts
     ruleBE --> core
     ruleBE --> contracts
     stateBE --> core
@@ -94,6 +97,7 @@ graph TD
   end
 
   entityFE -. "REST / Firestore" .-> store
+  entityFE -. REST .-> entityBE
   ruleFE -. "REST: /rules" .-> ruleBE
   stateFE -. REST .-> stateBE
   workflowFE -. REST .-> workflowBE
@@ -166,7 +170,7 @@ different stages:
 
 | Feature | Frontend | Backend |
 | --- | --- | --- |
-| `base-entity` | production-ready | served by `processpuzzle-store` / REST / Firestore |
+| `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | scaffold | scaffold |
 | `base-workflow` | scaffold | scaffold |
@@ -213,9 +217,12 @@ graph LR
   code --> DC
 ```
 
-**Firebase** — `firebase.json` wires Hosting (the Angular bundle from `dist/apps/*/browser`), a `/api/**`
-rewrite to the `jsonServer` Cloud Function, Firestore (rules + indexes), and Storage rules. The full emulator
-suite (auth, firestore, functions, storage, pubsub, hosting) runs the same topology locally.
+**Firebase** — `firebase.json` wires Hosting (the Angular bundle from `dist/apps/*/browser`), an `/api/store/**`
+rewrite to the `objectStore` Cloud Function and an `/api/**` one to `jsonServer`, Firestore (rules + indexes),
+and Storage rules. The full emulator suite (auth, firestore, functions, storage, pubsub, hosting) runs the same
+topology locally. A real project additionally needs three manual GCP settings the deploy cannot make for itself
+— default Storage bucket, token-creator grant for signed URIs, public invoker on `objectStore`; see
+[Google Cloud Platform (per Firebase project)](/.github/README.md#google-cloud-platform-per-firebase-project).
 
 **Docker Compose** — `tools/docker/docker-compose-ci.yaml` (CI / local) and `docker-compose-prod.yaml`
 (production) compose NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend

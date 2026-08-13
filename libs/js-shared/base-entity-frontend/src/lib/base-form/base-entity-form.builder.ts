@@ -97,7 +97,13 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
 
   // region protected, private helper methods
   private createFormControlFor(column: BaseEntityAttrDescriptor, currentAttrValue: unknown): AbstractControl {
-    return new FormControl({ value: currentAttrValue, disabled: column.disabled }, column.required ? Validators.required : null);
+    const validators = [];
+    if (column.required) validators.push(Validators.required);
+    // `Validators.pattern` on an empty value passes, so an optional patterned field stays optional — the two
+    // validators compose rather than one implying the other.
+    if (column.pattern) validators.push(Validators.pattern(column.pattern));
+
+    return new FormControl({ value: currentAttrValue, disabled: column.disabled }, validators);
   }
 
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {

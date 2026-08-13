@@ -1,7 +1,9 @@
 import { BaseEntityTabsComponent } from './base-entity-tabs.component';
-import { setupContainerComponentTest } from '../../test-setup';
+import { DummyComponent, setupContainerComponentTest, TEST_ENTITY_TAB_SEGMENT } from '../../test-setup';
+import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { describe, expect, it, vi } from 'vitest';
+import { EntityTabDescriptor } from '../base-entity/base-entity.descriptor';
 
 describe('BaseEntityTabsComponent', () => {
   describe('component sanity', () => {
@@ -105,6 +107,99 @@ describe('BaseEntityTabsComponent', () => {
 
       // VERIFY:
       expect(formNavigator.navigateToList).toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * A feature contributes a screen of its own through `BaseEntityDescriptor.extraTabs` — `Document` its
+   * content editor. The framework knows only how to render the link and route to the segment; what the
+   * screen is for stays with the feature.
+   */
+  describe('extra tabs:', () => {
+    const previewTab: EntityTabDescriptor = { segment: TEST_ENTITY_TAB_SEGMENT, i18nKey: 'test_entity.tabs.preview', component: DummyComponent };
+
+    async function setupWithPreviewTab(translations: Record<string, string> = {}) {
+      return setupContainerComponentTest(BaseEntityTabsComponent, { en: translations }, [], [previewTab]);
+    }
+
+    function tabLinks(fixture: { debugElement: DebugElement }) {
+      return fixture.debugElement.queryAll(By.css('a[mat-tab-link]'));
+    }
+
+    it('renders one link per declared tab, after the two generic ones', async () => {
+      const { fixture } = await setupWithPreviewTab({ 'test_entity.tabs.preview': '{{ entity }} - preview' });
+
+      const links = tabLinks(fixture);
+      expect(links).toHaveLength(3);
+      expect(links[2].nativeElement.textContent.trim()).toBe('TestEntity - preview');
+      // Same shape createTestId gives the generic links, so an e2e locator reads the same either way.
+      expect(links[2].attributes['data-testid']).toBe('testEntity-show-preview');
+    });
+
+    it('declares no extra link when the descriptor declares no tab', async () => {
+      const { fixture } = await setupContainerComponentTest(BaseEntityTabsComponent);
+      expect(tabLinks(fixture)).toHaveLength(2);
+    });
+
+    /** Same rule as Details: an entity-scoped screen has nothing to show until a row is selected. */
+    it('is disabled while no entity is current', async () => {
+      const { fixture, component, store } = await setupWithPreviewTab();
+      expect(component.store.currentEntity()).toBeUndefined();
+      expect(tabLinks(fixture)[2].nativeElement.getAttribute('aria-disabled')).toBe('true');
+
+      store.setCurrentEntity('1');
+      fixture.detectChanges();
+
+      expect(tabLinks(fixture)[2].nativeElement.getAttribute('aria-disabled')).toBe('false');
+    });
+
+    it('navigates to <entity>/<id>/<segment>', async () => {
+      const { component, store, formNavigator } = await setupWithPreviewTab();
+      store.setCurrentEntity('1');
+
+      await (component as BaseEntityTabsComponent).onShowTab(previewTab);
+
+      expect(formNavigator.determineCurrentUrl()).toBe('/test-entity/1/' + TEST_ENTITY_TAB_SEGMENT);
+    });
+
+    /**
+     * The reason the active-tab effect is a three-way branch: an extra tab's URL is neither the list nor the
+     * details route, and the earlier "details or else list" shape lit the List link up while the extra tab's
+     * own screen was on display.
+     */
+    it('marks itself active on its own route, leaving the list link alone', async () => {
+      const { fixture, component, store, formNavigator } = await setupWithPreviewTab();
+      store.setCurrentEntity('1');
+
+      await formNavigator.navigateToTab('TestEntity', '1', TEST_ENTITY_TAB_SEGMENT);
+      fixture.detectChanges();
+
+      expect(component.store.currentTab()).toBe('TestEntity - ' + TEST_ENTITY_TAB_SEGMENT);
+      expect(tabLinks(fixture)[0].nativeElement.getAttribute('aria-selected')).toBe('false');
+      expect(tabLinks(fixture)[2].nativeElement.getAttribute('aria-selected')).toBe('true');
+    });
+
+    it('deregisters its tab on destroy', async () => {
+      const { component } = await setupWithPreviewTab();
+      vi.spyOn(component.store, 'tabIsInactive');
+
+      (component as BaseEntityTabsComponent).ngOnDestroy();
+
+      expect(component.store.tabIsInactive).toHaveBeenCalledWith('TestEntity - ' + TEST_ENTITY_TAB_SEGMENT);
+    });
+  });
+
+  /**
+   * The store is bound onto the descriptor by whoever builds it, and forgetting it used to surface from an
+   * effect as `Cannot read properties of undefined (reading 'tabIsActive')`, several frames from the
+   * descriptor that was actually incomplete.
+   */
+  describe('unbound store:', () => {
+    it('names the descriptor that has no store', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityTabsComponent);
+      (component as BaseEntityTabsComponent).entityDescriptor().store = undefined;
+
+      expect(() => (component as BaseEntityTabsComponent).ngOnInit()).toThrowError(/TestEntity.*no store/);
     });
   });
 });

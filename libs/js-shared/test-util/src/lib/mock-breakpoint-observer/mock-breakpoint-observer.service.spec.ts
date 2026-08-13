@@ -1,4 +1,4 @@
-import { Breakpoints } from '@angular/cdk/layout';
+import { BreakpointState, Breakpoints } from '@angular/cdk/layout';
 import { DeviceTypes, MockBreakpointObserver } from './mock-breakpoint-observer.service';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -215,7 +215,7 @@ describe('MockBreakpointObserver', () => {
   describe('observe method', () => {
     it('should emit when resize is called', () => {
       return new Promise<void>((resolve) => {
-        const emittedValues: any[] = [];
+        const emittedValues: BreakpointState[] = [];
         const subscription = service.observe().subscribe((state) => {
           emittedValues.push(state);
 
@@ -238,7 +238,7 @@ describe('MockBreakpointObserver', () => {
 
     it('should skip the initial value', () => {
       return new Promise<void>((resolve) => {
-        const emittedValues: any[] = [];
+        const emittedValues: BreakpointState[] = [];
         const subscription = service.observe().subscribe((state) => {
           emittedValues.push(state);
         });
@@ -246,7 +246,7 @@ describe('MockBreakpointObserver', () => {
         // Wait a bit to ensure no emissions occur
         setTimeout(() => {
           // No values should be emitted without calling resize
-          expect(emittedValues.length).toBe(0);
+          expect(emittedValues).toHaveLength(0);
 
           subscription.unsubscribe();
           resolve();

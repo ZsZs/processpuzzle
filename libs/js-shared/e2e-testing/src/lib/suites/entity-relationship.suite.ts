@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { parentReferenceAttrName, relationshipTestersFor, type RelationshipControlTester } from '../controls/control-tester';
 import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
@@ -7,7 +7,7 @@ import { buildCreateDataForContext, buildUpdateDataForContext, identificationAtt
 import { EntityFormPO } from '../pages/entity-form.po';
 import { EntityListPO } from '../pages/entity-list.po';
 import { RelationshipFieldsetPO } from '../pages/relationship-fieldset.po';
-import { RouteResolver } from '../routing/route.resolver';
+import { entityIdFromDetailUrl, RouteResolver } from '../routing/route.resolver';
 
 export interface DefineEntityRelationshipSuiteOptions {
   /** Absolute path to the registry JSON produced by globalSetup. */
@@ -291,11 +291,6 @@ async function exerciseComponents(
   await picker.clickCancelButton();
 }
 
-/** The id in a `.../<entity>/<id>/details` URL — how a row's child identifies itself for cleanup. */
-function entityIdFromDetailUrl(url: string): string {
-  const segments = new URL(url).pathname.split('/');
-  return segments[segments.length - 2];
-}
 // endregion
 
 // region EMBEDDED_COMPONENTS

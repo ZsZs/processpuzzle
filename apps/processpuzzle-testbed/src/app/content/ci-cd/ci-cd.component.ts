@@ -6,16 +6,15 @@ import { MarkdownComponent } from 'ngx-markdown';
   selector: 'app-ci-cd',
   imports: [CommonModule, MarkdownComponent],
   templateUrl: './ci-cd.component.html',
-  styleUrl: './ci-cd.component.scss',
 })
 export class CiCdComponent {
   // region event handling methods
-  onLoad($event: string) {
-    // TODO: find out the use of this event
+  onLoad(): void {
+    return;
   }
 
-  onError($event: string | Error) {
-    // TODO: find out the use of this event
+  onError(): void {
+    return;
   }
 
   // endregion

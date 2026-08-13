@@ -13,6 +13,7 @@ export {
   REGION_TYPES,
   RegionDefinition,
   SIDENAV_MODES,
+  WIDGET_PLACEMENTS,
   WidgetRef,
   type ColorScheme,
   type LayoutDefinition,
@@ -21,6 +22,7 @@ export {
   type RegionType,
   type SidenavMode,
   type ThemeDefinition,
+  type WidgetPlacement,
 } from './lib/domain/app-definition';
 export {
   APP_DEFINITION_I18N_SCOPE,

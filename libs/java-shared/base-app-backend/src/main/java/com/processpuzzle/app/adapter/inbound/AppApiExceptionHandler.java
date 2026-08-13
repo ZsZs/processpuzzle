@@ -9,7 +9,9 @@ import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsExceptio
 import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
 import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,12 +23,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * than parse prose.
  *
  * <p>Only this feature's own exception types are declared here. {@code processpuzzle-core}'s
- * {@code ApiExceptionHandler} is an unordered global advice that already claims
- * {@code IllegalArgumentException}, {@code IllegalStateException}, {@code JsonProcessingException},
+ * {@code ApiExceptionHandler} already claims {@code IllegalArgumentException},
+ * {@code IllegalStateException}, {@code JsonProcessingException},
  * {@code MethodArgumentNotValidException} and {@code InvalidDataAccessApiUsageException}; declaring
  * any of those a second time here would make which advice wins depend on bean ordering.
+ *
+ * <p>{@link ApiAdviceOrder#FEATURE} puts this advice ahead of core's, which is what keeps the ids
+ * below from being answered by core's catch-all as {@code 500 internal-error} — see
+ * {@link ApiAdviceOrder} for the incident that made the ladder explicit.
  */
 @RestControllerAdvice
+@Order(ApiAdviceOrder.FEATURE)
 public class AppApiExceptionHandler {
 
     @ExceptionHandler(OrganizationNotFoundException.class)

@@ -7,6 +7,7 @@ on:
       - 'apps/processpuzzle-testbed/**'
       - 'tools/firebase/functions/**'
       - 'tools/mock-backend/**'
+      - 'libs/java-shared/base-document-backend/src/main/resources/sample-documents/**'
       - 'libs/java-shared/base-rule-backend/src/main/resources/sample-rules/**'
       - 'libs/java-shared/base-app-backend/src/main/resources/default-apps/**'
       - 'firebase.json'
@@ -58,7 +59,17 @@ jobs:
       - name: Deploy Firebase Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
-        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes --project processpuzzle-testbed-stage --non-interactive --force
+        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes,storage --project processpuzzle-testbed-stage --non-interactive --force
+
+      # Stage is reinitialized by every deployment, the way restarting the docker-compose topology
+      # gives the Spring backend an empty database that SampleDocumentLoader then fills. `--reset`
+      # therefore drops the organization's documents before importing, which also collects whatever a
+      # previously interrupted e2e run left behind.
+      - name: Reinitialize stage sample documents
+        working-directory: tools/firebase/functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
+        run: npm run seed:documents -- --project processpuzzle-testbed-stage --reset
 
       - id: deploy-to-firebase
         name: Deploy to Firebase host

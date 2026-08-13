@@ -138,21 +138,28 @@ describe('NavItem', () => {
 });
 
 describe('WidgetRef', () => {
-  it('starts as a leaf, so a new widget carries no empty children array', () => {
+  it('leaves placement unset, so a new widget renders where it sits without saying so', () => {
     const widget = new WidgetRef();
 
     expect(widget.id).toBe('');
     expect(widget.type).toBe('');
     expect(widget.props).toBeUndefined();
-    expect(widget.children).toBeUndefined();
+    expect(widget.placement).toBeUndefined();
   });
 
   it('exposes every property it was created with', () => {
-    const widget = new WidgetRef({ id: 'claims-grid', type: 'entity-grid', props: { entityName: 'Claim' }, children: [new WidgetRef({ id: 'nested' })] });
+    const widget = new WidgetRef({ id: 'claims-grid', type: 'entity-grid', props: { entityName: 'Claim' }, placement: 'REFERENCED' });
 
     expect(widget.id).toBe('claims-grid');
     expect(widget.type).toBe('entity-grid');
     expect(widget.props).toEqual({ entityName: 'Claim' });
-    expect(widget.children?.[0].id).toBe('nested');
+    expect(widget.placement).toBe('REFERENCED');
+  });
+
+  it('composes a container through sibling ids rather than a child collection', () => {
+    const container = new WidgetRef({ id: 'claims-tabs', type: 'tab-group', props: { childIds: ['claims-grid'] } });
+
+    expect(container.props?.['childIds']).toEqual(['claims-grid']);
+    expect('children' in container).toBe(false);
   });
 });

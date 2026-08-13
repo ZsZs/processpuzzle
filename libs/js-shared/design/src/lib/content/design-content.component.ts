@@ -26,6 +26,15 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
+      icon: 'article',
+      title: 'base-document_card_title',
+      subtitle: 'base-document_card_subtitle',
+      content: ['base-document_card_content', 'base-document_card_content_1', 'base-document_card_content_2', 'base-document_card_content_3'],
+      // Singular, matching the snake-cased entity name BASE_DOCUMENT_ROUTES mounts at — see the comment there.
+      actions: [{ link: '/design/document', caption: 'base-document_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
       icon: 'gavel',
       title: 'base-rule_card_title',
       subtitle: 'base-rule_card_subtitle',

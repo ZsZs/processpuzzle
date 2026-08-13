@@ -9,9 +9,9 @@ export class TestEntityComponent implements BaseEntity {
   testEntityId: string;
 
   constructor(id?: string, name?: string, description?: string, testEntityId?: string) {
-    this.id = id ? id : uuidv4();
-    this.name = name != undefined ? name : 'TestEntityComponent';
-    this.description = description != undefined ? description : '';
+    this.id = id ?? uuidv4();
+    this.name = name ?? 'TestEntityComponent';
+    this.description = description ?? '';
     this.testEntityId = testEntityId ?? '';
   }
 }
