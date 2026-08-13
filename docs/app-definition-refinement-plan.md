@@ -205,8 +205,8 @@ hard-rename rather than dual-publish.
 
 ## Phase 3 — `base-widget-backend` + the `WidgetDefinition` resource
 
-**Progress: 3a (contract) ✅ · 3b (Maven module) ✅ · 3c (registration) ✅ · 3d (props form
-prototype) todo.**
+**Phase 3 complete (2026-08-13): 3a (contract) ✅ · 3b (Maven module) ✅ · 3c (registration) ✅ ·
+3d (props form prototype) ✅.**
 
 ### 3a — contract ✅ (2026-08-13)
 
@@ -268,7 +268,34 @@ is genuinely wired rather than merely compiling. Full backend suite green.
 ⚠️ SonarCloud project `processpuzzle_base_widget_backend` also needs creating, alongside
 `processpuzzle_base_widget_frontend`.
 
-### 3d — remaining
+### 3d — props form prototype ✅ (2026-08-13)
+
+`propsSchemaToDescriptors()` in `base-widget-frontend/src/widget-definition/` turns a widget type's
+`propsSchema` into base-entity form descriptors, so a designer editing a `WidgetInstance` gets a
+typed control per prop instead of a raw key/value editor. Plus a `WidgetDefinition` frontend model.
+
+**The expressiveness question is answered: yes.** Measured against the props of widgets that
+actually exist — `entity-grid` exactly as documented in base-app-api.yaml, and `cards-grid` — the
+mapping covers string, integer, boolean, string-array, enum, date-format and long-text, producing
+TEXT_BOX / TAGS / CHECKBOX / DROPDOWN / DATE / TEXTAREA with `required`, labels, placeholders and
+numeric `inputType` all carried through. 13 tests, green first run.
+
+**The fallback is the load-bearing design decision, not a gap.** Only the keywords that map onto a
+control are read; `oneOf`, `$ref`, nested object schemas and tuple `items` are not interpreted and
+fall back to `ADDITIONAL_PROPERTIES` — the same open editor used when there is no schema at all. A
+test asserts every exotic prop is *kept*, because refusing to render or silently dropping a prop
+would turn an unrecognised keyword into a data-loss bug. Widening the subset later is safe precisely
+because the fallback is never wrong, only less specific.
+
+`hasDescribedProps()` exists to keep two contract states apart that the form must also distinguish:
+*no schema* (props unconstrained → open editor) versus *a schema declaring no props* (→ nothing).
+
+**Not yet wired into the live form.** `createWidgetInstanceDescriptor()` builds descriptors
+synchronously and has no access to loaded definitions; feeding it one means giving `AppWidgetFacade`
+the definition for the instance's `type`, which is a data-loading change rather than a mapping one.
+The mapping — the part that answers whether the schema carries enough — is done and tested.
+
+### Remaining
 
 ```
 WidgetDefinition {

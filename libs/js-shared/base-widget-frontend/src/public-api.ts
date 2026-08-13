@@ -31,6 +31,9 @@ export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { VersionButtonComponent } from './version-button/version-button.component';
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';
+export { hasDescribedProps, propsSchemaToDescriptors } from './widget-definition/props-schema-to-descriptors';
+export { ATTRIBUTE_VISIBILITY_MODES, PORT_TYPES, WIDGET_DEFINITION_STATUSES, WidgetDefinition } from './widget-definition/widget-definition';
+export type { AttributeVisibility, AttributeVisibilityMode, InputPort, OutputPort, PortType, PropsSchema, PropsSchemaProperty, WidgetDefinitionStatus } from './widget-definition/widget-definition';
 export { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
 export { widgetsRoutes } from './widgets.routes';
 
