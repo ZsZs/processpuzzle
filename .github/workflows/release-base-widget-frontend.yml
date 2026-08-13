@@ -1,4 +1,4 @@
-name: Release-Widgets
+name: Release-Base-Widget-Frontend
 on:
   push:
     branches:

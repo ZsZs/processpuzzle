@@ -205,7 +205,7 @@ hard-rename rather than dual-publish.
 
 ## Phase 3 — `base-widget-backend` + the `WidgetDefinition` resource
 
-**Progress: 3a (contract) ✅ · 3b (Maven module) todo · 3c (registration) todo · 3d (props form
+**Progress: 3a (contract) ✅ · 3b (Maven module) ✅ · 3c (registration) ✅ · 3d (props form
 prototype) todo.**
 
 ### 3a — contract ✅ (2026-08-13)
@@ -225,9 +225,50 @@ prototype) todo.**
 Converging them onto the shared types renames a generated Java type and its frontend class, so it is
 a follow-up mapping change, deliberately not part of introducing this module.
 
-### 3b–3d — remaining
+### 3b — the module ✅ (2026-08-13)
 
-The genuinely new library; full 13-file registration checklist applies.
+`libs/java-shared/base-widget-backend`, Modulith module `widget` under `com.processpuzzle.widget`,
+`allowedDependencies = {"core", "shared"}` — **no `app`, no `document`, and none may be added**:
+widgets are building blocks, aggregators depend on them and not the reverse.
+
+Shape notes, each a deliberate departure from base-app's:
+
+- **One `WidgetDefinitionCrud` service, not six use-case classes.** base-app splits them because each
+  carries real behaviour (graph conversion, rule validation, publish snapshotting). These are plain
+  CRUD over one row with one shared validation routine; six near-empty classes would be ceremony.
+  Splitting one out later is a rename.
+- **One `Port` record for both directions.** The contract separates `InputPort` / `OutputPort`
+  because an input has `required` / `defaultValue` / `defaultRsqlFilter`; in the domain those are
+  simply null on an output. Nothing here branches on direction, so `WidgetMapper` is where the
+  distinction is re-established.
+- **`version` is a plain column, not `@Version`** — same reasoning as `AppDefinition.revision`:
+  status is derived as `publishedVersion == version`, and Hibernate would bump a managed version on
+  the publish flush itself, reporting unpublished edits on every freshly published widget. Pinned by
+  `WidgetDefinitionTest`.
+- **`propsSchema` is stored verbatim and never validated**, and a test asserts a structurally
+  nonsensical schema is accepted — so a future "helpful" schema check breaks a test rather than
+  quietly changing the contract.
+
+17 module tests green.
+
+### 3c — registration ✅ (2026-08-13)
+
+Root pom (module + `base-widget-backend.version` + dependencyManagement), `release-java-lib.mjs`,
+`build`/`release-base-widget-backend.yml`, `sonar-project.properties`, nx `project.json`, and the
+backend app's pom dependency + `implicitDependencies`.
+
+The nx `project.json` deliberately omits `-am` from **both** `build` and `test`. The `base-state-backend`
+template it was copied from uses `mvn -pl … -am test`, which is the pattern that races on shared
+upstream modules like `api-contracts` under parallel `run-many`.
+
+**Verified the way the checklist demands**: `mvn test -pl apps/processpuzzle-backend
+-Dtest=ModularityTests` prints `# Base Widget` among the detected modules and passes, so the module
+is genuinely wired rather than merely compiling. Full backend suite green.
+
+⚠️ SonarCloud project `processpuzzle_base_widget_backend` also needs creating, alongside
+`processpuzzle_base_widget_frontend`.
+
+### 3d — remaining
 
 ```
 WidgetDefinition {
