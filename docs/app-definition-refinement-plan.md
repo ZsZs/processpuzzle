@@ -11,14 +11,42 @@ mechanisms rather than a new `base-content` concept.
 
 | # | Question | Decision |
 | --- | --- | --- |
-| 1 | What drives content definition? | The **route tree**. A route names its target: widgets, a document, an entity, or a module. |
-| 2 | How is a large app decomposed? | **`ModuleDefinition`** — a route subtree + its own transloco scope + its own resource namespace, stored as its own aggregate. |
+| 1 | What drives content definition? | **Routing.** A route names its target: widgets, a document, or an entity. |
+| 1b | Nested or flat routes? | **Flat.** `path` may be multi-segment (`claims/open`); there is no `children` array. Angular nesting is *derived* at registration time where it is genuinely needed. See below. |
+| 2 | How is a large app decomposed? | **`ModuleDefinition`** — its own flat route list + transloco scope + resource namespace, its own aggregate, mounted by the app at a `basePath`. This is the *only* recursion in the system. |
 | 3 | Design-time vs run-time widgets | Three tiers: **`WidgetDefinition`** (the type, versioned), **`WidgetInstance`** (a placement with bound props, lives in its container), **widget state** (per-user/per-record, out of scope for now). |
 | 4 | Region contribution per module | **Kept simple.** Sidenav items live in `AppDefinition`. Modules stay loosely coupled: a `NavItem` references a route by *path string*, and a dangling reference is a validation **warning**, not an error. |
 | 5 | Where does `WidgetDefinition` live? | A new **`base-widget`** lib pair. Widget count is expected to grow, especially from contributors. |
 | 6 | Name collision with `libs/js-shared/widgets` | Migrate that lib into **`base-widget-frontend`**, splitting infrastructure out (see Phase 2). |
 | 7 | Tabs | **No new concept.** Deep-linkable tabs are child routes; ephemeral tabs are a container widget. `base-document` stays closed textual/image content. |
 | 8 | Registry token + `WidgetInstance`: one lib or two? | **One lib.** `WIDGET_REGISTRY`, `WidgetInstance` and the concrete widget components all live in `base-widget-frontend`. `base-document-frontend` takes a dependency on it, because a document can embed widgets. No separate `base-widget-core`. |
+
+### Flat routes, derived nesting (decision 1b)
+
+The constraint driving this: **no giant nested routing system.** A recursive `RouteDefinition` with a
+`children` array would put an arbitrarily deep tree inside one aggregate — hard to author, hard to
+show in a designer, and hard to reason about. So:
+
+- A route's `path` may be multi-segment. `claims`, `claims/open` and `claims/:id` are three sibling
+  entries in one flat list, not a three-level tree.
+- Angular's real nesting — a parent route hosting a `<router-outlet>` for deep-linkable tabs — is
+  **derived** by the route builder from path prefixes at registration time. Nesting is a rendering
+  concern, so it is computed, not authored.
+- **Decomposition happens at the module boundary, not by nesting.** A `ModuleDefinition` owns its own
+  flat route list and the app mounts it at a `basePath`. That is the one place structure recurses,
+  and it recurses exactly one level: a module does not mount modules.
+- **Menu hierarchy is a separate axis** and already exists: `NavItem` nests, because a collapsible
+  sidenav group is presentation, not routing. Conflating the two is what would have forced routes to
+  nest in the first place.
+
+Two consequences worth stating plainly:
+
+1. **The embedded self-nesting defect is no longer a Phase 4 prerequisite.** `RouteDefinition` never
+   nests in itself, so the defect cannot bite here. It still affects `NavItem`, which does self-nest
+   today, and remains worth fixing on its own terms.
+2. **`ModuleDefinition`'s contract moves into Phase 4**, because the route model is not coherent
+   without it — modules are what makes flat routes sufficient. Phase 5 keeps the runtime wiring
+   (lazy metadata loading, per-module transloco scope).
 
 ### Building blocks vs aggregators
 
@@ -317,7 +345,59 @@ Modulith module `widget` under `com.processpuzzle.widget`. Verify with
 — the same descriptor machinery `base-entity` already has — instead of a raw JSON editor. Prototype
 this within the phase to prove the schema is expressive enough before Phase 4 depends on it.
 
-## Phase 4 — Route tree replaces `pages`
+## Phase 4 — Flat routes replace `pages`
+
+> 🔴 **REPO STATE: `base-app-backend` DOES NOT COMPILE.** 4a removed `PageDefinition` from the
+> contract; 27 files in `base-app-backend` still reference `PageDefinition` / `AppPage`. Resume at 4b
+> below. Everything else in the workspace builds and passes.
+>
+> Note for whoever resumes: `mvn compile` and `mvn install` on `api-contracts` **will report a false
+> green** here. `generate-sources` does not clean `target/`, so a deleted schema's stale `.java`
+> lingers and gets packaged; and `mvn compile` skips incrementally, reusing `.class` files from
+> before the change. Only `mvn clean compile` shows the truth. Both of those fooled this session
+> before the real state was found.
+
+**Progress: 4a (contract) ✅ · 4b (Java) todo · 4c (frontend) todo.**
+
+### 4a — contract ✅ (2026-08-13)
+
+- `PageDefinition` → **flat `RouteDefinition`**: `path` (multi-segment, `:param` allowed), `title`,
+  `translocoId`, `icon`, `roles`, `target`. **No `children`** — verified in the generated DTO.
+- `RouteTarget`, a flat discriminated union on `kind`: `WIDGETS` | `DOCUMENT` | `ENTITY`. Flat rather
+  than `oneOf` because the generator turns `oneOf` into an interface plus a class per variant, which
+  the frontend's generic form cannot edit — the same reason `DocumentBlock` keeps its kinds
+  side by side.
+  - **Deliberately no `MODULE` kind.** A module is mounted by the app, not reached through a route
+    target; a MODULE target would let a route point into a module that points at another module,
+    which is the unbounded structure this design exists to prevent.
+- `AppDefinition.pages` → `routes` **+ `modules: ModuleMount[]`** (`moduleKey` + `basePath`).
+- **`ModuleDefinition` / `ModuleDefinitionInput` + full CRUD** at `/organizations/{orgKey}/modules`,
+  including the lazy `GET /{moduleKey}` the shell calls when something first navigates under a mount.
+- `NavItem.pageId` → `routePath`, resolved by string; a dangling one is a **warning**, keeping
+  modules loosely coupled (decision 4).
+- **`RegionType.content` dropped** — it was already vestigial (`widgets` header/footer-only,
+  `navItems` sidenav-only, so `content` had no field of its own). Once routes own content, the content
+  area *is* the router outlet; its sizing stays in `LayoutDefinition.contentMaxWidth`.
+- `/app-definitions/{appId}/pages/{pageId}` → `/routes/{routePath}`, URL-encoded so a multi-segment
+  path stays one variable rather than needing a greedy wildcard that would be ambiguous against its
+  siblings.
+
+### 4b — Java (todo)
+
+`AppPage` → `AppRoute` and `AppGraph` gaining `routes`/`modules`; `GetPageDefinition` →
+`GetRouteDefinition`; a `ModuleDefinition` entity, repository and CRUD; `AppMapper`;
+`AppDefinitionValidator` (unique paths, `basePath` collisions as errors, dangling `routePath` as a
+warning); `AppEndpoint`'s new module operations; and the affected tests.
+
+### 4c — Frontend (todo)
+
+`app-definition.ts`, `NavItem.routePath`, drop `RegionType.content`, rename
+`page-definition.descriptors`, sample data (`DefaultAppLoader`, `tools/mock-backend/db.json`, testbed
+e2e) — **and the route builder**, which is the one genuinely new piece: deriving Angular's nested
+`Routes` (parent + `<router-outlet>`) from the flat multi-segment paths, so nesting is computed at
+registration rather than authored.
+
+### Original sketch, for reference
 
 - `PageDefinition[]` → recursive `RouteDefinition[]`:
 
