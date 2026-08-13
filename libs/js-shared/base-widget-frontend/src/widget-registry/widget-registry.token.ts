@@ -1,20 +1,25 @@
 import { InjectionToken, Optional, Provider, SkipSelf, Type } from '@angular/core';
 
 /**
- * PLACEMENT: this lives in base-entity-frontend rather than in either consumer because
- * base-app-frontend and base-document-frontend both need it and neither depends on the other,
- * while base-entity-frontend is the one lib both already depend on — the same reasoning that
- * puts FormControlType and EMBEDDED_COMPONENTS here rather than in base-app. The cost is that
- * base-entity-frontend picks up a second responsibility (runtime widget resolution) beyond
- * form/list rendering; the alternative was a new minimal lib with its own project.json, more
- * correct in isolation but a lot of ceremony for one token and one function.
+ * PLACEMENT: this lives in base-widget-frontend, the library of widget building blocks. It was
+ * parked in base-entity-frontend for a while — base-app-frontend and base-document-frontend both
+ * need it, neither depends on the other, and base-entity-frontend was the one lib both already
+ * had — at the cost of giving base-entity a second responsibility (runtime widget resolution)
+ * beyond form/list rendering. That is resolved: this library exists now and both consumers
+ * depend on it, so base-entity-frontend has no widget responsibility left.
  *
- * Still open, and deliberately not solved here: libs/js-shared/widgets already exists and holds
- * unrelated general-purpose UI components (like-button, share-button, language-selector) — a
- * second, different meaning of "widget" in the same workspace. (The other name collision this
- * comment used to flag — ArtifactAttr/FormControlType.ARTIFACT against base-artifact's own
- * "Artifact" — is resolved: that feature is now base-document and its noun is Document, so
- * ARTIFACT unambiguously means the file-attachment control.)
+ * The layering rule it follows: **widgets are building blocks, apps and documents are
+ * aggregators.** Both aggregators may embed widgets; neither is embeddable into a widget. So this
+ * library sits below base-app-frontend and base-document-frontend and may never depend on either.
+ * A widget that surfaces an aggregator's content belongs to that aggregator — `document-viewer`
+ * belongs in base-document-frontend and registers itself through {@link provideWidget}, because
+ * it is what embeds a document *into an app*, not something you embed into a document.
+ *
+ * The old name collision went away with the rename: libs/js-shared/widgets, which held
+ * general-purpose UI components under a second, different meaning of "widget", *is* this library.
+ * (The other collision this comment used to flag — ArtifactAttr/FormControlType.ARTIFACT against
+ * base-artifact's own "Artifact" — is likewise resolved: that feature is now base-document and its
+ * noun is Document, so ARTIFACT unambiguously means the file-attachment control.)
  */
 
 /**

@@ -20,7 +20,7 @@
       "path": "../../libs/js-shared/auth"
     },
     {
-      "path": "../../libs/js-shared/widgets"
+      "path": "../../libs/js-shared/base-widget-frontend"
     },
     {
       "path": "../../libs/js-shared/util"

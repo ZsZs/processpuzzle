@@ -1,7 +1,7 @@
-# @processpuzzle/widgets
+# @processpuzzle/base-widget
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-widgets.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_widgets&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_widgets)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fwidgets?style=flat)](https://www.npmjs.com/package/@processpuzzle/widgets)
+[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fwidgets?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-widget)
 
 This library provides a range of small widgets that can be built into an Angular application. These widgets primarily define UI elements 
 but also domain classes or signal stores. Some of them are even persistent, so they need appropriate configuration to access the backend.
@@ -146,7 +146,7 @@ The **ErrorSnackbar** provides a standardized error notification. `ErrorSnackbar
 ### Setup and Usage
 Register the provider in the application configuration:
 ```typescript
-import { provideErrorSnackbar } from '@processpuzzle/widgets';
+import { provideErrorSnackbar } from '@processpuzzle/base-widget';
 
 export const appConfig = {
   providers: [provideErrorSnackbar()],
@@ -168,7 +168,7 @@ The **ApplicationProperty** domain class and its NgRx Signals store persist simp
 ### Setup and Usage
 Provide the store where it is needed (e.g. in a route or component providers):
 ```typescript
-import { provideAppPropertyStore } from '@processpuzzle/widgets';
+import { provideAppPropertyStore } from '@processpuzzle/base-widget';
 
 providers: [provideAppPropertyStore()];
 ```
@@ -184,7 +184,7 @@ The **provideTranslocoService** helper configures Transloco for a `@processpuzzl
 
 ### Setup and Usage
 ```typescript
-import { provideTranslocoService } from '@processpuzzle/widgets';
+import { provideTranslocoService } from '@processpuzzle/base-widget';
 
 providers: [
   provideTranslocoService({

@@ -1,12 +1,10 @@
-import { BaseEntity } from '../base-entity/base-entity';
+import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
  * Frontend model of the canonical `WidgetInstance` schema of `shared-api.yaml`.
  *
- * PLACEMENT: here rather than in base-app-frontend or base-document-frontend for the same
- * reason {@link WIDGET_REGISTRY} lives here — both need it and neither depends on the other,
- * while base-entity-frontend is the lib both already depend on. It moves to base-widget-frontend
- * together with the registry; see docs/app-definition-refinement-plan.md, phase 2.
+ * PLACEMENT: beside {@link WIDGET_REGISTRY}, for the reason given there — this is the widget
+ * building-block library, and both aggregators that embed widgets depend on it.
  *
  * A `WidgetInstance` is one *placement* of a widget: a registry key plus the props bound to it
  * at this position. It is never standalone — it always lives inside a container (a base-app page

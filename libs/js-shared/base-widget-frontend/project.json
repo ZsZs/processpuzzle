@@ -1,10 +1,10 @@
 {
-  "name": "widgets",
+  "name": "base-widget-frontend",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "libs/js-shared/widgets/src",
+  "sourceRoot": "libs/js-shared/base-widget-frontend/src",
   "prefix": "pp",
-  "tags": ["scope:shared", "type:widgets"],
+  "tags": ["scope:base-widget", "type:domain"],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
@@ -12,15 +12,15 @@
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "defaultConfiguration": "production",
       "options": {
-        "project": "libs/js-shared/widgets/ng-package.json",
-        "tsConfig": "libs/js-shared/widgets/tsconfig.lib.json"
+        "project": "libs/js-shared/base-widget-frontend/ng-package.json",
+        "tsConfig": "libs/js-shared/base-widget-frontend/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/js-shared/widgets/tsconfig.lib.prod.json"
+          "tsConfig": "libs/js-shared/base-widget-frontend/tsconfig.lib.prod.json"
         },
         "development": {
-          "tsConfig": "libs/js-shared/widgets/tsconfig.lib.json"
+          "tsConfig": "libs/js-shared/base-widget-frontend/tsconfig.lib.json"
         }
       }
     },
@@ -30,9 +30,9 @@
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "runner": "vitest",
-        "runnerConfig": "libs/js-shared/widgets/vitest.config.ts",
-        "tsConfig": "libs/js-shared/widgets/tsconfig.spec.json",
-        "setupFiles": ["libs/js-shared/widgets/test-setup.ts"],
+        "runnerConfig": "libs/js-shared/base-widget-frontend/vitest.config.ts",
+        "tsConfig": "libs/js-shared/base-widget-frontend/tsconfig.spec.json",
+        "setupFiles": ["libs/js-shared/base-widget-frontend/test-setup.ts"],
         "coverage": true
       },
       "configurations": {
@@ -56,7 +56,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/widgets"
+        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-widget-frontend"
       }
     },
     "release": {

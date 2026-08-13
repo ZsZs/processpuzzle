@@ -1,9 +1,10 @@
-import { BaseEntity, WidgetInstance } from '@processpuzzle/base-entity';
+import { BaseEntity } from '@processpuzzle/base-entity';
+import { WidgetInstance } from '@processpuzzle/base-widget';
 
 // Re-exported rather than redeclared: WidgetPlacement is one enum shared with base-app, and it now
 // has a single declaration next to WIDGET_REGISTRY. The const-object form means existing
 // `WidgetPlacement.STANDALONE` call sites keep working unchanged.
-export { WIDGET_PLACEMENTS, WidgetPlacement } from '@processpuzzle/base-entity';
+export { WIDGET_PLACEMENTS, WidgetPlacement } from '@processpuzzle/base-widget';
 
 export enum PortType {
   STRING = 'STRING',

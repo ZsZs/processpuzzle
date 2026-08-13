@@ -1,5 +1,5 @@
 /*
- * Public API Surface of @processpuzzle/widgets
+ * Public API Surface of @processpuzzle/base-widget
  */
 
 export { ApplicationProperty } from './app-property/app-property';
@@ -20,6 +20,8 @@ export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { TranslocoHttpLoader } from './transloco/transloco.loader';
 export { VersionButtonComponent } from './version-button/version-button.component';
+export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';
+export { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
 export { widgetsRoutes } from './widgets.routes';
 
 export * from './error-snackbar/error-snackbar.component';

@@ -18,6 +18,24 @@ mechanisms rather than a new `base-content` concept.
 | 5 | Where does `WidgetDefinition` live? | A new **`base-widget`** lib pair. Widget count is expected to grow, especially from contributors. |
 | 6 | Name collision with `libs/js-shared/widgets` | Migrate that lib into **`base-widget-frontend`**, splitting infrastructure out (see Phase 2). |
 | 7 | Tabs | **No new concept.** Deep-linkable tabs are child routes; ephemeral tabs are a container widget. `base-document` stays closed textual/image content. |
+| 8 | Registry token + `WidgetInstance`: one lib or two? | **One lib.** `WIDGET_REGISTRY`, `WidgetInstance` and the concrete widget components all live in `base-widget-frontend`. `base-document-frontend` takes a dependency on it, because a document can embed widgets. No separate `base-widget-core`. |
+
+### Building blocks vs aggregators
+
+The layering rule the whole widget design follows:
+
+> **Widgets are building blocks. Apps and documents are aggregators.** Both aggregators can embed
+> widgets; neither is embeddable *into* a widget.
+
+So `base-widget-frontend` sits low in the dependency graph — below both `base-app-frontend` and
+`base-document-frontend` — and may never depend on either. A widget that renders an aggregator's
+content is owned by that aggregator, not by the widget library: **`document-viewer` belongs in
+`base-document-frontend`**, because it is what embeds a document *into an app*, not something you
+embed into a document. It registers itself through `provideDocumentViewerWidget()`, which is exactly
+what `provideWidget()`'s composability is for.
+
+Test for where a new widget belongs: *is this a building block, or does it surface an aggregator's
+content?* Building block → `base-widget-frontend`. Surfaces an aggregator → that aggregator's lib.
 
 ### Rationale for the tier split (decision 3)
 
@@ -76,6 +94,33 @@ across the three libs, lint (0 errors), and all three library builds.
 
 ## Phase 2 — `base-widget-frontend` (rename + split)
 
+**Progress: 2a (rename) ✅ · 2b (registry move) ✅ · 2c (infrastructure split) todo · 2d (widget
+registration) todo.** Split into four independently verifiable steps rather than one commit, because
+the infrastructure split changes `util`'s dependency surface and is worth isolating.
+
+- **2a — pure rename.** `widgets` → `base-widget-frontend`, `@processpuzzle/widgets` →
+  `@processpuzzle/base-widget`. All 9 registration sites, both workflows (renamed), the Sonar key,
+  the theme path, and ~25 importers. nx tags aligned to the `base-*` convention
+  (`scope:base-widget` / `type:domain`). The three dependents' peer ranges were pointing at
+  versions that will never exist under the new name (`^0.3.1`, `^0.8.0`, `^0.8.3`) and are now
+  `^0.9.1`, the carried-over version.
+- **2b — registry move.** `widget-registry/` (token + `widget-instance.ts`) moved from
+  `base-entity-frontend` to `base-widget-frontend`; `base-document-frontend` gained the
+  `@processpuzzle/base-widget` peer dep. `base-entity-frontend` now has **no** widget
+  responsibility, which is what the token's placement comment had been asking for. Layering
+  verified: `base-widget-frontend` imports nothing from base-app or base-document.
+
+⚠️ **The transloco scope is deliberately still `widgets`**, not renamed with the library. It is a
+runtime i18n namespace with a deployment footprint — it names the served asset path
+(`assets/i18n/widgets/*.json`) and every `base_widget.*`-style key would shift with it. Renaming it
+also trips the alias trap: `provideTranslocoScope({ scope: 'base-widget' })` camelCases to a default
+alias of `baseWidget`, so the rename would have to set `alias` explicitly everywhere. Worth doing as
+its own change; not smuggled into a library rename.
+
+⚠️ **The Sonar project must be created before CI runs green.** `sonar-project.properties` now says
+`processpuzzle_base_widget_frontend`, but that project does not exist on SonarCloud yet — the old
+`processpuzzle_widgets` does. Creating it is an outward-facing action; do it deliberately.
+
 Create the lib **by renaming `widgets`**, not from scratch: every registration file the new-lib
 checklist demands already exists for `widgets` and gets edited rather than added.
 
@@ -87,16 +132,32 @@ checklist demands already exists for `widgets` and gets edited rather than added
    `@angular/material` and `@jsverse/transloco` to `util`'s peer deps, which it currently lacks.
 4. **Keep and register as widgets** — `mat-cards-grid`, `markdown-page`, `like-button`,
    `share-button`, `version-button`, `language-selector`; a `provideXWidget()` per component.
-5. Move `WIDGET_REGISTRY` out of `base-entity-frontend` (its own placement comment says it is parked
-   there only for want of a better home) into this lib.
+5. Move `WIDGET_REGISTRY` **and** `widget-instance.ts` out of `base-entity-frontend` into this lib.
+   Both were parked there only because base-app and base-document both need them while neither
+   depends on the other, and `base-entity-frontend` was the one lib both already had — the token's
+   own placement comment says as much. This lib is the right home.
+
+   Per decision 8 they live **alongside the concrete widget components**, not in a separate
+   `base-widget-core`. The consequence is deliberate: **`base-document-frontend` gains a dependency
+   on `@processpuzzle/base-widget`**, which is honest — a document can embed widgets. It costs
+   nothing at runtime; `sideEffects: false` keeps unreferenced components out of the bundle, so the
+   weight is in the dependency graph, not the payload.
+
+   Concretely: add `@processpuzzle/base-widget` to `base-document-frontend`'s `peerDependencies`,
+   and drop the two widget exports from `base-entity-frontend`'s `public-api.ts` (added in Phase 1).
+   Re-point every importer — `base-app-frontend`'s `app-definition.ts` and descriptors,
+   `base-document-frontend`'s `base-document.ts` — from `@processpuzzle/base-entity` to
+   `@processpuzzle/base-widget`. `base-entity-frontend` then has no widget responsibility at all,
+   which is the cleanup the token's comment asked for.
 6. Theme path `src/theme/pp-colors.css` changes → update `apps/processpuzzle-testbed/project.json`
    styles and the README theming section.
 7. Rename the Sonar project (`processpuzzle_widgets` → `processpuzzle_base_widget_frontend`) via the
    admin API; rename both GitHub workflows.
 
 **Blast radius outside the lib:** 8 files in `auth`, 1 in `design`, ~4 in `processpuzzle-testbed`,
-3 dependent `package.json`s, `tsconfig.base.json`, `nx.json`, root `package.json`,
-`release-js-lib.mjs`, `README.md`.
+`base-entity-frontend` (`public-api.ts` + the `widget-registry/` directory moves out),
+`base-document-frontend` and `base-app-frontend` (imports re-pointed, `package.json` deps),
+`tsconfig.base.json`, `nx.json`, root `package.json`, `release-js-lib.mjs`, `README.md`.
 
 ⚠️ `@processpuzzle/widgets` is published at 0.9.1 — the rename breaks external consumers. Pre-1.0, so
 hard-rename rather than dual-publish.

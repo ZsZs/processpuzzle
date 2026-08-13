@@ -2,9 +2,9 @@ name: Release-Widgets
 on:
   push:
     branches:
-      - "release/widgets/*"
+      - "release/base-widget-frontend/*"
     paths:
-      - 'libs/js-shared/widgets/**'
+      - 'libs/js-shared/base-widget-frontend/**'
 permissions:
   id-token: write
   contents: write
@@ -24,7 +24,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: 'libs/js-shared/widgets'
+          path: 'libs/js-shared/base-widget-frontend'
 
       - name: Install Node
         uses: actions/setup-node@v5
@@ -46,8 +46,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: "libs/js-shared/widgets"
-          nx_project: 'widgets'
+          base_dir: "libs/js-shared/base-widget-frontend"
+          nx_project: 'base-widget-frontend'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=widgets --access public --no-cloud
+        run: npx nx release publish --projects=base-widget-frontend --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
@@ -70,8 +70,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: "@processpuzzle/widgets/${{steps.package-version.outputs.current-version}}"
-          tag: "widgets@${{steps.package-version.outputs.current-version}}"
+          title: "@processpuzzle/base-widget/${{steps.package-version.outputs.current-version}}"
+          tag: "base-widget-frontend@${{steps.package-version.outputs.current-version}}"
 
       - name: Merge release branch to develop and master
         uses: ./.github/actions/release-merge

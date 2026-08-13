@@ -23,7 +23,7 @@
     "@processpuzzle/base-app": "^0.1.0",
     "@processpuzzle/base-document": "^0.1.0",
     "@processpuzzle/base-rule": "^0.1.1",
-    "@processpuzzle/widgets": "^0.8.3",
+    "@processpuzzle/base-widget": "^0.9.1",
     "rxjs": "~7.8.2"
   },
   "dependencies": {

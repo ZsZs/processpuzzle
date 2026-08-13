@@ -1,5 +1,5 @@
 {
-  "name": "@processpuzzle/widgets",
+  "name": "@processpuzzle/base-widget",
   "version": "0.9.1",
   "publishConfig": {
     "access": "public"
@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ZsZs/processpuzzle.git",
-    "directory": "libs/js-shared/widgets"
+    "directory": "libs/js-shared/base-widget-frontend"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { VersionButtonComponent } from '@processpuzzle/widgets';
+import { VersionButtonComponent } from '@processpuzzle/base-widget';
 
 @Component({
   selector: 'app-footer',

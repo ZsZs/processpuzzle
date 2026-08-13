@@ -1,6 +1,7 @@
-import { BaseEntity, WidgetInstance } from '@processpuzzle/base-entity';
+import { BaseEntity } from '@processpuzzle/base-entity';
+import { WidgetInstance } from '@processpuzzle/base-widget';
 
-export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-entity';
+export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-widget';
 
 /**
  * Frontend model of the `AppDefinition` schema of `base-app-api.yaml`. `theme` and `layout` are

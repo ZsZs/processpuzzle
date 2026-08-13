@@ -12,7 +12,7 @@ It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `
 
 ## Features
 
-- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/widgets`, that links to each design building block.
+- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/base-widget`, that links to each design building block.
 - **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; automatically pulls in the child routes exposed by sibling design libraries (currently `BASE_RULE_ROUTES`).
 - **Route awareness** (`DesignRouteService`) — a root-provided Angular service exposing an `isDesignRoute` signal so surrounding UI (menus, breadcrumbs, toolbars) can adapt when the user is inside `/design`.
 - **i18n scoped translations** — the landing page registers a Transloco scope (`design`), so card titles, subtitles, content, and action captions are fully localizable.
@@ -80,7 +80,7 @@ Runtime peer dependencies (see `package.json`):
 
 - `@angular/common`, `@angular/core`, `@angular/router` — `~22.0.5`
 - `@jsverse/transloco` — `8.4.0`
-- `@processpuzzle/widgets` — `^0.8.0`
+- `@processpuzzle/base-widget` — `^0.8.0`
 - `rxjs` — `~7.8.2`
 
 ### Architecture Notes
