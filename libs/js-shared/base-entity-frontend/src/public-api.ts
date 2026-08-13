@@ -42,6 +42,7 @@ export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-rou
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { WIDGET_REGISTRY, provideWidget } from './lib/widget-registry/widget-registry.token';
+export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './lib/widget-registry/widget-instance';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES, baseEntityRoutes, type EmbeddedChildRoute } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';

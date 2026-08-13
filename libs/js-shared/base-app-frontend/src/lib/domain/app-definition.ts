@@ -1,4 +1,6 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { BaseEntity, WidgetInstance } from '@processpuzzle/base-entity';
+
+export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-entity';
 
 /**
  * Frontend model of the `AppDefinition` schema of `base-app-api.yaml`. `theme` and `layout` are
@@ -28,9 +30,6 @@ export type SidenavMode = (typeof SIDENAV_MODES)[number];
 export const REGION_TYPES = ['header', 'sidenav', 'content', 'footer'] as const;
 export type RegionType = (typeof REGION_TYPES)[number];
 
-export const WIDGET_PLACEMENTS = ['STANDALONE', 'REFERENCED'] as const;
-export type WidgetPlacement = (typeof WIDGET_PLACEMENTS)[number];
-
 export enum AppDefinitionStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
@@ -51,32 +50,6 @@ export interface LayoutDefinition {
   sidenavCollapsible?: boolean;
   sidenavOpenByDefault?: boolean;
   contentMaxWidth?: string;
-}
-
-export class WidgetRef implements BaseEntity {
-  /** Authored, not generated: it is the trackBy key of the render loop and unique within its owner. */
-  id: string;
-  /** Widget registry key, an open string by contract. */
-  type: string;
-  /**
-   * A container widget type composes through `props.childIds` — the ids of siblings in this same
-   * list — rather than by nesting, so this stays the only place a widget's structure is expressed.
-   */
-  props?: Record<string, unknown>;
-  /**
-   * `REFERENCED` opts the widget out of rendering at its own position, leaving it to be placed by
-   * whatever names it in `props.childIds`. Left undefined rather than defaulted, so a widget the
-   * designer never touched keeps the payload the schema describes — the server reads an absent
-   * value as `STANDALONE`.
-   */
-  placement?: WidgetPlacement;
-
-  constructor(init: Partial<WidgetRef> = {}) {
-    this.id = init.id ?? '';
-    this.type = init.type ?? '';
-    this.props = init.props;
-    this.placement = init.placement;
-  }
 }
 
 export class NavItem implements BaseEntity {
@@ -117,7 +90,7 @@ export class RegionDefinition implements BaseEntity {
   /** `sidenav` only; left undefined so a header region's payload carries no empty nav tree. */
   navItems?: NavItem[];
   /** `header` / `footer` only. */
-  widgets?: WidgetRef[];
+  widgets?: WidgetInstance[];
 
   constructor(init: Partial<RegionDefinition> = {}) {
     this.type = init.type;
@@ -132,7 +105,7 @@ export class PageDefinition implements BaseEntity {
   title: string;
   translocoId?: string;
   /** Required by the contract, so a page created here starts with an empty array rather than nothing. */
-  widgets: WidgetRef[];
+  widgets: WidgetInstance[];
 
   constructor(init: Partial<PageDefinition> = {}) {
     this.id = init.id ?? '';

@@ -5,9 +5,10 @@ info:
     Structural API for wiki-style textual documents (project plans, design docs, reports)
     composed of a flat, ordered list of blocks. Each block is either a TEXT block (static
     or Tiptap-editable rich text) or a WIDGET block — a reference into the same widget
-    registry `base-app-api.yaml`'s WidgetRef resolves against. base-document is expected
-    to become base-app's primary content type: an app-shell route that renders a
-    document is modeled as an ordinary WidgetRef (e.g. `type: document-viewer`,
+    registry `shared-api.yaml`'s canonical `WidgetInstance` resolves against.
+    base-document is expected to become base-app's primary content type: an app-shell
+    route that renders a document is modeled as an ordinary WidgetInstance (e.g.
+    `type: document-viewer`,
     `props.slug`), the same way base-app already references `entityName`s into the
     organization's entity registry. base-document never needs to know about routes,
     regions or navigation — that stays entirely base-app's concern.
@@ -1256,8 +1257,8 @@ components:
       default: STANDALONE
       description: >-
         WIDGET blocks only. Same enum and meaning as shared-api.yaml's canonical
-        WidgetRef.placement, applied here to a block instead of a standalone WidgetRef —
-        a DocumentBlock's type/props/placement together are structurally that shape. STANDALONE renders as its own full-width entry at its position
+        WidgetInstance.placement, applied here to a block instead of a standalone
+        WidgetInstance. STANDALONE renders as its own full-width entry at its position
         in the flat block list. REFERENCED means this widget does not render at its own
         list position — it renders only where something else points at its block id:
         either a container widget's props.childIds (composition, e.g. a tab group), or
@@ -1273,6 +1274,20 @@ components:
         Flat shape shared by both block kinds — fields relevant to the other kind are
         left null. Which fields are required for a given kind is validated server-side
         (see validateDocument), not enforced structurally.
+
+        **The five WIDGET fields below — type, props, placement, inputBindings,
+        outputBindings — are the canonical `WidgetInstance` of shared-api.yaml, flattened
+        onto the block rather than nested under a `widget` property.** Unlike base-app,
+        this spec therefore does *not* map them onto
+        com.processpuzzle.shared.model.WidgetInstance: the shapes differ in requiredness
+        (a WidgetInstance requires id and type; a TEXT block has neither) and the flat
+        form is what the Tiptap editor, DocumentContentStore and the persisted block
+        records already speak. Nesting them is a deliberate follow-up, not an oversight —
+        it is a breaking payload change across the editor, the Java DocumentBlock record
+        and the Firebase functions.
+
+        Until then this is a *copy*, and copies drift: any change to the canonical
+        WidgetInstance must be mirrored here by hand.
       properties:
         id:
           type: string
@@ -1308,7 +1323,7 @@ components:
           type: string
           nullable: true
           description: >-
-            WIDGET only. Registry key — the same key space as base-app's WidgetRef.type,
+            WIDGET only. Registry key — the same key space as the canonical WidgetInstance.type,
             resolved against the shared frontend widget registry.
           example: entity-grid
         props:
@@ -1385,7 +1400,7 @@ components:
         ENTITY_COLLECTION: a filtered set of base-entity instances (entityType + RSQL
         filter), e.g. for a table/grid widget bound to "all open claims." Neither
         variant requires base-document to know the entity's schema. entityType values
-        resolve within the enclosing organization, same as base-app's WidgetRef props.
+        resolve within the enclosing organization, same as base-app's WidgetInstance props.
 
     AttributeVisibility:
       type: object

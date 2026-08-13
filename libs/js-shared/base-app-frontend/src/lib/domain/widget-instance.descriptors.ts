@@ -5,7 +5,7 @@ import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } 
 
 export { APP_WIDGET_ENTITY_NAME };
 
-function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
+function createWidgetInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   // `id` rather than `type` identifies the widget: it is unique within its page or region, while a
   // page with two `entity-grid`s would otherwise show the same label twice.
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
@@ -13,7 +13,7 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   idAttr.isHeading = true;
   idAttr.placeholder = 'Unique within the page or region, e.g. widget-claims-grid';
 
-  // Deliberately a free-text box and not a dropdown: `WidgetRef.type` is a key into the frontend
+  // Deliberately a free-text box and not a dropdown: `WidgetInstance.type` is a key into the frontend
   // widget registry, which the contract keeps open so new widget types need no schema change.
   const typeAttr = new BaseEntityAttrDescriptor('type', FormControlType.TEXT_BOX, 'Type');
   typeAttr.required = true;
@@ -38,10 +38,10 @@ function createWidgetRefAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-export function createWidgetRefDescriptor(): BaseEntityDescriptor {
+export function createWidgetInstanceDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: APP_WIDGET_ENTITY_NAME,
-    attrDescriptors: createWidgetRefAttrDescriptors(),
+    attrDescriptors: createWidgetInstanceAttrDescriptors(),
     i18nScope: APP_WIDGET_I18N_SCOPE,
     // A widget sits in a header/footer region or on a page — and only there, since it cannot be nested
     // in another widget.

@@ -8,7 +8,7 @@ import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.PageDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
@@ -117,7 +117,7 @@ class AppRuleValidatorTest {
     @Test
     void entityGridWithoutAnEntityName_violatesAnErrorRule() {
         AppDefinitionInput input = conformingInput();
-        input.getPages().getFirst().setWidgets(List.of(new WidgetRef("widget-grid", "entity-grid")));
+        input.getPages().getFirst().setWidgets(List.of(new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(ruleValidator.validate(ORG, input)))
                 .contains("rule.appDefinition.entityWidgetsDeclareAnEntityName");
@@ -127,10 +127,10 @@ class AppRuleValidatorTest {
     @Test
     void entityGridComposedByAContainer_isAcceptedWhenItNamesItsEntity() {
         AppDefinitionInput input = conformingInput();
-        WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
+        WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
-        grid.setPlacement(WidgetRef.PlacementEnum.REFERENCED);
-        WidgetRef container = new WidgetRef("widget-tabs", "tab-group");
+        grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
+        WidgetInstance container = new WidgetInstance("widget-tabs", "tab-group");
         container.setProps(Map.of("childIds", List.of("widget-grid")));
         input.getPages().getFirst().setWidgets(List.of(container, grid));
 

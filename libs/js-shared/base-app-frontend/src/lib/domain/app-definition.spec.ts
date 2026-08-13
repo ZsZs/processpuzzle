@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppDefinition, AppDefinitionStatus, NavItem, PageDefinition, RegionDefinition, WidgetRef } from './app-definition';
+import { AppDefinition, AppDefinitionStatus, NavItem, PageDefinition, RegionDefinition, WidgetInstance } from './app-definition';
 
 describe('AppDefinition', () => {
   it('is constructible without arguments, as the entity store requires', () => {
@@ -102,7 +102,7 @@ describe('PageDefinition', () => {
   });
 
   it('exposes every property it was created with', () => {
-    const page = new PageDefinition({ id: 'claims-list', title: 'Claims', translocoId: 'claims.page.list.title', widgets: [new WidgetRef({ id: 'grid', type: 'entity-grid' })] });
+    const page = new PageDefinition({ id: 'claims-list', title: 'Claims', translocoId: 'claims.page.list.title', widgets: [new WidgetInstance({ id: 'grid', type: 'entity-grid' })] });
 
     expect(page.id).toBe('claims-list');
     expect(page.title).toBe('Claims');
@@ -137,9 +137,9 @@ describe('NavItem', () => {
   });
 });
 
-describe('WidgetRef', () => {
+describe('WidgetInstance', () => {
   it('leaves placement unset, so a new widget renders where it sits without saying so', () => {
-    const widget = new WidgetRef();
+    const widget = new WidgetInstance();
 
     expect(widget.id).toBe('');
     expect(widget.type).toBe('');
@@ -148,7 +148,7 @@ describe('WidgetRef', () => {
   });
 
   it('exposes every property it was created with', () => {
-    const widget = new WidgetRef({ id: 'claims-grid', type: 'entity-grid', props: { entityName: 'Claim' }, placement: 'REFERENCED' });
+    const widget = new WidgetInstance({ id: 'claims-grid', type: 'entity-grid', props: { entityName: 'Claim' }, placement: 'REFERENCED' });
 
     expect(widget.id).toBe('claims-grid');
     expect(widget.type).toBe('entity-grid');
@@ -157,7 +157,7 @@ describe('WidgetRef', () => {
   });
 
   it('composes a container through sibling ids rather than a child collection', () => {
-    const container = new WidgetRef({ id: 'claims-tabs', type: 'tab-group', props: { childIds: ['claims-grid'] } });
+    const container = new WidgetInstance({ id: 'claims-tabs', type: 'tab-group', props: { childIds: ['claims-grid'] } });
 
     expect(container.props?.['childIds']).toEqual(['claims-grid']);
     expect('children' in container).toBe(false);

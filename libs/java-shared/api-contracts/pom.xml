@@ -170,8 +170,14 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <apiPackage>com.processpuzzle.app.api</apiPackage>
                             <modelPackage>com.processpuzzle.app.model</modelPackage>
+                            <!-- WidgetInstance is declared in shared-api.yaml and repeated verbatim in
+                                 base-app-api.yaml, because no spec here uses cross-file $ref. The mapping is
+                                 what makes the repetition harmless: base-app generates no WidgetInstance of
+                                 its own and binds to the shared one, so base-app and base-document cannot
+                                 drift into two incompatible Java types the way WidgetRef and DocumentBlock
+                                 had already begun to. -->
                             <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,WidgetInstance=com.processpuzzle.shared.model.WidgetInstance
                             </schemaMappings>
                             <configOptions>
                                 <delegatePattern>false</delegatePattern>

@@ -7,7 +7,7 @@ import com.processpuzzle.app.model.PageDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.rule.domain.Severity;
@@ -132,8 +132,8 @@ class AppDefinitionValidatorTest {
     @Test
     void duplicateWidgetIdsWithinAPage_areReported() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(new WidgetRef("widget-grid", "entity-grid"),
-                new WidgetRef("widget-grid", "entity-grid")));
+        input.getPages().getFirst().setWidgets(List.of(new WidgetInstance("widget-grid", "entity-grid"),
+                new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.duplicate-widget-id");
@@ -164,7 +164,7 @@ class AppDefinitionValidatorTest {
     void childIdNamingAStandaloneWidget_isReported() {
         AppDefinitionInput input = validInput();
         input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-grid"),
-                new WidgetRef("widget-grid", "entity-grid")));
+                new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.dangling-child-id");
@@ -189,22 +189,22 @@ class AppDefinitionValidatorTest {
     @Test
     void childIdsThatIsNotAListOfIds_isLeftToTheWidgetType() {
         AppDefinitionInput input = validInput();
-        WidgetRef container = new WidgetRef("widget-container", "tab-group");
+        WidgetInstance container = new WidgetInstance("widget-container", "tab-group");
         container.setProps(Map.of("childIds", "widget-grid"));
         input.getPages().getFirst().setWidgets(List.of(container));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }
 
-    private static WidgetRef tabGroup(String... childIds) {
-        WidgetRef container = new WidgetRef("widget-container", "tab-group");
+    private static WidgetInstance tabGroup(String... childIds) {
+        WidgetInstance container = new WidgetInstance("widget-container", "tab-group");
         container.setProps(Map.of("childIds", List.of(childIds)));
         return container;
     }
 
-    private static WidgetRef referencedGrid(String id) {
-        WidgetRef grid = new WidgetRef(id, "entity-grid");
-        grid.setPlacement(WidgetRef.PlacementEnum.REFERENCED);
+    private static WidgetInstance referencedGrid(String id) {
+        WidgetInstance grid = new WidgetInstance(id, "entity-grid");
+        grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
         return grid;
     }
 
@@ -243,7 +243,7 @@ class AppDefinitionValidatorTest {
     void widgetsOnAContentRegion_areReported() {
         AppDefinitionInput input = validInput();
         RegionDefinition content = new RegionDefinition(RegionType.CONTENT);
-        content.setWidgets(List.of(new WidgetRef("widget-stray", "entity-grid")));
+        content.setWidgets(List.of(new WidgetInstance("widget-stray", "entity-grid")));
         input.getRegions().add(content);
 
         assertThat(errorIds(validator.validate("my-org", input)))
@@ -254,7 +254,7 @@ class AppDefinitionValidatorTest {
     void widgetsOnAHeaderRegion_areAllowed() {
         AppDefinitionInput input = validInput();
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
-        header.setWidgets(List.of(new WidgetRef("widget-language", "language-selector")));
+        header.setWidgets(List.of(new WidgetInstance("widget-language", "language-selector")));
         input.getRegions().add(header);
 
         assertThat(validator.validate("my-org", input)).isEmpty();
@@ -293,7 +293,7 @@ class AppDefinitionValidatorTest {
         when(entityRegistryProvider.getIfAvailable()).thenReturn(registry);
 
         AppDefinitionInput input = validInput();
-        WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
+        WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
         input.getPages().getFirst().setWidgets(List.of(grid));
 
@@ -304,7 +304,7 @@ class AppDefinitionValidatorTest {
     @Test
     void entityNameIsNotCheckedWhenNoRegistryIsAvailable() {
         AppDefinitionInput input = validInput();
-        WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
+        WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "NoSuchEntity"));
         input.getPages().getFirst().setWidgets(List.of(grid));
 
@@ -410,7 +410,7 @@ class AppDefinitionValidatorTest {
         sidenav.setNavItems(null);
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
         header.setWidgets(null);
-        WidgetRef propless = new WidgetRef("widget-1", "markdown");
+        WidgetInstance propless = new WidgetInstance("widget-1", "markdown");
         propless.setProps(null);
         input.setRegions(List.of(sidenav, header));
         input.setPages(List.of(page("page-claims-list", "Claims", propless)));
@@ -489,7 +489,7 @@ class AppDefinitionValidatorTest {
     void aWidgetWithoutAnIdOrATypeIsReported() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
-        header.setWidgets(List.of(new WidgetRef(" ", null)));
+        header.setWidgets(List.of(new WidgetInstance(" ", null)));
         input.setRegions(List.of(header));
 
         assertThat(errorIds(validator.validate("my-org", input)))
@@ -523,12 +523,12 @@ class AppDefinitionValidatorTest {
 
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
-        WidgetRef withoutProps = new WidgetRef("widget-1", "markdown");
-        WidgetRef withOtherProps = new WidgetRef("widget-2", "markdown");
+        WidgetInstance withoutProps = new WidgetInstance("widget-1", "markdown");
+        WidgetInstance withOtherProps = new WidgetInstance("widget-2", "markdown");
         withOtherProps.setProps(Map.of("content", "# Welcome"));
-        WidgetRef withBlankEntityName = new WidgetRef("widget-3", "entity-grid");
+        WidgetInstance withBlankEntityName = new WidgetInstance("widget-3", "entity-grid");
         withBlankEntityName.setProps(Map.of("entityName", "  "));
-        WidgetRef withNonTextEntityName = new WidgetRef("widget-4", "entity-grid");
+        WidgetInstance withNonTextEntityName = new WidgetInstance("widget-4", "entity-grid");
         withNonTextEntityName.setProps(Map.<String, Object>of("entityName", 42));
         header.setWidgets(List.of(withoutProps, withOtherProps, withBlankEntityName, withNonTextEntityName));
         input.setRegions(List.of(header));
@@ -567,7 +567,7 @@ class AppDefinitionValidatorTest {
         assertThat(PpThemeTokens.isKnown(null)).isFalse();
     }
 
-    private static PageDefinition page(String id, String title, WidgetRef... widgets) {
+    private static PageDefinition page(String id, String title, WidgetInstance... widgets) {
         return new PageDefinition(id, title, java.util.Arrays.asList(widgets));
     }
 
@@ -577,8 +577,8 @@ class AppDefinitionValidatorTest {
         return item;
     }
 
-    private static WidgetRef widget(String id) {
-        WidgetRef widget = new WidgetRef(id, "entity-grid");
+    private static WidgetInstance widget(String id) {
+        WidgetInstance widget = new WidgetInstance(id, "entity-grid");
         widget.setProps(Map.of("entityName", "Claim"));
         return widget;
     }

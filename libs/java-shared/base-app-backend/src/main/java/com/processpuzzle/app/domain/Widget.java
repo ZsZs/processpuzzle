@@ -5,9 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A reference to a registered frontend widget, as persisted inside {@link AppGraph}. Named
- * {@code Widget} rather than {@code WidgetRef} to avoid a clash with the generated
- * {@code com.processpuzzle.app.model.WidgetRef}.
+ * One placement of a registered frontend widget, as persisted inside {@link AppGraph} — the
+ * domain counterpart of the contract's {@code com.processpuzzle.shared.model.WidgetInstance}.
+ * Named {@code Widget} rather than {@code WidgetInstance} to keep the domain type distinct from
+ * the generated one at a glance; the two are converted in {@code AppMapper}.
  *
  * <p>{@code props} is deliberately opaque to the backend: each widget type owns and validates
  * its own props shape on the frontend. Ids referenced from within it — {@code entityName},

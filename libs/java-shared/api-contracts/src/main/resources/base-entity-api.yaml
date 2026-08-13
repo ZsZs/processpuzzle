@@ -663,7 +663,7 @@ components:
     EntityDefinition:
       description: >-
         Frontend descriptor compatibility: base-entity-frontend's existing
-        create*Descriptor() factories (createWidgetRefDescriptor, createDocumentInputPort
+        create*Descriptor() factories (createWidgetInstanceDescriptor, createDocumentInputPort
         Descriptor, etc.) become thin adapters over this shape rather than literal
         BaseEntityDescriptor constructions — a factory fetches/caches its EntityDefinition
         and maps attributes -> AbstractAttrDescriptor once, so existing components

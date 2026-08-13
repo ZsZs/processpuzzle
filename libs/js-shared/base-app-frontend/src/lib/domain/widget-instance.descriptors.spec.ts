@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
-import { APP_WIDGET_ENTITY_NAME, createWidgetRefDescriptor } from './widget-ref.descriptors';
+import { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor } from './widget-instance.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
 }
 
-describe('createWidgetRefDescriptor', () => {
-  const descriptor = createWidgetRefDescriptor();
+describe('createWidgetInstanceDescriptor', () => {
+  const descriptor = createWidgetInstanceDescriptor();
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 

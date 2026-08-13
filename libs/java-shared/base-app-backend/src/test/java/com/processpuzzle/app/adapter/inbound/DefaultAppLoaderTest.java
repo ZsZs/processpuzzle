@@ -10,7 +10,7 @@ import com.processpuzzle.app.model.PageDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
@@ -330,7 +330,7 @@ class DefaultAppLoaderTest {
         return sidenav.get();
     }
 
-    private static String entityNameOf(WidgetRef widget) {
+    private static String entityNameOf(WidgetInstance widget) {
         assertThat(widget.getProps()).isNotNull();
         return String.valueOf(widget.getProps().get("entityName"));
     }

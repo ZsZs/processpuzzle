@@ -24,7 +24,7 @@ import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
 import com.processpuzzle.app.usecase.KeyCheckOutcome;
@@ -77,8 +77,8 @@ class AppMapperTest {
         assertThat(model.getRegions().getFirst().getNavItems().getFirst().getChildren())
                 .extracting(NavItem::getId).containsExactly("nav-child");
         assertThat(model.getPages()).extracting(PageDefinition::getId).containsExactly("page-claims-list");
-        assertThat(model.getPages().getFirst().getWidgets()).extracting(WidgetRef::getPlacement)
-                .containsExactly(WidgetRef.PlacementEnum.STANDALONE, WidgetRef.PlacementEnum.REFERENCED);
+        assertThat(model.getPages().getFirst().getWidgets()).extracting(WidgetInstance::getPlacement)
+                .containsExactly(WidgetInstance.PlacementEnum.STANDALONE, WidgetInstance.PlacementEnum.REFERENCED);
         assertThat(model.getOrgKey()).isEqualTo("my-org");
     }
 
@@ -332,7 +332,7 @@ class AppMapperTest {
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         sidenav.setNavItems(Arrays.asList(nav, null));
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
-        header.setWidgets(Arrays.asList(new WidgetRef("widget-tabs", "tab-group"), null));
+        header.setWidgets(Arrays.asList(new WidgetInstance("widget-tabs", "tab-group"), null));
         input.setRegions(Arrays.asList(sidenav, header, new RegionDefinition(), null));
         input.setPages(Arrays.asList(new PageDefinition("page-claims-list", "Claims", null), null));
 
@@ -476,10 +476,10 @@ class AppMapperTest {
         layout.setContentMaxWidth("1280px");
         input.setLayout(layout);
 
-        WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
+        WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
-        grid.setPlacement(WidgetRef.PlacementEnum.REFERENCED);
-        WidgetRef container = new WidgetRef("widget-tabs", "tab-group");
+        grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
+        WidgetInstance container = new WidgetInstance("widget-tabs", "tab-group");
         container.setProps(Map.of("childIds", List.of("widget-grid")));
         input.setPages(List.of(new PageDefinition("page-claims-list", "Claims", List.of(container, grid))));
 

@@ -27,7 +27,7 @@ import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.app.model.ValidationProblem;
 import com.processpuzzle.app.model.ValidationResult;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
 import com.processpuzzle.app.usecase.KeyCheckOutcome;
@@ -118,7 +118,7 @@ public class AppMapper {
                 .toList();
     }
 
-    private List<Widget> toDomainWidgets(List<WidgetRef> widgets) {
+    private List<Widget> toDomainWidgets(List<WidgetInstance> widgets) {
         if (widgets == null) {
             return List.of();
         }
@@ -131,7 +131,7 @@ public class AppMapper {
                 .toList();
     }
 
-    private WidgetPlacement toDomainPlacement(WidgetRef.PlacementEnum placement) {
+    private WidgetPlacement toDomainPlacement(WidgetInstance.PlacementEnum placement) {
         return placement == null ? WidgetPlacement.STANDALONE : WidgetPlacement.valueOf(placement.name());
     }
 
@@ -278,14 +278,14 @@ public class AppMapper {
         }).toList();
     }
 
-    private List<WidgetRef> toModelWidgets(List<Widget> widgets) {
+    private List<WidgetInstance> toModelWidgets(List<Widget> widgets) {
         if (widgets == null) {
             return List.of();
         }
         return widgets.stream().map(widget -> {
-            WidgetRef model = new WidgetRef(widget.id(), widget.type());
+            WidgetInstance model = new WidgetInstance(widget.id(), widget.type());
             model.setProps(widget.props());
-            model.setPlacement(WidgetRef.PlacementEnum.fromValue(widget.placement().name()));
+            model.setPlacement(WidgetInstance.PlacementEnum.fromValue(widget.placement().name()));
             return model;
         }).toList();
     }

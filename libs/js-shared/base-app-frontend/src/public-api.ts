@@ -14,7 +14,7 @@ export {
   RegionDefinition,
   SIDENAV_MODES,
   WIDGET_PLACEMENTS,
-  WidgetRef,
+  WidgetInstance,
   type ColorScheme,
   type LayoutDefinition,
   type LayoutPreset,
@@ -36,7 +36,7 @@ export { APP_DEFINITION_ENTITY_NAME, createAppDefinitionDescriptor } from './lib
 export { APP_NAV_ITEM_ENTITY_NAME, createNavItemDescriptor } from './lib/domain/nav-item.descriptors';
 export { APP_PAGE_ENTITY_NAME, createPageDefinitionDescriptor } from './lib/domain/page-definition.descriptors';
 export { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD, createRegionDefinitionDescriptor } from './lib/domain/region-definition.descriptors';
-export { APP_WIDGET_ENTITY_NAME, createWidgetRefDescriptor } from './lib/domain/widget-ref.descriptors';
+export { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor } from './lib/domain/widget-instance.descriptors';
 export { AppDefinitionMapper } from './lib/domain/app-definition.mapper';
 export { AppDefinitionService } from './lib/domain/app-definition.service';
 export { AppDefinitionStore } from './lib/domain/app-definition.store';

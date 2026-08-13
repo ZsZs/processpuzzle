@@ -1,4 +1,9 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { BaseEntity, WidgetInstance } from '@processpuzzle/base-entity';
+
+// Re-exported rather than redeclared: WidgetPlacement is one enum shared with base-app, and it now
+// has a single declaration next to WIDGET_REGISTRY. The const-object form means existing
+// `WidgetPlacement.STANDALONE` call sites keep working unchanged.
+export { WIDGET_PLACEMENTS, WidgetPlacement } from '@processpuzzle/base-entity';
 
 export enum PortType {
   STRING = 'STRING',
@@ -25,11 +30,6 @@ export interface AttributeVisibility {
 export enum BlockKind {
   TEXT = 'TEXT',
   WIDGET = 'WIDGET',
-}
-
-export enum WidgetPlacement {
-  STANDALONE = 'STANDALONE',
-  REFERENCED = 'REFERENCED',
 }
 
 // Embedded, not an aggregate root of its own: a DocumentInputPort has no id/version/endpoint — it travels
@@ -74,17 +74,20 @@ export class DocumentOutputPort implements BaseEntity {
  * generic form at all in the primary flow; see DocumentEditorComponent and DocumentContentStore.
  * (An EMBEDDED_COMPONENTS descriptor for this shape as a secondary raw/debug view is a
  * reasonable follow-up, not sketched here.)
+ *
+ * The WIDGET half comes from {@link WidgetInstance} rather than being restated here, so the two
+ * cannot drift the way the old local copy had already begun to — it was missing nothing yet, but
+ * base-app's equivalent had no bindings at all. `Partial` because a block carries the widget
+ * fields only when `kind` is WIDGET: a TEXT block has no `type`, which a WidgetInstance requires.
+ * That requiredness mismatch is also why `base-document-api.yaml` keeps its own flattened copy of
+ * the schema instead of mapping onto the generated shared DTO — see the note on
+ * `DocumentBlockInput` there.
  */
-export interface DocumentBlock {
+export interface DocumentBlock extends Partial<WidgetInstance> {
   id: string;
   kind: BlockKind;
   editable?: boolean;
   content?: Record<string, unknown>; // opaque Tiptap/ProseMirror JSON document
-  placement?: WidgetPlacement;
-  type?: string; // widget registry key
-  props?: Record<string, unknown>;
-  inputBindings?: Record<string, string>;
-  outputBindings?: Record<string, string>;
 }
 
 export enum DocumentStatus {

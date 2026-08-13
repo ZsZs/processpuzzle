@@ -7,7 +7,7 @@ import { BASE_ENTITY_FACADE_REGISTRY, BaseEntityDescriptor } from '@processpuzzl
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './base-app.providers';
-import { AppDefinition, NavItem, PageDefinition, RegionDefinition, WidgetRef } from './domain/app-definition';
+import { AppDefinition, NavItem, PageDefinition, RegionDefinition, WidgetInstance } from './domain/app-definition';
 import { APP_DEFINITION_ENTITY_NAME, APP_NAV_ITEM_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './domain/app-entity-names';
 
 describe('BASE_APP facade providers', () => {
@@ -47,7 +47,7 @@ describe('BASE_APP facade providers', () => {
     expect(injector.get(BASE_APP_ENTITY_FACADES[APP_REGION_ENTITY_NAME]).entityType).toBe(RegionDefinition);
     expect(injector.get(BASE_APP_ENTITY_FACADES[APP_PAGE_ENTITY_NAME]).entityType).toBe(PageDefinition);
     expect(injector.get(BASE_APP_ENTITY_FACADES[APP_NAV_ITEM_ENTITY_NAME]).entityType).toBe(NavItem);
-    expect(injector.get(BASE_APP_ENTITY_FACADES[APP_WIDGET_ENTITY_NAME]).entityType).toBe(WidgetRef);
+    expect(injector.get(BASE_APP_ENTITY_FACADES[APP_WIDGET_ENTITY_NAME]).entityType).toBe(WidgetInstance);
   });
 
   it('makes the app definition the only aggregate root of the graph', () => {

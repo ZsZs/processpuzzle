@@ -400,8 +400,8 @@ paths:
         Checks referential integrity of a candidate definition: unique `id`s within their
         scope, every `NavItem.pageId` resolving to a declared page, no page orphaned from
         the navigation tree, no cycles in `NavItem.children` (widgets no longer nest, so
-        this check no longer applies to them), every `WidgetRef.props.childIds` entry
-        resolving to a sibling `WidgetRef.id` with `placement: REFERENCED` (error) or a
+        this check no longer applies to them), every `WidgetInstance.props.childIds` entry
+        resolving to a sibling `WidgetInstance.id` with `placement: REFERENCED` (error) or a
         `REFERENCED` widget pointed at by nothing (warning), every `--pp-*` token override
         naming a token the theme actually defines, and every `entityName` referenced by a
         widget being present in *this organization's* entity registry. Widget `props` are
@@ -773,12 +773,17 @@ components:
     # Canonical definition in shared-api.yaml — local duplicate for the same reason as
     # OrganizationKey / ErrorResponse (openapi-generator's swagger-parser cannot resolve
     # cross-file $refs on Windows).
-    WidgetRef:
+    WidgetInstance:
       type: object
       description: >-
-        A reference to a registered widget, resolved via the frontend widget registry at
-        render time and instantiated with `NgComponentOutlet` / `ViewContainerRef`. No
-        longer recursive — see `placement` for how container widgets (tab groups, split
+        One placement of a widget in a page or region. **Repeat of the canonical
+        `WidgetInstance` in `shared-api.yaml`** — mapped onto
+        `com.processpuzzle.shared.model.WidgetInstance` by this spec's `schemaMappings`,
+        so the property set here must stay identical to the canonical one; only the prose
+        is base-app-specific. See that declaration for why the text is duplicated rather
+        than `$ref`-ed.
+
+        Not recursive — see `placement` for how container widgets (tab groups, split
         panels) compose without nesting.
       required: [ id, type ]
       properties:
@@ -789,16 +794,18 @@ components:
         type:
           type: string
           description: >-
-            Widget registry key. Intentionally an open string rather than an enum — new
-            widget types register into the frontend map without a contract change. Keys
-            interpreted in this version: `entity-grid`, `entity-form`.
+            Widget registry key, and the key of the `WidgetDefinition` describing this
+            type. Intentionally an open string rather than an enum — new widget types
+            register into the frontend map without a contract change. Keys interpreted in
+            this version: `entity-grid`, `entity-form`.
           example: entity-grid
         props:
           type: object
           description: >-
             Widget-specific configuration, passed to the resolved component as inputs.
-            Loose by design: each widget type owns and validates its own props shape, so the
-            shell and this contract stay agnostic of it.
+            Loose in this contract by design: each widget type owns its own props shape,
+            declared in its `WidgetDefinition.propsSchema` rather than here, so the shell
+            and this contract stay agnostic of it.
 
             entity-grid: `entityName` (BaseEntityDescriptor.entityName, required), `columns`
             (attribute names, defaults to the descriptor's grid columns), `rsqlFilter` (RSQL
@@ -808,8 +815,8 @@ components:
             `loadRulesFor()`), `submitLabel`, `submitTranslocoId`.
 
             Container widget types (e.g. `tab-group`, `split-panel`) express composition
-            here too, via `childIds` — a list of sibling `WidgetRef.id`s within the same
-            `widgets` array to render inside the container. Interpreting `childIds` is
+            here too, via `childIds` — a list of sibling `WidgetInstance.id`s within the
+            same `widgets` array to render inside the container. Interpreting `childIds` is
             that widget type's own concern, the same as any other prop; base-document and
             base-app only validate that the ids resolve and flag orphans.
 
@@ -830,6 +837,25 @@ components:
             something else points at its id, i.e. a container widget's `props.childIds`.
             A REFERENCED widget with nothing pointing at it is an orphan, flagged by
             `validateAppDefinition` as a warning, not an error.
+        inputBindings:
+          type: object
+          nullable: true
+          description: >-
+            Part of the canonical `WidgetInstance` shape and therefore present here, but
+            unused by base-app in this version: a page or region declares no ports for a
+            binding to resolve against. base-document, whose documents do declare
+            `inputPorts`, is the consumer. `nullable` so it stays absent from base-app
+            payloads rather than serializing as `{}`; a future route target that declares
+            ports of its own would make it meaningful.
+          additionalProperties:
+            type: string
+        outputBindings:
+          type: object
+          nullable: true
+          description: >-
+            The reverse of `inputBindings`, and unused by base-app for the same reason.
+          additionalProperties:
+            type: string
 
     PageDefinition:
       type: object
@@ -854,7 +880,7 @@ components:
           type: array
           description: Top-level widgets rendered in the content region, in declaration order.
           items:
-            $ref: "#/components/schemas/WidgetRef"
+            $ref: "#/components/schemas/WidgetInstance"
 
     NavItem:
       type: object
@@ -921,7 +947,7 @@ components:
             header / footer only — static region content such as a language selector or
             version button, in declaration order.
           items:
-            $ref: "#/components/schemas/WidgetRef"
+            $ref: "#/components/schemas/WidgetInstance"
 
     AppDefinitionStatus:
       type: string

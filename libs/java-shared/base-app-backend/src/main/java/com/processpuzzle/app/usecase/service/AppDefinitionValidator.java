@@ -7,7 +7,7 @@ import com.processpuzzle.app.model.PageDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.rule.domain.Severity;
@@ -178,14 +178,14 @@ public class AppDefinitionValidator {
      * {@code props.childIds} rather than nesting — so the id scope of a {@code childIds} entry is
      * exactly this list, and both passes below can work off one index.
      */
-    private void validateWidgets(String orgKey, List<WidgetRef> widgets, String basePath,
+    private void validateWidgets(String orgKey, List<WidgetInstance> widgets, String basePath,
                                  List<AppValidationProblem> problems) {
         if (widgets == null) {
             return;
         }
-        Map<String, WidgetRef> byId = new LinkedHashMap<>();
+        Map<String, WidgetInstance> byId = new LinkedHashMap<>();
         for (int i = 0; i < widgets.size(); i++) {
-            WidgetRef widget = widgets.get(i);
+            WidgetInstance widget = widgets.get(i);
             String path = basePath + SEPARATOR + i;
             if (widget == null) {
                 problems.add(new AppValidationProblem(path, "app.validation.null-widget", "A widget entry is null."));
@@ -215,17 +215,17 @@ public class AppDefinitionValidator {
      * <p>The orphan case is a {@code WARNING} rather than an {@code ERROR} on purpose — declaring a
      * widget before wiring it into its container is a legitimate state for a draft to be saved in.
      */
-    private void validateComposition(List<WidgetRef> widgets, String basePath,
-                                     Map<String, WidgetRef> byId, List<AppValidationProblem> problems) {
+    private void validateComposition(List<WidgetInstance> widgets, String basePath,
+                                     Map<String, WidgetInstance> byId, List<AppValidationProblem> problems) {
         Set<String> referencedIds = new HashSet<>();
         for (int i = 0; i < widgets.size(); i++) {
-            WidgetRef widget = widgets.get(i);
+            WidgetInstance widget = widgets.get(i);
             if (widget == null) {
                 continue;
             }
             for (String childId : childIdsOf(widget)) {
-                WidgetRef target = byId.get(childId);
-                if (target == null || target.getPlacement() != WidgetRef.PlacementEnum.REFERENCED) {
+                WidgetInstance target = byId.get(childId);
+                if (target == null || target.getPlacement() != WidgetInstance.PlacementEnum.REFERENCED) {
                     problems.add(new AppValidationProblem(
                             basePath + SEPARATOR + i + "/props/" + CHILD_IDS,
                             "app.validation.dangling-child-id",
@@ -239,11 +239,11 @@ public class AppDefinitionValidator {
         reportOrphanWidgets(widgets, basePath, referencedIds, problems);
     }
 
-    private void reportOrphanWidgets(List<WidgetRef> widgets, String basePath, Set<String> referencedIds,
+    private void reportOrphanWidgets(List<WidgetInstance> widgets, String basePath, Set<String> referencedIds,
                                      List<AppValidationProblem> problems) {
         for (int i = 0; i < widgets.size(); i++) {
-            WidgetRef widget = widgets.get(i);
-            if (widget == null || widget.getPlacement() != WidgetRef.PlacementEnum.REFERENCED) {
+            WidgetInstance widget = widgets.get(i);
+            if (widget == null || widget.getPlacement() != WidgetInstance.PlacementEnum.REFERENCED) {
                 continue;
             }
             if (!referencedIds.contains(widget.getId())) {
@@ -259,7 +259,7 @@ public class AppDefinitionValidator {
      * own: composition is one widget type's convention, and the contract keeps {@code props} loose.
      * Anything that is not a list of strings is left to the widget type to reject.
      */
-    private List<String> childIdsOf(WidgetRef widget) {
+    private List<String> childIdsOf(WidgetInstance widget) {
         Map<String, Object> props = widget.getProps();
         if (props == null || !(props.get(CHILD_IDS) instanceof List<?> raw)) {
             return List.of();
@@ -267,7 +267,7 @@ public class AppDefinitionValidator {
         return raw.stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
 
-    private void validateEntityName(String orgKey, WidgetRef widget, String path,
+    private void validateEntityName(String orgKey, WidgetInstance widget, String path,
                                     List<AppValidationProblem> problems) {
         Map<String, Object> props = widget.getProps();
         if (props == null) {

@@ -18,7 +18,7 @@ import { InjectionToken, Optional, Provider, SkipSelf, Type } from '@angular/cor
  */
 
 /**
- * Maps a widget registry key (WidgetRef.type / DocumentBlock.type) to the Angular component
+ * Maps a widget registry key (WidgetInstance.type / DocumentBlock.type) to the Angular component
  * that renders it. Populated by each feature lib's own provider function — this file never
  * imports a concrete widget component itself, so app-shell, base-document, and any future
  * consumer share one registry without depending on each other.
