@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { APP_DEFINITION_ENTITY_NAME, createAppDefinitionDescriptor } from './app-definition.descriptors';
-import { APP_PAGE_ENTITY_NAME } from './page-definition.descriptors';
+import { APP_MODULE_MOUNT_ENTITY_NAME, APP_MODULE_MOUNT_ID_FIELD } from './module-mount.descriptors';
 import { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD } from './region-definition.descriptors';
+import { APP_ROUTE_ENTITY_NAME, APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -44,7 +45,8 @@ describe('createAppDefinitionDescriptor', () => {
       'sidenavCollapsible',
       'sidenavOpenByDefault',
       'regions',
-      'pages',
+      'routes',
+      'modules',
     ]);
   });
 
@@ -86,13 +88,16 @@ describe('createAppDefinitionDescriptor', () => {
   it('contains the nested definitions, which have no endpoint of their own', () => {
     expect(byName('regions')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
     expect(byName('regions')?.linkedEntityType).toBe(APP_REGION_ENTITY_NAME);
-    expect(byName('pages')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
-    expect(byName('pages')?.linkedEntityType).toBe(APP_PAGE_ENTITY_NAME);
+    expect(byName('routes')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(byName('routes')?.linkedEntityType).toBe(APP_ROUTE_ENTITY_NAME);
+    expect(byName('modules')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(byName('modules')?.linkedEntityType).toBe(APP_MODULE_MOUNT_ENTITY_NAME);
   });
 
-  it('identifies a region by its type, the schema giving it no id', () => {
+  it('identifies each nested row by its own key, none of the three schemas having an id', () => {
     expect(byName('regions')?.referenceIdField).toBe(APP_REGION_ID_FIELD);
-    expect(byName('pages')?.referenceIdField).toBe('id');
+    expect(byName('routes')?.referenceIdField).toBe(APP_ROUTE_ID_FIELD);
+    expect(byName('modules')?.referenceIdField).toBe(APP_MODULE_MOUNT_ID_FIELD);
   });
 
   it('keeps the list to the header fields', () => {

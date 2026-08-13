@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
-import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
+import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
 import { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor } from './widget-instance.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
@@ -16,8 +16,8 @@ describe('createWidgetInstanceDescriptor', () => {
     expect(descriptor.entityName).toBe(APP_WIDGET_ENTITY_NAME);
   });
 
-  it('is an embedded component of a region, a page or another widget', () => {
-    expect(descriptor.componentParents).toEqual([APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME]);
+  it('is an embedded component of a region or of a route', () => {
+    expect(descriptor.componentParents).toEqual([APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);
   });
 

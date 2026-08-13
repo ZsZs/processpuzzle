@@ -20,7 +20,8 @@
     "sidenavCollapsible": "Menu latéral repliable",
     "sidenavOpenByDefault": "Menu latéral ouvert par défaut",
     "regions": "Régions",
-    "pages": "Pages"
+    "routes": "Routes",
+    "modules": "Modules"
   },
   "app_region": {
     "_self": "Région",
@@ -28,12 +29,24 @@
     "navItems": "Éléments de navigation",
     "widgets": "Widgets"
   },
-  "app_page": {
-    "_self": "Page",
-    "id": "Id",
+  "app_route": {
+    "_self": "Route",
+    "path": "Chemin",
     "title": "Titre",
     "translocoId": "Id Transloco",
-    "widgets": "Widgets"
+    "icon": "Icône",
+    "roles": "Rôles",
+    "kind": "Affiche",
+    "widgets": "Widgets",
+    "documentSlug": "Slug du document",
+    "entityName": "Nom de l'entité",
+    "entityMode": "Mode de l'entité",
+    "rsqlFilter": "Filtre RSQL"
+  },
+  "app_module_mount": {
+    "_self": "Montage de module",
+    "moduleKey": "Clé du module",
+    "basePath": "Chemin de base"
   },
   "app_nav_item": {
     "_self": "Élément de navigation",
@@ -41,7 +54,7 @@
     "label": "Libellé",
     "translocoId": "Id Transloco",
     "icon": "Icône",
-    "pageId": "Page",
+    "routePath": "Route",
     "roles": "Rôles",
     "children": "Éléments enfants"
   },
@@ -51,6 +64,17 @@
     "type": "Type",
     "props": "Propriétés",
     "placement": "Emplacement"
+  },
+  "module_definition": {
+    "_self": "Module",
+    "id": "Clé",
+    "name": "Nom",
+    "translocoId": "Id Transloco",
+    "description": "Description",
+    "translocoScope": "Portée Transloco",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "routes": "Routes"
   },
   "publish": {
     "button": "Publier",

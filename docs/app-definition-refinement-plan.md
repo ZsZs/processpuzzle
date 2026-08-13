@@ -357,7 +357,7 @@ this within the phase to prove the schema is expressive enough before Phase 4 de
 > from **base-rule-backend's installed jar**, not from the reactor. Editing that file has no effect on
 > `AppRuleValidatorTest` until `mvn install -DskipTests -pl libs/java-shared/base-rule-backend` runs.
 
-**Progress: 4a (contract) ✅ · 4b (Java) ✅ · 4c (frontend) todo.**
+**Progress: 4a (contract) ✅ · 4b (Java) ✅ · 4c (frontend) ✅.**
 
 ### 4a — contract ✅ (2026-08-13)
 
@@ -403,13 +403,43 @@ Two consequences worth remembering, both of them the loose-coupling decision sur
 The shipped rules moved with the contract: `page-ids-are-route-safe` → `route-paths-are-route-safe`,
 now checking each `/`-separated segment so a multi-segment path passes.
 
-### 4c — Frontend (todo)
+### 4c — Frontend ✅ (2026-08-13)
 
-`app-definition.ts`, `NavItem.routePath`, drop `RegionType.content`, rename
-`page-definition.descriptors`, sample data (`DefaultAppLoader`, `tools/mock-backend/db.json`, testbed
-e2e) — **and the route builder**, which is the one genuinely new piece: deriving Angular's nested
-`Routes` (parent + `<router-outlet>`) from the flat multi-segment paths, so nesting is computed at
-registration rather than authored.
+`app-definition.ts` follows the contract: flat `RouteDefinition` (no `children`), `ModuleMount`,
+`NavItem.routePath`, no `RegionType.content`. `page-definition.descriptors` became
+`route-definition.descriptors`, joined by `module-mount.descriptors`; both are registered as embedded
+entities in `base-app.providers.ts` and reachable from the authoring routes, so the six-entity registry
+is `APP_DEFINITION, APP_REGION, APP_ROUTE, APP_MODULE_MOUNT, APP_NAV_ITEM, APP_WIDGET`. Sample data
+moved with it — `DefaultAppLoader`, `tools/mock-backend/db.json` (three routes, one of them an authored
+prefix of another so the sample exercises derived nesting), the five testbed locales, and the e2e
+relationship exclusions.
+
+**`buildAppRoutes` (`feature/app-route-builder.ts`)** is the genuinely new piece. It builds a trie of
+`/`-separated segments and emits Angular `Routes` from it, taking a renderer callback for everything
+that is not structure:
+
+- an **authored** prefix becomes the Angular parent — its rendered component must host a
+  `<router-outlet>`;
+- an **unauthored** prefix is folded into its descendants' paths rather than fabricating a parent
+  nobody described;
+- siblings are sorted **static-prefix-first**, so `claims/new` is matched before `claims/:id`;
+- a **module mount** is a component-less parent at `basePath`, with the module's own flat routes run
+  through the same derivation beneath it. An unloaded or empty module contributes nothing, which is what
+  makes a dangling `moduleKey` a warning rather than a broken shell.
+
+Three form-shaped concessions, each one a real row the generic form can produce: a route with no `path`
+is skipped, an absent `path` **field** likewise (a form row is the raw JSON it arrived as), and of two
+rows claiming one path the first wins — the backend already rejects the pair with `duplicate-route-path`.
+
+`AppDefinitionMapper` **flattens `RouteTarget` onto the route on read and re-nests it on save**, the
+same trick `theme` and `layout` already use: the generic form addresses one property per control and
+cannot edit a nested discriminated union.
+
+**Verified:** `base-app-frontend` 16 files / **157 tests** pass (97.05% statements, 93.84% branches;
+the route builder at 100%); lint and build green for `base-app-frontend`, `processpuzzle-testbed`,
+`processpuzzle-testbed-e2e` and `processpuzzle-ui`. The mock backend's 13 rules are now field-for-field
+identical to `sample-rules/processpuzzle-rules.yaml`, so json-server and Spring return the same verdicts
+and the same messages.
 
 ### Original sketch, for reference
 
@@ -441,21 +471,72 @@ Hard data migration, no back-compat: base-app frontend is a scaffold per the REA
 Touches `DefaultAppLoader`, `ImportAppDefinitions`, sample data, `tools/mock-backend/db.json`, and the
 testbed e2e specs.
 
-## Phase 5 — `ModuleDefinition`
+## Phase 5 — `ModuleDefinition` ✅ DONE (2026-08-13)
 
-Own aggregate: `{ key, orgKey, basePath, routes[], translocoScope, status, version }`.
-`AppDefinition` gains `modules: [{ moduleKey, basePath }]`. Sidenav stays wholly in `AppDefinition`
-(decision 4).
+The contract and the Java side shipped with Phase 4 (`/organizations/{orgKey}/modules`,
+`ModuleDefinition` + `ModuleDefinitionInput`, `ModuleMount` on `AppDefinition`, the five use cases and
+`validateModule`). Phase 5 was the **frontend** half.
 
-Transloco scope per module, with `alias` **always** set explicitly — both `-` and `_` in a scope name
-get camelCased into a wrong default.
+### What "lazy" means, precisely
 
-**Be honest in the docs about "lazy":** metadata, documents, descriptors and translations load lazily;
-widget *code* is bundled at compile time via the registry. A metadata module cannot lazy-load
-components unless it also maps to a real Angular `loadChildren` over a lib. The genuine win is that
-`AppDefinition` stops being one aggregate that must be loaded, locked and published atomically — and
-that a module becomes the unit of authoring permission and versioning. Do not justify Module on a
-performance claim it cannot cash.
+A mount whose module the shell has not already got becomes an Angular **`loadChildren`**, so nothing is
+fetched until something navigates under its base path. What that defers is **metadata** — one
+`GET /modules/{key}`, and with it the module's routes, its transloco scope and the documents and
+descriptors those name. It does **not** defer a *bundle*: widget components are bundled at compile time
+and resolved through the frontend registry, so a metadata module cannot split code on its own. The two
+real wins are that `AppDefinition` stops being one aggregate that has to be loaded, locked and published
+atomically, and that a module becomes the unit of authoring permission and versioning. Nothing here is
+justified on bundle size, and the same paragraph is on `ModuleDefinition`'s class doc so the claim cannot
+drift.
+
+### What shipped
+
+- **`domain/module-definition.ts`** — `{ id, name, translocoId, description, translocoScope, routes,
+  orgKey, version, createdAt, updatedAt }`. The contract's `key` is renamed onto **`id`** by
+  `ModuleDefinitionMapper`, because base-entity keys every store, URL and reference on `id`; a second
+  identity field beside it could only ever disagree. `moduleTranslocoScope()` is the one place the
+  "empty scope means the key" default is applied — resolving it in the mapper would put a scope in the
+  form the designer never authored. No `basePath`: where a module is mounted is the mount's business,
+  not the module's, which is what lets two apps mount one module at different paths.
+- **Mapper, service, store, facade, container** — the routable four, mirroring `AppDefinition`'s, plus
+  `RouteTarget` flattening reused verbatim from `AppDefinitionMapper`. Deliberately **no `publish`**:
+  status/publication stays an app-level act. The specs assert those absences (`'publish' in store` is
+  `false`, the container's `extraFormActionsTemplate` is `undefined`) so a later helpful addition fails
+  the build.
+- **`module-definition.descriptors.ts`** — routable, not embedded; `id` labelled *Key* with the
+  contract's own `^[a-z0-9]+(-[a-z0-9]+)*$`; `routes` an `EMBEDDED_COMPONENTS` attribute pointing at the
+  **existing** `App Route` descriptor.
+- **`App Route` gained a second parent.** An app's `routes` and a module's are the same rows edited by
+  the same descriptor, so `componentParents` is now `[App Definition, Module Definition]` — the only
+  level in this graph with two, and the embedded control throws on the module's form without it. The
+  registry is therefore two routable definitions over five embedded levels.
+- **`BASE_APP_ROUTES`** grew a `module-definition` branch beside `app-definition`, with both transloco
+  scopes and only `['app-route']` below the details route: a region is application chrome and a module
+  has none.
+- **`buildAppRoutes`** takes an optional `loadModule: (key) => Promise<ModuleDefinition | undefined>`.
+  A mount already present in `moduleRoutes` is still emitted eagerly (an empty array counts as present
+  — the shell knows the module has no routes); otherwise `lazyMount` emits `loadChildren`, which fetches
+  once, runs the module's flat routes through the same trie derivation, and hangs them under a
+  component-less `path: ''` wrapper. That wrapper exists to carry
+  `provideTranslocoScope({ scope, alias: scope })` — the alias is spelled out every time, because both
+  `-` and `_` in a scope name get camelCased into a wrong default. An unknown or route-less module
+  resolves to `[]`, which is what keeps a dangling `moduleKey` a warning rather than a broken shell.
+- **Sample data** — `processpuzzle-testbed-modules` in `tools/mock-backend/db.json` holds
+  `order-admin` (scope `order_admin`, two `Order Line` routes), mounted by the testbed app at
+  `basePath: back-office`; plus the five testbed locales and the e2e relationship exclusions.
+
+### A shared-library defect found on the way
+
+`BaseEntityRestService.findById` built its URL from `resourceUrl` **without** the `/%{id}` suffix that
+`delete` and `update` use, so it GET the collection and the mapper saw a list where it expected one
+record. The module store's lazy read is the first production caller of `findById` — grep found no other —
+and the Firestore and embedded implementations of the same interface do address one document, so the
+one-line fix makes the three agree. Its own spec had cemented the bug: titled *"builds an id-scoped
+URL"* while asserting `endsWith('/node')`. Both fixed.
+
+**Verified:** `base-app-frontend` 23 files / **209 tests** (97.02% statements, 93.6% branches);
+`base-entity-frontend` green; lint and build green for both libraries, `processpuzzle-testbed`,
+`processpuzzle-testbed-e2e` and `processpuzzle-ui`.
 
 ## Phase 6 — Tabs
 

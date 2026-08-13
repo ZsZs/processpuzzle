@@ -1,7 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
 import { WIDGET_PLACEMENTS } from './app-definition';
-import { APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
+import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
 
 export { APP_WIDGET_ENTITY_NAME };
 
@@ -45,7 +45,7 @@ export function createWidgetInstanceDescriptor(): BaseEntityDescriptor {
     i18nScope: APP_WIDGET_I18N_SCOPE,
     // A widget sits in a header/footer region or on a page — and only there, since it cannot be nested
     // in another widget.
-    componentParent: [APP_REGION_ENTITY_NAME, APP_PAGE_ENTITY_NAME],
+    componentParent: [APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME],
     isEmbedded: true,
   });
 }

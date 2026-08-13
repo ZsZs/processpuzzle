@@ -1,8 +1,10 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { AppDefinitionStatus, COLOR_SCHEMES, LAYOUT_PRESETS, MATERIAL_THEMES, SIDENAV_MODES } from './app-definition';
-import { APP_DEFINITION_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
+import { APP_DEFINITION_ENTITY_NAME, APP_MODULE_MOUNT_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
+import { APP_MODULE_MOUNT_ID_FIELD } from './module-mount.descriptors';
 import { APP_REGION_ID_FIELD } from './region-definition.descriptors';
+import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 
 export { APP_DEFINITION_ENTITY_NAME };
 
@@ -78,18 +80,28 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // endregion
 
   // region nested graph — kept on the entity as-is by AppDefinitionMapper, so the full-replacement PUT preserves it
-  // Containment, not association: the contract nests `RegionDefinition` and `PageDefinition` inside the
-  // AppDefinition document, and neither has an endpoint of its own, so the rows travel inside this entity's
-  // payload and are saved with it.
+  // Containment, not association: the contract nests `RegionDefinition`, `RouteDefinition` and
+  // `ModuleMount` inside the AppDefinition document, and none has an endpoint of its own, so the rows
+  // travel inside this entity's payload and are saved with it. A `ModuleMount` is the exception that
+  // proves it — the module it *names* is a separate aggregate with its own endpoints, but the mount
+  // itself belongs to this app.
   const regionsAttr = new BaseEntityAttrDescriptor('regions', FormControlType.EMBEDDED_COMPONENTS, 'Regions');
   regionsAttr.linkedEntityType = APP_REGION_ENTITY_NAME;
   // A region has no `id` in the contract; `type` is what identifies it. See APP_REGION_ID_FIELD.
   regionsAttr.referenceIdField = APP_REGION_ID_FIELD;
   regionsAttr.hideInTable = true;
 
-  const pagesAttr = new BaseEntityAttrDescriptor('pages', FormControlType.EMBEDDED_COMPONENTS, 'Pages');
-  pagesAttr.linkedEntityType = APP_PAGE_ENTITY_NAME;
-  pagesAttr.hideInTable = true;
+  // Flat by design: a route has no children, and the multi-segment paths of these rows are what the
+  // shell derives Angular's nesting from at registration time.
+  const routesAttr = new BaseEntityAttrDescriptor('routes', FormControlType.EMBEDDED_COMPONENTS, 'Routes');
+  routesAttr.linkedEntityType = APP_ROUTE_ENTITY_NAME;
+  routesAttr.referenceIdField = APP_ROUTE_ID_FIELD;
+  routesAttr.hideInTable = true;
+
+  const modulesAttr = new BaseEntityAttrDescriptor('modules', FormControlType.EMBEDDED_COMPONENTS, 'Modules');
+  modulesAttr.linkedEntityType = APP_MODULE_MOUNT_ENTITY_NAME;
+  modulesAttr.referenceIdField = APP_MODULE_MOUNT_ID_FIELD;
+  modulesAttr.hideInTable = true;
   // endregion
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, translocoIdAttr], FlexDirection.ROW);
@@ -104,7 +116,7 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   layoutRow.style = { 'column-gap': '10px' };
   const sidenavRow = new FlexboxDescriptor([sidenavCollapsibleAttr, sidenavOpenByDefaultAttr], FlexDirection.ROW);
   sidenavRow.style = { 'column-gap': '10px' };
-  const graphRow = new FlexboxDescriptor([regionsAttr, pagesAttr], FlexDirection.ROW);
+  const graphRow = new FlexboxDescriptor([regionsAttr, routesAttr, modulesAttr], FlexDirection.ROW);
   graphRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor(

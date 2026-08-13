@@ -143,7 +143,7 @@ components:
         Distinct from a WidgetDefinition, which describes the widget *type* (its props
         schema and ports) and is an addressable resource of its own. A WidgetInstance is
         never standalone — it always lives inside a container: base-app-api.yaml's
-        PageDefinition/RegionDefinition.widgets, or a WIDGET-kind DocumentBlock in
+        RouteTarget/RegionDefinition.widgets, or a WIDGET-kind DocumentBlock in
         base-document-api.yaml.
 
         This is the canonical declaration. Each consuming spec repeats this *shape* — the

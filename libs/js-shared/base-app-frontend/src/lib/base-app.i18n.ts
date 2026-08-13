@@ -24,13 +24,22 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const APP_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_definition`;
 
 /**
+ * Key root of the `ModuleDefinition` entity name and attribute labels. A child of this library's scope
+ * like the one above, and not to be confused with `ModuleDefinition.translocoScope`, which is a scope an
+ * *authored* module's own translations load under — see {@link moduleTranslocoScope}. These keys are the
+ * framework's labels for the authoring form; that one is the tenant's content.
+ */
+export const MODULE_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.module_definition`;
+
+/**
  * Key roots of the nested definitions the `AppDefinition` form contains through `EMBEDDED_COMPONENTS`
  * controls. They are children of {@link BASE_APP_TRANSLOCO_SCOPE} rather than scopes of their own,
  * because the whole graph is edited under `BASE_APP_ROUTES` and one scope registration has to cover
  * all of it — the embedded route branches add none.
  */
 export const APP_REGION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_region`;
-export const APP_PAGE_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_page`;
+export const APP_ROUTE_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_route`;
+export const APP_MODULE_MOUNT_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_module_mount`;
 export const APP_NAV_ITEM_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_nav_item`;
 export const APP_WIDGET_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_widget`;
 

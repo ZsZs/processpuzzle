@@ -8,11 +8,15 @@ import com.processpuzzle.app.adapter.inbound.dto.DefaultAppsDocument;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.KeyAvailability;
+import com.processpuzzle.app.model.ModuleDefinition;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -42,10 +46,16 @@ import java.io.InputStream;
  * file walk. A default definition is consequently subject to the same structural validation and the
  * same {@code base-rule} governance as one a designer saves.
  *
+ * <p>A file may declare {@code moduleDefinitions} beside its apps, and those are created first, so a
+ * mount in the same file names a module that already exists. That order is a courtesy to the startup
+ * log rather than a requirement: a mount naming an unknown module is a warning by design, which is what
+ * keeps the two aggregates independently authorable.
+ *
  * <p><strong>Existing data is never touched.</strong> An organization that already exists is loaded
- * into rather than re-provisioned, and an app definition whose id is already present is left exactly
- * as it is. Restarting against a persistent database therefore cannot overwrite a designer's edits
- * with the bundled defaults, which also makes the loader safe to leave enabled outside development.
+ * into rather than re-provisioned, and an app or module definition whose key is already present is left
+ * exactly as it is. Restarting against a persistent database therefore cannot overwrite a designer's
+ * edits with the bundled defaults, which also makes the loader safe to leave enabled outside
+ * development.
  *
  * <p>Nothing here can fail startup: every problem is logged and the next file or definition is
  * attempted. A convenience that refuses to boot would be worse than one that seeds nothing.
@@ -113,18 +123,22 @@ public class DefaultAppLoader {
             return;
         }
 
-        int created = 0;
-        int skipped = 0;
-        int rejected = 0;
-        for (AppDefinitionInput definition : document.appDefinitions()) {
-            switch (create(orgKey, definition, fileName)) {
-                case CREATED -> created++;
-                case SKIPPED -> skipped++;
-                case REJECTED -> rejected++;
+        // Modules first, so that a mount declared in this same file names a module that already exists.
+        if (!document.moduleDefinitions().isEmpty()) {
+            Tally modules = new Tally();
+            for (ModuleDefinitionInput module : document.moduleDefinitions()) {
+                modules.add(createModule(orgKey, module, fileName));
             }
+            LOG.info("Loaded default modules from {} into organization '{}': created={}, already present={}, rejected={}",
+                    fileName, orgKey, modules.created, modules.skipped, modules.rejected);
+        }
+
+        Tally apps = new Tally();
+        for (AppDefinitionInput definition : document.appDefinitions()) {
+            apps.add(create(orgKey, definition, fileName));
         }
         LOG.info("Loaded default apps from {} into organization '{}': created={}, already present={}, rejected={}",
-                fileName, orgKey, created, skipped, rejected);
+                fileName, orgKey, apps.created, apps.skipped, apps.rejected);
     }
 
     /**
@@ -219,6 +233,41 @@ public class DefaultAppLoader {
         }
     }
 
+    /**
+     * The module counterpart of {@link #create}, and deliberately as forgiving: a rejected module leaves
+     * the apps that mount it with a dangling {@code moduleKey}, which is a warning rather than an error,
+     * so there is nothing here that should stop the rest of the file from loading.
+     */
+    private Outcome createModule(String orgKey, ModuleDefinitionInput module, String fileName) {
+        if (module == null || isBlank(module.getKey())) {
+            LOG.warn("Skipping a module definition in {}: the entry is null or has no key.", fileName);
+            return Outcome.REJECTED;
+        }
+
+        try {
+            ModuleDefinition created = endpoint.createModuleDefinition(orgKey, module).getBody();
+            LOG.info("Created default module definition '{}' in organization '{}' as revision {}.",
+                    module.getKey(), orgKey,
+                    created == null || created.getVersion() == null ? "?" : created.getVersion());
+            return Outcome.CREATED;
+        } catch (ModuleDefinitionAlreadyExistsException e) {
+            LOG.info("Default module definition '{}' already exists in organization '{}'; left untouched.",
+                    module.getKey(), orgKey);
+            return Outcome.SKIPPED;
+        } catch (ModuleDefinitionInvalidException e) {
+            LOG.warn("Default module definition '{}' from {} was rejected by validation.",
+                    module.getKey(), fileName);
+            for (AppValidationProblem problem : e.getProblems()) {
+                LOG.warn("  {} {}: {}", problem.path(), problem.errorId(), problem.errorText());
+            }
+            return Outcome.REJECTED;
+        } catch (RuntimeException e) {
+            LOG.warn("Failed to create default module definition '{}' from {} in organization '{}'.",
+                    module.getKey(), fileName, orgKey, e);
+            return Outcome.REJECTED;
+        }
+    }
+
     /** The part of {@code <orgKey>-apps.yaml} before the suffix, or {@code null} if there is none. */
     private static String orgKeyOf(String fileName) {
         if (fileName == null || !fileName.endsWith(APPS_FILE_SUFFIX)) {
@@ -235,5 +284,20 @@ public class DefaultAppLoader {
     /** What became of one entry, for the per-file summary. */
     private enum Outcome {
         CREATED, SKIPPED, REJECTED
+    }
+
+    /** The per-file summary itself, counted the same way for both kinds of definition. */
+    private static final class Tally {
+        private int created;
+        private int skipped;
+        private int rejected;
+
+        private void add(Outcome outcome) {
+            switch (outcome) {
+                case CREATED -> created++;
+                case SKIPPED -> skipped++;
+                case REJECTED -> rejected++;
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { APP_NAV_ITEM_I18N_SCOPE } from '../base-app.i18n';
-import { APP_NAV_ITEM_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME } from './app-entity-names';
+import { APP_NAV_ITEM_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
+import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 
 export { APP_NAV_ITEM_ENTITY_NAME };
 
@@ -20,9 +21,11 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   iconAttr.placeholder = 'Material or FontAwesome icon name';
   iconAttr.hideInTable = true;
 
-  // A group node has children and no page, so this stays optional.
-  const pageIdAttr = new BaseEntityAttrDescriptor('pageId', FormControlType.FOREIGN_KEY, 'Page');
-  pageIdAttr.linkedEntityType = APP_PAGE_ENTITY_NAME;
+  // A group node expands its children instead of navigating, so this stays optional. The route is
+  // resolved by `path` rather than by an id — see APP_ROUTE_ID_FIELD.
+  const routePathAttr = new BaseEntityAttrDescriptor('routePath', FormControlType.FOREIGN_KEY, 'Route');
+  routePathAttr.linkedEntityType = APP_ROUTE_ENTITY_NAME;
+  routePathAttr.referenceIdField = APP_ROUTE_ID_FIELD;
 
   const rolesAttr = new BaseEntityAttrDescriptor('roles', FormControlType.TAGS, 'Roles');
   rolesAttr.placeholder = 'Empty means any authenticated member of the organization';
@@ -36,7 +39,7 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const identityRow = new FlexboxDescriptor([idAttr, labelAttr, translocoIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const targetRow = new FlexboxDescriptor([iconAttr, pageIdAttr], FlexDirection.ROW);
+  const targetRow = new FlexboxDescriptor([iconAttr, routePathAttr], FlexDirection.ROW);
   targetRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor([identityRow, targetRow, rolesAttr, childrenAttr], FlexDirection.COLUMN);

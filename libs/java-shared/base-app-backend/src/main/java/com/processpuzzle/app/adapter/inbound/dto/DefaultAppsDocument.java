@@ -1,6 +1,7 @@
 package com.processpuzzle.app.adapter.inbound.dto;
 
 import com.processpuzzle.app.model.AppDefinitionInput;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.model.OrganizationInput;
 
 import java.util.List;
@@ -19,14 +20,22 @@ import java.util.List;
  * name before {@code -apps.yaml}, so a copied file cannot silently seed the tenant it was copied
  * from.
  *
+ * <p>{@code moduleDefinitions} are seeded before the apps, so that a mount in the same file names a
+ * module that already exists. Nothing depends on that order — a mount naming an unknown module is a
+ * warning by design, see {@code AppDefinitionValidator#validateModuleMounts} — it only keeps the log of
+ * a fresh startup free of warnings the file itself answers.
+ *
  * @param organization the tenant to provision when it does not exist yet; may be {@code null}, in
  *     which case the loader provisions one named after the file's organization key
+ * @param moduleDefinitions the modules to create in that organization, before the apps that mount them
  * @param appDefinitions the definitions to create in that organization
  */
 public record DefaultAppsDocument(OrganizationInput organization,
+                                  List<ModuleDefinitionInput> moduleDefinitions,
                                   List<AppDefinitionInput> appDefinitions) {
 
     public DefaultAppsDocument {
+        moduleDefinitions = moduleDefinitions == null ? List.of() : List.copyOf(moduleDefinitions);
         appDefinitions = appDefinitions == null ? List.of() : List.copyOf(appDefinitions);
     }
 }

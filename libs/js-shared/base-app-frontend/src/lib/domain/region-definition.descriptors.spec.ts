@@ -42,7 +42,7 @@ describe('createRegionDefinitionDescriptor', () => {
 
   it('offers the closed region types of the contract as a dropdown', () => {
     expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['header', 'sidenav', 'content', 'footer']);
+    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['header', 'sidenav', 'footer']);
   });
 
   it('contains the nested definitions, which have no endpoint of their own', () => {

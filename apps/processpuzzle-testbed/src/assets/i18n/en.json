@@ -158,7 +158,7 @@
   "base-apps": {
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
-    "samples_desc_1": "An application definition describes a whole application as metadata: its workspaces, navigation, pages, regions and widgets.",
+    "samples_desc_1": "An application definition describes a whole application as metadata: its navigation, routes, regions, widgets and the modules it mounts.",
     "samples_desc_2": "The table and form below are generated run-time from the App Definition descriptors, exactly like any other entity.",
     "intro_heading": "ProcessPuzzle Application Designer",
     "frontend_heading": "Frontend — @processpuzzle/base-app",

@@ -151,7 +151,7 @@
   "base-apps": {
     "overview_tab_label": "Resumen",
     "samples_tab_label": "Ejemplos",
-    "samples_desc_1": "Una definición de aplicación describe una aplicación completa como metadatos: sus espacios de trabajo, navegación, páginas, regiones y widgets.",
+    "samples_desc_1": "Una definición de aplicación describe una aplicación completa como metadatos: su navegación, rutas, regiones, widgets y los módulos que monta.",
     "samples_desc_2": "La tabla y el formulario siguientes se generan en tiempo de ejecución a partir de los descriptores de App Definition, igual que cualquier otra entidad.",
     "intro_heading": "Diseñador de Aplicaciones de ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-app",

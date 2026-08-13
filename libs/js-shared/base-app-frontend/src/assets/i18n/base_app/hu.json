@@ -20,7 +20,8 @@
     "sidenavCollapsible": "Összecsukható oldalsáv",
     "sidenavOpenByDefault": "Oldalsáv alapból nyitva",
     "regions": "Régiók",
-    "pages": "Oldalak"
+    "routes": "Útvonalak",
+    "modules": "Modulok"
   },
   "app_region": {
     "_self": "Régió",
@@ -28,12 +29,24 @@
     "navItems": "Navigációs elemek",
     "widgets": "Widgetek"
   },
-  "app_page": {
-    "_self": "Oldal",
-    "id": "Azonosító",
+  "app_route": {
+    "_self": "Útvonal",
+    "path": "Útvonal",
     "title": "Cím",
     "translocoId": "Transloco azonosító",
-    "widgets": "Widgetek"
+    "icon": "Ikon",
+    "roles": "Szerepkörök",
+    "kind": "Megjelenít",
+    "widgets": "Widgetek",
+    "documentSlug": "Dokumentum slug",
+    "entityName": "Entitás neve",
+    "entityMode": "Entitás mód",
+    "rsqlFilter": "RSQL szűrő"
+  },
+  "app_module_mount": {
+    "_self": "Modul beépítés",
+    "moduleKey": "Modul kulcs",
+    "basePath": "Alap útvonal"
   },
   "app_nav_item": {
     "_self": "Navigációs elem",
@@ -41,7 +54,7 @@
     "label": "Felirat",
     "translocoId": "Transloco azonosító",
     "icon": "Ikon",
-    "pageId": "Oldal",
+    "routePath": "Útvonal",
     "roles": "Szerepkörök",
     "children": "Alelemek"
   },
@@ -51,6 +64,17 @@
     "type": "Típus",
     "props": "Tulajdonságok",
     "placement": "Elhelyezés"
+  },
+  "module_definition": {
+    "_self": "Modul",
+    "id": "Kulcs",
+    "name": "Név",
+    "translocoId": "Transloco azonosító",
+    "description": "Leírás",
+    "translocoScope": "Transloco tartomány",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "routes": "Útvonalak"
   },
   "publish": {
     "button": "Közzététel",

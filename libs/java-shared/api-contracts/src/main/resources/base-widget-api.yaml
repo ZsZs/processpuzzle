@@ -9,8 +9,8 @@ info:
 
     This contract owns the **type**; `WidgetInstance` in shared-api.yaml is a **placement** of one.
     A WidgetDefinition is an addressable resource with its own lifecycle and version; a
-    WidgetInstance is never standalone and always lives inside a container — a base-app page or
-    region, or a WIDGET-kind block in a base-document. The join between them is
+    WidgetInstance is never standalone and always lives inside a container — a base-app route
+    target or region, or a WIDGET-kind block in a base-document. The join between them is
     `WidgetInstance.type == WidgetDefinition.key`.
 
     Keeping them apart is what separates design-time configuration from the widget's own contract.

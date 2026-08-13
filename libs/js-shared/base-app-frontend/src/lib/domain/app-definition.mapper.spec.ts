@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppDefinition, AppDefinitionStatus } from './app-definition';
+import { AppDefinition, AppDefinitionStatus, RouteDefinition } from './app-definition';
 import { AppDefinitionMapper } from './app-definition.mapper';
 import { APP_DEFINITION_DTO } from './test-app-definition';
 
@@ -33,20 +33,56 @@ describe('AppDefinitionMapper', () => {
       const entity = mapper.fromDto(dto);
 
       expect(entity.regions).toEqual(dto.regions);
-      expect(entity.pages).toEqual(dto.pages);
+      expect(entity.modules).toEqual(dto.modules);
       expect(entity.orgKey).toBe('processpuzzle-testbed');
       expect(entity.status).toBe(AppDefinitionStatus.DRAFT);
       expect(entity.version).toBe(3);
       expect(entity.publishedVersion).toBe(2);
     });
 
-    it('tolerates a definition without theme and layout', () => {
+    // The generic form addresses one property per control and knows nothing of a discriminated union,
+    // so the target is flattened the same way theme and layout are.
+    it('flattens the route target onto each route', () => {
+      const route = mapper.fromDto(dto).routes?.[0];
+
+      expect(route?.path).toBe('orders');
+      expect(route?.title).toBe('Orders');
+      expect(route?.kind).toBe('WIDGETS');
+      expect(route?.widgets).toEqual([{ id: 'order-grid', type: 'entity-grid', props: { entityName: 'Order' } }]);
+    });
+
+    it('flattens the fields of a DOCUMENT and of an ENTITY target as well', () => {
+      const entity = mapper.fromDto({
+        id: 'demo',
+        name: 'Demo',
+        routes: [
+          { path: 'handbook', title: 'Handbook', target: { kind: 'DOCUMENT', documentSlug: 'employee-handbook' } },
+          { path: 'orders', title: 'Orders', target: { kind: 'ENTITY', entityName: 'Order', entityMode: 'LIST', rsqlFilter: 'status==OPEN' } },
+        ],
+      });
+
+      expect(entity.routes?.[0].documentSlug).toBe('employee-handbook');
+      expect(entity.routes?.[1].entityName).toBe('Order');
+      expect(entity.routes?.[1].entityMode).toBe('LIST');
+      expect(entity.routes?.[1].rsqlFilter).toBe('status==OPEN');
+    });
+
+    it('tolerates a definition without theme, layout, routes and modules', () => {
       const entity = mapper.fromDto({ id: 'bare', name: 'Bare' });
 
       expect(entity.materialTheme).toBeUndefined();
       expect(entity.preset).toBeUndefined();
       expect(entity.theme).toBeUndefined();
       expect(entity.layout).toBeUndefined();
+      expect(entity.routes).toBeUndefined();
+      expect(entity.modules).toBeUndefined();
+    });
+
+    it('leaves a route without a target with no kind rather than inventing one', () => {
+      const entity = mapper.fromDto({ id: 'bare', name: 'Bare', routes: [{ path: 'orders', title: 'Orders' }] });
+
+      expect(entity.routes?.[0].kind).toBeUndefined();
+      expect(entity.routes?.[0].target).toBeUndefined();
     });
   });
 
@@ -78,7 +114,30 @@ describe('AppDefinitionMapper', () => {
       const result = mapper.toDto(mapper.fromDto(dto));
 
       expect(result.regions).toEqual(dto.regions);
-      expect(result.pages).toEqual(dto.pages);
+      expect(result.modules).toEqual(dto.modules);
+    });
+
+    it('re-nests the target of every route', () => {
+      const entity = mapper.fromDto(dto);
+      const route = entity.routes?.[0] as RouteDefinition;
+      route.kind = 'ENTITY';
+      route.entityName = 'Order';
+
+      const result = mapper.toDto(entity);
+
+      expect(result.routes?.[0].target?.kind).toBe('ENTITY');
+      expect(result.routes?.[0].target?.entityName).toBe('Order');
+      expect(result.routes?.[0]).not.toHaveProperty('kind');
+      expect(result.routes?.[0]).not.toHaveProperty('entityName');
+    });
+
+    // A DOCUMENT or ENTITY route would otherwise persist an empty array it never renders.
+    it('omits the widgets of a target that holds none', () => {
+      const entity = mapper.fromDto({ id: 'demo', name: 'Demo', routes: [{ path: 'handbook', title: 'Handbook', target: { kind: 'DOCUMENT', documentSlug: 'handbook', widgets: [] } }] });
+
+      const result = mapper.toDto(entity);
+
+      expect(result.routes?.[0].target?.widgets).toBeUndefined();
     });
 
     it('does not leak the flattened controls into the payload', () => {
@@ -104,7 +163,8 @@ describe('AppDefinitionMapper', () => {
 
       expect(result.name).toBe('Renamed');
       expect(result.theme.materialTheme).toBe('cyan-orange');
-      expect(result.pages).toEqual(dto.pages);
+      expect(result.routes).toEqual(dto.routes);
+      expect(result.modules).toEqual(dto.modules);
     });
   });
 });

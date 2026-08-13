@@ -13,6 +13,10 @@
 #
 # Ids are lowercase-hyphen and every entity widget names its entity, so the definition satisfies the
 # 'App Definition' rules in base-rule's sample-rules as well as the structural validator.
+#
+# `moduleDefinitions` are seeded before `appDefinitions`, so a mount below names a module that exists
+# by then. The order is a courtesy to the startup log rather than a requirement: a mount naming an
+# unknown module is a warning, which is what keeps the two aggregates loosely coupled.
 
 organization:
   key: processpuzzle-testbed
@@ -22,6 +26,38 @@ organization:
     capabilities of the ProcessPuzzle framework.
   contactEmail: testbed@processpuzzle.com
   defaultLocale: en
+
+moduleDefinitions:
+  # A back-office slice of the same order domain the 'demo' app front-ends. It exists to show what a
+  # module is for: a route list of its own, authored and versioned separately, mounted under one prefix
+  # by whichever app wants it. Its routes use the ENTITY target kind, so the screens are generated from
+  # the testbed's 'Order Line' descriptor rather than composed from widgets.
+  - key: order-admin
+    name: Order administration
+    translocoId: order_admin.module.name
+    description: >-
+      Order line administration: the generated list and detail screens of 'Order Line', kept out of
+      the order-entry application so that back-office screens can be authored on their own.
+    translocoScope: order_admin
+    # 'lines' and 'line/:id' are siblings on purpose. Had the detail route been 'lines/:id', the flat
+    # list would derive 'lines' into its Angular parent, and a generated list screen hosts no
+    # router-outlet for the child to render in.
+    routes:
+      - path: lines
+        title: All order lines
+        translocoId: order_admin.route.lines
+        icon: view_list
+        target:
+          kind: ENTITY
+          entityName: Order Line
+          entityMode: LIST
+      - path: line/:id
+        title: Order line
+        translocoId: order_admin.route.line
+        target:
+          kind: ENTITY
+          entityName: Order Line
+          entityMode: DETAILS
 
 appDefinitions:
   # A deliberately basic shell: one Material theme, the default sidenav-left layout, the three
@@ -69,6 +105,15 @@ appDefinitions:
             translocoId: demo.nav.orderLines
             icon: view_list
             routePath: order-line-list
+          # Points into the module mounted below: the module's own 'lines' prefixed with its basePath.
+          # Startup logs one 'app.validation.unknown-route-reference' WARNING for this item, and should:
+          # an app definition cannot see the routes of a module it mounts, which is what keeps the two
+          # aggregates independent. A nav item is how a mounted module becomes reachable at all.
+          - id: nav-order-admin
+            label: Order line administration
+            translocoId: demo.nav.orderAdmin
+            icon: manage_search
+            routePath: back-office/lines
       - type: footer
     # Routes are flat: 'path' may be multi-segment and Angular's nesting is derived from the
     # prefixes at registration time.
@@ -108,3 +153,9 @@ appDefinitions:
               props:
                 entityName: Order Line
                 columns: [productName, quantity, unitPrice]
+    # The single composition point. The 'order-admin' module's flat routes are registered below this
+    # prefix, so its 'lines' answers at 'back-office/lines'. A module mounts no modules, so route
+    # structure composes exactly one level and no deeper.
+    modules:
+      - moduleKey: order-admin
+        basePath: back-office

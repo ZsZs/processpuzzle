@@ -20,7 +20,8 @@
     "sidenavCollapsible": "Sidenav Collapsible",
     "sidenavOpenByDefault": "Sidenav Open By Default",
     "regions": "Regions",
-    "pages": "Pages"
+    "routes": "Routes",
+    "modules": "Modules"
   },
   "app_region": {
     "_self": "Region",
@@ -28,12 +29,24 @@
     "navItems": "Nav Items",
     "widgets": "Widgets"
   },
-  "app_page": {
-    "_self": "Page",
-    "id": "Id",
+  "app_route": {
+    "_self": "Route",
+    "path": "Path",
     "title": "Title",
     "translocoId": "Transloco Id",
-    "widgets": "Widgets"
+    "icon": "Icon",
+    "roles": "Roles",
+    "kind": "Renders",
+    "widgets": "Widgets",
+    "documentSlug": "Document Slug",
+    "entityName": "Entity Name",
+    "entityMode": "Entity Mode",
+    "rsqlFilter": "Rsql Filter"
+  },
+  "app_module_mount": {
+    "_self": "Module Mount",
+    "moduleKey": "Module Key",
+    "basePath": "Base Path"
   },
   "app_nav_item": {
     "_self": "Nav Item",
@@ -41,7 +54,7 @@
     "label": "Label",
     "translocoId": "Transloco Id",
     "icon": "Icon",
-    "pageId": "Page",
+    "routePath": "Route",
     "roles": "Roles",
     "children": "Children"
   },
@@ -51,6 +64,17 @@
     "type": "Type",
     "props": "Props",
     "placement": "Placement"
+  },
+  "module_definition": {
+    "_self": "Module",
+    "id": "Key",
+    "name": "Name",
+    "translocoId": "Transloco Id",
+    "description": "Description",
+    "translocoScope": "Transloco Scope",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "routes": "Routes"
   },
   "publish": {
     "button": "Publish",

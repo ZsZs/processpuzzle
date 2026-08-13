@@ -27,7 +27,8 @@ describe('AppDefinitionStore', () => {
 
   it('exposes the whole definition graph as current entity, not just its header fields', () => {
     expect(store.currentEntity()?.regions).toEqual(APP_DEFINITION_DTO.regions);
-    expect(store.currentEntity()?.pages).toEqual(APP_DEFINITION_DTO.pages);
+    expect(store.currentEntity()?.routes?.[0].path).toBe('orders');
+    expect(store.currentEntity()?.modules).toEqual(APP_DEFINITION_DTO.modules);
     expect(store.currentEntity()?.preset).toBe('sidenav-left');
     expect(store.currentEntity()?.contentMaxWidth).toBe('1280px');
   });
