@@ -2,10 +2,11 @@ package com.processpuzzle.app.usecase.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.shared.model.WidgetInstance;
@@ -88,22 +89,22 @@ class AppRuleValidatorTest {
         assertThat(AppValidationProblem.blocking(problems)).hasSize(1);
     }
 
-    /** Proves page ids reach the expression through the nested {@code pages} array. */
+    /** Proves route paths reach the expression through the nested {@code routes} array. */
     @Test
-    void pageIdThatIsNotRouteSafe_violatesAnErrorRule() {
+    void routePathThatIsNotRouteSafe_violatesAnErrorRule() {
         AppDefinitionInput input = conformingInput();
-        input.getPages().getFirst().setId("Claims_List");
-        input.getRegions().getFirst().getNavItems().getFirst().setPageId("Claims_List");
+        input.getRoutes().getFirst().setPath("Claims_List");
+        input.getRegions().getFirst().getNavItems().getFirst().setRoutePath("Claims_List");
 
         assertThat(errorIds(ruleValidator.validate(ORG, input)))
-                .containsExactly("rule.appDefinition.pageIdsAreRouteSafe");
+                .containsExactly("rule.appDefinition.routePathsAreRouteSafe");
     }
 
     /** Proves {@code RegionType.SIDENAV} arrives as {@code 'sidenav'}, the value the rules compare against. */
     @Test
     void appWithoutAPopulatedSidenav_violatesAWarningRuleOnly() {
         AppDefinitionInput input = conformingInput();
-        input.setRegions(List.of(new RegionDefinition(RegionType.CONTENT)));
+        input.setRegions(List.of(new RegionDefinition(RegionType.HEADER)));
 
         List<AppValidationProblem> problems = ruleValidator.validate(ORG, input);
 
@@ -117,7 +118,7 @@ class AppRuleValidatorTest {
     @Test
     void entityGridWithoutAnEntityName_violatesAnErrorRule() {
         AppDefinitionInput input = conformingInput();
-        input.getPages().getFirst().setWidgets(List.of(new WidgetInstance("widget-grid", "entity-grid")));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(ruleValidator.validate(ORG, input)))
                 .contains("rule.appDefinition.entityWidgetsDeclareAnEntityName");
@@ -132,7 +133,7 @@ class AppRuleValidatorTest {
         grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
         WidgetInstance container = new WidgetInstance("widget-tabs", "tab-group");
         container.setProps(Map.of("childIds", List.of("widget-grid")));
-        input.getPages().getFirst().setWidgets(List.of(container, grid));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(container, grid));
 
         assertThat(ruleValidator.validate(ORG, input)).isEmpty();
     }
@@ -205,12 +206,12 @@ class AppRuleValidatorTest {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         input.setTranslocoId("claimsApp.name");
 
-        PageDefinition page = new PageDefinition("page-claims-list", "Claims", new ArrayList<>());
-        page.setTranslocoId("claimsApp.page.claimsList");
-        input.setPages(new ArrayList<>(List.of(page)));
+        RouteDefinition route = AppTestFixtures.routeDefinition("claims-list", "Claims");
+        route.setTranslocoId("claimsApp.route.claimsList");
+        input.setRoutes(new ArrayList<>(List.of(route)));
 
         NavItem nav = new NavItem("nav-claims", "Claims");
-        nav.setPageId("page-claims-list");
+        nav.setRoutePath("claims-list");
         nav.setIcon("list");
         nav.setRoles(List.of("CLAIMS_ADJUSTER"));
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);

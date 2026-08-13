@@ -54,7 +54,7 @@ public class OrganizationGuard {
      * Drops the nav entries the principal may not see, recursing into groups. Filtering happens
      * here — server side — so a nav entry a user may not see never reaches the browser.
      *
-     * <p>A group node (no {@code pageId}) whose children are all filtered away is dropped too:
+     * <p>A group node (no {@code routePath}) whose children are all filtered away is dropped too:
      * rendering an empty expandable group would leak the fact that something exists behind it.
      */
     public List<Region> filterRegions(List<Region> regions) {
@@ -82,26 +82,26 @@ public class OrganizationGuard {
     }
 
     private static boolean isEmptiedGroup(NavNode item, List<NavNode> visibleChildren) {
-        return item.pageId() == null && !item.children().isEmpty() && visibleChildren.isEmpty();
+        return item.routePath() == null && !item.children().isEmpty() && visibleChildren.isEmpty();
     }
 
     /**
-     * Whether any nav entry the principal can see reaches {@code pageId}. Guards the lazy page
-     * fetch, so a page is not readable just because its id was guessed.
+     * Whether any nav entry the principal can see reaches {@code routePath}. Guards the lazy route
+     * fetch, so a route is not readable just because its id was guessed.
      */
-    public boolean isPageReachable(List<Region> regions, String pageId) {
-        if (regions == null || pageId == null) {
+    public boolean isRouteReachable(List<Region> regions, String routePath) {
+        if (regions == null || routePath == null) {
             return false;
         }
-        return regions.stream().anyMatch(region -> reaches(region.navItems(), pageId));
+        return regions.stream().anyMatch(region -> reaches(region.navItems(), routePath));
     }
 
-    private boolean reaches(List<NavNode> navItems, String pageId) {
+    private boolean reaches(List<NavNode> navItems, String routePath) {
         for (NavNode item : navItems) {
             if (!isVisible(item.roles())) {
                 continue;
             }
-            if (pageId.equals(item.pageId()) || reaches(item.children(), pageId)) {
+            if (routePath.equals(item.routePath()) || reaches(item.children(), routePath)) {
                 return true;
             }
         }

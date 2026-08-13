@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Reads the complete definition graph, unfiltered by role — the authoring view. The run-time shell
- * uses {@link GetAppLayout} plus {@link GetPageDefinition} instead.
+ * uses {@link GetAppLayout} plus {@link GetRouteDefinition} instead.
  */
 @Service
 @Transactional(readOnly = true)

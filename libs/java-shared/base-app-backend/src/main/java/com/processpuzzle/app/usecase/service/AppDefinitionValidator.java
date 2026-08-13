@@ -2,8 +2,10 @@ package com.processpuzzle.app.usecase.service;
 
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
+import com.processpuzzle.app.model.ModuleMount;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
@@ -83,7 +85,7 @@ public class AppDefinitionValidator {
                     "No app definition was supplied."));
         }
         List<AppValidationProblem> problems = validateParts(orgKey, input.getId(), input.getName(),
-                input.getTheme(), input.getRegions(), input.getPages());
+                input.getTheme(), input.getRegions(), input.getRoutes(), input.getModules());
         problems.addAll(ruleValidator.validate(orgKey, input));
         return problems;
     }
@@ -102,14 +104,41 @@ public class AppDefinitionValidator {
                     "No app definition was supplied."));
         }
         List<AppValidationProblem> problems = validateParts(orgKey, definition.getId(),
-                definition.getName(), definition.getTheme(), definition.getRegions(), definition.getPages());
+                definition.getName(), definition.getTheme(), definition.getRegions(), definition.getRoutes(), definition.getModules());
         problems.addAll(ruleValidator.validate(orgKey, definition));
+        return problems;
+    }
+
+    /**
+     * A module's own integrity: it needs a key and a name, and its routes are checked exactly like an
+     * app's — the same {@link RouteDefinition} list, so the same duplicate-path and widget rules.
+     *
+     * <p>Two app-level checks deliberately do not apply. A module carries no regions, so there is no
+     * nav tree to resolve route paths against and therefore no orphan-route warning: a module's routes
+     * are reached through the mounting app's navigation, which this aggregate cannot see. And a module
+     * mounts no modules, so there are no basePath collisions to look for.
+     */
+    public List<AppValidationProblem> validateModule(String orgKey, ModuleDefinitionInput input) {
+        if (input == null) {
+            return List.of(new AppValidationProblem("/", "app.validation.missing-body",
+                    "No module definition was supplied."));
+        }
+        List<AppValidationProblem> problems = new ArrayList<>();
+        if (isBlank(input.getKey())) {
+            problems.add(new AppValidationProblem("/key", "module.validation.missing-key",
+                    "A module needs a key; it is what an AppDefinition mount references."));
+        }
+        if (isBlank(input.getName())) {
+            problems.add(new AppValidationProblem("/name", "module.validation.missing-name",
+                    "A module needs a name."));
+        }
+        validateRoutes(orgKey, input.getRoutes(), problems);
         return problems;
     }
 
     private List<AppValidationProblem> validateParts(String orgKey, String id, String name,
                                                      ThemeDefinition theme, List<RegionDefinition> regions,
-                                                     List<PageDefinition> pages) {
+                                                     List<RouteDefinition> routes, List<ModuleMount> modules) {
         List<AppValidationProblem> problems = new ArrayList<>();
 
         if (isBlank(id)) {
@@ -122,11 +151,56 @@ public class AppDefinitionValidator {
         }
 
         validateTheme(theme, problems);
-        Set<String> pageIds = validatePages(orgKey, pages, problems);
-        Set<String> referencedPageIds = validateRegions(orgKey, regions, pageIds, problems);
-        reportOrphanPages(pages, referencedPageIds, problems);
+        Set<String> routePaths = validateRoutes(orgKey, routes, problems);
+        validateModuleMounts(modules, routePaths, problems);
+        Set<String> referencedRoutePaths = validateRegions(orgKey, regions, routePaths, problems);
+        reportOrphanRoutes(routes, referencedRoutePaths, problems);
 
         return problems;
+    }
+
+    /**
+     * Module mounts. Two collisions block the write, because either one makes routing ambiguous:
+     * a basePath used by two mounts, and a basePath that an app-level route already occupies.
+     *
+     * <p>A {@code moduleKey} naming no existing module is deliberately <em>not</em> checked here.
+     * Modules are separate aggregates and loosely coupled by design — an app may legitimately mount
+     * one that has not been authored yet — and resolving the key would make this validator depend on
+     * the module repository, coupling the two after all.
+     */
+    private void validateModuleMounts(List<ModuleMount> modules, Set<String> routePaths,
+                                      List<AppValidationProblem> problems) {
+        if (modules == null) {
+            return;
+        }
+        Set<String> basePaths = new LinkedHashSet<>();
+        for (int i = 0; i < modules.size(); i++) {
+            String path = "/modules/" + i;
+            ModuleMount mount = modules.get(i);
+            if (mount == null) {
+                problems.add(new AppValidationProblem(path, "app.validation.null-module-mount",
+                        "A module mount entry is null."));
+                continue;
+            }
+            if (isBlank(mount.getModuleKey())) {
+                problems.add(new AppValidationProblem(path + "/moduleKey", "app.validation.missing-module-key",
+                        "A module mount needs a moduleKey."));
+            }
+            if (isBlank(mount.getBasePath())) {
+                problems.add(new AppValidationProblem(path + "/basePath", "app.validation.missing-base-path",
+                        "A module mount needs a basePath."));
+                continue;
+            }
+            if (!basePaths.add(mount.getBasePath())) {
+                problems.add(new AppValidationProblem(path + "/basePath", "app.validation.duplicate-base-path",
+                        "More than one module is mounted at '" + mount.getBasePath() + "'."));
+            }
+            if (routePaths.contains(mount.getBasePath())) {
+                problems.add(new AppValidationProblem(path + "/basePath", "app.validation.base-path-collides-with-route",
+                        "A route already occupies '" + mount.getBasePath() + "', so the module mounted "
+                                + "there could never be reached."));
+            }
+        }
     }
 
     private void validateTheme(ThemeDefinition theme, List<AppValidationProblem> problems) {
@@ -144,37 +218,40 @@ public class AppDefinitionValidator {
         }
     }
 
-    private Set<String> validatePages(String orgKey, List<PageDefinition> pages,
+    private Set<String> validateRoutes(String orgKey, List<RouteDefinition> routes,
                                       List<AppValidationProblem> problems) {
-        Set<String> pageIds = new LinkedHashSet<>();
-        if (pages == null) {
-            return pageIds;
+        Set<String> routePaths = new LinkedHashSet<>();
+        if (routes == null) {
+            return routePaths;
         }
-        for (int i = 0; i < pages.size(); i++) {
-            PageDefinition page = pages.get(i);
-            String path = "/pages/" + i;
-            if (page == null) {
-                problems.add(new AppValidationProblem(path, "app.validation.null-page", "A page entry is null."));
+        for (int i = 0; i < routes.size(); i++) {
+            RouteDefinition route = routes.get(i);
+            String path = "/routes/" + i;
+            if (route == null) {
+                problems.add(new AppValidationProblem(path, "app.validation.null-route", "A route entry is null."));
                 continue;
             }
-            if (isBlank(page.getId())) {
-                problems.add(new AppValidationProblem(path + "/id", "app.validation.missing-page-id",
-                        "A page needs an id; it is used as the route path segment."));
-            } else if (!pageIds.add(page.getId())) {
-                problems.add(new AppValidationProblem(path + "/id", "app.validation.duplicate-page-id",
-                        "More than one page uses the id '" + page.getId() + "'."));
+            if (isBlank(route.getPath())) {
+                problems.add(new AppValidationProblem(path + "/path", "app.validation.missing-route-path",
+                        "A route needs a path."));
+            } else if (!routePaths.add(route.getPath())) {
+                problems.add(new AppValidationProblem(path + "/path", "app.validation.duplicate-route-path",
+                        "More than one route uses the path '" + route.getPath() + "'."));
             }
-            if (isBlank(page.getTitle())) {
-                problems.add(new AppValidationProblem(path + "/title", "app.validation.missing-page-title",
-                        "A page needs a title."));
+            if (isBlank(route.getTitle())) {
+                problems.add(new AppValidationProblem(path + "/title", "app.validation.missing-route-title",
+                        "A route needs a title."));
             }
-            validateWidgets(orgKey, page.getWidgets(), path + WIDGETS, problems);
+            // Widgets live on the target now, and only a WIDGETS target has any.
+            if (route.getTarget() != null) {
+                validateWidgets(orgKey, route.getTarget().getWidgets(), path + "/target" + WIDGETS, problems);
+            }
         }
-        return pageIds;
+        return routePaths;
     }
 
     /**
-     * The widgets of one page or region. The list is flat — container widget types compose through
+     * The widgets of one route or region. The list is flat — container widget types compose through
      * {@code props.childIds} rather than nesting — so the id scope of a {@code childIds} entry is
      * exactly this list, and both passes below can work off one index.
      */
@@ -196,7 +273,7 @@ public class AppDefinitionValidator {
                         "A widget needs an id."));
             } else if (byId.putIfAbsent(widget.getId(), widget) != null) {
                 problems.add(new AppValidationProblem(path + "/id", "app.validation.duplicate-widget-id",
-                        "More than one widget in this page or region uses the id '" + widget.getId() + "'."));
+                        "More than one widget in this route or region uses the id '" + widget.getId() + "'."));
             }
             if (isBlank(widget.getType())) {
                 problems.add(new AppValidationProblem(path + TYPE, "app.validation.missing-widget-type",
@@ -230,7 +307,7 @@ public class AppDefinitionValidator {
                             basePath + SEPARATOR + i + "/props/" + CHILD_IDS,
                             "app.validation.dangling-child-id",
                             "props.childIds references widget '" + childId + "', which is not a widget with "
-                                    + "placement REFERENCED in this page or region."));
+                                    + "placement REFERENCED in this route or region."));
                 } else {
                     referencedIds.add(childId);
                 }
@@ -286,10 +363,10 @@ public class AppDefinitionValidator {
     }
 
     private Set<String> validateRegions(String orgKey, List<RegionDefinition> regions,
-                                        Set<String> pageIds, List<AppValidationProblem> problems) {
-        Set<String> referencedPageIds = new LinkedHashSet<>();
+                                        Set<String> routePaths, List<AppValidationProblem> problems) {
+        Set<String> referencedRoutePaths = new LinkedHashSet<>();
         if (regions == null) {
-            return referencedPageIds;
+            return referencedRoutePaths;
         }
         Set<RegionType> seenTypes = new HashSet<>();
         Set<String> navIds = new HashSet<>();
@@ -306,15 +383,15 @@ public class AppDefinitionValidator {
                     problems.add(new AppValidationProblem(path + TYPE, "app.validation.duplicate-region",
                             "More than one '" + region.getType().getValue() + "' region is declared."));
                 }
-                validateRegionContents(orgKey, region, path, pageIds, navIds, referencedPageIds, problems);
+                validateRegionContents(orgKey, region, path, routePaths, navIds, referencedRoutePaths, problems);
             }
         }
-        return referencedPageIds;
+        return referencedRoutePaths;
     }
 
     private void validateRegionContents(String orgKey, RegionDefinition region, String path,
-                                        Set<String> pageIds, Set<String> navIds,
-                                        Set<String> referencedPageIds, List<AppValidationProblem> problems) {
+                                        Set<String> routePaths, Set<String> navIds,
+                                        Set<String> referencedRoutePaths, List<AppValidationProblem> problems) {
         boolean isSidenav = region.getType() == RegionType.SIDENAV;
         boolean hasNavItems = region.getNavItems() != null && !region.getNavItems().isEmpty();
         boolean hasWidgets = region.getWidgets() != null && !region.getWidgets().isEmpty();
@@ -329,18 +406,18 @@ public class AppDefinitionValidator {
             problems.add(new AppValidationProblem(path + WIDGETS, "app.validation.widgets-not-allowed",
                     "Only a header or footer region carries static widgets; the '"
                             + region.getType().getValue() + "' region declares "
-                            + region.getWidgets().size() + ". Content-region widgets belong to a page."));
+                            + region.getWidgets().size() + ". Content-region widgets belong to a route."));
         }
         if (isSidenav) {
-            validateNavItems(region.getNavItems(), path + "/navItems", pageIds, navIds, referencedPageIds, problems);
+            validateNavItems(region.getNavItems(), path + "/navItems", routePaths, navIds, referencedRoutePaths, problems);
         }
         if (staticContentAllowed) {
             validateWidgets(orgKey, region.getWidgets(), path + WIDGETS, problems);
         }
     }
 
-    private void validateNavItems(List<NavItem> navItems, String basePath, Set<String> pageIds,
-                                  Set<String> navIds, Set<String> referencedPageIds,
+    private void validateNavItems(List<NavItem> navItems, String basePath, Set<String> routePaths,
+                                  Set<String> navIds, Set<String> referencedRoutePaths,
                                   List<AppValidationProblem> problems) {
         if (navItems == null) {
             return;
@@ -353,8 +430,8 @@ public class AppDefinitionValidator {
                         "A nav item entry is null."));
             } else {
                 validateNavItem(item, path, navIds, problems);
-                validatePageReference(item, path, pageIds, referencedPageIds, problems);
-                validateNavItems(item.getChildren(), path + "/children", pageIds, navIds, referencedPageIds,
+                validateRouteReference(item, path, routePaths, referencedRoutePaths, problems);
+                validateNavItems(item.getChildren(), path + "/children", routePaths, navIds, referencedRoutePaths,
                         problems);
             }
         }
@@ -375,36 +452,43 @@ public class AppDefinitionValidator {
         }
     }
 
-    private void validatePageReference(NavItem item, String path, Set<String> pageIds,
-                                       Set<String> referencedPageIds, List<AppValidationProblem> problems) {
+    private void validateRouteReference(NavItem item, String path, Set<String> routePaths,
+                                       Set<String> referencedRoutePaths, List<AppValidationProblem> problems) {
         boolean hasChildren = item.getChildren() != null && !item.getChildren().isEmpty();
-        if (isBlank(item.getPageId())) {
+        if (isBlank(item.getRoutePath())) {
             if (!hasChildren) {
                 problems.add(new AppValidationProblem(path, "app.validation.dead-nav-item",
-                        "Nav item '" + item.getId() + "' has neither a pageId nor children, "
+                        "Nav item '" + item.getId() + "' has neither a routePath nor children, "
                                 + "so it would render as an entry that does nothing."));
             }
-        } else if (!pageIds.contains(item.getPageId())) {
-            problems.add(new AppValidationProblem(path + "/pageId", "app.validation.unknown-page-reference",
-                    "No page with id '" + item.getPageId() + "' is declared in this app definition."));
+        } else if (!routePaths.contains(item.getRoutePath())) {
+            // WARNING, not ERROR: a nav item may legitimately point into a mounted module whose
+            // routes are not part of this aggregate, or at a module not yet authored. Blocking the
+            // write here would make modules tightly coupled after all.
+            problems.add(new AppValidationProblem(path + "/routePath", "app.validation.unknown-route-reference",
+                    "No route with path '" + item.getRoutePath() + "' is declared in this app definition; "
+                            + "it may belong to a mounted module.", Severity.WARNING));
         } else {
-            referencedPageIds.add(item.getPageId());
+            referencedRoutePaths.add(item.getRoutePath());
         }
     }
 
-    private void reportOrphanPages(List<PageDefinition> pages, Set<String> referencedPageIds,
+    private void reportOrphanRoutes(List<RouteDefinition> routes, Set<String> referencedRoutePaths,
                                    List<AppValidationProblem> problems) {
-        if (pages == null) {
+        if (routes == null) {
             return;
         }
-        for (int i = 0; i < pages.size(); i++) {
-            PageDefinition page = pages.get(i);
-            if (page == null || isBlank(page.getId())) {
+        for (int i = 0; i < routes.size(); i++) {
+            RouteDefinition route = routes.get(i);
+            if (route == null || isBlank(route.getPath())) {
                 continue;
             }
-            if (!referencedPageIds.contains(page.getId())) {
-                problems.add(new AppValidationProblem("/pages/" + i, "app.validation.orphan-page",
-                        "Page '" + page.getId() + "' is not reachable: no nav item references it."));
+            if (!referencedRoutePaths.contains(route.getPath())) {
+                // Also a WARNING: a flat route is addressable by URL whether or not the sidenav
+                // links it, so an unreferenced route is a navigation gap rather than broken data.
+                problems.add(new AppValidationProblem("/routes/" + i, "app.validation.orphan-route",
+                        "Route '" + route.getPath() + "' is not reachable from the navigation tree.",
+                        Severity.WARNING));
             }
         }
     }

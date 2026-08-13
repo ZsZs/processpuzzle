@@ -5,28 +5,35 @@ import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.KeyAvailability;
+import com.processpuzzle.app.model.ModuleDefinition;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.model.Organization;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationUpdate;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
+import com.processpuzzle.app.usecase.CreateModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
+import com.processpuzzle.app.usecase.DeleteModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteOrganization;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
+import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
+import com.processpuzzle.app.usecase.FindModuleDefinition;
 import com.processpuzzle.app.usecase.FindOrganization;
 import com.processpuzzle.app.usecase.GetAppLayout;
-import com.processpuzzle.app.usecase.GetPageDefinition;
+import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
 import com.processpuzzle.app.usecase.ProvisionOrganization;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
+import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.core.logging.LogClass;
@@ -42,6 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 
 /**
  * REST adapter for the base-app feature, implementing the generated {@link BaseAppApi}. Holds no
@@ -62,8 +70,13 @@ public class AppEndpoint implements BaseAppApi {
     private final UpdateAppDefinition updateAppDefinition;
     private final DeleteAppDefinition deleteAppDefinition;
     private final PublishAppDefinition publishAppDefinition;
+    private final CreateModuleDefinition createModuleDefinition;
+    private final FindModuleDefinition findModuleDefinition;
+    private final FindAllModuleDefinitions findAllModuleDefinitions;
+    private final UpdateModuleDefinition updateModuleDefinition;
+    private final DeleteModuleDefinition deleteModuleDefinition;
     private final GetAppLayout getAppLayout;
-    private final GetPageDefinition getPageDefinition;
+    private final GetRouteDefinition getRouteDefinition;
     private final ValidateAppDefinition validateAppDefinition;
     private final ImportAppDefinitions importAppDefinitions;
     private final ExportAppDefinition exportAppDefinition;
@@ -81,8 +94,13 @@ public class AppEndpoint implements BaseAppApi {
                        UpdateAppDefinition updateAppDefinition,
                        DeleteAppDefinition deleteAppDefinition,
                        PublishAppDefinition publishAppDefinition,
+                       CreateModuleDefinition createModuleDefinition,
+                       FindModuleDefinition findModuleDefinition,
+                       FindAllModuleDefinitions findAllModuleDefinitions,
+                       UpdateModuleDefinition updateModuleDefinition,
+                       DeleteModuleDefinition deleteModuleDefinition,
                        GetAppLayout getAppLayout,
-                       GetPageDefinition getPageDefinition,
+                       GetRouteDefinition getRouteDefinition,
                        ValidateAppDefinition validateAppDefinition,
                        ImportAppDefinitions importAppDefinitions,
                        ExportAppDefinition exportAppDefinition,
@@ -98,8 +116,13 @@ public class AppEndpoint implements BaseAppApi {
         this.updateAppDefinition = updateAppDefinition;
         this.deleteAppDefinition = deleteAppDefinition;
         this.publishAppDefinition = publishAppDefinition;
+        this.createModuleDefinition = createModuleDefinition;
+        this.findModuleDefinition = findModuleDefinition;
+        this.findAllModuleDefinitions = findAllModuleDefinitions;
+        this.updateModuleDefinition = updateModuleDefinition;
+        this.deleteModuleDefinition = deleteModuleDefinition;
         this.getAppLayout = getAppLayout;
-        this.getPageDefinition = getPageDefinition;
+        this.getRouteDefinition = getRouteDefinition;
         this.validateAppDefinition = validateAppDefinition;
         this.importAppDefinitions = importAppDefinitions;
         this.exportAppDefinition = exportAppDefinition;
@@ -174,6 +197,38 @@ public class AppEndpoint implements BaseAppApi {
         return ResponseEntity.ok(mapper.toModel(publishAppDefinition.execute(orgKey, appId)));
     }
 
+    // --- modules -------------------------------------------------------------------------
+
+    @Override
+    public ResponseEntity<List<ModuleDefinition>> listModuleDefinitions(String orgKey) {
+        return ResponseEntity.ok(findAllModuleDefinitions.execute(orgKey).stream()
+                .map(mapper::toModel)
+                .toList());
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> createModuleDefinition(String orgKey, ModuleDefinitionInput input) {
+        return new ResponseEntity<>(mapper.toModel(createModuleDefinition.execute(orgKey, input)),
+                HttpStatus.CREATED);
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> getModuleDefinition(String orgKey, String moduleKey) {
+        return ResponseEntity.ok(mapper.toModel(findModuleDefinition.execute(orgKey, moduleKey)));
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> updateModuleDefinition(String orgKey, String moduleKey,
+                                                                   ModuleDefinitionInput input) {
+        return ResponseEntity.ok(mapper.toModel(updateModuleDefinition.execute(orgKey, moduleKey, input)));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteModuleDefinition(String orgKey, String moduleKey) {
+        deleteModuleDefinition.execute(orgKey, moduleKey);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- runtime -------------------------------------------------------------------------
 
     @Override
@@ -183,10 +238,10 @@ public class AppEndpoint implements BaseAppApi {
     }
 
     @Override
-    public ResponseEntity<PageDefinition> getPageDefinition(String orgKey, String appId, String pageId,
+    public ResponseEntity<RouteDefinition> getRouteDefinition(String orgKey, String appId, String routePath,
                                                             Boolean draft) {
         return ResponseEntity.ok(mapper.toModel(
-                getPageDefinition.execute(orgKey, appId, pageId, Boolean.TRUE.equals(draft))));
+                getRouteDefinition.execute(orgKey, appId, routePath, Boolean.TRUE.equals(draft))));
     }
 
     // --- validation and transfer ---------------------------------------------------------

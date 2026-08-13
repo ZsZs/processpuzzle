@@ -3,35 +3,35 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Resolves one page for a route — the lazy counterpart to {@link GetAppLayout}, mirroring how
+ * Resolves one route by its path — the lazy counterpart to {@link GetAppLayout}, mirroring how
  * base-rule loads only the rules for the context at hand.
  *
- * <p>A page that exists but that no nav entry the caller can see reaches is reported as missing,
- * not as forbidden: answering 403 would confirm that a page the caller may not reach exists.
- * Checking reachability rather than trusting the layout response also means a guessed page id does
+ * <p>A route that exists but that no nav entry the caller can see reaches is reported as missing,
+ * not as forbidden: answering 403 would confirm that a route the caller may not reach exists.
+ * Checking reachability rather than trusting the layout response also means a guessed route id does
  * not bypass the role filter.
  */
 @Service
 @Transactional(readOnly = true)
-public class GetPageDefinition {
+public class GetRouteDefinition {
 
     private final AppDefinitionRepository repository;
     private final OrganizationGuard guard;
 
-    public GetPageDefinition(AppDefinitionRepository repository, OrganizationGuard guard) {
+    public GetRouteDefinition(AppDefinitionRepository repository, OrganizationGuard guard) {
         this.repository = repository;
         this.guard = guard;
     }
 
-    public AppPage execute(String orgKey, String appId, String pageId, boolean draft) {
+    public AppRoute execute(String orgKey, String appId, String routePath, boolean draft) {
         if (draft) {
             guard.requireDesign(orgKey);
         } else {
@@ -46,10 +46,10 @@ public class GetPageDefinition {
             throw new AppNotPublishedException(orgKey, appId);
         }
 
-        AppPage page = graph.findPage(pageId);
-        if (page == null || !guard.isPageReachable(graph.regions(), pageId)) {
-            throw new PageDefinitionNotFoundException(orgKey, appId, pageId);
+        AppRoute route = graph.findRoute(routePath);
+        if (route == null || !guard.isRouteReachable(graph.regions(), routePath)) {
+            throw new RouteDefinitionNotFoundException(orgKey, appId, routePath);
         }
-        return page;
+        return route;
     }
 }

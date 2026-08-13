@@ -6,7 +6,7 @@ import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.Organization;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationStatus;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 /**
  * Covers the loader's file walk and, through the bundled {@code processpuzzle-testbed-apps.yaml},
  * the shipped default definition itself: the last test feeds the parsed demo app to the real
- * {@link AppDefinitionValidator}, so a YAML edit that breaks a page or nav reference fails here
+ * {@link AppDefinitionValidator}, so a YAML edit that breaks a route or nav reference fails here
  * rather than at run-time with the loader logging a rejection nobody reads.
  */
 class DefaultAppLoaderTest {
@@ -109,7 +109,7 @@ class DefaultAppLoaderTest {
     @Test
     void survivesADefinitionRejectedByValidation() {
         doThrow(new AppDefinitionInvalidException(TESTBED_KEY, "demo",
-                List.of(new AppValidationProblem("/pages/0", "app.validation.orphan-page", "Unreachable."))))
+                List.of(new AppValidationProblem("/routes/0", "app.validation.orphan-route", "Unreachable."))))
                 .when(endpoint).createAppDefinition(anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
@@ -163,15 +163,15 @@ class DefaultAppLoaderTest {
         // Every region type is declared, and the sidenav is populated — an app published without one
         // gives end users a shell they cannot navigate.
         assertThat(demo.getRegions()).extracting(RegionDefinition::getType)
-                .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.CONTENT, RegionType.FOOTER);
+                .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.FOOTER);
         assertThat(sidenavOf(demo).getNavItems()).isNotEmpty();
 
-        // Every declared page is reachable and every entity widget names its entity, both of which the
+        // Every declared route is reachable and every entity widget names its entity, both of which the
         // structural validator and the 'App Definition' rules require.
-        assertThat(demo.getPages()).extracting(PageDefinition::getId)
+        assertThat(demo.getRoutes()).extracting(RouteDefinition::getPath)
                 .containsExactly("order-list", "order-entry", "order-line-list");
-        assertThat(demo.getPages()).allSatisfy(page ->
-                assertThat(page.getWidgets()).isNotEmpty().allSatisfy(widget ->
+        assertThat(demo.getRoutes()).allSatisfy(route ->
+                assertThat(route.getTarget().getWidgets()).isNotEmpty().allSatisfy(widget ->
                         assertThat(entityNameOf(widget)).isNotBlank()));
 
         assertThat(structuralValidator().validate(TESTBED_KEY, demo)).isEmpty();

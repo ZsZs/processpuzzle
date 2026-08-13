@@ -1,9 +1,10 @@
 package com.processpuzzle.app.usecase.service;
 
+import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
@@ -54,7 +55,7 @@ class AppDefinitionValidatorTest {
     @Test
     void freshlyProvisionedDefinition_isValid() {
         AppDefinitionInput input = new AppDefinitionInput("app", "My Org");
-        input.setRegions(List.of(new RegionDefinition(RegionType.CONTENT)));
+        input.setRegions(List.of(new RegionDefinition(RegionType.HEADER)));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }
@@ -76,30 +77,30 @@ class AppDefinitionValidatorTest {
     @Test
     void navItemPointingAtUndeclaredPage_isReported() {
         AppDefinitionInput input = validInput();
-        input.getRegions().getFirst().getNavItems().getFirst().setPageId("page-does-not-exist");
+        input.getRegions().getFirst().getNavItems().getFirst().setRoutePath("route-does-not-exist");
 
         List<AppValidationProblem> problems = validator.validate("my-org", input);
 
-        assertThat(errorIds(problems)).contains("app.validation.unknown-page-reference");
+        assertThat(errorIds(problems)).contains("app.validation.unknown-route-reference");
         assertThat(problems.stream().map(AppValidationProblem::path))
-                .contains("/regions/0/navItems/0/pageId");
+                .contains("/regions/0/navItems/0/routePath");
     }
 
     @Test
     void pageNoNavItemReaches_isReportedAsOrphan() {
         AppDefinitionInput input = validInput();
-        input.getPages().add(new PageDefinition("page-unreachable", "Nowhere", List.of()));
+        input.getRoutes().add(route("route-unreachable", "Nowhere"));
 
         assertThat(errorIds(validator.validate("my-org", input)))
-                .contains("app.validation.orphan-page");
+                .contains("app.validation.orphan-route");
     }
 
     @Test
     void pageReachedOnlyThroughANestedNavItem_isNotAnOrphan() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims");
-        input.setPages(List.of(new PageDefinition("page-deep", "Deep", List.of())));
+        input.setRoutes(List.of(route("route-deep", "Deep")));
         NavItem child = new NavItem("nav-child", "Child");
-        child.setPageId("page-deep");
+        child.setRoutePath("route-deep");
         NavItem group = new NavItem("nav-group", "Group");
         group.setChildren(List.of(child));
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
@@ -110,19 +111,19 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
-    void duplicatePageIds_areReported() {
+    void duplicateRoutePaths_areReported() {
         AppDefinitionInput input = validInput();
-        input.getPages().add(new PageDefinition("page-claims-list", "Duplicate", List.of()));
+        input.getRoutes().add(route("claims-list", "Duplicate"));
 
         assertThat(errorIds(validator.validate("my-org", input)))
-                .contains("app.validation.duplicate-page-id");
+                .contains("app.validation.duplicate-route-path");
     }
 
     @Test
     void duplicateNavItemIds_areReportedAcrossNesting() {
         AppDefinitionInput input = validInput();
         NavItem duplicate = new NavItem("nav-claims", "Same id again");
-        duplicate.setPageId("page-claims-list");
+        duplicate.setRoutePath("claims-list");
         input.getRegions().getFirst().getNavItems().add(duplicate);
 
         assertThat(errorIds(validator.validate("my-org", input)))
@@ -132,7 +133,7 @@ class AppDefinitionValidatorTest {
     @Test
     void duplicateWidgetIdsWithinAPage_areReported() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(new WidgetInstance("widget-grid", "entity-grid"),
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(new WidgetInstance("widget-grid", "entity-grid"),
                 new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
@@ -142,7 +143,7 @@ class AppDefinitionValidatorTest {
     @Test
     void containerWidgetComposingReferencedSiblings_isAccepted() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-grid"), referencedGrid("widget-grid")));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(tabGroup("widget-grid"), referencedGrid("widget-grid")));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }
@@ -150,7 +151,7 @@ class AppDefinitionValidatorTest {
     @Test
     void childIdNamingNoWidgetAtAll_isReported() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-absent")));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(tabGroup("widget-absent")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.dangling-child-id");
@@ -163,7 +164,7 @@ class AppDefinitionValidatorTest {
     @Test
     void childIdNamingAStandaloneWidget_isReported() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(tabGroup("widget-grid"),
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(tabGroup("widget-grid"),
                 new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
@@ -174,7 +175,7 @@ class AppDefinitionValidatorTest {
     @Test
     void referencedWidgetNothingPointsAt_isAWarningRatherThanAnError() {
         AppDefinitionInput input = validInput();
-        input.getPages().getFirst().setWidgets(List.of(referencedGrid("widget-grid")));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(referencedGrid("widget-grid")));
 
         List<AppValidationProblem> problems = validator.validate("my-org", input);
 
@@ -191,7 +192,7 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = validInput();
         WidgetInstance container = new WidgetInstance("widget-container", "tab-group");
         container.setProps(Map.of("childIds", "widget-grid"));
-        input.getPages().getFirst().setWidgets(List.of(container));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(container));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }
@@ -231,7 +232,7 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = validInput();
         RegionDefinition footer = new RegionDefinition(RegionType.FOOTER);
         NavItem stray = new NavItem("nav-stray", "Stray");
-        stray.setPageId("page-claims-list");
+        stray.setRoutePath("claims-list");
         footer.setNavItems(List.of(stray));
         input.getRegions().add(footer);
 
@@ -240,11 +241,9 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
-    void widgetsOnAContentRegion_areReported() {
+    void widgetsOnASidenavRegion_areReported() {
         AppDefinitionInput input = validInput();
-        RegionDefinition content = new RegionDefinition(RegionType.CONTENT);
-        content.setWidgets(List.of(new WidgetInstance("widget-stray", "entity-grid")));
-        input.getRegions().add(content);
+        input.getRegions().getFirst().setWidgets(List.of(new WidgetInstance("widget-stray", "entity-grid")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.widgets-not-allowed");
@@ -295,7 +294,7 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = validInput();
         WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
-        input.getPages().getFirst().setWidgets(List.of(grid));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(grid));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.unknown-entity-name");
@@ -306,7 +305,7 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = validInput();
         WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "NoSuchEntity"));
-        input.getPages().getFirst().setWidgets(List.of(grid));
+        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(grid));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }
@@ -343,7 +342,7 @@ class AppDefinitionValidatorTest {
     @Test
     void violationWithoutTranslocoId_getsAnErrorIdDerivedFromTheRuleId() {
         givenViolations(new RuleViolation("titles-are-translatable", "Titles are translatable",
-                Severity.INFO, "Give every page title a Transloco id.", "  "));
+                Severity.INFO, "Give every route title a Transloco id.", "  "));
 
         assertThat(errorIds(validator.validate("my-org", validInput())))
                 .containsExactly("app.validation.rule.titles-are-translatable");
@@ -352,14 +351,14 @@ class AppDefinitionValidatorTest {
     /** The stored-definition path publishing uses must consult the rules too. */
     @Test
     void storedDefinition_isAlsoEvaluatedAgainstTheRules() {
-        givenViolations(new RuleViolation("page-ids-are-route-safe", "Page ids are route-safe",
-                Severity.ERROR, "Every page id must be lowercase.", null));
+        givenViolations(new RuleViolation("route-ids-are-route-safe", "Page ids are route-safe",
+                Severity.ERROR, "Every route id must be lowercase.", null));
 
         AppDefinition stored = new AppDefinition("claims-app", "Claims Management");
-        stored.setPages(List.of(new PageDefinition("Page_One", "Claims", List.of())));
+        stored.setRoutes(List.of(route("Page_One", "Claims")));
 
         assertThat(errorIds(validator.validateStored("my-org", stored)))
-                .contains("app.validation.rule.page-ids-are-route-safe");
+                .contains("app.validation.rule.route-ids-are-route-safe");
     }
 
     @Test
@@ -400,11 +399,11 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         input.setTheme(theme);
         input.setRegions(null);
-        input.setPages(null);
+        input.setRoutes(null);
 
         assertThat(validator.validate("my-org", input)).isEmpty();
 
-        NavItem nav = navItem("nav-claims", "page-claims-list");
+        NavItem nav = navItem("nav-claims", "claims-list");
         nav.setChildren(null);
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         sidenav.setNavItems(null);
@@ -413,12 +412,12 @@ class AppDefinitionValidatorTest {
         WidgetInstance propless = new WidgetInstance("widget-1", "markdown");
         propless.setProps(null);
         input.setRegions(List.of(sidenav, header));
-        input.setPages(List.of(page("page-claims-list", "Claims", propless)));
+        input.setRoutes(List.of(route("claims-list", "Claims", propless)));
 
-        // The page is now unreachable — the sidenav declares no navigation at all — which is the only
+        // The route is now unreachable — the sidenav declares no navigation at all — which is the only
         // thing that may be reported here.
         assertThat(errorIds(validator.validate("my-org", input)))
-                .containsExactly("app.validation.orphan-page");
+                .containsExactly("app.validation.orphan-route");
 
         sidenav.setNavItems(List.of(nav));
 
@@ -429,16 +428,16 @@ class AppDefinitionValidatorTest {
     @Test
     void aNullEntryInAnyCollection_isReportedAtItsOwnPath() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
-        input.setPages(java.util.Arrays.asList(null, page("page-claims-list", "Claims", widget("w-1"), null)));
+        input.setRoutes(java.util.Arrays.asList(null, route("claims-list", "Claims", widget("w-1"), null)));
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
-        sidenav.setNavItems(java.util.Arrays.asList(navItem("nav-claims", "page-claims-list"), null));
+        sidenav.setNavItems(java.util.Arrays.asList(navItem("nav-claims", "claims-list"), null));
         input.setRegions(java.util.Arrays.asList(null, sidenav));
 
         List<AppValidationProblem> problems = validator.validate("my-org", input);
 
         assertThat(problems).anySatisfy(problem -> {
-            assertThat(problem.errorId()).isEqualTo("app.validation.null-page");
-            assertThat(problem.path()).isEqualTo("/pages/0");
+            assertThat(problem.errorId()).isEqualTo("app.validation.null-route");
+            assertThat(problem.path()).isEqualTo("/routes/0");
         });
         assertThat(problems).anySatisfy(problem -> {
             assertThat(problem.errorId()).isEqualTo("app.validation.null-region");
@@ -450,7 +449,7 @@ class AppDefinitionValidatorTest {
         });
         assertThat(problems).anySatisfy(problem -> {
             assertThat(problem.errorId()).isEqualTo("app.validation.null-widget");
-            assertThat(problem.path()).isEqualTo("/pages/1/widgets/1");
+            assertThat(problem.path()).isEqualTo("/routes/1/target/widgets/1");
         });
     }
 
@@ -467,22 +466,22 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
-    void aPageWithoutAnIdOrATitle_isReported() {
+    void aRouteWithoutAPathOrATitle_isReported() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
-        input.setPages(List.of(page(" ", null)));
+        input.setRoutes(List.of(route(" ", null)));
 
         assertThat(errorIds(validator.validate("my-org", input)))
-                .contains("app.validation.missing-page-id", "app.validation.missing-page-title");
+                .contains("app.validation.missing-route-path", "app.validation.missing-route-title");
     }
 
-    /** A page with no id cannot be referenced, so it must not also be reported as an orphan. */
+    /** A route with no path cannot be referenced, so it must not also be reported as an orphan. */
     @Test
-    void aPageWithoutAnId_isNotAlsoReportedAsUnreachable() {
+    void aRouteWithoutAPath_isNotAlsoReportedAsUnreachable() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
-        input.setPages(List.of(page(null, "Claims")));
+        input.setRoutes(List.of(route(null, "Claims")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
-                .doesNotContain("app.validation.orphan-page");
+                .doesNotContain("app.validation.orphan-route");
     }
 
     @Test
@@ -501,10 +500,10 @@ class AppDefinitionValidatorTest {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         NavItem nameless = new NavItem(" ", "  ");
-        nameless.setPageId("page-claims-list");
+        nameless.setRoutePath("claims-list");
         sidenav.setNavItems(List.of(nameless));
         input.setRegions(List.of(sidenav));
-        input.setPages(List.of(page("page-claims-list", "Claims")));
+        input.setRoutes(List.of(route("claims-list", "Claims")));
 
         assertThat(errorIds(validator.validate("my-org", input)))
                 .contains("app.validation.missing-nav-item-id", "app.validation.missing-nav-item-label");
@@ -567,13 +566,13 @@ class AppDefinitionValidatorTest {
         assertThat(PpThemeTokens.isKnown(null)).isFalse();
     }
 
-    private static PageDefinition page(String id, String title, WidgetInstance... widgets) {
-        return new PageDefinition(id, title, java.util.Arrays.asList(widgets));
+    private static RouteDefinition route(String id, String title, WidgetInstance... widgets) {
+        return AppTestFixtures.routeDefinition(id, title, widgets);
     }
 
-    private static NavItem navItem(String id, String pageId) {
+    private static NavItem navItem(String id, String routePath) {
         NavItem item = new NavItem(id, "Claims");
-        item.setPageId(pageId);
+        item.setRoutePath(routePath);
         return item;
     }
 
@@ -594,11 +593,11 @@ class AppDefinitionValidatorTest {
     private static AppDefinitionInput validInput() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
 
-        PageDefinition page = new PageDefinition("page-claims-list", "Claims", new java.util.ArrayList<>());
-        input.setPages(new java.util.ArrayList<>(List.of(page)));
+        RouteDefinition route = AppTestFixtures.routeDefinition("claims-list", "Claims");
+        input.setRoutes(new java.util.ArrayList<>(List.of(route)));
 
         NavItem nav = new NavItem("nav-claims", "Claims");
-        nav.setPageId("page-claims-list");
+        nav.setRoutePath("claims-list");
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         sidenav.setNavItems(new java.util.ArrayList<>(List.of(nav)));
         input.setRegions(new java.util.ArrayList<>(List.of(sidenav)));

@@ -5,7 +5,7 @@ import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.Layout;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.OrganizationRepository;
@@ -13,6 +13,7 @@ import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
 import com.processpuzzle.app.domain.WidgetPlacement;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,7 @@ import java.util.Optional;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +63,7 @@ class ExportAppDefinitionTest {
         String yaml = new String(exportAppDefinition.execute(ORG_KEY, APP_ID), StandardCharsets.UTF_8);
 
         assertThat(yaml).contains("appDefinitions", APP_ID, "Claims Management", "rose-red",
-                "sidenav-left", "sidenav", PAGE_ID, "entityName", "Claim");
+                "sidenav-left", "sidenav", ROUTE_PATH, "entityName", "Claim");
     }
 
     /** Server-assigned fields would either be ignored on import or, worse, seed the wrong tenant. */
@@ -125,14 +126,14 @@ class ExportAppDefinitionTest {
     /** Every optional part of the graph populated, so the round-trip has something to lose. */
     private static AppDefinition richDefinition() {
         Widget grid = new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"), WidgetPlacement.STANDALONE);
-        AppPage page = new AppPage(PAGE_ID, "Claims", "claims.page.list", List.of(grid));
-        NavNode nav = new NavNode(AppTestFixtures.NAV_ID, "Claims", "claims.nav", "list_alt", PAGE_ID,
+        AppRoute route = new AppRoute(ROUTE_PATH, "Claims", "claims.route.list", null, List.of(), RouteTarget.ofWidgets(List.of(grid)));
+        NavNode nav = new NavNode(AppTestFixtures.NAV_ID, "Claims", "claims.nav", "list_alt", ROUTE_PATH,
                 List.of("CLAIMS_ADJUSTER"), List.of());
         AppGraph graph = new AppGraph(
                 new Theme("rose-red", "dark", Map.of("--pp-surface-sidenav", "#0d1b2a"), null, null),
                 new Layout("sidenav-left", "side", true, true, "1280px"),
                 List.of(new Region("sidenav", List.of(nav), List.of())),
-                List.of(page));
+                List.of(route), List.of());
         return new AppDefinition(ORG_KEY, APP_ID, "Claims Management", "claims.app.name", "Handles claims.",
                 graph);
     }

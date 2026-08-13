@@ -3,12 +3,16 @@ package com.processpuzzle.app.adapter.inbound;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
 import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.springframework.core.annotation.Order;
@@ -16,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 /**
  * Maps this feature's exceptions onto the {@code ErrorResponse} shape every 4xx in
@@ -46,12 +52,29 @@ public class AppApiExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "app.not-found", ex.getMessage());
     }
 
-    @ExceptionHandler(PageDefinitionNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handlePageNotFound(PageDefinitionNotFoundException ex) {
-        return error(HttpStatus.NOT_FOUND, "app.page.not-found", ex.getMessage());
+    @ExceptionHandler(RouteDefinitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePageNotFound(RouteDefinitionNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "app.route.not-found", ex.getMessage());
     }
 
-    /** 404 rather than 409: the contract declares only 404 for the layout and page endpoints. */
+    @ExceptionHandler(ModuleDefinitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleModuleNotFound(ModuleDefinitionNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "module.not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ModuleDefinitionAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleModuleExists(ModuleDefinitionAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "module.already-exists", ex.getMessage());
+    }
+
+    /** Reports the first problem's identifier, for the reason given on {@link #handleInvalid}. */
+    @ExceptionHandler(ModuleDefinitionInvalidException.class)
+    public ResponseEntity<ErrorResponse> handleModuleInvalid(ModuleDefinitionInvalidException ex) {
+        return error(HttpStatus.BAD_REQUEST, firstErrorId(ex.getProblems(), "module.validation.failed"),
+                detailOf(ex.getProblems(), ex.getMessage()));
+    }
+
+    /** 404 rather than 409: the contract declares only 404 for the layout and route endpoints. */
     @ExceptionHandler(AppNotPublishedException.class)
     public ResponseEntity<ErrorResponse> handleNotPublished(AppNotPublishedException ex) {
         return error(HttpStatus.NOT_FOUND, "app.not-published", ex.getMessage());
@@ -78,14 +101,19 @@ public class AppApiExceptionHandler {
      */
     @ExceptionHandler(AppDefinitionInvalidException.class)
     public ResponseEntity<ErrorResponse> handleInvalid(AppDefinitionInvalidException ex) {
-        String errorId = ex.getProblems().isEmpty()
-                ? "app.validation.failed"
-                : ex.getProblems().getFirst().errorId();
-        String detail = ex.getProblems().stream()
+        return error(HttpStatus.BAD_REQUEST, firstErrorId(ex.getProblems(), "app.validation.failed"),
+                detailOf(ex.getProblems(), ex.getMessage()));
+    }
+
+    private String firstErrorId(List<AppValidationProblem> problems, String fallback) {
+        return problems.isEmpty() ? fallback : problems.getFirst().errorId();
+    }
+
+    private String detailOf(List<AppValidationProblem> problems, String fallback) {
+        return problems.stream()
                 .map(problem -> problem.path() + ": " + problem.errorText())
                 .reduce((first, second) -> first + " | " + second)
-                .orElse(ex.getMessage());
-        return error(HttpStatus.BAD_REQUEST, errorId, detail);
+                .orElse(fallback);
     }
 
     @ExceptionHandler(OrganizationAccessDeniedException.class)

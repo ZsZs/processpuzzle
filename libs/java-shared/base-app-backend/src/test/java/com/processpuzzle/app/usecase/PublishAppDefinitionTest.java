@@ -4,12 +4,13 @@ import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
@@ -102,8 +103,8 @@ class PublishAppDefinitionTest {
         assertThat(edited.isPublished()).isFalse();
         assertThat(mapper.toModelStatus(edited)).isEqualTo(AppDefinitionStatus.DRAFT);
 
-        assertThat(edited.graphFor(true).pages()).isEmpty();
-        assertThat(edited.graphFor(false).pages()).hasSize(1);
+        assertThat(edited.graphFor(true).routes()).isEmpty();
+        assertThat(edited.graphFor(false).routes()).hasSize(1);
     }
 
     @Test
@@ -118,7 +119,7 @@ class PublishAppDefinitionTest {
         assertThat(republished.getRevision()).isEqualTo(2L);
         assertThat(republished.getPublishedRevision()).isEqualTo(2L);
         assertThat(republished.isPublished()).isTrue();
-        assertThat(republished.graphFor(false).pages()).isEmpty();
+        assertThat(republished.graphFor(false).routes()).isEmpty();
     }
 
     @Test
@@ -135,11 +136,13 @@ class PublishAppDefinitionTest {
 
     @Test
     void publishingAnInvalidDefinition_isRejectedSoItCannotGoLive() {
+        AppRoute duplicate = new AppRoute("claims-list", "Claims", null, null, List.of(),
+                RouteTarget.ofWidgets(List.of()));
         AppGraph brokenGraph = new AppGraph(null, null,
                 List.of(new Region("sidenav",
-                        List.of(new NavNode("nav-1", "Broken", null, null, "page-missing", List.of(), List.of())),
+                        List.of(new NavNode("nav-1", "Broken", null, null, "claims-list", List.of(), List.of())),
                         List.of())),
-                List.of());
+                List.of(duplicate, duplicate), List.of());
         AppDefinition definition = stored(brokenGraph);
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -210,16 +213,16 @@ class PublishAppDefinitionTest {
     }
 
     private static AppGraph validGraph() {
-        AppPage page = new AppPage("page-claims-list", "Claims", null, List.of());
-        NavNode nav = new NavNode("nav-claims", "Claims", null, null, "page-claims-list", List.of(), List.of());
-        return new AppGraph(null, null, List.of(new Region("sidenav", List.of(nav), List.of())), List.of(page));
+        AppRoute route = new AppRoute("claims-list", "Claims", null, null, List.of(), RouteTarget.ofWidgets(List.of()));
+        NavNode nav = new NavNode("nav-claims", "Claims", null, null, "claims-list", List.of(), List.of());
+        return new AppGraph(null, null, List.of(new Region("sidenav", List.of(nav), List.of())), List.of(route), List.of());
     }
 
-    /** A valid but page-less revision, so draft and published snapshots are distinguishable. */
+    /** A valid but route-less revision, so draft and published snapshots are distinguishable. */
     private static AppDefinitionInput emptyishInput() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
-        input.setRegions(List.of(new RegionDefinition(RegionType.CONTENT)));
-        input.setPages(List.<PageDefinition>of());
+        input.setRegions(List.of(new RegionDefinition(RegionType.HEADER)));
+        input.setRoutes(List.<RouteDefinition>of());
         input.setTheme(null);
         return input;
     }

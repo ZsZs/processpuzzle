@@ -49,9 +49,9 @@ class ImportAppDefinitionsTest {
                     navItems:
                       - id: nav-claims
                         label: Claims
-                        pageId: page-claims-list
-                pages:
-                  - id: page-claims-list
+                        routePath: claims-list
+                routes:
+                  - path: claims-list
                     title: Claims
             """;
 
@@ -84,7 +84,7 @@ class ImportAppDefinitionsTest {
         assertThat(saved.getOrgKey()).isEqualTo(ORG_KEY);
         assertThat(saved.getId()).isEqualTo(APP_ID);
         assertThat(saved.getTranslocoId()).isEqualTo("claims.app.name");
-        assertThat(saved.getDraftGraph().pages()).hasSize(1);
+        assertThat(saved.getDraftGraph().routes()).hasSize(1);
         assertThat(saved.getRevision()).isEqualTo(1L);
     }
 
@@ -153,21 +153,20 @@ class ImportAppDefinitionsTest {
 
     @Test
     void oneStructurallyInvalidEntry_rejectsTheWholeFile() throws IOException {
-        String withOrphanPage = VALID_FILE + """
+        String withTitlelessRoute = VALID_FILE + """
                   - id: second-app
                     name: Second
-                    pages:
-                      - id: unreachable
-                        title: Unreachable
+                    routes:
+                      - path: titleless
                 """;
 
-        ImportOutcome outcome = importAppDefinitions.execute(ORG_KEY, yaml(withOrphanPage));
+        ImportOutcome outcome = importAppDefinitions.execute(ORG_KEY, yaml(withTitlelessRoute));
 
         assertThat(outcome.created()).isZero();
         assertThat(outcome.updated()).isZero();
         // The message names the entry and the offending node, so a file with several entries says which.
         assertThat(outcome.errors()).singleElement().asString()
-                .contains("'second-app'", "/pages/0", "not reachable");
+                .contains("'second-app'", "/routes/0/title", "needs a title");
         verify(repository, never()).save(any());
     }
 
@@ -177,7 +176,7 @@ class ImportAppDefinitionsTest {
         AppDefinitionValidator lenient = mock(AppDefinitionValidator.class);
         when(lenient.validate(anyString(), any())).thenReturn(List.of(
                 new AppValidationProblem("/", "rule.appDefinition.titlesAreTranslatable",
-                        "Give every page title a Transloco id.", Severity.INFO)));
+                        "Give every route title a Transloco id.", Severity.INFO)));
         ImportAppDefinitions withAdvice = new ImportAppDefinitions(repository, organizationRepository,
                 lenient, AppTestFixtures.permissiveGuard(), new AppMapper());
 

@@ -1,8 +1,10 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.Layout;
+import com.processpuzzle.app.domain.ModuleMount;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
@@ -17,7 +19,7 @@ import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
@@ -63,7 +65,8 @@ public class AppMapper {
                 toDomainTheme(input.getTheme()),
                 toDomainLayout(input.getLayout()),
                 toDomainRegions(input.getRegions()),
-                toDomainPages(input.getPages()));
+                toDomainRoutes(input.getRoutes()),
+                toDomainMounts(input.getModules()));
     }
 
     private Theme toDomainTheme(ThemeDefinition theme) {
@@ -112,7 +115,7 @@ public class AppMapper {
                         item.getLabel(),
                         item.getTranslocoId(),
                         item.getIcon(),
-                        item.getPageId(),
+                        item.getRoutePath(),
                         item.getRoles(),
                         toDomainNavItems(item.getChildren())))
                 .toList();
@@ -135,16 +138,45 @@ public class AppMapper {
         return placement == null ? WidgetPlacement.STANDALONE : WidgetPlacement.valueOf(placement.name());
     }
 
-    private List<AppPage> toDomainPages(List<PageDefinition> pages) {
-        if (pages == null) {
+    public List<AppRoute> toDomainRoutes(List<RouteDefinition> routes) {
+        if (routes == null) {
             return List.of();
         }
-        return pages.stream().filter(Objects::nonNull)
-                .map(page -> new AppPage(
-                        page.getId(),
-                        page.getTitle(),
-                        page.getTranslocoId(),
-                        toDomainWidgets(page.getWidgets())))
+        return routes.stream().filter(Objects::nonNull)
+                .map(route -> new AppRoute(
+                        route.getPath(),
+                        route.getTitle(),
+                        route.getTranslocoId(),
+                        route.getIcon(),
+                        route.getRoles(),
+                        toDomainTarget(route.getTarget())))
+                .toList();
+    }
+
+    /**
+     * A route with no target at all becomes an empty WIDGETS target rather than null, so the graph
+     * never holds a route the renderer cannot ask a question of. Which fields a kind requires is
+     * AppDefinitionValidator's business, not this mapper's.
+     */
+    private RouteTarget toDomainTarget(com.processpuzzle.app.model.RouteTarget target) {
+        if (target == null) {
+            return RouteTarget.ofWidgets(List.of());
+        }
+        return new RouteTarget(
+                target.getKind() == null ? RouteTarget.Kind.WIDGETS : RouteTarget.Kind.valueOf(target.getKind().name()),
+                toDomainWidgets(target.getWidgets()),
+                target.getDocumentSlug(),
+                target.getEntityName(),
+                target.getEntityMode() == null ? null : RouteTarget.EntityMode.valueOf(target.getEntityMode().name()),
+                target.getRsqlFilter());
+    }
+
+    private List<ModuleMount> toDomainMounts(List<com.processpuzzle.app.model.ModuleMount> mounts) {
+        if (mounts == null) {
+            return List.of();
+        }
+        return mounts.stream().filter(Objects::nonNull)
+                .map(mount -> new ModuleMount(mount.getModuleKey(), mount.getBasePath()))
                 .toList();
     }
 
@@ -167,7 +199,8 @@ public class AppMapper {
             model.setTheme(toModelTheme(graph.theme()));
             model.setLayout(toModelLayout(graph.layout()));
             model.setRegions(toModelRegions(graph.regions()));
-            model.setPages(toModelPages(graph.pages()));
+            model.setRoutes(toModelRoutes(graph.routes()));
+            model.setModules(toModelMounts(graph.modules()));
         }
         return model;
     }
@@ -271,7 +304,7 @@ public class AppMapper {
             NavItem model = new NavItem(node.id(), node.label());
             model.setTranslocoId(node.translocoId());
             model.setIcon(node.icon());
-            model.setPageId(node.pageId());
+            model.setRoutePath(node.routePath());
             model.setRoles(node.roles());
             model.setChildren(toModelNavItems(node.children()));
             return model;
@@ -290,17 +323,74 @@ public class AppMapper {
         }).toList();
     }
 
-    private List<PageDefinition> toModelPages(List<AppPage> pages) {
-        if (pages == null) {
+    private List<RouteDefinition> toModelRoutes(List<AppRoute> routes) {
+        if (routes == null) {
             return List.of();
         }
-        return pages.stream().map(this::toModel).toList();
+        return routes.stream().map(this::toModel).toList();
     }
 
-    public PageDefinition toModel(AppPage page) {
-        PageDefinition model = new PageDefinition(page.id(), page.title(), toModelWidgets(page.widgets()));
-        model.setTranslocoId(page.translocoId());
+    public RouteDefinition toModel(AppRoute route) {
+        RouteDefinition model = new RouteDefinition(route.path(), route.title(), toModelTarget(route.target()));
+        model.setTranslocoId(route.translocoId());
+        model.setIcon(route.icon());
+        model.setRoles(route.roles());
         return model;
+    }
+
+    private com.processpuzzle.app.model.RouteTarget toModelTarget(RouteTarget target) {
+        if (target == null) {
+            return null;
+        }
+        com.processpuzzle.app.model.RouteTarget model = new com.processpuzzle.app.model.RouteTarget(
+                com.processpuzzle.app.model.RouteTarget.KindEnum.fromValue(target.kind().name()));
+        model.setWidgets(toModelWidgets(target.widgets()));
+        model.setDocumentSlug(target.documentSlug());
+        model.setEntityName(target.entityName());
+        if (target.entityMode() != null) {
+            model.setEntityMode(com.processpuzzle.app.model.RouteTarget.EntityModeEnum.fromValue(target.entityMode().name()));
+        }
+        model.setRsqlFilter(target.rsqlFilter());
+        return model;
+    }
+
+    private List<com.processpuzzle.app.model.ModuleMount> toModelMounts(List<ModuleMount> mounts) {
+        if (mounts == null) {
+            return List.of();
+        }
+        return mounts.stream()
+                .map(mount -> new com.processpuzzle.app.model.ModuleMount(mount.moduleKey(), mount.basePath()))
+                .toList();
+    }
+
+    // --- modules -------------------------------------------------------------------------
+
+    public com.processpuzzle.app.model.ModuleDefinition toModel(
+            com.processpuzzle.app.domain.ModuleDefinition module) {
+        com.processpuzzle.app.model.ModuleDefinition model =
+                new com.processpuzzle.app.model.ModuleDefinition(
+                        module.getKey(), module.getName(), module.getOrgKey(), module.getVersion());
+        model.setTranslocoId(module.getTranslocoId());
+        model.setDescription(module.getDescription());
+        model.setTranslocoScope(module.getTranslocoScope());
+        model.setRoutes(toModelRoutes(module.getRoutes()));
+        model.setCreatedAt(toOffsetDateTime(module.getCreatedAt()));
+        model.setUpdatedAt(toOffsetDateTime(module.getUpdatedAt()));
+        return model;
+    }
+
+    /**
+     * Copies the editable fields of a module input onto an entity. {@code key} and {@code orgKey} are
+     * deliberately absent: the contract calls the key immutable, because it is what an
+     * {@code AppDefinition.modules} entry references.
+     */
+    public void applyToModule(com.processpuzzle.app.domain.ModuleDefinition module,
+                              com.processpuzzle.app.model.ModuleDefinitionInput input) {
+        module.setName(input.getName());
+        module.setTranslocoId(input.getTranslocoId());
+        module.setDescription(input.getDescription());
+        module.setTranslocoScope(input.getTranslocoScope());
+        module.setRoutes(toDomainRoutes(input.getRoutes()));
     }
 
     // --- organizations -------------------------------------------------------------------

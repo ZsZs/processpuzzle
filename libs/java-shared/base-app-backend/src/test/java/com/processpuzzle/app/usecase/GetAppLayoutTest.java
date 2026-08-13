@@ -3,16 +3,17 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Organization;
 import com.processpuzzle.app.domain.OrganizationRepository;
 import com.processpuzzle.app.domain.OrganizationStatus;
 import com.processpuzzle.app.domain.Region;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
 import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.port.PermitAllOrganizationAccessPolicy;
 import org.junit.jupiter.api.Test;
@@ -115,21 +116,21 @@ class GetAppLayoutTest {
 
     @Test
     void pageNotReachableByTheCallersRoles_is404NotForbidden() {
-        GetPageDefinition getPageDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
+        GetRouteDefinition getRouteDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
         stored(graphWithRoles());
 
-        assertThatThrownBy(() -> getPageDefinition.execute("my-org", "claims-app", "page-restricted", true))
-                .isInstanceOf(PageDefinitionNotFoundException.class);
+        assertThatThrownBy(() -> getRouteDefinition.execute("my-org", "claims-app", "route-restricted", true))
+                .isInstanceOf(RouteDefinitionNotFoundException.class);
     }
 
     @Test
     void reachablePage_isServed() {
-        GetPageDefinition getPageDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
+        GetRouteDefinition getRouteDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
         stored(graphWithRoles());
 
-        AppPage page = getPageDefinition.execute("my-org", "claims-app", "page-open", true);
+        AppRoute route = getRouteDefinition.execute("my-org", "claims-app", "route-open", true);
 
-        assertThat(page.id()).isEqualTo("page-open");
+        assertThat(route.path()).isEqualTo("route-open");
     }
 
     // --- fixtures ------------------------------------------------------------------------
@@ -145,8 +146,8 @@ class GetAppLayoutTest {
         return new GetAppLayout(repository, organizationRepository, guard(policy));
     }
 
-    private GetPageDefinition pageUseCase(OrganizationAccessPolicy policy) {
-        return new GetPageDefinition(repository, guard(policy));
+    private GetRouteDefinition pageUseCase(OrganizationAccessPolicy policy) {
+        return new GetRouteDefinition(repository, guard(policy));
     }
 
     @SuppressWarnings("unchecked")
@@ -170,16 +171,16 @@ class GetAppLayoutTest {
      * different role — so the three filtering behaviours are distinguishable.
      */
     private static AppGraph graphWithRoles() {
-        NavNode open = new NavNode("nav-open", "Open", null, null, "page-open", List.of(), List.of());
-        NavNode restricted = new NavNode("nav-restricted", "Restricted", null, null, "page-restricted",
+        NavNode open = new NavNode("nav-open", "Open", null, null, "route-open", List.of(), List.of());
+        NavNode restricted = new NavNode("nav-restricted", "Restricted", null, null, "route-restricted",
                 List.of("CLAIMS_ADJUSTER"), List.of());
-        NavNode groupChild = new NavNode("nav-group-child", "Child", null, null, "page-open",
+        NavNode groupChild = new NavNode("nav-group-child", "Child", null, null, "route-open",
                 List.of("AUDITOR"), List.of());
         NavNode group = new NavNode("nav-group", "Group", null, null, null, List.of(), List.of(groupChild));
 
         return new AppGraph(null, null,
                 List.of(new Region("sidenav", List.of(open, restricted, group), List.of())),
-                List.of(new AppPage("page-open", "Open", null, List.of()),
-                        new AppPage("page-restricted", "Restricted", null, List.of())));
+                List.of(new AppRoute("route-open", "Open", null, null, List.of(), RouteTarget.ofWidgets(List.of())),
+                        new AppRoute("route-restricted", "Restricted", null, null, List.of(), RouteTarget.ofWidgets(List.of()))), List.of());
     }
 }

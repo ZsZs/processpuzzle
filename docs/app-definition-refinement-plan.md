@@ -347,17 +347,17 @@ this within the phase to prove the schema is expressive enough before Phase 4 de
 
 ## Phase 4 — Flat routes replace `pages`
 
-> 🔴 **REPO STATE: `base-app-backend` DOES NOT COMPILE.** 4a removed `PageDefinition` from the
-> contract; 27 files in `base-app-backend` still reference `PageDefinition` / `AppPage`. Resume at 4b
-> below. Everything else in the workspace builds and passes.
+> ⚠️ **Verify with `clean`.** `mvn compile` / `mvn install` on `api-contracts` **report a false green**
+> across a contract change: `generate-sources` does not clean `target/`, so a deleted schema's stale
+> `.java` lingers and gets packaged, and `mvn compile` skips incrementally, reusing `.class` files from
+> before the change. Only `mvn clean compile` / `clean test-compile` / `clean test` show the truth.
+> Two false greens in this work came from exactly that.
 >
-> Note for whoever resumes: `mvn compile` and `mvn install` on `api-contracts` **will report a false
-> green** here. `generate-sources` does not clean `target/`, so a deleted schema's stale `.java`
-> lingers and gets packaged; and `mvn compile` skips incrementally, reusing `.class` files from
-> before the change. Only `mvn clean compile` shows the truth. Both of those fooled this session
-> before the real state was found.
+> A second one, specific to rules: `base-app-backend` reads `sample-rules/processpuzzle-rules.yaml`
+> from **base-rule-backend's installed jar**, not from the reactor. Editing that file has no effect on
+> `AppRuleValidatorTest` until `mvn install -DskipTests -pl libs/java-shared/base-rule-backend` runs.
 
-**Progress: 4a (contract) ✅ · 4b (Java) todo · 4c (frontend) todo.**
+**Progress: 4a (contract) ✅ · 4b (Java) ✅ · 4c (frontend) todo.**
 
 ### 4a — contract ✅ (2026-08-13)
 
@@ -382,12 +382,26 @@ this within the phase to prove the schema is expressive enough before Phase 4 de
   path stays one variable rather than needing a greedy wildcard that would be ambiguous against its
   siblings.
 
-### 4b — Java (todo)
+### 4b — Java ✅ (2026-08-13)
 
-`AppPage` → `AppRoute` and `AppGraph` gaining `routes`/`modules`; `GetPageDefinition` →
-`GetRouteDefinition`; a `ModuleDefinition` entity, repository and CRUD; `AppMapper`;
-`AppDefinitionValidator` (unique paths, `basePath` collisions as errors, dangling `routePath` as a
-warning); `AppEndpoint`'s new module operations; and the affected tests.
+`AppPage` → `AppRoute` (flat, with a `RouteTarget`) and `AppGraph` gaining `routes`/`modules`;
+`GetPageDefinition` → `GetRouteDefinition`; a `ModuleDefinition` entity (`@IdClass` on
+`orgKey` + `key`, routes in a JSON column), repository and five CRUD use cases; `AppMapper`
+(`applyToModule`, `toModel`); `AppDefinitionValidator.validateModule` plus the app-level checks;
+`AppEndpoint`'s five module operations. `ProvisionOrganization`'s starter app is now genuinely empty —
+`RegionType.content` is gone, so there is no content region to seed. **312 tests pass.**
+
+Two consequences worth remembering, both of them the loose-coupling decision surfacing:
+
+- **`unknown-route-reference` and `orphan-route` are WARNINGs**, so neither blocks a write. Three
+  "an invalid definition is rejected" tests had to be rewritten around a structurally blocking error
+  (`duplicate-route-path`) instead.
+- **A module route nothing links to is not an orphan.** The sidenav that reaches it lives in the app,
+  which the module aggregate cannot see; applying the app-level orphan check to `validateModule` would
+  mean no module ever validates.
+
+The shipped rules moved with the contract: `page-ids-are-route-safe` → `route-paths-are-route-safe`,
+now checking each `/`-separated segment so a multi-segment path passes.
 
 ### 4c — Frontend (todo)
 

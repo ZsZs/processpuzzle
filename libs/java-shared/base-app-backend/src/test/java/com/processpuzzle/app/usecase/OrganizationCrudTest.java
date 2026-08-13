@@ -3,6 +3,7 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.Organization;
+import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.domain.OrganizationRepository;
 import com.processpuzzle.app.domain.OrganizationStatus;
 import com.processpuzzle.app.model.OrganizationUpdate;
@@ -32,11 +33,13 @@ class OrganizationCrudTest {
 
     private OrganizationRepository organizationRepository;
     private AppDefinitionRepository appDefinitionRepository;
+    private ModuleDefinitionRepository moduleDefinitionRepository;
 
     @BeforeEach
     void setUp() {
         organizationRepository = mock(OrganizationRepository.class);
         appDefinitionRepository = mock(AppDefinitionRepository.class);
+        moduleDefinitionRepository = mock(ModuleDefinitionRepository.class);
         when(organizationRepository.save(any(Organization.class))).thenAnswer(call -> call.getArgument(0));
         when(organizationRepository.existsById(anyString())).thenReturn(true);
     }
@@ -169,11 +172,12 @@ class OrganizationCrudTest {
             assertThatThrownBy(() -> deleteOrganization(AppTestFixtures.denyingGuard()).execute(ORG_KEY))
                     .isInstanceOf(OrganizationAccessDeniedException.class);
 
-            verifyNoInteractions(organizationRepository, appDefinitionRepository);
+            verifyNoInteractions(organizationRepository, appDefinitionRepository, moduleDefinitionRepository);
         }
 
         private DeleteOrganization deleteOrganization(OrganizationGuard guard) {
-            return new DeleteOrganization(organizationRepository, appDefinitionRepository, guard);
+            return new DeleteOrganization(organizationRepository, appDefinitionRepository,
+                    moduleDefinitionRepository, guard);
         }
     }
 

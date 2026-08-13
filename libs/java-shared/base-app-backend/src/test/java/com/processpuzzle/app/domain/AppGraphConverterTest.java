@@ -1,5 +1,6 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.app.domain.RouteTarget;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -24,11 +25,10 @@ class AppGraphConverterTest {
                 new Layout("sidenav-left", "side", true, false, "1280px"),
                 List.of(new Region("sidenav",
                         List.of(new NavNode("nav-claims", "Claims", "claims.nav", "list_alt",
-                                "page-claims", List.of("CLAIMS_ADJUSTER"), List.of())),
+                                "route-claims", List.of("CLAIMS_ADJUSTER"), List.of())),
                         List.of())),
-                List.of(new AppPage("page-claims", "Claims", null,
-                        List.of(new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"),
-                                WidgetPlacement.REFERENCED)))));
+                List.of(new AppRoute("route-claims", "Claims", null, null, List.of(), RouteTarget.ofWidgets(List.of(new Widget("widget-grid", "entity-grid", Map.of("entityName", "Claim"),
+                                WidgetPlacement.REFERENCED))))), List.of());
 
         String column = converter.convertToDatabaseColumn(graph);
 
@@ -47,7 +47,7 @@ class AppGraphConverterTest {
     void unsetPartsAreOmittedFromTheColumnRatherThanWrittenAsNull() {
         String column = converter.convertToDatabaseColumn(AppGraph.empty());
 
-        assertThat(column).doesNotContain("null").contains("regions", "pages");
+        assertThat(column).doesNotContain("null").contains("regions", "routes");
     }
 
     @Test
@@ -67,7 +67,7 @@ class AppGraphConverterTest {
     void aPropertyThisReleaseNoLongerKnows_isIgnoredRatherThanFailingTheRead() {
         String fromAnEarlierRelease = """
                 {"regions":[{"type":"sidenav","navItems":[],"widgets":[],"legacyFlag":true}],\
-                "pages":[],"retiredField":"whatever"}""";
+                "routes":[],"retiredField":"whatever"}""";
 
         AppGraph graph = converter.convertToEntityAttribute(fromAnEarlierRelease);
 
@@ -90,8 +90,7 @@ class AppGraphConverterTest {
     @Test
     void aGraphThatCannotBeSerialized_failsTheWrite() {
         AppGraph unserializable = new AppGraph(null, null, List.of(),
-                List.of(new AppPage("page-1", "One", null,
-                        List.of(new Widget("widget-1", "custom", Map.of("opaque", new Object()), WidgetPlacement.STANDALONE)))));
+                List.of(new AppRoute("route-1", "One", null, null, List.of(), RouteTarget.ofWidgets(List.of(new Widget("widget-1", "custom", Map.of("opaque", new Object()), WidgetPlacement.STANDALONE))))), List.of());
 
         assertThatThrownBy(() -> converter.convertToDatabaseColumn(unserializable))
                 .isInstanceOf(IllegalStateException.class)

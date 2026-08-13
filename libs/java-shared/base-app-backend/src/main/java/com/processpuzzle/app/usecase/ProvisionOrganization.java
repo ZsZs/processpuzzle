@@ -78,12 +78,13 @@ public class ProvisionOrganization {
     }
 
     /**
-     * The graph of a freshly provisioned app: one content region so the shell has somewhere to
-     * render, and nothing else. No theme means the frontend defaults apply until the designer picks
-     * one.
+     * The graph of a freshly provisioned app: genuinely empty. It used to declare a {@code content}
+     * region so the shell had somewhere to render, but content is no longer a region — the content
+     * area is the router outlet, so an app with no routes simply renders nothing there. No theme
+     * means the frontend defaults apply until the designer picks one.
      */
     private static AppGraph starterGraph() {
-        return new AppGraph(null, null, List.of(new Region("content", List.of(), List.of())), List.of());
+        return AppGraph.empty();
     }
 
     /** An organization and the starter app definition created with it. */

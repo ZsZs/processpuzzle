@@ -24,9 +24,9 @@ organization:
   defaultLocale: en
 
 appDefinitions:
-  # A deliberately basic shell: one Material theme, the default sidenav-left layout, all four
-  # regions, and three pages driven by the testbed's 'Order' and 'Order Line' descriptors. It is
-  # meant to be the smallest definition that still renders something navigable.
+  # A deliberately basic shell: one Material theme, the default sidenav-left layout, the three
+  # shell regions, and three routes driven by the testbed's 'Order' and 'Order Line' descriptors.
+  # It is meant to be the smallest definition that still renders something navigable.
   - id: demo
     name: Demo
     translocoId: demo.app.name
@@ -44,10 +44,11 @@ appDefinitions:
       contentMaxWidth: 1280px
     regions:
       # header and footer are declared so the shell renders them, but carry no static widgets yet.
+      # There is no 'content' region: the content area is the router outlet the routes below fill.
       - type: header
       - type: sidenav
         navItems:
-          # A group node: no pageId, so it only expands its children.
+          # A group node: no routePath, so it only expands its children.
           - id: nav-orders
             label: Orders
             translocoId: demo.nav.orders
@@ -57,47 +58,53 @@ appDefinitions:
                 label: All orders
                 translocoId: demo.nav.orderList
                 icon: list_alt
-                pageId: order-list
+                routePath: order-list
               - id: nav-order-entry
                 label: New order
                 translocoId: demo.nav.orderEntry
                 icon: add_circle
-                pageId: order-entry
+                routePath: order-entry
           - id: nav-order-lines
             label: Order lines
             translocoId: demo.nav.orderLines
             icon: view_list
-            pageId: order-line-list
-      # content carries no widgets of its own — it is populated per route from a page.
-      - type: content
+            routePath: order-line-list
       - type: footer
-    pages:
-      - id: order-list
+    # Routes are flat: 'path' may be multi-segment and Angular's nesting is derived from the
+    # prefixes at registration time.
+    routes:
+      - path: order-list
         title: Orders
-        translocoId: demo.page.orderList
-        widgets:
-          - id: order-grid
-            type: entity-grid
-            props:
-              entityName: Order
-              columns: [orderNumber, customerName, status, total]
-              rsqlFilter: "status!=CANCELLED"
-      - id: order-entry
+        translocoId: demo.route.orderList
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: order-grid
+              type: entity-grid
+              props:
+                entityName: Order
+                columns: [orderNumber, customerName, status, total]
+                rsqlFilter: "status!=CANCELLED"
+      - path: order-entry
         title: New order
-        translocoId: demo.page.orderEntry
-        widgets:
-          - id: order-form
-            type: entity-form
-            props:
-              entityName: Order
-              submitLabel: Save order
-              submitTranslocoId: demo.action.saveOrder
-      - id: order-line-list
+        translocoId: demo.route.orderEntry
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: order-form
+              type: entity-form
+              props:
+                entityName: Order
+                submitLabel: Save order
+                submitTranslocoId: demo.action.saveOrder
+      - path: order-line-list
         title: Order lines
-        translocoId: demo.page.orderLineList
-        widgets:
-          - id: order-line-grid
-            type: entity-grid
-            props:
-              entityName: Order Line
-              columns: [productName, quantity, unitPrice]
+        translocoId: demo.route.orderLineList
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: order-line-grid
+              type: entity-grid
+              props:
+                entityName: Order Line
+                columns: [productName, quantity, unitPrice]
