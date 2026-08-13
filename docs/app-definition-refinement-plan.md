@@ -130,10 +130,10 @@ rather than one commit, because the infrastructure split changes `util`'s depend
    `util` — a cycle. It is not a widget and does not really belong here either; a proper home is an
    open question, not urgent.
 2. **`design-button` stays too.** The plan said move it to `design`. Reading it, it is a
-   `/home` ⇄ `/design` toggle for the app-shell header whose only consumer is the testbed — it knows
-   nothing of the `design` lib's domain, and moving it there would make the shell header depend on a
-   feature lib for a button. It also hardcodes both routes, which is really app configuration; that
-   smell is worth revisiting, but not by relocating it into the wrong library.
+   `/home` ⇄ `/design` toggle for the app-shell header — it knows nothing of the `design` lib's
+   domain, and it is a button, which is a building block. Confirmed by the owner after a brief
+   round-trip. Its hardcoded `/home` and `/design` routes are really app configuration; that smell
+   is worth revisiting, but not by relocating it into the wrong library.
 
 ### Defect found and fixed: `provideWidget` did not compose within one injector
 
@@ -204,6 +204,28 @@ hard-rename rather than dual-publish.
 > for them than "widgets" was. Hence step 3.
 
 ## Phase 3 — `base-widget-backend` + the `WidgetDefinition` resource
+
+**Progress: 3a (contract) ✅ · 3b (Maven module) todo · 3c (registration) todo · 3d (props form
+prototype) todo.**
+
+### 3a — contract ✅ (2026-08-13)
+
+- **Ports promoted to `shared-api.yaml`**: `PortType`, `AttributeVisibility`, and new canonical
+  `InputPort` / `OutputPort`. Two features declare ports — a widget type declares what it offers, a
+  document declares what its content exposes — and a `WidgetInstance`'s bindings are what join them.
+- **`base-widget-api.yaml`**: `WidgetDefinition` CRUD + publish, `WidgetKey` pattern,
+  `WidgetDefinitionStatus`, paged list. Generates into `com.processpuzzle.widget.{api,model}`.
+- **Verified**: `widget/model/` contains only the four widget types — ports, `ErrorResponse` and
+  `OrganizationKey` all bind to shared/JDK types via `schemaMappings`, so nothing is duplicated.
+- **`propsSchema` generates as a bare `Map<String, Object>`** with no `new HashMap<>()`, because it
+  is declared `nullable: true`. That distinction is load-bearing: null means "props unconstrained"
+  (the honest state for an undescribed widget), whereas `{}` would assert the widget takes no props.
+
+`base-document` still generates `DocumentInputPort` / `DocumentOutputPort` from identical shapes.
+Converging them onto the shared types renames a generated Java type and its frontend class, so it is
+a follow-up mapping change, deliberately not part of introducing this module.
+
+### 3b–3d — remaining
 
 The genuinely new library; full 13-file registration checklist applies.
 
