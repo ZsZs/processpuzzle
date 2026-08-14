@@ -42,6 +42,7 @@
   "base-app_card_content_2": "Entitás-, szabály-, állapot- és munkafolyamat-modulok beillesztése az alkalmazás-shellbe",
   "base-app_card_content_3": "Az alkalmazás felépítése és közzététele az /appRoute/orgKey útvonalon",
   "base-app_card_button": "Alkalmazások meghatározása...",
+  "designer-home": "Tervező kezdőlap",
   "entities": "Entitások",
   "documents": "Dokumentumok",
   "rules": "Szabályok",

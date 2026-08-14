@@ -28,15 +28,15 @@ describe('ApplicationDesignerComponent', () => {
     expect(component.tabs).toBe(APPLICATION_DESIGNER_TABS);
   });
 
-  it('renders one tab link per declared tab, in order', () => {
-    const links = fixture.debugElement.queryAll(By.css('a[mat-tab-link]'));
+  it('renders one route button per declared tab, in order', () => {
+    const links = fixture.debugElement.queryAll(By.css('a[mat-stroked-button]'));
 
     expect(links).toHaveLength(APPLICATION_DESIGNER_TABS.length);
     expect(links.map((link) => link.nativeElement.getAttribute('href'))).toEqual(APPLICATION_DESIGNER_TABS.map((tab) => `/${tab.path}`));
   });
 
-  it('labels each tab from the design scope and shows its icon', () => {
-    const links = fixture.debugElement.queryAll(By.css('a[mat-tab-link]'));
+  it('labels each route button from the design scope and shows its icon', () => {
+    const links = fixture.debugElement.queryAll(By.css('a[mat-stroked-button]'));
     const texts = links.map((link) => (link.nativeElement as HTMLElement).textContent?.trim());
 
     // The icon renders as the ligature text of a material-symbols span, so it precedes the label.
@@ -47,7 +47,7 @@ describe('ApplicationDesignerComponent', () => {
     expect(texts[0]).toContain('Applications');
   });
 
-  it('hosts the child routes in a tab panel', () => {
-    expect(fixture.debugElement.query(By.css('mat-tab-nav-panel router-outlet'))).toBeTruthy();
+  it('hosts the child routes below the route buttons', () => {
+    expect(fixture.debugElement.query(By.css('router-outlet'))).toBeTruthy();
   });
 });

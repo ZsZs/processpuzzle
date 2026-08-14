@@ -8,7 +8,13 @@ import { DesignContentComponent } from './content/design-content.component';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
 
 export const DESIGN_ROUTES: Routes = [
-  { path: '', pathMatch: 'full', component: DesignContentComponent },
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'ProcessPuzzle Design - Designer Home',
+    data: { icon: 'home', menuTitle: 'design.designer-home' },
+    component: DesignContentComponent,
+  },
   {
     path: 'entities',
     title: 'ProcessPuzzle Design - Entities',

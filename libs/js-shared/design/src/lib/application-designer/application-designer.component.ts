@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
+import { MatButton } from '@angular/material/button';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { APPLICATION_DESIGNER_TABS } from './application-designer.tabs';
@@ -8,10 +8,11 @@ import { APPLICATION_DESIGNER_TABS } from './application-designer.tabs';
  * The Application section of the designer: one page whose tabs switch between the three entities that
  * describe an application — its definition, the modules it mounts and the widget types those place.
  *
- * A `mat-tab-nav-bar` rather than a `mat-tab-group`, because every tab is a route: each one deep-links,
- * survives a reload and keeps the browser's Back button meaningful. Being the component of the *parent*
- * route, it also stays on screen while the user drills into a definition's form and its embedded levels,
- * and `routerLinkActive`'s default subset matching keeps the right tab lit down there.
+ * This uses route buttons instead of a second tab bar so the page does not stack two nearly identical tab
+ * controls on top of each other. Each button still deep-links, survives a reload and keeps the browser's
+ * Back button meaningful. Being the component of the *parent* route, it also stays on screen while the
+ * user drills into a definition's form and its embedded levels, and `routerLinkActive`'s default subset
+ * matching keeps the right view highlighted down there.
  *
  * The `design` scope the labels are keys of is named **inline on the directive** rather than provided by the
  * component or its route, unlike the library's leaf components. Two reasons: the component then translates
@@ -22,23 +23,43 @@ import { APPLICATION_DESIGNER_TABS } from './application-designer.tabs';
 @Component({
   selector: 'pp-application-designer',
   standalone: true,
-  imports: [MatTabNav, MatTabNavPanel, MatTabLink, RouterLink, RouterLinkActive, RouterOutlet, TranslocoDirective],
+  imports: [MatButton, RouterLink, RouterLinkActive, RouterOutlet, TranslocoDirective],
   template: `
     <ng-container *transloco="let t; scope: 'design'">
-      <nav mat-tab-nav-bar [tabPanel]="tabPanel">
+      <nav class="designer-nav" aria-label="Application designer views">
         @for (tab of tabs; track tab.path) {
-          <a mat-tab-link [routerLink]="tab.path" routerLinkActive #linkActive="routerLinkActive" [active]="linkActive.isActive">
+          <a
+            mat-stroked-button
+            class="designer-nav-button"
+            [routerLink]="tab.path"
+            routerLinkActive="designer-nav-button-active"
+            ariaCurrentWhenActive="page"
+          >
             <span class="material-symbols-outlined tab-icon">{{ tab.icon }}</span>
             {{ t(tab.label) }}
           </a>
         }
       </nav>
-      <mat-tab-nav-panel #tabPanel>
-        <router-outlet></router-outlet>
-      </mat-tab-nav-panel>
+      <router-outlet></router-outlet>
     </ng-container>
   `,
   styles: `
+    .designer-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .designer-nav-button {
+      border-radius: 999px;
+    }
+
+    .designer-nav-button-active {
+      background-color: rgb(0 0 0 / 4%);
+      border-color: currentcolor;
+    }
+
     .tab-icon {
       margin-right: 6px;
     }

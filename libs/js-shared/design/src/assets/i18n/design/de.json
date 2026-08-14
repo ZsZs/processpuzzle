@@ -42,6 +42,7 @@
   "base-app_card_content_2": "Entitäts-, Regel-, Zustands- und Workflow-Module in die Anwendungs-Shell einfügen",
   "base-app_card_content_3": "Die Anwendung unter /appRoute/orgKey bauen und veröffentlichen",
   "base-app_card_button": "Anwendungen definieren...",
+  "designer-home": "Designer-Startseite",
   "entities": "Entitäten",
   "documents": "Dokumente",
   "rules": "Regeln",

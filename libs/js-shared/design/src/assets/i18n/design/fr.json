@@ -42,6 +42,7 @@
   "base-app_card_content_2": "Assembler les modules entité, règle, état et workflow dans le shell applicatif",
   "base-app_card_content_3": "Construire et publier l'application sous /appRoute/orgKey",
   "base-app_card_button": "Définir les applications...",
+  "designer-home": "Accueil du concepteur",
   "entities": "Entités",
   "documents": "Documents",
   "rules": "Règles",
