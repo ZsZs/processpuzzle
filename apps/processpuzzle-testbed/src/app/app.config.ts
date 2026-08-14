@@ -11,7 +11,7 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { provideAppPropertyStore } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, provideAppPropertyStore } from '@processpuzzle/base-widget';
 import { provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/util';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
@@ -65,6 +65,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // Same shape for base-document: the routable `Document` plus the two embedded port lists its form
       // carries, which the design section's document route renders.
       ...BASE_DOCUMENT_FACADE_PROVIDERS,
+      // And for base-widget: the routable `Widget Definition` plus its two embedded port lists, rendered by
+      // the Widgets tab of the design section's Application page.
+      ...BASE_WIDGET_FACADE_PROVIDERS,
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {
@@ -79,6 +82,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Order Line': OrderLineFacade,
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
+          ...BASE_WIDGET_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },

@@ -538,9 +538,54 @@ URL"* while asserting `endsWith('/node')`. Both fixed.
 `base-entity-frontend` green; lint and build green for both libraries, `processpuzzle-testbed`,
 `processpuzzle-testbed-e2e` and `processpuzzle-ui`.
 
+## Phase 5.5 — One Application section, three tabs ✅ DONE (2026-08-13)
+
+A correction to the *design surface*, not to the schema, made after Phase 5 put a second base-app item
+in the `/design` sidenav. An application, the modules it mounts and the widget types those place are
+three views of one authoring subject, so they share one page:
+
+- `DESIGN_ROUTES` now has a single **Application** section (`/design/application`,
+  `ApplicationDesignerComponent`) whose children are `[redirect → app-definition, ...BASE_APP_ROUTES,
+  ...BASE_WIDGET_ROUTES]`. A `mat-tab-nav-bar` drives the three tabs from
+  `APPLICATION_DESIGNER_TABS`; `design.routes.spec.ts` asserts every tab path is mounted as a child, so
+  the explicit list cannot drift from the routes.
+- `BASE_APP_ROUTES` is spread **unchanged** — its branches keep their own scopes and facades and stay
+  mountable elsewhere (the testbed still mounts them at `/base-app/samples`). URLs simply gained a
+  segment: `/design/application/app-definition/list`.
+- `design.modules` was referenced by base-app's route while existing in none of the five `design`
+  locale files — the sidenav rendered the raw key. Fixed, and `design.i18n.spec.ts` now derives the
+  expected key set from `DESIGN_ROUTES` recursively, so the next omission fails the build.
+- The Widgets tab needed the whole `WidgetDefinition` authoring stack, which did not exist: mapper
+  (renames the contract's `key` onto `id`, and carries **every** field in both directions — the form
+  PUTs the whole input schema, so a field the mapper drops is destroyed on the next Save), service with
+  `publish`, store, descriptors, two port descriptors, three facades, container with a Publish action,
+  `BASE_WIDGET_ROUTES`, and the `base_widget` transloco scope in five locales. `propsSchema` is
+  deliberately **not** on the form — arbitrary nested JSON Schema through a flat key/value editor would
+  mangle it; that stays Phase 6's business.
+- Sample data, mock backend: a hand-written `processpuzzle-testbed-widget-definitions` in
+  `tools/mock-backend/db.json` (`cards-grid`, `markdown-page`) plus `widget-definitions` in
+  `org-scope.js`.
+- Sample data, Java backend: `DefaultWidgetLoader` +
+  `base-widget-backend/src/main/resources/default-widgets/processpuzzle-testbed-widgets.yaml`, gated by
+  `base-widget.loadDefaultWidgets` (`yes` in the application, `no` under `unit-test`). The same two
+  widget types, seeded as **drafts** through `WidgetEndpoint` — so a default passes exactly the
+  validation a designer's definition does, and the Publish action has something to act on. Filename
+  before `-widgets.yaml` is the owning organization, as in `<orgKey>-apps.yaml`; existing keys are left
+  untouched, so a restart cannot overwrite edited definitions. This was not optional polish: the
+  generated `[Widget Definition] LIST` e2e spec asserts the list is non-empty, and `defineEntityListSuite`
+  has no exclusion mechanism, so a routable entity with no rows fails the suite on the Java backend.
+- A **Phase 5 defect** the e2e verification surfaced, fixed here: `RouteDefinition.path`,
+  `ModuleMount.moduleKey` and `ModuleMount.basePath` carry a `pattern` in the contract but declared none
+  on their descriptors, so the form accepted values the backend's `@Pattern` refuses. It read as an
+  embedded-persistence bug — the row appears on Save and is gone after reload — because the generated
+  fixture value reaches the PUT as prose and comes back `400 request.validation-failed`, which the backend
+  does not log. A descriptor `pattern` is therefore load-bearing twice over: `BaseEntityFormBuilder` turns
+  it into a `Validators.pattern`, and the e2e registry turns it into a dashed fixture token.
+
 ## Phase 6 — Tabs
 
-No new schema.
+No new schema. Read against the Application section above: a `tab-container` widget is authored on the
+Widgets tab and placed from the Applications tab.
 
 - **Deep-linkable** (URL per tab, back button works) → child `RouteDefinition`s + a `tab-container`
   widget rendering `<router-outlet>`.

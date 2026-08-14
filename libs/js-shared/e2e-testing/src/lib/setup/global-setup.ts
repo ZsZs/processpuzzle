@@ -18,7 +18,7 @@ export interface CreateGlobalSetupOptions {
    * suites would fall back to guessing `<routePrefix>/<kebab-name>`, which the router answers with NG04002.
    *
    * Naming the base path here is the application's own statement of where it mounted that branch —
-   * `{ 'App Definition': '/design/app-definition' }` — and it is used only where the registry reported none,
+   * `{ 'Widget Definition': '/design/application/widget-definition' }` — and it is used only where the registry reported none,
    * so it goes stale loudly rather than silently overriding what the application knows.
    */
   routeOverrides?: Record<string, string>;

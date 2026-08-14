@@ -271,3 +271,27 @@ Ensure a `RUNTIME_CONFIGURATION` provider exposing `BASE_CONFIGURATION.APPLICATI
 ```xhtml
 <pp-version-button></pp-version-button>
 ```
+
+## Widget Catalogue
+A **WidgetDefinition** describes a widget *type* — its key, name, category, icon, the JSON Schema of its props and its input/output ports — as opposed to a `WidgetInstance`, which is one placement of a type inside a container. The definitions are persisted metadata (`/organizations/{orgKey}/widget-definitions`), so the catalogue is authored at run-time rather than compiled in.
+
+### Features
+- **Generated authoring screens**: `createWidgetDefinitionDescriptor()` drives the list, form, search and export through `@processpuzzle/base-entity`; the two port lists are embedded levels of the definition form.
+- **Own lifecycle**: a definition is `DRAFT` or `PUBLISHED` and carries `version` / `publishedVersion`. `WidgetDefinitionContainerComponent` contributes a **Publish** action to the form, which `WidgetDefinitionStore.publish` posts to `.../widget-definitions/{key}/publish`. json-server has no such endpoint — the button is live only against the Java backend.
+- **Mountable branch**: `BASE_WIDGET_ROUTES` is a one-branch `Routes` array (`widget-definition`) to be spread into a host's routes. `@processpuzzle/design` mounts it as the third tab of its Application section.
+- **Scoped translations**: the branch registers the `base_widget` scope (five locales), alongside `base_entity` for the generic list and form chrome.
+- **Seeded catalogue**: `base-widget-backend`'s `DefaultWidgetLoader` imports `default-widgets/<orgKey>-widgets.yaml` on startup when `base-widget.loadDefaultWidgets` is true, so the list is not empty on a fresh deployment. Defaults arrive as drafts, go through the same validation as an authored definition, and an existing key is never overwritten.
+
+### Setup and Usage
+Spread the routes where the catalogue should live, and — because a base-entity screen resolves its entity and embedded levels through `BASE_ENTITY_FACADE_REGISTRY`, a token a library cannot contribute to without replacing it — register the facades in the application:
+```typescript
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_ROUTES } from '@processpuzzle/base-widget';
+
+providers: [
+  ...BASE_WIDGET_FACADE_PROVIDERS,
+  { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: { ...BASE_WIDGET_ENTITY_FACADES /* , your own */ } },
+];
+```
+Also copy `src/assets/i18n/base_widget` to the application's `assets/i18n/base_widget`.
+
+`propsSchema` is intentionally **not** on the generated form: it is arbitrary nested JSON Schema, and the flat key/value control would flatten it. The mapper still carries it in both directions, so saving a definition never loses it.

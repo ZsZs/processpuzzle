@@ -21,3 +21,6 @@ base-rule:
 
 base-app:
   loadDefaultApps: no
+
+base-widget:
+  loadDefaultWidgets: no

@@ -33,6 +33,17 @@ describe('createModuleMountDescriptor', () => {
     expect(byName('basePath')?.required).toBe(true);
   });
 
+  /**
+   * Both values are URL material — the key addresses a module endpoint, the base path prefixes every
+   * route the module contributes — so the form has to constrain them exactly as the contract does.
+   * Omitting either pattern is not merely lax: the generated e2e fixtures read it from the descriptor,
+   * and without it they offer prose that the backend's own `@Pattern` rejects with 400.
+   */
+  it('constrains both values as the contract does', () => {
+    expect(byName('moduleKey')?.pattern).toBe('^[a-z0-9]+(-[a-z0-9]+)*$');
+    expect(byName('basePath')?.pattern).toBe('^[a-z0-9][a-z0-9\\-/]*$');
+  });
+
   it('identifies a mount by the module key, the schema giving it no id', () => {
     expect(APP_MODULE_MOUNT_ID_FIELD).toBe('moduleKey');
     expect(descriptor.componentIdentification()).toBe(APP_MODULE_MOUNT_ID_FIELD);

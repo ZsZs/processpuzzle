@@ -1,10 +1,15 @@
 import { Provider } from '@angular/core';
+import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
 import { LanguageSelectorComponent } from './language-selector/language-selector.component';
 import { LikeButtonComponent } from './like-button/like-button.component';
 import { MarkdownPageComponent } from './markdown-page/markdown-page.component';
 import { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 import { ShareButtonComponent } from './share-button/share-button.component';
 import { VersionButtonComponent } from './version-button/version-button.component';
+import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
+import { WIDGET_DEFINITION_ENTITY_NAME, WIDGET_INPUT_PORT_ENTITY_NAME, WIDGET_OUTPUT_PORT_ENTITY_NAME } from './widget-definition/widget-entity-names';
+import { WidgetInputPortFacade } from './widget-definition/widget-input-port.facade';
+import { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
 import { provideWidget } from './widget-registry/widget-registry.token';
 
 /**
@@ -68,3 +73,32 @@ export function provideBaseWidgets(): Provider[] {
     provideVersionButtonWidget(),
   ];
 }
+
+/**
+ * The facades of the widget-catalogue authoring graph, to be spread into the application's `providers`.
+ *
+ * Nothing to do with the widget *registry* above: those calls register components a container can render,
+ * these register the entities the catalogue itself is edited through. A `WidgetDefinition` describes a
+ * widget type; `provideWidget` supplies the code one is implemented by.
+ *
+ * The embedded port facades are here for the same reason the routable one is: an embedded entity has a
+ * facade like any other — that is what gives it a store — and only its repository differs, reading and
+ * writing the `WidgetDefinition` payload rather than an endpoint of its own.
+ */
+export const BASE_WIDGET_FACADE_PROVIDERS: Provider[] = [WidgetDefinitionFacade, WidgetInputPortFacade, WidgetOutputPortFacade];
+
+/**
+ * The same facades keyed by entity name, to be spread into the application's `BASE_ENTITY_FACADE_REGISTRY`
+ * value.
+ *
+ * Every entity an `EMBEDDED_COMPONENTS` attribute of this library names has to appear here, or the control
+ * throws on first render rather than showing a list whose rows go nowhere on save — the registry is how it
+ * reaches the child's store and descriptor. Spread rather than provided separately, because the token holds
+ * one value: a second `provide: BASE_ENTITY_FACADE_REGISTRY` would replace the application's own entities
+ * instead of adding to them.
+ */
+export const BASE_WIDGET_ENTITY_FACADES: BaseEntityFacadeRegistry = {
+  [WIDGET_DEFINITION_ENTITY_NAME]: WidgetDefinitionFacade,
+  [WIDGET_INPUT_PORT_ENTITY_NAME]: WidgetInputPortFacade,
+  [WIDGET_OUTPUT_PORT_ENTITY_NAME]: WidgetOutputPortFacade,
+};

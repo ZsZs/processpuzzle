@@ -1,0 +1,75 @@
+# Default widget definitions of the 'processpuzzle-testbed' organization — the tenant behind
+# apps/processpuzzle-testbed.
+#
+# DefaultWidgetLoader imports this file on startup when `base-widget.loadDefaultWidgets` is true. The
+# owning organization is the part of the file name before `-widgets.yaml`, exactly as `<orgKey>-apps.yaml`
+# works in base-app, so seeding another tenant is adding another file rather than a configuration change.
+#
+# There is no `organization` block, unlike a default-apps file: a widget definition is keyed by
+# (orgKey, key) and this module has no organization registry to provision one in. See
+# DefaultWidgetsDocument.
+#
+# Every entry is precisely the payload of `POST /organizations/{orgKey}/widget-definitions`, so it
+# passes through the same mapper and the same key/port validation as a definition a designer saves.
+# Keys are lowercase-hyphen, as the contract's WidgetKey pattern requires.
+#
+# The two widget types below are the ones the testbed already renders as Angular components, so the
+# catalogue describes what the application can actually place rather than an aspiration. They arrive as
+# drafts: publishing is the designer's decision, and it leaves the Publish action something to do.
+
+widgetDefinitions:
+  # The palette entry of the card grid the testbed's content pages are built from. `propsSchema` is the
+  # JSON Schema of its `props` — stored verbatim and never interpreted server-side — and is what lets the
+  # designer render a generated props form instead of a raw JSON editor.
+  - key: cards-grid
+    name: Cards grid
+    translocoId: base_widget.cards_grid.name
+    description: >-
+      A responsive grid of Material cards, each with an image, a title and an action link.
+    category: Content
+    icon: grid_view
+    propsSchema:
+      type: object
+      properties:
+        cards:
+          type: array
+          title: Cards
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              imageUrl:
+                type: string
+                format: uri
+              actionLink:
+                type: string
+    inputPorts:
+      - name: cards
+        type: ARRAY
+        required: true
+        description: The cards to render, in order.
+
+  # The markdown renderer behind the testbed's documentation pages. A single string port, which is what
+  # makes it the simplest useful example of a widget type: one input, no output, one schema property.
+  - key: markdown-page
+    name: Markdown page
+    translocoId: base_widget.markdown_page.name
+    description: >-
+      Renders a Markdown document, resolving its source relative to the active language.
+    category: Content
+    icon: article
+    propsSchema:
+      type: object
+      properties:
+        markdownSrc:
+          type: string
+          title: Markdown source
+          description: Path of the document, without the language segment.
+      required:
+        - markdownSrc
+    inputPorts:
+      - name: markdownSrc
+        type: STRING
+        required: true
+        description: Path of the document to render.

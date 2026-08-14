@@ -21,6 +21,10 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const pathAttr = new BaseEntityAttrDescriptor('path', FormControlType.TEXT_BOX, 'Path', undefined, true);
   pathAttr.required = true;
   pathAttr.placeholder = 'Relative to the app root, e.g. claims/open or claims/:id';
+  // The contract's own pattern. Declaring it here is what makes the form reject a value the backend
+  // would reject anyway — and it is serialized into the e2e registry, so generated fixtures produce a
+  // dashed token instead of a prose value the PUT answers with 400.
+  pathAttr.pattern = '^[a-z0-9:][a-z0-9\\-:/]*$';
 
   const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title');
   titleAttr.required = true;

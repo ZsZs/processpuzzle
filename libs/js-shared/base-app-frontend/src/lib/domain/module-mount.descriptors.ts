@@ -15,10 +15,15 @@ function createModuleMountAttrDescriptors(): AbstractAttrDescriptor[] {
   moduleKeyAttr.required = true;
   moduleKeyAttr.isHeading = true;
   moduleKeyAttr.placeholder = 'Key of a module definition of this organization';
+  // Both patterns are the contract's own. Declaring them here makes the form refuse what the backend
+  // would refuse anyway, and puts them in the e2e registry, so generated fixtures produce dashed tokens
+  // rather than prose the PUT answers with 400.
+  moduleKeyAttr.pattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
 
   const basePathAttr = new BaseEntityAttrDescriptor('basePath', FormControlType.TEXT_BOX, 'Base Path');
   basePathAttr.required = true;
   basePathAttr.placeholder = 'The module routes are mounted under this prefix, e.g. claims';
+  basePathAttr.pattern = '^[a-z0-9][a-z0-9\\-/]*$';
 
   const flexBoxContainer = new FlexboxDescriptor([moduleKeyAttr, basePathAttr], FlexDirection.ROW);
   flexBoxContainer.style = { 'column-gap': '10px', width: 'fit-content' };

@@ -1,0 +1,40 @@
+{
+  "widget_definition": {
+    "_self": "Widget",
+    "id": "Schlüssel",
+    "name": "Name",
+    "translocoId": "Transloco-Id",
+    "description": "Beschreibung",
+    "category": "Kategorie",
+    "icon": "Symbol",
+    "status": "Status",
+    "version": "Version",
+    "publishedVersion": "Veröffentlichte Version",
+    "updatedAt": "Aktualisiert am",
+    "inputPorts": "Eingangsports",
+    "outputPorts": "Ausgangsports"
+  },
+  "widget_input_port": {
+    "_self": "Eingangsport",
+    "name": "Name",
+    "type": "Typ",
+    "required": "Erforderlich",
+    "description": "Beschreibung",
+    "entityType": "Entitätstyp",
+    "attributeVisibility": "Attributsichtbarkeit",
+    "defaultValue": "Standardwert",
+    "defaultRsqlFilter": "Standard-RSQL-Filter"
+  },
+  "widget_output_port": {
+    "_self": "Ausgangsport",
+    "name": "Name",
+    "type": "Typ",
+    "description": "Beschreibung",
+    "entityType": "Entitätstyp",
+    "attributeVisibility": "Attributsichtbarkeit"
+  },
+  "publish": {
+    "button": "Veröffentlichen",
+    "tooltip": "Diese Version freigeben, damit Instanzen sich auf ihr Props-Schema verlassen können"
+  }
+}

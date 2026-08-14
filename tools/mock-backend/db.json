@@ -808,6 +808,80 @@
       ]
     }
   ],
+  "processpuzzle-testbed-widget-definitions": [
+    {
+      "id": "cards-grid",
+      "key": "cards-grid",
+      "name": "Cards grid",
+      "translocoId": "base_widget.cards_grid.name",
+      "description": "A responsive grid of Material cards, each with an image, a title and an action link.",
+      "category": "Content",
+      "icon": "grid_view",
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "cards": {
+            "type": "array",
+            "title": "Cards",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "imageUrl": { "type": "string", "format": "uri" },
+                "actionLink": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "inputPorts": [
+        {
+          "name": "cards",
+          "type": "ARRAY",
+          "required": true,
+          "description": "The cards to render, in order."
+        }
+      ],
+      "outputPorts": [],
+      "orgKey": "processpuzzle-testbed",
+      "status": "PUBLISHED",
+      "version": 1,
+      "publishedVersion": 1,
+      "createdAt": "2026-01-15T09:00:00Z",
+      "updatedAt": "2026-01-15T09:00:00Z"
+    },
+    {
+      "id": "markdown-page",
+      "key": "markdown-page",
+      "name": "Markdown page",
+      "translocoId": "base_widget.markdown_page.name",
+      "description": "Renders a Markdown document, resolving its source relative to the active language.",
+      "category": "Content",
+      "icon": "article",
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "markdownSrc": { "type": "string", "title": "Markdown source", "description": "Path of the document, without the language segment." }
+        },
+        "required": ["markdownSrc"]
+      },
+      "inputPorts": [
+        {
+          "name": "markdownSrc",
+          "type": "STRING",
+          "required": true,
+          "description": "Path of the document to render."
+        }
+      ],
+      "outputPorts": [],
+      "orgKey": "processpuzzle-testbed",
+      "status": "DRAFT",
+      "version": 2,
+      "publishedVersion": 1,
+      "createdAt": "2026-01-15T09:00:00Z",
+      "updatedAt": "2026-02-02T11:30:00Z"
+    }
+  ],
   "processpuzzle-testbed-modules": [
     {
       "id": "order-admin",

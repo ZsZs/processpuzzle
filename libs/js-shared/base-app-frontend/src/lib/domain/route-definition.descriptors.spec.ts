@@ -50,6 +50,15 @@ describe('createRouteDefinitionDescriptor', () => {
     expect(descriptor.componentIdentification()).toBe(APP_ROUTE_ID_FIELD);
   });
 
+  /**
+   * The path is a URL segment and the row's identification, so the form constrains it exactly as the
+   * contract does — `:` and `/` allowed, nothing needing encoding. The generated e2e fixtures read the
+   * pattern from here too; without it they offer prose the backend's `@Pattern` rejects with 400.
+   */
+  it('constrains the path as the contract does', () => {
+    expect(byName('path')?.pattern).toBe('^[a-z0-9:][a-z0-9\\-:/]*$');
+  });
+
   it('offers every target kind and entity mode of the contract as a dropdown', () => {
     expect(byName('kind')?.formControlType).toBe(FormControlType.DROPDOWN);
     expect(byName('kind')?.getSelectables()?.map((selectable) => selectable.key)).toEqual([...ROUTE_TARGET_KINDS]);

@@ -47,7 +47,10 @@
   "rules": "Szabályok",
   "states": "Állapotok",
   "workflows": "Munkafolyamatok",
+  "application": "Alkalmazás",
   "applications": "Alkalmazások",
+  "modules": "Modulok",
+  "widgets": "Widgetek",
   "under-construction_title": "Fejlesztés alatt",
   "under-construction_message": "Ez az oldal még nem érhető el. Térjen vissza később."
 }

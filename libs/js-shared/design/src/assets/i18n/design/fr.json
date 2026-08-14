@@ -47,7 +47,10 @@
   "rules": "Règles",
   "states": "États",
   "workflows": "Workflows",
+  "application": "Application",
   "applications": "Applications",
+  "modules": "Modules",
+  "widgets": "Widgets",
   "under-construction_title": "En construction",
   "under-construction_message": "Cette page n'est pas encore disponible. Revenez plus tard."
 }
