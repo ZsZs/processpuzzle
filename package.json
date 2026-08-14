@@ -113,7 +113,7 @@
     "test-base-rule-frontend": "nx run base-rule-frontend:test --configuration=ci --coverage --no-cloud",
     "test-base-state-backend": "nx run base-state-backend:test --configuration=ci --no-cloud",
     "test-base-state-frontend": "nx run base-state-frontend:test --configuration=ci --coverage --no-cloud",
-    "test-base-widget-backend": "nx run base-widget-backend:test --configuration=ci --coverage --no-cloud",
+    "test-base-widget-backend": "nx run base-widget-backend:test --configuration=ci --no-cloud",
     "test-base-widget-frontend": "nx run base-widget-frontend:test --configuration=ci --coverage --no-cloud",
     "test-base-widget-frontend-ui": "nx run base-widget-frontend:test --ui",
     "test-design": "nx run design:test --configuration=ci --coverage --no-cloud",
