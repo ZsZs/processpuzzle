@@ -129,7 +129,7 @@ describe('BaseEntityService', () => {
     it('builds an id-scoped URL and maps the single-object response', () => {
       let actual: TestEntity | undefined;
       baseEntityService.findById('1').subscribe((entity) => (actual = entity as TestEntity));
-      const request = controller.expectOne((req) => req.url.endsWith('/node') && !req.params.keys().length);
+      const request = controller.expectOne((req) => req.url.endsWith('/node/1') && !req.params.keys().length);
       expect(request.request.method).toBe('GET');
       request.flush(payload);
       controller.verify();

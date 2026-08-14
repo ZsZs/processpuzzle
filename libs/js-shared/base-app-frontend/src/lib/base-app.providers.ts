@@ -1,11 +1,21 @@
 import type { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
-import { APP_DEFINITION_ENTITY_NAME, APP_NAV_ITEM_ENTITY_NAME, APP_PAGE_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './domain/app-entity-names';
+import {
+  APP_DEFINITION_ENTITY_NAME,
+  APP_MODULE_MOUNT_ENTITY_NAME,
+  APP_NAV_ITEM_ENTITY_NAME,
+  APP_REGION_ENTITY_NAME,
+  APP_ROUTE_ENTITY_NAME,
+  APP_WIDGET_ENTITY_NAME,
+  MODULE_DEFINITION_ENTITY_NAME,
+} from './domain/app-entity-names';
 import { AppDefinitionFacade } from './feature/app-definition.facade';
+import { AppModuleMountFacade } from './feature/app-module-mount.facade';
 import { AppNavItemFacade } from './feature/app-nav-item.facade';
-import { AppPageFacade } from './feature/app-page.facade';
 import { AppRegionFacade } from './feature/app-region.facade';
+import { AppRouteFacade } from './feature/app-route.facade';
 import { AppWidgetFacade } from './feature/app-widget.facade';
+import { ModuleDefinitionFacade } from './feature/module-definition.facade';
 
 /**
  * The facades of the whole definition graph, to be spread into the application's `providers`.
@@ -14,7 +24,7 @@ import { AppWidgetFacade } from './feature/app-widget.facade';
  * like any other — that is what gives it a store — and only its repository differs, reading and writing
  * the `App Definition` document rather than an endpoint of its own.
  */
-export const BASE_APP_FACADE_PROVIDERS: Provider[] = [AppDefinitionFacade, AppRegionFacade, AppPageFacade, AppNavItemFacade, AppWidgetFacade];
+export const BASE_APP_FACADE_PROVIDERS: Provider[] = [AppDefinitionFacade, ModuleDefinitionFacade, AppRegionFacade, AppRouteFacade, AppModuleMountFacade, AppNavItemFacade, AppWidgetFacade];
 
 /**
  * The same facades keyed by entity name, to be spread into the application's
@@ -28,8 +38,10 @@ export const BASE_APP_FACADE_PROVIDERS: Provider[] = [AppDefinitionFacade, AppRe
  */
 export const BASE_APP_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [APP_DEFINITION_ENTITY_NAME]: AppDefinitionFacade,
+  [MODULE_DEFINITION_ENTITY_NAME]: ModuleDefinitionFacade,
   [APP_REGION_ENTITY_NAME]: AppRegionFacade,
-  [APP_PAGE_ENTITY_NAME]: AppPageFacade,
+  [APP_ROUTE_ENTITY_NAME]: AppRouteFacade,
+  [APP_MODULE_MOUNT_ENTITY_NAME]: AppModuleMountFacade,
   [APP_NAV_ITEM_ENTITY_NAME]: AppNavItemFacade,
   [APP_WIDGET_ENTITY_NAME]: AppWidgetFacade,
 };

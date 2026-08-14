@@ -89,7 +89,7 @@ createGlobalSetup({ registryPath: REGISTRY_PATH, registryUrl: '/my-registry' });
 The registry derives each entity's base path by walking the router's configuration, and a `loadChildren` branch that has never been entered is not in it — the registry endpoint is a page load of its own. An entity mounted there arrives without a route, and the suites would fall back to guessing `<routePrefix>/<kebab-name>`, which the router answers with `NG04002`. Name its base path yourself; setup warns about every entity it had to leave unrouted, so a missing entry is reported next to its cause rather than three layers away:
 
 ```ts
-createGlobalSetup({ registryPath: REGISTRY_PATH, routeOverrides: { 'App Definition': '/design/app-definition' } });
+createGlobalSetup({ registryPath: REGISTRY_PATH, routeOverrides: { 'Widget Definition': '/design/application/widget-definition' } });
 ```
 
 ### 3. Spec files — one line each

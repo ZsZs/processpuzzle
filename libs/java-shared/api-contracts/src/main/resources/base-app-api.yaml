@@ -5,7 +5,7 @@ info:
     Organization provisioning plus CRUD, YAML import/export and runtime-resolution
     operations for AppDefinition — the metadata that the generic application shell
     (`@processpuzzle/base-app-frontend`) interprets at run-time to compose theme, layout,
-    navigation and pages.
+    navigation and routes.
 
     base-app is an interpreter, not a code generator: an AppDefinition describes *which*
     registered widget renders *where* with *which* props. It never carries widget
@@ -40,7 +40,8 @@ info:
 
     ## Scope of this version
 
-    Four region types (`header`, `sidenav`, `content`, `footer`), preset-based layout,
+    Three region types (`header`, `sidenav`, `footer`) plus the routed content outlet,
+    preset-based layout,
     prebuilt Material theme selection with `--pp-*` token overrides, and the two
     entity-driven widget types (`entity-grid`, `entity-form`). Responsive breakpoint rules
     are deferred; both `RegionType` and the widget `type` key space are open for extension
@@ -184,7 +185,7 @@ paths:
       operationId: listAppDefinitions
       summary: List the organization's app definitions
       description: >-
-        Returns complete definitions — theme, layout, every region and every page — exactly
+        Returns complete definitions — theme, layout, every region and every route — exactly
         as `getAppDefinition` does, one per page entry. This is the authoring/design-time
         view: the Low-Code designer edits a definition straight out of the list rather than
         re-fetching it, so a lighter shape here would leave it editing a truncated object
@@ -241,9 +242,9 @@ paths:
       operationId: getAppDefinition
       summary: Get the complete app definition by id
       description: >-
-        Returns the whole definition graph — theme, layout, every region and every page —
+        Returns the whole definition graph — theme, layout, every region and every route —
         unfiltered by role. This is the authoring/design-time view used by the Low-Code
-        designer. The run-time shell should use `/layout` plus lazy page loads instead.
+        designer. The run-time shell should use `/layout` plus lazy route loads instead.
       tags:
         - Base App
       responses:
@@ -310,7 +311,7 @@ paths:
       summary: Publish the current draft revision
       description: >-
         Promotes the current `version` to `publishedVersion` and sets status to `PUBLISHED`,
-        making it what `/layout` and the page endpoints serve to end users. Rejected with
+        making it what `/layout` and the route endpoints serve to end users. Rejected with
         400 when validation does not pass, so an invalid definition can never go live.
       tags:
         - Base App
@@ -338,9 +339,10 @@ paths:
       description: >-
         The bootstrap payload for AppShellComponent: theme, layout and the region list with
         `NavItem`s already filtered against the authenticated principal's roles, and
-        without the `pages` array. Pages are fetched lazily per route, mirroring base-rule's
-        `loadRulesFor()`. Filtering happens server-side so that a nav entry a user may not
-        see is never sent to the browser; clients must still expect the corresponding page
+        without the `routes` array. Routes are fetched lazily per path, mirroring base-rule's
+        `loadRulesFor()`; a mounted module's routes are fetched as a unit when something first
+        navigates under its basePath. Filtering happens server-side so that a nav entry a user may
+        not see is never sent to the browser; clients must still expect the corresponding route
         fetch to be authorized independently.
       tags:
         - Base App
@@ -358,33 +360,156 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /organizations/{orgKey}/app-definitions/{appId}/pages/{pageId}:
+  /organizations/{orgKey}/app-definitions/{appId}/routes/{routePath}:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/AppIdParam"
-      - name: pageId
+      - name: routePath
         in: path
         required: true
-        description: PageDefinition id — also the route path segment the shell registers.
+        description: >-
+          `RouteDefinition.path`. Multi-segment paths are URL-encoded (`claims%2Fopen`) so the whole
+          path stays one path variable — the alternative, a greedy wildcard segment, would make this
+          operation ambiguous against the sibling paths above.
         schema:
           type: string
     get:
-      operationId: getPageDefinition
-      summary: Get a single page definition
+      operationId: getRouteDefinition
+      summary: Get a single route definition
       description: >-
-        Lazy per-route page load. Returns 404 both when the page does not exist and when it
-        exists but no `NavItem` reachable by the caller's roles references it.
+        Lazy per-route load. Returns 404 both when the route does not exist and when it exists but
+        the caller's roles do not permit it.
       tags:
         - Base App
       parameters:
         - $ref: "#/components/parameters/DraftParam"
       responses:
         "200":
-          description: The page definition
+          description: The route definition
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageDefinition"
+                $ref: "#/components/schemas/RouteDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/modules:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listModuleDefinitions
+      summary: List the organization's modules
+      description: >-
+        Returns complete definitions including their route lists — the frontend's generic list feeds
+        its edit form from the listed object, so a summary projection would blank the omitted fields
+        on the next save.
+      tags:
+        - Base App
+      responses:
+        "200":
+          description: The organization's modules.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createModuleDefinition
+      summary: Create a module
+      tags:
+        - Base App
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/modules/{moduleKey}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - name: moduleKey
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+    get:
+      operationId: getModuleDefinition
+      summary: Get one module, with its routes
+      description: >-
+        The lazy-load entry point: the shell fetches a module's routes only when something navigates
+        under its mounted `basePath`.
+      tags:
+        - Base App
+      responses:
+        "200":
+          description: The module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateModuleDefinition
+      summary: Update a module
+      description: >-
+        Full replacement. `key` is immutable — it is what an `AppDefinition.modules` entry
+        references.
+      tags:
+        - Base App
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteModuleDefinition
+      summary: Delete a module
+      description: >-
+        Does not cascade: an `AppDefinition` still mounting this key keeps the mount, which becomes a
+        validation warning rather than breaking the app. Same loose coupling as a dangling
+        `NavItem.routePath`.
+      tags:
+        - Base App
+      responses:
+        "204":
+          description: Deleted
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
@@ -398,10 +523,10 @@ paths:
       summary: Validate an app definition without persisting it
       description: >-
         Checks referential integrity of a candidate definition: unique `id`s within their
-        scope, every `NavItem.pageId` resolving to a declared page, no page orphaned from
-        the navigation tree, no cycles in `NavItem.children` (widgets no longer nest, so
-        this check no longer applies to them), every `WidgetRef.props.childIds` entry
-        resolving to a sibling `WidgetRef.id` with `placement: REFERENCED` (error) or a
+        scope, unique `RouteDefinition.path`es, no `ModuleMount.basePath` colliding with another
+        mount or with an app-level route, no cycles in `NavItem.children` (widgets no longer nest, so
+        this check no longer applies to them), every `WidgetInstance.props.childIds` entry
+        resolving to a sibling `WidgetInstance.id` with `placement: REFERENCED` (error) or a
         `REFERENCED` widget pointed at by nothing (warning), every `--pp-*` token override
         naming a token the theme actually defines, and every `entityName` referenced by a
         widget being present in *this organization's* entity registry. Widget `props` are
@@ -765,40 +890,51 @@ components:
       description: >-
         The slot of the shell a region fills. A region is rendered only when it is declared
         in `regions`, so omitting `footer` is how an app has no footer. `sidenav` carries
-        `navItems`, `header` and `footer` carry static `widgets`, and `content` carries
-        neither — it is populated per route from a PageDefinition.
-      enum: [ header, sidenav, content, footer ]
+        `navItems`, and `header` and `footer` carry static `widgets`.
+
+        `content` is deliberately **not** a region: once routes own content, the content area *is*
+        the router outlet. The old `content` member carried no field of its own — `widgets` was
+        header/footer-only and `navItems` sidenav-only — so it was already vestigial. Sizing of the
+        outlet lives in `LayoutDefinition.contentMaxWidth`.
+      enum: [ header, sidenav, footer ]
       example: sidenav
 
     # Canonical definition in shared-api.yaml — local duplicate for the same reason as
     # OrganizationKey / ErrorResponse (openapi-generator's swagger-parser cannot resolve
     # cross-file $refs on Windows).
-    WidgetRef:
+    WidgetInstance:
       type: object
       description: >-
-        A reference to a registered widget, resolved via the frontend widget registry at
-        render time and instantiated with `NgComponentOutlet` / `ViewContainerRef`. No
-        longer recursive — see `placement` for how container widgets (tab groups, split
+        One placement of a widget in a route or region. **Repeat of the canonical
+        `WidgetInstance` in `shared-api.yaml`** — mapped onto
+        `com.processpuzzle.shared.model.WidgetInstance` by this spec's `schemaMappings`,
+        so the property set here must stay identical to the canonical one; only the prose
+        is base-app-specific. See that declaration for why the text is duplicated rather
+        than `$ref`-ed.
+
+        Not recursive — see `placement` for how container widgets (tab groups, split
         panels) compose without nesting.
       required: [ id, type ]
       properties:
         id:
           type: string
-          description: Unique within its page or region; used as the render loop's trackBy key.
+          description: Unique within its route or region; used as the render loop's trackBy key.
           example: widget-claims-grid
         type:
           type: string
           description: >-
-            Widget registry key. Intentionally an open string rather than an enum — new
-            widget types register into the frontend map without a contract change. Keys
-            interpreted in this version: `entity-grid`, `entity-form`.
+            Widget registry key, and the key of the `WidgetDefinition` describing this
+            type. Intentionally an open string rather than an enum — new widget types
+            register into the frontend map without a contract change. Keys interpreted in
+            this version: `entity-grid`, `entity-form`.
           example: entity-grid
         props:
           type: object
           description: >-
             Widget-specific configuration, passed to the resolved component as inputs.
-            Loose by design: each widget type owns and validates its own props shape, so the
-            shell and this contract stay agnostic of it.
+            Loose in this contract by design: each widget type owns its own props shape,
+            declared in its `WidgetDefinition.propsSchema` rather than here, so the shell
+            and this contract stay agnostic of it.
 
             entity-grid: `entityName` (BaseEntityDescriptor.entityName, required), `columns`
             (attribute names, defaults to the descriptor's grid columns), `rsqlFilter` (RSQL
@@ -808,8 +944,8 @@ components:
             `loadRulesFor()`), `submitLabel`, `submitTranslocoId`.
 
             Container widget types (e.g. `tab-group`, `split-panel`) express composition
-            here too, via `childIds` — a list of sibling `WidgetRef.id`s within the same
-            `widgets` array to render inside the container. Interpreting `childIds` is
+            here too, via `childIds` — a list of sibling `WidgetInstance.id`s within the
+            same `widgets` array to render inside the container. Interpreting `childIds` is
             that widget type's own concern, the same as any other prop; base-document and
             base-app only validate that the ids resolve and flag orphans.
 
@@ -830,38 +966,219 @@ components:
             something else points at its id, i.e. a container widget's `props.childIds`.
             A REFERENCED widget with nothing pointing at it is an orphan, flagged by
             `validateAppDefinition` as a warning, not an error.
+        inputBindings:
+          type: object
+          nullable: true
+          description: >-
+            Part of the canonical `WidgetInstance` shape and therefore present here, but
+            unused by base-app in this version: a route or region declares no ports for a
+            binding to resolve against. base-document, whose documents do declare
+            `inputPorts`, is the consumer. `nullable` so it stays absent from base-app
+            payloads rather than serializing as `{}`; a future route target that declares
+            ports of its own would make it meaningful.
+          additionalProperties:
+            type: string
+        outputBindings:
+          type: object
+          nullable: true
+          description: >-
+            The reverse of `inputBindings`, and unused by base-app for the same reason.
+          additionalProperties:
+            type: string
 
-    PageDefinition:
+    RouteTarget:
       type: object
-      description: One navigable page. The content region resolves to exactly one of these per route.
-      required: [ id, title, widgets ]
+      description: >-
+        What a route renders. A discriminated union on `kind`: exactly the fields of the named kind
+        are meaningful, the rest are null.
+
+        Modelled flat rather than as `oneOf` because openapi-generator turns a `oneOf` into an
+        interface plus one class per variant, and the frontend's generic form cannot edit that — the
+        same reason `DocumentBlock` keeps TEXT and WIDGET fields side by side. Which fields a kind
+        requires is validated server-side by `validateAppDefinition`, not structurally.
+      required: [ kind ]
       properties:
-        id:
+        kind:
           type: string
-          description: Unique within the app; used verbatim as the route path segment.
-          example: page-claims-list
+          enum: [ WIDGETS, DOCUMENT, ENTITY ]
+          description: >-
+            WIDGETS renders `widgets` in the content region. DOCUMENT renders the base-document
+            named by `documentSlug`. ENTITY renders base-entity's generated list or details screen
+            for `entityName`.
+
+            Deliberately no MODULE kind: a module is mounted by the app through
+            `AppDefinition.modules`, not reached through a route target. Making it a target would
+            let a route point into a module which points at another module, which is the arbitrarily
+            deep structure this design exists to avoid.
+        widgets:
+          type: array
+          description: WIDGETS only. Rendered in the content region, in declaration order.
+          items:
+            $ref: "#/components/schemas/WidgetInstance"
+        documentSlug:
+          type: string
+          nullable: true
+          description: >-
+            DOCUMENT only. `Document.slug` within this organization — the human-readable route key,
+            not the UUID, so a route survives being re-pointed at a rewritten document.
+          example: getting-started
+        entityName:
+          type: string
+          nullable: true
+          description: ENTITY only. `BaseEntityDescriptor.entityName` within this organization.
+          example: Claim
+        entityMode:
+          type: string
+          nullable: true
+          enum: [ LIST, DETAILS ]
+          description: ENTITY only. Which generated screen to render.
+        rsqlFilter:
+          type: string
+          nullable: true
+          description: ENTITY + LIST only. RSQL applied to the backing search.
+          example: "status!=CLOSED"
+
+    RouteDefinition:
+      type: object
+      description: >-
+        One navigable route. **Flat: a route has no children.** `path` may be multi-segment, so
+        `claims`, `claims/open` and `claims/:id` are three sibling entries rather than a tree.
+
+        Angular's own nesting — a parent route hosting a `<router-outlet>`, which deep-linkable tabs
+        need — is *derived* from these path prefixes when the frontend builds its `Routes`, because
+        nesting is a rendering concern rather than something worth authoring. Structure is broken up
+        at the module boundary instead: see `AppDefinition.modules`.
+      required: [ path, title, target ]
+      properties:
+        path:
+          type: string
+          description: >-
+            Route path relative to the app root, without a leading slash. May contain `/` for depth
+            and `:name` for a parameter. Unique within the app (and within a module).
+          pattern: '^[a-z0-9:][a-z0-9\-:/]*$'
+          example: claims/:id
         title:
           type: string
-          description: Default page title, in the organization's default language.
+          description: Default title, in the organization's default language.
           example: Claims
         translocoId:
           type: string
+          nullable: true
           description: >-
-            Transloco translation key for the title. The frontend prefers it over `title`
-            when present; the backend treats it as an opaque identifier.
-          example: claims.page.list.title
-        widgets:
+            Transloco translation key for the title. The frontend prefers it over `title` when
+            present; the backend treats it as an opaque identifier.
+          example: claims.route.list.title
+        icon:
+          type: string
+          nullable: true
+          description: Material or FontAwesome icon name, used where the route is surfaced directly.
+        roles:
           type: array
-          description: Top-level widgets rendered in the content region, in declaration order.
+          nullable: true
+          description: >-
+            Roles allowed to reach this route. Omit or leave empty for "any authenticated member of
+            the organization". Same convention as `NavItem.roles`.
           items:
-            $ref: "#/components/schemas/WidgetRef"
+            type: string
+        target:
+          $ref: "#/components/schemas/RouteTarget"
+
+    ModuleDefinitionInput:
+      type: object
+      description: >-
+        A lazily-loadable slice of an application: its own flat route list, its own transloco scope,
+        its own resource namespace. The unit that keeps a large app from becoming one deep tree.
+
+        **What "lazy" honestly means here.** A module lazy-loads *metadata* — this definition, its
+        routes, its translation files, and the documents and descriptors they name. It does **not**
+        lazy-load widget code: widget components are bundled at compile time and resolved through the
+        frontend registry, so a metadata module cannot split a bundle on its own. The real wins are
+        that `AppDefinition` stops being one aggregate that must be loaded, locked and published
+        atomically, and that a module becomes the unit of authoring permission and versioning.
+        Do not justify modules on a bundle-size claim they cannot cash.
+      required: [ key, name ]
+      properties:
+        key:
+          type: string
+          description: Unique within the organization; referenced by `ModuleMount.moduleKey`. Immutable.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: claims
+        name:
+          type: string
+          example: Claims management
+        translocoId:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        translocoScope:
+          type: string
+          nullable: true
+          description: >-
+            Transloco scope the module's translations load under; defaults to `key`. The frontend
+            must register it with an **explicit alias** — both `-` and `_` in a scope name are
+            camel-cased into a default alias that will not match the authored keys.
+          example: claims
+        routes:
+          type: array
+          description: >-
+            The module's routes, flat, with paths relative to the `basePath` it is mounted at. A
+            module does not mount modules: this is where composition stops.
+          items:
+            $ref: "#/components/schemas/RouteDefinition"
+
+    ModuleDefinition:
+      allOf:
+        - $ref: "#/components/schemas/ModuleDefinitionInput"
+        - type: object
+          required: [ orgKey, version ]
+          properties:
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ModuleMount:
+      type: object
+      description: >-
+        Mounts a `ModuleDefinition`'s routes into this application under `basePath`. The one place
+        route structure composes — and it composes exactly one level deep, because a module cannot
+        mount modules.
+      required: [ moduleKey, basePath ]
+      properties:
+        moduleKey:
+          type: string
+          description: >-
+            `ModuleDefinition.key` within this organization. A key naming no existing module is a
+            validation **warning**, not an error: modules are loosely coupled by design, so an app
+            may reference one that has not been authored yet.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: claims
+        basePath:
+          type: string
+          description: >-
+            Path prefix every route of the module is registered under. Two modules mounted at the
+            same basePath, or a basePath colliding with an app-level route, is an error.
+          pattern: '^[a-z0-9][a-z0-9\-/]*$'
+          example: claims
 
     NavItem:
       type: object
       description: >-
-        One entry in the sidenav, and the source for dynamic route registration
-        (`Router.resetConfig()` at bootstrap). An item with `children` and no `pageId` is a
-        non-navigable group node.
+        One entry in the sidenav. An item with `children` and no `routePath` is a non-navigable
+        group node.
+
+        **Nav hierarchy and route structure are separate axes, deliberately.** This is where nesting
+        belongs, because a collapsible sidenav group is presentation; `RouteDefinition` stays flat.
+        Conflating the two is what would force routes into an arbitrarily deep tree.
       required: [ id, label ]
       properties:
         id:
@@ -879,12 +1196,17 @@ components:
           type: string
           description: Material or FontAwesome icon name.
           example: description
-        pageId:
+        routePath:
           type: string
+          nullable: true
           description: >-
-            PageDefinition.id this entry navigates to. Omitted for group nodes, which only
-            expand their `children`.
-          example: page-claims-list
+            `RouteDefinition.path` this entry navigates to — including a module's routes, addressed
+            as `basePath/path`. Omitted for group nodes, which only expand their `children`.
+
+            Resolved by **string**, and a path matching no declared route is a validation
+            **warning** rather than an error. That is what keeps modules loosely coupled: an app may
+            link to a module's route before that module has been authored.
+          example: claims/open
         roles:
           type: array
           description: >-
@@ -905,7 +1227,7 @@ components:
         A shell region. Per-type configuration is modelled as optional sibling properties
         rather than a discriminated union, because the flat shape maps cleanly onto the
         generated Java records: `navItems` applies to `sidenav`, `widgets` to `header` and
-        `footer`, and `content` uses neither.
+        `footer`; the routed content outlet uses neither.
       required: [ type ]
       properties:
         type:
@@ -921,7 +1243,7 @@ components:
             header / footer only — static region content such as a language selector or
             version button, in declaration order.
           items:
-            $ref: "#/components/schemas/WidgetRef"
+            $ref: "#/components/schemas/WidgetInstance"
 
     AppDefinitionStatus:
       type: string
@@ -965,10 +1287,20 @@ components:
             definition is intentionally almost empty, and the designer fills it in.
           items:
             $ref: "#/components/schemas/RegionDefinition"
-        pages:
+        routes:
           type: array
+          description: >-
+            The app's own routes, as a flat list. Routes contributed by mounted modules are not
+            repeated here — they live in their `ModuleDefinition` and are composed in at runtime.
           items:
-            $ref: "#/components/schemas/PageDefinition"
+            $ref: "#/components/schemas/RouteDefinition"
+        modules:
+          type: array
+          description: >-
+            Modules this application mounts, and where. The unit of decomposition: a large app is a
+            short route list plus a handful of module mounts, rather than one deep tree.
+          items:
+            $ref: "#/components/schemas/ModuleMount"
 
     AppDefinition:
       description: A persisted app definition.
@@ -1004,7 +1336,7 @@ components:
       type: object
       description: >-
         The run-time shell payload: theme, layout and the regions of an app definition with
-        role filtering already applied, and without pages. `version` is the version of the
+        role filtering already applied, and without routes. `version` is the version of the
         AppDefinition it was derived from, so the shell can detect a published change.
       required: [ id, orgKey, name, regions ]
       properties:
@@ -1040,15 +1372,15 @@ components:
         path:
           type: string
           description: JSON-pointer-like location of the offending node.
-          example: /regions/0/navItems/1/pageId
+          example: /regions/0/navItems/1/routePath
         errorId:
           type: string
           description: Stable, machine-readable identifier / Transloco key.
-          example: app.validation.unknown-page-reference
+          example: app.validation.unknown-route-reference
         errorText:
           type: string
           description: Human-readable message in the service's default language.
-          example: No page with id 'page-claim-form' is declared in this app definition.
+          example: No route with path 'claims/:id' is declared in this app definition.
         severity:
           $ref: "#/components/schemas/Severity"
 

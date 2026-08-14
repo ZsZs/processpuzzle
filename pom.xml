@@ -50,6 +50,7 @@
         <module>libs/java-shared/base-workflow-backend</module>
         <module>libs/java-shared/base-rule-backend</module>
         <module>libs/java-shared/base-state-backend</module>
+        <module>libs/java-shared/base-widget-backend</module>
         <module>libs/java-shared/processpuzzle-store</module>
         <module>libs/java-shared/processpuzzle-core</module>
     </modules>
@@ -82,6 +83,7 @@
         <base-rule-backend.version>1.1.0</base-rule-backend.version>
         <base-state-backend.version>1.0.5</base-state-backend.version>
         <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
+        <base-widget-backend.version>0.1.0</base-widget-backend.version>
         <processpuzzle-core.version>1.1.0</processpuzzle-core.version>
         <processpuzzle-store.version>1.1.1</processpuzzle-store.version>
     </properties>
@@ -145,6 +147,12 @@
                 <groupId>${project.groupId}</groupId>
                 <artifactId>base-app-backend</artifactId>
                 <version>${base-app-backend.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>base-widget-backend</artifactId>
+                <version>${base-widget-backend.version}</version>
             </dependency>
 
             <dependency>

@@ -12,11 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Builds the run-time bootstrap payload for the application shell: theme, layout, and the regions
- * with nav entries already filtered against the caller's roles — but no pages, which are fetched
+ * with nav entries already filtered against the caller's roles — but no routes, which are fetched
  * lazily per route.
  *
  * <p>Filtering happens here, server side, so a nav entry the user may not see never reaches the
- * browser. The corresponding page fetch is authorized independently by {@link GetPageDefinition};
+ * browser. The corresponding route fetch is authorized independently by {@link GetRouteDefinition};
  * hiding the entry is not by itself access control.
  *
  * <p>{@code draft = true} serves the unpublished working copy for the designer's preview and

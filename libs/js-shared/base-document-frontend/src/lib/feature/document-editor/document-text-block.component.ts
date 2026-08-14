@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, computed, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { WIDGET_REGISTRY } from '@processpuzzle/base-entity';
+import { WIDGET_REGISTRY } from '@processpuzzle/base-widget';
 import { DocumentBlock } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';

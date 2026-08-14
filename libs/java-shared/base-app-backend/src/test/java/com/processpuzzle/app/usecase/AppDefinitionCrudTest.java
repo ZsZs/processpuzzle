@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,7 +52,7 @@ class AppDefinitionCrudTest {
         AppDefinition found = findAppDefinition.execute(ORG_KEY, APP_ID);
 
         assertThat(found).isSameAs(stored);
-        assertThat(found.getDraftGraph().pages()).extracting(page -> page.id()).containsExactly(PAGE_ID);
+        assertThat(found.getDraftGraph().routes()).extracting(route -> route.path()).containsExactly(ROUTE_PATH);
     }
 
     @Test
@@ -91,11 +91,11 @@ class AppDefinitionCrudTest {
     @Test
     void validateReportsProblemsWithoutPersistingAnything() {
         AppDefinitionInput broken = AppTestFixtures.validInput(APP_ID);
-        broken.getRegions().getFirst().getNavItems().getFirst().setPageId("page-missing");
+        broken.getRegions().getFirst().getNavItems().getFirst().setRoutePath("route-missing");
 
         assertThat(validateAppDefinition.execute(ORG_KEY, broken))
                 .extracting(AppValidationProblem::errorId)
-                .contains("app.validation.unknown-page-reference", "app.validation.orphan-page");
+                .contains("app.validation.unknown-route-reference", "app.validation.orphan-route");
         verifyNoInteractions(repository);
     }
 

@@ -59,14 +59,19 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/js-shared/widgets/src/assets/i18n/widgets",
+            "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/widgets",
             "output": "assets/i18n/widgets"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/base_widget",
+            "output": "assets/i18n/base_widget"
           },
           "apps/processpuzzle-testbed/src/environments",
           "apps/processpuzzle-testbed/src/run-time-conf"
         ],
         "styles": [
-          "libs/js-shared/widgets/src/theme/pp-colors.css",
+          "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
           "apps/processpuzzle-testbed/src/custom-theme.scss",
           "apps/processpuzzle-testbed/src/styles.scss",
           "node_modules/prismjs/themes/prism-okaidia.css",

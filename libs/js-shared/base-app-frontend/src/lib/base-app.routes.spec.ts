@@ -12,6 +12,10 @@ describe('BASE_APP_ROUTES', () => {
   const [appDefinitionRoute] = BASE_APP_ROUTES;
   const detailsRoute = appDefinitionRoute.children?.find((child) => child.path === ':entityId/details');
 
+  it('registers the two routable aggregates as siblings', () => {
+    expect(BASE_APP_ROUTES.map((route) => route.path)).toEqual(['app-definition', 'module-definition']);
+  });
+
   it('uses the snake-cased entity name as path, as the form navigator expects', () => {
     expect(appDefinitionRoute.path).toBe('app-definition');
   });
@@ -37,21 +41,27 @@ describe('BASE_APP_ROUTES', () => {
     expect(appDefinitionRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']);
   });
 
-  it('hangs the regions and the pages below the definition being edited', async () => {
+  it('hangs the regions, the routes and the module mounts below the definition being edited', async () => {
     const branches = await embeddedBranchesOf(detailsRoute);
 
     // Below the details route, not beside it: an embedded row has no id to be looked up by, so the
     // owner's segments are what address it — and what make it unreachable except through the owner.
-    expect(branches.map((branch) => branch.path)).toEqual(['app-region', 'app-page']);
-    expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['App Region', 'App Page']);
+    expect(branches.map((branch) => branch.path)).toEqual(['app-region', 'app-route', 'app-module-mount']);
+    expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['App Region', 'App Route', 'App Module Mount']);
     branches.forEach((branch) => expect(branch.data?.['embeddedEntity']).toBe(true));
   });
 
-  it('hangs the nav items and the widgets below the region, and the widgets below the page', async () => {
-    const [regionBranch, pageBranch] = await embeddedBranchesOf(detailsRoute);
+  it('hangs the nav items and the widgets below the region, and the widgets below the route', async () => {
+    const [regionBranch, routeBranch] = await embeddedBranchesOf(detailsRoute);
 
     expect((await embeddedBranchesOf(await deepestDetailsOf(regionBranch))).map((branch) => branch.path)).toEqual(['app-nav-item', 'app-widget']);
-    expect((await embeddedBranchesOf(await deepestDetailsOf(pageBranch))).map((branch) => branch.path)).toEqual(['app-widget']);
+    expect((await embeddedBranchesOf(await deepestDetailsOf(routeBranch))).map((branch) => branch.path)).toEqual(['app-widget']);
+  });
+
+  it('stops the module mount branch at itself, a module being an aggregate of its own', async () => {
+    const [, , moduleBranch] = await embeddedBranchesOf(detailsRoute);
+
+    expect(await embeddedBranchesOf(await deepestDetailsOf(moduleBranch))).toEqual([]);
   });
 
   it('lets a nav item nest in itself, as a group node does, and stops the widget branch at one level', async () => {
@@ -69,6 +79,46 @@ describe('BASE_APP_ROUTES', () => {
     // The rows are already listed on the owner's form, which is also the only place they are reachable
     // from, so a list route here would be a second door to the same room.
     expect((await embeddedBranchesOf(regionBranch)).map((route) => route.path)).toEqual([':entityId/details']);
+  });
+});
+
+describe('BASE_APP_ROUTES module definition branch', () => {
+  const moduleDefinitionRoute = BASE_APP_ROUTES[1];
+  const detailsRoute = moduleDefinitionRoute.children?.find((child) => child.path === ':entityId/details');
+
+  it('uses the snake-cased entity name as path, as the form navigator expects', () => {
+    expect(moduleDefinitionRoute.path).toBe('module-definition');
+  });
+
+  it('advertises itself to the design sidenav and to the entity route registry', () => {
+    expect(moduleDefinitionRoute.title).toBeTruthy();
+    expect(moduleDefinitionRoute.data).toEqual({ icon: 'extension', menuTitle: 'design.modules', entityName: 'Module Definition' });
+  });
+
+  it('registers the same two scopes the app branch does', () => {
+    const scopeProviders = (moduleDefinitionRoute.providers?.flat() ?? []) as Array<{ useValue: unknown }>;
+
+    expect(scopeProviders.map((provider) => provider.useValue)).toEqual([
+      { scope: 'base_entity', alias: 'base_entity' },
+      { scope: 'base_app', alias: 'base_app' },
+    ]);
+  });
+
+  // Routes and nothing else: a module has no regions of its own — a region is chrome, and the chrome
+  // belongs to the app that mounts the module.
+  it('hangs only the routes below the module being edited', async () => {
+    const branches = await embeddedBranchesOf(detailsRoute);
+
+    expect(branches.map((branch) => branch.path)).toEqual(['app-route']);
+    expect(branches[0].data?.['entityName']).toBe('App Route');
+    expect(branches[0].data?.['embeddedEntity']).toBe(true);
+  });
+
+  /** The same `App Route` branch the app definition gets, differing only in the URL prefix above it. */
+  it('gives a module route the same widget branch below it', async () => {
+    const [routeBranch] = await embeddedBranchesOf(detailsRoute);
+
+    expect((await embeddedBranchesOf(await deepestDetailsOf(routeBranch))).map((branch) => branch.path)).toEqual(['app-widget']);
   });
 });
 

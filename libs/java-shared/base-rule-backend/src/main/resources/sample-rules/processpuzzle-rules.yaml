@@ -3,11 +3,11 @@
 # What the designer authors is base-app metadata, so these rules guard an Organization and an
 # App Definition as they are being edited. `context` is the entityName of the designer's
 # BaseEntityDescriptor, and an expression sees the whole form value — for an App Definition
-# that includes the nested theme, layout, regions and pages.
+# that includes the nested theme, layout, regions and routes.
 #
 # Scope: these are the conventions and policies AppDefinitionValidator deliberately leaves
-# out, not a second copy of it. Referential integrity (duplicate ids, unknown pageId
-# references, orphan pages, dead nav items, region/type mismatches, unknown --pp-* theme
+# out, not a second copy of it. Referential integrity (duplicate ids, unknown routePath
+# references, orphan routes, dead nav items, region/type mismatches, unknown --pp-* theme
 # tokens) is already checked server-side on every write and needs no rule. Enum-valued
 # fields (materialTheme, colorScheme, preset, sidenavMode, region type) are rejected by
 # Jackson during deserialization, so they need none either.
@@ -97,19 +97,22 @@ rules:
     message: An app id is lowercase letters, digits and single hyphens, at most 100 characters.
     translocoId: rule.appDefinition.idIsRouteSafe
 
-  - id: page-ids-are-route-safe
-    name: Page ids are route-safe
+  - id: route-paths-are-route-safe
+    name: Route paths are route-safe
     description: >-
-      Same reason as the app id: a page id becomes its route path segment verbatim. The
-      server checks presence and uniqueness, not shape.
+      Same reason as the app id: a route path is used in the URL verbatim. A path may be
+      multi-segment ('orders/open'), so each segment is checked in turn; ':param' segments
+      are allowed. The server checks presence and uniqueness, not shape.
     context: App Definition
     severity: ERROR
     enabled: true
     fields:
-      - pages
-    expression: "(entity.pages || []).every(p => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.id || ''))"
-    message: Every page id must be lowercase letters, digits and single hyphens.
-    translocoId: rule.appDefinition.pageIdsAreRouteSafe
+      - routes
+    expression: >-
+      (entity.routes || []).every(r => (r.path || '').split('/').length > 0 &&
+      (r.path || '').split('/').every(s => /^:?[a-z0-9]+(-[a-z0-9]+)*$/.test(s)))
+    message: Every route path segment must be lowercase letters, digits and single hyphens.
+    translocoId: rule.appDefinition.routePathsAreRouteSafe
 
   - id: entity-widgets-declare-an-entity-name
     name: Entity widgets name the entity they render
@@ -117,16 +120,16 @@ rules:
       'entity-grid' and 'entity-form' resolve a BaseEntityDescriptor by props.entityName.
       The server verifies the name against the registry when one is given, but a missing
       entityName is only noticed at render time, as an empty widget. Covers every widget list —
-      page widgets and static header/footer widgets. No recursion: widgets do not nest, a
+      route target widgets and static header/footer widgets. No recursion: widgets do not nest, a
       container places siblings by id through props.childIds, so each list is already complete.
     context: App Definition
     severity: ERROR
     enabled: true
     fields:
-      - pages
+      - routes
       - regions
     expression: >-
-      ((check) => (entity.pages || []).every(p => check(p.widgets || [])) &&
+      ((check) => (entity.routes || []).every(r => check((r.target || {}).widgets || [])) &&
       (entity.regions || []).every(r => check(r.widgets || [])))(
       (widgets) => widgets.every(w =>
       !(w.type === 'entity-grid' || w.type === 'entity-form') ||
@@ -146,7 +149,7 @@ rules:
     fields:
       - regions
     expression: "(entity.regions || []).some(r => r.type === 'sidenav' && (r.navItems || []).length > 0)"
-    message: This app declares no sidenav navigation, so no page is reachable.
+    message: This app declares no sidenav navigation, so no route is reachable.
     translocoId: rule.appDefinition.declaresAPopulatedSidenav
 
   - id: sidenav-depth-at-most-two
@@ -214,13 +217,13 @@ rules:
     expression: >-
       (entity.regions || []).every(r => r.type !== 'sidenav' ||
       ((f, x) => f(f, x))((self, items) => items.every(n =>
-      (n.pageId == null || n.pageId === '' || (n.icon != null && n.icon !== '')) &&
+      (n.routePath == null || n.routePath === '' || (n.icon != null && n.icon !== '')) &&
       self(self, n.children || [])), r.navItems || []))
-    message: A nav entry that opens a page should have an icon.
+    message: A nav entry that opens a route should have an icon.
     translocoId: rule.appDefinition.navigableNavItemsHaveAnIcon
 
   - id: titles-are-translatable
-    name: App name and page titles are translatable
+    name: App name and route titles are translatable
     description: >-
       The frontend prefers translocoId over the literal name or title. Without one, a
       multi-language tenant shows the designer's default language to everyone.
@@ -229,9 +232,9 @@ rules:
     enabled: true
     fields:
       - translocoId
-      - pages
+      - routes
     expression: >-
       entity.translocoId != null && entity.translocoId !== '' &&
-      (entity.pages || []).every(p => p.translocoId != null && p.translocoId !== '')
-    message: Give the app name and every page title a Transloco id.
+      (entity.routes || []).every(r => r.translocoId != null && r.translocoId !== '')
+    message: Give the app name and every route title a Transloco id.
     translocoId: rule.appDefinition.titlesAreTranslatable

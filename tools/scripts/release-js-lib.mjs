@@ -34,7 +34,7 @@ const PROJECTS = new Map([
   ['e2e-testing', 'libs/js-shared/e2e-testing'],
   ['test-util', 'libs/js-shared/test-util'],
   ['util', 'libs/js-shared/util'],
-  ['widgets', 'libs/js-shared/widgets'],
+  ['base-widget-frontend', 'libs/js-shared/base-widget-frontend'],
   ['processpuzzle-testbed', 'apps/processpuzzle-testbed'],
 ]);
 

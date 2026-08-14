@@ -42,12 +42,16 @@
   "base-app_card_content_2": "Assemble entity, rule, state and workflow modules into the application shell",
   "base-app_card_content_3": "Build and promote the application under /appRoute/orgKey",
   "base-app_card_button": "Define applications...",
+  "designer-home": "Designer Home",
   "entities": "Entities",
   "documents": "Documents",
   "rules": "Rules",
   "states": "States",
   "workflows": "Workflows",
+  "application": "Application",
   "applications": "Applications",
+  "modules": "Modules",
+  "widgets": "Widgets",
   "under-construction_title": "Under construction",
   "under-construction_message": "This page is not available yet. Come back later."
 }

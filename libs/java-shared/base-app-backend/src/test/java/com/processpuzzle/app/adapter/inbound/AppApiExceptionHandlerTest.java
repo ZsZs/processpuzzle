@@ -9,7 +9,7 @@ import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException
 import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
 import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import java.util.List;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -46,11 +46,11 @@ class AppApiExceptionHandlerTest {
     @Test
     void anUnknownPageIs404() {
         assertThatResponse(handler.handlePageNotFound(
-                new PageDefinitionNotFoundException(ORG_KEY, APP_ID, PAGE_ID)))
-                .isEqualTo(HttpStatus.NOT_FOUND, "app.page.not-found", PAGE_ID);
+                new RouteDefinitionNotFoundException(ORG_KEY, APP_ID, ROUTE_PATH)))
+                .isEqualTo(HttpStatus.NOT_FOUND, "app.route.not-found", ROUTE_PATH);
     }
 
-    /** 404 rather than 409: the contract declares only 404 for the layout and page endpoints. */
+    /** 404 rather than 409: the contract declares only 404 for the layout and route endpoints. */
     @Test
     void requestingAnUnpublishedRevisionIs404NotAConflict() {
         assertThatResponse(handler.handleNotPublished(new AppNotPublishedException(ORG_KEY, APP_ID)))

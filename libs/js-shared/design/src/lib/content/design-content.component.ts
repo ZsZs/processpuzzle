@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
+import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/base-widget';
 
 @Component({
   selector: 'pp-design-content',
@@ -63,7 +63,8 @@ export class DesignContentComponent {
       title: 'base-app_card_title',
       subtitle: 'base-app_card_subtitle',
       content: ['base-app_card_content', 'base-app_card_content_1', 'base-app_card_content_2', 'base-app_card_content_3'],
-      actions: [{ link: '/design/app-definition', caption: 'base-app_card_button', colour: 'primary' }],
+      // The section, not one of its tabs: `application` redirects to the App Definition tab on its own.
+      actions: [{ link: '/design/application', caption: 'base-app_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
   ];

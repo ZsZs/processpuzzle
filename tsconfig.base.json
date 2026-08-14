@@ -31,7 +31,7 @@
       "@processpuzzle/design": ["./libs/js-shared/design/src/public-api.ts"],
       "@processpuzzle/test-util": ["./libs/js-shared/test-util/src/public-api.ts"],
       "@processpuzzle/util": ["./libs/js-shared/util/src/public-api.ts"],
-      "@processpuzzle/widgets": ["./libs/js-shared/widgets/src/public-api.ts"],
+      "@processpuzzle/base-widget": ["./libs/js-shared/base-widget-frontend/src/public-api.ts"],
       "@processpuzzle/e2e-testing": ["./libs/js-shared/e2e-testing/src/public-api.ts"]
     }
   },

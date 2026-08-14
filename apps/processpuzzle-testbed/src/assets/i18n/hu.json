@@ -151,7 +151,7 @@
   "base-apps": {
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Példák",
-    "samples_desc_1": "Az alkalmazásdefiníció a teljes alkalmazást metaadatként írja le: munkaterületeit, navigációját, oldalait, régióit és widgetjeit.",
+    "samples_desc_1": "Az alkalmazásdefiníció a teljes alkalmazást metaadatként írja le: navigációját, útvonalait, régióit, widgetjeit és a hozzá csatolt modulokat.",
     "samples_desc_2": "Az alábbi táblázat és űrlap futásidőben, az App Definition leírókból generálódik – pontosan úgy, mint bármely más entitás esetében.",
     "intro_heading": "ProcessPuzzle Alkalmazástervező",
     "frontend_heading": "Frontend — @processpuzzle/base-app",

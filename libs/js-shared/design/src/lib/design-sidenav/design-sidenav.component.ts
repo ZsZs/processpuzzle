@@ -29,5 +29,11 @@ import { DESIGN_ROUTES } from '../design.routes';
 })
 export class DesignSidenavComponent {
   readonly layoutService = inject(LayoutService);
-  readonly routes = DESIGN_ROUTES.filter((item) => item.title !== null && item.title !== undefined);
+  /**
+   * The sections of the designer: the top-level routes that declare a `menuTitle`, which is what this list
+   * renders. Filtering on that rather than on `title` — as this did — says what the filter means: a route's
+   * `title` is the browser's, and the deepest one wins, so the parent titles here are never displayed.
+   * Children are not walked: the Application section's three entities are tabs of its own page.
+   */
+  readonly routes = DESIGN_ROUTES.filter((item) => item.data?.['menuTitle'] !== undefined);
 }

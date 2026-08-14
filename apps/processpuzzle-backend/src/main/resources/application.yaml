@@ -68,6 +68,9 @@ base-rule:
 base-app:
   loadDefaultApps: yes
 
+base-widget:
+  loadDefaultWidgets: yes
+
 base-document:
   loadSamples: yes
 

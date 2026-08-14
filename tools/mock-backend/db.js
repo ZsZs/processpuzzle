@@ -18,13 +18,23 @@ const METADATA_SOURCES = [
     documentKey: 'appDefinitions',
     collection: 'app-definitions',
   },
+  // Modules live in the same file as the apps that mount them, under a key of their own — one source
+  // per collection, so the apps file simply appears twice here. A module is identified by `key` in the
+  // contract, and json-server addresses records by `id`, so `identifier` names the field to mirror.
+  {
+    directory: '../../libs/java-shared/base-app-backend/src/main/resources/default-apps',
+    suffix: '-apps.yaml',
+    documentKey: 'moduleDefinitions',
+    collection: 'modules',
+    identifier: 'key',
+  },
 ];
 
 // json-server rejects '/' in collection names, so an org-scoped collection is flattened to
 // `<orgKey>-<collection>`; org-scope.js rewrites `/organizations/<orgKey>/<collection>` onto it.
-const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)/;
+const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)|(-modules$)/;
 
-function readYamlDocuments({ directory, suffix, documentKey, collection }) {
+function readYamlDocuments({ directory, suffix, documentKey, collection, identifier }) {
   const absoluteDirectory = path.resolve(__dirname, directory);
   if (!fs.existsSync(absoluteDirectory)) return [];
   return fs
@@ -36,9 +46,16 @@ function readYamlDocuments({ directory, suffix, documentKey, collection }) {
         orgKey: fileName.slice(0, -suffix.length),
         organization: document.organization,
         collection,
-        records: document[documentKey] ?? [],
+        records: (document[documentKey] ?? []).map((record) => withIdentifier(record, identifier)),
       };
     });
+}
+
+// json-server addresses a record by its `id`, so a collection whose contract identifier is named
+// something else gets that field mirrored onto `id` — the same rename the frontend mapper performs.
+function withIdentifier(record, identifier) {
+  if (!identifier || record?.id !== undefined) return record;
+  return { id: record?.[identifier], ...record };
 }
 
 // The `organization` block of an apps file provisions the tenant; a file that carries none still

@@ -13,7 +13,7 @@ import java.util.List;
  * would mean mapping between two identical enums for no gain. It is the single type Base Rule exposes
  * as its {@code domain} named interface, precisely so that a caller can read an evaluation result.
  *
- * @param path JSON-pointer-like location of the offending node, e.g. {@code /regions/0/navItems/1/pageId}
+ * @param path JSON-pointer-like location of the offending node, e.g. {@code /regions/0/navItems/1/routePath}
  * @param errorId stable, machine-readable identifier, usable as a Transloco key by the designer
  * @param errorText human-readable message in the service's default language
  * @param severity whether this rejects the write or is merely advice — see {@link #blocksPersisting()}

@@ -151,7 +151,7 @@
   "base-apps": {
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
-    "samples_desc_1": "Eine Anwendungsdefinition beschreibt eine ganze Anwendung als Metadaten: ihre Arbeitsbereiche, Navigation, Seiten, Regionen und Widgets.",
+    "samples_desc_1": "Eine Anwendungsdefinition beschreibt eine ganze Anwendung als Metadaten: ihre Navigation, Routen, Regionen, Widgets und die von ihr eingebundenen Module.",
     "samples_desc_2": "Die Tabelle und das Formular unten werden zur Laufzeit aus den App-Definition-Deskriptoren generiert – genau wie bei jeder anderen Entität.",
     "intro_heading": "ProcessPuzzle Application Designer",
     "frontend_heading": "Frontend — @processpuzzle/base-app",

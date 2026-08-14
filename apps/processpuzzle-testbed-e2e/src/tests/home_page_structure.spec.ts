@@ -29,7 +29,7 @@ test.describe('Home page navigation', { tag: '@smoke' }, () => {
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToWidgetsPage();
-    await expect(page.getByRole('heading', { name: '@processpuzzle/widgets' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '@processpuzzle/base-widget' })).toBeVisible();
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToAuthPage();

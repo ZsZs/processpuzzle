@@ -46,7 +46,8 @@ describe('AppDefinitionService', () => {
     expect(listed.materialTheme).toBe('azure-blue');
     expect(listed.contentMaxWidth).toBe('1280px');
     expect(listed.regions).toEqual(APP_DEFINITION_DTO.regions);
-    expect(listed.pages).toEqual(APP_DEFINITION_DTO.pages);
+    expect(listed.routes?.[0].path).toBe('orders');
+    expect(listed.modules).toEqual(APP_DEFINITION_DTO.modules);
   });
 
   it('still reads the bare array the json-server mock returns', async () => {
@@ -55,7 +56,7 @@ describe('AppDefinitionService', () => {
     controller.expectOne(`${serviceRoot}/app-definitions`).flush([APP_DEFINITION_DTO]);
 
     const result = (await pending) as AppDefinition[];
-    expect(result[0].pages).toEqual(APP_DEFINITION_DTO.pages);
+    expect(result[0].routes?.[0].path).toBe('orders');
   });
 
   it('addresses a single definition by its app id', () => {
@@ -71,7 +72,8 @@ describe('AppDefinitionService', () => {
       id: 'demo',
       name: 'Demo',
       layout: { preset: 'top-nav' },
-      pages: [{ id: 'p1', title: 'P1', widgets: [] }],
+      routes: [{ path: 'orders', title: 'Orders', target: { kind: 'ENTITY', entityName: 'Order', entityMode: 'LIST' } }],
+      modules: [{ moduleKey: 'claims', basePath: 'claims' }],
     }) as PersistedEntity<AppDefinition>;
 
     service.update(entity).subscribe();
@@ -79,7 +81,8 @@ describe('AppDefinitionService', () => {
     const request = controller.expectOne(`${serviceRoot}/app-definitions/demo`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body.layout.preset).toBe('top-nav');
-    expect(request.request.body.pages).toEqual([{ id: 'p1', title: 'P1', widgets: [] }]);
+    expect(request.request.body.routes).toEqual([{ path: 'orders', title: 'Orders', target: { kind: 'ENTITY', entityName: 'Order', entityMode: 'LIST' } }]);
+    expect(request.request.body.modules).toEqual([{ moduleKey: 'claims', basePath: 'claims' }]);
     request.flush({ id: 'demo', name: 'Demo' });
   });
 

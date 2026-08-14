@@ -4,7 +4,7 @@ import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { WIDGET_REGISTRY } from '@processpuzzle/base-entity';
+import { WIDGET_REGISTRY } from '@processpuzzle/base-widget';
 import { DocumentBlock, BlockKind, WidgetPlacement } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockComponent } from './document-text-block.component';

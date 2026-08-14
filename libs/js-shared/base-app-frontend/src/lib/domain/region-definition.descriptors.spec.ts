@@ -3,7 +3,7 @@ import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, Fo
 import { APP_DEFINITION_ENTITY_NAME } from './app-entity-names';
 import { APP_NAV_ITEM_ENTITY_NAME } from './nav-item.descriptors';
 import { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD, createRegionDefinitionDescriptor } from './region-definition.descriptors';
-import { APP_WIDGET_ENTITY_NAME } from './widget-ref.descriptors';
+import { APP_WIDGET_ENTITY_NAME } from './widget-instance.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -42,7 +42,7 @@ describe('createRegionDefinitionDescriptor', () => {
 
   it('offers the closed region types of the contract as a dropdown', () => {
     expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['header', 'sidenav', 'content', 'footer']);
+    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['header', 'sidenav', 'footer']);
   });
 
   it('contains the nested definitions, which have no endpoint of their own', () => {

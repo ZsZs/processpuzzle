@@ -234,7 +234,7 @@ so neither platform can quietly become the only one that works.
 
 ## Theming
 The framework ships a small set of **named brand colors** as CSS custom properties, defined in
-`libs/js-shared/widgets/src/theme/pp-colors.css`. Framework components (header, sidenav, cards, form &
+`libs/js-shared/base-widget-frontend/src/theme/pp-colors.css`. Framework components (header, sidenav, cards, form &
 card buttons) reference these tokens instead of hard-coded values, so a single stylesheet controls the
 platform's look.
 
@@ -257,7 +257,7 @@ Add the token file to your app's `styles` array (Angular `project.json` / `angul
 own global styles:
 ```jsonc
 "styles": [
-  "libs/js-shared/widgets/src/theme/pp-colors.css", // or the published package path
+  "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css", // or the published package path
   "src/styles.scss"
 ]
 ```

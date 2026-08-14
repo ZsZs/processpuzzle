@@ -3,17 +3,21 @@ package com.processpuzzle.app.adapter.inbound;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.KeyAvailability;
+import com.processpuzzle.app.model.ModuleDefinition;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.model.Organization;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationStatus;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
+import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
@@ -21,6 +25,7 @@ import com.processpuzzle.rule.usecase.EvaluateObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -41,6 +46,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
@@ -50,7 +56,7 @@ import static org.mockito.Mockito.when;
 /**
  * Covers the loader's file walk and, through the bundled {@code processpuzzle-testbed-apps.yaml},
  * the shipped default definition itself: the last test feeds the parsed demo app to the real
- * {@link AppDefinitionValidator}, so a YAML edit that breaks a page or nav reference fails here
+ * {@link AppDefinitionValidator}, so a YAML edit that breaks a route or nav reference fails here
  * rather than at run-time with the loader logging a rejection nobody reads.
  */
 class DefaultAppLoaderTest {
@@ -70,6 +76,7 @@ class DefaultAppLoaderTest {
         keyIs(availableKey(TESTBED_KEY));
         when(endpoint.provisionOrganization(any())).thenAnswer(call -> provisioned(call.getArgument(0)));
         when(endpoint.createAppDefinition(anyString(), any())).thenAnswer(call -> created(call.getArgument(1)));
+        when(endpoint.createModuleDefinition(anyString(), any())).thenAnswer(call -> createdModule(call.getArgument(1)));
         loader = new DefaultAppLoader(endpoint, resourceResolver);
     }
 
@@ -109,7 +116,7 @@ class DefaultAppLoaderTest {
     @Test
     void survivesADefinitionRejectedByValidation() {
         doThrow(new AppDefinitionInvalidException(TESTBED_KEY, "demo",
-                List.of(new AppValidationProblem("/pages/0", "app.validation.orphan-page", "Unreachable."))))
+                List.of(new AppValidationProblem("/routes/0", "app.validation.orphan-route", "Unreachable."))))
                 .when(endpoint).createAppDefinition(anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
@@ -163,18 +170,116 @@ class DefaultAppLoaderTest {
         // Every region type is declared, and the sidenav is populated — an app published without one
         // gives end users a shell they cannot navigate.
         assertThat(demo.getRegions()).extracting(RegionDefinition::getType)
-                .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.CONTENT, RegionType.FOOTER);
+                .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.FOOTER);
         assertThat(sidenavOf(demo).getNavItems()).isNotEmpty();
 
-        // Every declared page is reachable and every entity widget names its entity, both of which the
+        // Every declared route is reachable and every entity widget names its entity, both of which the
         // structural validator and the 'App Definition' rules require.
-        assertThat(demo.getPages()).extracting(PageDefinition::getId)
+        assertThat(demo.getRoutes()).extracting(RouteDefinition::getPath)
                 .containsExactly("order-list", "order-entry", "order-line-list");
-        assertThat(demo.getPages()).allSatisfy(page ->
-                assertThat(page.getWidgets()).isNotEmpty().allSatisfy(widget ->
+        assertThat(demo.getRoutes()).allSatisfy(route ->
+                assertThat(route.getTarget().getWidgets()).isNotEmpty().allSatisfy(widget ->
                         assertThat(entityNameOf(widget)).isNotBlank()));
 
-        assertThat(structuralValidator().validate(TESTBED_KEY, demo)).isEmpty();
+        // Nothing blocking, and exactly one advisory: 'nav-order-admin' points into the mounted module,
+        // whose routes an app definition cannot see. That warning is the loose coupling working, so it is
+        // asserted rather than tolerated — a second one would mean a genuinely broken reference.
+        List<AppValidationProblem> problems = structuralValidator().validate(TESTBED_KEY, demo);
+        assertThat(problems).noneMatch(AppValidationProblem::blocksPersisting);
+        assertThat(problems).singleElement().satisfies(problem -> {
+            assertThat(problem.errorId()).isEqualTo("app.validation.unknown-route-reference");
+            assertThat(problem.path()).endsWith("/routePath");
+        });
+    }
+
+    /**
+     * The bundled module, and the seeding order it relies on: a mount in the same file names a module
+     * that exists by the time the app is created. Nothing breaks if it does not — a dangling mount is a
+     * warning — but a fresh startup should not log one the file itself answers.
+     */
+    @Test
+    void theBundledModuleIsCreatedBeforeTheAppThatMountsIt() {
+        loader.loadDefaults();
+
+        InOrder order = inOrder(endpoint);
+        order.verify(endpoint).createModuleDefinition(eq(TESTBED_KEY), any(ModuleDefinitionInput.class));
+        order.verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+
+        ModuleDefinitionInput module = capturedModule();
+        assertThat(module.getKey()).isEqualTo("order-admin");
+        assertThat(module.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("lines", "line/:id");
+        assertThat(structuralValidator().validateModule(TESTBED_KEY, module)).isEmpty();
+
+        // The mount is what makes the module reachable, and it is the one the nav item points into.
+        assertThat(capturedDefinition().getModules()).singleElement().satisfies(mount -> {
+            assertThat(mount.getModuleKey()).isEqualTo("order-admin");
+            assertThat(mount.getBasePath()).isEqualTo("back-office");
+        });
+    }
+
+    @Test
+    void leavesAnAlreadyPresentModuleUntouchedAndStillLoadsTheApps() {
+        doThrow(new ModuleDefinitionAlreadyExistsException(TESTBED_KEY, "order-admin"))
+                .when(endpoint).createModuleDefinition(anyString(), any());
+
+        loader.loadDefaults();
+
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    /** A rejected module leaves a dangling mount, which is a warning — so the apps still load. */
+    @Test
+    void survivesAModuleRejectedByValidation() {
+        doThrow(new ModuleDefinitionInvalidException(TESTBED_KEY, "order-admin",
+                List.of(new AppValidationProblem("/routes/0", "app.validation.route-path-missing", "No path."))))
+                .when(endpoint).createModuleDefinition(anyString(), any());
+
+        loader.loadDefaults();
+
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    @Test
+    void aModuleCreationFailingForAnyOtherReason_isSurvived() {
+        doThrow(new IllegalStateException("constraint violation"))
+                .when(endpoint).createModuleDefinition(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+    }
+
+    /** The revision is only logged, so an answer without one must not become an exception. */
+    @Test
+    void aModuleCreationAnsweringWithoutARevision_isSurvived() {
+        doReturn(new ResponseEntity<>(new ModuleDefinition(), HttpStatus.CREATED))
+                .when(endpoint).createModuleDefinition(anyString(), any());
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+
+        doReturn(ResponseEntity.ok(null)).when(endpoint).createModuleDefinition(anyString(), any());
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    /** A blank key is as unusable as an absent one: the key is how a mount names the module. */
+    @Test
+    void aModuleWithoutAUsableKey_isRejectedWithoutReachingTheEndpoint() {
+        resolvesTo(yamlFile("other-org-apps.yaml",
+                "moduleDefinitions:\n  - name: Nameless\n  - key: \"   \"\n    name: Blank\n"));
+        keyIs(availableKey("other-org"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createModuleDefinition(anyString(), any());
+    }
+
+    @Test
+    void aFileDeclaringNoModules_seedsNone() {
+        resolvesTo(yamlFile("other-org-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
+        keyIs(availableKey("other-org"));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createModuleDefinition(anyString(), any());
     }
 
     /**
@@ -323,6 +428,12 @@ class DefaultAppLoaderTest {
         return definition.getValue();
     }
 
+    private ModuleDefinitionInput capturedModule() {
+        ArgumentCaptor<ModuleDefinitionInput> module = ArgumentCaptor.forClass(ModuleDefinitionInput.class);
+        verify(endpoint).createModuleDefinition(eq(TESTBED_KEY), module.capture());
+        return module.getValue();
+    }
+
     private static RegionDefinition sidenavOf(AppDefinitionInput definition) {
         Optional<RegionDefinition> sidenav = definition.getRegions().stream()
                 .filter(region -> region.getType() == RegionType.SIDENAV).findFirst();
@@ -330,7 +441,7 @@ class DefaultAppLoaderTest {
         return sidenav.get();
     }
 
-    private static String entityNameOf(WidgetRef widget) {
+    private static String entityNameOf(WidgetInstance widget) {
         assertThat(widget.getProps()).isNotNull();
         return String.valueOf(widget.getProps().get("entityName"));
     }
@@ -378,6 +489,13 @@ class DefaultAppLoaderTest {
         AppDefinition starter = new AppDefinition();
         starter.setId("app");
         return new ResponseEntity<>(new ProvisioningResult(organization, starter), HttpStatus.CREATED);
+    }
+
+    private static ResponseEntity<ModuleDefinition> createdModule(ModuleDefinitionInput input) {
+        ModuleDefinition definition = new ModuleDefinition();
+        definition.setKey(input.getKey());
+        definition.setVersion(1L);
+        return new ResponseEntity<>(definition, HttpStatus.CREATED);
     }
 
     private static ResponseEntity<AppDefinition> created(AppDefinitionInput input) {

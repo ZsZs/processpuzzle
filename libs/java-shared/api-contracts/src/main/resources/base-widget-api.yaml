@@ -1,0 +1,496 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Base Widget API
+  description: >-
+    CRUD for `WidgetDefinition` — the description of a widget *type*: its registry key, the schema
+    of its props, and the ports it offers.
+
+    ## Definition vs instance
+
+    This contract owns the **type**; `WidgetInstance` in shared-api.yaml is a **placement** of one.
+    A WidgetDefinition is an addressable resource with its own lifecycle and version; a
+    WidgetInstance is never standalone and always lives inside a container — a base-app route
+    target or region, or a WIDGET-kind block in a base-document. The join between them is
+    `WidgetInstance.type == WidgetDefinition.key`.
+
+    Keeping them apart is what separates design-time configuration from the widget's own contract.
+    Adding a widget type is a definition; using it somewhere is an instance; what the end user
+    later does with it at runtime is neither, and is not modelled here.
+
+    ## What this does *not* own
+
+    base-widget-backend records metadata about widget types. It holds no widget implementations —
+    those are Angular components registered into the frontend widget registry by
+    `provideWidget()` — and it never evaluates props, resolves ports, or renders anything. A `key`
+    with no registered component is a definition the frontend cannot render; that is a deployment
+    concern the backend cannot detect and deliberately does not try to.
+
+    ## propsSchema
+
+    The point of the resource. `WidgetInstance.props` is loose by design in every other contract —
+    each widget type owns its own props shape. `propsSchema` is where that shape is finally written
+    down, as JSON Schema, so a designer can be offered a *generated form* per widget type instead of
+    a raw JSON editor. The backend stores and returns it verbatim and does not validate instance
+    props against it: the widget owns its props, and validation belongs where the props are edited.
+
+    ## Multi-tenancy
+
+    Every resource is scoped by `{orgKey}`, exactly as in base-app-api.yaml — tenant discriminator,
+    public URL segment, and the scope every `key` is unique within. `OrganizationKey` and
+    `OrgKeyParam` in shared-api.yaml are canonical; verifying `orgKey` against the authenticated
+    principal's `organization` claim (403 on mismatch) is a server-side responsibility, not a
+    decision the path segment makes on its own.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+  /organizations/{orgKey}/widget-definitions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listWidgetDefinitions
+      summary: List the organization's widget definitions
+      description: >-
+        Returns complete definitions, including `propsSchema` and both port lists. Deliberately not
+        a summary projection: the frontend's generic list feeds its edit form directly from the
+        listed object, so a field omitted here is a field the next save writes back as null.
+      tags:
+        - Base Widget
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of widget definitions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_WidgetDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createWidgetDefinition
+      summary: Create a widget definition
+      description: >-
+        `key` must be unique within the organization; 409 otherwise. The definition is created in
+        `DRAFT` — see publishWidgetDefinition.
+      tags:
+        - Base Widget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WidgetDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/widget-definitions/{key}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WidgetKeyParam"
+    get:
+      operationId: getWidgetDefinition
+      summary: Get one widget definition
+      tags:
+        - Base Widget
+      responses:
+        "200":
+          description: The widget definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateWidgetDefinition
+      summary: Update a widget definition
+      description: >-
+        A full replacement: a field absent from the body is written as null. `key` is immutable —
+        it is what every stored `WidgetInstance.type` references, so renaming it would orphan every
+        placement. Create a new definition instead.
+      tags:
+        - Base Widget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WidgetDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteWidgetDefinition
+      summary: Delete a widget definition
+      description: >-
+        Does **not** cascade: instances referencing this key are left in place and become
+        unrenderable, the same state as a key with no registered component. Detecting them requires
+        scanning every app definition and document, which crosses feature boundaries; a
+        reference-checking endpoint is a reasonable follow-up.
+      tags:
+        - Base Widget
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/widget-definitions/{key}/publish:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WidgetKeyParam"
+    post:
+      operationId: publishWidgetDefinition
+      summary: Promote the draft to published
+      description: >-
+        Mirrors publishAppDefinition: `publishedVersion` is set to the current `version` and
+        `status` becomes PUBLISHED. A designer palette shows published definitions; the designer's
+        own preview may show drafts.
+      tags:
+        - Base Widget
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+components:
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      description: >-
+        Repeat of shared-api.yaml's canonical OrgKeyParam — see the note on WidgetInstance there for
+        why this workspace repeats rather than $refs across files.
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+
+    WidgetKeyParam:
+      name: key
+      in: path
+      required: true
+      description: The widget registry key, unique within the organization.
+      schema:
+        $ref: "#/components/schemas/WidgetKey"
+
+    WhereParam:
+      name: where
+      in: query
+      required: false
+      description: RSQL filter expression.
+      schema:
+        type: string
+
+    OrderParam:
+      name: order
+      in: query
+      required: false
+      description: Sort expression, e.g. `name,asc`.
+      schema:
+        type: string
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  responses:
+    BadRequest:
+      description: The request was malformed or failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The authenticated principal may not act on this organization.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: No such resource in this organization.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    OrganizationKey:
+      type: string
+      description: Repeat of shared-api.yaml's canonical OrganizationKey; mapped onto the shared type.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    ErrorResponse:
+      type: object
+      description: Repeat of shared-api.yaml's canonical ErrorResponse; mapped onto the shared type.
+      required: [ errorId, message ]
+      properties:
+        errorId:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    WidgetKey:
+      type: string
+      description: >-
+        Registry key. Kebab-case by convention (`cards-grid`, `entity-grid`, `document-viewer`), and
+        the value a `WidgetInstance.type` carries. Semantic rather than an implementation name: the
+        grid widget is `cards-grid`, not `mat-cards-grid`, because that it is built from Material
+        cards is not something a designer choosing a widget should have to know.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 64
+      example: cards-grid
+
+    WidgetDefinitionStatus:
+      type: string
+      enum: [ DRAFT, PUBLISHED ]
+
+    # ── Ports ──
+    # Repeats of shared-api.yaml's canonical PortType / AttributeVisibility / InputPort / OutputPort,
+    # mapped onto the shared generated types by this spec's schemaMappings. Shape must stay identical.
+
+    PortType:
+      type: string
+      enum: [ STRING, NUMBER, BOOLEAN, DATE, OBJECT, ARRAY, ENTITY_REF, ENTITY_COLLECTION ]
+      description: Repeat of the canonical PortType in shared-api.yaml.
+
+    AttributeVisibility:
+      type: object
+      description: Repeat of the canonical AttributeVisibility in shared-api.yaml.
+      properties:
+        mode:
+          type: string
+          enum: [ ALL, INCLUDE, EXCLUDE ]
+          default: ALL
+        attributes:
+          type: array
+          items:
+            type: string
+
+    InputPort:
+      type: object
+      required: [ name, type ]
+      description: Repeat of the canonical InputPort in shared-api.yaml.
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PortType"
+        required:
+          type: boolean
+          default: false
+        description:
+          type: string
+          nullable: true
+        defaultValue:
+          nullable: true
+        entityType:
+          type: string
+          nullable: true
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+        defaultRsqlFilter:
+          type: string
+          nullable: true
+
+    OutputPort:
+      type: object
+      required: [ name, type ]
+      description: Repeat of the canonical OutputPort in shared-api.yaml.
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PortType"
+        description:
+          type: string
+          nullable: true
+        entityType:
+          type: string
+          nullable: true
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+
+    # ── Widget definition ──
+
+    WidgetDefinitionInput:
+      type: object
+      required: [ key, name ]
+      description: The writable half of a WidgetDefinition; server-assigned fields live on the response.
+      properties:
+        key:
+          $ref: "#/components/schemas/WidgetKey"
+        name:
+          type: string
+          description: Human-readable label for the designer's widget palette.
+          example: Cards grid
+        translocoId:
+          type: string
+          nullable: true
+          description: >-
+            Translation key for `name`. The frontend prefers it when present; the backend treats it
+            as an opaque identifier.
+        description:
+          type: string
+          nullable: true
+          description: One or two lines shown in the palette to explain what the widget is for.
+        category:
+          type: string
+          nullable: true
+          description: >-
+            Free-form palette grouping (`Content`, `Data`, `Navigation`, …). Deliberately not an
+            enum: the useful categories differ per organization, and a wrong-but-fixable grouping
+            is cheaper than a schema migration.
+        icon:
+          type: string
+          nullable: true
+          description: Material icon name for the palette entry.
+          example: grid_view
+        propsSchema:
+          type: object
+          nullable: true
+          description: >-
+            JSON Schema for this widget type's `props`, stored and returned verbatim and never
+            interpreted server-side. It is what lets the designer render a generated props form
+            instead of a raw JSON editor.
+
+            Null means "props are unconstrained" — the honest state for a widget nobody has
+            described yet, and the reason this is nullable rather than defaulting to an empty
+            schema, which would instead assert that the widget takes no props at all.
+
+            Not validated against instance props by this backend: the widget owns its props, and
+            enforcement belongs where they are edited.
+          additionalProperties: true
+        inputPorts:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/InputPort"
+        outputPorts:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/OutputPort"
+
+    WidgetDefinition:
+      allOf:
+        - $ref: "#/components/schemas/WidgetDefinitionInput"
+        - type: object
+          required: [ orgKey, status, version ]
+          properties:
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            status:
+              $ref: "#/components/schemas/WidgetDefinitionStatus"
+            version:
+              type: integer
+              format: int64
+              description: Incremented on every write; the optimistic-locking token.
+            publishedVersion:
+              type: integer
+              format: int64
+              nullable: true
+              description: The `version` that was current at the last publish; null until first published.
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_WidgetDefinition:
+      type: object
+      required: [ content, totalElements, totalPages, number, size ]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/WidgetDefinition"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        number:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32

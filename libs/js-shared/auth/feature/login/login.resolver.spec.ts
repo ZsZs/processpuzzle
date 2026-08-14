@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from '@angular/router';
 import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, AuthenticationConfiguration, User } from '@processpuzzle/auth/domain';
-import { NavigateBackService } from '@processpuzzle/widgets';
+import { NavigateBackService } from '@processpuzzle/util';
 import { loginResolver } from './login.resolver';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

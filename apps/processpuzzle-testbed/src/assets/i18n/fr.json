@@ -151,7 +151,7 @@
   "base-apps": {
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
-    "samples_desc_1": "Une définition d'application décrit une application entière sous forme de métadonnées : ses espaces de travail, sa navigation, ses pages, régions et widgets.",
+    "samples_desc_1": "Une définition d'application décrit une application entière sous forme de métadonnées : sa navigation, ses routes, ses régions, ses widgets et les modules qu'elle monte.",
     "samples_desc_2": "Le tableau et le formulaire ci-dessous sont générés à l'exécution à partir des descripteurs App Definition, exactement comme pour toute autre entité.",
     "intro_heading": "Concepteur d'Applications ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-app",

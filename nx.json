@@ -117,7 +117,7 @@
       "processpuzzle-testbed",
       "test-util",
       "util",
-      "widgets",
+      "base-widget-frontend",
       "e2e-testing"
     ],
     "projectsRelationship": "independent",

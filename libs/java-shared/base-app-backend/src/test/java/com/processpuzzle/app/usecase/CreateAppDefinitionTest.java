@@ -21,7 +21,7 @@ import java.util.List;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,8 +81,8 @@ class CreateAppDefinitionTest {
     void theInputGraphIsMappedIntoTheDraft() {
         AppDefinition created = createAppDefinition.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID));
 
-        assertThat(created.getDraftGraph().pages()).singleElement()
-                .satisfies(page -> assertThat(page.id()).isEqualTo(PAGE_ID));
+        assertThat(created.getDraftGraph().routes()).singleElement()
+                .satisfies(route -> assertThat(route.path()).isEqualTo(ROUTE_PATH));
         assertThat(created.getDraftGraph().regions()).singleElement()
                 .satisfies(region -> assertThat(region.navItems()).hasSize(1));
         assertThat(created.getPublishedGraph()).isNull();
@@ -113,13 +113,13 @@ class CreateAppDefinitionTest {
     @Test
     void aStructurallyInvalidDefinition_is400CarryingTheProblems() {
         AppDefinitionInput input = AppTestFixtures.validInput(APP_ID);
-        input.getRegions().getFirst().getNavItems().getFirst().setPageId("page-missing");
+        input.getRoutes().add(AppTestFixtures.routeDefinition(AppTestFixtures.ROUTE_PATH, "Duplicate"));
 
         assertThatThrownBy(() -> createAppDefinition.execute(ORG_KEY, input))
                 .isInstanceOf(AppDefinitionInvalidException.class)
                 .satisfies(thrown -> assertThat(((AppDefinitionInvalidException) thrown).getProblems())
                         .extracting(AppValidationProblem::errorId)
-                        .contains("app.validation.unknown-page-reference"));
+                        .contains("app.validation.duplicate-route-path"));
 
         verify(repository, never()).save(any());
     }

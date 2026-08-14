@@ -29,9 +29,9 @@ import static org.mockito.Mockito.when;
 class OrganizationGuardTest {
 
     private static final NavNode PUBLIC_ITEM =
-            new NavNode("nav-claims", "Claims", null, null, "page-claims", List.of(), List.of());
+            new NavNode("nav-claims", "Claims", null, null, "route-claims", List.of(), List.of());
     private static final NavNode RESTRICTED_ITEM =
-            new NavNode("nav-audit", "Audit", null, null, "page-audit", List.of("CLAIMS_AUDITOR"), List.of());
+            new NavNode("nav-audit", "Audit", null, null, "route-audit", List.of("CLAIMS_AUDITOR"), List.of());
 
     @Test
     void anEntryWithoutRoles_isVisibleToAnyMember() {
@@ -85,7 +85,7 @@ class OrganizationGuardTest {
     }
 
     /**
-     * A childless entry with no pageId is malformed rather than emptied, so it is not the guard's job
+     * A childless entry with no routePath is malformed rather than emptied, so it is not the guard's job
      * to drop it — {@code AppDefinitionValidator} reports it as a dead nav item instead.
      */
     @Test
@@ -100,10 +100,10 @@ class OrganizationGuardTest {
     void aPageIsReachableWhenAVisibleEntryPointsAtIt() {
         List<Region> regions = List.of(sidenav(PUBLIC_ITEM, RESTRICTED_ITEM));
 
-        assertThat(withRoles(true).isPageReachable(regions, "page-claims")).isTrue();
-        assertThat(withRoles(true).isPageReachable(regions, "page-audit")).isTrue();
-        assertThat(withRoles(false).isPageReachable(regions, "page-audit")).isFalse();
-        assertThat(withRoles(true).isPageReachable(regions, "page-unknown")).isFalse();
+        assertThat(withRoles(true).isRouteReachable(regions, "route-claims")).isTrue();
+        assertThat(withRoles(true).isRouteReachable(regions, "route-audit")).isTrue();
+        assertThat(withRoles(false).isRouteReachable(regions, "route-audit")).isFalse();
+        assertThat(withRoles(true).isRouteReachable(regions, "route-unknown")).isFalse();
     }
 
     @Test
@@ -111,15 +111,15 @@ class OrganizationGuardTest {
         NavNode group = new NavNode("nav-group", "Claims", null, null, null, List.of(),
                 List.of(PUBLIC_ITEM));
 
-        assertThat(withRoles(true).isPageReachable(List.of(sidenav(group)), "page-claims")).isTrue();
+        assertThat(withRoles(true).isRouteReachable(List.of(sidenav(group)), "route-claims")).isTrue();
     }
 
     @Test
     void nothingIsReachableWithoutRegionsOrWithoutAPageId() {
         OrganizationGuard guard = withRoles(true);
 
-        assertThat(guard.isPageReachable(null, "page-claims")).isFalse();
-        assertThat(guard.isPageReachable(List.of(sidenav(PUBLIC_ITEM)), null)).isFalse();
+        assertThat(guard.isRouteReachable(null, "route-claims")).isFalse();
+        assertThat(guard.isRouteReachable(List.of(sidenav(PUBLIC_ITEM)), null)).isFalse();
     }
 
     @Test

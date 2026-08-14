@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, LayoutPreset, MaterialTheme, SidenavMode, ThemeDefinition } from './app-definition';
+import { flattenRouteTarget, nestRouteTarget, RouteDefinitionDto } from './route-definition.mapper';
 
 interface AppDefinitionDto {
   id?: string;
@@ -10,7 +11,8 @@ interface AppDefinitionDto {
   theme?: ThemeDefinition;
   layout?: LayoutDefinition;
   regions?: AppDefinition['regions'];
-  pages?: AppDefinition['pages'];
+  routes?: RouteDefinitionDto[];
+  modules?: AppDefinition['modules'];
   orgKey?: string;
   status?: AppDefinitionStatus;
   version?: number;
@@ -27,11 +29,16 @@ type AppDefinitionPayload = AppDefinitionDto & { theme: ThemeDefinition; layout:
  * generated form works with.
  *
  * Two invariants matter here. The form saves `{ ...entity, ...form.value }`, so every DTO field the
- * form does not show has to survive on the entity — `regions` and `pages` are nested rather than
- * flattened for exactly that reason, and the `EMBEDDED_COMPONENTS` controls edit them in place. And
- * `PUT /app-definitions/{appId}` is a full replacement, so {@link toDto} rebuilds `theme` and
- * `layout` from the flattened controls *on top of* the objects they were lifted out of, which keeps
- * any field a later contract version adds before this mapper learns about it.
+ * form does not show has to survive on the entity — `regions`, `routes` and `modules` are nested
+ * rather than flattened for exactly that reason, and the `EMBEDDED_COMPONENTS` controls edit them in
+ * place. And `PUT /app-definitions/{appId}` is a full replacement, so {@link toDto} rebuilds `theme`
+ * and `layout` from the flattened controls *on top of* the objects they were lifted out of, which
+ * keeps any field a later contract version adds before this mapper learns about it.
+ *
+ * A route's `target` is the third thing flattened, one level deeper: `regions` and `modules` rows
+ * travel as the raw DTO they arrived as, but a route row cannot. That flattening lives in
+ * `route-definition.mapper.ts` rather than here, because `ModuleDefinition.routes` carries the same
+ * schema and a route authored in a module has to behave exactly like one authored in an app.
  */
 @Injectable({ providedIn: 'root' })
 export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
@@ -57,7 +64,8 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       theme,
       layout,
       regions: source.regions,
-      pages: source.pages,
+      routes: source.routes?.map(flattenRouteTarget),
+      modules: source.modules,
       orgKey: source.orgKey,
       status: source.status,
       version: source.version,
@@ -77,7 +85,8 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       theme: this.mergeTheme(entity),
       layout: this.mergeLayout(entity),
       regions: entity.regions,
-      pages: entity.pages,
+      routes: entity.routes?.map(nestRouteTarget),
+      modules: entity.modules,
       orgKey: entity.orgKey,
       status: entity.status,
       version: entity.version,

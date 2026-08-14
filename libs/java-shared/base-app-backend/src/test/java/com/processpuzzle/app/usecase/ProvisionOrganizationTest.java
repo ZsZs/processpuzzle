@@ -67,14 +67,13 @@ class ProvisionOrganizationTest {
     }
 
     @Test
-    void starterAppIsAlmostEmpty_oneContentRegionAndNothingElse() {
+    void starterAppIsGenuinelyEmpty_noRegionsNoRoutesNoThemeNoLayout() {
         ProvisionOrganization.Result result =
                 provisionOrganization.execute(new OrganizationInput("my-org", "My Org"));
 
         AppDefinition starterApp = result.starterApp();
-        assertThat(starterApp.getDraftGraph().regions()).extracting(com.processpuzzle.app.domain.Region::type)
-                .containsExactly("content");
-        assertThat(starterApp.getDraftGraph().pages()).isEmpty();
+        assertThat(starterApp.getDraftGraph().regions()).isEmpty();
+        assertThat(starterApp.getDraftGraph().routes()).isEmpty();
         assertThat(starterApp.getDraftGraph().theme()).isNull();
         assertThat(starterApp.getDraftGraph().layout()).isNull();
     }

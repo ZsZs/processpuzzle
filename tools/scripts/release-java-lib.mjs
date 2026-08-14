@@ -39,6 +39,7 @@ const PROJECTS = new Map([
   ['base-entity-backend', 'libs/java-shared/base-entity-backend'],
   ['base-rule-backend', 'libs/java-shared/base-rule-backend'],
   ['base-state-backend', 'libs/java-shared/base-state-backend'],
+  ['base-widget-backend', 'libs/java-shared/base-widget-backend'],
   ['base-workflow-backend', 'libs/java-shared/base-workflow-backend'],
   ['processpuzzle-core', 'libs/java-shared/processpuzzle-core'],
   ['processpuzzle-store', 'libs/java-shared/processpuzzle-store'],

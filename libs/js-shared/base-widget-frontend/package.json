@@ -1,0 +1,39 @@
+{
+  "name": "@processpuzzle/base-widget",
+  "version": "0.9.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZsZs/processpuzzle.git",
+    "directory": "libs/js-shared/base-widget-frontend"
+  },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
+  "peerDependencies": {
+    "@angular/cdk": "^22.0.3",
+    "@angular/common": "~22.0.5",
+    "@angular/core": "~22.0.5",
+    "@angular/material": "^22.0.3",
+    "@angular/platform-browser": "~22.0.5",
+    "@angular/router": "~22.0.5",
+    "@fortawesome/angular-fontawesome": "^5.0.0",
+    "@fortawesome/fontawesome-svg-core": "^7.3.0",
+    "@fortawesome/free-brands-svg-icons": "^7.3.0",
+    "@fortawesome/free-solid-svg-icons": "^7.3.0",
+    "@jsverse/transloco": "8.4.0",
+    "@ngrx/component-store": "^21.1.1",
+    "@ngrx/operators": "^21.1.1",
+    "@ngrx/signals": "^21.1.1",
+    "@processpuzzle/base-entity": "^0.8.0",
+    "@processpuzzle/test-util": "^0.8.0",
+    "@processpuzzle/util": "^0.8.0",
+    "ngx-markdown": "^22.0.0",
+    "ngx-sharebuttons": "^17.0.0",
+    "rxjs": "~7.8.2"
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
+  },
+  "sideEffects": false
+}

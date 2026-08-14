@@ -42,12 +42,16 @@
   "base-app_card_content_2": "Ensamblar los módulos de entidad, regla, estado y flujo en el shell de la aplicación",
   "base-app_card_content_3": "Construir y publicar la aplicación bajo /appRoute/orgKey",
   "base-app_card_button": "Definir aplicaciones...",
+  "designer-home": "Inicio del diseñador",
   "entities": "Entidades",
   "documents": "Documentos",
   "rules": "Reglas",
   "states": "Estados",
   "workflows": "Flujos de trabajo",
+  "application": "Aplicación",
   "applications": "Aplicaciones",
+  "modules": "Módulos",
+  "widgets": "Widgets",
   "under-construction_title": "En construcción",
   "under-construction_message": "Esta página aún no está disponible. Vuelva más tarde."
 }

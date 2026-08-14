@@ -55,6 +55,11 @@
             <artifactId>base-workflow-backend</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>base-widget-backend</artifactId>
+        </dependency>
+
         <!-- Spring dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -6,7 +6,7 @@ import { MatError, MatFormField } from '@angular/material/form-field';
 import { MatInput, MatLabel } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NavigateBackService } from '@processpuzzle/widgets';
+import { NavigateBackService } from '@processpuzzle/util';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';

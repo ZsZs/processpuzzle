@@ -114,6 +114,34 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>generate-widget-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/base-widget-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <apiPackage>com.processpuzzle.widget.api</apiPackage>
+                            <modelPackage>com.processpuzzle.widget.model</modelPackage>
+                            <!-- The port schemas are declared canonically in shared-api.yaml and repeated in
+                                 base-widget-api.yaml, so base-widget binds to the shared generated types rather
+                                 than minting its own. base-document still generates DocumentInputPort /
+                                 DocumentOutputPort from identical shapes; converging it is a mapping change,
+                                 deliberately left out of introducing this module. -->
+                            <schemaMappings>
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,OrganizationKey=java.lang.String,PortType=com.processpuzzle.shared.model.PortType,AttributeVisibility=com.processpuzzle.shared.model.AttributeVisibility,InputPort=com.processpuzzle.shared.model.InputPort,OutputPort=com.processpuzzle.shared.model.OutputPort
+                            </schemaMappings>
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <interfaceOnly>true</interfaceOnly>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useTags>true</useTags>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>generate-rule-api</id>
                         <goals>
                             <goal>generate</goal>
@@ -170,8 +198,14 @@
                             <skipValidateSpec>true</skipValidateSpec>
                             <apiPackage>com.processpuzzle.app.api</apiPackage>
                             <modelPackage>com.processpuzzle.app.model</modelPackage>
+                            <!-- WidgetInstance is declared in shared-api.yaml and repeated verbatim in
+                                 base-app-api.yaml, because no spec here uses cross-file $ref. The mapping is
+                                 what makes the repetition harmless: base-app generates no WidgetInstance of
+                                 its own and binds to the shared one, so base-app and base-document cannot
+                                 drift into two incompatible Java types the way WidgetRef and DocumentBlock
+                                 had already begun to. -->
                             <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,WidgetInstance=com.processpuzzle.shared.model.WidgetInstance
                             </schemaMappings>
                             <configOptions>
                                 <delegatePattern>false</delegatePattern>

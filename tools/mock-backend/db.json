@@ -493,31 +493,31 @@
       "translocoId": "rule.appDefinition.idIsRouteSafe"
     },
     {
-      "id": "page-ids-are-route-safe",
-      "name": "Page ids are route-safe",
-      "description": "Same reason as the app id: a page id becomes its route path segment verbatim. The server checks presence and uniqueness, not shape.",
+      "id": "route-paths-are-route-safe",
+      "name": "Route paths are route-safe",
+      "description": "Same reason as the app id: a route path is used in the URL verbatim. A path may be multi-segment ('orders/open'), so each segment is checked in turn; ':param' segments are allowed. The server checks presence and uniqueness, not shape.",
       "context": "App Definition",
       "severity": "ERROR",
       "enabled": true,
       "fields": [
-        "pages"
+        "routes"
       ],
-      "expression": "(entity.pages || []).every(p => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.id || ''))",
-      "message": "Every page id must be lowercase letters, digits and single hyphens.",
-      "translocoId": "rule.appDefinition.pageIdsAreRouteSafe"
+      "expression": "(entity.routes || []).every(r => (r.path || '').split('/').length > 0 && (r.path || '').split('/').every(s => /^:?[a-z0-9]+(-[a-z0-9]+)*$/.test(s)))",
+      "message": "Every route path segment must be lowercase letters, digits and single hyphens.",
+      "translocoId": "rule.appDefinition.routePathsAreRouteSafe"
     },
     {
       "id": "entity-widgets-declare-an-entity-name",
       "name": "Entity widgets name the entity they render",
-      "description": "'entity-grid' and 'entity-form' resolve a BaseEntityDescriptor by props.entityName. The server verifies the name against the registry when one is given, but a missing entityName is only noticed at render time, as an empty widget. Walks the whole widget forest — page widgets and static header/footer widgets, children included.",
+      "description": "'entity-grid' and 'entity-form' resolve a BaseEntityDescriptor by props.entityName. The server verifies the name against the registry when one is given, but a missing entityName is only noticed at render time, as an empty widget. Covers every widget list — route target widgets and static header/footer widgets. No recursion: widgets do not nest, a container places siblings by id through props.childIds, so each list is already complete.",
       "context": "App Definition",
       "severity": "ERROR",
       "enabled": true,
       "fields": [
-        "pages",
+        "routes",
         "regions"
       ],
-      "expression": "((check) => (entity.pages || []).every(p => check(p.widgets || [])) && (entity.regions || []).every(r => check(r.widgets || [])))( (widgets) => ((f, x) => f(f, x))((self, ws) => ws.every(w => (!(w.type === 'entity-grid' || w.type === 'entity-form') || (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')) && self(self, w.children || [])), widgets))",
+      "expression": "((check) => (entity.routes || []).every(r => check((r.target || {}).widgets || [])) && (entity.regions || []).every(r => check(r.widgets || [])))( (widgets) => widgets.every(w => !(w.type === 'entity-grid' || w.type === 'entity-form') || (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')))",
       "message": "An 'entity-grid' or 'entity-form' widget needs props.entityName.",
       "translocoId": "rule.appDefinition.entityWidgetsDeclareAnEntityName"
     },
@@ -532,7 +532,7 @@
         "regions"
       ],
       "expression": "(entity.regions || []).some(r => r.type === 'sidenav' && (r.navItems || []).length > 0)",
-      "message": "This app declares no sidenav navigation, so no page is reachable.",
+      "message": "This app declares no sidenav navigation, so no route is reachable.",
       "translocoId": "rule.appDefinition.declaresAPopulatedSidenav"
     },
     {
@@ -587,23 +587,23 @@
       "fields": [
         "regions"
       ],
-      "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x))((self, items) => items.every(n => (n.pageId == null || n.pageId === '' || (n.icon != null && n.icon !== '')) && self(self, n.children || [])), r.navItems || []))",
-      "message": "A nav entry that opens a page should have an icon.",
+      "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x))((self, items) => items.every(n => (n.routePath == null || n.routePath === '' || (n.icon != null && n.icon !== '')) && self(self, n.children || [])), r.navItems || []))",
+      "message": "A nav entry that opens a route should have an icon.",
       "translocoId": "rule.appDefinition.navigableNavItemsHaveAnIcon"
     },
     {
       "id": "titles-are-translatable",
-      "name": "App name and page titles are translatable",
+      "name": "App name and route titles are translatable",
       "description": "The frontend prefers translocoId over the literal name or title. Without one, a multi-language tenant shows the designer's default language to everyone.",
       "context": "App Definition",
       "severity": "INFO",
       "enabled": true,
       "fields": [
         "translocoId",
-        "pages"
+        "routes"
       ],
-      "expression": "entity.translocoId != null && entity.translocoId !== '' && (entity.pages || []).every(p => p.translocoId != null && p.translocoId !== '')",
-      "message": "Give the app name and every page title a Transloco id.",
+      "expression": "entity.translocoId != null && entity.translocoId !== '' && (entity.routes || []).every(r => r.translocoId != null && r.translocoId !== '')",
+      "message": "Give the app name and every route title a Transloco id.",
       "translocoId": "rule.appDefinition.titlesAreTranslatable"
     }
   ],
@@ -702,14 +702,14 @@
                   "label": "All orders",
                   "translocoId": "demo.nav.orderList",
                   "icon": "list_alt",
-                  "pageId": "order-list"
+                  "routePath": "order-list"
                 },
                 {
                   "id": "nav-order-entry",
                   "label": "New order",
                   "translocoId": "demo.nav.orderEntry",
                   "icon": "add_circle",
-                  "pageId": "order-entry"
+                  "routePath": "order-entry"
                 }
               ]
             },
@@ -718,73 +718,199 @@
               "label": "Order lines",
               "translocoId": "demo.nav.orderLines",
               "icon": "view_list",
-              "pageId": "order-line-list"
+              "routePath": "order-line-list"
+            },
+            {
+              "id": "nav-order-admin",
+              "label": "Order line administration",
+              "translocoId": "demo.nav.orderAdmin",
+              "icon": "manage_search",
+              "routePath": "back-office/lines"
             }
           ]
-        },
-        {
-          "type": "content"
         },
         {
           "type": "footer"
         }
       ],
-      "pages": [
+      "routes": [
         {
-          "id": "order-list",
+          "path": "order-list",
           "title": "Orders",
-          "translocoId": "demo.page.orderList",
-          "widgets": [
-            {
-              "id": "order-grid",
-              "type": "entity-grid",
-              "props": {
-                "entityName": "Order",
-                "columns": [
-                  "orderNumber",
-                  "customerName",
-                  "status",
-                  "total"
-                ],
-                "rsqlFilter": "status!=CANCELLED"
+          "translocoId": "demo.route.orderList",
+          "target": {
+            "kind": "WIDGETS",
+            "widgets": [
+              {
+                "id": "order-grid",
+                "type": "entity-grid",
+                "props": {
+                  "entityName": "Order",
+                  "columns": [
+                    "orderNumber",
+                    "customerName",
+                    "status",
+                    "total"
+                  ],
+                  "rsqlFilter": "status!=CANCELLED"
+                }
               }
-            }
-          ]
+            ]
+          }
         },
         {
-          "id": "order-entry",
+          "path": "order-entry",
           "title": "New order",
-          "translocoId": "demo.page.orderEntry",
-          "widgets": [
-            {
-              "id": "order-form",
-              "type": "entity-form",
-              "props": {
-                "entityName": "Order",
-                "submitLabel": "Save order",
-                "submitTranslocoId": "demo.action.saveOrder"
+          "translocoId": "demo.route.orderEntry",
+          "target": {
+            "kind": "WIDGETS",
+            "widgets": [
+              {
+                "id": "order-form",
+                "type": "entity-form",
+                "props": {
+                  "entityName": "Order",
+                  "submitLabel": "Save order",
+                  "submitTranslocoId": "demo.action.saveOrder"
+                }
               }
-            }
-          ]
+            ]
+          }
         },
         {
-          "id": "order-line-list",
+          "path": "order-line-list",
           "title": "Order lines",
-          "translocoId": "demo.page.orderLineList",
-          "widgets": [
-            {
-              "id": "order-line-grid",
-              "type": "entity-grid",
-              "props": {
-                "entityName": "Order Line",
-                "columns": [
-                  "productName",
-                  "quantity",
-                  "unitPrice"
-                ]
+          "translocoId": "demo.route.orderLineList",
+          "target": {
+            "kind": "WIDGETS",
+            "widgets": [
+              {
+                "id": "order-line-grid",
+                "type": "entity-grid",
+                "props": {
+                  "entityName": "Order Line",
+                  "columns": [
+                    "productName",
+                    "quantity",
+                    "unitPrice"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "modules": [
+        {
+          "moduleKey": "order-admin",
+          "basePath": "back-office"
+        }
+      ]
+    }
+  ],
+  "processpuzzle-testbed-widget-definitions": [
+    {
+      "id": "cards-grid",
+      "key": "cards-grid",
+      "name": "Cards grid",
+      "translocoId": "base_widget.cards_grid.name",
+      "description": "A responsive grid of Material cards, each with an image, a title and an action link.",
+      "category": "Content",
+      "icon": "grid_view",
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "cards": {
+            "type": "array",
+            "title": "Cards",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "imageUrl": { "type": "string", "format": "uri" },
+                "actionLink": { "type": "string" }
               }
             }
-          ]
+          }
+        }
+      },
+      "inputPorts": [
+        {
+          "name": "cards",
+          "type": "ARRAY",
+          "required": true,
+          "description": "The cards to render, in order."
+        }
+      ],
+      "outputPorts": [],
+      "orgKey": "processpuzzle-testbed",
+      "status": "PUBLISHED",
+      "version": 1,
+      "publishedVersion": 1,
+      "createdAt": "2026-01-15T09:00:00Z",
+      "updatedAt": "2026-01-15T09:00:00Z"
+    },
+    {
+      "id": "markdown-page",
+      "key": "markdown-page",
+      "name": "Markdown page",
+      "translocoId": "base_widget.markdown_page.name",
+      "description": "Renders a Markdown document, resolving its source relative to the active language.",
+      "category": "Content",
+      "icon": "article",
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "markdownSrc": { "type": "string", "title": "Markdown source", "description": "Path of the document, without the language segment." }
+        },
+        "required": ["markdownSrc"]
+      },
+      "inputPorts": [
+        {
+          "name": "markdownSrc",
+          "type": "STRING",
+          "required": true,
+          "description": "Path of the document to render."
+        }
+      ],
+      "outputPorts": [],
+      "orgKey": "processpuzzle-testbed",
+      "status": "DRAFT",
+      "version": 2,
+      "publishedVersion": 1,
+      "createdAt": "2026-01-15T09:00:00Z",
+      "updatedAt": "2026-02-02T11:30:00Z"
+    }
+  ],
+  "processpuzzle-testbed-modules": [
+    {
+      "id": "order-admin",
+      "key": "order-admin",
+      "name": "Order administration",
+      "translocoId": "order_admin.module.name",
+      "description": "Order line administration: the generated list and detail screens of 'Order Line', kept out of the order-entry application so that back-office screens can be authored on their own.",
+      "translocoScope": "order_admin",
+      "routes": [
+        {
+          "path": "lines",
+          "title": "All order lines",
+          "translocoId": "order_admin.route.lines",
+          "icon": "view_list",
+          "target": {
+            "kind": "ENTITY",
+            "entityName": "Order Line",
+            "entityMode": "LIST"
+          }
+        },
+        {
+          "path": "line/:id",
+          "title": "Order line",
+          "translocoId": "order_admin.route.line",
+          "target": {
+            "kind": "ENTITY",
+            "entityName": "Order Line",
+            "entityMode": "DETAILS"
+          }
         }
       ]
     }

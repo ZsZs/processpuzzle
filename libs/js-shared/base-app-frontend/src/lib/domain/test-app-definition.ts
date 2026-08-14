@@ -4,8 +4,8 @@
  *
  * It lives here rather than in a single spec because the service and store specs used to mock a
  * header-only object, which is precisely the shape that made the edit form show defaults and the
- * next full-replacement PUT wipe `regions` and `pages`. Sharing one full fixture keeps a mock from
- * quietly drifting back to a projection the backend does not send.
+ * next full-replacement PUT wipe `regions`, `routes` and `modules`. Sharing one full fixture keeps a
+ * mock from quietly drifting back to a projection the backend does not send.
  *
  * Named `test-*` so `tsconfig.lib.json` keeps it out of the published package.
  */
@@ -16,8 +16,9 @@ export const APP_DEFINITION_DTO = {
   description: 'Basic demonstration application',
   theme: { materialTheme: 'azure-blue', colorScheme: 'light', tokenOverrides: { '--pp-surface-sidenav': '#0d1b2a' }, logoUrl: 'logo.png' },
   layout: { preset: 'sidenav-left', sidenavMode: 'side', sidenavCollapsible: true, sidenavOpenByDefault: false, contentMaxWidth: '1280px' },
-  regions: [{ type: 'sidenav', navItems: [{ id: 'nav-orders', label: 'Orders', pageId: 'order-list' }] }],
-  pages: [{ id: 'order-list', title: 'Orders', widgets: [{ id: 'order-grid', type: 'entity-grid', props: { entityName: 'Order' } }] }],
+  regions: [{ type: 'sidenav', navItems: [{ id: 'nav-orders', label: 'Orders', routePath: 'orders' }] }],
+  routes: [{ path: 'orders', title: 'Orders', target: { kind: 'WIDGETS', widgets: [{ id: 'order-grid', type: 'entity-grid', props: { entityName: 'Order' } }] } }],
+  modules: [{ moduleKey: 'claims', basePath: 'claims' }],
   orgKey: 'processpuzzle-testbed',
   status: 'DRAFT',
   version: 3,

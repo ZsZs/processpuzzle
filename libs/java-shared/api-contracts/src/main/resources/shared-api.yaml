@@ -133,16 +133,30 @@ components:
 
   schemas:
 
-    WidgetRef:
+    WidgetInstance:
       type: object
       description: >-
-        A reference to a registered widget, resolved via the frontend widget registry at
-        render time and instantiated with `NgComponentOutlet` / `ViewContainerRef`. Shared
-        by base-app-api.yaml (PageDefinition/RegionDefinition.widgets) and
-        base-document-api.yaml (a WIDGET-kind DocumentBlock's type/props/placement fields
-        mirror this shape) so a widget tree renders identically wherever it's hosted. Not
-        recursive: container widget types (tab groups, split panels) compose via
-        props.childIds referencing sibling ids, not via nested WidgetRefs — see placement.
+        One *placement* of a widget: a registry key plus the configuration bound to it at
+        this position. Resolved via the frontend widget registry at render time and
+        instantiated with `NgComponentOutlet` / `ViewContainerRef`.
+
+        Distinct from a WidgetDefinition, which describes the widget *type* (its props
+        schema and ports) and is an addressable resource of its own. A WidgetInstance is
+        never standalone — it always lives inside a container: base-app-api.yaml's
+        RouteTarget/RegionDefinition.widgets, or a WIDGET-kind DocumentBlock in
+        base-document-api.yaml.
+
+        This is the canonical declaration. Each consuming spec repeats this *shape* — the
+        property set and their types, prose may add spec-specific notes — and maps it onto
+        com.processpuzzle.shared.model.WidgetInstance through the schemaMappings in
+        api-contracts/pom.xml, the same mechanism ErrorResponse and ImportResult use. The
+        repetition is deliberate: no spec in this workspace uses cross-file $ref, and the
+        generator's $ref handling has failed on Windows before. The YAML text is
+        duplicated; the generated Java type is not. Any property added here must be added
+        to every repeat, or that spec's payload will silently lose it.
+
+        Not recursive: container widget types (tab groups, split panels) compose via
+        props.childIds referencing sibling ids, not by nesting — see placement.
       required: [ id, type ]
       properties:
         id:
@@ -152,16 +166,18 @@ components:
         type:
           type: string
           description: >-
-            Widget registry key. Intentionally an open string rather than an enum — new
-            widget types register into the frontend map without a contract change.
+            Widget registry key, and the key of the WidgetDefinition describing this type.
+            Intentionally an open string rather than an enum — new widget types register
+            into the frontend map without a contract change.
           example: entity-grid
         props:
           type: object
           description: >-
             Widget-specific configuration, passed to the resolved component as inputs.
-            Loose by design: each widget type owns and validates its own props shape.
+            Loose in this contract by design: each widget type owns its own props shape,
+            declared in its WidgetDefinition.propsSchema rather than here.
             Container widget types express composition here via childIds — a list of
-            sibling WidgetRef.id values within the same enclosing array — rather than
+            sibling WidgetInstance.id values within the same enclosing array — rather than
             through structural nesting. Interpreting childIds is that widget type's own
             concern; consumers only validate that the ids resolve and flag orphans.
           additionalProperties: true
@@ -175,6 +191,130 @@ components:
             container widget's props.childIds, or (base-document only) a Tiptap
             widgetEmbed node. A REFERENCED widget nothing points at is an orphan, flagged
             by validation as a warning, not an error.
+        inputBindings:
+          # nullable, unlike props, so the generator emits no `new HashMap<>()` initializer:
+          # "this widget binds nothing" has to stay absent rather than serialize as {}, and
+          # base-document — where these two fields come from — already declares them this way.
+          # props keeps its non-nullable declaration because base-app's payloads have always
+          # carried {} for it; changing that here would be an unrelated wire change.
+          type: object
+          nullable: true
+          description: >-
+            Maps a widget prop name to a value supplied by the enclosing container: keys
+            are widget prop names, values are the container's port names. Used by
+            base-document, whose documents declare inputPorts; base-app leaves it absent
+            until a route target declares ports of its own. Resolving the bound value at
+            runtime is entirely a frontend concern.
+          additionalProperties:
+            type: string
+        outputBindings:
+          type: object
+          nullable: true
+          description: >-
+            The reverse of inputBindings: keys are the widget's emitted event names,
+            values are the enclosing container's output port names.
+          additionalProperties:
+            type: string
+
+    # ── Ports ─────────────────────────────────────────────────
+    # A typed, named slot through which a container passes data to a widget and receives data back.
+    # Canonical here because two features declare them: a WidgetDefinition declares the ports its
+    # widget type offers, and a Document declares the ports its content exposes. A WidgetInstance's
+    # inputBindings/outputBindings are what join the two.
+    #
+    # base-document still generates its own DocumentInputPort/DocumentOutputPort from identical
+    # shapes in base-document-api.yaml. Converging those onto InputPort/OutputPort renames a
+    # generated Java type and its frontend class, so it is a deliberate follow-up rather than part
+    # of introducing base-widget. PortType and AttributeVisibility below are already the shapes
+    # base-document declares, verbatim, so that convergence is a mapping change and nothing more.
+
+    PortType:
+      type: string
+      enum: [ STRING, NUMBER, BOOLEAN, DATE, OBJECT, ARRAY, ENTITY_REF, ENTITY_COLLECTION ]
+      description: >-
+        Lightweight type tag for UI hinting and basic validation only.
+        ENTITY_REF: a single base-entity instance (entityType + entityId).
+        ENTITY_COLLECTION: a filtered set of base-entity instances (entityType + RSQL
+        filter), e.g. for a table/grid widget bound to "all open claims." Neither
+        variant requires the declaring feature to know the entity's schema. entityType values
+        resolve within the enclosing organization, same as a WidgetInstance's props.
+
+    AttributeVisibility:
+      type: object
+      description: >-
+        Attribute projection applied to entity data carried through an ENTITY_REF or
+        ENTITY_COLLECTION port. Stored as a plain allow/deny list — attribute names are not
+        validated against base-entity's schema. Unrelated to any document- or app-level access
+        control: this projects the data flowing through a port, not who may read the resource.
+      properties:
+        mode:
+          type: string
+          enum: [ ALL, INCLUDE, EXCLUDE ]
+          default: ALL
+        attributes:
+          type: array
+          items:
+            type: string
+          description: Used when mode is INCLUDE or EXCLUDE; ignored when mode is ALL.
+
+    InputPort:
+      type: object
+      required: [ name, type ]
+      description: >-
+        A value the container supplies to the widget. Resolving a bound value at runtime is
+        entirely a frontend concern; the backend only records that the port exists.
+      properties:
+        name:
+          type: string
+          description: Unique within the declaring resource; what a WidgetInstance.inputBindings value names.
+        type:
+          $ref: "#/components/schemas/PortType"
+        required:
+          type: boolean
+          default: false
+        description:
+          type: string
+          nullable: true
+        defaultValue:
+          nullable: true
+          description: Used when required is false and the hosting context supplies nothing.
+        entityType:
+          type: string
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. The base-entity type this port carries.
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. Optional default projection.
+        defaultRsqlFilter:
+          type: string
+          nullable: true
+          description: >-
+            ENTITY_COLLECTION only. Fallback filter used when the hosting context binds
+            this port without supplying its own filter.
+
+    OutputPort:
+      type: object
+      required: [ name, type ]
+      description: A value the widget emits back to its container, named by WidgetInstance.outputBindings.
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PortType"
+        description:
+          type: string
+          nullable: true
+        entityType:
+          type: string
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only.
+        attributeVisibility:
+          allOf:
+            - $ref: "#/components/schemas/AttributeVisibility"
+          nullable: true
+          description: ENTITY_REF / ENTITY_COLLECTION only. Projection applied to emitted data.
 
     OrganizationKey:
       type: string

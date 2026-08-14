@@ -1,11 +1,22 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
+import { WidgetInstance } from '@processpuzzle/base-widget';
+
+export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-widget';
 
 /**
  * Frontend model of the `AppDefinition` schema of `base-app-api.yaml`. `theme` and `layout` are
  * flattened onto the entity by {@link AppDefinitionMapper} so that the generated form can offer a
  * typed control per field; the original objects are kept alongside, because a full replacement PUT
- * would otherwise drop the parts no control writes. `regions` and `pages` stay nested and are edited
- * through the `EMBEDDED_COMPONENTS` controls of the `App Region` / `App Page` descriptors.
+ * would otherwise drop the parts no control writes. `regions`, `routes` and `modules` stay nested and
+ * are edited through the `EMBEDDED_COMPONENTS` controls of the `App Region` / `App Route` /
+ * `App Module Mount` descriptors.
+ *
+ * A route's `target` is flattened the same way, for the same reason and by the same mapper. The
+ * contract already keeps `RouteTarget` flat rather than a `oneOf` because the generic form cannot edit
+ * a discriminated union of classes; a nested object it equally cannot reach, since an
+ * `EMBEDDED_COMPONENTS` row is edited as the parsed JSON it arrived as and a descriptor addresses one
+ * property, not a path. So {@link RouteDefinition} carries `kind` and the per-kind fields directly and
+ * {@link AppDefinitionMapper} re-nests them on save.
  *
  * The nested definitions are classes rather than interfaces, because each is an embedded entity of
  * its own: `EmbeddedEntityFacade` mints the blank row an `Add` opens the child's form on, and that
@@ -25,11 +36,24 @@ export type LayoutPreset = (typeof LAYOUT_PRESETS)[number];
 export const SIDENAV_MODES = ['side', 'over', 'push'] as const;
 export type SidenavMode = (typeof SIDENAV_MODES)[number];
 
-export const REGION_TYPES = ['header', 'sidenav', 'content', 'footer'] as const;
+/**
+ * No `content`: once routes own the content area it *is* the router outlet, so a content region would
+ * have no field of its own — `widgets` is header/footer-only and `navItems` sidenav-only. Its sizing
+ * lives in {@link LayoutDefinition.contentMaxWidth}.
+ */
+export const REGION_TYPES = ['header', 'sidenav', 'footer'] as const;
 export type RegionType = (typeof REGION_TYPES)[number];
 
-export const WIDGET_PLACEMENTS = ['STANDALONE', 'REFERENCED'] as const;
-export type WidgetPlacement = (typeof WIDGET_PLACEMENTS)[number];
+/**
+ * What a route renders. Uppercase because the contract's enum is — `RegionType` and the theme enums
+ * are lowercase, and mixing the two up is a silent miss rather than a type error once a value reaches
+ * JSON.
+ */
+export const ROUTE_TARGET_KINDS = ['WIDGETS', 'DOCUMENT', 'ENTITY'] as const;
+export type RouteTargetKind = (typeof ROUTE_TARGET_KINDS)[number];
+
+export const ENTITY_MODES = ['LIST', 'DETAILS'] as const;
+export type EntityMode = (typeof ENTITY_MODES)[number];
 
 export enum AppDefinitionStatus {
   DRAFT = 'DRAFT',
@@ -53,39 +77,19 @@ export interface LayoutDefinition {
   contentMaxWidth?: string;
 }
 
-export class WidgetRef implements BaseEntity {
-  /** Authored, not generated: it is the trackBy key of the render loop and unique within its owner. */
-  id: string;
-  /** Widget registry key, an open string by contract. */
-  type: string;
-  /**
-   * A container widget type composes through `props.childIds` — the ids of siblings in this same
-   * list — rather than by nesting, so this stays the only place a widget's structure is expressed.
-   */
-  props?: Record<string, unknown>;
-  /**
-   * `REFERENCED` opts the widget out of rendering at its own position, leaving it to be placed by
-   * whatever names it in `props.childIds`. Left undefined rather than defaulted, so a widget the
-   * designer never touched keeps the payload the schema describes — the server reads an absent
-   * value as `STANDALONE`.
-   */
-  placement?: WidgetPlacement;
-
-  constructor(init: Partial<WidgetRef> = {}) {
-    this.id = init.id ?? '';
-    this.type = init.type ?? '';
-    this.props = init.props;
-    this.placement = init.placement;
-  }
-}
-
 export class NavItem implements BaseEntity {
   id: string;
   label: string;
   translocoId?: string;
   icon?: string;
-  /** Absent on a group node, which expands its {@link children} instead of navigating. */
-  pageId?: string;
+  /**
+   * `RouteDefinition.path` of the route this entry navigates to, resolved by string. Absent on a group
+   * node, which expands its {@link children} instead of navigating.
+   *
+   * A path naming no route is a validation *warning* server-side, not an error: it may name a route of
+   * a module that has not been authored yet, and modules stay loosely coupled.
+   */
+  routePath?: string;
   roles?: string[];
   children?: NavItem[];
 
@@ -94,7 +98,7 @@ export class NavItem implements BaseEntity {
     this.label = init.label ?? '';
     this.translocoId = init.translocoId;
     this.icon = init.icon;
-    this.pageId = init.pageId;
+    this.routePath = init.routePath;
     this.roles = init.roles;
     this.children = init.children;
   }
@@ -117,7 +121,7 @@ export class RegionDefinition implements BaseEntity {
   /** `sidenav` only; left undefined so a header region's payload carries no empty nav tree. */
   navItems?: NavItem[];
   /** `header` / `footer` only. */
-  widgets?: WidgetRef[];
+  widgets?: WidgetInstance[];
 
   constructor(init: Partial<RegionDefinition> = {}) {
     this.type = init.type;
@@ -126,19 +130,98 @@ export class RegionDefinition implements BaseEntity {
   }
 }
 
-export class PageDefinition implements BaseEntity {
-  /** Authored, not generated: it is used verbatim as the route path segment. */
-  id: string;
+/**
+ * The nested `target` object of the DTO. Only {@link AppDefinitionMapper} handles it — the form works
+ * on the fields {@link RouteDefinition} carries flattened — so it is an interface rather than a class.
+ */
+export interface RouteTarget {
+  kind: RouteTargetKind;
+  /** WIDGETS only. */
+  widgets?: WidgetInstance[];
+  /** DOCUMENT only. */
+  documentSlug?: string;
+  /** ENTITY only. */
+  entityName?: string;
+  /** ENTITY only. */
+  entityMode?: EntityMode;
+  /** ENTITY + LIST only. */
+  rsqlFilter?: string;
+}
+
+/**
+ * One navigable route. **Flat: a route has no children.** `path` may be multi-segment, so `claims`,
+ * `claims/open` and `claims/:id` are three sibling entries rather than a tree — Angular's own nesting
+ * is derived from those prefixes when the shell builds its `Routes`, because nesting is a rendering
+ * concern rather than something worth authoring. Structure is broken up at the module boundary
+ * instead, through {@link ModuleMount}.
+ *
+ * The `target` fields are flattened onto the row and re-nested by {@link AppDefinitionMapper}; which of
+ * them are meaningful follows from {@link kind}, and the backend — not the form — is what enforces it.
+ */
+export class RouteDefinition implements BaseEntity {
+  /**
+   * Declared, never assigned. The contract gives a route no `id`: `path` identifies it, which is what
+   * a `NavItem.routePath` resolves against. Same reason as {@link RegionDefinition.id}.
+   */
+  declare readonly id?: string;
+
+  /** Relative to the app root, no leading slash. May contain `/` for depth and `:name` for a parameter. */
+  path: string;
   title: string;
   translocoId?: string;
-  /** Required by the contract, so a page created here starts with an empty array rather than nothing. */
-  widgets: WidgetRef[];
+  icon?: string;
+  /** Empty or absent means any authenticated member of the organization, as on {@link NavItem.roles}. */
+  roles?: string[];
+  // region flattened target — re-nested into `target` by AppDefinitionMapper
+  /**
+   * Required by the contract, but undefined while a route is being created — the dropdown is declared
+   * `required`, so the form is what enforces it before the row reaches the payload.
+   */
+  kind: RouteTargetKind | undefined;
+  /** WIDGETS only. Starts as an empty array so the embedded list has something to append to. */
+  widgets: WidgetInstance[];
+  documentSlug?: string;
+  entityName?: string;
+  entityMode?: EntityMode;
+  rsqlFilter?: string;
+  // endregion
+  /** The object the flattened fields came from, preserved so a save cannot drop a future field. */
+  target?: RouteTarget;
 
-  constructor(init: Partial<PageDefinition> = {}) {
-    this.id = init.id ?? '';
+  constructor(init: Partial<RouteDefinition> = {}) {
+    this.path = init.path ?? '';
     this.title = init.title ?? '';
     this.translocoId = init.translocoId;
+    this.icon = init.icon;
+    this.roles = init.roles;
+    this.kind = init.kind;
     this.widgets = init.widgets ?? [];
+    this.documentSlug = init.documentSlug;
+    this.entityName = init.entityName;
+    this.entityMode = init.entityMode;
+    this.rsqlFilter = init.rsqlFilter;
+    this.target = init.target;
+  }
+}
+
+/**
+ * Mounts a module's routes under {@link basePath}. The one place route structure composes, and it
+ * composes exactly one level deep: a module cannot mount modules.
+ */
+export class ModuleMount implements BaseEntity {
+  /** `moduleKey` identifies the mount; the contract gives it no `id`. */
+  declare readonly id?: string;
+
+  /**
+   * Key of a `ModuleDefinition` in this organization. One naming no existing module is a validation
+   * warning, not an error — an app may mount a module before it has been authored.
+   */
+  moduleKey: string;
+  basePath: string;
+
+  constructor(init: Partial<ModuleMount> = {}) {
+    this.moduleKey = init.moduleKey ?? '';
+    this.basePath = init.basePath ?? '';
   }
 }
 
@@ -166,7 +249,8 @@ export class AppDefinition implements BaseEntity {
   theme: ThemeDefinition | undefined;
   layout: LayoutDefinition | undefined;
   regions: RegionDefinition[] | undefined;
-  pages: PageDefinition[] | undefined;
+  routes: RouteDefinition[] | undefined;
+  modules: ModuleMount[] | undefined;
   // region server-assigned
   orgKey: string | undefined;
   status: AppDefinitionStatus | undefined;
@@ -194,7 +278,8 @@ export class AppDefinition implements BaseEntity {
     this.theme = init.theme;
     this.layout = init.layout;
     this.regions = init.regions;
-    this.pages = init.pages;
+    this.routes = init.routes;
+    this.modules = init.modules;
     this.orgKey = init.orgKey;
     this.status = init.status;
     this.version = init.version;

@@ -51,7 +51,8 @@ public class ExportAppDefinition {
         entry.setTheme(model.getTheme());
         entry.setLayout(model.getLayout());
         entry.setRegions(model.getRegions());
-        entry.setPages(model.getPages());
+        entry.setRoutes(model.getRoutes());
+        entry.setModules(model.getModules());
 
         return yamlMapper.writeValueAsBytes(new AppYamlDocument(List.of(entry)));
     }

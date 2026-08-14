@@ -43,7 +43,7 @@ import java.time.Instant;
  * <p>{@code name}, {@code translocoId} and {@code description} are real columns rather than part
  * of the graph, because {@code listAppDefinitions} filters and sorts on them via RSQL. They are
  * consequently <em>not</em> snapshotted on publish: renaming an app is visible to end users
- * immediately. Only theme, layout, regions and pages are versioned.
+ * immediately. Only theme, layout, regions and routes are versioned.
  */
 @Entity
 @Table(name = "app_definitions")

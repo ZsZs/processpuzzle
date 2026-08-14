@@ -278,7 +278,7 @@ export const appRoutes: Route[] = [
     path: 'ci-cd',
     title: 'ProcessPuzzle Testbed - CI/CD',
     data: { icon: 'repartition', menuTitle: 'ci-cd', markdownSrc: 'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/.github/README.md' },
-    loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
+    loadComponent: () => import('@processpuzzle/base-widget').then((comp) => comp.MarkdownPageComponent),
   },
   {
     path: 'design',

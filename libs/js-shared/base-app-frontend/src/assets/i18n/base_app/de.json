@@ -20,7 +20,8 @@
     "sidenavCollapsible": "Seitennavigation einklappbar",
     "sidenavOpenByDefault": "Seitennavigation standardmäßig geöffnet",
     "regions": "Bereiche",
-    "pages": "Seiten"
+    "routes": "Routen",
+    "modules": "Module"
   },
   "app_region": {
     "_self": "Bereich",
@@ -28,12 +29,24 @@
     "navItems": "Navigationseinträge",
     "widgets": "Widgets"
   },
-  "app_page": {
-    "_self": "Seite",
-    "id": "Id",
+  "app_route": {
+    "_self": "Route",
+    "path": "Pfad",
     "title": "Titel",
     "translocoId": "Transloco-Id",
-    "widgets": "Widgets"
+    "icon": "Symbol",
+    "roles": "Rollen",
+    "kind": "Zeigt",
+    "widgets": "Widgets",
+    "documentSlug": "Dokument-Slug",
+    "entityName": "Entitätsname",
+    "entityMode": "Entitätsmodus",
+    "rsqlFilter": "RSQL-Filter"
+  },
+  "app_module_mount": {
+    "_self": "Modul-Einbindung",
+    "moduleKey": "Modulschlüssel",
+    "basePath": "Basispfad"
   },
   "app_nav_item": {
     "_self": "Navigationseintrag",
@@ -41,7 +54,7 @@
     "label": "Bezeichnung",
     "translocoId": "Transloco-Id",
     "icon": "Symbol",
-    "pageId": "Seite",
+    "routePath": "Route",
     "roles": "Rollen",
     "children": "Untereinträge"
   },
@@ -51,6 +64,17 @@
     "type": "Typ",
     "props": "Eigenschaften",
     "placement": "Platzierung"
+  },
+  "module_definition": {
+    "_self": "Modul",
+    "id": "Schlüssel",
+    "name": "Name",
+    "translocoId": "Transloco-Id",
+    "description": "Beschreibung",
+    "translocoScope": "Transloco-Bereich",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "routes": "Routen"
   },
   "publish": {
     "button": "Veröffentlichen",

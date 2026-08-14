@@ -2,11 +2,19 @@ import { Routes } from '@angular/router';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_RULE_ROUTES } from '@processpuzzle/base-rule';
+import { BASE_WIDGET_ROUTES } from '@processpuzzle/base-widget';
+import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
 
 export const DESIGN_ROUTES: Routes = [
-  { path: '', pathMatch: 'full', component: DesignContentComponent },
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'ProcessPuzzle Design - Designer Home',
+    data: { icon: 'home', menuTitle: 'design.designer-home' },
+    component: DesignContentComponent,
+  },
   {
     path: 'entities',
     title: 'ProcessPuzzle Design - Entities',
@@ -32,5 +40,19 @@ export const DESIGN_ROUTES: Routes = [
     data: { icon: 'schema', menuTitle: 'design.workflows' },
     component: UnderConstructionComponent,
   },
-  ...BASE_APP_ROUTES,
+  // One section, three tabs — see ApplicationDesignerComponent. Both spreads are unchanged, so the branches
+  // keep their own transloco scopes and stay mountable elsewhere (the testbed mounts BASE_APP_ROUTES a second
+  // time under `/base-app/samples`); only the prefix they hang under is new. As for base-app and
+  // base-document, the hosting application has to spread BASE_WIDGET_FACADE_PROVIDERS and
+  // BASE_WIDGET_ENTITY_FACADES into its own providers for the Widgets tab to resolve its facades.
+  {
+    path: 'application',
+    title: 'ProcessPuzzle Design - Application',
+    data: { icon: 'web', menuTitle: 'design.application' },
+    component: ApplicationDesignerComponent,
+    // No `providers`: the tab bar names its `design` scope on the directive itself, so this route adds
+    // nothing to the injectors the tabs' own screens resolve through. What those screens need —
+    // `base_entity` and `base_app` — each tab's route declares for itself.
+    children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES, ...BASE_WIDGET_ROUTES],
+  },
 ];
