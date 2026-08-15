@@ -1,0 +1,289 @@
+# Default entity definitions and sample objects of the 'processpuzzle-testbed' organization —
+# the tenant behind apps/processpuzzle-testbed.
+#
+# DefaultEntityLoader imports this file on startup when `base-entity.loadDefaultEntities` is true. The
+# owning organization is the part of the file name before `-entities.yaml`, exactly as `<orgKey>-apps.yaml`
+# works in base-app and `<orgKey>-widgets.yaml` in base-widget.
+#
+# Existing definitions and entity instances are never overwritten or duplicated.
+
+entityDefinitions:
+  # 1. Embedded component definition: dynamic-embedded-address
+  - code: dynamic-embedded-address
+    name: Dynamic Embedded Address
+    description: >-
+      Embedded address component demonstrating street, city, postal code and country attributes.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - dynamic-entity
+    attributes:
+      - code: street
+        name: Street
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+      - code: city
+        name: City
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+      - code: postalCode
+        name: Postal Code
+        displayOrder: 3
+        valueKind: TEXT
+        formControlType: TEXT
+      - code: country
+        name: Country
+        displayOrder: 4
+        valueKind: TEXT
+        formControlType: TEXT
+
+  # 2. Embedded component definition: dynamic-embedded-detail
+  - code: dynamic-embedded-detail
+    name: Dynamic Embedded Detail
+    description: >-
+      Embedded detail key-value item with an optional note.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - dynamic-entity
+    attributes:
+      - code: detailKey
+        name: Key
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+      - code: detailValue
+        name: Value
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+      - code: detailNote
+        name: Note
+        displayOrder: 3
+        valueKind: TEXT
+        formControlType: TEXTAREA
+
+  # 3. Main dynamic entity definition showcasing all attribute types
+  - code: dynamic-entity
+    name: Dynamic Entity
+    description: >-
+      Comprehensive demonstration entity definition showcasing all supported attribute value kinds and form control types.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: description
+        name: Description
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXTAREA
+      - code: numberAttr
+        name: Number
+        displayOrder: 3
+        valueKind: NUMBER
+        formControlType: NUMBER
+        indexed: true
+      - code: booleanAttr
+        name: Boolean
+        displayOrder: 4
+        valueKind: BOOLEAN
+        formControlType: BOOLEAN
+        defaultValue: true
+      - code: dateAttr
+        name: Date
+        displayOrder: 5
+        valueKind: DATE
+        formControlType: DATE
+      - code: dateTimeAttr
+        name: Date Time
+        displayOrder: 6
+        valueKind: DATE_TIME
+        formControlType: DATE_TIME
+      - code: enumAttr
+        name: Status
+        displayOrder: 7
+        valueKind: ENUM
+        formControlType: ENUM_SELECT
+        enumValues:
+          - DRAFT
+          - IN_PROGRESS
+          - COMPLETED
+          - ARCHIVED
+        defaultValue: DRAFT
+      - code: tags
+        name: Tags
+        displayOrder: 8
+        valueKind: TEXT
+        formControlType: TEXT
+        isMultiValued: true
+      - code: artifact
+        name: Artifact
+        displayOrder: 9
+        valueKind: REFERENCE
+        formControlType: ARTIFACT
+      - code: parentRef
+        name: Parent Reference
+        displayOrder: 10
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: dynamic-entity
+      - code: embeddedAddress
+        name: Embedded Address
+        displayOrder: 11
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: dynamic-embedded-address
+        isMultiValued: false
+      - code: embeddedDetails
+        name: Embedded Details
+        displayOrder: 12
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: dynamic-embedded-detail
+        isMultiValued: true
+
+entities:
+  # Sample Object 1
+  - entityDefinitionCode: dynamic-entity
+    payload:
+      name: Dynamic Entity Alpha
+      description: First dynamic entity specimen with complete attribute configuration.
+      numberAttr: 101.5
+      booleanAttr: true
+      dateAttr: "2026-01-15"
+      dateTimeAttr: "2026-01-15T09:30:00Z"
+      enumAttr: DRAFT
+      tags:
+        - specimen
+        - alpha
+        - primary
+      artifact: documents/alpha-report.pdf
+      embeddedAddress:
+        street: 123 Innovation Boulevard
+        city: Zurich
+        postalCode: "8001"
+        country: Switzerland
+      embeddedDetails:
+        - detailKey: CPU
+          detailValue: 64 Cores
+          detailNote: Primary computation cluster
+        - detailKey: Memory
+          detailValue: 256 GB
+          detailNote: ECC DDR5
+
+  # Sample Object 2
+  - entityDefinitionCode: dynamic-entity
+    payload:
+      name: Dynamic Entity Beta
+      description: Second dynamic entity instance in active progress.
+      numberAttr: 250
+      booleanAttr: false
+      dateAttr: "2026-02-20"
+      dateTimeAttr: "2026-02-20T14:15:30Z"
+      enumAttr: IN_PROGRESS
+      tags:
+        - beta
+        - active
+        - processing
+      artifact: images/beta-diagram.png
+      embeddedAddress:
+        street: 456 Silicon Alley
+        city: New York
+        postalCode: "10010"
+        country: USA
+      embeddedDetails:
+        - detailKey: Bandwidth
+          detailValue: 10 Gbps
+          detailNote: Direct optical interconnect
+
+  # Sample Object 3
+  - entityDefinitionCode: dynamic-entity
+    payload:
+      name: Dynamic Entity Gamma
+      description: Third dynamic entity instance verified and completed.
+      numberAttr: 375.8
+      booleanAttr: true
+      dateAttr: "2026-03-10"
+      dateTimeAttr: "2026-03-10T11:00:00Z"
+      enumAttr: COMPLETED
+      tags:
+        - gamma
+        - verified
+        - stable
+      artifact: archives/gamma-backup.tar.gz
+      embeddedAddress:
+        street: 789 Tech Hub Lane
+        city: Munich
+        postalCode: "80331"
+        country: Germany
+      embeddedDetails:
+        - detailKey: Storage
+          detailValue: 20 TB
+          detailNote: NVMe Tier 1 array
+        - detailKey: Replication
+          detailValue: 3x
+          detailNote: Cross-region sync active
+
+  # Sample Object 4
+  - entityDefinitionCode: dynamic-entity
+    payload:
+      name: Dynamic Entity Delta
+      description: Fourth dynamic entity instance archived for compliance records.
+      numberAttr: 42
+      booleanAttr: false
+      dateAttr: "2025-11-05"
+      dateTimeAttr: "2025-11-05T16:45:00Z"
+      enumAttr: ARCHIVED
+      tags:
+        - delta
+        - compliance
+        - archived
+      artifact: documents/delta-audit.pdf
+      embeddedAddress:
+        street: 321 Legacy Road
+        city: London
+        postalCode: EC1A 1BB
+        country: UK
+      embeddedDetails:
+        - detailKey: Retention
+          detailValue: 7 Years
+          detailNote: Regulatory compliance lock
+
+  # Sample Object 5
+  - entityDefinitionCode: dynamic-entity
+    payload:
+      name: Dynamic Entity Epsilon
+      description: Fifth dynamic entity test specimen for edge cases.
+      numberAttr: 999.99
+      booleanAttr: true
+      dateAttr: "2026-08-15"
+      dateTimeAttr: "2026-08-15T17:30:00Z"
+      enumAttr: IN_PROGRESS
+      tags:
+        - epsilon
+        - testing
+        - edge-case
+      artifact: data/epsilon-dataset.csv
+      embeddedAddress:
+        street: 55 Innovation Park
+        city: Amsterdam
+        postalCode: 1012 JS
+        country: Netherlands
+      embeddedDetails:
+        - detailKey: Status
+          detailValue: Evaluating
+          detailNote: Benchmarking in progress

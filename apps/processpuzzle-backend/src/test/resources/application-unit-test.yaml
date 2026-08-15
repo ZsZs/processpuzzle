@@ -24,3 +24,6 @@ base-app:
 
 base-widget:
   loadDefaultWidgets: no
+
+base-entity:
+  loadDefaultEntities: no

@@ -97,6 +97,12 @@
             <artifactId>rsql-parser</artifactId>
         </dependency>
 
+        <!-- YAML parsing, for the bundled default-entities files DefaultEntityLoader reads -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
