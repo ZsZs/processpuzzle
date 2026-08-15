@@ -2,10 +2,10 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
-import com.processpuzzle.baseentity.instances.adapters.inbound.EntityObjectEndpoint.EntityObjectUpdateRequest;
-import com.processpuzzle.baseentity.instances.adapters.inbound.dto.EntityObjectDto;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.*;
+import com.processpuzzle.baseentity.model.EntityObjectInput;
+import com.processpuzzle.baseentity.model.EntityObjectUpdate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,7 +83,7 @@ class EntityObjectEndpointTest {
                 .build();
         when(findByIdUseCase.findById(id)).thenReturn(entity);
 
-        mockMvc.perform(get("/api/base-entity/entities/{id}", id))
+        mockMvc.perform(get("/entities/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.entityDefinitionCode").value("partner"))
@@ -101,14 +101,13 @@ class EntityObjectEndpointTest {
                 .build();
         when(createUseCase.create(eq("partner"), any())).thenReturn(entity);
 
-        EntityObjectDto inputDto = EntityObjectDto.builder()
-                .entityDefinitionCode("partner")
-                .payload(Map.of("name", "ACME"))
-                .build();
+        EntityObjectInput input = new EntityObjectInput();
+        input.setEntityDefinitionCode("partner");
+        input.setPayload(Map.of("name", "ACME"));
 
-        mockMvc.perform(post("/api/base-entity/entities")
+        mockMvc.perform(post("/entities")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputDto)))
+                        .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.entityDefinitionCode").value("partner"));
@@ -125,9 +124,11 @@ class EntityObjectEndpointTest {
                 .build();
         when(updateUseCase.update(eq(id), eq(1L), any())).thenReturn(entity);
 
-        EntityObjectUpdateRequest updateRequest = new EntityObjectUpdateRequest(1L, Map.of("name", "ACME Updated"));
+        EntityObjectUpdate updateRequest = new EntityObjectUpdate();
+        updateRequest.setVersion(1);
+        updateRequest.setPayload(Map.of("name", "ACME Updated"));
 
-        mockMvc.perform(put("/api/base-entity/entities/{id}", id)
+        mockMvc.perform(put("/entities/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -139,7 +140,7 @@ class EntityObjectEndpointTest {
     void delete_returnsNoContent() throws Exception {
         UUID id = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/base-entity/entities/{id}", id)
+        mockMvc.perform(delete("/entities/{id}", id)
                         .param("cascade", "false"))
                 .andExpect(status().isNoContent());
 
@@ -160,7 +161,7 @@ class EntityObjectEndpointTest {
         when(searchUseCase.search(eq("partner"), eq("name==ACME"), any(Pageable.class)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/base-entity/entities")
+        mockMvc.perform(get("/entities")
                         .param("entityDefinitionCode", "partner")
                         .param("rsql", "name==ACME"))
                 .andExpect(status().isOk())

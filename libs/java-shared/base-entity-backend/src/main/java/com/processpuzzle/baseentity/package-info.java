@@ -6,7 +6,7 @@
  */
 @ApplicationModule(
         displayName = "Base Entity",
-        allowedDependencies = {"core", "shared", "rule :: usecase", "rule :: domain"})
+        allowedDependencies = {"core", "shared"})
 package com.processpuzzle.baseentity;
 
 import org.springframework.modulith.ApplicationModule;

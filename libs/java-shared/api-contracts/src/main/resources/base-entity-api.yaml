@@ -49,7 +49,8 @@ paths:
   # ==========================================================================
   /entity-definitions:
     get:
-      tags: [entity-definitions]
+      operationId: listEntityDefinitions
+      tags: [ entity-definitions ]
       summary: List entity definitions
       parameters:
         - name: status
@@ -71,7 +72,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/BaseEntityDefinitionPage'
     post:
-      tags: [entity-definitions]
+      operationId: createEntityDefinition
+      tags: [ entity-definitions ]
       summary: Create a new entity definition (with its attributes)
       requestBody:
         required: true
@@ -103,7 +105,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/EntityDefinitionCode'
     get:
-      tags: [entity-definitions]
+      operationId: getEntityDefinition
+      tags: [ entity-definitions ]
       summary: Get an entity definition by code
       responses:
         '200':
@@ -115,7 +118,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     put:
-      tags: [entity-definitions]
+      operationId: replaceEntityDefinition
+      tags: [ entity-definitions ]
       summary: Replace an entity definition (attributes included, full replace)
       requestBody:
         required: true
@@ -141,7 +145,8 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [entity-definitions]
+      operationId: deleteEntityDefinition
+      tags: [ entity-definitions ]
       summary: Delete an entity definition
       description: >
         Rejected (409) if EntityObject rows still reference this definition, or if
@@ -162,7 +167,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/EntityDefinitionCode'
     post:
-      tags: [entity-definitions]
+      operationId: addAttribute
+      tags: [ entity-definitions ]
       summary: Add a single attribute to an existing definition
       description: Convenience endpoint for incremental authoring; PUT the whole definition for bulk changes.
       requestBody:
@@ -196,7 +202,8 @@ paths:
         schema:
           type: string
     put:
-      tags: [entity-definitions]
+      operationId: replaceAttribute
+      tags: [ entity-definitions ]
       summary: Replace a single attribute
       requestBody:
         required: true
@@ -214,7 +221,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
-      tags: [entity-definitions]
+      operationId: deleteAttribute
+      tags: [ entity-definitions ]
       summary: Remove an attribute
       description: Rejected (409) if existing EntityObject payloads for this definition still populate this attribute.
       responses:
@@ -234,7 +242,8 @@ paths:
   # ==========================================================================
   /entities:
     get:
-      tags: [entities]
+      operationId: listEntities
+      tags: [ entities ]
       summary: List / filter entity instances
       parameters:
         - name: entityDefinitionCode
@@ -268,7 +277,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
     post:
-      tags: [entities]
+      operationId: createEntity
+      tags: [ entities ]
       summary: Create an entity instance
       description: >
         `entityDefinitionCode` must reference a definition with isEmbedded=false
@@ -303,7 +313,8 @@ paths:
           type: string
           format: uuid
     get:
-      tags: [entities]
+      operationId: getEntity
+      tags: [ entities ]
       summary: Get an entity instance by id
       responses:
         '200':
@@ -315,7 +326,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     put:
-      tags: [entities]
+      operationId: updateEntity
+      tags: [ entities ]
       summary: Replace an entity instance's payload
       description: Full-payload replace. `version` must match the current stored version (optimistic locking).
       requestBody:
@@ -342,7 +354,8 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
-      tags: [entities]
+      operationId: deleteEntity
+      tags: [ entities ]
       summary: Delete an entity instance
       description: >
         Deleting an object that other objects reference via a FOREIGN_KEY attribute
@@ -409,7 +422,7 @@ components:
     # ------------------------------------------------------------------
     EntityDefinitionStatus:
       type: string
-      enum: [DRAFT, ACTIVE, DEPRECATED]
+      enum: [ DRAFT, ACTIVE, DEPRECATED ]
 
     ValueKind:
       type: string
@@ -417,7 +430,7 @@ components:
         Data type of the attribute's value. Drives JSON payload validation and
         RSQL comparison-operator casting. (TEXT_LIST intentionally omitted —
         repetition is expressed via isMultiValued instead.)
-      enum: [TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE]
+      enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE ]
 
     FormControlType:
       type: string
@@ -441,7 +454,7 @@ components:
 
     BaseEntityAttributeInput:
       type: object
-      required: [code, name, valueKind, formControlType]
+      required: [ code, name, valueKind, formControlType ]
       properties:
         code:
           type: string
@@ -463,7 +476,7 @@ components:
           type: boolean
           default: false
           description: When true, an expression index is generated over payload->>code for RSQL range queries.
-        defaultValue: {}
+        defaultValue: { }
         enumValues:
           type: array
           items:
@@ -479,7 +492,7 @@ components:
           type: boolean
           default: false
           description: Marks the attribute used as this entity's display title (componentIdentification).
-        validationRules: {}
+        validationRules: { }
 
     BaseEntityAttribute:
       allOf:
@@ -493,7 +506,7 @@ components:
 
     BaseEntityDefinitionInput:
       type: object
-      required: [code, name, attributes]
+      required: [ code, name, attributes ]
       properties:
         code:
           type: string
@@ -507,7 +520,7 @@ components:
           type: array
           items:
             type: string
-          default: []
+          default: [ ]
           description: Entity definition code(s) this may be nested under. Empty for a standalone entity.
         isEmbedded:
           type: boolean
@@ -564,7 +577,7 @@ components:
     # ------------------------------------------------------------------
     EntityObjectInput:
       type: object
-      required: [entityDefinitionCode, payload]
+      required: [ entityDefinitionCode, payload ]
       properties:
         entityDefinitionCode:
           type: string
@@ -580,7 +593,7 @@ components:
 
     EntityObjectUpdate:
       type: object
-      required: [version, payload]
+      required: [ version, payload ]
       properties:
         version:
           type: integer
@@ -631,7 +644,7 @@ components:
       properties:
         content:
           type: array
-          items: {}
+          items: { }
         page:
           type: integer
         size:
