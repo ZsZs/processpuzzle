@@ -6,12 +6,12 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.stereotype.Component;
 
 /**
  * Structural-only validation: required-field presence isn't tracked at this level (that lives on
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-@ConditionalOnMissingBean(PayloadValidatorPort.class)
 public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
 
     private final EntityDefinitionLookupPort definitionLookupPort;
