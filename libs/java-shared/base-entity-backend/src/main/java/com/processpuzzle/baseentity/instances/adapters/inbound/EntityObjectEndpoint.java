@@ -1,6 +1,6 @@
 package com.processpuzzle.baseentity.instances.adapters.inbound;
 
-import com.processpuzzle.baseentity.api.EntitiesApi;
+import com.processpuzzle.baseentity.api.BaseEntitiesApi;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.*;
 import com.processpuzzle.baseentity.model.EntityObjectInput;
@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Inbound REST adapter for the instances module, implementing the generated {@link EntitiesApi}.
+ * Inbound REST adapter for the instances module, implementing the generated {@link BaseEntitiesApi}.
  * Talks only to usecases + the mapper; no domain/repository access here.
  */
 @RestController
 @LogClass
 @RequiredArgsConstructor
-public class EntityObjectEndpoint implements EntitiesApi {
+public class EntityObjectEndpoint implements BaseEntitiesApi {
 
     private final CreateEntityInstanceUseCase createUseCase;
     private final FindEntityInstanceByIdUseCase findByIdUseCase;
@@ -38,6 +38,7 @@ public class EntityObjectEndpoint implements EntitiesApi {
 
     @Override
     public ResponseEntity<Page> listEntities(
+        String orgKey,
         String entityDefinitionCode,
         String rsql,
         String sort,
@@ -50,10 +51,14 @@ public class EntityObjectEndpoint implements EntitiesApi {
     }
 
     @Override
-    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> createEntity(EntityObjectInput input) {
+    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> createEntity(
+        String orgKey,
+        String entityDefinitionCode,
+        EntityObjectInput input
+    ) {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) input.getPayload();
-        EntityObject created = createUseCase.create(input.getEntityDefinitionCode(), payload);
+        EntityObject created = createUseCase.create(entityDefinitionCode, payload);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
             .buildAndExpand(created.getId())
@@ -62,12 +67,12 @@ public class EntityObjectEndpoint implements EntitiesApi {
     }
 
     @Override
-    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> getEntity(UUID id) {
+    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> getEntity(String orgKey, String entityDefinitionCode, UUID id) {
         return ResponseEntity.ok(mapper.toModel(findByIdUseCase.findById(id)));
     }
 
     @Override
-    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> updateEntity(UUID id, EntityObjectUpdate request) {
+    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> updateEntity(String orgKey, String entityDefinitionCode, UUID id, EntityObjectUpdate request) {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) request.getPayload();
         Long version = request.getVersion() != null ? request.getVersion().longValue() : null;
@@ -75,7 +80,7 @@ public class EntityObjectEndpoint implements EntitiesApi {
     }
 
     @Override
-    public ResponseEntity<Void> deleteEntity(UUID id, Boolean cascade) {
+    public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
         deleteUseCase.delete(id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
     }

@@ -9,6 +9,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -188,5 +194,31 @@ class DefinitionUseCasesTest {
 
         assertThat(existing.getAttributes()).isEmpty();
         verify(repository).save(existing);
+    }
+
+    @Test
+    void findAll_withNullFilters_queriesSuccessfully() {
+        Pageable pageable = PageRequest.of(0, 20);
+        BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").build();
+        when(repository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(def)));
+
+        Page<BaseEntityDefinition> result = findAllUseCase.findAll(null, null, pageable);
+
+        assertThat(result.getContent()).containsExactly(def);
+        verify(repository).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    void findAll_withFilters_queriesSuccessfully() {
+        Pageable pageable = PageRequest.of(0, 20);
+        BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").status(EntityDefinitionStatus.ACTIVE).isEmbedded(false).build();
+        when(repository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(def)));
+
+        Page<BaseEntityDefinition> result = findAllUseCase.findAll(EntityDefinitionStatus.ACTIVE, false, pageable);
+
+        assertThat(result.getContent()).containsExactly(def);
+        verify(repository).findAll(any(Specification.class), eq(pageable));
     }
 }

@@ -69,7 +69,7 @@ public class BaseEntityDefinition extends Auditable {
 
     private UUID organizationId;
 
-    @OneToMany(mappedBy = "entityDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "entityDefinition", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("displayOrder ASC")
     @Builder.Default
     private List<BaseEntityAttribute> attributes = new ArrayList<>();

@@ -89,7 +89,7 @@ class EntityDefinitionEndpointTest {
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
         when(findAllUseCase.findAll(any(), any(), any(Pageable.class))).thenReturn(page);
 
-        mockMvc.perform(get("/entity-definitions"))
+        mockMvc.perform(get("/organizations/test-org/entity-definitions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("partner"))
                 .andExpect(jsonPath("$.content[0].name").value("Partner"));
@@ -104,7 +104,7 @@ class EntityDefinitionEndpointTest {
                 .build();
         when(findByCodeUseCase.findByCode("partner")).thenReturn(def);
 
-        mockMvc.perform(get("/entity-definitions/partner"))
+        mockMvc.perform(get("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("partner"))
                 .andExpect(jsonPath("$.name").value("Partner"));
@@ -123,7 +123,7 @@ class EntityDefinitionEndpointTest {
         input.setCode("partner");
         input.setName("Partner");
 
-        mockMvc.perform(post("/entity-definitions")
+        mockMvc.perform(post("/organizations/test-org/entity-definitions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
@@ -143,7 +143,7 @@ class EntityDefinitionEndpointTest {
         input.setCode("partner");
         input.setName("Updated Partner");
 
-        mockMvc.perform(put("/entity-definitions/partner")
+        mockMvc.perform(put("/organizations/test-org/entity-definitions/partner")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
@@ -152,7 +152,7 @@ class EntityDefinitionEndpointTest {
 
     @Test
     void delete_returnsNoContent() throws Exception {
-        mockMvc.perform(delete("/entity-definitions/partner"))
+        mockMvc.perform(delete("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isNoContent());
 
         verify(deleteUseCase).delete("partner");
@@ -174,7 +174,7 @@ class EntityDefinitionEndpointTest {
         input.setValueKind(com.processpuzzle.baseentity.model.ValueKind.TEXT);
         input.setFormControlType(com.processpuzzle.baseentity.model.FormControlType.TEXT);
 
-        mockMvc.perform(post("/entity-definitions/partner/attributes")
+        mockMvc.perform(post("/organizations/test-org/entity-definitions/partner/attributes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
@@ -197,7 +197,7 @@ class EntityDefinitionEndpointTest {
         input.setValueKind(com.processpuzzle.baseentity.model.ValueKind.TEXT);
         input.setFormControlType(com.processpuzzle.baseentity.model.FormControlType.TEXT);
 
-        mockMvc.perform(put("/entity-definitions/partner/attributes/email")
+        mockMvc.perform(put("/organizations/test-org/entity-definitions/partner/attributes/email")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
@@ -206,7 +206,7 @@ class EntityDefinitionEndpointTest {
 
     @Test
     void deleteAttribute_returnsNoContent() throws Exception {
-        mockMvc.perform(delete("/entity-definitions/partner/attributes/email"))
+        mockMvc.perform(delete("/organizations/test-org/entity-definitions/partner/attributes/email"))
                 .andExpect(status().isNoContent());
 
         verify(deleteAttributeUseCase).deleteAttribute("partner", "email");

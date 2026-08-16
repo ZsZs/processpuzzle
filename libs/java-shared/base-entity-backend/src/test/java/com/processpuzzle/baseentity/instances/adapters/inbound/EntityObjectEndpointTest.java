@@ -83,7 +83,7 @@ class EntityObjectEndpointTest {
                 .build();
         when(findByIdUseCase.findById(id)).thenReturn(entity);
 
-        mockMvc.perform(get("/entities/{id}", id))
+        mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.entityDefinitionCode").value("partner"))
@@ -105,7 +105,7 @@ class EntityObjectEndpointTest {
         input.setEntityDefinitionCode("partner");
         input.setPayload(Map.of("name", "ACME"));
 
-        mockMvc.perform(post("/entities")
+        mockMvc.perform(post("/organizations/test-org/entities/{entityDefinitionCode}", "partner")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
@@ -128,7 +128,7 @@ class EntityObjectEndpointTest {
         updateRequest.setVersion(1);
         updateRequest.setPayload(Map.of("name", "ACME Updated"));
 
-        mockMvc.perform(put("/entities/{id}", id)
+        mockMvc.perform(put("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -140,7 +140,7 @@ class EntityObjectEndpointTest {
     void delete_returnsNoContent() throws Exception {
         UUID id = UUID.randomUUID();
 
-        mockMvc.perform(delete("/entities/{id}", id)
+        mockMvc.perform(delete("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id)
                         .param("cascade", "false"))
                 .andExpect(status().isNoContent());
 
@@ -161,8 +161,7 @@ class EntityObjectEndpointTest {
         when(searchUseCase.search(eq("partner"), eq("name==ACME"), any(Pageable.class)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/entities")
-                        .param("entityDefinitionCode", "partner")
+        mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}", "partner")
                         .param("rsql", "name==ACME"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(id.toString()))
