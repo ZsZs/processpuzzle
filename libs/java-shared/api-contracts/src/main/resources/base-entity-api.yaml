@@ -469,21 +469,162 @@ components:
       type: string
       description: >
         UI rendering hint for the attribute, consumed by the frontend form
-        generator. NOTE: mirrors libs/js-shared/base-entity-frontend
-        abstact-attr.descriptor.ts FormControlType — this enum should be
-        reconciled against that source before finalizing; only the values
-        referenced elsewhere in the codebase are listed here as placeholders.
+        generator. Mirrors libs/js-shared/base-entity-frontend
+        abstact-attr.descriptor.ts FormControlType.
       enum:
         - TEXT
         - TEXTAREA
+        - TEXT_BOX
         - NUMBER
         - DATE
         - DATE_TIME
         - BOOLEAN
+        - CHECKBOX
+        - RADIO
+        - DROPDOWN
         - ENUM_SELECT
         - FOREIGN_KEY
+        - LOOKUP
         - EMBEDDED_COMPONENTS
+        - COMPONENTS
+        - RELATED_ENTITIES
         - ARTIFACT
+        - TAGS
+        - TITLE
+        - LABEL
+        - ADDITIONAL_PROPERTIES
+        - FLEX_BOX
+
+    FlexDirection:
+      type: string
+      description: >-
+        Flexbox layout direction for entity form descriptors (mirrors
+        libs/js-shared/base-entity-frontend FlexDirection).
+      enum: [ CONTAINER, COLUMN, ROW ]
+
+    Selectable:
+      type: object
+      description: Key-value option for selectable controls (dropdown, radio, etc.).
+      required: [ key ]
+      properties:
+        key:
+          type: string
+        value: { }
+
+    AbstractAttrDescriptor:
+      type: object
+      description: >-
+        Base abstract descriptor for entity form attributes and layout items.
+        Mirrors libs/js-shared/base-entity-frontend AbstractAttrDescriptor.
+      required: [ attrName, formControlType ]
+      properties:
+        attrName:
+          type: string
+        formControlType:
+          $ref: '#/components/schemas/FormControlType'
+        disabled:
+          type: boolean
+          default: false
+        style:
+          type: object
+          description:
+            CSS style key-value pairs (e.g. column-gap: 20px).
+          additionalProperties: true
+        labelKey:
+          type: string
+          description: Optional override for the transloco key segment of this attribute.
+
+    AttributeDescriptor:
+      allOf:
+        - $ref: '#/components/schemas/AbstractAttrDescriptor'
+        - type: object
+          description: >-
+            Descriptor for a single entity attribute in form and table rendering.
+            Mirrors libs/js-shared/base-entity-frontend BaseEntityAttrDescriptor.
+          properties:
+            label:
+              type: string
+            description:
+              type: string
+            styleClass:
+              type: string
+            labelClass:
+              type: string
+            format:
+              type: string
+            isLinkToDetails:
+              type: boolean
+              default: false
+            selectables:
+              type: array
+              items:
+                $ref: '#/components/schemas/Selectable'
+            visible:
+              type: boolean
+              default: true
+            showThumbnail:
+              type: boolean
+              default: true
+            hideInTable:
+              type: boolean
+              default: false
+            isHeading:
+              type: boolean
+            placeholder:
+              type: string
+            lines:
+              type: integer
+            options:
+              type: object
+              additionalProperties: true
+            required:
+              type: boolean
+              default: false
+            pattern:
+              type: string
+            referenceIdField:
+              type: string
+              default: id
+            linkedEntityType:
+              type: string
+
+    BaseEntityAttrDescriptor:
+      $ref: '#/components/schemas/AttributeDescriptor'
+
+    FlexBoxDescriptor:
+      allOf:
+        - $ref: '#/components/schemas/AbstractAttrDescriptor'
+        - type: object
+          description: >-
+            Layout descriptor for organizing attribute descriptors and nested flexbox
+            descriptors in containers, rows, or columns with optional CSS styles.
+            Mirrors libs/js-shared/base-entity-frontend FlexboxDescriptor.
+          required: [ direction ]
+          properties:
+            direction:
+              $ref: '#/components/schemas/FlexDirection'
+            attrDescriptors:
+              type: array
+              description: Array of AttributeDescriptors and/or nested FlexBoxDescriptors.
+              items:
+                $ref: '#/components/schemas/AbstractAttrDescriptor'
+
+    FlexboxDescriptor:
+      $ref: '#/components/schemas/FlexBoxDescriptor'
+
+    BaseEntityDescriptor:
+      type: object
+      description: >-
+        Descriptor bundling an entity's name and its layout of attribute / flexbox descriptors.
+        Mirrors libs/js-shared/base-entity-frontend BaseEntityDescriptor.
+      required: [ entityName, attrDescriptors ]
+      properties:
+        entityName:
+          type: string
+        attrDescriptors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbstractAttrDescriptor'
 
     BaseEntityAttributeInput:
       type: object

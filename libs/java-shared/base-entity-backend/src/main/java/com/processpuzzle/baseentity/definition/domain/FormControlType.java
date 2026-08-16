@@ -2,19 +2,29 @@ package com.processpuzzle.baseentity.definition.domain;
 
 /**
  * UI rendering hint consumed by the frontend form generator.
- * TODO reconcile against libs/js-shared/base-entity-frontend/.../abstact-attr.descriptor.ts
- * FormControlType — only FOREIGN_KEY / EMBEDDED_COMPONENTS / ARTIFACT are confirmed against
- * that source; the rest are placeholders.
+ * Mirrors libs/js-shared/base-entity-frontend abstact-attr.descriptor.ts FormControlType.
  */
 public enum FormControlType {
     TEXT,
     TEXTAREA,
+    TEXT_BOX,
     NUMBER,
     DATE,
     DATE_TIME,
     BOOLEAN,
+    CHECKBOX,
+    RADIO,
+    DROPDOWN,
     ENUM_SELECT,
     FOREIGN_KEY,
+    LOOKUP,
     EMBEDDED_COMPONENTS,
-    ARTIFACT
+    COMPONENTS,
+    RELATED_ENTITIES,
+    ARTIFACT,
+    TAGS,
+    TITLE,
+    LABEL,
+    ADDITIONAL_PROPERTIES,
+    FLEX_BOX
 }
