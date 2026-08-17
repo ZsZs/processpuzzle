@@ -4,11 +4,19 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
-import com.processpuzzle.baseentity.instances.usecases.inbound.*;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,11 +27,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -149,6 +152,73 @@ class InstancesUseCasesTest {
 
         assertThatThrownBy(() -> findByIdUseCase.findById(id))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void findEntityInstanceById_success() {
+        UUID id = UUID.randomUUID();
+        EntityObject entity = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        EntityObject result = findByIdUseCase.findById(id);
+
+        assertThat(result).isSameAs(entity);
+    }
+
+    @Test
+    void updateEntityInstance_notFound_throwsNotFound() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> updateUseCase.update(id, 1L, Map.of()))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void updateEntityInstance_definitionNotFound_throwsNotFound() {
+        UUID id = UUID.randomUUID();
+        EntityObject existing = EntityObject.builder()
+                .id(id)
+                .entityDefinitionCode("partner")
+                .version(1L)
+                .build();
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> updateUseCase.update(id, 1L, Map.of()))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteEntityInstance_notFound_throwsNotFound() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> deleteUseCase.delete(id, false))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteEntityInstance_hasReferencesAndCascadeFalse_throwsConflict() {
+        UUID id = UUID.randomUUID();
+        EntityObject existing = EntityObject.builder().id(id).build();
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(repository.existsAnyReferenceTo(id.toString())).thenReturn(true);
+
+        assertThatThrownBy(() -> deleteUseCase.delete(id, false))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("is still referenced by other entities — pass cascade=true to delete anyway");
+    }
+
+    @Test
+    void deleteEntityInstance_hasReferencesAndCascadeTrue_deletes() {
+        UUID id = UUID.randomUUID();
+        EntityObject existing = EntityObject.builder().id(id).build();
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+
+        deleteUseCase.delete(id, true);
+
+        verify(repository).delete(existing);
     }
 
     @Test

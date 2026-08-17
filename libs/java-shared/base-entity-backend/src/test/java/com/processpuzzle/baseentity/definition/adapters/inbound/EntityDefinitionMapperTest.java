@@ -4,12 +4,17 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxContainer;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxDescriptor;
-import com.processpuzzle.baseentity.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
+import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
+import com.processpuzzle.baseentity.model.EntityDefinitionStatus;
+import com.processpuzzle.baseentity.model.FlexDirection;
+import com.processpuzzle.baseentity.model.FormControlType;
+import com.processpuzzle.baseentity.model.Page;
+import com.processpuzzle.baseentity.model.ValueKind;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -187,5 +192,144 @@ class EntityDefinitionMapperTest {
             assertThat(modelType).isNotNull();
             assertThat(mapper.toDomainFormControlType(modelType)).isEqualTo(domainType);
         }
+    }
+
+    @Test
+    void allEnums_andNulls_mapCorrectly() {
+        for (com.processpuzzle.baseentity.definition.domain.ValueKind vk : com.processpuzzle.baseentity.definition.domain.ValueKind.values()) {
+            ValueKind modelVk = mapper.toModelValueKind(vk);
+            assertThat(modelVk).isNotNull();
+            assertThat(mapper.toDomainValueKind(modelVk)).isEqualTo(vk);
+        }
+        assertThat(mapper.toModelValueKind(null)).isNull();
+        assertThat(mapper.toDomainValueKind(null)).isNull();
+
+        for (com.processpuzzle.baseentity.definition.domain.FlexDirection fd : com.processpuzzle.baseentity.definition.domain.FlexDirection.values()) {
+            FlexDirection modelFd = mapper.toModelFlexDirection(fd);
+            assertThat(modelFd).isNotNull();
+            assertThat(mapper.toDomainFlexDirection(modelFd)).isEqualTo(fd);
+        }
+        assertThat(mapper.toModelFlexDirection(null)).isNull();
+        assertThat(mapper.toDomainFlexDirection(null)).isNull();
+
+        for (com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus status : com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.values()) {
+            EntityDefinitionStatus modelStatus = mapper.toModelStatus(status);
+            assertThat(modelStatus).isNotNull();
+            assertThat(mapper.toDomainStatus(modelStatus)).isEqualTo(status);
+        }
+        assertThat(mapper.toModelStatus(null)).isNull();
+        assertThat(mapper.toDomainStatus(null)).isNull();
+        assertThat(mapper.toModelFormControlType(null)).isNull();
+        assertThat(mapper.toDomainFormControlType(null)).isNull();
+    }
+
+    @Test
+    void nullInputs_returnNull() {
+        assertThat(mapper.toDomain((BaseEntityDefinitionInput) null)).isNull();
+        assertThat(mapper.toDomain((BaseEntityAttributeInput) null)).isNull();
+        assertThat(mapper.toModel((BaseEntityDefinition) null)).isNull();
+        assertThat(mapper.toModel((BaseEntityAttribute) null)).isNull();
+        assertThat(mapper.toDomain((com.processpuzzle.baseentity.model.Selectable) null)).isNull();
+        assertThat(mapper.toModel((com.processpuzzle.baseentity.definition.domain.Selectable) null)).isNull();
+        assertThat(mapper.toDomain((com.processpuzzle.baseentity.model.AbstractAttrDescriptor) null)).isNull();
+        assertThat(mapper.toModel((com.processpuzzle.baseentity.definition.domain.AbstractAttrDescriptor) null)).isNull();
+        assertThat(mapper.toDomain((com.processpuzzle.baseentity.model.AttributeDescriptor) null)).isNull();
+        assertThat(mapper.toModel((com.processpuzzle.baseentity.definition.domain.AttributeDescriptor) null)).isNull();
+        assertThat(mapper.toDomain((com.processpuzzle.baseentity.model.FlexBoxDescriptor) null)).isNull();
+        assertThat(mapper.toModel((com.processpuzzle.baseentity.definition.domain.FlexBoxContainer) null)).isNull();
+        assertThat(mapper.toDomain((com.processpuzzle.baseentity.model.BaseEntityDescriptor) null)).isNull();
+        assertThat(mapper.toModel((com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor) null)).isNull();
+        assertThat(mapper.toAttributeDescriptor(null)).isNull();
+        assertThat(mapper.toDescriptor(null)).isNull();
+    }
+
+    @Test
+    void toPage_mapsSpringPageCorrectly() {
+        BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").name("Partner").build();
+        org.springframework.data.domain.Page<BaseEntityDefinition> springPage =
+                new org.springframework.data.domain.PageImpl<>(List.of(def), org.springframework.data.domain.PageRequest.of(0, 10), 1);
+
+        Page page = mapper.toPage(springPage);
+        assertThat(page.getPage()).isEqualTo(0);
+        assertThat(page.getSize()).isEqualTo(10);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getTotalPages()).isEqualTo(1);
+        assertThat(page.getContent()).hasSize(1);
+    }
+
+    @Test
+    void abstractAttrDescriptor_toDomain_flexBoxAndStandard() {
+        com.processpuzzle.baseentity.model.AbstractAttrDescriptor flexInput = new com.processpuzzle.baseentity.model.AbstractAttrDescriptor();
+        flexInput.setAttrName("flexLayout");
+        flexInput.setFormControlType(FormControlType.FLEX_BOX);
+        flexInput.setDisabled(true);
+        flexInput.setStyle(Map.of("display", "flex"));
+        flexInput.setLabelKey("flex.label");
+
+        com.processpuzzle.baseentity.definition.domain.AbstractAttrDescriptor flexDomain = mapper.toDomain(flexInput);
+        assertThat(flexDomain).isInstanceOf(FlexBoxContainer.class);
+        FlexBoxContainer container = (FlexBoxContainer) flexDomain;
+        assertThat(container.getAttrName()).isEqualTo("flexLayout");
+        assertThat(container.getDirection()).isEqualTo(com.processpuzzle.baseentity.definition.domain.FlexDirection.CONTAINER);
+        assertThat(container.isDisabled()).isTrue();
+
+        com.processpuzzle.baseentity.model.AbstractAttrDescriptor textInput = new com.processpuzzle.baseentity.model.AbstractAttrDescriptor();
+        textInput.setAttrName("textAttr");
+        textInput.setFormControlType(FormControlType.TEXT);
+
+        com.processpuzzle.baseentity.definition.domain.AbstractAttrDescriptor textDomain = mapper.toDomain(textInput);
+        assertThat(textDomain).isInstanceOf(com.processpuzzle.baseentity.definition.domain.AttributeDescriptor.class);
+    }
+
+    @Test
+    void attributeDescriptor_fullFieldMapping() {
+        com.processpuzzle.baseentity.model.Selectable selInput = new com.processpuzzle.baseentity.model.Selectable();
+        selInput.setKey("k1");
+        selInput.setValue("v1");
+
+        com.processpuzzle.baseentity.model.AttributeDescriptor modelAttr = new com.processpuzzle.baseentity.model.AttributeDescriptor();
+        modelAttr.setAttrName("custom");
+        modelAttr.setFormControlType(FormControlType.DROPDOWN);
+        modelAttr.setDisabled(false);
+        modelAttr.setLabel("Custom Label");
+        modelAttr.setDescription("Custom Desc");
+        modelAttr.setStyleClass("my-style");
+        modelAttr.setLabelClass("my-label-style");
+        modelAttr.setFormat("fmt");
+        modelAttr.setIsLinkToDetails(true);
+        modelAttr.setSelectables(List.of(selInput));
+        modelAttr.setVisible(true);
+        modelAttr.setShowThumbnail(false);
+        modelAttr.setHideInTable(true);
+        modelAttr.setIsHeading(false);
+        modelAttr.setPlaceholder("Enter...");
+        modelAttr.setLines(3);
+        modelAttr.setOptions(Map.of("k", "v"));
+        modelAttr.setRequired(true);
+        modelAttr.setPattern("[0-9]+");
+        modelAttr.setReferenceIdField("id");
+        modelAttr.setLinkedEntityType("other-entity");
+
+        com.processpuzzle.baseentity.definition.domain.AttributeDescriptor domainAttr = mapper.toDomain(modelAttr);
+        assertThat(domainAttr.getAttrName()).isEqualTo("custom");
+        assertThat(domainAttr.getSelectables()).hasSize(1);
+        assertThat(domainAttr.getSelectables().get(0).getKey()).isEqualTo("k1");
+
+        com.processpuzzle.baseentity.model.AttributeDescriptor mappedBack = mapper.toModel(domainAttr);
+        assertThat(mappedBack.getAttrName()).isEqualTo("custom");
+        assertThat(mappedBack.getSelectables()).hasSize(1);
+        assertThat(mappedBack.getSelectables().get(0).getKey()).isEqualTo("k1");
+    }
+
+    @Test
+    void toDescriptor_withNullAttributes() {
+        BaseEntityDefinition def = BaseEntityDefinition.builder()
+                .name("EmptyDef")
+                .attributes(null)
+                .build();
+
+        com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor desc = mapper.toDescriptor(def);
+        assertThat(desc.getEntityName()).isEqualTo("EmptyDef");
+        assertThat(desc.getAttrDescriptors()).isEmpty();
     }
 }

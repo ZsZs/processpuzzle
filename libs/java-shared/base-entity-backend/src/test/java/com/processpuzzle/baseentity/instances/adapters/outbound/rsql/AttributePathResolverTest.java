@@ -4,14 +4,13 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -79,5 +78,63 @@ class AttributePathResolverTest {
 
         assertThatThrownBy(() -> resolver.resolve("partner", "unknown"))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void resolve_unknownDefinition_throwsIllegalArgument() {
+        when(lookupPort.findByCode("unknown")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> resolver.resolve("unknown", "name"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unknown entity definition 'unknown' while resolving 'name'");
+    }
+
+    @Test
+    void resolve_nonEmbeddedAttributeMidPath_throwsIllegalArgument() {
+        EntityDefinitionView partnerDef = new EntityDefinitionView(
+                "partner",
+                false,
+                List.of(new EntityAttributeView("name", ValueKindView.TEXT, false, false, null, false))
+        );
+        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+
+        assertThatThrownBy(() -> resolver.resolve("partner", "name.length"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("is not an embedded-component attribute");
+    }
+
+    @Test
+    void resolve_embeddedAttributeWithoutLinkedEntityTypeMidPath_throwsIllegalArgument() {
+        EntityDefinitionView partnerDef = new EntityDefinitionView(
+                "partner",
+                false,
+                List.of(new EntityAttributeView("brokenAddress", ValueKindView.REFERENCE, false, true, null, false))
+        );
+        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+
+        assertThatThrownBy(() -> resolver.resolve("partner", "brokenAddress.city"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("is not an embedded-component attribute");
+    }
+
+    @Test
+    void resolve_leafSegmentMultiValuedEmbedded_setsArrayTrue() {
+        EntityDefinitionView partnerDef = new EntityDefinitionView(
+                "partner",
+                false,
+                List.of(new EntityAttributeView("contacts", ValueKindView.REFERENCE, true, true, "contact", false))
+        );
+        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+
+        ResolvedAttributePath path = resolver.resolve("partner", "contacts");
+
+        assertThat(path.segments()).hasSize(1);
+        assertThat(path.segments().get(0).array()).isTrue();
+    }
+
+    @Test
+    void entityDefinitionView_attributeMethod_returnsNullWhenNotFound() {
+        EntityDefinitionView def = new EntityDefinitionView("test", false, List.of());
+        assertThat(def.attribute("nonexistent")).isNull();
     }
 }

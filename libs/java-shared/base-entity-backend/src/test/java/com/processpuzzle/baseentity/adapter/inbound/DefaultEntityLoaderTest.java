@@ -8,6 +8,11 @@ import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,17 +21,17 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class DefaultEntityLoaderTest {
 
@@ -164,6 +169,88 @@ class DefaultEntityLoaderTest {
 
         verifyNoInteractions(createDefinitionUseCase);
         verifyNoInteractions(createInstanceUseCase);
+    }
+
+    @Test
+    void skipsFilesWithBlankOrgKey() throws IOException {
+        Resource blankOrgResource = new ByteArrayResource(
+                "entityDefinitions: []\nentities: []".getBytes(StandardCharsets.UTF_8)
+        ) {
+            @Override
+            public String getFilename() {
+                return "-entities.yaml";
+            }
+        };
+        when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{blankOrgResource});
+
+        loader.loadDefaults();
+
+        verifyNoInteractions(createDefinitionUseCase);
+        verifyNoInteractions(createInstanceUseCase);
+    }
+
+    @Test
+    void survivesIoExceptionOnReadingResource() throws IOException {
+        Resource brokenResource = mock(Resource.class);
+        when(brokenResource.getFilename()).thenReturn("test-entities.yaml");
+        when(brokenResource.getInputStream()).thenThrow(new IOException("corrupt file"));
+        when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{brokenResource});
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void handlesNullOrBlankDefinitionCodeAndNullEntities() throws IOException {
+        String yamlContent = """
+                entityDefinitions:
+                  - code: ""
+                    name: "Empty Code"
+                  - code: null
+                    name: "Null Code"
+                entities:
+                  - entityDefinitionCode: ""
+                    payload: {}
+                  - entityDefinitionCode: "test"
+                    payload: null
+                  - entityDefinitionCode: null
+                    payload: {"a": 1}
+                """;
+        Resource yamlResource = new ByteArrayResource(yamlContent.getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public String getFilename() {
+                return "custom-entities.yaml";
+            }
+        };
+        when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{yamlResource});
+
+        loader.loadDefaults();
+
+        verifyNoInteractions(createDefinitionUseCase);
+        verifyNoInteractions(createInstanceUseCase);
+    }
+
+    @Test
+    void survivesRuntimeExceptionWhenCreatingDefinition() {
+        doThrow(new RuntimeException("unexpected db error"))
+                .when(createDefinitionUseCase).create(argThat(def -> "dynamic-entity".equals(def.getCode())));
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void survivesConflictExceptionWhenCreatingInstance() {
+        doThrow(new ConflictException("already exists"))
+                .when(createInstanceUseCase).create(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void survivesRuntimeExceptionWhenCreatingInstance() {
+        doThrow(new RuntimeException("unexpected error"))
+                .when(createInstanceUseCase).create(anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
 
     private static Resource bundledTestbedFile() {

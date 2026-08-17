@@ -1,9 +1,27 @@
 package com.processpuzzle.baseentity.definition.usecases;
 
 import com.processpuzzle.baseentity.common.ConflictException;
-import com.processpuzzle.baseentity.definition.domain.*;
-import com.processpuzzle.baseentity.definition.usecases.inbound.*;
+import com.processpuzzle.baseentity.common.NotFoundException;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
+import com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus;
+import com.processpuzzle.baseentity.definition.domain.EntityDefinitionValidator;
+import com.processpuzzle.baseentity.definition.domain.FormControlType;
+import com.processpuzzle.baseentity.definition.domain.ValueKind;
+import com.processpuzzle.baseentity.definition.usecases.inbound.AddAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteEntityDefinitionUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.FindAllEntityDefinitionsUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionByCodeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceExistenceCheckPort;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,11 +32,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +56,7 @@ class DefinitionUseCasesTest {
     private ReplaceEntityDefinitionUseCase replaceUseCase;
     private DeleteEntityDefinitionUseCase deleteUseCase;
     private FindAllEntityDefinitionsUseCase findAllUseCase;
+    private FindEntityDefinitionByCodeUseCase findByCodeUseCase;
     private AddAttributeUseCase addAttributeUseCase;
     private ReplaceAttributeUseCase replaceAttributeUseCase;
     private DeleteAttributeUseCase deleteAttributeUseCase;
@@ -53,6 +67,7 @@ class DefinitionUseCasesTest {
         replaceUseCase = new ReplaceEntityDefinitionUseCase(repository, validator);
         deleteUseCase = new DeleteEntityDefinitionUseCase(repository, existenceCheckPort);
         findAllUseCase = new FindAllEntityDefinitionsUseCase(repository);
+        findByCodeUseCase = new FindEntityDefinitionByCodeUseCase(repository);
         addAttributeUseCase = new AddAttributeUseCase(repository, validator);
         replaceAttributeUseCase = new ReplaceAttributeUseCase(repository, validator);
         deleteAttributeUseCase = new DeleteAttributeUseCase(repository);
@@ -218,5 +233,104 @@ class DefinitionUseCasesTest {
 
         assertThat(result.getContent()).containsExactly(def);
         verify(repository).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    void findByCode_success() {
+        BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").build();
+        when(repository.findByCode("partner")).thenReturn(Optional.of(def));
+
+        BaseEntityDefinition result = findByCodeUseCase.findByCode("partner");
+
+        assertThat(result).isSameAs(def);
+    }
+
+    @Test
+    void findByCode_notFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> findByCodeUseCase.findByCode("unknown"))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void replaceEntityDefinition_notFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        BaseEntityDefinition update = BaseEntityDefinition.builder().code("unknown").build();
+        assertThatThrownBy(() -> replaceUseCase.replace("unknown", update))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteEntityDefinition_notFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> deleteUseCase.delete("unknown"))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteEntityDefinition_hasComponentParentDependents_throwsConflict() {
+        BaseEntityDefinition existing = BaseEntityDefinition.builder().code("address").build();
+        when(repository.findByCode("address")).thenReturn(Optional.of(existing));
+        when(existenceCheckPort.existsAnyInstanceOf("address")).thenReturn(false);
+        when(repository.findByComponentParentsContaining("address"))
+                .thenReturn(List.of(BaseEntityDefinition.builder().code("partner").build()));
+
+        assertThatThrownBy(() -> deleteUseCase.delete("address"))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("is still declared as a componentParent by another definition");
+    }
+
+    @Test
+    void addAttribute_definitionNotFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
+        assertThatThrownBy(() -> addAttributeUseCase.addAttribute("unknown", attr))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void replaceAttribute_definitionNotFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
+        assertThatThrownBy(() -> replaceAttributeUseCase.replaceAttribute("unknown", "email", attr))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void replaceAttribute_attributeNotFound_throwsNotFound() {
+        BaseEntityDefinition existing = BaseEntityDefinition.builder()
+                .code("partner")
+                .attributes(new ArrayList<>())
+                .build();
+        when(repository.findByCode("partner")).thenReturn(Optional.of(existing));
+
+        BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
+        assertThatThrownBy(() -> replaceAttributeUseCase.replaceAttribute("partner", "email", attr))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteAttribute_definitionNotFound_throwsNotFound() {
+        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> deleteAttributeUseCase.deleteAttribute("unknown", "email"))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void deleteAttribute_attributeNotFound_throwsNotFound() {
+        BaseEntityDefinition existing = BaseEntityDefinition.builder()
+                .code("partner")
+                .attributes(new ArrayList<>())
+                .build();
+        when(repository.findByCode("partner")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> deleteAttributeUseCase.deleteAttribute("partner", "email"))
+                .isInstanceOf(NotFoundException.class);
     }
 }

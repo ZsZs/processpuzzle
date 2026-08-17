@@ -2,10 +2,22 @@ package com.processpuzzle.baseentity.definition.adapters.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
-import com.processpuzzle.baseentity.definition.domain.*;
-import com.processpuzzle.baseentity.definition.usecases.inbound.*;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus;
+import com.processpuzzle.baseentity.definition.domain.FormControlType;
+import com.processpuzzle.baseentity.definition.domain.ValueKind;
+import com.processpuzzle.baseentity.definition.usecases.inbound.AddAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteEntityDefinitionUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.FindAllEntityDefinitionsUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionByCodeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,13 +35,14 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -93,6 +106,25 @@ class EntityDefinitionEndpointTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("partner"))
                 .andExpect(jsonPath("$.content[0].name").value("Partner"));
+    }
+
+    @Test
+    void findAll_withQueryParams_passesFiltersToUseCase() throws Exception {
+        BaseEntityDefinition def = BaseEntityDefinition.builder()
+                .code("partner")
+                .name("Partner")
+                .status(EntityDefinitionStatus.ACTIVE)
+                .build();
+        Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
+        when(findAllUseCase.findAll(eq(EntityDefinitionStatus.ACTIVE), eq(false), any(Pageable.class))).thenReturn(page);
+
+        mockMvc.perform(get("/organizations/test-org/entity-definitions")
+                        .param("status", "ACTIVE")
+                        .param("isEmbedded", "false")
+                        .param("page", "1")
+                        .param("size", "15"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].code").value("partner"));
     }
 
     @Test

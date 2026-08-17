@@ -3,9 +3,16 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
-import com.processpuzzle.baseentity.instances.usecases.inbound.*;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.model.EntityObjectInput;
 import com.processpuzzle.baseentity.model.EntityObjectUpdate;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,15 +30,14 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -148,6 +154,27 @@ class EntityObjectEndpointTest {
     }
 
     @Test
+    void delete_withCascadeTrue_callsUseCaseWithCascadeTrue() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(delete("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id)
+                        .param("cascade", "true"))
+                .andExpect(status().isNoContent());
+
+        verify(deleteUseCase).delete(id, true);
+    }
+
+    @Test
+    void delete_withoutCascadeParam_callsUseCaseWithCascadeFalse() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(delete("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
+                .andExpect(status().isNoContent());
+
+        verify(deleteUseCase).delete(id, false);
+    }
+
+    @Test
     void search_returnsPage() throws Exception {
         UUID id = UUID.randomUUID();
         EntityObject entity = EntityObject.builder()
@@ -162,7 +189,10 @@ class EntityObjectEndpointTest {
                 .thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}", "partner")
-                        .param("rsql", "name==ACME"))
+                        .param("rsql", "name==ACME")
+                        .param("sort", "name,asc")
+                        .param("page", "2")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(id.toString()))
                 .andExpect(jsonPath("$.content[0].entityDefinitionCode").value("partner"));
