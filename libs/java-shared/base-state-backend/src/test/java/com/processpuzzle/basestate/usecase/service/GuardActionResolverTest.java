@@ -51,12 +51,44 @@ class GuardActionResolverTest {
     }
 
     @Test
+    void isKnownAction_shouldReturnTrueWhenBeanExistsAndMatchesType() {
+        TransitionAction action = mock(TransitionAction.class);
+        when(context.getBean("myAction", TransitionAction.class)).thenReturn(action);
+
+        assertThat(resolver.isKnownAction("myAction")).isTrue();
+    }
+
+    @Test
+    void isKnownAction_shouldReturnFalseWhenNoSuchBean() {
+        when(context.getBean("missing", TransitionAction.class))
+                .thenThrow(new NoSuchBeanDefinitionException("missing"));
+
+        assertThat(resolver.isKnownAction("missing")).isFalse();
+    }
+
+    @Test
+    void resolveGuard_shouldReturnBeanWhenFound() {
+        TransitionGuard guard = mock(TransitionGuard.class);
+        when(context.getBean("myGuard", TransitionGuard.class)).thenReturn(guard);
+
+        assertThat(resolver.resolveGuard("myGuard")).isSameAs(guard);
+    }
+
+    @Test
     void resolveGuard_shouldThrowWhenNotFound() {
         when(context.getBean("missing", TransitionGuard.class))
                 .thenThrow(new NoSuchBeanDefinitionException("missing"));
 
         assertThatThrownBy(() -> resolver.resolveGuard("missing"))
                 .isInstanceOf(UnknownGuardBeanException.class);
+    }
+
+    @Test
+    void resolveAction_shouldReturnBeanWhenFound() {
+        TransitionAction action = mock(TransitionAction.class);
+        when(context.getBean("myAction", TransitionAction.class)).thenReturn(action);
+
+        assertThat(resolver.resolveAction("myAction")).isSameAs(action);
     }
 
     @Test

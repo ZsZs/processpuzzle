@@ -146,6 +146,9 @@ class StateMachineDefinitionUseCasesTest {
 
         Page<StateMachineDefinition> page = findAllUseCase.execute(ORG, null, null, 0, 10);
         assertThat(page.getContent()).containsExactly(existing);
+
+        Page<StateMachineDefinition> page2 = findAllUseCase.execute(ORG, "name=='SM'", "name,desc", null, null);
+        assertThat(page2.getContent()).containsExactly(existing);
     }
 
     private StateMachineDefinition sampleDefinition(String name, String description, String stateAttr, String initial) {

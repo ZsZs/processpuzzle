@@ -5,10 +5,9 @@ import com.processpuzzle.basestate.domain.GuardRef;
 import com.processpuzzle.basestate.domain.State;
 import com.processpuzzle.basestate.domain.Transition;
 import com.processpuzzle.basestate.usecase.service.GuardActionResolver;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,6 +38,23 @@ class StateMachineTopologyValidatorTest {
                 List.of(new ActionRef("knownAction", null))));
 
         assertThatCode(() -> validator.validate("draft", states, transitions)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void acceptsNullTransitions() {
+        List<State> states = List.of(new State("draft", "Draft", null, false, false, null));
+        assertThatCode(() -> validator.validate("draft", states, null)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsEmptyOrNullStates() {
+        assertThatThrownBy(() -> validator.validate("draft", null, List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least one state");
+
+        assertThatThrownBy(() -> validator.validate("draft", List.of(), List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least one state");
     }
 
     @Test
@@ -78,6 +94,39 @@ class StateMachineTopologyValidatorTest {
     }
 
     @Test
+    void rejectsDuplicateTransitionKey() {
+        List<State> states = List.of(
+                new State("draft", "Draft", null, false, false, null),
+                new State("approved", "Approved", null, false, false, null));
+        List<Transition> transitions = List.of(
+                new Transition("t1", null, "draft", "approved", "trig1", List.of(), List.of()),
+                new Transition("t1", null, "draft", "approved", "trig2", List.of(), List.of()));
+
+        assertThatThrownBy(() -> validator.validate("draft", states, transitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Duplicate transition key");
+    }
+
+    @Test
+    void rejectsUnknownTransitionSourceOrTargetState() {
+        List<State> states = List.of(
+                new State("draft", "Draft", null, false, false, null),
+                new State("approved", "Approved", null, false, false, null));
+
+        List<Transition> unknownSource = List.of(
+                new Transition("t1", null, "unknown", "approved", "trig1", List.of(), List.of()));
+        assertThatThrownBy(() -> validator.validate("draft", states, unknownSource))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sourceStateKey");
+
+        List<Transition> unknownTarget = List.of(
+                new Transition("t2", null, "draft", "unknown", "trig1", List.of(), List.of()));
+        assertThatThrownBy(() -> validator.validate("draft", states, unknownTarget))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("targetStateKey");
+    }
+
+    @Test
     void rejectsUnknownGuardBean() {
         List<State> states = List.of(
                 new State("draft", "Draft", null, false, false, null),
@@ -89,6 +138,20 @@ class StateMachineTopologyValidatorTest {
         assertThatThrownBy(() -> validator.validate("draft", states, transitions))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("missingGuard");
+    }
+
+    @Test
+    void rejectsUnknownActionBean() {
+        List<State> states = List.of(
+                new State("draft", "Draft", null, false, false, null),
+                new State("approved", "Approved", null, false, false, null));
+        List<Transition> transitions = List.of(new Transition(
+                "approve", null, "draft", "approved", "approve",
+                List.of(), List.of(new ActionRef("missingAction", null))));
+
+        assertThatThrownBy(() -> validator.validate("draft", states, transitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("missingAction");
     }
 
     @Test
