@@ -1,0 +1,58 @@
+# Default state machine definitions for the 'processpuzzle-testbed' organization —
+# the tenant behind apps/processpuzzle-testbed.
+#
+# DefaultStateImporter imports this file on startup when `base-state.loadDefaultStateMachines` is true.
+# The owning organization is the part of the file name before `-state-machines.yaml`, exactly as
+# `<orgKey>-entities.yaml` works in base-entity, `<orgKey>-apps.yaml` in base-app, and `<orgKey>-widgets.yaml` in base-widget.
+#
+# State machines bind 1:1 to entity definitions (e.g. 'dynamic-entity' from base-entity-backend).
+# The stateAttributeKey ('enumAttr') corresponds to the Status enum attribute defined on Dynamic Entity.
+
+stateMachines:
+  - entityName: dynamic-entity
+    name: Dynamic Entity State Machine
+    description: State machine governing the lifecycle and state transitions of Dynamic Entity instances.
+    stateAttributeKey: enumAttr
+    initialStateKey: DRAFT
+    states:
+      - key: DRAFT
+        name: Draft
+        description: Initial draft state where entity is prepared and configured.
+        isFinal: false
+        isLocked: false
+      - key: IN_PROGRESS
+        name: In Progress
+        description: Entity is actively being worked on or executed.
+        isFinal: false
+        isLocked: false
+      - key: COMPLETED
+        name: Completed
+        description: Entity work has finished and has been verified.
+        isFinal: false
+        isLocked: false
+      - key: ARCHIVED
+        name: Archived
+        description: Entity is archived for record retention and locked from further edits.
+        isFinal: true
+        isLocked: true
+    transitions:
+      - key: start-progress
+        name: Start Progress
+        sourceStateKey: DRAFT
+        targetStateKey: IN_PROGRESS
+        triggerKey: start
+      - key: complete
+        name: Complete
+        sourceStateKey: IN_PROGRESS
+        targetStateKey: COMPLETED
+        triggerKey: complete
+      - key: reopen
+        name: Reopen
+        sourceStateKey: COMPLETED
+        targetStateKey: IN_PROGRESS
+        triggerKey: reopen
+      - key: archive
+        name: Archive
+        sourceStateKey: COMPLETED
+        targetStateKey: ARCHIVED
+        triggerKey: archive
