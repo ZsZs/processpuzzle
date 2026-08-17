@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.domain;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
@@ -14,31 +16,31 @@ import java.util.Map;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
+@lombok.EqualsAndHashCode(callSuper = true)
+@lombok.ToString(callSuper = true)
 public class AttributeDescriptor extends AbstractAttrDescriptor {
     private String label;
     private String description;
     private String styleClass;
     private String labelClass;
     private String format;
-    @Builder.Default
+    @lombok.Builder.Default
     private boolean isLinkToDetails = false;
     private List<Selectable> selectables;
-    @Builder.Default
+    @lombok.Builder.Default
     private Boolean visible = true;
-    @Builder.Default
+    @lombok.Builder.Default
     private Boolean showThumbnail = true;
-    @Builder.Default
+    @lombok.Builder.Default
     private Boolean hideInTable = false;
     private Boolean isHeading;
     private String placeholder;
     private Integer lines;
     private Map<String, Object> options;
-    @Builder.Default
+    @lombok.Builder.Default
     private boolean required = false;
     private String pattern;
-    @Builder.Default
+    @lombok.Builder.Default
     private String referenceIdField = "id";
     private String linkedEntityType;
 

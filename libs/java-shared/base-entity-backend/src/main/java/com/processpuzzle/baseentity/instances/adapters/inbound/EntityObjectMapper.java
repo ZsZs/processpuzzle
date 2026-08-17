@@ -32,7 +32,7 @@ public class EntityObjectMapper {
     public Page toPage(org.springframework.data.domain.Page<EntityObject> page) {
         List<Object> content = page.getContent().stream()
             .map(this::toModel)
-            .map(item -> (Object) item)
+            .map(Object.class::cast)
             .toList();
         return new Page()
             .content(content)

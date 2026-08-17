@@ -15,8 +15,7 @@ import org.springframework.stereotype.Component;
 /**
  * Implements the instances module's EntityDefinitionLookupPort by reaching into the definition
  * module and mapping its JPA entities down to the read-only view records the port contract
- * defines. Same Modulith-boundary caveat as EntityInstanceExistenceCheckAdapter on the
- * definition side — see that class's TODO.
+ * defines.
  */
 @Component
 @RequiredArgsConstructor

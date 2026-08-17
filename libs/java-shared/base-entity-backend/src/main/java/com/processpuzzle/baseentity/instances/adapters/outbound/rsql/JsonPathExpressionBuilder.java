@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  */
 final class JsonPathExpressionBuilder {
 
-    private static final Pattern SAFE_ATTRIBUTE_CODE = Pattern.compile("^[A-Za-z][A-Za-z0-9_]*$");
+    private static final Pattern SAFE_ATTRIBUTE_CODE = Pattern.compile("^[A-Za-z]\\w*$");
 
     static String buildPath(ResolvedAttributePath path, ComparisonOperator operator, List<String> arguments) {
         StringBuilder jsonPath = new StringBuilder("$");

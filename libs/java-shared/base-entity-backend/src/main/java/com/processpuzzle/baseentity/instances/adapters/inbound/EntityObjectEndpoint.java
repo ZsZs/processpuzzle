@@ -2,12 +2,17 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 
 import com.processpuzzle.baseentity.api.BaseEntitiesApi;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
-import com.processpuzzle.baseentity.instances.usecases.inbound.*;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
 import com.processpuzzle.baseentity.model.EntityObjectInput;
 import com.processpuzzle.baseentity.model.EntityObjectUpdate;
 import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.core.rsql.SortParser;
+import java.net.URI;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Inbound REST adapter for the instances module, implementing the generated {@link BaseEntitiesApi}.
@@ -31,8 +32,8 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
 
     private final CreateEntityInstanceUseCase createUseCase;
     private final FindEntityInstanceByIdUseCase findByIdUseCase;
-    private final SearchEntityInstancesUseCase searchUseCase;
-    private final UpdateEntityInstanceUseCase updateUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase searchUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase updateUseCase;
     private final DeleteEntityInstanceUseCase deleteUseCase;
     private final EntityObjectMapper mapper;
 

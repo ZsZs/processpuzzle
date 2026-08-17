@@ -1,8 +1,13 @@
 package com.processpuzzle.baseentity.instances.domain;
 
 import com.processpuzzle.baseentity.common.Auditable;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -19,28 +24,28 @@ import java.util.UUID;
  * reached only through EntityDefinitionLookupPort, never navigated as a direct JPA association
  * across the module boundary.
  */
-@Getter
-@Setter
+@lombok.Getter
+@lombok.Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = "id")
-@ToString
+@lombok.EqualsAndHashCode(callSuper = false, of = "id")
+@lombok.ToString
 @Entity
 @Table(
     name = "entity_object",
-    indexes = @Index(name = "idx_entity_object_definition_code", columnList = "entity_definition_code")
+    indexes = @jakarta.persistence.Index(name = "idx_entity_object_definition_code", columnList = "entity_definition_code")
 )
 public class EntityObject extends Auditable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.UUID)
     private UUID id;
 
     @Column(name = "entity_definition_code", nullable = false, updatable = false)
     private String entityDefinitionCode;
 
-    @Version
+    @jakarta.persistence.Version
     private Long version;
 
     @JdbcTypeCode(SqlTypes.JSON)

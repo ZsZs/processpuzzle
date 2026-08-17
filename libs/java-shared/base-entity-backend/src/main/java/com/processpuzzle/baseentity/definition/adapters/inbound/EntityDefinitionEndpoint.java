@@ -3,12 +3,16 @@ package com.processpuzzle.baseentity.definition.adapters.inbound;
 import com.processpuzzle.baseentity.api.BaseEntityDefinitionsApi;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
-import com.processpuzzle.baseentity.definition.usecases.inbound.*;
+import com.processpuzzle.baseentity.definition.usecases.inbound.AddAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteAttributeUseCase;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.EntityDefinitionStatus;
 import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.core.logging.LogClass;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,8 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 /**
  * Inbound REST adapter for the definition module, implementing the generated {@link BaseEntityDefinitionsApi}.
@@ -29,12 +31,12 @@ import java.net.URI;
 public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
 
     private final CreateEntityDefinitionUseCase createUseCase;
-    private final FindEntityDefinitionByCodeUseCase findByCodeUseCase;
-    private final FindAllEntityDefinitionsUseCase findAllUseCase;
-    private final ReplaceEntityDefinitionUseCase replaceUseCase;
+    private final com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionByCodeUseCase findByCodeUseCase;
+    private final com.processpuzzle.baseentity.definition.usecases.inbound.FindAllEntityDefinitionsUseCase findAllUseCase;
+    private final com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceEntityDefinitionUseCase replaceUseCase;
     private final DeleteEntityDefinitionUseCase deleteUseCase;
     private final AddAttributeUseCase addAttributeUseCase;
-    private final ReplaceAttributeUseCase replaceAttributeUseCase;
+    private final com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceAttributeUseCase replaceAttributeUseCase;
     private final DeleteAttributeUseCase deleteAttributeUseCase;
     private final EntityDefinitionMapper mapper;
 

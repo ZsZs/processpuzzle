@@ -3,7 +3,9 @@ package com.processpuzzle.baseentity.instances.adapters.outbound.rsql;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import cz.jirutka.rsql.parser.RSQLParser;
-import cz.jirutka.rsql.parser.ast.*;
+import cz.jirutka.rsql.parser.ast.AndNode;
+import cz.jirutka.rsql.parser.ast.ComparisonNode;
+import cz.jirutka.rsql.parser.ast.Node;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
@@ -13,7 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 /**
- * TODO PROVISIONAL — see RsqlToInstanceSpecificationPort. This class re-implements RSQL parsing
+ * PROVISIONAL — see RsqlToInstanceSpecificationPort. This class re-implements RSQL parsing
  * + AND/OR composition from scratch (RSQLParser + a hand-rolled RSQLVisitor) because
  * processpuzzle-core's RsqlSpecificationBuilder wasn't available to compose against at the time
  * this was written. It almost certainly duplicates parsing/composition logic that already exists
@@ -41,7 +43,7 @@ public class RsqlToInstanceSpecificationAdapter implements RsqlToInstanceSpecifi
     }
 
     @RequiredArgsConstructor
-    private class PredicateVisitor implements RSQLVisitor<Predicate, Void> {
+    private class PredicateVisitor implements cz.jirutka.rsql.parser.ast.RSQLVisitor<Predicate, Void> {
 
         private final Root<EntityObject> root;
         private final CriteriaBuilder cb;
@@ -53,7 +55,7 @@ public class RsqlToInstanceSpecificationAdapter implements RsqlToInstanceSpecifi
         }
 
         @Override
-        public Predicate visit(OrNode node, Void ctx) {
+        public Predicate visit(cz.jirutka.rsql.parser.ast.OrNode node, Void ctx) {
             return cb.or(node.getChildren().stream().map(child -> child.accept(this, ctx)).toArray(Predicate[]::new));
         }
 

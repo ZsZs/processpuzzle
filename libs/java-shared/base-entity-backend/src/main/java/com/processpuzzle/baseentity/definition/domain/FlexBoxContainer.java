@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.domain;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
@@ -15,11 +17,11 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
+@lombok.EqualsAndHashCode(callSuper = true)
+@lombok.ToString(callSuper = true)
 public class FlexBoxContainer extends AbstractAttrDescriptor {
     private FlexDirection direction;
-    @Builder.Default
+    @lombok.Builder.Default
     private List<AbstractAttrDescriptor> attrDescriptors = new ArrayList<>();
 
     public FlexBoxContainer(List<AbstractAttrDescriptor> attrDescriptors, FlexDirection direction) {

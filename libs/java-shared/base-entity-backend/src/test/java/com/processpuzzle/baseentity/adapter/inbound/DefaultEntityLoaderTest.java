@@ -7,7 +7,6 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
-import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,6 @@ class DefaultEntityLoaderTest {
     private EntityDefinitionRepository definitionRepository;
     private EntityDefinitionMapper definitionMapper;
     private CreateEntityInstanceUseCase createInstanceUseCase;
-    private EntityObjectRepository objectRepository;
     private ResourcePatternResolver resourceResolver;
     private DefaultEntityLoader loader;
 
@@ -47,12 +45,10 @@ class DefaultEntityLoaderTest {
         definitionRepository = mock(EntityDefinitionRepository.class);
         definitionMapper = new EntityDefinitionMapper();
         createInstanceUseCase = mock(CreateEntityInstanceUseCase.class);
-        objectRepository = mock(EntityObjectRepository.class);
         resourceResolver = mock(ResourcePatternResolver.class);
 
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{bundledTestbedFile()});
         when(definitionRepository.existsByCode(anyString())).thenReturn(false);
-        when(objectRepository.existsByEntityDefinitionCode(anyString())).thenReturn(false);
 
         when(createDefinitionUseCase.create(any(BaseEntityDefinition.class)))
                 .thenAnswer(call -> {
@@ -79,7 +75,6 @@ class DefaultEntityLoaderTest {
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
-                objectRepository,
                 resourceResolver
         );
     }

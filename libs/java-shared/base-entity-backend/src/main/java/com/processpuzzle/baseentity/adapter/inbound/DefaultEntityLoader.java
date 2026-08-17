@@ -12,7 +12,6 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
-import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.EntityObjectInput;
@@ -57,7 +56,6 @@ public class DefaultEntityLoader {
     private final EntityDefinitionRepository definitionRepository;
     private final EntityDefinitionMapper definitionMapper;
     private final CreateEntityInstanceUseCase createInstanceUseCase;
-    private final EntityObjectRepository objectRepository;
     private final ResourcePatternResolver resourceResolver;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -67,13 +65,11 @@ public class DefaultEntityLoader {
                                EntityDefinitionRepository definitionRepository,
                                EntityDefinitionMapper definitionMapper,
                                CreateEntityInstanceUseCase createInstanceUseCase,
-                               EntityObjectRepository objectRepository,
                                ResourcePatternResolver resourceResolver) {
         this.createDefinitionUseCase = createDefinitionUseCase;
         this.definitionRepository = definitionRepository;
         this.definitionMapper = definitionMapper;
         this.createInstanceUseCase = createInstanceUseCase;
-        this.objectRepository = objectRepository;
         this.resourceResolver = resourceResolver;
     }
 

@@ -1,16 +1,18 @@
 package com.processpuzzle.baseentity.definition.adapters.inbound;
 
-import com.processpuzzle.baseentity.definition.domain.*;
+import com.processpuzzle.baseentity.definition.domain.AbstractAttrDescriptor;
+import com.processpuzzle.baseentity.definition.domain.AttributeDescriptor;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.Page;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 /** Maps domain objects to and from OpenAPI generated models for the definition module. */
 @Component
@@ -106,7 +108,7 @@ public class EntityDefinitionMapper {
     public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page) {
         List<Object> content = page.getContent().stream()
             .map(this::toModel)
-            .map(item -> (Object) item)
+            .map(Object.class::cast)
             .toList();
         return new Page()
             .content(content)
@@ -116,49 +118,49 @@ public class EntityDefinitionMapper {
             .totalPages(page.getTotalPages());
     }
 
-    public EntityDefinitionStatus toDomainStatus(com.processpuzzle.baseentity.model.EntityDefinitionStatus status) {
-        return status == null ? null : EntityDefinitionStatus.valueOf(status.getValue());
+    public com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus toDomainStatus(com.processpuzzle.baseentity.model.EntityDefinitionStatus status) {
+        return status == null ? null : com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.valueOf(status.getValue());
     }
 
-    public com.processpuzzle.baseentity.model.EntityDefinitionStatus toModelStatus(EntityDefinitionStatus status) {
+    public com.processpuzzle.baseentity.model.EntityDefinitionStatus toModelStatus(com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus status) {
         return status == null ? null : com.processpuzzle.baseentity.model.EntityDefinitionStatus.fromValue(status.name());
     }
 
-    public ValueKind toDomainValueKind(com.processpuzzle.baseentity.model.ValueKind valueKind) {
-        return valueKind == null ? null : ValueKind.valueOf(valueKind.getValue());
+    public com.processpuzzle.baseentity.definition.domain.ValueKind toDomainValueKind(com.processpuzzle.baseentity.model.ValueKind valueKind) {
+        return valueKind == null ? null : com.processpuzzle.baseentity.definition.domain.ValueKind.valueOf(valueKind.getValue());
     }
 
-    public com.processpuzzle.baseentity.model.ValueKind toModelValueKind(ValueKind valueKind) {
+    public com.processpuzzle.baseentity.model.ValueKind toModelValueKind(com.processpuzzle.baseentity.definition.domain.ValueKind valueKind) {
         return valueKind == null ? null : com.processpuzzle.baseentity.model.ValueKind.fromValue(valueKind.name());
     }
 
-    public FormControlType toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType formControlType) {
-        return formControlType == null ? null : FormControlType.valueOf(formControlType.getValue());
+    public com.processpuzzle.baseentity.definition.domain.FormControlType toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType formControlType) {
+        return formControlType == null ? null : com.processpuzzle.baseentity.definition.domain.FormControlType.valueOf(formControlType.getValue());
     }
 
-    public com.processpuzzle.baseentity.model.FormControlType toModelFormControlType(FormControlType formControlType) {
+    public com.processpuzzle.baseentity.model.FormControlType toModelFormControlType(com.processpuzzle.baseentity.definition.domain.FormControlType formControlType) {
         return formControlType == null ? null : com.processpuzzle.baseentity.model.FormControlType.fromValue(formControlType.name());
     }
 
-    public FlexDirection toDomainFlexDirection(com.processpuzzle.baseentity.model.FlexDirection direction) {
-        return direction == null ? null : FlexDirection.valueOf(direction.getValue());
+    public com.processpuzzle.baseentity.definition.domain.FlexDirection toDomainFlexDirection(com.processpuzzle.baseentity.model.FlexDirection direction) {
+        return direction == null ? null : com.processpuzzle.baseentity.definition.domain.FlexDirection.valueOf(direction.getValue());
     }
 
-    public com.processpuzzle.baseentity.model.FlexDirection toModelFlexDirection(FlexDirection direction) {
+    public com.processpuzzle.baseentity.model.FlexDirection toModelFlexDirection(com.processpuzzle.baseentity.definition.domain.FlexDirection direction) {
         return direction == null ? null : com.processpuzzle.baseentity.model.FlexDirection.fromValue(direction.name());
     }
 
-    public Selectable toDomain(com.processpuzzle.baseentity.model.Selectable selectable) {
+    public com.processpuzzle.baseentity.definition.domain.Selectable toDomain(com.processpuzzle.baseentity.model.Selectable selectable) {
         if (selectable == null) {
             return null;
         }
-        return Selectable.builder()
+        return com.processpuzzle.baseentity.definition.domain.Selectable.builder()
             .key(selectable.getKey())
             .value(selectable.getValue())
             .build();
     }
 
-    public com.processpuzzle.baseentity.model.Selectable toModel(Selectable selectable) {
+    public com.processpuzzle.baseentity.model.Selectable toModel(com.processpuzzle.baseentity.definition.domain.Selectable selectable) {
         if (selectable == null) {
             return null;
         }
@@ -173,13 +175,13 @@ public class EntityDefinitionMapper {
             return null;
         }
         if (input.getFormControlType() == com.processpuzzle.baseentity.model.FormControlType.FLEX_BOX) {
-            return FlexBoxContainer.builder()
+            return com.processpuzzle.baseentity.definition.domain.FlexBoxContainer.builder()
                 .attrName(input.getAttrName())
                 .formControlType(toDomainFormControlType(input.getFormControlType()))
                 .disabled(Boolean.TRUE.equals(input.getDisabled()))
                 .style(input.getStyle())
                 .labelKey(input.getLabelKey())
-                .direction(FlexDirection.CONTAINER)
+                .direction(com.processpuzzle.baseentity.definition.domain.FlexDirection.CONTAINER)
                 .attrDescriptors(new ArrayList<>())
                 .build();
         }
@@ -269,14 +271,14 @@ public class EntityDefinitionMapper {
         return model;
     }
 
-    public FlexBoxContainer toDomain(com.processpuzzle.baseentity.model.FlexBoxDescriptor input) {
+    public com.processpuzzle.baseentity.definition.domain.FlexBoxContainer toDomain(com.processpuzzle.baseentity.model.FlexBoxDescriptor input) {
         if (input == null) {
             return null;
         }
         List<AbstractAttrDescriptor> children = input.getAttrDescriptors() != null
             ? input.getAttrDescriptors().stream().map(this::toDomain).toList()
             : new ArrayList<>();
-        return FlexBoxContainer.builder()
+        return com.processpuzzle.baseentity.definition.domain.FlexBoxContainer.builder()
             .attrName(input.getAttrName() != null ? input.getAttrName() : "dummy")
             .formControlType(toDomainFormControlType(input.getFormControlType()))
             .disabled(Boolean.TRUE.equals(input.getDisabled()))
@@ -287,7 +289,7 @@ public class EntityDefinitionMapper {
             .build();
     }
 
-    public com.processpuzzle.baseentity.model.FlexBoxDescriptor toModel(FlexBoxContainer container) {
+    public com.processpuzzle.baseentity.model.FlexBoxDescriptor toModel(com.processpuzzle.baseentity.definition.domain.FlexBoxContainer container) {
         if (container == null) {
             return null;
         }
@@ -304,20 +306,20 @@ public class EntityDefinitionMapper {
         return model;
     }
 
-    public BaseEntityDescriptor toDomain(com.processpuzzle.baseentity.model.BaseEntityDescriptor input) {
+    public com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor toDomain(com.processpuzzle.baseentity.model.BaseEntityDescriptor input) {
         if (input == null) {
             return null;
         }
         List<AbstractAttrDescriptor> descriptors = input.getAttrDescriptors() != null
             ? input.getAttrDescriptors().stream().map(this::toDomain).toList()
             : new ArrayList<>();
-        return BaseEntityDescriptor.builder()
+        return com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor.builder()
             .entityName(input.getEntityName())
             .attrDescriptors(new ArrayList<>(descriptors))
             .build();
     }
 
-    public com.processpuzzle.baseentity.model.BaseEntityDescriptor toModel(BaseEntityDescriptor descriptor) {
+    public com.processpuzzle.baseentity.model.BaseEntityDescriptor toModel(com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor descriptor) {
         if (descriptor == null) {
             return null;
         }
@@ -336,21 +338,21 @@ public class EntityDefinitionMapper {
         return AttributeDescriptor.builder()
             .attrName(attribute.getCode())
             .label(attribute.getName())
-            .formControlType(attribute.getFormControlType())
+            .formControlType(toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType.fromValue(attribute.getFormControlType().name())))
             .required(attribute.isRequired())
             .isLinkToDetails(attribute.isLinkToDetails())
             .linkedEntityType(attribute.getLinkedEntityType())
             .build();
     }
 
-    public BaseEntityDescriptor toDescriptor(BaseEntityDefinition definition) {
+    public com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor toDescriptor(BaseEntityDefinition definition) {
         if (definition == null) {
             return null;
         }
         List<AbstractAttrDescriptor> attrDescriptors = definition.getAttributes() != null
             ? definition.getAttributes().stream().map(this::toAttributeDescriptor).map(a -> (AbstractAttrDescriptor) a).toList()
             : List.of();
-        return BaseEntityDescriptor.builder()
+        return com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor.builder()
             .entityName(definition.getName())
             .attrDescriptors(new ArrayList<>(attrDescriptors))
             .build();

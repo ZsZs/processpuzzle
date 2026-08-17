@@ -1,9 +1,12 @@
 package com.processpuzzle.baseentity.common;
 
+import java.io.Serializable;
 import java.util.List;
 import lombok.Getter;
 
-// TODO: same note as NotFoundException — replace with processpuzzle-core's equivalent.
+/**
+ * Exception thrown when an entity definition or payload fails validation.
+ */
 @Getter
 public class ValidationException extends RuntimeException {
 
@@ -14,6 +17,6 @@ public class ValidationException extends RuntimeException {
         this.violations = violations;
     }
 
-    public record Violation(String attributeCode, String message) {
+    public record Violation(String attributeCode, String message) implements Serializable {
     }
 }

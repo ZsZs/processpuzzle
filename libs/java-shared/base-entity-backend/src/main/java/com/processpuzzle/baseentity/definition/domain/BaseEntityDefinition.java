@@ -1,8 +1,13 @@
 package com.processpuzzle.baseentity.definition.domain;
 
 import com.processpuzzle.baseentity.common.Auditable;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,19 +25,19 @@ import java.util.UUID;
  * least one component parent. Enforced by {@link EntityDefinitionValidator}, not here, so it
  * produces a 422 through the usual usecase/adapter path rather than failing at persistence time.
  */
-@Getter
-@Setter
+@lombok.Getter
+@lombok.Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = "id")
-@ToString(exclude = "attributes")
+@lombok.EqualsAndHashCode(callSuper = false, of = "id")
+@lombok.ToString(exclude = "attributes")
 @Entity
-@Table(name = "base_entity_definition", uniqueConstraints = @UniqueConstraint(columnNames = "code"))
+@Table(name = "base_entity_definition", uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = "code"))
 public class BaseEntityDefinition extends Auditable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.UUID)
     private UUID id;
 
     /** Stable, immutable-after-creation identifier used across the API and as the FK target from EntityObject in the instances module. */
@@ -44,10 +49,10 @@ public class BaseEntityDefinition extends Auditable {
 
     private String description;
 
-    @Version
+    @jakarta.persistence.Version
     private Long version;
 
-    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private EntityDefinitionStatus status = EntityDefinitionStatus.DRAFT;
@@ -69,8 +74,8 @@ public class BaseEntityDefinition extends Auditable {
 
     private UUID organizationId;
 
-    @OneToMany(mappedBy = "entityDefinition", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @OrderBy("displayOrder ASC")
+    @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.OrderBy("displayOrder ASC")
     @Builder.Default
     private List<BaseEntityAttribute> attributes = new ArrayList<>();
 

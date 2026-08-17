@@ -6,12 +6,11 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Structural-only validation: required-field presence isn't tracked at this level (that lives on
@@ -37,35 +36,49 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void validateInto(EntityDefinitionView definition, Map<String, Object> payload, List<Violation> violations) {
         for (EntityAttributeView attribute : definition.attributes()) {
             Object value = payload.get(attribute.code());
+            validateAttributePayload(definition, attribute, value, violations);
+        }
+    }
 
-            if (attribute.required() && isBlank(value)) {
-                violations.add(new Violation(attribute.code(), "required"));
-                continue;
-            }
-            if (value == null || !attribute.embeddedComponent()) {
-                continue;
-            }
+    private void validateAttributePayload(EntityDefinitionView definition, EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (attribute.required() && isBlank(value)) {
+            violations.add(new Violation(attribute.code(), "required"));
+            return;
+        }
+        if (value == null || !attribute.embeddedComponent()) {
+            return;
+        }
 
-            EntityDefinitionView childDefinition = definitionLookupPort.findByCode(attribute.linkedEntityType())
-                .orElseThrow(() -> new IllegalStateException(
-                    "Embedded definition '%s' referenced by '%s.%s' no longer exists"
-                        .formatted(attribute.linkedEntityType(), definition.code(), attribute.code())));
+        EntityDefinitionView childDefinition = definitionLookupPort.findByCode(attribute.linkedEntityType())
+            .orElseThrow(() -> new IllegalStateException(
+                "Embedded definition '%s' referenced by '%s.%s' no longer exists"
+                    .formatted(attribute.linkedEntityType(), definition.code(), attribute.code())));
 
-            if (attribute.multiValued()) {
-                if (!(value instanceof List<?> rows)) {
-                    violations.add(new Violation(attribute.code(), "expected an array of embedded components"));
-                    continue;
-                }
-                for (Object row : rows) {
-                    validateInto(childDefinition, (Map<String, Object>) row, violations);
-                }
-            } else {
-                validateInto(childDefinition, (Map<String, Object>) value, violations);
-            }
+        if (attribute.multiValued()) {
+            validateMultiValuedEmbedded(attribute, value, childDefinition, violations);
+        } else {
+            validateSingleEmbedded(childDefinition, value, violations);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateMultiValuedEmbedded(EntityAttributeView attribute, Object value, EntityDefinitionView childDefinition, List<Violation> violations) {
+        if (!(value instanceof List<?> rows)) {
+            violations.add(new Violation(attribute.code(), "expected an array of embedded components"));
+            return;
+        }
+        for (Object row : rows) {
+            validateInto(childDefinition, (Map<String, Object>) row, violations);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateSingleEmbedded(EntityDefinitionView childDefinition, Object value, List<Violation> violations) {
+        if (value instanceof Map<?, ?> mapValue) {
+            validateInto(childDefinition, (Map<String, Object>) mapValue, violations);
         }
     }
 
