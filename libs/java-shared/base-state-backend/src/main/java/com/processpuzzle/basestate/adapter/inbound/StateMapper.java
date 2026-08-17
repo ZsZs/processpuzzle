@@ -16,13 +16,12 @@ import com.processpuzzle.basestate.usecase.FireStateTransition;
 import com.processpuzzle.basestate.usecase.ImportOutcome;
 import com.processpuzzle.basestate.usecase.TransitionOutcome;
 import com.processpuzzle.shared.model.ImportResult;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
 
 @Component
 public class StateMapper {
@@ -35,15 +34,16 @@ public class StateMapper {
      * {@code RuleMapper.toDomain}.
      */
     public StateMachineDefinition toDomain(String orgKey, StateMachineDefinitionInput input) {
-        return new StateMachineDefinition(
-                orgKey,
-                input.getEntityName(),
-                input.getName(),
-                input.getDescription(),
-                input.getStateAttributeKey(),
-                input.getInitialStateKey(),
-                toDomainStates(input.getStates()),
-                toDomainTransitions(input.getTransitions()));
+        return StateMachineDefinition.builder()
+                .orgKey(orgKey)
+                .entityName(input.getEntityName())
+                .name(input.getName())
+                .description(input.getDescription())
+                .stateAttributeKey(input.getStateAttributeKey())
+                .initialStateKey(input.getInitialStateKey())
+                .states(toDomainStates(input.getStates()))
+                .transitions(toDomainTransitions(input.getTransitions()))
+                .build();
     }
 
     public void applyToDomain(StateMachineDefinitionInput input, StateMachineDefinition target) {

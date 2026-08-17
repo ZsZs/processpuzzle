@@ -45,7 +45,7 @@ public class GetEntityObjectState {
         boolean knownState = definition.findState(currentStateKey).isPresent();
         boolean isFinal = definition.findState(currentStateKey).map(State::isFinal).orElse(false);
         List<AvailableTransitionProjection> availableTransitions = knownState
-                ? engine.availableTransitions(definition, orgKey, entityName, objectId, currentStateKey, snapshot)
+                ? engine.availableTransitions(definition, objectId, currentStateKey, snapshot)
                 : List.of();
 
         // enteredStateAt has no source yet: base-state does not persist a transition log in this

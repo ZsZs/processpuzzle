@@ -63,7 +63,7 @@ public class FireStateTransition {
         // UnknownTriggerException propagates uncaught here — a structurally invalid request
         // (400), not a business rejection this use case reports as a normal Result.
         TransitionOutcome outcome = engine.fire(
-                definition, orgKey, entityName, objectId, currentStateKey, triggerKey, snapshot, requestContext);
+                definition, objectId, currentStateKey, triggerKey, snapshot, requestContext);
 
         if (!outcome.success()) {
             return new Result(outcome, snapshot.version());

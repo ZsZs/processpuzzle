@@ -35,7 +35,16 @@ class ImportExportStateMachineDefinitionsTest {
     @Test
     void export_shouldReturnYamlBytes() throws IOException {
         List<State> states = List.of(new State("draft", "Draft", null, false, false, null));
-        StateMachineDefinition def = new StateMachineDefinition(ORG, "order", "Order SM", "desc", "state", "draft", states, List.of());
+        StateMachineDefinition def = StateMachineDefinition.builder()
+                .orgKey(ORG)
+                .entityName("order")
+                .name("Order SM")
+                .description("desc")
+                .stateAttributeKey("state")
+                .initialStateKey("draft")
+                .states(states)
+                .transitions(List.of())
+                .build();
         when(repository.findByOrgKeyAndEntityName(ORG, "order")).thenReturn(Optional.of(def));
 
         byte[] yamlBytes = exportUseCase.execute(ORG, "order");

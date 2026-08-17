@@ -85,17 +85,19 @@ public class StateMachineDefinition {
         // required by JPA
     }
 
-    public StateMachineDefinition(String orgKey, String entityName, String name, String description,
-                                   String stateAttributeKey, String initialStateKey,
-                                   List<State> states, List<Transition> transitions) {
-        this.orgKey = orgKey;
-        this.entityName = entityName;
-        this.name = name;
-        this.description = description;
-        this.stateAttributeKey = stateAttributeKey;
-        this.initialStateKey = initialStateKey;
-        this.states = states == null ? new ArrayList<>() : new ArrayList<>(states);
-        this.transitions = transitions == null ? new ArrayList<>() : new ArrayList<>(transitions);
+    private StateMachineDefinition(Builder builder) {
+        this.orgKey = builder.orgKey;
+        this.entityName = builder.entityName;
+        this.name = builder.name;
+        this.description = builder.description;
+        this.stateAttributeKey = builder.stateAttributeKey;
+        this.initialStateKey = builder.initialStateKey;
+        this.states = builder.states == null ? new ArrayList<>() : new ArrayList<>(builder.states);
+        this.transitions = builder.transitions == null ? new ArrayList<>() : new ArrayList<>(builder.transitions);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @PrePersist
@@ -194,5 +196,60 @@ public class StateMachineDefinition {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public static class Builder {
+        private String orgKey;
+        private String entityName;
+        private String name;
+        private String description;
+        private String stateAttributeKey;
+        private String initialStateKey;
+        private List<State> states = new ArrayList<>();
+        private List<Transition> transitions = new ArrayList<>();
+
+        public Builder orgKey(String orgKey) {
+            this.orgKey = orgKey;
+            return this;
+        }
+
+        public Builder entityName(String entityName) {
+            this.entityName = entityName;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder stateAttributeKey(String stateAttributeKey) {
+            this.stateAttributeKey = stateAttributeKey;
+            return this;
+        }
+
+        public Builder initialStateKey(String initialStateKey) {
+            this.initialStateKey = initialStateKey;
+            return this;
+        }
+
+        public Builder states(List<State> states) {
+            this.states = states;
+            return this;
+        }
+
+        public Builder transitions(List<Transition> transitions) {
+            this.transitions = transitions;
+            return this;
+        }
+
+        public StateMachineDefinition build() {
+            return new StateMachineDefinition(this);
+        }
     }
 }

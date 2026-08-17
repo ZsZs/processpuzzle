@@ -37,28 +37,44 @@ public class ImportStateMachineDefinitions {
 
     @Transactional
     public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
-        StateMachineYamlDocument document;
-        try {
-            document = yamlMapper.readValue(input, StateMachineYamlDocument.class);
-        } catch (com.fasterxml.jackson.databind.exc.MismatchedInputException e) {
+        List<StateMachineYamlEntry> entries = parseEntries(input);
+        if (entries.isEmpty()) {
             return new ImportOutcome(0, 0, List.of());
         }
-        List<StateMachineYamlEntry> entries = (document == null || document.stateMachines() == null)
-                ? List.of()
-                : document.stateMachines();
 
         List<String> errors = new ArrayList<>();
+        Map<String, StateMachineYamlEntry> byEntityName = collectEntriesByEntity(entries, errors);
+        validateTopologies(byEntityName, errors);
+
+        if (!errors.isEmpty()) {
+            return new ImportOutcome(0, 0, errors);
+        }
+
+        return persistEntries(orgKey, byEntityName.values());
+    }
+
+    private List<StateMachineYamlEntry> parseEntries(InputStream input) throws IOException {
+        try {
+            StateMachineYamlDocument document = yamlMapper.readValue(input, StateMachineYamlDocument.class);
+            return (document == null || document.stateMachines() == null) ? List.of() : document.stateMachines();
+        } catch (com.fasterxml.jackson.databind.exc.MismatchedInputException e) {
+            return List.of();
+        }
+    }
+
+    private Map<String, StateMachineYamlEntry> collectEntriesByEntity(List<StateMachineYamlEntry> entries, List<String> errors) {
         Map<String, StateMachineYamlEntry> byEntityName = new LinkedHashMap<>();
         for (StateMachineYamlEntry entry : entries) {
             if (entry.entityName() == null || entry.entityName().isBlank()) {
                 errors.add("A state machine entry is missing 'entityName' and was skipped.");
-                continue;
-            }
-            if (byEntityName.put(entry.entityName(), entry) != null) {
+            } else if (byEntityName.put(entry.entityName(), entry) != null) {
                 errors.add("Duplicate entityName within the import file: '" + entry.entityName() + "'.");
             }
         }
+        return byEntityName;
+    }
 
+    private void validateTopologies(Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
         for (StateMachineYamlEntry entry : byEntityName.values()) {
             try {
                 validator.validate(entry.initialStateKey(), entry.states(), entry.transitions());
@@ -66,29 +82,34 @@ public class ImportStateMachineDefinitions {
                 errors.add("'" + entry.entityName() + "': " + e.getMessage());
             }
         }
+    }
 
-        if (!errors.isEmpty()) {
-            return new ImportOutcome(0, 0, errors);
-        }
-
+    private ImportOutcome persistEntries(String orgKey, Iterable<StateMachineYamlEntry> entries) {
         int created = 0;
         int updated = 0;
-        for (StateMachineYamlEntry entry : byEntityName.values()) {
+        for (StateMachineYamlEntry entry : entries) {
             Optional<StateMachineDefinition> existing = repository.findByOrgKeyAndEntityName(orgKey, entry.entityName());
-            StateMachineDefinition definition;
             if (existing.isPresent()) {
-                definition = existing.get();
+                StateMachineDefinition definition = existing.get();
                 definition.replaceTopology(entry.name(), entry.description(), entry.stateAttributeKey(),
                         entry.initialStateKey(), entry.states(), entry.transitions());
+                repository.save(definition);
                 updated++;
             } else {
-                definition = new StateMachineDefinition(orgKey, entry.entityName(), entry.name(), entry.description(),
-                        entry.stateAttributeKey(), entry.initialStateKey(), entry.states(), entry.transitions());
+                StateMachineDefinition definition = StateMachineDefinition.builder()
+                        .orgKey(orgKey)
+                        .entityName(entry.entityName())
+                        .name(entry.name())
+                        .description(entry.description())
+                        .stateAttributeKey(entry.stateAttributeKey())
+                        .initialStateKey(entry.initialStateKey())
+                        .states(entry.states())
+                        .transitions(entry.transitions())
+                        .build();
+                repository.save(definition);
                 created++;
             }
-            repository.save(definition);
         }
-
-        return new ImportOutcome(created, updated, errors);
+        return new ImportOutcome(created, updated, List.of());
     }
 }

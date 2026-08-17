@@ -17,16 +17,15 @@ import com.processpuzzle.basestate.usecase.GetEntityObjectState;
 import com.processpuzzle.basestate.usecase.ImportStateMachineDefinitions;
 import com.processpuzzle.basestate.usecase.UpdateStateMachineDefinition;
 import com.processpuzzle.shared.model.ImportResult;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.UUID;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.UUID;
 
 /**
  * Thin adapter over the use cases: every method validates nothing and computes nothing itself,
@@ -87,9 +86,7 @@ public class StateEndpoint implements BaseStateApi {
     public ResponseEntity<com.processpuzzle.basestate.model.StateMachineDefinition> createStateMachineDefinition(
             String orgKey, StateMachineDefinitionInput input) {
         StateMachineDefinition domain = mapper.toDomain(orgKey, input);
-        StateMachineDefinition created = createStateMachineDefinition.execute(
-                orgKey, domain.getEntityName(), domain.getName(), domain.getDescription(),
-                domain.getStateAttributeKey(), domain.getInitialStateKey(), domain.getStates(), domain.getTransitions());
+        StateMachineDefinition created = createStateMachineDefinition.execute(domain);
         return ResponseEntity.status(201).body(mapper.toModel(created));
     }
 
@@ -104,9 +101,7 @@ public class StateEndpoint implements BaseStateApi {
     public ResponseEntity<com.processpuzzle.basestate.model.StateMachineDefinition> updateStateMachineDefinition(
             String orgKey, String entityName, StateMachineDefinitionInput input) {
         StateMachineDefinition domain = mapper.toDomain(orgKey, input);
-        StateMachineDefinition updated = updateStateMachineDefinition.execute(
-                orgKey, entityName, domain.getName(), domain.getDescription(), domain.getStateAttributeKey(),
-                domain.getInitialStateKey(), domain.getStates(), domain.getTransitions());
+        StateMachineDefinition updated = updateStateMachineDefinition.execute(orgKey, entityName, domain);
         return ResponseEntity.ok(mapper.toModel(updated));
     }
 

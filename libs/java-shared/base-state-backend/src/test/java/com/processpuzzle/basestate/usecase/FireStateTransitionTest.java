@@ -57,7 +57,15 @@ class FireStateTransitionTest {
                 new State("approved", "Approved", null, true, false, null));
         List<Transition> transitions = List.of(
                 new Transition("t1", null, "draft", "approved", "approve", List.of(), List.of()));
-        definition = new StateMachineDefinition(ORG, ENTITY, "Invoice Machine", null, "state", "draft", states, transitions);
+        definition = StateMachineDefinition.builder()
+                .orgKey(ORG)
+                .entityName(ENTITY)
+                .name("Invoice Machine")
+                .stateAttributeKey("state")
+                .initialStateKey("draft")
+                .states(states)
+                .transitions(transitions)
+                .build();
 
         when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition));
     }
@@ -66,7 +74,7 @@ class FireStateTransitionTest {
     void execute_shouldSucceedAndUpdateStateAndPublishEvent() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of("state", "draft"));
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.fire(definition, ORG, ENTITY, OBJECT_ID, "draft", "approve", snapshot, Map.of()))
+        when(engine.fire(definition, OBJECT_ID, "draft", "approve", snapshot, Map.of()))
                 .thenReturn(TransitionOutcome.success("draft", "approved", "t1", List.of()));
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "state", "approved", 1L))
                 .thenReturn(2L);
@@ -95,7 +103,7 @@ class FireStateTransitionTest {
     void execute_shouldDefaultToInitialStateWhenRawStateIsNull() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.fire(definition, ORG, ENTITY, OBJECT_ID, "draft", "approve", snapshot, null))
+        when(engine.fire(definition, OBJECT_ID, "draft", "approve", snapshot, null))
                 .thenReturn(TransitionOutcome.success("draft", "approved", "t1", List.of()));
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "state", "approved", 1L))
                 .thenReturn(2L);
@@ -122,7 +130,7 @@ class FireStateTransitionTest {
     void execute_shouldNotUpdateOrPublishWhenOutcomeIsRejected() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of("state", "draft"));
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.fire(definition, ORG, ENTITY, OBJECT_ID, "draft", "approve", snapshot, null))
+        when(engine.fire(definition, OBJECT_ID, "draft", "approve", snapshot, null))
                 .thenReturn(TransitionOutcome.rejected("draft", "t1", "guard failed"));
 
         FireStateTransition.Result result = usecase.execute(ORG, ENTITY, OBJECT_ID, "approve", null, 1L);

@@ -45,14 +45,21 @@ class StateMachineEngineTest {
                 new Transition("approveTransition", null, "draft", "approved", "approve",
                         List.of(new GuardRef("approvalGuard", null)), List.of(new ActionRef("notifyAction", null))),
                 new Transition("rejectTransition", null, "draft", "rejected", "reject", List.of(), List.of()));
-        definition = new StateMachineDefinition("org-1", "invoice", "Invoice workflow", null,
-                "state", "draft", states, transitions);
+        definition = StateMachineDefinition.builder()
+                .orgKey("org-1")
+                .entityName("invoice")
+                .name("Invoice workflow")
+                .stateAttributeKey("state")
+                .initialStateKey("draft")
+                .states(states)
+                .transitions(transitions)
+                .build();
     }
 
     @Test
     void fireThrowsWhenTriggerIsUnknownAnywhereOnTheMachine() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
-        assertThatThrownBy(() -> engine.fire(definition, "org-1", "invoice", OBJECT_ID, "draft", "cancel", snapshot, null))
+        assertThatThrownBy(() -> engine.fire(definition, OBJECT_ID, "draft", "cancel", snapshot, null))
                 .isInstanceOf(UnknownTriggerException.class);
     }
 
@@ -60,7 +67,7 @@ class StateMachineEngineTest {
     void fireRejectsWhenNoTransitionMatchesFromTheCurrentState() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
         // "approve" exists on the machine, but not from "rejected".
-        TransitionOutcome outcome = engine.fire(definition, "org-1", "invoice", OBJECT_ID, "rejected", "approve", snapshot, null);
+        TransitionOutcome outcome = engine.fire(definition, OBJECT_ID, "rejected", "approve", snapshot, null);
 
         assertThat(outcome.success()).isFalse();
         assertThat(outcome.transitionKey()).isNull();
@@ -74,7 +81,7 @@ class StateMachineEngineTest {
         when(guardActionResolver.resolveGuard("approvalGuard")).thenReturn(guard);
 
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
-        TransitionOutcome outcome = engine.fire(definition, "org-1", "invoice", OBJECT_ID, "draft", "approve", snapshot, null);
+        TransitionOutcome outcome = engine.fire(definition, OBJECT_ID, "draft", "approve", snapshot, null);
 
         assertThat(outcome.success()).isFalse();
         assertThat(outcome.transitionKey()).isEqualTo("approveTransition");
@@ -92,7 +99,7 @@ class StateMachineEngineTest {
         when(guardActionResolver.resolveAction("notifyAction")).thenReturn(action);
 
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
-        TransitionOutcome outcome = engine.fire(definition, "org-1", "invoice", OBJECT_ID, "draft", "approve", snapshot, null);
+        TransitionOutcome outcome = engine.fire(definition, OBJECT_ID, "draft", "approve", snapshot, null);
 
         assertThat(outcome.success()).isTrue();
         assertThat(outcome.newStateKey()).isEqualTo("approved");
@@ -108,7 +115,7 @@ class StateMachineEngineTest {
 
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
         List<AvailableTransitionProjection> available =
-                engine.availableTransitions(definition, "org-1", "invoice", OBJECT_ID, "draft", snapshot);
+                engine.availableTransitions(definition, OBJECT_ID, "draft", snapshot);
 
         assertThat(available).hasSize(2);
         assertThat(available.get(0).transitionKey()).isEqualTo("approveTransition");

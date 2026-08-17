@@ -73,11 +73,17 @@ class StateEndpointTest {
                 ENTITY, "Invoice Machine", "state", "draft",
                 List.of(new com.processpuzzle.basestate.model.State("draft", "Draft")));
 
-        StateMachineDefinition created = new StateMachineDefinition(
-                ORG, ENTITY, "Invoice Machine", null, "state", "draft",
-                List.of(new State("draft", "Draft", null, false, false, null)), List.of());
+        StateMachineDefinition created = StateMachineDefinition.builder()
+                .orgKey(ORG)
+                .entityName(ENTITY)
+                .name("Invoice Machine")
+                .stateAttributeKey("state")
+                .initialStateKey("draft")
+                .states(List.of(new State("draft", "Draft", null, false, false, null)))
+                .transitions(List.of())
+                .build();
 
-        when(createUseCase.execute(eq(ORG), eq(ENTITY), eq("Invoice Machine"), any(), eq("state"), eq("draft"), any(), any()))
+        when(createUseCase.execute(any(StateMachineDefinition.class)))
                 .thenReturn(created);
 
         ResponseEntity<com.processpuzzle.basestate.model.StateMachineDefinition> response =

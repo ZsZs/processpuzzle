@@ -61,7 +61,8 @@ class StateMachineDefinitionUseCasesTest {
         when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(false);
         when(repository.save(any(StateMachineDefinition.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        StateMachineDefinition def = createUseCase.execute(ORG, ENTITY, "Order SM", "desc", "state", "draft", states, transitions);
+        StateMachineDefinition input = sampleDefinition("Order SM", "desc", "state", "draft");
+        StateMachineDefinition def = createUseCase.execute(input);
 
         assertThat(def.getOrgKey()).isEqualTo(ORG);
         assertThat(def.getEntityName()).isEqualTo(ENTITY);
@@ -73,17 +74,19 @@ class StateMachineDefinitionUseCasesTest {
     void create_shouldThrowWhenAlreadyExists() {
         when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
 
-        assertThatThrownBy(() -> createUseCase.execute(ORG, ENTITY, "Order SM", null, "state", "draft", states, transitions))
+        StateMachineDefinition input = sampleDefinition("Order SM", null, "state", "draft");
+        assertThatThrownBy(() -> createUseCase.execute(input))
                 .isInstanceOf(StateMachineAlreadyExistsException.class);
     }
 
     @Test
     void update_shouldReplaceTopologyWhenFound() {
-        StateMachineDefinition existing = new StateMachineDefinition(ORG, ENTITY, "Old", null, "state", "draft", states, transitions);
+        StateMachineDefinition existing = sampleDefinition("Old", null, "state", "draft");
         when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        StateMachineDefinition updated = updateUseCase.execute(ORG, ENTITY, "New", "new desc", "status", "draft", states, transitions);
+        StateMachineDefinition update = sampleDefinition("New", "new desc", "status", "draft");
+        StateMachineDefinition updated = updateUseCase.execute(ORG, ENTITY, update);
 
         assertThat(updated.getName()).isEqualTo("New");
         assertThat(updated.getDescription()).isEqualTo("new desc");
@@ -95,7 +98,8 @@ class StateMachineDefinitionUseCasesTest {
     void update_shouldThrowWhenNotFound() {
         when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> updateUseCase.execute(ORG, ENTITY, "New", null, "state", "draft", states, transitions))
+        StateMachineDefinition update = sampleDefinition("New", null, "state", "draft");
+        assertThatThrownBy(() -> updateUseCase.execute(ORG, ENTITY, update))
                 .isInstanceOf(StateMachineNotFoundException.class);
     }
 
@@ -118,7 +122,7 @@ class StateMachineDefinitionUseCasesTest {
 
     @Test
     void find_shouldReturnWhenExists() {
-        StateMachineDefinition existing = new StateMachineDefinition(ORG, ENTITY, "SM", null, "state", "draft", states, transitions);
+        StateMachineDefinition existing = sampleDefinition("SM", null, "state", "draft");
         when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
 
         StateMachineDefinition result = findUseCase.execute(ORG, ENTITY);
@@ -136,11 +140,24 @@ class StateMachineDefinitionUseCasesTest {
     @Test
     @SuppressWarnings("unchecked")
     void findAll_shouldQueryRepository() {
-        StateMachineDefinition existing = new StateMachineDefinition(ORG, ENTITY, "SM", null, "state", "draft", states, transitions);
+        StateMachineDefinition existing = sampleDefinition("SM", null, "state", "draft");
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(existing)));
 
         Page<StateMachineDefinition> page = findAllUseCase.execute(ORG, null, null, 0, 10);
         assertThat(page.getContent()).containsExactly(existing);
+    }
+
+    private StateMachineDefinition sampleDefinition(String name, String description, String stateAttr, String initial) {
+        return StateMachineDefinition.builder()
+                .orgKey(ORG)
+                .entityName(ENTITY)
+                .name(name)
+                .description(description)
+                .stateAttributeKey(stateAttr)
+                .initialStateKey(initial)
+                .states(states)
+                .transitions(transitions)
+                .build();
     }
 }

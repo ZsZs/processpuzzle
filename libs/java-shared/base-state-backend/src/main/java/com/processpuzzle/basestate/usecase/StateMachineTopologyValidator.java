@@ -29,41 +29,59 @@ public class StateMachineTopologyValidator {
     public void validate(String initialStateKey, List<State> states, List<Transition> transitions) {
         Set<String> stateKeys = uniqueStateKeys(states);
         requireKnownState(initialStateKey, stateKeys, "initialStateKey");
+        validateTransitions(states, stateKeys, transitions);
+    }
 
-        List<Transition> transitionList = transitions == null ? List.of() : transitions;
+    private void validateTransitions(List<State> states, Set<String> stateKeys, List<Transition> transitions) {
+        if (transitions == null) {
+            return;
+        }
         Set<String> transitionKeys = new HashSet<>();
         Set<String> sourceTriggerPairs = new HashSet<>();
-        for (Transition transition : transitionList) {
-            if (!transitionKeys.add(transition.key())) {
-                throw new IllegalArgumentException("Duplicate transition key: '" + transition.key() + "'");
-            }
-            requireKnownState(transition.sourceStateKey(), stateKeys, "transition '" + transition.key() + "'.sourceStateKey");
-            requireKnownState(transition.targetStateKey(), stateKeys, "transition '" + transition.key() + "'.targetStateKey");
+        for (Transition transition : transitions) {
+            validateTransition(transition, stateKeys, states, transitionKeys, sourceTriggerPairs);
+        }
+    }
 
-            State source = stateOf(states, transition.sourceStateKey());
-            if (source.isFinal()) {
+    private void validateTransition(Transition transition, Set<String> stateKeys, List<State> states,
+                                    Set<String> transitionKeys, Set<String> sourceTriggerPairs) {
+        if (!transitionKeys.add(transition.key())) {
+            throw new IllegalArgumentException("Duplicate transition key: '" + transition.key() + "'");
+        }
+        requireKnownState(transition.sourceStateKey(), stateKeys, "transition '" + transition.key() + "'.sourceStateKey");
+        requireKnownState(transition.targetStateKey(), stateKeys, "transition '" + transition.key() + "'.targetStateKey");
+
+        State source = stateOf(states, transition.sourceStateKey());
+        if (source.isFinal()) {
+            throw new IllegalArgumentException(
+                    "Transition '" + transition.key() + "' sources from final state '" + source.key() + "'");
+        }
+
+        String pair = transition.sourceStateKey() + "::" + transition.triggerKey();
+        if (!sourceTriggerPairs.add(pair)) {
+            throw new IllegalArgumentException(
+                    "Ambiguous trigger: two transitions from state '" + transition.sourceStateKey()
+                            + "' share the trigger '" + transition.triggerKey() + "'");
+        }
+
+        validateGuards(transition);
+        validateActions(transition);
+    }
+
+    private void validateGuards(Transition transition) {
+        for (GuardRef guard : transition.guards()) {
+            if (!guardActionResolver.isKnownGuard(guard.beanName())) {
                 throw new IllegalArgumentException(
-                        "Transition '" + transition.key() + "' sources from final state '" + source.key() + "'");
+                        "Transition '" + transition.key() + "' references unknown guard bean '" + guard.beanName() + "'");
             }
+        }
+    }
 
-            String pair = transition.sourceStateKey() + "::" + transition.triggerKey();
-            if (!sourceTriggerPairs.add(pair)) {
+    private void validateActions(Transition transition) {
+        for (ActionRef action : transition.actions()) {
+            if (!guardActionResolver.isKnownAction(action.beanName())) {
                 throw new IllegalArgumentException(
-                        "Ambiguous trigger: two transitions from state '" + transition.sourceStateKey()
-                                + "' share the trigger '" + transition.triggerKey() + "'");
-            }
-
-            for (GuardRef guard : transition.guards()) {
-                if (!guardActionResolver.isKnownGuard(guard.beanName())) {
-                    throw new IllegalArgumentException(
-                            "Transition '" + transition.key() + "' references unknown guard bean '" + guard.beanName() + "'");
-                }
-            }
-            for (ActionRef action : transition.actions()) {
-                if (!guardActionResolver.isKnownAction(action.beanName())) {
-                    throw new IllegalArgumentException(
-                            "Transition '" + transition.key() + "' references unknown action bean '" + action.beanName() + "'");
-                }
+                        "Transition '" + transition.key() + "' references unknown action bean '" + action.beanName() + "'");
             }
         }
     }

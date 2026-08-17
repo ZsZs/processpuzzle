@@ -49,7 +49,15 @@ class GetEntityObjectStateTest {
                 new State("approved", "Approved", null, true, false, null));
         List<Transition> transitions = List.of(
                 new Transition("t1", null, "draft", "approved", "approve", List.of(), List.of()));
-        definition = new StateMachineDefinition(ORG, ENTITY, "Invoice Machine", null, "state", "draft", states, transitions);
+        definition = StateMachineDefinition.builder()
+                .orgKey(ORG)
+                .entityName(ENTITY)
+                .name("Invoice Machine")
+                .stateAttributeKey("state")
+                .initialStateKey("draft")
+                .states(states)
+                .transitions(transitions)
+                .build();
 
         when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition));
     }
@@ -58,7 +66,7 @@ class GetEntityObjectStateTest {
     void execute_shouldReturnInitialStateWhenObjectHasNoStateAttributeYet() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.availableTransitions(eq(definition), eq(ORG), eq(ENTITY), eq(OBJECT_ID), eq("draft"), eq(snapshot)))
+        when(engine.availableTransitions(eq(definition), eq(OBJECT_ID), eq("draft"), eq(snapshot)))
                 .thenReturn(List.of(new AvailableTransitionProjection("t1", "approve", "approved", true, null)));
 
         EntityObjectStateProjection result = usecase.execute(ORG, ENTITY, OBJECT_ID);
@@ -73,7 +81,7 @@ class GetEntityObjectStateTest {
     void execute_shouldReturnStoredStateWhenPresent() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 2L, Map.of("state", "approved"));
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.availableTransitions(eq(definition), eq(ORG), eq(ENTITY), eq(OBJECT_ID), eq("approved"), eq(snapshot)))
+        when(engine.availableTransitions(eq(definition), eq(OBJECT_ID), eq("approved"), eq(snapshot)))
                 .thenReturn(List.of());
 
         EntityObjectStateProjection result = usecase.execute(ORG, ENTITY, OBJECT_ID);

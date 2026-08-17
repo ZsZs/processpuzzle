@@ -40,11 +40,11 @@ public class StateMachineEngine {
      * carries.
      */
     public List<AvailableTransitionProjection> availableTransitions(
-            StateMachineDefinition definition, String orgKey, String entityName, UUID objectId,
+            StateMachineDefinition definition, UUID objectId,
             String currentStateKey, EntityObjectSnapshot snapshot) {
         List<AvailableTransitionProjection> result = new ArrayList<>();
         for (Transition transition : definition.transitionsFrom(currentStateKey)) {
-            GuardOutcome outcome = evaluateGuards(definition, transition, orgKey, entityName, objectId, snapshot, null);
+            GuardOutcome outcome = evaluateGuards(definition, transition, objectId, snapshot, null);
             result.add(new AvailableTransitionProjection(
                     transition.key(), transition.triggerKey(), transition.targetStateKey(),
                     outcome.allowed(), outcome.blockedReason()));
@@ -64,13 +64,13 @@ public class StateMachineEngine {
      *         triggerKey} matches no transition anywhere on the machine, not just from the current
      *         state — see that exception's javadoc for the distinction from a normal rejection
      */
-    public TransitionOutcome fire(StateMachineDefinition definition, String orgKey, String entityName,
-                                   UUID objectId, String currentStateKey, String triggerKey,
+    public TransitionOutcome fire(StateMachineDefinition definition, UUID objectId,
+                                   String currentStateKey, String triggerKey,
                                    EntityObjectSnapshot snapshot, Map<String, Object> requestContext) {
         boolean triggerExistsAnywhere = definition.getTransitions().stream()
                 .anyMatch(t -> t.triggerKey().equals(triggerKey));
         if (!triggerExistsAnywhere) {
-            throw new com.processpuzzle.basestate.usecase.exception.UnknownTriggerException(entityName, triggerKey);
+            throw new com.processpuzzle.basestate.usecase.exception.UnknownTriggerException(definition.getEntityName(), triggerKey);
         }
 
         Transition matching = definition.transitionsFrom(currentStateKey).stream()
@@ -82,7 +82,7 @@ public class StateMachineEngine {
                     "No transition for trigger '" + triggerKey + "' from state '" + currentStateKey + "'");
         }
 
-        GuardOutcome guardOutcome = evaluateGuards(definition, matching, orgKey, entityName, objectId, snapshot, requestContext);
+        GuardOutcome guardOutcome = evaluateGuards(definition, matching, objectId, snapshot, requestContext);
         if (!guardOutcome.allowed()) {
             return TransitionOutcome.rejected(currentStateKey, matching.key(), guardOutcome.blockedReason());
         }
@@ -91,7 +91,7 @@ public class StateMachineEngine {
         for (ActionRef actionRef : matching.actions()) {
             TransitionAction action = guardActionResolver.resolveAction(actionRef.beanName());
             TransitionContext context = contextFor(
-                    definition, matching, orgKey, entityName, objectId, snapshot, requestContext, actionRef.params());
+                    definition, matching, objectId, snapshot, requestContext, actionRef.params());
             action.execute(context);
             executed.add(actionRef.beanName());
         }
@@ -100,12 +100,12 @@ public class StateMachineEngine {
     }
 
     private GuardOutcome evaluateGuards(StateMachineDefinition definition, Transition transition,
-                                         String orgKey, String entityName, UUID objectId,
-                                         EntityObjectSnapshot snapshot, Map<String, Object> requestContext) {
+                                         UUID objectId, EntityObjectSnapshot snapshot,
+                                         Map<String, Object> requestContext) {
         for (GuardRef guardRef : transition.guards()) {
             TransitionGuard guard = guardActionResolver.resolveGuard(guardRef.beanName());
             TransitionContext context = contextFor(
-                    definition, transition, orgKey, entityName, objectId, snapshot, requestContext, guardRef.params());
+                    definition, transition, objectId, snapshot, requestContext, guardRef.params());
             GuardResult result = guard.evaluate(context);
             if (!result.isAllowed()) {
                 return new GuardOutcome(false, result.reason());
@@ -115,12 +115,12 @@ public class StateMachineEngine {
     }
 
     private TransitionContext contextFor(StateMachineDefinition definition, Transition transition,
-                                          String orgKey, String entityName, UUID objectId,
-                                          EntityObjectSnapshot snapshot, Map<String, Object> requestContext,
-                                          Map<String, Object> guardParams) {
+                                          UUID objectId, EntityObjectSnapshot snapshot,
+                                          Map<String, Object> requestContext, Map<String, Object> guardParams) {
         State source = definition.findState(transition.sourceStateKey()).orElse(null);
         State target = definition.findState(transition.targetStateKey()).orElse(null);
-        return new TransitionContext(orgKey, objectId, entityName, source, target, snapshot, guardParams, requestContext);
+        return new TransitionContext(definition.getOrgKey(), objectId, definition.getEntityName(),
+                source, target, snapshot, guardParams, requestContext);
     }
 
     private record GuardOutcome(boolean allowed, String blockedReason) {

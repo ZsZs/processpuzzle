@@ -1,14 +1,10 @@
 package com.processpuzzle.basestate.usecase;
 
-import com.processpuzzle.basestate.domain.State;
 import com.processpuzzle.basestate.domain.StateMachineDefinition;
 import com.processpuzzle.basestate.domain.StateMachineDefinitionRepository;
-import com.processpuzzle.basestate.domain.Transition;
 import com.processpuzzle.basestate.usecase.exception.StateMachineNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 /**
  * Whole-document replace of a state machine's topology. Optimistic locking is Hibernate's own
@@ -28,14 +24,14 @@ public class UpdateStateMachineDefinition {
         this.validator = validator;
     }
 
-    public StateMachineDefinition execute(String orgKey, String entityName, String name, String description,
-                                          String stateAttributeKey, String initialStateKey,
-                                          List<State> states, List<Transition> transitions) {
+    public StateMachineDefinition execute(String orgKey, String entityName, StateMachineDefinition updated) {
         StateMachineDefinition definition = repository.findByOrgKeyAndEntityName(orgKey, entityName)
                 .orElseThrow(() -> new StateMachineNotFoundException(orgKey, entityName));
-        validator.validate(initialStateKey, states, transitions);
+        validator.validate(updated.getInitialStateKey(), updated.getStates(), updated.getTransitions());
 
-        definition.replaceTopology(name, description, stateAttributeKey, initialStateKey, states, transitions);
+        definition.replaceTopology(
+                updated.getName(), updated.getDescription(), updated.getStateAttributeKey(),
+                updated.getInitialStateKey(), updated.getStates(), updated.getTransitions());
         return repository.save(definition);
     }
 }
