@@ -77,6 +77,9 @@ base-entity:
 base-document:
   loadSamples: yes
 
+base-state:
+  loadDefaultStateMachines: yes
+
 minio:
   endpoint: http://localhost:7000
   access-key: minioadmin

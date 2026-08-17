@@ -3,427 +3,456 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.0</version>
+    <relativePath/> <!-- lookup parent from repository -->
+  </parent>
 
-    <groupId>com.processpuzzle</groupId>
-    <artifactId>processpuzzle-parent</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>ProcessPuzzle :: Backend :: Parent</name>
-    <description>ProcessPuzzle platform libraries</description>
+  <groupId>com.processpuzzle</groupId>
+  <artifactId>processpuzzle-parent</artifactId>
+  <version>1.0.5-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>ProcessPuzzle :: Backend :: Parent</name>
+  <description>ProcessPuzzle platform libraries</description>
+  <url>https://github.com/ZsZs/processpuzzle</url>
+
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>zsuffazs</id>
+      <name>Zsolt Zsuffa</name>
+      <email>zsolt.zsuffa@gmail.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
+    <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
     <url>https://github.com/ZsZs/processpuzzle</url>
+  </scm>
 
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
+  <modules>
+    <module>apps/processpuzzle-backend</module>
+    <module>libs/java-shared/api-contracts</module>
+    <module>libs/java-shared/base-app-backend</module>
+    <module>libs/java-shared/base-document-backend</module>
+    <module>libs/java-shared/base-entity-backend</module>
+    <module>libs/java-shared/base-workflow-backend</module>
+    <module>libs/java-shared/base-rule-backend</module>
+    <module>libs/java-shared/base-state-backend</module>
+    <module>libs/java-shared/base-widget-backend</module>
+    <module>libs/java-shared/processpuzzle-store</module>
+    <module>libs/java-shared/processpuzzle-core</module>
+  </modules>
 
-    <developers>
-        <developer>
-            <id>zsuffazs</id>
-            <name>Zsolt Zsuffa</name>
-            <email>zsolt.zsuffa@gmail.com</email>
-        </developer>
-    </developers>
+  <properties>
+    <revision>1.0.0</revision>
+    <java.version>25</java.version>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
+    <minio.version>8.6.0</minio.version>
+    <okhttp.version>4.12.0</okhttp.version>
+    <rsql-parser.version>2.1.0</rsql-parser.version>
+    <!-- Spring Boot's BOM does not manage Spring Modulith, so spring-modulith-bom is imported
+         below. 2.1.0 is the line built against Spring Boot 4.1. -->
+    <spring-modulith.version>2.1.0</spring-modulith.version>
+    <!-- Default so surefire's @{argLine} resolves in modules that do NOT run the JaCoCo
+         agent (e.g. app modules without the jacoco plugin). jacoco:prepare-agent overrides
+         this property with the -javaagent argument in modules that do. Without this default,
+         @{argLine} is passed literally and the forked JVM fails with "could not open {argLine}". -->
+    <argLine/>
+    <!-- Per-lib versions. Single source of truth: each child pom references the matching
+         property via <version>${<lib>.version}</version>, and root <dependencyManagement>
+         pins sibling deps to the same property. Property therefore always reflects the
+         CURRENT PUBLISHED version, no SNAPSHOT between releases.
+         tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
+         flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
+    <api-contracts.version>1.1.0</api-contracts.version>
+    <base-app-backend.version>1.1.0</base-app-backend.version>
+    <base-document-backend.version>0.1.0</base-document-backend.version>
+    <base-entity-backend.version>0.1.0</base-entity-backend.version>
+    <base-rule-backend.version>1.1.0</base-rule-backend.version>
+    <base-state-backend.version>1.0.5</base-state-backend.version>
+    <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
+    <base-widget-backend.version>0.1.0</base-widget-backend.version>
+    <processpuzzle-core.version>1.1.0</processpuzzle-core.version>
+    <processpuzzle-store.version>1.1.1</processpuzzle-store.version>
+  </properties>
 
-    <scm>
-        <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
-        <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
-        <url>https://github.com/ZsZs/processpuzzle</url>
-    </scm>
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spring Modulith BOM — every library declares spring-modulith-api without a
+           version so the whole workspace moves in lockstep. -->
+      <dependency>
+        <groupId>org.springframework.modulith</groupId>
+        <artifactId>spring-modulith-bom</artifactId>
+        <version>${spring-modulith.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
 
-    <modules>
-        <module>apps/processpuzzle-backend</module>
-        <module>libs/java-shared/api-contracts</module>
-        <module>libs/java-shared/base-app-backend</module>
-        <module>libs/java-shared/base-document-backend</module>
-        <module>libs/java-shared/base-entity-backend</module>
-        <module>libs/java-shared/base-workflow-backend</module>
-        <module>libs/java-shared/base-rule-backend</module>
-        <module>libs/java-shared/base-state-backend</module>
-        <module>libs/java-shared/base-widget-backend</module>
-        <module>libs/java-shared/processpuzzle-store</module>
-        <module>libs/java-shared/processpuzzle-core</module>
-    </modules>
+      <!-- Module dependencies -->
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>processpuzzle-core</artifactId>
+        <version>${processpuzzle-core.version}</version>
+      </dependency>
 
-    <properties>
-        <revision>1.0.0</revision>
-        <java.version>25</java.version>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
-        <minio.version>8.6.0</minio.version>
-        <okhttp.version>4.12.0</okhttp.version>
-        <rsql-parser.version>2.1.0</rsql-parser.version>
-        <!-- Spring Boot's BOM does not manage Spring Modulith, so spring-modulith-bom is imported
-             below. 2.1.0 is the line built against Spring Boot 4.1. -->
-        <spring-modulith.version>2.1.0</spring-modulith.version>
-        <!-- Default so surefire's @{argLine} resolves in modules that do NOT run the JaCoCo
-             agent (e.g. app modules without the jacoco plugin). jacoco:prepare-agent overrides
-             this property with the -javaagent argument in modules that do. Without this default,
-             @{argLine} is passed literally and the forked JVM fails with "could not open {argLine}". -->
-        <argLine/>
-        <!-- Per-lib versions. Single source of truth: each child pom references the matching
-             property via <version>${<lib>.version}</version>, and root <dependencyManagement>
-             pins sibling deps to the same property. Property therefore always reflects the
-             CURRENT PUBLISHED version, no SNAPSHOT between releases.
-             tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
-             flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
-        <api-contracts.version>1.1.0</api-contracts.version>
-        <base-app-backend.version>1.1.0</base-app-backend.version>
-        <base-document-backend.version>0.1.0</base-document-backend.version>
-        <base-entity-backend.version>0.1.0</base-entity-backend.version>
-        <base-rule-backend.version>1.1.0</base-rule-backend.version>
-        <base-state-backend.version>1.0.5</base-state-backend.version>
-        <base-workflow-backend.version>1.0.5</base-workflow-backend.version>
-        <base-widget-backend.version>0.1.0</base-widget-backend.version>
-        <processpuzzle-core.version>1.1.0</processpuzzle-core.version>
-        <processpuzzle-store.version>1.1.1</processpuzzle-store.version>
-    </properties>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>processpuzzle-store</artifactId>
+        <version>${processpuzzle-store.version}</version>
+      </dependency>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- Spring Modulith BOM — every library declares spring-modulith-api without a
-                 version so the whole workspace moves in lockstep. -->
-            <dependency>
-                <groupId>org.springframework.modulith</groupId>
-                <artifactId>spring-modulith-bom</artifactId>
-                <version>${spring-modulith.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-document-backend</artifactId>
+        <version>${base-document-backend.version}</version>
+      </dependency>
 
-            <!-- Module dependencies -->
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>processpuzzle-core</artifactId>
-                <version>${processpuzzle-core.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-entity-backend</artifactId>
+        <version>${base-entity-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>processpuzzle-store</artifactId>
-                <version>${processpuzzle-store.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-rule-backend</artifactId>
+        <version>${base-rule-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-document-backend</artifactId>
-                <version>${base-document-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-state-backend</artifactId>
+        <version>${base-state-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-entity-backend</artifactId>
-                <version>${base-entity-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-workflow-backend</artifactId>
+        <version>${base-workflow-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-rule-backend</artifactId>
-                <version>${base-rule-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-app-backend</artifactId>
+        <version>${base-app-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-state-backend</artifactId>
-                <version>${base-state-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>base-widget-backend</artifactId>
+        <version>${base-widget-backend.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-workflow-backend</artifactId>
-                <version>${base-workflow-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>com.processpuzzle</groupId>
+        <artifactId>processpuzzle-api</artifactId>
+        <version>${api-contracts.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-app-backend</artifactId>
-                <version>${base-app-backend.version}</version>
-            </dependency>
+      <!-- Spring Boot dependencies -->
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>3.0.3</version>
+      </dependency>
 
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>base-widget-backend</artifactId>
-                <version>${base-widget-backend.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>org.openapitools</groupId>
+        <artifactId>jackson-databind-nullable</artifactId>
+        <version>0.2.6</version>
+      </dependency>
 
-            <dependency>
-                <groupId>com.processpuzzle</groupId>
-                <artifactId>processpuzzle-api</artifactId>
-                <version>${api-contracts.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>io.minio</groupId>
+        <artifactId>minio</artifactId>
+        <version>${minio.version}</version>
+      </dependency>
 
-            <!-- Spring Boot dependencies -->
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.0.3</version>
-            </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>org.openapitools</groupId>
-                <artifactId>jackson-databind-nullable</artifactId>
-                <version>0.2.6</version>
-            </dependency>
+      <dependency>
+        <groupId>cz.jirutka.rsql</groupId>
+        <artifactId>rsql-parser</artifactId>
+        <version>${rsql-parser.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
-            <dependency>
-                <groupId>io.minio</groupId>
-                <artifactId>minio</artifactId>
-                <version>${minio.version}</version>
-            </dependency>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Checkstyle plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.6.0</version>
+          <configuration>
+            <!-- checkstyle rules -->
+            <configLocation>${maven.multiModuleProjectDirectory}/tools/checkstyle.xml</configLocation>
+            <!-- Silence per-violation console noise; errors still fail the build
+                 (failsOnError=true) and full details are written to the XML report. -->
+            <consoleOutput>false</consoleOutput>
+            <logViolationsToConsole>false</logViolationsToConsole>
+            <violationSeverity>error</violationSeverity>
+            <!-- Generate XML report -->
+            <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+            <outputFileFormat>xml</outputFileFormat>
+            <failsOnError>true</failsOnError>
+            <linkXRef>false</linkXRef>
+          </configuration>
+          <executions>
+            <execution>
+              <id>validate</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
+        <!-- Compiler plugin for Java compilation -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.14.1</version>
+          <configuration>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
 
-            <dependency>
-                <groupId>cz.jirutka.rsql</groupId>
-                <artifactId>rsql-parser</artifactId>
-                <version>${rsql-parser.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+        <!-- Sources JAR — required by Maven Central -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-    <build>
-        <pluginManagement>
-            <plugins>
-                <!-- Checkstyle plugin -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.6.0</version>
-                    <configuration>
-                        <!-- checkstyle rules -->
-                        <configLocation>${maven.multiModuleProjectDirectory}/tools/checkstyle.xml</configLocation>
-                        <!-- Silence per-violation console noise; errors still fail the build
-                             (failsOnError=true) and full details are written to the XML report. -->
-                        <consoleOutput>false</consoleOutput>
-                        <logViolationsToConsole>false</logViolationsToConsole>
-                        <violationSeverity>error</violationSeverity>
-                        <!-- Generate XML report -->
-                        <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
-                        <outputFileFormat>xml</outputFileFormat>
-                        <failsOnError>true</failsOnError>
-                        <linkXRef>false</linkXRef>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <phase>validate</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- Javadoc JAR — required by Maven Central -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.12.0</version>
+          <configuration>
+            <doclint>none</doclint>
+            <quiet>true</quiet>
+            <failOnWarnings>false</failOnWarnings>
+            <detectJavaApiLink>false</detectJavaApiLink>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-                <!-- Compiler plugin for Java compilation -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.14.1</version>
-                    <configuration>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
+        <!-- Jacoco MAVEN plugin -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.14</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <!-- Bound to `test` (not `verify`) so the XML report is produced by
+                 `mvn test`, which is what the Nx test target and CI run. -->
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-                <!-- Sources JAR — required by Maven Central -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar-no-fork</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- Jacoco to LCOV conversion plugin -->
+        <plugin>
+          <groupId>com.github.pknidhu</groupId>
+          <artifactId>jacoco-to-lcov-maven-plugin</artifactId>
+          <version>1.0.1</version>
+          <executions>
+            <execution>
+              <id>convert-to-lcov</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>jacoco-to-lcov</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-                <!-- Javadoc JAR — required by Maven Central -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.12.0</version>
-                    <configuration>
-                        <doclint>none</doclint>
-                        <quiet>true</quiet>
-                        <failOnWarnings>false</failOnWarnings>
-                        <detectJavaApiLink>false</detectJavaApiLink>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>attach-javadocs</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- GPG signing — required by Maven Central -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>3.2.7</version>
+          <configuration>
+            <keyname>zsolt.zsuffa@gmail.com</keyname>
+            <passphraseServerId>gpg</passphraseServerId>
+          </configuration>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
 
-                <!-- Jacoco MAVEN plugin -->
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.14</version>
-                    <executions>
-                        <execution>
-                            <id>prepare-agent</id>
-                            <goals>
-                                <goal>prepare-agent</goal>
-                            </goals>
-                        </execution>
-                        <!-- Bound to `test` (not `verify`) so the XML report is produced by
-                             `mvn test`, which is what the Nx test target and CI run. -->
-                        <execution>
-                            <id>report</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- Central Publishing Plugin — replaces legacy OSSRH -->
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version>
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>maven-central</publishingServerId>
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
 
-                <!-- Jacoco to LCOV conversion plugin -->
-                <plugin>
-                    <groupId>com.github.pknidhu</groupId>
-                    <artifactId>jacoco-to-lcov-maven-plugin</artifactId>
-                    <version>1.0.1</version>
-                    <executions>
-                        <execution>
-                            <id>convert-to-lcov</id>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>jacoco-to-lcov</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- Versions plugin — used by tools/scripts/release-java-lib.mjs to bump
+             per-lib versions during release. -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.19.1</version>
+        </plugin>
 
-                <!-- GPG signing — required by Maven Central -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>3.2.7</version>
-                    <configuration>
-                        <keyname>zsolt.zsuffa@gmail.com</keyname>
-                        <passphraseServerId>gpg</passphraseServerId>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>sign-artifacts</id>
-                            <phase>deploy</phase>
-                            <goals>
-                                <goal>sign</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+        <!-- Spotless: applies the Eclipse formatter (tools/eclipse-formatter.xml)
+             project-wide. Run `mvn spotless:apply` to reformat, `mvn spotless:check`
+             to verify. Not bound to a phase yet — enable the `validate` binding once
+             the whole codebase has been reformatted. -->
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.44.5</version>
+          <configuration>
+            <java>
+              <includes>
+                <include>src/main/java/**/*.java</include>
+                <include>src/test/java/**/*.java</include>
+              </includes>
+              <eclipse>
+                <file>${maven.multiModuleProjectDirectory}/tools/eclipse-formatter.xml</file>
+              </eclipse>
+            </java>
+          </configuration>
+        </plugin>
 
-                <!-- Central Publishing Plugin — replaces legacy OSSRH -->
-                <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>0.8.0</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <publishingServerId>maven-central</publishingServerId>
-                        <autoPublish>true</autoPublish>
-                        <waitUntil>published</waitUntil>
-                    </configuration>
-                </plugin>
+        <!-- Dependency plugin for copying dependencies -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.8.1</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <!-- Copy dependencies to target/dependencies for Sonar analysis -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <excludeGroupIds>com.processpuzzle</excludeGroupIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
-                <!-- Versions plugin — used by tools/scripts/release-java-lib.mjs to bump
-                     per-lib versions during release. -->
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.19.1</version>
-                </plugin>
+      <!-- Surefire: activate the "unit-test" Spring profile for every module's unit tests,
+           and silence JDK 25 warnings from dynamic agents (Mockito/ByteBuddy) and native
+           access (Truffle in the RSQL engine). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <spring.profiles.active>unit-test</spring.profiles.active>
+          </systemPropertyVariables>
+          <!-- @{argLine} preserves the JaCoCo agent injected by jacoco:prepare-agent;
+               a bare value would replace it and produce zero coverage. -->
+          <argLine>@{argLine} -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
+        </configuration>
+      </plugin>
 
-                <!-- Spotless: applies the Eclipse formatter (tools/eclipse-formatter.xml)
-                     project-wide. Run `mvn spotless:apply` to reformat, `mvn spotless:check`
-                     to verify. Not bound to a phase yet — enable the `validate` binding once
-                     the whole codebase has been reformatted. -->
-                <plugin>
-                    <groupId>com.diffplug.spotless</groupId>
-                    <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.44.5</version>
-                    <configuration>
-                        <java>
-                            <includes>
-                                <include>src/main/java/**/*.java</include>
-                                <include>src/test/java/**/*.java</include>
-                            </includes>
-                            <eclipse>
-                                <file>${maven.multiModuleProjectDirectory}/tools/eclipse-formatter.xml</file>
-                            </eclipse>
-                        </java>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        <plugins>
-            <!-- Surefire: activate the "unit-test" Spring profile for every module's unit tests,
-                 and silence JDK 25 warnings from dynamic agents (Mockito/ByteBuddy) and native
-                 access (Truffle in the RSQL engine). -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <spring.profiles.active>unit-test</spring.profiles.active>
-                    </systemPropertyVariables>
-                    <!-- @{argLine} preserves the JaCoCo agent injected by jacoco:prepare-agent;
-                         a bare value would replace it and produce zero coverage. -->
-                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</argLine>
-                </configuration>
-            </plugin>
-
-            <!-- Flatten POM for OSSRH deployment -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <configuration>
-                    <updatePomFile>true</updatePomFile>
-                    <flattenMode>ossrh</flattenMode>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>flatten-clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+      <!-- Flatten POM for OSSRH deployment -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>ossrh</flattenMode>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>flatten-clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

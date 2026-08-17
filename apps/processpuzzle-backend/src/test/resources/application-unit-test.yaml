@@ -38,3 +38,6 @@ base-widget:
 
 base-entity:
   loadDefaultEntities: no
+
+base-state:
+  loadDefaultStateMachines: no

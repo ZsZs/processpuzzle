@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ProcessPuzzle Workflow Engine API (base-workflow)
   description: >-
-    SPEM-inspired workflow definition and execution API. Orchestrates activities, roles,
+    SPEM-inspired workflow definition and execution API. Orchestrates tasks, roles,
     work products and tools across a ProcessPuzzle process instance.
 
     base-workflow is a pure orchestrator: rule evaluation is delegated to base-rule, state
@@ -10,7 +10,11 @@ info:
     those libraries are by ID only — base-workflow never owns or duplicates their models.
     Coordination between libraries happens exclusively through the shared event schema
     defined in base-workflow-events.yaml.
-  version: 0.1.0
+
+    All resources are scoped per organisation via the {orgKey} path variable, consistent
+    with the multi-tenancy convention used across the ProcessPuzzle platform (see
+    processpuzzle-core's OrganizationGuard / orgKey scoping).
+  version: 0.2.0
 
 servers:
   - url: /api/workflow
@@ -22,7 +26,9 @@ paths:
 
   # ── Process Definitions ───────────────────────────────────
 
-  /processes:
+  /organisations/{orgKey}/processes:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listProcessDefinitions
       summary: List all process definitions
@@ -33,7 +39,7 @@ paths:
         - $ref: "#/components/parameters/SizeParam"
       responses:
         "200":
-          description: Paged list of process definitions (summary view, no activities/steps)
+          description: Paged list of process definitions (summary view, no tasks/steps)
           content:
             application/json:
               schema:
@@ -60,12 +66,13 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /processes/{processId}:
+  /organisations/{orgKey}/processes/{processId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: getProcessDefinition
-      summary: Get a process definition with all activities, roles, work products and tools
+      summary: Get a process definition with all tasks, roles, work products and tools
       responses:
         "200":
           description: Full process definition
@@ -114,7 +121,9 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /processes/import:
+  /organisations/{orgKey}/processes/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     post:
       operationId: importProcessDefinitions
       summary: Bulk-import process definitions from a SPEM YAML file
@@ -141,8 +150,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportResult"
 
-  /processes/{processId}/export:
+  /organisations/{orgKey}/processes/{processId}/export:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: exportProcessDefinition
@@ -158,9 +168,214 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Role Definitions (direct access) ──────────────────────
+  # Roles are owned by a process definition (their id is only unique within that
+  # process, same convention as tasks), but can now be read/managed directly
+  # instead of only via a full PUT of the process definition.
+
+  /organisations/{orgKey}/processes/{processId}/roles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ProcessIdParam"
+    get:
+      operationId: listRoleDefinitions
+      summary: List all role definitions of a process definition
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+      responses:
+        "200":
+          description: Role definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: createRoleDefinition
+      summary: Add a new role definition to a process definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organisations/{orgKey}/processes/{processId}/roles/{roleId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/RoleIdParam"
+    get:
+      operationId: getRoleDefinition
+      summary: Get a single role definition
+      responses:
+        "200":
+          description: Role definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateRoleDefinition
+      summary: Replace a role definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteRoleDefinition
+      summary: Delete a role definition
+      description: >-
+        Only allowed if no task definition in the process still references this
+        role via performedBy.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Task Definitions (direct access) ──────────────────────
+  # Same convention as roles: task ids are unique within their process definition.
+  # These endpoints let clients read/manage a single task without a full process PUT.
+
+  /organisations/{orgKey}/processes/{processId}/tasks:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ProcessIdParam"
+    get:
+      operationId: listTaskDefinitions
+      summary: List all task definitions of a process definition
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+      responses:
+        "200":
+          description: Task definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: createTaskDefinition
+      summary: Add a new task definition to a process definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organisations/{orgKey}/processes/{processId}/tasks/{taskId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/TaskIdParam"
+    get:
+      operationId: getTaskDefinition
+      summary: Get a single task definition
+      responses:
+        "200":
+          description: Task definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateTaskDefinition
+      summary: Replace a task definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteTaskDefinition
+      summary: Delete a task definition
+      description: Only allowed if no other task definition references this one via dependsOn.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   # ── Tool Definitions ──────────────────────────────────────
 
-  /tools:
+  /organisations/{orgKey}/tools:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listToolDefinitions
       summary: List all tool definitions
@@ -198,8 +413,9 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /tools/{toolId}:
+  /organisations/{orgKey}/tools/{toolId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - name: toolId
         in: path
         required: true
@@ -254,7 +470,9 @@ paths:
 
   # ── Process Instances ─────────────────────────────────────
 
-  /instances:
+  /organisations/{orgKey}/instances:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listProcessInstances
       summary: List process instances
@@ -299,7 +517,7 @@ paths:
               $ref: "#/components/schemas/StartProcessRequest"
       responses:
         "201":
-          description: Instance created and first activities activated
+          description: Instance created and first tasks activated
           content:
             application/json:
               schema:
@@ -313,12 +531,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}:
+  /organisations/{orgKey}/instances/{instanceId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
       operationId: getProcessInstance
-      summary: Get a process instance with its activity and work product instances
+      summary: Get a process instance with its task and work product instances
       responses:
         "200":
           description: Full process instance
@@ -352,65 +571,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Activity Instances ────────────────────────────────────
+  # ── Task Instances ─────────────────────────────────────────
 
-  /instances/{instanceId}/activities:
+  /organisations/{orgKey}/instances/{instanceId}/tasks:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
-      operationId: listActivityInstances
-      summary: List all activity instances for a process instance
+      operationId: listTaskInstances
+      summary: List all task instances for a process instance
       parameters:
         - name: status
           in: query
           schema:
-            $ref: "#/components/schemas/ActivityInstanceStatus"
+            $ref: "#/components/schemas/TaskInstanceStatus"
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
       responses:
         "200":
-          description: Activity instances
+          description: Task instances
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ActivityInstance"
+                  $ref: "#/components/schemas/TaskInstance"
 
-  /instances/{instanceId}/activities/{activityId}:
+  /organisations/{orgKey}/instances/{instanceId}/tasks/{taskId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     get:
-      operationId: getActivityInstance
-      summary: Get a single activity instance
+      operationId: getTaskInstance
+      summary: Get a single task instance
       responses:
         "200":
-          description: Activity instance
+          description: Task instance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /instances/{instanceId}/activities/{activityId}/assign:
+  /organisations/{orgKey}/instances/{instanceId}/tasks/{taskId}/assign:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: assignActivity
-      summary: Assign an active activity to a user
+      operationId: assignTask
+      summary: Assign an active task to a user
       description: >-
-        The assignee must hold a role that matches the activity's performedBy role
+        The assignee must hold a role that matches the task's performedBy role
         definition. Role membership is managed by base-entity; base-workflow validates by
         calling base-entity's role membership query.
       requestBody:
@@ -418,75 +632,69 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignActivityRequest"
+              $ref: "#/components/schemas/AssignTaskRequest"
       responses:
         "200":
           description: Assigned
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Activity is not in ACTIVE status
+          description: Task is not in ACTIVE status
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}/activities/{activityId}/complete:
+  /organisations/{orgKey}/instances/{instanceId}/tasks/{taskId}/complete:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: completeActivity
-      summary: Mark an activity as completed
+      operationId: completeTask
+      summary: Mark a task as completed
       description: >-
-        Triggers evaluation of the activity's postcondition (via base-rule) and, if it
-        passes, publishes ActivityCompletedEvent. base-state will react to that event and
+        Triggers evaluation of the task's postcondition (via base-rule) and, if it
+        passes, publishes TaskCompletedEvent. base-state will react to that event and
         fire the corresponding state machine transition on any linked work products.
-        base-workflow will then re-evaluate which activities become ACTIVE next.
-        If the postcondition fails, the activity stays ACTIVE and the response includes
+        base-workflow will then re-evaluate which tasks become ACTIVE next.
+        If the postcondition fails, the task stays ACTIVE and the response includes
         the evaluation detail.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteActivityRequest"
+              $ref: "#/components/schemas/CompleteTaskRequest"
       responses:
         "200":
           description: Completion accepted (postcondition passed) or rejected (postcondition failed)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CompleteActivityResponse"
+                $ref: "#/components/schemas/CompleteTaskResponse"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Activity is not in ACTIVE status
+          description: Task is not in ACTIVE status
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}/activities/{activityId}/skip:
+  /organisations/{orgKey}/instances/{instanceId}/tasks/{taskId}/skip:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: skipActivity
-      summary: Skip an activity (manager override)
+      operationId: skipTask
+      summary: Skip a task (manager override)
       requestBody:
         content:
           application/json:
@@ -501,14 +709,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
   # ── Work Product Instances ────────────────────────────────
 
-  /instances/{instanceId}/work-products:
+  /organisations/{orgKey}/instances/{instanceId}/work-products:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
       operationId: listWorkProductInstances
@@ -529,8 +738,9 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkProductInstance"
 
-  /instances/{instanceId}/work-products/{workProductId}:
+  /organisations/{orgKey}/instances/{instanceId}/work-products/{workProductId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
       - name: workProductId
         in: path
@@ -556,6 +766,15 @@ paths:
 components:
 
   parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+      description: >-
+        Organisation key used to scope all base-workflow resources for multi-tenancy.
+        Matches the orgKey convention used across processpuzzle-core (OrganizationGuard).
     ProcessIdParam:
       name: processId
       in: path
@@ -564,6 +783,18 @@ components:
         type: string
     InstanceIdParam:
       name: instanceId
+      in: path
+      required: true
+      schema:
+        type: string
+    RoleIdParam:
+      name: roleId
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskIdParam:
+      name: taskId
       in: path
       required: true
       schema:
@@ -627,7 +858,7 @@ components:
       type: string
       enum: [ ACTIVE, COMPLETED, CANCELLED, SUSPENDED ]
 
-    ActivityInstanceStatus:
+    TaskInstanceStatus:
       type: string
       enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED ]
 
@@ -642,6 +873,15 @@ components:
     HttpMethod:
       type: string
       enum: [ GET, POST, PUT, PATCH, DELETE ]
+
+    ReferenceType:
+      type: string
+      enum: [ BASE_ENTITY, DOCUMENT, WIDGET ]
+      description: >-
+        The kind of resource a TaskIOReference points to. BASE_ENTITY references an
+        entity instance/definition in base-entity, DOCUMENT references a base-artifact
+        document, WIDGET references a widget registered in base-entity-frontend's
+        WIDGET_REGISTRY.
 
     # ── Process Definition ─────────────────────────────────
 
@@ -668,7 +908,7 @@ components:
 
     ProcessDefinitionInput:
       type: object
-      required: [ id, name, activities ]
+      required: [ id, name, tasks ]
       properties:
         id:
           type: string
@@ -681,7 +921,7 @@ components:
           type: string
           nullable: true
           description: >-
-            ID of a parent ProcessDefinition to inherit roles, work products and activities
+            ID of a parent ProcessDefinition to inherit roles, work products and tasks
             from. Follows the same extends/override convention as base-rule.
         roles:
           type: array
@@ -691,14 +931,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkProductDefinitionInput"
-        activities:
+        tasks:
           type: array
           items:
-            $ref: "#/components/schemas/ActivityDefinitionInput"
+            $ref: "#/components/schemas/TaskDefinitionInput"
         tools:
           type: array
           description: >-
-            References to ToolDefinitions used by activities in this process. Defined
+            References to ToolDefinitions used by tasks in this process. Defined
             separately via /tools so they can be shared across process definitions.
           items:
             type: string
@@ -738,7 +978,16 @@ components:
           description: >-
             ID of the corresponding role definition in base-entity. When set,
             base-workflow validates that a user holds this entity role before
-            allowing them to be assigned to activities that require this role.
+            allowing them to be assigned to tasks that require this role.
+
+    RoleDefinition:
+      allOf:
+        - $ref: "#/components/schemas/RoleDefinitionInput"
+        - type: object
+          properties:
+            processId:
+              type: string
+              description: ID of the process definition this role belongs to.
 
     # ── Work Product Definition ────────────────────────────
 
@@ -768,9 +1017,9 @@ components:
             product's lifecycle. base-workflow passes this ID when publishing
             WorkProductInstanceCreatedEvent so base-state can initialize the right machine.
 
-    # ── Activity Definition ────────────────────────────────
+    # ── Task Definition ─────────────────────────────────────
 
-    ActivityDefinitionInput:
+    TaskDefinitionInput:
       type: object
       required: [ id, name, performedBy ]
       properties:
@@ -786,50 +1035,88 @@ components:
           description: Role definition id
         inputs:
           type: array
-          description: Work product definition ids this activity reads
+          description: >-
+            Resources this task reads. Each reference points directly at a base-entity
+            entity, a base-artifact document, or a widget — not at a WorkProductDefinition.
+            Use workProducts / WorkProductType when the resource's lifecycle must be
+            tracked by base-state; use these references for plain read/write access.
           items:
-            type: string
+            $ref: "#/components/schemas/TaskIOReference"
         outputs:
           type: array
-          description: Work product definition ids this activity produces or modifies
+          description: Resources this task produces or modifies. Same reference model as inputs.
           items:
-            type: string
+            $ref: "#/components/schemas/TaskIOReference"
         preconditionRuleId:
           type: string
           nullable: true
           description: >-
-            ID of a rule in base-rule. Evaluated when this activity is a candidate to
-            become ACTIVE. If it returns false, the activity stays PENDING.
+            ID of a rule in base-rule. Evaluated when this task is a candidate to
+            become ACTIVE. If it returns false, the task stays PENDING.
         postconditionRuleId:
           type: string
           nullable: true
           description: >-
             ID of a rule in base-rule. Evaluated when a user calls /complete. If it
-            returns false, completion is rejected and the activity stays ACTIVE.
+            returns false, completion is rejected and the task stays ACTIVE.
         steps:
           type: array
+          description: >-
+            Ordered, informal description of what to do to complete this task — free-text
+            guidance, not enforced by the engine. Kept deliberately simple for now; a
+            future revision may evolve steps into a checklist that instance execution can
+            track item-by-item (see StepResult at instance level, which already records a
+            per-step outcome for steps that invoke a tool).
           items:
             $ref: "#/components/schemas/StepDefinitionInput"
         dependsOn:
           type: array
           description: >-
-            Activity definition ids that must be COMPLETED before this activity can
-            become ACTIVE. Empty means the activity is eligible from process start.
+            Task definition ids that must be COMPLETED before this task can
+            become ACTIVE. Empty means the task is eligible from process start.
           items:
             type: string
         parallel:
           type: boolean
           default: false
           description: >-
-            When true, this activity can run concurrently with its siblings that share
-            the same dependsOn. When false (default), activities within the same
+            When true, this task can run concurrently with its siblings that share
+            the same dependsOn. When false (default), tasks within the same
             dependency level run sequentially in definition order.
         override:
           type: boolean
           default: false
           description: >-
-            When this ProcessDefinition extends another, marks this activity as replacing
-            an identically-named activity from the parent rather than adding to it.
+            When this ProcessDefinition extends another, marks this task as replacing
+            an identically-named task from the parent rather than adding to it.
+
+    TaskDefinition:
+      allOf:
+        - $ref: "#/components/schemas/TaskDefinitionInput"
+        - type: object
+          properties:
+            processId:
+              type: string
+              description: ID of the process definition this task belongs to.
+
+    # ── Task Input/Output Reference ────────────────────────
+
+    TaskIOReference:
+      type: object
+      required: [ type, refId ]
+      properties:
+        type:
+          $ref: "#/components/schemas/ReferenceType"
+        refId:
+          type: string
+          description: >-
+            ID of the referenced resource: a base-entity BaseEntityDefinition/EntityObject
+            id when type is BASE_ENTITY, a base-artifact document id when type is DOCUMENT,
+            or a widget id (as registered in WIDGET_REGISTRY) when type is WIDGET.
+        label:
+          type: string
+          nullable: true
+          description: Optional display label overriding the referenced resource's own name.
 
     # ── Step Definition ────────────────────────────────────
 
@@ -996,10 +1283,10 @@ components:
         - $ref: "#/components/schemas/ProcessInstanceSummary"
         - type: object
           properties:
-            activities:
+            tasks:
               type: array
               items:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
             workProducts:
               type: array
               items:
@@ -1009,19 +1296,19 @@ components:
               description: Current process context, updated by tool output mappings
               additionalProperties: true
 
-    # ── Activity Instance (runtime) ────────────────────────
+    # ── Task Instance (runtime) ────────────────────────────
 
-    ActivityInstance:
+    TaskInstance:
       type: object
       properties:
         id:
           type: string
-        activityDefinitionId:
+        taskDefinitionId:
           type: string
         name:
           type: string
         status:
-          $ref: "#/components/schemas/ActivityInstanceStatus"
+          $ref: "#/components/schemas/TaskInstanceStatus"
         assignedTo:
           type: string
           nullable: true
@@ -1066,14 +1353,14 @@ components:
           type: string
           nullable: true
 
-    AssignActivityRequest:
+    AssignTaskRequest:
       type: object
       required: [ userId ]
       properties:
         userId:
           type: string
 
-    CompleteActivityRequest:
+    CompleteTaskRequest:
       type: object
       properties:
         context:
@@ -1084,14 +1371,14 @@ components:
             the user's actions (e.g. reviewScore, approval decision).
           additionalProperties: true
 
-    CompleteActivityResponse:
+    CompleteTaskResponse:
       type: object
       properties:
         accepted:
           type: boolean
-          description: True if postcondition passed and the activity moved to COMPLETED.
-        activity:
-          $ref: "#/components/schemas/ActivityInstance"
+          description: True if postcondition passed and the task moved to COMPLETED.
+        task:
+          $ref: "#/components/schemas/TaskInstance"
         postconditionDetail:
           type: string
           nullable: true

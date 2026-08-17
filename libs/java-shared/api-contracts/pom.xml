@@ -1,333 +1,356 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>com.processpuzzle</groupId>
-        <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.5-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
-    </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.processpuzzle</groupId>
+    <artifactId>processpuzzle-parent</artifactId>
+    <version>1.0.5-SNAPSHOT</version>
+    <relativePath>../../../pom.xml</relativePath>
+  </parent>
 
-    <artifactId>processpuzzle-api</artifactId>
-    <version>${api-contracts.version}</version>
-    <name>ProcessPuzzle :: API Contracts</name>
-    <description>ProcessPuzzle API Contracts and Generated Types</description>
-    <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/api-contracts</url>
+  <artifactId>processpuzzle-api</artifactId>
+  <version>${api-contracts.version}</version>
+  <name>ProcessPuzzle :: API Contracts</name>
+  <description>ProcessPuzzle API Contracts and Generated Types</description>
+  <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/api-contracts</url>
 
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
 
-    <developers>
-        <developer>
-            <id>zsuffazs</id>
-            <name>Zsolt Zsuffa</name>
-            <email>zsolt.zsuffa@gmail.com</email>
-        </developer>
-    </developers>
+  <developers>
+    <developer>
+      <id>zsuffazs</id>
+      <name>Zsolt Zsuffa</name>
+      <email>zsolt.zsuffa@gmail.com</email>
+    </developer>
+  </developers>
 
-    <scm>
-        <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
-        <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
-        <url>https://github.com/ZsZs/processpuzzle</url>
-    </scm>
+  <scm>
+    <connection>scm:git:git://github.com/ZsZs/processpuzzle.git</connection>
+    <developerConnection>scm:git:ssh://github.com/ZsZs/processpuzzle.git</developerConnection>
+    <url>https://github.com/ZsZs/processpuzzle</url>
+  </scm>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openapitools</groupId>
-            <artifactId>jackson-databind-nullable</artifactId>
-        </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+    </dependency>
 
-        <!-- Annotations only, for the com.processpuzzle.shared application module declaration -->
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-api</artifactId>
-        </dependency>
-    </dependencies>
+    <!-- Annotations only, for the com.processpuzzle.shared application module declaration -->
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-api</artifactId>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <!-- OpenAPI Generator plugin for generating API contracts -->
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.10.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-shared-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/shared-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <generateApis>false</generateApis>
-                            <apiPackage>com.processpuzzle.shared.api</apiPackage>
-                            <modelPackage>com.processpuzzle.shared.model</modelPackage>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-storage-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/processpuzzle-store-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.store.api</apiPackage>
-                            <modelPackage>com.processpuzzle.store.model</modelPackage>
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-widget-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-widget-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.widget.api</apiPackage>
-                            <modelPackage>com.processpuzzle.widget.model</modelPackage>
-                            <!-- The port schemas are declared canonically in shared-api.yaml and repeated in
-                                 base-widget-api.yaml, so base-widget binds to the shared generated types rather
-                                 than minting its own. base-document still generates DocumentInputPort /
-                                 DocumentOutputPort from identical shapes; converging it is a mapping change,
-                                 deliberately left out of introducing this module. -->
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,OrganizationKey=java.lang.String,PortType=com.processpuzzle.shared.model.PortType,AttributeVisibility=com.processpuzzle.shared.model.AttributeVisibility,InputPort=com.processpuzzle.shared.model.InputPort,OutputPort=com.processpuzzle.shared.model.OutputPort
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-rule-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-rule-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.rule.api</apiPackage>
-                            <modelPackage>com.processpuzzle.rule.model</modelPackage>
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-workflow-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-workflow-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.workflow.api</apiPackage>
-                            <modelPackage>com.processpuzzle.workflow.model</modelPackage>
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-app-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-app-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.app.api</apiPackage>
-                            <modelPackage>com.processpuzzle.app.model</modelPackage>
-                            <!-- WidgetInstance is declared in shared-api.yaml and repeated verbatim in
-                                 base-app-api.yaml, because no spec here uses cross-file $ref. The mapping is
-                                 what makes the repetition harmless: base-app generates no WidgetInstance of
-                                 its own and binds to the shared one, so base-app and base-document cannot
-                                 drift into two incompatible Java types the way WidgetRef and DocumentBlock
-                                 had already begun to. -->
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,WidgetInstance=com.processpuzzle.shared.model.WidgetInstance
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-document-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-document-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.document.api</apiPackage>
-                            <modelPackage>com.processpuzzle.document.model</modelPackage>
-                            <!-- TiptapDocument is opaque per the contract, so it maps to a bare Object rather
-                                 than to a generated model class that would drop every property it does not
-                                 declare. Deliberately NOT to com.fasterxml.jackson.databind.JsonNode, which is
-                                 what the domain uses: Spring Boot 4 reads and writes HTTP with Jackson 3
-                                 (tools.jackson), to which a Jackson 2 node is an ordinary bean — it serialized
-                                 as {"array":false,"bigDecimal":false,...} and failed deserialization outright
-                                 with a 500. An Object is a Map/List/scalar tree both Jackson versions handle
-                                 natively; DocumentMapper converts it to and from the domain's JsonNode. -->
-                            <schemaMappings>
-                                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,TiptapDocument=java.lang.Object
-                            </schemaMappings>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-entity-api</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/base-entity-api.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <skipValidateSpec>true</skipValidateSpec>
-                            <apiPackage>com.processpuzzle.baseentity.api</apiPackage>
-                            <modelPackage>com.processpuzzle.baseentity.model</modelPackage>
-                            <configOptions>
-                                <delegatePattern>false</delegatePattern>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useTags>true</useTags>
-                                <openApiNullable>false</openApiNullable>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+  <build>
+    <plugins>
+      <!-- OpenAPI Generator plugin for generating API contracts -->
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>7.10.0</version>
+        <executions>
+          <execution>
+            <id>generate-shared-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/shared-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <generateApis>false</generateApis>
+              <apiPackage>com.processpuzzle.shared.api</apiPackage>
+              <modelPackage>com.processpuzzle.shared.model</modelPackage>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-storage-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/processpuzzle-store-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.store.api</apiPackage>
+              <modelPackage>com.processpuzzle.store.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-widget-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-widget-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.widget.api</apiPackage>
+              <modelPackage>com.processpuzzle.widget.model</modelPackage>
+              <!-- The port schemas are declared canonically in shared-api.yaml and repeated in
+                   base-widget-api.yaml, so base-widget binds to the shared generated types rather
+                   than minting its own. base-document still generates DocumentInputPort /
+                   DocumentOutputPort from identical shapes; converging it is a mapping change,
+                   deliberately left out of introducing this module. -->
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,OrganizationKey=java.lang.String,PortType=com.processpuzzle.shared.model.PortType,AttributeVisibility=com.processpuzzle.shared.model.AttributeVisibility,InputPort=com.processpuzzle.shared.model.InputPort,OutputPort=com.processpuzzle.shared.model.OutputPort
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-rule-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-rule-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.rule.api</apiPackage>
+              <modelPackage>com.processpuzzle.rule.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-state-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-state-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.basestate.api</apiPackage>
+              <modelPackage>com.processpuzzle.basestate.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-workflow-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-workflow-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.workflow.api</apiPackage>
+              <modelPackage>com.processpuzzle.workflow.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-app-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-app-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.app.api</apiPackage>
+              <modelPackage>com.processpuzzle.app.model</modelPackage>
+              <!-- WidgetInstance is declared in shared-api.yaml and repeated verbatim in
+                   base-app-api.yaml, because no spec here uses cross-file $ref. The mapping is
+                   what makes the repetition harmless: base-app generates no WidgetInstance of
+                   its own and binds to the shared one, so base-app and base-document cannot
+                   drift into two incompatible Java types the way WidgetRef and DocumentBlock
+                   had already begun to. -->
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,WidgetInstance=com.processpuzzle.shared.model.WidgetInstance
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-document-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-document-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.document.api</apiPackage>
+              <modelPackage>com.processpuzzle.document.model</modelPackage>
+              <!-- TiptapDocument is opaque per the contract, so it maps to a bare Object rather
+                   than to a generated model class that would drop every property it does not
+                   declare. Deliberately NOT to com.fasterxml.jackson.databind.JsonNode, which is
+                   what the domain uses: Spring Boot 4 reads and writes HTTP with Jackson 3
+                   (tools.jackson), to which a Jackson 2 node is an ordinary bean — it serialized
+                   as {"array":false,"bigDecimal":false,...} and failed deserialization outright
+                   with a 500. An Object is a Map/List/scalar tree both Jackson versions handle
+                   natively; DocumentMapper converts it to and from the domain's JsonNode. -->
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,TiptapDocument=java.lang.Object
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-entity-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-entity-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.baseentity.api</apiPackage>
+              <modelPackage>com.processpuzzle.baseentity.model</modelPackage>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- Checkstyle plugin for code quality checks -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
+      <!-- Checkstyle plugin for code quality checks -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
 
-            <!-- Copy the jar to the Nx dist directory on `mvn install` -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-jar-to-dist</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
-                                      tofile="${project.basedir}/../../../dist/libs/${project.artifactId}/${project.artifactId}.jar"
-                                      overwrite="true"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- Copy the jar to the Nx dist directory on `mvn install` -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-jar-to-dist</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                      tofile="${project.basedir}/../../../dist/libs/${project.artifactId}/${project.artifactId}.jar"
+                      overwrite="true"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- Sources JAR — required by Maven Central -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
+      <!-- Sources JAR — required by Maven Central -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
 
-            <!-- Javadoc JAR — required by Maven Central -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-            </plugin>
+      <!-- Javadoc JAR — required by Maven Central -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
 
-            <!-- GPG signing — required by Maven Central -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-            </plugin>
+      <!-- GPG signing — required by Maven Central -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+      </plugin>
 
-            <!-- Central Publishing Plugin — replaces legacy OSSRH -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.8.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
-                    <waitUntil>published</waitUntil>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+      <!-- Central Publishing Plugin — replaces legacy OSSRH -->
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.8.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>true</autoPublish>
+          <waitUntil>published</waitUntil>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
