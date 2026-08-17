@@ -1,15 +1,14 @@
 package com.processpuzzle.basestate.usecase;
 
-import com.processpuzzle.basestate.domain.GuardRef;
 import com.processpuzzle.basestate.domain.ActionRef;
+import com.processpuzzle.basestate.domain.GuardRef;
 import com.processpuzzle.basestate.domain.State;
 import com.processpuzzle.basestate.domain.Transition;
 import com.processpuzzle.basestate.usecase.service.GuardActionResolver;
-import org.springframework.stereotype.Component;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
  * Validates a candidate {@code states}/{@code transitions} topology before it is persisted, the
@@ -31,9 +30,10 @@ public class StateMachineTopologyValidator {
         Set<String> stateKeys = uniqueStateKeys(states);
         requireKnownState(initialStateKey, stateKeys, "initialStateKey");
 
+        List<Transition> transitionList = transitions == null ? List.of() : transitions;
         Set<String> transitionKeys = new HashSet<>();
         Set<String> sourceTriggerPairs = new HashSet<>();
-        for (Transition transition : transitions) {
+        for (Transition transition : transitionList) {
             if (!transitionKeys.add(transition.key())) {
                 throw new IllegalArgumentException("Duplicate transition key: '" + transition.key() + "'");
             }

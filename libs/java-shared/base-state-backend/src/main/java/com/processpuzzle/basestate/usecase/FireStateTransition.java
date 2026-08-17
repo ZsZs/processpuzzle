@@ -2,23 +2,26 @@ package com.processpuzzle.basestate.usecase;
 
 import com.processpuzzle.basestate.domain.StateMachineDefinition;
 import com.processpuzzle.basestate.domain.StateMachineDefinitionRepository;
+import com.processpuzzle.basestate.domain.event.EntityObjectStateChangedEvent;
 import com.processpuzzle.basestate.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.basestate.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.basestate.usecase.service.EntityObjectGatewayResolver;
 import com.processpuzzle.basestate.usecase.service.StateMachineEngine;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The single legitimate way an {@code EntityObject}'s state attribute ever changes — see
  * base-state-api.yaml's "Ownership and the single entry point" note. Resolves {@code
  * (currentStateKey, triggerKey)} via {@link StateMachineEngine}, and only on a successful outcome
  * writes the new state through {@link com.processpuzzle.basestate.usecase.port.EntityObjectGateway}
- * — the engine itself never writes anything, keeping the compare-and-swap write (and the
- * optimistic-lock check that guards it) here in the use case.
+ * and publishes {@link EntityObjectStateChangedEvent} — the engine itself never writes anything,
+ * keeping the compare-and-swap write (and the optimistic-lock check that guards it) here in the
+ * use case.
  */
 @Service
 @Transactional
@@ -27,13 +30,16 @@ public class FireStateTransition {
     private final StateMachineDefinitionRepository repository;
     private final EntityObjectGatewayResolver gatewayResolver;
     private final StateMachineEngine engine;
+    private final ApplicationEventPublisher eventPublisher;
 
     public FireStateTransition(StateMachineDefinitionRepository repository,
                                EntityObjectGatewayResolver gatewayResolver,
-                               StateMachineEngine engine) {
+                               StateMachineEngine engine,
+                               ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.gatewayResolver = gatewayResolver;
         this.engine = engine;
+        this.eventPublisher = eventPublisher;
     }
 
     public Result execute(String orgKey, String entityName, UUID objectId,
@@ -65,6 +71,9 @@ public class FireStateTransition {
 
         long newVersion = gateway.updateStateAttribute(
                 orgKey, entityName, objectId, definition.getStateAttributeKey(), outcome.newStateKey(), expectedVersion);
+        eventPublisher.publishEvent(new EntityObjectStateChangedEvent(
+                orgKey, entityName, objectId, outcome.previousStateKey(), outcome.newStateKey(),
+                outcome.transitionKey(), triggerKey, newVersion, Instant.now()));
         return new Result(outcome, newVersion);
     }
 

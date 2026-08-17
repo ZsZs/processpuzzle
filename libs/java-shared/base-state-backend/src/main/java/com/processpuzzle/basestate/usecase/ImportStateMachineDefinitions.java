@@ -7,9 +7,6 @@ import com.processpuzzle.basestate.adapter.inbound.dto.StateMachineYamlDocument;
 import com.processpuzzle.basestate.adapter.inbound.dto.StateMachineYamlEntry;
 import com.processpuzzle.basestate.domain.StateMachineDefinition;
 import com.processpuzzle.basestate.domain.StateMachineDefinitionRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * All-or-nothing bulk import, the same contract as {@code ImportRules}: if any entry fails
@@ -38,8 +37,15 @@ public class ImportStateMachineDefinitions {
 
     @Transactional
     public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
-        StateMachineYamlDocument document = yamlMapper.readValue(input, StateMachineYamlDocument.class);
-        List<StateMachineYamlEntry> entries = document.stateMachines() == null ? List.of() : document.stateMachines();
+        StateMachineYamlDocument document;
+        try {
+            document = yamlMapper.readValue(input, StateMachineYamlDocument.class);
+        } catch (com.fasterxml.jackson.databind.exc.MismatchedInputException e) {
+            return new ImportOutcome(0, 0, List.of());
+        }
+        List<StateMachineYamlEntry> entries = (document == null || document.stateMachines() == null)
+                ? List.of()
+                : document.stateMachines();
 
         List<String> errors = new ArrayList<>();
         Map<String, StateMachineYamlEntry> byEntityName = new LinkedHashMap<>();

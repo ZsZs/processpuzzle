@@ -1,10 +1,10 @@
 package com.processpuzzle.basestate.usecase.service;
 
-import com.processpuzzle.basestate.usecase.exception.UnknownGuardBeanException;
 import com.processpuzzle.basestate.usecase.exception.UnknownActionBeanException;
+import com.processpuzzle.basestate.usecase.exception.UnknownGuardBeanException;
 import com.processpuzzle.basestate.usecase.port.TransitionAction;
 import com.processpuzzle.basestate.usecase.port.TransitionGuard;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class GuardActionResolver {
     public TransitionGuard resolveGuard(String beanName) {
         try {
             return applicationContext.getBean(beanName, TransitionGuard.class);
-        } catch (NoSuchBeanDefinitionException e) {
+        } catch (BeansException e) {
             throw new UnknownGuardBeanException(beanName);
         }
     }
@@ -49,7 +49,7 @@ public class GuardActionResolver {
     public TransitionAction resolveAction(String beanName) {
         try {
             return applicationContext.getBean(beanName, TransitionAction.class);
-        } catch (NoSuchBeanDefinitionException e) {
+        } catch (BeansException e) {
             throw new UnknownActionBeanException(beanName);
         }
     }
@@ -58,7 +58,7 @@ public class GuardActionResolver {
         try {
             applicationContext.getBean(beanName, type);
             return true;
-        } catch (NoSuchBeanDefinitionException e) {
+        } catch (BeansException e) {
             return false;
         }
     }

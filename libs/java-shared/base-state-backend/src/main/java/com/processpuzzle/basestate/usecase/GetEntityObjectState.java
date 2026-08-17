@@ -1,16 +1,16 @@
 package com.processpuzzle.basestate.usecase;
 
+import com.processpuzzle.basestate.domain.State;
 import com.processpuzzle.basestate.domain.StateMachineDefinition;
 import com.processpuzzle.basestate.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.basestate.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.basestate.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.basestate.usecase.service.EntityObjectGatewayResolver;
 import com.processpuzzle.basestate.usecase.service.StateMachineEngine;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The read side of the operation layer: current state plus a guards-only dry run of the
@@ -40,10 +40,10 @@ public class GetEntityObjectState {
 
         EntityObjectSnapshot snapshot = gatewayResolver.gateway().findObject(orgKey, entityName, objectId);
         Object rawState = snapshot.attribute(definition.getStateAttributeKey());
-        String currentStateKey = rawState == null ? null : rawState.toString();
+        String currentStateKey = rawState == null ? definition.getInitialStateKey() : rawState.toString();
 
-        boolean knownState = currentStateKey != null && definition.findState(currentStateKey).isPresent();
-        boolean isFinal = !knownState || definition.findState(currentStateKey).map(s -> s.isFinal()).orElse(true);
+        boolean knownState = definition.findState(currentStateKey).isPresent();
+        boolean isFinal = definition.findState(currentStateKey).map(State::isFinal).orElse(false);
         List<AvailableTransitionProjection> availableTransitions = knownState
                 ? engine.availableTransitions(definition, orgKey, entityName, objectId, currentStateKey, snapshot)
                 : List.of();
