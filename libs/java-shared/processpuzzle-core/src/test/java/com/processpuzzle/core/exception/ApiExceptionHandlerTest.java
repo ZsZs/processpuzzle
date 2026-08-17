@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.ExceptionHandlerMethodResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,6 +104,16 @@ class ApiExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().errorId()).isEqualTo("request.validation-failed");
         assertThat(response.getBody().errorText()).isEqualTo("slug: must not be blank; title: must not be blank");
+    }
+
+    @Test
+    void aMissingRequestParameterIs400() {
+        var ex = new MissingServletRequestParameterException("entityDefinitionCode", "String");
+        var response = handler.handleMissingParameter(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().errorId()).isEqualTo("request.missing-parameter");
+        assertThat(response.getBody().errorText()).isEqualTo("Required request parameter 'entityDefinitionCode' for method parameter type String is not present");
     }
 
     /**

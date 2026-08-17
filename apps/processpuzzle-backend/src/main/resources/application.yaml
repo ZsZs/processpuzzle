@@ -71,6 +71,9 @@ base-app:
 base-widget:
   loadDefaultWidgets: yes
 
+base-entity:
+  loadDefaultEntities: yes
+
 base-document:
   loadSamples: yes
 
