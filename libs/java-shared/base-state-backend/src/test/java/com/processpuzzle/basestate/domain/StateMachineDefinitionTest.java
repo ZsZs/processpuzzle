@@ -88,14 +88,15 @@ class StateMachineDefinitionTest {
         assertThat(key1.getOrgKey()).isEqualTo("org-1");
         assertThat(key1.getEntityName()).isEqualTo("invoice");
 
-        assertThat(key1).isEqualTo(key2);
-        assertThat(key1).isEqualTo(key1);
-        assertThat(key1).isNotEqualTo(null);
-        assertThat(key1).isNotEqualTo("someString");
-        assertThat(key1).isNotEqualTo(key3);
-        assertThat(key1).isNotEqualTo(key4);
+        assertThat(key1.equals(key1)).isTrue();
+        assertThat(key1.equals(null)).isFalse();
+        assertThat(key1.equals("someString")).isFalse();
 
-        assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
-        assertThat(key1.toString()).isEqualTo("org-1/invoice");
+        assertThat(key1)
+                .isEqualTo(key2)
+                .isNotEqualTo(key3)
+                .isNotEqualTo(key4)
+                .hasSameHashCodeAs(key2)
+                .hasToString("org-1/invoice");
     }
 }

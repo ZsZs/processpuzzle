@@ -71,7 +71,7 @@ class DefaultStateImporterTest {
 
             assertThat(outcome.errors()).isEmpty();
             assertThat(outcome.created()).isEqualTo(1);
-            assertThat(outcome.updated()).isEqualTo(0);
+            assertThat(outcome.updated()).isZero();
 
             ArgumentCaptor<StateMachineDefinition> defCaptor = ArgumentCaptor.forClass(StateMachineDefinition.class);
             verify(repository).save(defCaptor.capture());

@@ -169,7 +169,7 @@ class StateMapperTest {
         assertThat(pageModel.getContent()).hasSize(1);
         assertThat(pageModel.getTotalElements()).isEqualTo(1);
         assertThat(pageModel.getTotalPages()).isEqualTo(1);
-        assertThat(pageModel.getNumber()).isEqualTo(0);
+        assertThat(pageModel.getNumber()).isZero();
         assertThat(pageModel.getSize()).isEqualTo(10);
     }
 

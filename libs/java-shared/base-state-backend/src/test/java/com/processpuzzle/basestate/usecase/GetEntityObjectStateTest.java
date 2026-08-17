@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,7 +65,7 @@ class GetEntityObjectStateTest {
     void execute_shouldReturnInitialStateWhenObjectHasNoStateAttributeYet() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.availableTransitions(eq(definition), eq(OBJECT_ID), eq("draft"), eq(snapshot)))
+        when(engine.availableTransitions(definition, OBJECT_ID, "draft", snapshot))
                 .thenReturn(List.of(new AvailableTransitionProjection("t1", "approve", "approved", true, null)));
 
         EntityObjectStateProjection result = usecase.execute(ORG, ENTITY, OBJECT_ID);
@@ -81,7 +80,7 @@ class GetEntityObjectStateTest {
     void execute_shouldReturnStoredStateWhenPresent() {
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 2L, Map.of("state", "approved"));
         when(gateway.findObject(ORG, ENTITY, OBJECT_ID)).thenReturn(snapshot);
-        when(engine.availableTransitions(eq(definition), eq(OBJECT_ID), eq("approved"), eq(snapshot)))
+        when(engine.availableTransitions(definition, OBJECT_ID, "approved", snapshot))
                 .thenReturn(List.of());
 
         EntityObjectStateProjection result = usecase.execute(ORG, ENTITY, OBJECT_ID);

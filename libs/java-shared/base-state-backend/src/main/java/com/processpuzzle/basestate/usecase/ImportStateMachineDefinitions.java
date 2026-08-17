@@ -35,7 +35,7 @@ public class ImportStateMachineDefinitions {
         this.validator = validator;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
         List<StateMachineYamlEntry> entries = parseEntries(input);
         if (entries.isEmpty()) {

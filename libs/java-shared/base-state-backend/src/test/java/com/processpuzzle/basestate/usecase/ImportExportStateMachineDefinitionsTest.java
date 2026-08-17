@@ -54,8 +54,9 @@ class ImportExportStateMachineDefinitionsTest {
         byte[] yamlBytes = exportUseCase.execute(ORG, "order");
         String yaml = new String(yamlBytes, StandardCharsets.UTF_8);
 
-        assertThat(yaml).contains("entityName: \"order\"");
-        assertThat(yaml).contains("initialStateKey: \"draft\"");
+        assertThat(yaml)
+                .contains("entityName: \"order\"")
+                .contains("initialStateKey: \"draft\"");
     }
 
     @Test
@@ -76,8 +77,9 @@ class ImportExportStateMachineDefinitionsTest {
         byte[] yamlBytes = exportUseCase.execute(ORG, null);
         String yaml = new String(yamlBytes, StandardCharsets.UTF_8);
 
-        assertThat(yaml).contains("entityName: \"order\"");
-        assertThat(yaml).contains("initialStateKey: \"draft\"");
+        assertThat(yaml)
+                .contains("entityName: \"order\"")
+                .contains("initialStateKey: \"draft\"");
     }
 
     @Test
@@ -109,7 +111,7 @@ class ImportExportStateMachineDefinitionsTest {
 
         assertThat(outcome.errors()).isEmpty();
         assertThat(outcome.created()).isEqualTo(1);
-        assertThat(outcome.updated()).isEqualTo(0);
+        assertThat(outcome.updated()).isZero();
         verify(repository).save(any(StateMachineDefinition.class));
     }
 
@@ -138,7 +140,7 @@ class ImportExportStateMachineDefinitionsTest {
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(outcome.errors()).isEmpty();
-        assertThat(outcome.created()).isEqualTo(0);
+        assertThat(outcome.created()).isZero();
         assertThat(outcome.updated()).isEqualTo(1);
         assertThat(existing.getName()).isEqualTo("Updated Invoice SM");
     }
@@ -149,8 +151,8 @@ class ImportExportStateMachineDefinitionsTest {
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(outcome.errors()).isEmpty();
-        assertThat(outcome.created()).isEqualTo(0);
-        assertThat(outcome.updated()).isEqualTo(0);
+        assertThat(outcome.created()).isZero();
+        assertThat(outcome.updated()).isZero();
     }
 
     @Test

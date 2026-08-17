@@ -7,14 +7,13 @@ import com.processpuzzle.basestate.adapter.inbound.dto.StateMachineYamlDocument;
 import com.processpuzzle.basestate.adapter.inbound.dto.StateMachineYamlEntry;
 import com.processpuzzle.basestate.domain.StateMachineDefinition;
 import com.processpuzzle.basestate.domain.StateMachineDefinitionRepository;
+import java.io.IOException;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.List;
-
 @Service
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, rollbackFor = Exception.class)
 public class ExportStateMachineDefinitions {
 
     private final StateMachineDefinitionRepository repository;

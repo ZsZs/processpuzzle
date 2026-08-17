@@ -20,7 +20,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +80,7 @@ class StateMachineEngineTest {
     @Test
     void fireRejectsWhenAGuardFails() {
         TransitionGuard guard = mock(TransitionGuard.class);
-        when(guard.evaluate(org.mockito.ArgumentMatchers.any())).thenReturn(GuardResult.rejected("insufficient balance"));
+        when(guard.evaluate(any())).thenReturn(GuardResult.rejected("insufficient balance"));
         when(guardActionResolver.resolveGuard("approvalGuard")).thenReturn(guard);
 
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
@@ -92,7 +95,7 @@ class StateMachineEngineTest {
     @Test
     void fireRunsActionsOnlyAfterEveryGuardPasses() {
         TransitionGuard guard = mock(TransitionGuard.class);
-        when(guard.evaluate(org.mockito.ArgumentMatchers.any())).thenReturn(GuardResult.allowed());
+        when(guard.evaluate(any())).thenReturn(GuardResult.allowed());
         when(guardActionResolver.resolveGuard("approvalGuard")).thenReturn(guard);
 
         TransitionAction action = mock(TransitionAction.class);
@@ -104,13 +107,13 @@ class StateMachineEngineTest {
         assertThat(outcome.success()).isTrue();
         assertThat(outcome.newStateKey()).isEqualTo("approved");
         assertThat(outcome.executedActions()).containsExactly("notifyAction");
-        verify(action).execute(org.mockito.ArgumentMatchers.any());
+        verify(action).execute(any());
     }
 
     @Test
     void availableTransitionsIsADryRunThatNeverExecutesActions() {
         TransitionGuard guard = mock(TransitionGuard.class);
-        when(guard.evaluate(org.mockito.ArgumentMatchers.any())).thenReturn(GuardResult.allowed());
+        when(guard.evaluate(any())).thenReturn(GuardResult.allowed());
         when(guardActionResolver.resolveGuard("approvalGuard")).thenReturn(guard);
 
         EntityObjectSnapshot snapshot = new EntityObjectSnapshot(OBJECT_ID, 1L, Map.of());
@@ -122,6 +125,6 @@ class StateMachineEngineTest {
         assertThat(available.get(0).guardsSatisfied()).isTrue();
         assertThat(available.get(1).transitionKey()).isEqualTo("rejectTransition");
         assertThat(available.get(1).guardsSatisfied()).isTrue();
-        verify(guardActionResolver, org.mockito.Mockito.never()).resolveAction(org.mockito.ArgumentMatchers.anyString());
+        verify(guardActionResolver, never()).resolveAction(anyString());
     }
 }
