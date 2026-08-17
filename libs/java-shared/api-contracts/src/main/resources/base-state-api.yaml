@@ -1,9 +1,742 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  title: ProcessPuzzle Base State API
-  description: ProcessPuzzle Base State API
-  version: 1.0.0
+  title: ProcessPuzzle State Machine API (base-state)
+  description: >-
+    Two layers, mirroring base-entity and base-rule's split.
+
+    KNOWLEDGE LAYER (/state-machines): the state machine *definition* for one entity type —
+    its states, transitions, triggers, guards and actions. Exactly one state machine per
+    entityName (1:1, enforced at create time), so the definition is addressed by entityName
+    itself rather than an independent key — same convention as base-entity-api.yaml's
+    /entity-definitions/{entityName}. No parallel states and no nested states in this
+    version; every State is a flat, mutually exclusive value.
+
+    OPERATION LAYER (/entities/{entityName}/{objectId}/state, .../state-transitions): the
+    current state of one EntityObject, and the single entry point through which it changes.
+    There is no separate "state" storage here — current state is an ordinary attribute on
+    the EntityObject's JSONB payload (see base-entity-api.yaml EntityObject), named by this
+    state machine's stateAttributeKey. Storing it that way means RSQL filtering, sorting and
+    search on state (`state==Approved`) work through base-entity's existing
+    AttributePathResolver / JsonPathExpressionBuilder pipeline for free — base-state does not
+    reimplement querying.
+
+    ## Ownership and the single entry point
+
+    base-state-backend is the only writer of the state attribute. base-entity-backend stays
+    unaware of state machines entirely; it does not gain an AOP aspect or a special case for
+    this attribute in this version, unlike base-rule's `@Validate` aspect which genuinely
+    sits in the write path because it validates arbitrary attribute changes. State has
+    exactly one legitimate entry point instead: fireStateTransition below. base-state-backend
+    calls into base-entity-backend's operation-layer update as a privileged internal caller
+    once a transition's guards pass, and publishes EntityObjectStateChangedEvent
+    post-commit (via Spring Modulith) so base-workflow-backend can react to state changes it
+    did not itself trigger — e.g. a user pressing "Approve" in the UI. base-workflow-backend
+    is otherwise an ordinary caller of fireStateTransition, with no special-cased path of its
+    own; see base-workflow-api.yaml's note that state transitions are delegated to base-state
+    by id only.
+
+    ## Triggers, not target states
+
+    TransitionRequest names a `triggerKey` (the verb a caller invokes — "approve", "reject")
+    rather than a `targetStateKey`. The engine resolves `(currentStateKey, triggerKey) ->
+    Transition` itself, so callers never need to know the machine's topology: a UI button is
+    wired to a trigger, not to a specific edge. This also allows two different triggers to
+    reach the same target state under different guards/actions, and one trigger to mean
+    different things depending on the source state.
+
+    ## Business rejection vs. optimistic-lock conflict
+
+    Firing a transition that is simply not available from the current state (wrong trigger,
+    or a guard rejects it) is an expected, common outcome — not an exceptional one — so it is
+    answered `200` with `TransitionResult.success = false` and a `rejectionReason`, the same
+    way a disabled UI button is a normal state rather than an error. `409` is reserved for a
+    genuine optimistic-lock conflict: `TransitionRequest.version` no longer matches the
+    EntityObject's current version. `400` is reserved for structurally invalid requests (an
+    unknown `triggerKey` that exists on no transition at all, malformed context).
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as base-entity-api.yaml and base-rule-api.yaml establish; see
+    shared-api.yaml OrgKeyParam. entityName resolves within the same organization only.
+  version: 0.1.0
+
 servers:
-  - url: 'https'
+  - url: 'http://localhost:8080/api/v1'
+
 paths:
-  
+
+  # ── Knowledge layer: state machine definitions ─────────────────
+
+  /organizations/{orgKey}/state-machines:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listStateMachineDefinitions
+      summary: List the organization's state machine definitions
+      tags: [ Base State ]
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of state machine definitions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_StateMachineDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createStateMachineDefinition
+      summary: Create a state machine definition for an entity type
+      description: >-
+        Rejected with 409 if entityName already has a state machine definition in this
+        organization — the 1:1 relationship is enforced here, not left to the caller.
+        Validated at creation: initialStateKey and every Transition's sourceStateKey /
+        targetStateKey must resolve to a declared State.key; no two transitions may share
+        the same (sourceStateKey, triggerKey) pair, since that would make trigger resolution
+        ambiguous; stateAttributeKey must name an attribute declared on the entityName's
+        current EntityDefinition.
+      tags: [ Base State ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StateMachineDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StateMachineDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName does not resolve to an entity definition in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: entityName already has a state machine definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/state-machines/{entityName}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+    get:
+      operationId: getStateMachineDefinition
+      summary: Get the state machine definition for an entity type
+      tags: [ Base State ]
+      responses:
+        "200":
+          description: The state machine definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StateMachineDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateStateMachineDefinition
+      summary: Replace a state machine definition's states and transitions
+      description: >-
+        Whole-document replace. Optimistic-locked the same way base-document's
+        updateDocument is: the server loads the managed entity and lets Hibernate's own
+        `@Version` column detect a genuinely concurrent write on flush — there is no
+        separate client-supplied version to compare, unlike TransitionRequest.version below,
+        which guards a read-then-act sequence rather than a single write. Removing a State
+        or Transition that an in-flight EntityObject currently depends on is accepted — the
+        definition is the source of truth going forward — but any object left sitting in a
+        currentStateKey no longer declared surfaces that fact the next time
+        getEntityObjectState is called (terminal true, availableTransitions empty), rather
+        than being migrated automatically.
+      tags: [ Base State ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StateMachineDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StateMachineDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteStateMachineDefinition
+      summary: Delete a state machine definition
+      description: >-
+        Existing EntityObjects keep whatever value is already stored in their state
+        attribute; base-state simply stops governing further changes to it, and
+        fireStateTransition/getEntityObjectState both answer 404 for this entityName from
+        then on.
+      tags: [ Base State ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/state-machines/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: importStateMachineDefinitions
+      summary: Bulk-import state machine definitions from a YAML file
+      description: >-
+        All-or-nothing, same contract as base-rule's importRules: if any entry fails
+        validation (duplicate entityName, unknown state/transition reference, ambiguous
+        trigger), nothing in the file is persisted and the full list of problems is
+        returned. Imported definitions are scoped to {orgKey} regardless of any
+        organization key present in the file.
+      tags: [ Base State ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/state-machines/export:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: exportStateMachineDefinitions
+      summary: Export state machine definitions as a YAML file
+      tags: [ Base State ]
+      parameters:
+        - name: entityName
+          in: query
+          required: false
+          description: Limit the export to a single entity type's state machine.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: YAML file
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Operation layer: an object's current state ──────────────────
+
+  /organizations/{orgKey}/entities/{entityName}/{objectId}/state:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+      - $ref: "#/components/parameters/ObjectIdParam"
+    get:
+      operationId: getEntityObjectState
+      summary: Get an object's current state and the transitions available from it
+      description: >-
+        availableTransitions is a dry run: every Transition declared with sourceStateKey
+        equal to the object's currentStateKey, each with its guards evaluated against the
+        object's *current* payload but no actions executed — intended for a UI to render
+        "Approve" / "Reject" buttons as enabled or disabled without firing anything.
+        guardsSatisfied can go stale the moment another change lands; fireStateTransition
+        re-evaluates guards itself and is the only call that is authoritative.
+      tags: [ Base State ]
+      responses:
+        "200":
+          description: Current state and available transitions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityObjectStateView"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: >-
+            Either the object does not exist, or entityName has no state machine definition
+            in this organization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/entities/{entityName}/{objectId}/state-transitions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+      - $ref: "#/components/parameters/ObjectIdParam"
+    post:
+      operationId: fireStateTransition
+      summary: Attempt to fire a transition by trigger
+      description: >-
+        Resolves (currentStateKey, triggerKey) to a Transition, evaluates its guards in
+        declaration order against the object's current payload (AND semantics,
+        short-circuiting on the first guard that rejects), and — only if every guard
+        passes — runs its actions in declaration order, writes the new currentStateKey to
+        the entity object's state attribute via base-entity-backend, and publishes
+        EntityObjectStateChangedEvent post-commit. See the top-level description for the
+        200-vs-409 distinction between a business rejection and a stale-version conflict.
+      tags: [ Base State ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionRequest"
+      responses:
+        "200":
+          description: >-
+            Always returned once the request itself is well-formed and the version is
+            current — check TransitionResult.success for the outcome.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransitionResult"
+        "400":
+          description: triggerKey matches no transition declared anywhere on this state machine, or context is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: >-
+            Either the object does not exist, or entityName has no state machine definition
+            in this organization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: TransitionRequest.version no longer matches the object's current version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: >-
+        Tenant discriminator; see shared-api.yaml OrgKeyParam for the full contract. Must be
+        verified against the principal's `organization` claim — 403 on mismatch.
+    EntityNameParam:
+      name: entityName
+      in: path
+      required: true
+      description: Unique within the organization; same value as base-entity-api.yaml's EntityDefinition.entityName.
+      schema:
+        type: string
+    ObjectIdParam:
+      name: objectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WhereParam:
+      name: where
+      in: query
+      required: false
+      schema:
+        type: string
+      description: RSQL filter expression over StateMachineDefinition fields (entityName, name). See shared-api.yaml WhereParam for the operator reference.
+    OrderParam:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Format `property,(asc|desc)`; multiple criteria separated by comma.
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Validation error — the request payload or parameters are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The authenticated principal may not act on this organization.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    # ── Knowledge layer ────────────────────────────────────────
+
+    GuardRef:
+      type: object
+      required: [ beanName ]
+      description: >-
+        Names a Spring bean implementing TransitionGuard, resolved by bean name — same named
+        SPI convention as base-state's earlier TransitionGuard/TransitionAction sketch and
+        base-entity's PayloadValidator seam. Existence of the bean is checked at definition
+        save time, not just at transition time, so a typo surfaces immediately rather than
+        the first time the transition is fired.
+      properties:
+        beanName:
+          type: string
+          example: sufficientBalanceGuard
+        params:
+          type: object
+          nullable: true
+          description: Static configuration passed to TransitionGuard.evaluate() alongside the runtime TransitionContext.
+          additionalProperties: true
+
+    ActionRef:
+      type: object
+      required: [ beanName ]
+      description: Names a Spring bean implementing TransitionAction, resolved by bean name. Only run after every guard on the transition has passed.
+      properties:
+        beanName:
+          type: string
+          example: sendApprovalNotificationAction
+        params:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    State:
+      type: object
+      required: [ key, name ]
+      description: A single, flat, mutually exclusive value of the state attribute. No parallel or nested states in this version — see StateMachineDefinitionInput.
+      properties:
+        key:
+          type: string
+          description: Unique within the state machine; the literal value written to the state attribute.
+          example: PendingApproval
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        terminal:
+          type: boolean
+          default: false
+          description: No transition may declare this state as its sourceStateKey — enforced at definition save time.
+        locked:
+          type: boolean
+          default: false
+          description: >-
+            When true, only the state attribute itself may change on an object sitting in
+            this state — every other attribute update via base-entity's
+            updateEntityObject is rejected while the object is in this state. All-or-nothing
+            for now; an attribute-level allow-list is a deliberate follow-up, the same way
+            parallel/nested states are, not part of this version.
+        metadata:
+          type: object
+          nullable: true
+          description: UI hints only — e.g. color, icon — for rendering the state machine graph. Opaque to base-state-backend.
+          additionalProperties: true
+
+    Transition:
+      type: object
+      required: [ key, sourceStateKey, targetStateKey, triggerKey ]
+      properties:
+        key:
+          type: string
+          description: Unique within the state machine.
+        name:
+          type: string
+          nullable: true
+        sourceStateKey:
+          type: string
+          description: Must resolve to a declared State.key that is not terminal.
+        targetStateKey:
+          type: string
+          description: Must resolve to a declared State.key.
+        triggerKey:
+          type: string
+          description: >-
+            The verb callers invoke in TransitionRequest.triggerKey — e.g. "approve". Must
+            be unique in combination with sourceStateKey; two transitions may share a
+            triggerKey only if their sourceStateKey differs, and two transitions may share a
+            sourceStateKey only if their triggerKey differs. Distinct transitions with the
+            same triggerKey may target different states, which is how one button can mean
+            different things depending on where the object currently sits.
+          example: approve
+        guards:
+          type: array
+          description: Evaluated in order, AND semantics, short-circuiting on the first that rejects. Empty means the transition is unconditional.
+          items:
+            $ref: "#/components/schemas/GuardRef"
+        actions:
+          type: array
+          description: Executed in order, only once every guard has passed.
+          items:
+            $ref: "#/components/schemas/ActionRef"
+
+    StateMachineDefinitionInput:
+      type: object
+      required: [ entityName, name, stateAttributeKey, initialStateKey, states ]
+      properties:
+        entityName:
+          type: string
+          description: >-
+            The entity type this state machine governs — resolved within this organization.
+            1:1: creating a second definition for the same entityName is a 409. The path
+            segment on PUT/DELETE is the source of truth; this field is only meaningful on
+            POST create, mirroring EntityDefinitionInput.entityName in base-entity-api.yaml.
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        stateAttributeKey:
+          type: string
+          description: >-
+            The attrName, declared on entityName's current EntityDefinition, whose value
+            holds the object's current state. Must be a TEXT-valued attribute. base-state
+            is the only writer of it — see the top-level description's "Ownership and the
+            single entry point" note.
+          example: state
+        initialStateKey:
+          type: string
+          description: The State.key a newly-created EntityObject of this entityName starts in. Must resolve to a declared State.key.
+        states:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/State"
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transition"
+
+    StateMachineDefinition:
+      allOf:
+        - $ref: "#/components/schemas/StateMachineDefinitionInput"
+        - type: object
+          properties:
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_StateMachineDefinition:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/StateMachineDefinition"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    # ── Operation layer ────────────────────────────────────────
+
+    AvailableTransition:
+      type: object
+      required: [ transitionKey, triggerKey, targetStateKey, guardsSatisfied ]
+      properties:
+        transitionKey:
+          type: string
+        triggerKey:
+          type: string
+        targetStateKey:
+          type: string
+        guardsSatisfied:
+          type: boolean
+          description: Dry-run result — true only if every guard on this transition currently passes against the object's payload.
+        blockedReason:
+          type: string
+          nullable: true
+          description: Set when guardsSatisfied is false — the message from the first guard that rejected.
+
+    EntityObjectStateView:
+      type: object
+      required: [ objectId, entityName, currentStateKey, terminal, availableTransitions ]
+      properties:
+        objectId:
+          type: string
+          format: uuid
+        entityName:
+          type: string
+        currentStateKey:
+          type: string
+        terminal:
+          type: boolean
+          description: True when currentStateKey resolves to a State with terminal true.
+        enteredStateAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the object last transitioned into currentStateKey. Absent if it has never transitioned since creation.
+        availableTransitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailableTransition"
+
+    TransitionRequest:
+      type: object
+      required: [ triggerKey, version ]
+      properties:
+        triggerKey:
+          type: string
+          example: approve
+        context:
+          type: object
+          nullable: true
+          description: >-
+            Caller-supplied data made available to guards and actions as
+            TransitionContext.requestContext — e.g. an approval comment, or identifiers
+            base-workflow-backend passes through from the activity that triggered this call.
+          additionalProperties: true
+        version:
+          type: integer
+          format: int64
+          description: Optimistic lock against the EntityObject's current version — same contract as base-entity's updateEntityObject. A mismatch is a 409, not a business rejection.
+
+    TransitionResult:
+      type: object
+      required: [ success, previousStateKey ]
+      properties:
+        success:
+          type: boolean
+        previousStateKey:
+          type: string
+        newStateKey:
+          type: string
+          nullable: true
+          description: Absent when success is false — the object's state did not change.
+        transitionKey:
+          type: string
+          nullable: true
+          description: The Transition that matched (currentStateKey, triggerKey), even when a guard subsequently rejected it. Absent only when triggerKey matched no transition from the current state at all.
+        executedActions:
+          type: array
+          items:
+            type: string
+          description: beanNames of the actions that ran, in execution order. Empty when success is false.
+        rejectionReason:
+          type: string
+          nullable: true
+          description: Populated when success is false — either "no transition for trigger '{triggerKey}' from state '{currentStateKey}'" or the rejecting guard's message.
+        version:
+          type: integer
+          format: int64
+          description: The EntityObject's version after this call — unchanged from the request when success is false.
+
+    # Shared shapes — kept as local duplicates because the openapi-generator swagger-parser
+    # cannot resolve cross-file $refs on Windows. schemaMappings in the pom.xml redirects the
+    # generated classes to com.processpuzzle.shared.model, same mechanism base-rule-api.yaml
+    # and base-entity-api.yaml already use for these three shapes.
+    OrganizationKey:
+      type: string
+      description: URL-safe tenant slug; canonical definition in shared-api.yaml.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+          example: state-machine.transition.ambiguous-trigger
+        errorText:
+          type: string
+          example: Two transitions from state 'Draft' share the trigger 'submit'.
+
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
