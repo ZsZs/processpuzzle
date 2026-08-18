@@ -41,3 +41,6 @@ base-entity:
 
 base-state:
   loadDefaultStateMachines: no
+
+base-workflow:
+  loadDefaultWorkflows: no

@@ -1,0 +1,96 @@
+# Default workflow definitions for the 'processpuzzle-testbed' organization —
+# the tenant behind apps/processpuzzle-testbed.
+#
+# DefaultWorkflowImporter imports this file on startup when `base-workflow.loadDefaultWorkflows` is true.
+# The owning organization is the part of the file name before `-workflows.yaml`, exactly as
+# `<orgKey>-entities.yaml` works in base-entity, `<orgKey>-state-machines.yaml` in base-state,
+# `<orgKey>-apps.yaml` in base-app, and `<orgKey>-widgets.yaml` in base-widget.
+
+processes:
+  - id: order-fulfillment-workflow
+    name: Order Fulfillment Workflow
+    description: Sample end-to-end workflow governing order processing, review, and fulfillment in the testbed environment.
+    tools:
+      - automated-check-tool
+    roles:
+      - id: clerk
+        name: Order Clerk
+        description: Responsible for initial order entry and verification.
+        entityRoleId: clerk-role
+      - id: manager
+        name: Order Manager
+        description: Approves high-value orders and handles exceptions.
+        entityRoleId: manager-role
+    workProducts:
+      - id: order-entity
+        name: Order Entity
+        description: The order being processed through the lifecycle.
+        type: ENTITY
+        entityTypeId: dynamic-entity
+        stateMachineId: dynamic-entity
+      - id: fulfillment-invoice
+        name: Fulfillment Invoice
+        description: Generated invoice document for fulfilled order.
+        type: DELIVERABLE
+    tasks:
+      - id: verify-order
+        name: Verify Order
+        description: Review order details and validate line items.
+        performedBy: clerk
+        inputs:
+          - type: BASE_ENTITY
+            refId: dynamic-entity
+            label: Incoming Order
+        outputs:
+          - type: BASE_ENTITY
+            refId: dynamic-entity
+            label: Verified Order
+        preconditionRuleId: positive-quantities
+        dependsOn: [ ]
+        parallel: false
+        steps:
+          - id: check-items
+            name: Check Line Items
+            description: Verify all line items are available in inventory.
+            toolId: automated-check-tool
+            toolOperation: inventory-check
+      - id: approve-order
+        name: Approve Order
+        description: Manager approval for order fulfillment.
+        performedBy: manager
+        inputs:
+          - type: BASE_ENTITY
+            refId: dynamic-entity
+            label: Verified Order
+        outputs:
+          - type: BASE_ENTITY
+            refId: dynamic-entity
+            label: Approved Order
+        dependsOn:
+          - verify-order
+        parallel: false
+        steps:
+          - id: manager-signoff
+            name: Manager Sign-off
+            description: Sign off on order approval.
+      - id: fulfill-order
+        name: Fulfill and Invoice
+        description: Fulfill the order and produce the final delivery invoice.
+        performedBy: clerk
+        inputs:
+          - type: BASE_ENTITY
+            refId: dynamic-entity
+            label: Approved Order
+        outputs:
+          - type: DOCUMENT
+            refId: fulfillment-invoice
+            label: Generated Invoice
+        dependsOn:
+          - approve-order
+        parallel: false
+        steps:
+          - id: generate-invoice
+            name: Generate Invoice
+            description: Produce delivery note and invoice.
+            toolId: automated-check-tool
+            toolOperation: generate-doc

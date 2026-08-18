@@ -80,6 +80,9 @@ base-document:
 base-state:
   loadDefaultStateMachines: yes
 
+base-workflow:
+  loadDefaultWorkflows: yes
+
 minio:
   endpoint: http://localhost:7000
   access-key: minioadmin
