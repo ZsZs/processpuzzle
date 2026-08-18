@@ -62,6 +62,7 @@ export { AppNavItemFacade } from './lib/feature/app-nav-item.facade';
 export { buildAppRoutes, type AppRouteSource, type ModuleLoader, type RouteRenderer } from './lib/feature/app-route-builder';
 export { AppRouteRenderer } from './lib/feature/app-route-renderer';
 export { RouteWidgetsComponent } from './lib/feature/route-widgets.component';
+export { WidgetListComponent } from './lib/feature/widget-list.component';
 export { RouteEntityComponent } from './lib/feature/route-entity.component';
 export { RouteUnsupportedComponent } from './lib/feature/route-unsupported.component';
 export { AppRegionFacade } from './lib/feature/app-region.facade';
