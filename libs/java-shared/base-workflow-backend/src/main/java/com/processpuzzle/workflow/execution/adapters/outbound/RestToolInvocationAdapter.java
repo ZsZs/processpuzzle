@@ -5,16 +5,17 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.execution.usecases.outbound.ToolInvocationPort;
 import com.processpuzzle.workflow.execution.usecases.outbound.ToolInvocationResult;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Calls a {@link ToolDefinition}'s operation over HTTP using Spring's {@code RestClient}.
@@ -47,8 +48,14 @@ public class RestToolInvocationAdapter implements ToolInvocationPort {
     private final RestClient.Builder restClientBuilder;
     private final Environment environment;
 
+    @Autowired
+    public RestToolInvocationAdapter(ObjectProvider<RestClient.Builder> restClientBuilderProvider, Environment environment) {
+        this.restClientBuilder = restClientBuilderProvider.getIfAvailable(RestClient::builder);
+        this.environment = environment;
+    }
+
     public RestToolInvocationAdapter(RestClient.Builder restClientBuilder, Environment environment) {
-        this.restClientBuilder = restClientBuilder;
+        this.restClientBuilder = restClientBuilder != null ? restClientBuilder : RestClient.builder();
         this.environment = environment;
     }
 

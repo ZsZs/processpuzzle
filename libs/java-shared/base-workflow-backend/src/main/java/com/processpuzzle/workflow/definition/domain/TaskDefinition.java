@@ -6,9 +6,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -18,10 +22,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * A unit of work within a {@link ProcessDefinition}, performed by a {@link RoleDefinition}.
@@ -38,7 +38,7 @@ import java.util.UUID;
 @Entity
 @Table(
     name = "workflow_task_definition",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"process_technical_id", "id"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"process_org_key", "process_id", "id"}))
 public class TaskDefinition {
 
     @Id
@@ -115,6 +115,9 @@ public class TaskDefinition {
     private boolean override = false;
 
     @ManyToOne
-    @JoinColumn(name = "process_technical_id")
+    @JoinColumns({
+        @JoinColumn(name = "process_org_key", referencedColumnName = "org_key"),
+        @JoinColumn(name = "process_id", referencedColumnName = "id")
+    })
     private ProcessDefinition process;
 }

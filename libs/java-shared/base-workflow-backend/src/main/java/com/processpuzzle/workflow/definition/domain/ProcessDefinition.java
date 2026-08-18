@@ -46,7 +46,7 @@ import org.hibernate.type.SqlTypes;
 public class ProcessDefinition extends com.processpuzzle.workflow.common.Auditable {
 
     @Id
-    @Column(nullable = false)
+    @Column(name = "org_key", nullable = false)
     private String orgKey;
 
     @Id

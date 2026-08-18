@@ -8,9 +8,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -18,8 +20,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.UUID;
 
 /**
  * A resource whose lifecycle is tracked across a process instance's tasks — as opposed to a plain
@@ -36,7 +36,7 @@ import java.util.UUID;
 @Entity
 @Table(
     name = "workflow_work_product_definition",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"process_technical_id", "id"}))
+    uniqueConstraints = @UniqueConstraint(columnNames = {"process_org_key", "process_id", "id"}))
 public class WorkProductDefinition {
 
     @Id
@@ -67,6 +67,9 @@ public class WorkProductDefinition {
     private String stateMachineId;
 
     @ManyToOne
-    @JoinColumn(name = "process_technical_id")
+    @JoinColumns({
+        @JoinColumn(name = "process_org_key", referencedColumnName = "org_key"),
+        @JoinColumn(name = "process_id", referencedColumnName = "id")
+    })
     private ProcessDefinition process;
 }
