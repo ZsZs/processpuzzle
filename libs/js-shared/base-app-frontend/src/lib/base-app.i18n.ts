@@ -24,6 +24,14 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const APP_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_definition`;
 
 /**
+ * Label of the Preview tab. Under this library's own scope rather than `base_entity.tabs.*`: the generic
+ * tabs are List and Details, and an application preview is this feature's contribution, not the framework's.
+ * Resolved with `{ entity }` like the generic tab labels, so a translation may name the entity if it reads
+ * better that way.
+ */
+export const APP_PREVIEW_I18N_KEY = `${APP_DEFINITION_I18N_SCOPE}.tabs.preview`;
+
+/**
  * Key root of the `ModuleDefinition` entity name and attribute labels. A child of this library's scope
  * like the one above, and not to be confused with `ModuleDefinition.translocoScope`, which is a scope an
  * *authored* module's own translations load under — see {@link moduleTranslocoScope}. These keys are the

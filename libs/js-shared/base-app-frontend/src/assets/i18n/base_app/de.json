@@ -21,7 +21,10 @@
     "sidenavOpenByDefault": "Seitennavigation standardmäßig geöffnet",
     "regions": "Bereiche",
     "routes": "Routen",
-    "modules": "Module"
+    "modules": "Module",
+    "tabs": {
+      "preview": "{{ entity }} - Vorschau"
+    }
   },
   "app_region": {
     "_self": "Bereich",

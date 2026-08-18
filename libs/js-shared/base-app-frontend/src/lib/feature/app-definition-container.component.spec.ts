@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { AppDefinitionContainerComponent } from './app-definition-container.component';
+import { APP_PREVIEW_TAB } from './app-preview-tab';
 
 describe('AppDefinitionContainerComponent', () => {
   async function setup(currentEntity?: Partial<AppDefinition>) {
@@ -34,6 +35,12 @@ describe('AppDefinitionContainerComponent', () => {
     const { component, storeStub } = await setup();
 
     expect(component.entityDescriptor.store).toBe(storeStub);
+  });
+
+  it('declares the preview tab the routes mount', async () => {
+    const { component } = await setup();
+
+    expect(component.entityDescriptor.extraTabs).toEqual([APP_PREVIEW_TAB]);
   });
 
   it('contributes the Publish button to the form actions', async () => {

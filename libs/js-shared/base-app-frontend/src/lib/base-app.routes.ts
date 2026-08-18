@@ -9,9 +9,10 @@ import {
   APP_REGION_ENTITY_NAME,
   APP_ROUTE_ENTITY_NAME,
   APP_WIDGET_ENTITY_NAME,
-  MODULE_DEFINITION_ENTITY_NAME,
+  MODULE_DEFINITION_ENTITY_NAME
 } from './domain/app-entity-names';
 import { AppDefinitionContainerComponent } from './feature/app-definition-container.component';
+import { APP_PREVIEW_TAB } from './feature/app-preview-tab';
 import { AppModuleMountFacade } from './feature/app-module-mount.facade';
 import { AppNavItemFacade } from './feature/app-nav-item.facade';
 import { AppRegionFacade } from './feature/app-region.facade';
@@ -31,7 +32,7 @@ export const BASE_APP_ROUTES: Routes = [
     data: { icon: 'web', menuTitle: 'design.applications', entityName: APP_DEFINITION_ENTITY_NAME },
     component: AppDefinitionContainerComponent,
     providers: [authoringScopes()],
-    children: baseEntityRoutes(embeddedDefinitionRoutes()),
+    children: baseEntityRoutes(embeddedDefinitionRoutes(), [APP_PREVIEW_TAB]),
   },
   // A sibling rather than a child of the branch above: a module is an aggregate of its own, with its own
   // endpoints and its own list screen. What ties the two together is data — a `ModuleMount` naming a key —

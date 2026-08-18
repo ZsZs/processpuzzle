@@ -21,7 +21,10 @@
     "sidenavOpenByDefault": "Oldalsáv alapból nyitva",
     "regions": "Régiók",
     "routes": "Útvonalak",
-    "modules": "Modulok"
+    "modules": "Modulok",
+    "tabs": {
+      "preview": "{{ entity }} - előnézet"
+    }
   },
   "app_region": {
     "_self": "Régió",

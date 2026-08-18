@@ -21,7 +21,10 @@
     "sidenavOpenByDefault": "Menu latéral ouvert par défaut",
     "regions": "Régions",
     "routes": "Routes",
-    "modules": "Modules"
+    "modules": "Modules",
+    "tabs": {
+      "preview": "{{ entity }} - aperçu"
+    }
   },
   "app_region": {
     "_self": "Région",
