@@ -46,8 +46,22 @@ class WorkflowDefinitionMapperTest {
                 ._extends("parent-proc")
                 .tools(List.of("tool-1"))
                 .roles(List.of(new RoleDefinitionInput().id("r1").name("Role 1").description("Role Desc").entityRoleId("er-1")))
-                .workProducts(List.of(new WorkProductDefinitionInput().id("wp1").name("WP 1").type(com.processpuzzle.workflow.model.WorkProductType.ARTIFACT)))
-                .tasks(List.of(new TaskDefinitionInput().id("t1").name("Task 1").performedBy("r1")));
+                .workProducts(List.of(new WorkProductDefinitionInput().id("wp1").name("WP 1")
+                        .type(com.processpuzzle.workflow.model.WorkProductType.ENTITY)
+                        .entityTypeId("Invoice")
+                        .stateMachineId("sm-invoice")))
+                .tasks(List.of(new TaskDefinitionInput()
+                        .id("t1")
+                        .name("Task 1")
+                        .performedBy("r1")
+                        .inputs(List.of(new com.processpuzzle.workflow.model.TaskIOReference().refId("wp1").type(com.processpuzzle.workflow.model.ReferenceType.DOCUMENT).label("L1")))
+                        .outputs(List.of(new com.processpuzzle.workflow.model.TaskIOReference().refId("wp1").type(com.processpuzzle.workflow.model.ReferenceType.BASE_ENTITY).label("L2")))
+                        .preconditionRuleId("rule-pre")
+                        .postconditionRuleId("rule-post")
+                        .parallel(true)
+                        .override(true)
+                        .dependsOn(List.of("t0"))
+                        .steps(List.of(new com.processpuzzle.workflow.model.StepDefinitionInput().id("s1").name("Step 1").toolId("tool-1").toolOperation("op-1")))));
 
         ProcessDefinition domain = mapper.toDomain("org-1", input);
 
@@ -73,6 +87,13 @@ class WorkflowDefinitionMapperTest {
         assertThat(model.getWorkProducts()).hasSize(1);
         assertThat(model.getTasks()).hasSize(1);
         assertThat(model.getVersion()).isEqualTo(1L);
+
+        // Test with null sub-collections
+        ProcessDefinitionInput emptyInput = new ProcessDefinitionInput().id("empty").name("Empty");
+        ProcessDefinition emptyDomain = mapper.toDomain("org-1", emptyInput);
+        assertThat(emptyDomain.getRoles()).isEmpty();
+        assertThat(emptyDomain.getWorkProducts()).isEmpty();
+        assertThat(emptyDomain.getTasks()).isEmpty();
     }
 
     @Test

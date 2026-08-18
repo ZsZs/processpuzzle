@@ -55,4 +55,38 @@ class ProcessDefinitionValidatorTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Duplicate task id");
     }
+
+    @Test
+    void rejectsDuplicateRoleIds() {
+        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
+        process.addRole(RoleDefinition.builder().id("developer").name("Developer 1").build());
+        process.addRole(RoleDefinition.builder().id("developer").name("Developer 2").build());
+
+        assertThatThrownBy(() -> validator.validate(process))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Duplicate role id");
+    }
+
+    @Test
+    void rejectsDuplicateWorkProductIds() {
+        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
+        process.addWorkProduct(WorkProductDefinition.builder().id("spec").name("Spec 1").build());
+        process.addWorkProduct(WorkProductDefinition.builder().id("spec").name("Spec 2").build());
+
+        assertThatThrownBy(() -> validator.validate(process))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Duplicate work product id");
+    }
+
+    @Test
+    void rejectsTaskWithUnknownDependsOn() {
+        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
+        process.addRole(RoleDefinition.builder().id("developer").name("Developer").build());
+        process.addTask(TaskDefinition.builder().id("review").name("Review").performedBy("developer")
+                .dependsOn(java.util.List.of("nonexistent")).build());
+
+        assertThatThrownBy(() -> validator.validate(process))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("dependsOn unknown task");
+    }
 }
