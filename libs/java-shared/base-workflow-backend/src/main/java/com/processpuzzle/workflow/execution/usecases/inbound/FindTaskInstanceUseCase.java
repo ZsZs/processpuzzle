@@ -1,0 +1,26 @@
+package com.processpuzzle.workflow.execution.usecases.inbound;
+
+import com.processpuzzle.workflow.common.NotFoundException;
+import com.processpuzzle.workflow.execution.domain.TaskInstance;
+import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Component
+public class FindTaskInstanceUseCase {
+
+    private final TaskInstanceRepository repository;
+
+    public FindTaskInstanceUseCase(TaskInstanceRepository repository) {
+        this.repository = repository;
+    }
+
+    @Transactional(readOnly = true)
+    public TaskInstance find(String orgKey, UUID processInstanceId, String taskDefinitionId) {
+        return repository.findByOrgKeyAndProcessInstanceIdAndTaskDefinitionId(orgKey, processInstanceId, taskDefinitionId)
+                .orElseThrow(() -> new NotFoundException(
+                        "No task '%s' in process instance '%s'".formatted(taskDefinitionId, processInstanceId)));
+    }
+}

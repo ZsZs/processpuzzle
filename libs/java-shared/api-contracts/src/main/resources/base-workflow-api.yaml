@@ -31,6 +31,7 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listProcessDefinitions
+      tags: [ Process Definitions ]
       summary: List all process definitions
       parameters:
         - $ref: "#/components/parameters/WhereParam"
@@ -47,6 +48,7 @@ paths:
 
     post:
       operationId: createProcessDefinition
+      tags: [ Process Definitions ]
       summary: Create a new process definition
       requestBody:
         required: true
@@ -72,6 +74,7 @@ paths:
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: getProcessDefinition
+      tags: [ Process Definitions ]
       summary: Get a process definition with all tasks, roles, work products and tools
       responses:
         "200":
@@ -85,6 +88,7 @@ paths:
 
     put:
       operationId: updateProcessDefinition
+      tags: [ Process Definitions ]
       summary: Replace a process definition
       description: >-
         Only allowed if there are no ACTIVE process instances for this definition.
@@ -111,6 +115,7 @@ paths:
 
     delete:
       operationId: deleteProcessDefinition
+      tags: [ Process Definitions ]
       summary: Delete a process definition
       description: Only allowed if there are no process instances (active or historic).
       responses:
@@ -126,6 +131,7 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     post:
       operationId: importProcessDefinitions
+      tags: [ Process Definitions ]
       summary: Bulk-import process definitions from a SPEM YAML file
       description: >-
         All-or-nothing import: if any entry fails structural validation, nothing in the file
@@ -156,6 +162,7 @@ paths:
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: exportProcessDefinition
+      tags: [ Process Definitions ]
       summary: Export a single process definition as SPEM YAML
       responses:
         "200":
@@ -179,6 +186,7 @@ paths:
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: listRoleDefinitions
+      tags: [ Role Definitions ]
       summary: List all role definitions of a process definition
       parameters:
         - $ref: "#/components/parameters/WhereParam"
@@ -197,6 +205,7 @@ paths:
 
     post:
       operationId: createRoleDefinition
+      tags: [ Role Definitions ]
       summary: Add a new role definition to a process definition
       requestBody:
         required: true
@@ -225,6 +234,7 @@ paths:
       - $ref: "#/components/parameters/RoleIdParam"
     get:
       operationId: getRoleDefinition
+      tags: [ Role Definitions ]
       summary: Get a single role definition
       responses:
         "200":
@@ -238,6 +248,7 @@ paths:
 
     put:
       operationId: updateRoleDefinition
+      tags: [ Role Definitions ]
       summary: Replace a role definition
       requestBody:
         required: true
@@ -259,6 +270,7 @@ paths:
 
     delete:
       operationId: deleteRoleDefinition
+      tags: [ Role Definitions ]
       summary: Delete a role definition
       description: >-
         Only allowed if no task definition in the process still references this
@@ -281,6 +293,7 @@ paths:
       - $ref: "#/components/parameters/ProcessIdParam"
     get:
       operationId: listTaskDefinitions
+      tags: [ Task Definitions ]
       summary: List all task definitions of a process definition
       parameters:
         - $ref: "#/components/parameters/WhereParam"
@@ -299,6 +312,7 @@ paths:
 
     post:
       operationId: createTaskDefinition
+      tags: [ Task Definitions ]
       summary: Add a new task definition to a process definition
       requestBody:
         required: true
@@ -327,6 +341,7 @@ paths:
       - $ref: "#/components/parameters/TaskIdParam"
     get:
       operationId: getTaskDefinition
+      tags: [ Task Definitions ]
       summary: Get a single task definition
       responses:
         "200":
@@ -340,6 +355,7 @@ paths:
 
     put:
       operationId: updateTaskDefinition
+      tags: [ Task Definitions ]
       summary: Replace a task definition
       requestBody:
         required: true
@@ -361,6 +377,7 @@ paths:
 
     delete:
       operationId: deleteTaskDefinition
+      tags: [ Task Definitions ]
       summary: Delete a task definition
       description: Only allowed if no other task definition references this one via dependsOn.
       responses:
@@ -378,6 +395,7 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listToolDefinitions
+      tags: [ Tool Definitions ]
       summary: List all tool definitions
       parameters:
         - $ref: "#/components/parameters/WhereParam"
@@ -394,6 +412,7 @@ paths:
 
     post:
       operationId: createToolDefinition
+      tags: [ Tool Definitions ]
       summary: Create a new tool definition (external REST service)
       requestBody:
         required: true
@@ -423,6 +442,7 @@ paths:
           type: string
     get:
       operationId: getToolDefinition
+      tags: [ Tool Definitions ]
       summary: Get a tool definition
       responses:
         "200":
@@ -436,6 +456,7 @@ paths:
 
     put:
       operationId: updateToolDefinition
+      tags: [ Tool Definitions ]
       summary: Update a tool definition
       requestBody:
         required: true
@@ -455,6 +476,7 @@ paths:
 
     delete:
       operationId: deleteToolDefinition
+      tags: [ Tool Definitions ]
       summary: Delete a tool definition
       responses:
         "204":
@@ -475,6 +497,7 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listProcessInstances
+      tags: [ Process Instances ]
       summary: List process instances
       parameters:
         - name: processId
@@ -508,6 +531,7 @@ paths:
 
     post:
       operationId: startProcessInstance
+      tags: [ Process Instances ]
       summary: Start a new process instance
       requestBody:
         required: true
@@ -537,6 +561,7 @@ paths:
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
       operationId: getProcessInstance
+      tags: [ Process Instances ]
       summary: Get a process instance with its task and work product instances
       responses:
         "200":
@@ -550,6 +575,7 @@ paths:
 
     delete:
       operationId: cancelProcessInstance
+      tags: [ Process Instances ]
       summary: Cancel a running process instance
       requestBody:
         content:
@@ -579,6 +605,7 @@ paths:
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
       operationId: listTaskInstances
+      tags: [ Task Instances ]
       summary: List all task instances for a process instance
       parameters:
         - name: status
@@ -604,6 +631,7 @@ paths:
       - $ref: "#/components/parameters/TaskIdParam"
     get:
       operationId: getTaskInstance
+      tags: [ Task Instances ]
       summary: Get a single task instance
       responses:
         "200":
@@ -622,6 +650,7 @@ paths:
       - $ref: "#/components/parameters/TaskIdParam"
     post:
       operationId: assignTask
+      tags: [ Task Instances ]
       summary: Assign an active task to a user
       description: >-
         The assignee must hold a role that matches the task's performedBy role
@@ -658,6 +687,7 @@ paths:
       - $ref: "#/components/parameters/TaskIdParam"
     post:
       operationId: completeTask
+      tags: [ Task Instances ]
       summary: Mark a task as completed
       description: >-
         Triggers evaluation of the task's postcondition (via base-rule) and, if it
@@ -694,6 +724,7 @@ paths:
       - $ref: "#/components/parameters/TaskIdParam"
     post:
       operationId: skipTask
+      tags: [ Task Instances ]
       summary: Skip a task (manager override)
       requestBody:
         content:
@@ -721,6 +752,7 @@ paths:
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
       operationId: listWorkProductInstances
+      tags: [ Work Product Instances ]
       summary: >-
         List work product instances in a process instance. Each entry carries the
         current state from base-state (read-only from base-workflow's perspective)
@@ -749,6 +781,7 @@ paths:
           type: string
     get:
       operationId: getWorkProductInstance
+      tags: [ Work Product Instances ]
       summary: Get a single work product instance
       responses:
         "200":
