@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
-import { AppPreviewComponent } from 'libs/js-shared/base-app-frontend/src/lib/feature/app-preview.component';
+import { AppPreviewComponent } from './app-preview.component';
 
 describe('AppPreviewTabComponent', () => {
   let fixture: ComponentFixture<AppPreviewComponent>;
