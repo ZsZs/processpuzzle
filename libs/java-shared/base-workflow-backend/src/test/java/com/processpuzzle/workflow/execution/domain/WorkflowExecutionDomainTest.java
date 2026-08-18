@@ -54,8 +54,9 @@ class WorkflowExecutionDomainTest {
         assertThat(pi.getContext()).containsEntry("k2", "v2");
 
         ProcessInstance pi2 = ProcessInstance.builder().id(id).build();
-        assertThat(pi).isEqualTo(pi2);
-        assertThat(pi.hashCode()).isEqualTo(pi2.hashCode());
+        assertThat(pi)
+                .isEqualTo(pi2)
+                .hasSameHashCodeAs(pi2);
         assertThat(pi.toString()).contains("org-1");
 
         ProcessInstance empty = new ProcessInstance();
@@ -108,8 +109,9 @@ class WorkflowExecutionDomainTest {
         assertThat(ti.getVersion()).isEqualTo(2L);
 
         TaskInstance ti2 = TaskInstance.builder().id(id).build();
-        assertThat(ti).isEqualTo(ti2);
-        assertThat(ti.hashCode()).isEqualTo(ti2.hashCode());
+        assertThat(ti)
+                .isEqualTo(ti2)
+                .hasSameHashCodeAs(ti2);
         assertThat(ti.toString()).contains("Task 1");
 
         TaskInstance empty = new TaskInstance();
@@ -147,8 +149,9 @@ class WorkflowExecutionDomainTest {
         assertThat(wpi.getUpdatedAt()).isEqualTo(now);
 
         WorkProductInstance wpi2 = WorkProductInstance.builder().id(id).build();
-        assertThat(wpi).isEqualTo(wpi2);
-        assertThat(wpi.hashCode()).isEqualTo(wpi2.hashCode());
+        assertThat(wpi)
+                .isEqualTo(wpi2)
+                .hasSameHashCodeAs(wpi2);
         assertThat(wpi.toString()).contains("Work Product 1");
     }
 

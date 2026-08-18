@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * The process engine's core: decides which PENDING/BLOCKED tasks of a running process instance
@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
  * dependsOn", it doesn't fully specify non-parallel ordering, so this fills the gap the way SPEM's
  * own informal-sequencing intent suggests.
  */
-@Component
+@Service
 public class TaskActivationService {
 
     private final TaskInstanceRepository taskInstanceRepository;

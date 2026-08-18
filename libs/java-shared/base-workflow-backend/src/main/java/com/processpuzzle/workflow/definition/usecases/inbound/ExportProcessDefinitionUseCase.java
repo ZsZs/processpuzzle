@@ -29,12 +29,12 @@ import org.springframework.transaction.annotation.Transactional;
  * re-imported (into the same or a different organization; the entry carries no {@code orgKey}).
  */
 @Component
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, rollbackFor = Exception.class)
 public class ExportProcessDefinitionUseCase {
 
     private final ProcessDefinitionRepository repository;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
     public ExportProcessDefinitionUseCase(ProcessDefinitionRepository repository) {
         this.repository = repository;
@@ -49,7 +49,7 @@ public class ExportProcessDefinitionUseCase {
                 process.getName(),
                 process.getDescription(),
                 process.getExtendsProcessId(),
-                process.getTools().isEmpty() ? null : process.getTools(),
+                process.getTools(),
                 toRoleEntries(process.getRoles()),
                 toWorkProductEntries(process.getWorkProducts()),
                 toTaskEntries(process.getTasks()));
@@ -58,8 +58,8 @@ public class ExportProcessDefinitionUseCase {
     }
 
     private List<RoleYamlEntry> toRoleEntries(List<RoleDefinition> roles) {
-        if (roles.isEmpty()) {
-            return null;
+        if (roles == null || roles.isEmpty()) {
+            return List.of();
         }
         return roles.stream()
                 .map(r -> new RoleYamlEntry(r.getId(), r.getName(), r.getDescription(), r.getEntityRoleId()))
@@ -67,8 +67,8 @@ public class ExportProcessDefinitionUseCase {
     }
 
     private List<WorkProductYamlEntry> toWorkProductEntries(List<WorkProductDefinition> workProducts) {
-        if (workProducts.isEmpty()) {
-            return null;
+        if (workProducts == null || workProducts.isEmpty()) {
+            return List.of();
         }
         return workProducts.stream()
                 .map(this::toWorkProductEntry)
@@ -84,8 +84,8 @@ public class ExportProcessDefinitionUseCase {
     }
 
     private List<TaskYamlEntry> toTaskEntries(List<TaskDefinition> tasks) {
-        if (tasks.isEmpty()) {
-            return null;
+        if (tasks == null || tasks.isEmpty()) {
+            return List.of();
         }
         return tasks.stream()
                 .map(this::toTaskEntry)
@@ -93,7 +93,7 @@ public class ExportProcessDefinitionUseCase {
     }
 
     private TaskYamlEntry toTaskEntry(TaskDefinition t) {
-        List<String> dependsOn = t.getDependsOn().isEmpty() ? null : t.getDependsOn();
+        List<String> dependsOn = t.getDependsOn();
         Boolean parallel = t.isParallel() ? Boolean.TRUE : null;
         Boolean override = t.isOverride() ? Boolean.TRUE : null;
         return new TaskYamlEntry(
@@ -108,7 +108,7 @@ public class ExportProcessDefinitionUseCase {
 
     private List<TaskIOReferenceYaml> toReferenceEntries(List<TaskIOReference> references) {
         if (references == null || references.isEmpty()) {
-            return null;
+            return List.of();
         }
         return references.stream()
                 .map(this::toReferenceEntry)
@@ -122,7 +122,7 @@ public class ExportProcessDefinitionUseCase {
 
     private List<StepYamlEntry> toStepEntries(List<StepDefinition> steps) {
         if (steps == null || steps.isEmpty()) {
-            return null;
+            return List.of();
         }
         return steps.stream()
                 .map(s -> new StepYamlEntry(

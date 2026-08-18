@@ -354,7 +354,7 @@ class ProcessDefinitionUseCasesTest {
         // Test rejected static factory
         ImportOutcome rejected = ImportOutcome.rejected(List.of("Error 1"));
         assertThat(rejected.errors()).containsExactly("Error 1");
-        assertThat(rejected.created()).isEqualTo(0);
+        assertThat(rejected.created()).isZero();
 
         // Import with duplicate id in file
         String duplicateYaml = """
@@ -385,6 +385,9 @@ class ProcessDefinitionUseCasesTest {
                     name: B
                     extends: a
                 """;
+        ImportOutcome cyclicOutcome = importUseCase.execute(ORG, new ByteArrayInputStream(cyclicYaml.getBytes(StandardCharsets.UTF_8)));
+        assertThat(cyclicOutcome.errors()).anyMatch(e -> e.contains("is part of an extends cycle"));
+
         // Import with rich YAML and update existing
         String richYaml = """
                 processes:

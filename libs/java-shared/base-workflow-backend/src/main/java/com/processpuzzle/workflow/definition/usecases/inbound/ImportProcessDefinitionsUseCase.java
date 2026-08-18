@@ -59,7 +59,7 @@ public class ImportProcessDefinitionsUseCase {
         this.validator = validator;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
         ProcessYamlDocument document = yamlMapper.readValue(input, ProcessYamlDocument.class);
         List<ProcessYamlEntry> entries = document.processes() == null ? List.of() : document.processes();

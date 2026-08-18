@@ -148,13 +148,14 @@ class WorkflowExecutionUseCasesTest {
         FindAllProcessInstancesUseCase findAllUseCase = new FindAllProcessInstancesUseCase(procInstRepo);
 
         UUID instanceId = UUID.randomUUID();
+        UUID unknownId = UUID.randomUUID();
         ProcessInstance pi = ProcessInstance.builder().id(instanceId).orgKey(ORG).build();
 
         when(procInstRepo.findByOrgKeyAndId(ORG, instanceId)).thenReturn(Optional.of(pi));
-        when(procInstRepo.findByOrgKeyAndId(ORG, UUID.randomUUID())).thenReturn(Optional.empty());
+        when(procInstRepo.findByOrgKeyAndId(ORG, unknownId)).thenReturn(Optional.empty());
 
         assertThat(findUseCase.findByOrgKeyAndId(ORG, instanceId)).isEqualTo(pi);
-        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, UUID.randomUUID()))
+        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, unknownId))
                 .isInstanceOf(NotFoundException.class);
 
         when(procInstRepo.findAll(any(Specification.class), any(Pageable.class)))

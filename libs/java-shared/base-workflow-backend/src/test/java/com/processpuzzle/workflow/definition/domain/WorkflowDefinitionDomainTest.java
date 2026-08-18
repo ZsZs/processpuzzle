@@ -20,12 +20,13 @@ class WorkflowDefinitionDomainTest {
         emptyKey.setOrgKey("org1");
         emptyKey.setId("proc1");
 
-        assertThat(key1).isEqualTo(key2);
-        assertThat(key1).isEqualTo(emptyKey);
-        assertThat(key1).isNotEqualTo(key3);
-        assertThat(key1).isNotEqualTo(null);
-        assertThat(key1).isNotEqualTo("other");
-        assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
+        assertThat(key1)
+                .isEqualTo(key2)
+                .isEqualTo(emptyKey)
+                .isNotEqualTo(key3)
+                .isNotEqualTo(null)
+                .isNotEqualTo("other")
+                .hasSameHashCodeAs(key2);
         assertThat(key1.getOrgKey()).isEqualTo("org1");
         assertThat(key1.getId()).isEqualTo("proc1");
     }
@@ -40,18 +41,19 @@ class WorkflowDefinitionDomainTest {
         emptyKey.setOrgKey("org1");
         emptyKey.setId("tool1");
 
-        assertThat(key1).isEqualTo(key2);
-        assertThat(key1).isEqualTo(emptyKey);
-        assertThat(key1).isNotEqualTo(key3);
-        assertThat(key1).isNotEqualTo(null);
-        assertThat(key1).isNotEqualTo("other");
-        assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
+        assertThat(key1)
+                .isEqualTo(key2)
+                .isEqualTo(emptyKey)
+                .isNotEqualTo(key3)
+                .isNotEqualTo(null)
+                .isNotEqualTo("other")
+                .hasSameHashCodeAs(key2);
         assertThat(key1.getOrgKey()).isEqualTo("org1");
         assertThat(key1.getId()).isEqualTo("tool1");
     }
 
     @Test
-    void processDefinition_builderAndMethods() {
+    void processDefinition_builderAndFindMethods() {
         RoleDefinition role = RoleDefinition.builder().id("analyst").name("Business Analyst").build();
         TaskDefinition task = TaskDefinition.builder().id("gather").name("Gather Requirements").performedBy("analyst").build();
         WorkProductDefinition wp = WorkProductDefinition.builder().id("spec").name("Specification").type(WorkProductType.ARTIFACT).build();
@@ -86,8 +88,15 @@ class WorkflowDefinitionDomainTest {
         assertThat(def.findTask("unknown")).isEmpty();
         assertThat(def.findWorkProduct("spec")).contains(wp);
         assertThat(def.findWorkProduct("unknown")).isEmpty();
+    }
 
-        // Test replaceContent
+    @Test
+    void processDefinition_replaceContentAndEmptyDef() {
+        ProcessDefinition def = ProcessDefinition.builder()
+                .orgKey("org-1")
+                .id("proc-1")
+                .build();
+
         RoleDefinition newRole = RoleDefinition.builder().id("dev").name("Developer").build();
         TaskDefinition newTask = TaskDefinition.builder().id("code").name("Write Code").performedBy("dev").build();
         WorkProductDefinition newWp = WorkProductDefinition.builder().id("pr").name("Pull Request").type(WorkProductType.DELIVERABLE).build();
