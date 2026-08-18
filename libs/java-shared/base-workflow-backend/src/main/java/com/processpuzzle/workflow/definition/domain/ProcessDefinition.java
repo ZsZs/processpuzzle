@@ -3,12 +3,15 @@ package com.processpuzzle.workflow.definition.domain;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -18,10 +21,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * The aggregate root of the definition layer: a SPEM-inspired process definition made up of
@@ -57,6 +56,7 @@ public class ProcessDefinition extends com.processpuzzle.workflow.common.Auditab
     @Column(nullable = false)
     private String name;
 
+    @SuppressWarnings("java:S1450")
     private String description;
 
     /**
@@ -66,6 +66,7 @@ public class ProcessDefinition extends com.processpuzzle.workflow.common.Auditab
      * Cycle safety is enforced by {@link ProcessDefinitionExtendsValidator}, mirroring
      * {@code RuleExtendsValidator} in base-rule-backend.
      */
+    @SuppressWarnings("java:S1450")
     private String extendsProcessId;
 
     /** IDs of {@code ToolDefinition}s (same org) usable by this process's task steps. */

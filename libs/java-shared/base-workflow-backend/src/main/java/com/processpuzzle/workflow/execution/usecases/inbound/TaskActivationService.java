@@ -8,14 +8,13 @@ import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.events.TaskActivatedEvent;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleCheckResult;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleEvaluationPort;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 /**
  * The process engine's core: decides which PENDING/BLOCKED tasks of a running process instance
@@ -62,38 +61,48 @@ public class TaskActivationService {
         Set<TaskInstanceStatus> terminal = Set.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED);
 
         for (TaskDefinition taskDef : process.getTasks()) {
-            TaskInstance instance = byDefinitionId.get(taskDef.getId());
-            if (instance == null || instance.getStatus() != TaskInstanceStatus.PENDING
-                    && instance.getStatus() != TaskInstanceStatus.BLOCKED) {
-                continue; // ACTIVE/COMPLETED/SKIPPED — nothing to do
-            }
-
-            boolean dependenciesSatisfied = taskDef.getDependsOn().stream()
-                    .allMatch(depId -> {
-                        TaskInstance dep = byDefinitionId.get(depId);
-                        return dep != null && terminal.contains(dep.getStatus());
-                    });
-            if (!dependenciesSatisfied) {
-                continue;
-            }
-
-            if (!taskDef.isParallel() && hasActiveSiblingAtSameLevel(taskDef, process, byDefinitionId)) {
-                continue;
-            }
-
-            RuleCheckResult check = ruleEvaluationPort.evaluate(orgKey, taskDef.getPreconditionRuleId(), context);
-            if (check.passed()) {
-                instance.setStatus(TaskInstanceStatus.ACTIVE);
-                instance.setActivatedAt(Instant.now());
-                instance.setBlockedReason(null);
-                taskInstanceRepository.save(instance);
-                eventPublisher.publishEvent(new TaskActivatedEvent(orgKey, processInstanceId, instance.getId(), taskDef.getId()));
-            } else {
-                instance.setStatus(TaskInstanceStatus.BLOCKED);
-                instance.setBlockedReason(check.detail());
-                taskInstanceRepository.save(instance);
-            }
+            activateTaskIfEligible(orgKey, taskDef, process, processInstanceId, context, byDefinitionId, terminal);
         }
+    }
+
+    private void activateTaskIfEligible(String orgKey, TaskDefinition taskDef, ProcessDefinition process,
+                                        java.util.UUID processInstanceId, Map<String, Object> context,
+                                        Map<String, TaskInstance> byDefinitionId, Set<TaskInstanceStatus> terminal) {
+        TaskInstance instance = byDefinitionId.get(taskDef.getId());
+        if (instance == null || (instance.getStatus() != TaskInstanceStatus.PENDING
+                && instance.getStatus() != TaskInstanceStatus.BLOCKED)) {
+            return;
+        }
+
+        if (!areDependenciesSatisfied(taskDef, byDefinitionId, terminal)) {
+            return;
+        }
+
+        if (!taskDef.isParallel() && hasActiveSiblingAtSameLevel(taskDef, process, byDefinitionId)) {
+            return;
+        }
+
+        RuleCheckResult check = ruleEvaluationPort.evaluate(orgKey, taskDef.getPreconditionRuleId(), context);
+        if (check.passed()) {
+            instance.setStatus(TaskInstanceStatus.ACTIVE);
+            instance.setActivatedAt(Instant.now());
+            instance.setBlockedReason(null);
+            taskInstanceRepository.save(instance);
+            eventPublisher.publishEvent(new TaskActivatedEvent(orgKey, processInstanceId, instance.getId(), taskDef.getId()));
+        } else {
+            instance.setStatus(TaskInstanceStatus.BLOCKED);
+            instance.setBlockedReason(check.detail());
+            taskInstanceRepository.save(instance);
+        }
+    }
+
+    private boolean areDependenciesSatisfied(TaskDefinition taskDef, Map<String, TaskInstance> byDefinitionId,
+                                             Set<TaskInstanceStatus> terminal) {
+        return taskDef.getDependsOn().stream()
+                .allMatch(depId -> {
+                    TaskInstance dep = byDefinitionId.get(depId);
+                    return dep != null && terminal.contains(dep.getStatus());
+                });
     }
 
     private boolean hasActiveSiblingAtSameLevel(TaskDefinition taskDef, ProcessDefinition process,

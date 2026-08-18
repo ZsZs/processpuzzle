@@ -18,11 +18,10 @@ import com.processpuzzle.workflow.definition.domain.StepDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskIOReference;
 import com.processpuzzle.workflow.definition.domain.WorkProductDefinition;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.util.List;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Exports a single process definition as SPEM YAML — one entry in the same {@code processes:}
@@ -59,41 +58,73 @@ public class ExportProcessDefinitionUseCase {
     }
 
     private List<RoleYamlEntry> toRoleEntries(List<RoleDefinition> roles) {
-        return roles.isEmpty() ? null : roles.stream()
+        if (roles.isEmpty()) {
+            return null;
+        }
+        return roles.stream()
                 .map(r -> new RoleYamlEntry(r.getId(), r.getName(), r.getDescription(), r.getEntityRoleId()))
                 .toList();
     }
 
     private List<WorkProductYamlEntry> toWorkProductEntries(List<WorkProductDefinition> workProducts) {
-        return workProducts.isEmpty() ? null : workProducts.stream()
-                .map(w -> new WorkProductYamlEntry(
-                        w.getId(), w.getName(), w.getDescription(),
-                        w.getType() == null ? null : w.getType().name(),
-                        w.getEntityTypeId(), w.getStateMachineId()))
+        if (workProducts.isEmpty()) {
+            return null;
+        }
+        return workProducts.stream()
+                .map(this::toWorkProductEntry)
                 .toList();
+    }
+
+    private WorkProductYamlEntry toWorkProductEntry(WorkProductDefinition w) {
+        String typeName = w.getType() != null ? w.getType().name() : null;
+        return new WorkProductYamlEntry(
+                w.getId(), w.getName(), w.getDescription(),
+                typeName,
+                w.getEntityTypeId(), w.getStateMachineId());
     }
 
     private List<TaskYamlEntry> toTaskEntries(List<TaskDefinition> tasks) {
-        return tasks.isEmpty() ? null : tasks.stream()
-                .map(t -> new TaskYamlEntry(
-                        t.getId(), t.getName(), t.getDescription(), t.getPerformedBy(),
-                        toReferenceEntries(t.getInputs()), toReferenceEntries(t.getOutputs()),
-                        t.getPreconditionRuleId(), t.getPostconditionRuleId(),
-                        toStepEntries(t.getSteps()),
-                        t.getDependsOn().isEmpty() ? null : t.getDependsOn(),
-                        t.isParallel() ? Boolean.TRUE : null,
-                        t.isOverride() ? Boolean.TRUE : null))
+        if (tasks.isEmpty()) {
+            return null;
+        }
+        return tasks.stream()
+                .map(this::toTaskEntry)
                 .toList();
+    }
+
+    private TaskYamlEntry toTaskEntry(TaskDefinition t) {
+        List<String> dependsOn = t.getDependsOn().isEmpty() ? null : t.getDependsOn();
+        Boolean parallel = t.isParallel() ? Boolean.TRUE : null;
+        Boolean override = t.isOverride() ? Boolean.TRUE : null;
+        return new TaskYamlEntry(
+                t.getId(), t.getName(), t.getDescription(), t.getPerformedBy(),
+                toReferenceEntries(t.getInputs()), toReferenceEntries(t.getOutputs()),
+                t.getPreconditionRuleId(), t.getPostconditionRuleId(),
+                toStepEntries(t.getSteps()),
+                dependsOn,
+                parallel,
+                override);
     }
 
     private List<TaskIOReferenceYaml> toReferenceEntries(List<TaskIOReference> references) {
-        return references == null || references.isEmpty() ? null : references.stream()
-                .map(r -> new TaskIOReferenceYaml(r.getType() == null ? null : r.getType().name(), r.getRefId(), r.getLabel()))
+        if (references == null || references.isEmpty()) {
+            return null;
+        }
+        return references.stream()
+                .map(this::toReferenceEntry)
                 .toList();
     }
 
+    private TaskIOReferenceYaml toReferenceEntry(TaskIOReference r) {
+        String typeName = r.getType() != null ? r.getType().name() : null;
+        return new TaskIOReferenceYaml(typeName, r.getRefId(), r.getLabel());
+    }
+
     private List<StepYamlEntry> toStepEntries(List<StepDefinition> steps) {
-        return steps == null || steps.isEmpty() ? null : steps.stream()
+        if (steps == null || steps.isEmpty()) {
+            return null;
+        }
+        return steps.stream()
                 .map(s -> new StepYamlEntry(
                         s.getId(), s.getName(), s.getDescription(), s.getToolId(), s.getToolOperation(),
                         s.getInputMapping(), s.getOutputMapping()))

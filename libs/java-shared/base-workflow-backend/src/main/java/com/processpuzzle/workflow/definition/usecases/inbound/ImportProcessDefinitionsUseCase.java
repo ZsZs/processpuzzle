@@ -20,9 +20,6 @@ import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskIOReference;
 import com.processpuzzle.workflow.definition.domain.WorkProductDefinition;
 import com.processpuzzle.workflow.definition.domain.WorkProductType;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,6 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * All-or-nothing bulk import of process definitions from a SPEM YAML file, mirroring
@@ -48,6 +47,7 @@ import java.util.Set;
 public class ImportProcessDefinitionsUseCase {
 
     private static final int MAX_EXTENDS_CHAIN_DEPTH = 100;
+    private static final String PROCESS_PREFIX = "Process '";
 
     private final ProcessDefinitionRepository repository;
     private final ProcessDefinitionValidator validator;
@@ -65,6 +65,23 @@ public class ImportProcessDefinitionsUseCase {
         List<ProcessYamlEntry> entries = document.processes() == null ? List.of() : document.processes();
 
         List<String> errors = new ArrayList<>();
+        Map<String, ProcessYamlEntry> byId = indexEntries(entries, errors);
+
+        Map<String, String> extendsLinks = buildExtendsLinks(orgKey, byId);
+        validateExtendsLinks(byId, extendsLinks, errors);
+
+        for (ProcessYamlEntry entry : byId.values()) {
+            validateStructure(entry, errors);
+        }
+
+        if (!errors.isEmpty()) {
+            return new ImportOutcome(0, 0, errors);
+        }
+
+        return persistEntries(orgKey, byId.values(), errors);
+    }
+
+    private Map<String, ProcessYamlEntry> indexEntries(List<ProcessYamlEntry> entries, List<String> errors) {
         Map<String, ProcessYamlEntry> byId = new LinkedHashMap<>();
         for (ProcessYamlEntry entry : entries) {
             if (entry.id() == null || entry.id().isBlank()) {
@@ -75,7 +92,10 @@ public class ImportProcessDefinitionsUseCase {
                 errors.add("Duplicate process id within the import file: '" + entry.id() + "'.");
             }
         }
+        return byId;
+    }
 
+    private Map<String, String> buildExtendsLinks(String orgKey, Map<String, ProcessYamlEntry> byId) {
         // Only this organization's existing processes can satisfy an 'extends' reference.
         Map<String, String> extendsLinks = new HashMap<>();
         for (ProcessDefinition existing : repository.findByOrgKey(orgKey)) {
@@ -84,32 +104,33 @@ public class ImportProcessDefinitionsUseCase {
         for (ProcessYamlEntry entry : byId.values()) {
             extendsLinks.put(entry.id(), entry.extendsProcessId());
         }
+        return extendsLinks;
+    }
 
+    private void validateExtendsLinks(Map<String, ProcessYamlEntry> byId, Map<String, String> extendsLinks, List<String> errors) {
         for (ProcessYamlEntry entry : byId.values()) {
-            String parentId = entry.extendsProcessId();
-            if (parentId == null) {
-                continue;
-            }
-            if (!extendsLinks.containsKey(parentId)) {
-                errors.add("Process '" + entry.id() + "' extends unknown process '" + parentId + "'.");
-                continue;
-            }
-            if (createsCycle(entry.id(), extendsLinks)) {
-                errors.add("Process '" + entry.id() + "' is part of an extends cycle.");
-            }
+            validateExtendsLink(entry, extendsLinks, errors);
         }
+    }
 
-        for (ProcessYamlEntry entry : byId.values()) {
-            validateStructure(entry, errors);
+    private void validateExtendsLink(ProcessYamlEntry entry, Map<String, String> extendsLinks, List<String> errors) {
+        String parentId = entry.extendsProcessId();
+        if (parentId == null) {
+            return;
         }
-
-        if (!errors.isEmpty()) {
-            return new ImportOutcome(0, 0, errors);
+        if (!extendsLinks.containsKey(parentId)) {
+            errors.add(PROCESS_PREFIX + entry.id() + "' extends unknown process '" + parentId + "'.");
+            return;
         }
+        if (createsCycle(entry.id(), extendsLinks)) {
+            errors.add(PROCESS_PREFIX + entry.id() + "' is part of an extends cycle.");
+        }
+    }
 
+    private ImportOutcome persistEntries(String orgKey, Iterable<ProcessYamlEntry> entries, List<String> errors) {
         int created = 0;
         int updated = 0;
-        for (ProcessYamlEntry entry : byId.values()) {
+        for (ProcessYamlEntry entry : entries) {
             Optional<ProcessDefinition> existingOpt = repository.findByOrgKeyAndId(orgKey, entry.id());
             ProcessDefinition process;
             if (existingOpt.isPresent()) {
@@ -123,39 +144,48 @@ public class ImportProcessDefinitionsUseCase {
             validator.validate(process);
             repository.save(process);
         }
-
         return new ImportOutcome(created, updated, errors);
     }
 
     private void validateStructure(ProcessYamlEntry entry, List<String> errors) {
+        Set<String> roleIds = collectAndValidateRoleIds(entry, errors);
+        Set<String> taskIds = collectAndValidateTaskIds(entry, errors);
+        validateTaskReferences(entry, roleIds, taskIds, errors);
+    }
+
+    private Set<String> collectAndValidateRoleIds(ProcessYamlEntry entry, List<String> errors) {
         Set<String> roleIds = new HashSet<>();
         for (RoleYamlEntry role : safeList(entry.roles())) {
             if (role.id() == null || role.id().isBlank()) {
-                errors.add("Process '" + entry.id() + "' has a role missing 'id'.");
-                continue;
-            }
-            if (!roleIds.add(role.id())) {
-                errors.add("Process '" + entry.id() + "' has duplicate role id '" + role.id() + "'.");
+                errors.add(PROCESS_PREFIX + entry.id() + "' has a role missing 'id'.");
+            } else if (!roleIds.add(role.id())) {
+                errors.add(PROCESS_PREFIX + entry.id() + "' has duplicate role id '" + role.id() + "'.");
             }
         }
+        return roleIds;
+    }
+
+    private Set<String> collectAndValidateTaskIds(ProcessYamlEntry entry, List<String> errors) {
         Set<String> taskIds = new HashSet<>();
         for (TaskYamlEntry task : safeList(entry.tasks())) {
             if (task.id() == null || task.id().isBlank()) {
-                errors.add("Process '" + entry.id() + "' has a task missing 'id'.");
-                continue;
-            }
-            if (!taskIds.add(task.id())) {
-                errors.add("Process '" + entry.id() + "' has duplicate task id '" + task.id() + "'.");
+                errors.add(PROCESS_PREFIX + entry.id() + "' has a task missing 'id'.");
+            } else if (!taskIds.add(task.id())) {
+                errors.add(PROCESS_PREFIX + entry.id() + "' has duplicate task id '" + task.id() + "'.");
             }
         }
+        return taskIds;
+    }
+
+    private void validateTaskReferences(ProcessYamlEntry entry, Set<String> roleIds, Set<String> taskIds, List<String> errors) {
         for (TaskYamlEntry task : safeList(entry.tasks())) {
             if (task.performedBy() == null || !roleIds.contains(task.performedBy())) {
-                errors.add("Process '" + entry.id() + "', task '" + task.id()
+                errors.add(PROCESS_PREFIX + entry.id() + "', task '" + task.id()
                         + "' is performedBy unknown role '" + task.performedBy() + "'.");
             }
             for (String dependsOnId : safeList(task.dependsOn())) {
                 if (!taskIds.contains(dependsOnId)) {
-                    errors.add("Process '" + entry.id() + "', task '" + task.id()
+                    errors.add(PROCESS_PREFIX + entry.id() + "', task '" + task.id()
                             + "' dependsOn unknown task '" + dependsOnId + "'.");
                 }
             }

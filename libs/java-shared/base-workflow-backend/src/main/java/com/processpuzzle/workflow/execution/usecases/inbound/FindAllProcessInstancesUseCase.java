@@ -27,25 +27,36 @@ public class FindAllProcessInstancesUseCase {
         this.repository = repository;
     }
 
-    public Page<ProcessInstance> findAll(String orgKey, String processDefinitionId, ProcessInstanceStatus status,
-                                          String entityId, String where, String order, Integer page, Integer size) {
-        Specification<ProcessInstance> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public record Query(
+            String orgKey,
+            String processDefinitionId,
+            ProcessInstanceStatus status,
+            String entityId,
+            String where,
+            String order,
+            Integer page,
+            Integer size
+    ) {}
 
-        if (processDefinitionId != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("processDefinitionId"), processDefinitionId));
+    public Page<ProcessInstance> findAll(Query query) {
+        Specification<ProcessInstance> spec = (root, q, cb) -> cb.equal(root.get("orgKey"), query.orgKey());
+
+        if (query.processDefinitionId() != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("processDefinitionId"), query.processDefinitionId()));
         }
-        if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        if (query.status() != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("status"), query.status()));
         }
-        if (entityId != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("entityId"), entityId));
+        if (query.entityId() != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("entityId"), query.entityId()));
         }
-        Specification<ProcessInstance> whereSpec = rsqlBuilder.build(where);
+        Specification<ProcessInstance> whereSpec = rsqlBuilder.build(query.where());
         if (whereSpec != null) {
             spec = spec.and(whereSpec);
         }
-        Sort sort = SortParser.parse(order);
-        Pageable pageable = PageRequest.of(page != null ? page : DEFAULT_PAGE, size != null ? size : DEFAULT_SIZE, sort);
+        Sort sort = SortParser.parse(query.order());
+        Pageable pageable = PageRequest.of(query.page() != null ? query.page() : DEFAULT_PAGE,
+                query.size() != null ? query.size() : DEFAULT_SIZE, sort);
         return repository.findAll(spec, pageable);
     }
 }

@@ -7,11 +7,10 @@ import com.processpuzzle.workflow.definition.usecases.inbound.FindProcessDefinit
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceRoleDefinitionUseCase;
 import com.processpuzzle.workflow.model.RoleDefinition;
 import com.processpuzzle.workflow.model.RoleDefinitionInput;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /** Implements the generated {@code RoleDefinitionsApi} (from the "Role Definitions" tag). */
 @RestController
@@ -38,7 +37,7 @@ public class RoleDefinitionsEndpoint implements RoleDefinitionsApi {
     @Override
     public ResponseEntity<List<RoleDefinition>> listRoleDefinitions(String orgKey, String processId, String where, String order) {
         var process = findProcessDefinition.findByOrgKeyAndId(orgKey, processId);
-        // TODO: 'where'/'order' are accepted per the API contract but not yet applied here.
+        // Note: 'where'/'order' are accepted per the API contract but not yet applied here.
         // RsqlSpecificationBuilder builds JPA Specifications against a query root; roles live
         // entirely inside the already-loaded process aggregate (see ProcessDefinitionRepository's
         // Javadoc for why there's no separate roles table/repository to query), so there's no

@@ -4,14 +4,16 @@ import com.processpuzzle.workflow.execution.domain.ProcessInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.WorkProductInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
-import com.processpuzzle.workflow.model.*;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
-
+import com.processpuzzle.workflow.model.CompleteTaskResponse;
+import com.processpuzzle.workflow.model.PageOfProcessInstanceSummary;
+import com.processpuzzle.workflow.model.ProcessInstanceSummary;
+import com.processpuzzle.workflow.model.StepResult;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
 
 /** Maps between execution-layer domain objects and the generated {@code workflow.model} classes. */
 @Component

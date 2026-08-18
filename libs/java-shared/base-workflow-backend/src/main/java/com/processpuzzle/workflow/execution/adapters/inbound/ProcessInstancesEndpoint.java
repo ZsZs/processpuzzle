@@ -74,7 +74,8 @@ public class ProcessInstancesEndpoint implements ProcessInstancesApi {
             String orgKey, String processId, com.processpuzzle.workflow.model.ProcessInstanceStatus status,
             String entityId, String where, String order, Integer page, Integer size) {
         ProcessInstanceStatus domainStatus = status == null ? null : ProcessInstanceStatus.valueOf(status.getValue());
-        var result = findAllProcessInstances.findAll(orgKey, processId, domainStatus, entityId, where, order, page, size);
+        var query = new FindAllProcessInstancesUseCase.Query(orgKey, processId, domainStatus, entityId, where, order, page, size);
+        var result = findAllProcessInstances.findAll(query);
         return ResponseEntity.ok(mapper.toModel(result));
     }
 
