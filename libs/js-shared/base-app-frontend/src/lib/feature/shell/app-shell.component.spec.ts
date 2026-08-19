@@ -32,8 +32,9 @@ describe('AppShellComponent', () => {
     return fixture.debugElement.query(By.directive(MatSidenav))?.componentInstance;
   }
 
+  /** The host element: the shell *is* the grid, so the theme custom properties land here. */
   function shellElement(): HTMLElement {
-    return fixture.nativeElement.querySelector('.pp-app-shell');
+    return fixture.nativeElement;
   }
 
   beforeEach(() => TestBed.resetTestingModule());
@@ -80,6 +81,19 @@ describe('AppShellComponent', () => {
       expect(fixture.nativeElement.querySelectorAll('pp-region-header, pp-region-nav')).toHaveLength(0);
     });
 
+    it('orders the rows header, content, footer — the grid gives the middle row the slack', async () => {
+      // jsdom does no layout, so the row order is the most of "the footer sits at the bottom" that a unit
+      // test can hold onto. It is the part that regressed: with the footer anywhere but last, or the body
+      // not between them, no amount of grid sizing puts it at the bottom.
+      await render(
+        new AppDefinition({ id: 'demo-app', name: 'Demo', regions: [{ type: 'header' }, { type: 'footer' }, { type: 'sidenav', navItems: [] }] }),
+      );
+
+      const rows = [...fixture.nativeElement.children].map((node) => (node as HTMLElement).localName);
+      expect(rows).toEqual(['div', 'mat-sidenav-container', 'pp-region-footer']);
+      expect((fixture.nativeElement.children[0] as HTMLElement).className).toContain('pp-app-shell__top');
+    });
+
     it('renders an outlet for the routes an app declares', async () => {
       await render(new AppDefinition({ id: 'demo-app', name: 'Demo' }));
 
@@ -89,7 +103,8 @@ describe('AppShellComponent', () => {
     it('renders an empty shell before a definition resolves', async () => {
       await render(undefined);
 
-      expect(shellElement()).not.toBeNull();
+      // Still a shell with an outlet — just no chrome, because no region has been authored yet.
+      expect(fixture.nativeElement.querySelector('.pp-app-shell__content router-outlet')).not.toBeNull();
       expect(fixture.nativeElement.querySelectorAll('pp-region-header, pp-region-footer, pp-region-nav')).toHaveLength(0);
     });
   });

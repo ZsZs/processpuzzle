@@ -13,8 +13,8 @@ import { AppShellComponent } from './shell/app-shell.component';
  * standalone runtime host will mount just as this does — so the preview cannot grow behaviour the real
  * shell lacks, which is the only way a preview stays honest.
  *
- * The frame below — rounded, white, a minimum height — is the preview's own, not the shell's. In
- * production the shell fills the viewport and none of it applies.
+ * The frame below — rounded, white, and tall enough to look like an application — is the preview's own,
+ * not the shell's. In production the shell fills the viewport and none of it applies.
  */
 @Component({
   selector: 'pp-app-preview-tab',
@@ -30,8 +30,21 @@ import { AppShellComponent } from './shell/app-shell.component';
       .pp-app-preview {
         background-color: var(--pp-surface-base, #ffffff);
         border-radius: 6px;
-        min-height: 320px;
         overflow: hidden;
+      }
+      /*
+       * How tall a previewed application is, and therefore where its footer sits: at the bottom of this
+       * box, not directly under the header. The shell is a three-row grid whose middle row takes the slack,
+       * so giving it a height is all that is needed — but something has to, and nothing above this can:
+       * the tab panel, the router outlets and the designer's own layout are all auto-height, so a
+       * percentage here would resolve against nothing.
+       *
+       * Viewport-relative rather than a calc() subtracting the chrome: what sits above a preview is a tab
+       * bar, a status bar and a toolbar whose heights are Material's to change, and a subtraction would go
+       * quietly wrong when they do.
+       */
+      .pp-app-preview > pp-app-shell {
+        min-height: 65vh;
       }
     `,
   ],

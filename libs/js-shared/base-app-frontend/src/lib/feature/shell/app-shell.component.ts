@@ -31,44 +31,52 @@ import { NavOrientation } from './region-nav.component';
   selector: 'pp-app-shell',
   standalone: true,
   imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet],
+  // Theme custom properties go on the host rather than on a wrapper, so the element that *is* the shell
+  // is also the element they cascade from — and so the host can be the grid, see the styles below.
+  host: { '[style]': 'themeVars()' },
   template: `
-    <div class="pp-app-shell" [style]="themeVars()">
-      @if (headerView() || topNavView()) {
-        <div class="pp-app-shell__top">
-          @if (headerView(); as view) {
-            <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
-          }
-          @if (topNavView(); as view) {
-            <ng-container *ngComponentOutlet="view.component; inputs: topNavInputs()"></ng-container>
-          }
-        </div>
-      }
-
-      <mat-sidenav-container class="pp-app-shell__body">
-        @if (sidenavView(); as view) {
-          <mat-sidenav class="pp-app-shell__sidenav" [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
-            <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
-          </mat-sidenav>
+    @if (headerView() || topNavView()) {
+      <div class="pp-app-shell__top">
+        @if (headerView(); as view) {
+          <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
         }
-        <mat-sidenav-content>
-          <main class="pp-app-shell__content" [style.max-width]="layout().contentMaxWidth">
-            <router-outlet />
-          </main>
-        </mat-sidenav-content>
-      </mat-sidenav-container>
+        @if (topNavView(); as view) {
+          <ng-container *ngComponentOutlet="view.component; inputs: topNavInputs()"></ng-container>
+        }
+      </div>
+    }
 
-      @if (footerView(); as view) {
-        <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
+    <mat-sidenav-container class="pp-app-shell__body">
+      @if (sidenavView(); as view) {
+        <mat-sidenav class="pp-app-shell__sidenav" [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
+          <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
+        </mat-sidenav>
       }
-    </div>
+      <mat-sidenav-content>
+        <main class="pp-app-shell__content" [style.max-width]="layout().contentMaxWidth">
+          <router-outlet />
+        </main>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
+
+    @if (footerView(); as view) {
+      <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
+    }
   `,
   styles: [
     `
+      /*
+       * The host itself is the three-row grid — header, content, footer — rather than a wrapper inside it.
+       * That is what lets a *caller* decide how tall the shell is: a height or a min-height set on
+       * pp-app-shell from outside sizes the grid directly, and the 1fr row absorbs the difference, so the
+       * footer sits at the bottom of whatever space the host is given. Through a wrapper it could not: a
+       * percentage height inside a parent that has only a min-height resolves to auto, the 1fr row
+       * collapses to its content, and the footer rides up under the header.
+       *
+       * height: 100% covers the other case — an ancestor chain that does have definite heights, as the
+       * standalone runtime host will.
+       */
       :host {
-        display: block;
-        height: 100%;
-      }
-      .pp-app-shell {
         display: grid;
         grid-template-rows: auto 1fr auto;
         height: 100%;
