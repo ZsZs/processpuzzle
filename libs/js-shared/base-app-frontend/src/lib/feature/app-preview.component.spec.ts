@@ -1,17 +1,17 @@
-import { Component, input, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WIDGET_REGISTRY } from '@processpuzzle/base-widget';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { AppPreviewComponent } from './app-preview.component';
 
-@Component({ selector: 'pp-preview-test-widget', template: `<span class="test-widget">{{ label() }}</span>` })
-class PreviewTestWidgetComponent {
-  readonly label = input('');
-}
-
-describe('AppPreviewTabComponent', () => {
+/**
+ * What the *container* owes: selecting the previewed definition and handing it to the shell. How an
+ * application renders from that definition is `app-shell.component.spec.ts`' subject, and asserting it
+ * twice would only make the shell harder to change.
+ */
+describe('AppPreviewComponent', () => {
   let fixture: ComponentFixture<AppPreviewComponent>;
   const storeStub = {
     currentEntity: signal<AppDefinition | undefined>(undefined),
@@ -21,10 +21,7 @@ describe('AppPreviewTabComponent', () => {
   async function render(appId = 'demo-app') {
     await TestBed.configureTestingModule({
       imports: [AppPreviewComponent],
-      providers: [
-        { provide: AppDefinitionStore, useValue: storeStub },
-        { provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', PreviewTestWidgetComponent]]) },
-      ],
+      providers: [provideRouter([]), { provide: AppDefinitionStore, useValue: storeStub }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppPreviewComponent);
@@ -34,56 +31,27 @@ describe('AppPreviewTabComponent', () => {
   }
 
   it('selects the entity on init so the tab bar details and statusbar stay in sync', async () => {
-    storeStub.currentEntity.set(new AppDefinition({ id: 'claims-app', name: 'Demo Application', regions: [{ type: 'header' }] }));
+    storeStub.currentEntity.set(new AppDefinition({ id: 'claims-app', name: 'Demo Application' }));
+
     await render('claims-app');
 
     expect(storeStub.setCurrentEntity).toHaveBeenCalledWith('claims-app');
-    expect(fixture.nativeElement.querySelector('.pp-app-preview__title')?.textContent?.trim()).toBe('Demo Application');
   });
 
-  it('renders configured header and footer widgets in declaration order', async () => {
-    storeStub.currentEntity.set(
-      new AppDefinition({
-        id: 'demo-app',
-        name: 'Demo Application',
-        logoUrl: '/demo-logo.svg',
-        regions: [
-          { type: 'header', widgets: [{ id: 'language', type: 'test-widget', props: { label: 'Language' } }] },
-          { type: 'footer', widgets: [{ id: 'version', type: 'test-widget', props: { label: 'Version' } }] },
-        ],
-      }),
-    );
+  it('hands the selected definition to the shell', async () => {
+    storeStub.currentEntity.set(new AppDefinition({ id: 'demo-app', name: 'Demo Application', regions: [{ type: 'footer' }] }));
 
     await render();
 
-    expect(fixture.nativeElement.querySelector('header img')?.getAttribute('src')).toBe('/demo-logo.svg');
-    expect(fixture.nativeElement.querySelector('header .test-widget')?.textContent).toContain('Language');
-    expect(fixture.nativeElement.querySelector('footer .test-widget')?.textContent).toContain('Version');
+    // The shell is what renders the region, so its presence is what proves the definition arrived.
+    expect(fixture.nativeElement.querySelector('pp-app-shell pp-region-footer')).not.toBeNull();
   });
 
-  it('does not invent header or footer regions when they are absent', async () => {
-    storeStub.currentEntity.set(new AppDefinition({ id: 'demo-app', name: 'Demo Application' }));
+  it('frames a shell even before a definition has resolved', async () => {
+    storeStub.currentEntity.set(undefined);
 
     await render();
 
-    expect(fixture.nativeElement.querySelector('header')).toBeNull();
-    expect(fixture.nativeElement.querySelector('footer')).toBeNull();
-  });
-
-  it('renders empty regions without requiring a widget registry provider', async () => {
-    TestBed.resetTestingModule();
-    storeStub.currentEntity.set(
-      new AppDefinition({ id: 'demo-app', name: 'Demo Application', regions: [{ type: 'header' }, { type: 'footer' }] }),
-    );
-    await TestBed.configureTestingModule({
-      imports: [AppPreviewComponent],
-      providers: [{ provide: AppDefinitionStore, useValue: storeStub }],
-    }).compileComponents();
-    fixture = TestBed.createComponent(AppPreviewComponent);
-    fixture.componentRef.setInput('entityId', 'demo-app');
-
-    expect(() => fixture.detectChanges()).not.toThrow();
-    expect(fixture.nativeElement.querySelector('header')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('footer')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.pp-app-preview pp-app-shell')).not.toBeNull();
   });
 });
