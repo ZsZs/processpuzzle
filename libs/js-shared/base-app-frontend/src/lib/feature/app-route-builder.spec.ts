@@ -184,7 +184,7 @@ describe('buildAppRoutes', () => {
 
       const children = await childrenOf(buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, renderRoute)[0]);
 
-      expect(scopesOf(children[0])).toEqual([{ scope: 'claims', alias: 'claims' }]);
+      expect(scopesOf(children[0])).toContainEqual({ scope: 'claims', alias: 'claims' });
     });
 
     it('honours the scope the module named', async () => {
@@ -192,7 +192,23 @@ describe('buildAppRoutes', () => {
 
       const children = await childrenOf(buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, renderRoute)[0]);
 
-      expect(scopesOf(children[0])).toEqual([{ scope: 'claims_module', alias: 'claims_module' }]);
+      expect(scopesOf(children[0])).toContainEqual({ scope: 'claims_module', alias: 'claims_module' });
+    });
+
+    // The regression this guards: TRANSLOCO_SCOPE is a `multi` provider and Angular does not merge those
+    // across injectors, so the wrapper's array *replaces* whatever the host registered. Naming only the
+    // module's scope left every `base_entity.*` label below a mounted module unresolved — the generic tabs
+    // in particular, which a module's ENTITY routes render.
+    it('re-registers the framework scopes it would otherwise shadow', async () => {
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routeDefinitions('open'), { translocoScope: 'claims_module' }));
+
+      const children = await childrenOf(buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, renderRoute)[0]);
+
+      expect(scopesOf(children[0])).toEqual([
+        { scope: 'claims_module', alias: 'claims_module' },
+        { scope: 'base_entity', alias: 'base_entity' },
+        { scope: 'base_app', alias: 'base_app' },
+      ]);
     });
 
     // A dangling module key stays a warning at run-time too: the mount resolves to nothing rather than

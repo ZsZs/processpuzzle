@@ -1,7 +1,0 @@
-{
-  "_self": "Order Line",
-  "productName": "Product",
-  "quantity": "Quantity",
-  "unitPrice": "Unit Price",
-  "orderId": "Order"
-}

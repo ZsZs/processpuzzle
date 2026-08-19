@@ -29,18 +29,30 @@ logging:
 
 base-rule:
   loadSamples: no
+  loadDefaultTranslations: no
 
 base-app:
   loadDefaultApps: no
+  loadDefaultTranslations: no
 
 base-widget:
   loadDefaultWidgets: no
+  loadDefaultTranslations: no
 
 base-entity:
   loadDefaultEntities: no
+  loadDefaultTranslations: no
+
+# base-document was missing from this list entirely, so SampleDocumentLoader ran during this module's
+# Spring tests while the other six did not — the app's own application.yaml is on the test classpath.
+base-document:
+  loadSamples: no
+  loadDefaultTranslations: no
 
 base-state:
   loadDefaultStateMachines: no
+  loadDefaultTranslations: no
 
 base-workflow:
   loadDefaultWorkflows: no
+  loadDefaultTranslations: no

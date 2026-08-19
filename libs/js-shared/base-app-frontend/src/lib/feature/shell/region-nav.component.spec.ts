@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NavItem } from '../../domain/app-definition';
 import { RegionNavComponent, toNavRows } from './region-nav.component';
@@ -55,7 +56,10 @@ describe('RegionNavComponent', () => {
 
   async function render(navItems: NavItem[], knownPaths: string[] = []) {
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ imports: [RegionNavComponent], providers: [provideRouter([])] });
+    // Transloco is required because the rows render their label through `ppLabel`, which injects
+    // TranslocoService. With no translations registered every key falls back to the authored literal,
+    // which is what the assertions below expect.
+    TestBed.configureTestingModule({ imports: [RegionNavComponent], providers: [provideRouter([]), provideTranslocoTesting({ translations: {} })] });
     fixture = TestBed.createComponent(RegionNavComponent);
     fixture.componentRef.setInput('navItems', navItems);
     fixture.componentRef.setInput('knownPaths', knownPaths);

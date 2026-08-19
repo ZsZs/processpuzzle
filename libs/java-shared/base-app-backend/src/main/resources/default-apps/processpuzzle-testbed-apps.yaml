@@ -31,32 +31,36 @@ moduleDefinitions:
   # A back-office slice of the same order domain the 'demo' app front-ends. It exists to show what a
   # module is for: a route list of its own, authored and versioned separately, mounted under one prefix
   # by whichever app wants it. Its routes use the ENTITY target kind, so the screens are generated from
-  # the testbed's 'Order Line' descriptor rather than composed from widgets.
+  # the testbed's 'Order' definition rather than composed from widgets.
+  #
+  # It used to target 'Order Line', which is now an embedded component of 'Order' and so has no
+  # instances — and therefore no list or detail screen — of its own. Order lines are administered on
+  # the order that carries them.
   - key: order-admin
     name: Order administration
     translocoId: order_admin.module.name
     description: >-
-      Order line administration: the generated list and detail screens of 'Order Line', kept out of
+      Back-office order administration: the generated list and detail screens of 'Order', kept out of
       the order-entry application so that back-office screens can be authored on their own.
     translocoScope: order_admin
-    # 'lines' and 'line/:id' are siblings on purpose. Had the detail route been 'lines/:id', the flat
-    # list would derive 'lines' into its Angular parent, and a generated list screen hosts no
+    # 'orders' and 'order/:id' are siblings on purpose. Had the detail route been 'orders/:id', the flat
+    # list would derive 'orders' into its Angular parent, and a generated list screen hosts no
     # router-outlet for the child to render in.
     routes:
-      - path: lines
-        title: All order lines
-        translocoId: order_admin.route.lines
+      - path: orders
+        title: All orders
+        translocoId: order_admin.route.orders
         icon: view_list
         target:
           kind: ENTITY
-          entityName: Order Line
+          entityName: Order
           entityMode: LIST
-      - path: line/:id
-        title: Order line
-        translocoId: order_admin.route.line
+      - path: order/:id
+        title: Order
+        translocoId: order_admin.route.order
         target:
           kind: ENTITY
-          entityName: Order Line
+          entityName: Order
           entityMode: DETAILS
 
 appDefinitions:
@@ -119,20 +123,15 @@ appDefinitions:
                 translocoId: demo.nav.orderList
                 icon: list_alt
                 routePath: order-list
-              - id: nav-order-lines
-                label: Order lines
-                translocoId: demo.nav.orderLines
-                icon: view_list
-                routePath: order-line-list
-          # Points into the module mounted below: the module's own 'lines' prefixed with its basePath.
+          # Points into the module mounted below: the module's own 'orders' prefixed with its basePath.
           # Startup logs one 'app.validation.unknown-route-reference' WARNING for this item, and should:
           # an app definition cannot see the routes of a module it mounts, which is what keeps the two
           # aggregates independent. A nav item is how a mounted module becomes reachable at all.
           - id: nav-order-admin
-            label: Order line administration
+            label: Order administration
             translocoId: demo.nav.orderAdmin
             icon: manage_search
-            routePath: back-office/lines
+            routePath: back-office/orders
       - type: footer
         widgets:
           - id: footer-version-button
@@ -157,11 +156,13 @@ appDefinitions:
               type: markdown-page
               props:
                 markdownSrc: /assets/demo/welcome.md
-      # The two entity screens are ENTITY routes rather than widgets wrapping an entity: base-entity
+      # The entity screen is an ENTITY route rather than a widget wrapping an entity: base-entity
       # already owns the list/detail/search/export surface of a descriptor, and a widget that took an
       # `entityName` prop would only be a second way to ask for the same thing. `entityName` names a
-      # BaseEntityDescriptor the *hosting application* registers, which for the testbed is
-      # BASE_ENTITY_FACADE_REGISTRY's `Order` and `Order Line`.
+      # BaseEntityDescriptor the *hosting application* resolves. 'Order' is metadata now — seeded by
+      # base-entity's processpuzzle-testbed-entities.yaml, with no entry in the testbed's
+      # BASE_ENTITY_FACADE_REGISTRY — so this route renders RouteEntityComponent's "not registered"
+      # state until a descriptor can be synthesized from a BaseEntityDefinition.
       - path: order-list
         title: Orders
         translocoId: demo.route.orderList
@@ -169,15 +170,8 @@ appDefinitions:
           kind: ENTITY
           entityName: Order
           entityMode: LIST
-      - path: order-line-list
-        title: Order lines
-        translocoId: demo.route.orderLineList
-        target:
-          kind: ENTITY
-          entityName: Order Line
-          entityMode: LIST
     # The single composition point. The 'order-admin' module's flat routes are registered below this
-    # prefix, so its 'lines' answers at 'back-office/lines'. A module mounts no modules, so route
+    # prefix, so its 'orders' answers at 'back-office/orders'. A module mounts no modules, so route
     # structure composes exactly one level and no deeper.
     modules:
       - moduleKey: order-admin

@@ -4,6 +4,7 @@ import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { WIDGET_REGISTRY } from '@processpuzzle/base-widget';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppShellComponent } from './app-shell.component';
@@ -19,7 +20,13 @@ describe('AppShellComponent', () => {
   async function render(definition: AppDefinition | undefined, withRegistry = true) {
     TestBed.configureTestingModule({
       imports: [AppShellComponent],
-      providers: [provideRouter([]), ...(withRegistry ? [{ provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', ShellTestWidgetComponent]]) }] : [])],
+      // The nav region renders its labels through `ppLabel`, which injects TranslocoService. No
+      // translations are registered, so every label falls back to the authored literal.
+      providers: [
+        provideRouter([]),
+        provideTranslocoTesting({ translations: {} }),
+        ...(withRegistry ? [{ provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', ShellTestWidgetComponent]]) }] : []),
+      ],
     });
 
     fixture = TestBed.createComponent(AppShellComponent);
@@ -240,7 +247,7 @@ describe('AppShellComponent host class merging', () => {
 
   it('keeps a class set by the caller alongside the theme classes it adds', async () => {
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ imports: [ShellHostComponent], providers: [provideRouter([])] });
+    TestBed.configureTestingModule({ imports: [ShellHostComponent], providers: [provideRouter([]), provideTranslocoTesting({ translations: {} })] });
 
     const hostFixture = TestBed.createComponent(ShellHostComponent);
     hostFixture.detectChanges();

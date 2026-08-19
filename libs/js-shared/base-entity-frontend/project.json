@@ -9,7 +9,7 @@
     "build": {
       "executor": "@nx/angular:package",
       "dependsOn": ["^build"],
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/dist/libs/base-entity-frontend"],
       "defaultConfiguration": "production",
       "options": {
         "project": "libs/js-shared/base-entity-frontend/ng-package.json"
@@ -54,7 +54,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/base-entity-frontend"
+        "packageRoot": "{workspaceRoot}/dist/libs/base-entity-frontend"
       }
     },
     "release": {

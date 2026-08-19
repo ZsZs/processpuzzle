@@ -83,3 +83,4 @@ export { APP_PREVIEW_TAB } from './lib/feature/app-preview-tab';
 export { ModuleDefinitionContainerComponent } from './lib/feature/module-definition-container.component';
 export { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './lib/base-app.providers';
 export { BASE_APP_ROUTES } from './lib/base-app.routes';
+export { BASE_APP_TRANSLATION_SOURCE } from './lib/base-app.i18n';

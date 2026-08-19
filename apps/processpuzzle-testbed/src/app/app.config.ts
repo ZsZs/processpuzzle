@@ -11,17 +11,18 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
 import { provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/util';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_ENTITY_FACADE_REGISTRY, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
+import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from '@processpuzzle/base-app';
-import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS } from '@processpuzzle/base-document';
+import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
+import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
+import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
@@ -29,8 +30,6 @@ import { EmbeddedComponentFacade } from './content/base-forms/embedded-component
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
-import { OrderFacade } from './content/base-rules/order/order.facade';
-import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -55,8 +54,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       RelatedEntityFacade,
       TrunkDataFacade,
       FirestoreDocFacade,
-      OrderFacade,
-      OrderLineFacade,
       // Embedded entities are registered like any other: their facade gives them a store, which reads and
       // writes the containing entity's document rather than an endpoint of their own. base-app ships the
       // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
@@ -82,8 +79,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Related Entity': RelatedEntityFacade,
           'Trunk Data': TrunkDataFacade,
           'Firestore Doc': FirestoreDocFacade,
-          Order: OrderFacade,
-          'Order Line': OrderLineFacade,
+          // 'Order' and its embedded 'Order Line' are deliberately absent: they moved to
+          // base-entity-backend's processpuzzle-testbed-entities.yaml and are metadata now, with no
+          // compile-time facade. Until a descriptor can be synthesized from BaseEntityDefinition,
+          // RouteEntityComponent renders its "not registered" state for the app definition's Order routes.
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,
@@ -91,6 +90,15 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Embedded Detail': EmbeddedDetailFacade,
         },
       },
+      // Which backend serves which transloco scope, for the bundles that have no asset to fall back on.
+      // Each library declares its own entry; a scope nobody claims — a designer-authored module's, named
+      // at run-time — goes to base-app, which owns ModuleDefinition. All contributions have to be here
+      // rather than on route branches: a `multi` token is not merged across injectors.
+      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE].map((source) => ({
+        provide: TRANSLATION_SOURCE_REGISTRY,
+        useValue: source,
+        multi: true,
+      })),
       { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },
       { provide: AUTHENTICATION_CONFIGURATION, useValue: runtimeConfiguration.AUTHENTICATION_CONFIGURATION },

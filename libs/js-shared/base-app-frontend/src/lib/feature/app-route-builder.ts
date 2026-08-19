@@ -2,6 +2,7 @@ import { Route, Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { ModuleMount, RouteDefinition } from '../domain/app-definition';
 import { ModuleDefinition, moduleTranslocoScope } from '../domain/module-definition';
+import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-app.i18n';
 
 /**
  * What the run-time shell registers routes from. `routes` and `modules` are the app definition's own
@@ -98,6 +99,13 @@ function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer): Rou
  * because that is the first moment its name is known — the default is the module key, but a module may
  * name its own. The alias is spelled out, as everywhere in this workspace: transloco would otherwise
  * camel-case it and miss every key below it.
+ *
+ * The framework scopes are re-registered alongside it, for the reason `BASE_APP_ROUTES.authoringScopes()`
+ * gives: a route that declares TRANSLOCO_SCOPE *replaces* the collection it inherits rather than adding to
+ * it, because Angular does not merge `multi` providers across injectors. A module's routes render the same
+ * generic screens as everything else — an ENTITY route reaches `BaseEntityTabsComponent`, which translates
+ * `base_entity.tabs.*` — so naming only the module's scope here would leave every framework label below the
+ * mount unresolved.
  */
 function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader, renderRoute: RouteRenderer): Route {
   return {
@@ -107,7 +115,14 @@ function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader
       const children = emitLevel(trieOf(definition?.routes), [], renderRoute);
       if (!definition || !children.length) return [];
       const scope = moduleTranslocoScope(definition);
-      return [{ path: '', providers: [provideTranslocoScope({ scope, alias: scope })], children }];
+      const providers = [
+        provideTranslocoScope(
+          { scope, alias: scope },
+          { scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE },
+          { scope: BASE_APP_TRANSLOCO_SCOPE, alias: BASE_APP_TRANSLOCO_SCOPE },
+        ),
+      ];
+      return [{ path: '', providers, children }];
     },
   };
 }

@@ -1,9 +1,0 @@
-{
-  "_self": "Order",
-  "orderNumber": "Order #",
-  "customerName": "Customer",
-  "status": "Status",
-  "total": "Total",
-  "shippingAddress": "Shipping Address",
-  "lineItems": "Line Items"
-}

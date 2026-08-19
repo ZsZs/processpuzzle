@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@angular/material/list';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { EntityLabelPipe } from '@processpuzzle/base-entity';
 import { NavItem } from '../../domain/app-definition';
 
 /** Which way the list runs. The shell decides it from `layout.preset`, not the region definition. */
@@ -15,6 +16,12 @@ export type NavOrientation = 'vertical' | 'horizontal';
 export interface NavRow {
   id: string;
   label: string;
+  /**
+   * Transloco key for {@link label}, preferred over it when the key resolves. Carried onto the row rather
+   * than translated here: `toNavRows` is a pure function and translation depends on the active language
+   * and on which scopes have finished loading, both of which are the template's concern.
+   */
+  translocoId?: string;
   icon?: string;
   /** Present only when the item names a route that something accounts for — see {@link toNavRows}. */
   routePath?: string;
@@ -41,6 +48,7 @@ export function toNavRows(items: NavItem[] | undefined, knownPaths: string[]): N
     return {
       id: item.id,
       label: item.label,
+      translocoId: item.translocoId,
       icon: item.icon,
       ...(resolved ? { routePath } : {}),
       unresolved: routePath !== undefined && !resolved,
@@ -73,14 +81,15 @@ function normalize(routePath: string | undefined): string | undefined {
  * would navigate into a 404. A dangling `routePath` is a *warning* server-side by design — it may name a
  * route of a module authored later — so the shell has to render it as something rather than reject it.
  *
- * `label` is rendered rather than `translocoId`: a nav label is *tenant* content, translated under the
- * scope of the module that owns it, and the shell registers no such scope. Resolving it belongs with the
- * module-scope work, and rendering the authored literal is the honest reading until then.
+ * `translocoId` is preferred over `label` where it resolves, through the impure `ppLabel` pipe — so a row
+ * shows the authored literal until the scope that owns its key has loaded, then re-renders. A nav label is
+ * *tenant* content living under a module's own scope, which for an authored module is served by the
+ * backend rather than shipped as an asset; `ppLabel` falling back is the normal case, not a defect.
  */
 @Component({
   selector: 'pp-region-nav',
   standalone: true,
-  imports: [MatNavList, MatListItem, MatListItemIcon, MatListItemTitle, NgTemplateOutlet, RouterLink, RouterLinkActive],
+  imports: [MatNavList, MatListItem, MatListItemIcon, MatListItemTitle, NgTemplateOutlet, RouterLink, RouterLinkActive, EntityLabelPipe],
   template: `
     <mat-nav-list [class.pp-region-nav--horizontal]="orientation() === 'horizontal'">
       <ng-container *ngTemplateOutlet="rowList; context: { $implicit: rows(), depth: 0 }"></ng-container>
@@ -111,7 +120,7 @@ function normalize(routePath: string | undefined): string | undefined {
             @if (row.icon) {
               <span matListItemIcon class="material-symbols-outlined">{{ row.icon }}</span>
             }
-            <div matListItemTitle>{{ row.label }}</div>
+            <div matListItemTitle>{{ row.translocoId | ppLabel: row.label }}</div>
           </a>
         } @else {
           <mat-list-item
@@ -124,7 +133,7 @@ function normalize(routePath: string | undefined): string | undefined {
             @if (row.icon) {
               <span matListItemIcon class="material-symbols-outlined">{{ row.icon }}</span>
             }
-            <div matListItemTitle>{{ row.label }}</div>
+            <div matListItemTitle>{{ row.translocoId | ppLabel: row.label }}</div>
           </mat-list-item>
         }
         @if (row.children.length) {

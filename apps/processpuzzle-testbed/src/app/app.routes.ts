@@ -10,8 +10,6 @@ import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.faca
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
-import { OrderFacade } from './content/base-rules/order/order.facade';
-import { OrderLineFacade } from './content/base-rules/order-line/order-line.facade';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
@@ -154,26 +152,9 @@ export const appRoutes: Route[] = [
         path: 'overview',
         loadComponent: () => import('./content/base-rules/overview.component').then((comp) => comp.OverviewComponent),
       },
-      {
-        path: 'samples',
-        loadComponent: () => import('./content/base-rules/samples.component').then((comp) => comp.SamplesComponent),
-        children: [
-          {
-            path: 'order',
-            data: { entityName: 'Order' },
-            loadComponent: () => import('./content/base-rules/order/order-container.component').then((comp) => comp.OrderContainerComponent),
-            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderFacade }, provideTranslocoScope({ scope: 'order', alias: 'order' })],
-            children: BASE_ENTITY_ROUTES,
-          },
-          {
-            path: 'order-line',
-            data: { entityName: 'Order Line' },
-            loadComponent: () => import('./content/base-rules/order-line/order-line-container.component').then((comp) => comp.OrderLineContainerComponent),
-            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrderLineFacade }, provideTranslocoScope({ scope: 'order_line', alias: 'order_line' })],
-            children: BASE_ENTITY_ROUTES,
-          },
-        ],
-      },
+      // The 'samples' tab is gone with the Order / Order Line facades it hosted — those entities now live
+      // as metadata in base-entity-backend's processpuzzle-testbed-entities.yaml. The sample rules still
+      // name 'Order' as their context; the surface that renders it returns with dynamic entity generation.
     ],
   },
   {

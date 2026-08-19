@@ -1,3 +1,4 @@
+import type { TranslationSource } from '@processpuzzle/util';
 /**
  * Transloco scope of this library. The translations live in
  * `libs/js-shared/base-app-frontend/src/assets/i18n/base_app/*.json` and are published with the
@@ -54,3 +55,18 @@ export const APP_WIDGET_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_widget`;
 /** Keys of the `Publish` form action contributed by `AppDefinitionContainerComponent`. */
 export const PUBLISH_BUTTON_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.button`;
 export const PUBLISH_TOOLTIP_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.tooltip`;
+
+/**
+ * Where this library's transloco bundles come from when the application ships without its assets.
+ *
+ * Spread into the application's `TRANSLATION_SOURCE_REGISTRY`, the way its facades are spread into
+ * `BASE_ENTITY_FACADE_REGISTRY`. The scopes below normally arrive as static files — the build copies
+ * them into `assets/i18n/<scope>` and the loader tries the asset first — so this is reached only by a
+ * host that skips that copy step. It is declared here rather than in the application because which
+ * backend owns a scope is base-app's knowledge, not its caller's.
+ */
+export const BASE_APP_TRANSLATION_SOURCE: TranslationSource = {
+  scopes: ['base_app'],
+  serviceRootKey: 'APP_SERVICE_ROOT',
+  segment: 'app',
+};

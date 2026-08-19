@@ -386,6 +386,13 @@
           <artifactId>maven-dependency-plugin</artifactId>
           <version>3.8.1</version>
         </plugin>
+
+        <!-- Antrun plugin for copying build artifacts to dist -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>

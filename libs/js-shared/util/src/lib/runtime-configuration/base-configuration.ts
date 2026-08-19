@@ -17,5 +17,17 @@ export interface BaseConfiguration {
   readonly APP_SERVICE_ROOT: string;
   /** Organization-scoped root of the base-document endpoints: `<host>/organizations/<orgKey>`. */
   readonly DOCUMENT_SERVICE_ROOT: string;
+  /**
+   * Organization-scoped roots of the remaining features, same shape as the two above. Optional because
+   * every feature is served by one host today: absent, a caller falls back to `APP_SERVICE_ROOT`.
+   *
+   * They exist so that a feature can move to a host of its own — each backend library is meant to become
+   * a service with its own database — without every caller changing. The translations resource is the
+   * first to use them, since it is the first resource all seven features expose.
+   */
+  readonly ENTITY_SERVICE_ROOT?: string;
+  readonly WIDGET_SERVICE_ROOT?: string;
+  readonly STATE_SERVICE_ROOT?: string;
+  readonly WORKFLOW_SERVICE_ROOT?: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

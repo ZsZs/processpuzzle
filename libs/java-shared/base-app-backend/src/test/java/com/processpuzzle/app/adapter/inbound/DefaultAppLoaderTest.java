@@ -191,9 +191,9 @@ class DefaultAppLoaderTest {
         // content area, and an ENTITY route with no entityName resolves to no descriptor — both of which
         // the structural validator and the 'App Definition' rules require to be filled in.
         assertThat(demo.getRoutes()).extracting(RouteDefinition::getPath)
-                .containsExactly("home", "order-list", "order-line-list");
+                .containsExactly("home", "order-list");
         assertThat(demo.getRoutes()).extracting(route -> route.getTarget().getKind())
-                .containsExactly(RouteTarget.KindEnum.WIDGETS, RouteTarget.KindEnum.ENTITY, RouteTarget.KindEnum.ENTITY);
+                .containsExactly(RouteTarget.KindEnum.WIDGETS, RouteTarget.KindEnum.ENTITY);
         assertThat(demo.getRoutes()).allSatisfy(route -> {
             RouteTarget target = route.getTarget();
             if (target.getKind() == RouteTarget.KindEnum.WIDGETS) assertThat(target.getWidgets()).isNotEmpty();
@@ -232,7 +232,7 @@ class DefaultAppLoaderTest {
 
         ModuleDefinitionInput module = capturedModule();
         assertThat(module.getKey()).isEqualTo("order-admin");
-        assertThat(module.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("lines", "line/:id");
+        assertThat(module.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("orders", "order/:id");
         assertThat(structuralValidator().validateModule(TESTBED_KEY, module)).isEmpty();
 
         // The mount is what makes the module reachable, and it is the one the nav item points into.

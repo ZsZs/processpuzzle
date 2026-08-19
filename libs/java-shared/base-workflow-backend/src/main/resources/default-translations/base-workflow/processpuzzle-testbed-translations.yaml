@@ -1,0 +1,20 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-workflow.
+#
+# WorkflowTranslationLoader imports this file on startup when `base-workflow.loadDefaultTranslations`
+# is true. See base-app's file of the same name for the conventions.
+#
+# NOTE: base-workflow owns no frontend transloco scope today — the library is still a scaffold. Nothing
+# requests this bundle yet; it is seeded so the resource is exercised and the scope name is settled.
+#
+# The keys below name the sample process in default-workflows/processpuzzle-testbed-workflows.yaml.
+
+translations:
+  - scope: base_workflow
+    locale: en
+    messages:
+      process:
+        _self: Process
+        name: Name
+      role:
+        clerk: Order clerk
+        manager: Order manager

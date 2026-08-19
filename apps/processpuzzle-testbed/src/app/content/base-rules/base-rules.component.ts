@@ -14,9 +14,6 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <a mat-tab-link routerLink="overview" routerLinkActive #rla1="routerLinkActive" [active]="rla1.isActive">
           {{ t('overview_tab_label') }}
         </a>
-        <a mat-tab-link routerLink="samples" routerLinkActive #rla2="routerLinkActive" [active]="rla2.isActive">
-          {{ t('samples_tab_label') }}
-        </a>
       </nav>
       <mat-tab-nav-panel #tabPanel>
         <router-outlet></router-outlet>

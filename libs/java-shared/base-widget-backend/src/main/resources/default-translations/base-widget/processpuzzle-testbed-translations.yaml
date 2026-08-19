@@ -1,0 +1,25 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-widget.
+#
+# WidgetTranslationLoader imports this file on startup when `base-widget.loadDefaultTranslations` is
+# true. See base-app's file of the same name for the conventions.
+
+translations:
+  # ── base_widget ──
+  # The widget-authoring form's labels. Normally a static asset; a subset is seeded so a host that ships
+  # without the asset copy step still has them.
+  - scope: base_widget
+    locale: en
+    messages:
+      publish:
+        button: Publish
+        tooltip: Publish this widget definition
+
+  # ── widgets ──
+  # The runtime widget catalogue's own scope. Note the name: it is deliberately `widgets` and not
+  # `base_widget`, because renaming it would move the served asset path and shift every `base_widget.*`
+  # key — see the note in docs/app-definition-refinement-plan.md. Two scopes, one library.
+  - scope: widgets
+    locale: en
+    messages:
+      language_selector:
+        label: Language

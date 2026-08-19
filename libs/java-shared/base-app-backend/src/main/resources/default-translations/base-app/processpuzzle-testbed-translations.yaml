@@ -1,0 +1,64 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-app.
+#
+# AppTranslationLoader imports this file on startup when `base-app.loadDefaultTranslations` is true.
+# The owning organization is the part of the file name before `-translations.yaml`, exactly as
+# `<orgKey>-apps.yaml` works next door.
+#
+# The `base-app/` directory is not decoration. Every feature library ships a file of this same name, and
+# the scan is `classpath*:` so that a host application can add bundles beside a library's — without the
+# per-feature directory each loader would pick up all seven libraries' files and every feature's table
+# would end up holding every feature's bundles.
+#
+# `messages` keys are RELATIVE TO THE SCOPE. Transloco prefixes them with the scope alias itself, so a
+# wrapping `order_admin:` level here would resolve as `order_admin.order_admin.*` and match nothing.
+#
+# Unlike the other default loaders, an existing bundle is MERGED INTO rather than left untouched — a
+# seeded key overwrites an edited one on restart. Bundles are shipped defaults, not tenant content.
+
+translations:
+  # ── order_admin ──
+  # The scope of the `order-admin` module in default-apps/processpuzzle-testbed-apps.yaml, which declares
+  # `translocoScope: order_admin` and the three keys below.
+  #
+  # This is the bundle the whole feature exists for. `order_admin` is named at run-time, in a
+  # ModuleDefinition fetched on first navigation into the mount, so no application build could have
+  # shipped `assets/i18n/order_admin/<lang>.json` for it — the asset request 404s and the loader falls
+  # back here. It is the one scope in the workspace that has nowhere else to come from.
+  - scope: order_admin
+    locale: en
+    messages:
+      module:
+        name: Order administration
+      route:
+        orders: All orders
+        order: Order
+
+  - scope: order_admin
+    locale: de
+    messages:
+      module:
+        name: Auftragsverwaltung
+      route:
+        orders: Alle Aufträge
+        order: Auftrag
+
+  - scope: order_admin
+    locale: hu
+    messages:
+      module:
+        name: Rendeléskezelés
+      route:
+        orders: Minden rendelés
+        order: Rendelés
+
+  # ── base_app ──
+  # This library's own framework scope. It normally arrives as a static asset — the application build
+  # copies `base-app-frontend/src/assets/i18n/base_app` into `assets/i18n/base_app`, and the loader tries
+  # the asset first — so these are reached only by a host that ships without that copy step. Deliberately
+  # a small subset rather than a duplicate of the asset file, which would drift silently.
+  - scope: base_app
+    locale: en
+    messages:
+      publish:
+        button: Publish
+        tooltip: Publish this application definition

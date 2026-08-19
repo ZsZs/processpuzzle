@@ -275,134 +275,6 @@
       "value": "Wert 4"
     }
   ],
-  "order": [
-    {
-      "id": "1",
-      "orderNumber": "ORD-1001",
-      "customerName": "Alice Johnson",
-      "status": "DRAFT",
-      "total": 89.88,
-      "shippingAddress": null,
-      "lineItems": [
-        {
-          "id": "1",
-          "productName": "Widget A",
-          "quantity": 2,
-          "unitPrice": 19.99,
-          "orderId": "1"
-        },
-        {
-          "id": "2",
-          "productName": "Widget B",
-          "quantity": 1,
-          "unitPrice": 49.9,
-          "orderId": "1"
-        }
-      ]
-    },
-    {
-      "id": "2",
-      "orderNumber": "ORD-1002",
-      "customerName": "Bob Meier",
-      "status": "SHIPPED",
-      "total": 85.5,
-      "shippingAddress": "Hauptstraße 12, 80331 München, DE",
-      "lineItems": [
-        {
-          "id": "3",
-          "productName": "Bolt M8",
-          "quantity": 5,
-          "unitPrice": 12,
-          "orderId": "2"
-        },
-        {
-          "id": "4",
-          "productName": "Nut M8",
-          "quantity": 3,
-          "unitPrice": 8.5,
-          "orderId": "2"
-        }
-      ]
-    },
-    {
-      "id": "3",
-      "orderNumber": "ORD-1003",
-      "customerName": "Carla Rossi",
-      "status": "CONFIRMED",
-      "total": 100,
-      "shippingAddress": null,
-      "lineItems": [
-        {
-          "id": "5",
-          "productName": "Temperature Sensor",
-          "quantity": 4,
-          "unitPrice": 25,
-          "orderId": "3"
-        }
-      ]
-    },
-    {
-      "id": "4",
-      "orderNumber": "ORD-1004",
-      "customerName": "Daniel Novak",
-      "status": "DELIVERED",
-      "total": 499,
-      "shippingAddress": "Wenceslas Square 5, 110 00 Praha, CZ",
-      "lineItems": [
-        {
-          "id": "6",
-          "productName": "Servo Motor",
-          "quantity": 1,
-          "unitPrice": 499,
-          "orderId": "4"
-        }
-      ]
-    }
-  ],
-  "order-line": [
-    {
-      "id": "1",
-      "productName": "Widget A",
-      "quantity": 2,
-      "unitPrice": 19.99,
-      "orderId": "1"
-    },
-    {
-      "id": "2",
-      "productName": "Widget B",
-      "quantity": 1,
-      "unitPrice": 49.9,
-      "orderId": "1"
-    },
-    {
-      "id": "3",
-      "productName": "Bolt M8",
-      "quantity": 5,
-      "unitPrice": 12,
-      "orderId": "2"
-    },
-    {
-      "id": "4",
-      "productName": "Nut M8",
-      "quantity": 3,
-      "unitPrice": 8.5,
-      "orderId": "2"
-    },
-    {
-      "id": "5",
-      "productName": "Temperature Sensor",
-      "quantity": 4,
-      "unitPrice": 25,
-      "orderId": "3"
-    },
-    {
-      "id": "6",
-      "productName": "Servo Motor",
-      "quantity": 1,
-      "unitPrice": 499,
-      "orderId": "4"
-    }
-  ],
   "organizations": [
     {
       "id": "processpuzzle",
@@ -673,18 +545,11 @@
               ]
             },
             {
-              "id": "nav-order-lines",
-              "label": "Order lines",
-              "translocoId": "demo.nav.orderLines",
-              "icon": "view_list",
-              "routePath": "order-line-list"
-            },
-            {
               "id": "nav-order-admin",
-              "label": "Order line administration",
+              "label": "Order administration",
               "translocoId": "demo.nav.orderAdmin",
               "icon": "manage_search",
-              "routePath": "back-office/lines"
+              "routePath": "back-office/orders"
             }
           ]
         },
@@ -726,24 +591,6 @@
                   "entityName": "Order",
                   "submitLabel": "Save order",
                   "submitTranslocoId": "demo.action.saveOrder"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "path": "order-line-list",
-          "title": "Order lines",
-          "translocoId": "demo.route.orderLineList",
-          "target": {
-            "kind": "WIDGETS",
-            "widgets": [
-              {
-                "id": "order-line-grid",
-                "type": "entity-grid",
-                "props": {
-                  "entityName": "Order Line",
-                  "columns": ["productName", "quantity", "unitPrice"]
                 }
               }
             ]
@@ -838,27 +685,27 @@
       "key": "order-admin",
       "name": "Order administration",
       "translocoId": "order_admin.module.name",
-      "description": "Order line administration: the generated list and detail screens of 'Order Line', kept out of the order-entry application so that back-office screens can be authored on their own.",
+      "description": "Back-office order administration: the generated list and detail screens of 'Order', kept out of the order-entry application so that back-office screens can be authored on their own.",
       "translocoScope": "order_admin",
       "routes": [
         {
-          "path": "lines",
-          "title": "All order lines",
-          "translocoId": "order_admin.route.lines",
+          "path": "orders",
+          "title": "All orders",
+          "translocoId": "order_admin.route.orders",
           "icon": "view_list",
           "target": {
             "kind": "ENTITY",
-            "entityName": "Order Line",
+            "entityName": "Order",
             "entityMode": "LIST"
           }
         },
         {
-          "path": "line/:id",
-          "title": "Order line",
-          "translocoId": "order_admin.route.line",
+          "path": "order/:id",
+          "title": "Order",
+          "translocoId": "order_admin.route.order",
           "target": {
             "kind": "ENTITY",
-            "entityName": "Order Line",
+            "entityName": "Order",
             "entityMode": "DETAILS"
           }
         }

@@ -22,6 +22,7 @@ export { NavigateBackComponent } from './lib/navigate-back/navigate-back.compone
 export { NavigateBackService } from './lib/navigate-back/navigate-back.service';
 export { provideTranslocoService } from './lib/transloco/provide-transloco.service';
 export { TranslocoHttpLoader } from './lib/transloco/transloco.loader';
+export { DEFAULT_TRANSLATION_SOURCE, TRANSLATION_SOURCE_REGISTRY, translationSourceOf, type TranslationSource } from './lib/transloco/translation-source';
 export { Stack } from './lib/stack';
 export { SubstringPipe } from './lib/substring.pipe';
 export { wildcardTextMatcher } from './lib/wildcard-text-matcher';

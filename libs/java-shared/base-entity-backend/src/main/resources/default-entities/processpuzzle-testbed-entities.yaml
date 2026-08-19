@@ -156,6 +156,95 @@ entityDefinitions:
         linkedEntityType: dynamic-embedded-detail
         isMultiValued: true
 
+  # 4. Embedded component definition: order-line
+  #
+  # An order line is carried inside its order's payload rather than existing on its own, so it has no
+  # back-reference to the order: the containment *is* the relation. This is why it also has no list or
+  # detail route of its own — CreateEntityInstanceUseCase refuses instances of an embedded definition.
+  - code: order-line
+    name: Order Line
+    description: >-
+      A single product line of an order: what was ordered, how many, and at what unit price.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - order
+    attributes:
+      - code: productName
+        name: Product
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+      - code: quantity
+        name: Quantity
+        displayOrder: 2
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+        required: true
+      - code: unitPrice
+        name: Unit Price
+        displayOrder: 3
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+        required: true
+
+  # 5. Order — the entity the sample rules in base-rule and the sample documents in base-document
+  # are written against (context/entityType 'Order').
+  - code: order
+    name: Order
+    description: >-
+      Customer order with its line items, demonstrating an entity whose rules span the parent and its
+      embedded children.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: orderNumber
+        name: 'Order #'
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: customerName
+        name: Customer
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+      - code: status
+        name: Status
+        displayOrder: 3
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - DRAFT
+          - CONFIRMED
+          - SHIPPED
+          - DELIVERED
+          - CANCELLED
+        defaultValue: DRAFT
+      - code: total
+        name: Total
+        displayOrder: 4
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+      - code: shippingAddress
+        name: Shipping Address
+        displayOrder: 5
+        valueKind: TEXT
+        formControlType: TEXTAREA
+      - code: lineItems
+        name: Line Items
+        displayOrder: 6
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: order-line
+        isMultiValued: true
+
 entities:
   # Sample Object 1
   - entityDefinitionCode: dynamic-entity
@@ -287,3 +376,59 @@ entities:
         - detailKey: Status
           detailValue: Evaluating
           detailNote: Benchmarking in progress
+
+  # Order 1 — a draft with no shipping address yet, so the 'shipped-requires-address' rule stays quiet.
+  - entityDefinitionCode: order
+    payload:
+      orderNumber: ORD-1001
+      customerName: Alice Johnson
+      status: DRAFT
+      total: 89.88
+      lineItems:
+        - productName: Widget A
+          quantity: 2
+          unitPrice: 19.99
+        - productName: Widget B
+          quantity: 1
+          unitPrice: 49.90
+
+  # Order 2 — shipped, so it carries the address that state requires.
+  - entityDefinitionCode: order
+    payload:
+      orderNumber: ORD-1002
+      customerName: Bob Meier
+      status: SHIPPED
+      total: 85.50
+      shippingAddress: Hauptstraße 12, 80331 München, DE
+      lineItems:
+        - productName: Bolt M8
+          quantity: 5
+          unitPrice: 12
+        - productName: Nut M8
+          quantity: 3
+          unitPrice: 8.50
+
+  # Order 3
+  - entityDefinitionCode: order
+    payload:
+      orderNumber: ORD-1003
+      customerName: Carla Rossi
+      status: CONFIRMED
+      total: 100
+      lineItems:
+        - productName: Temperature Sensor
+          quantity: 4
+          unitPrice: 25
+
+  # Order 4
+  - entityDefinitionCode: order
+    payload:
+      orderNumber: ORD-1004
+      customerName: Daniel Novak
+      status: DELIVERED
+      total: 499
+      shippingAddress: Wenceslas Square 5, 110 00 Praha, CZ
+      lineItems:
+        - productName: Servo Motor
+          quantity: 1
+          unitPrice: 499
