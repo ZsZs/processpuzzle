@@ -70,8 +70,11 @@ appDefinitions:
       Basic demonstration application: order management screens composed from the entity-driven
       widgets, with nothing configured that the shell does not need.
     theme:
-      materialTheme: azure-blue
-      colorScheme: light
+      # Deliberately not the designer's own theme (azure-blue / light): the Preview tab renders a
+      # previewed application in its *own* Material theme, scoped to the shell, and a demo app sharing
+      # the designer's theme would produce byte-identical tokens and look like the scoping was broken.
+      materialTheme: rose-red
+      colorScheme: dark
     layout:
       preset: sidenav-left
       sidenavMode: side

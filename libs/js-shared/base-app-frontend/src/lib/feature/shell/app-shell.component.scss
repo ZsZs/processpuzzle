@@ -1,0 +1,44 @@
+/*
+ * Layout only. The Material themes this shell's host class selects live in
+ * `src/theme/pp-material-themes.scss` — a global stylesheet the consuming application registers, because
+ * four full token sets are far past the `anyComponentStyle` budget a component stylesheet is held to.
+ * See that file for how the theming works and what it cannot reach.
+ *
+ * The host itself is the three-row grid — header, content, footer — rather than a wrapper inside it.
+ * That is what lets a caller decide how tall the shell is: a height or a min-height set on pp-app-shell
+ * from outside sizes the grid directly, and the 1fr row absorbs the difference, so the footer sits at the
+ * bottom of whatever space the host is given. Through a wrapper it could not: a percentage height inside
+ * a parent that has only a min-height resolves to auto, the 1fr row collapses to its content, and the
+ * footer rides up under the header.
+ *
+ * height: 100% covers the other case — an ancestor chain that does have definite heights, as the
+ * standalone runtime host will.
+ */
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+}
+
+.pp-app-shell__top {
+  align-items: stretch;
+  display: flex;
+  background-color: var(--pp-surface-header);
+}
+
+/* min-height: 0 keeps the sidenav container from being sized by its content and overflowing the
+   1fr row — a grid item's automatic minimum size is its content, not zero. */
+.pp-app-shell__body {
+  height: 100%;
+  min-height: 0;
+}
+
+.pp-app-shell__sidenav {
+  background-color: var(--pp-surface-sidenav);
+  color: var(--pp-on-sidenav);
+  min-width: 200px;
+}
+
+.pp-app-shell__content {
+  padding: 16px 20px 24px;
+}

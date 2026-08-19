@@ -1,4 +1,4 @@
-import { AppDefinition, LayoutPreset, SidenavMode } from '../../domain/app-definition';
+import { AppDefinition, ColorScheme, LayoutPreset, SidenavMode } from '../../domain/app-definition';
 
 /**
  * The layout decisions {@link AppShellComponent} renders from, resolved out of an `AppDefinition`'s
@@ -80,4 +80,26 @@ export function layoutOf(definition: AppDefinition | undefined): ResolvedLayout 
 export function themeVarsOf(definition: AppDefinition | undefined): Record<string, string> {
   // The nested object first, so an override the form actually edited wins over the one the server sent.
   return { ...definition?.theme?.tokenOverrides, ...definition?.tokenOverrides };
+}
+
+/** The scheme a definition that names none is rendered in, matching the contract's own default. */
+const DEFAULT_COLOR_SCHEME: ColorScheme = 'light';
+
+/**
+ * Which of the scoped Material themes in `app-shell.component.scss` the shell should wear, as the class
+ * names that select it — `pp-theme-<materialTheme> pp-scheme-<colorScheme>`.
+ *
+ * **Empty unless a `materialTheme` is named.** A `colorScheme` on its own would be half a theme: it
+ * decides which side of the stylesheet's `light-dark()` values is used, and with no theme block applied
+ * there are none — so it would flip native controls to dark while every Material component kept the
+ * surrounding application's colours. Inheriting the host's theme untouched is the honest reading of a
+ * definition that has not chosen one, and matches the shell's rule of never inventing what was not
+ * authored.
+ */
+export function themeClassOf(definition: AppDefinition | undefined): string {
+  const materialTheme = definition?.materialTheme ?? definition?.theme?.materialTheme;
+  if (!materialTheme) return '';
+
+  const colorScheme = definition?.colorScheme ?? definition?.theme?.colorScheme ?? DEFAULT_COLOR_SCHEME;
+  return `pp-theme-${materialTheme} pp-scheme-${colorScheme}`;
 }

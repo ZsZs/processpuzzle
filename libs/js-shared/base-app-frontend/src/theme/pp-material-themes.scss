@@ -1,0 +1,81 @@
+@use 'sass:list';
+@use '@angular/material' as mat;
+
+////
+/// The four Material themes an `AppDefinition` may name in `theme.materialTheme`, each emitted under a
+/// class so that a *subtree* can wear one — which is what lets the designer's Preview tab render a
+/// previewed application in its own theme while the designer around it keeps its own.
+///
+/// This works because `mat.theme()` emits nothing but `--mat-sys-*` custom properties: a Material theme
+/// is a set of cascading variables, so it can be declared on any element rather than only on `html`.
+/// Angular's own prebuilt themes (`@angular/material/prebuilt-themes/*.css`) cannot be reused for this —
+/// their `html` selector is baked into the shipped CSS — so the palettes are referenced directly here.
+/// The four names and their palette pairs match those prebuilt files, and `MATERIAL_THEMES` in
+/// `app-definition.ts` is the list this has to stay in step with.
+///
+/// `theme-type: color-scheme` is what keeps this to four blocks rather than twelve: it emits every token
+/// as `light-dark(<light>, <dark>)`, and `light-dark()` resolves against the **element's own**
+/// `color-scheme`. So one block per palette serves light, dark and auto, and the three scheme classes at
+/// the bottom are the entire light/dark switch.
+///
+/// ### Registering it
+/// A global stylesheet rather than a component's, because four full token sets are ~32 kB (about 3 kB
+/// gzipped) and Angular's `anyComponentStyle` budget is meant to catch exactly that shape of file. Add it
+/// to the consuming application's `styles` array, next to `pp-colors.css`:
+///
+/// ```jsonc
+/// "styles": [
+///   "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
+///   "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss",
+///   "src/styles.scss"
+/// ]
+/// ```
+///
+/// Without it, `AppShellComponent` still sets the classes and simply inherits the host application's
+/// theme — a missing registration costs theming, not correctness.
+///
+/// ### Known limitation: CDK overlays
+/// A dialog, menu, tooltip, snackbar or `mat-select` panel renders into `.cdk-overlay-container`, a child
+/// of `<body>` and therefore outside the themed subtree, so it keeps the host application's theme. This
+/// does not arise in a standalone deployment, where the application's theme is the document's; in the
+/// Preview tab an overlay opened from inside the preview will look like the designer. Closing that needs
+/// a per-panel class or a scoped `OverlayContainer`, neither of which belongs in a stylesheet.
+////
+
+$pp-material-themes: (
+  azure-blue: (mat.$azure-palette, mat.$blue-palette),
+  rose-red: (mat.$rose-palette, mat.$red-palette),
+  magenta-violet: (mat.$magenta-palette, mat.$violet-palette),
+  cyan-orange: (mat.$cyan-palette, mat.$orange-palette),
+);
+
+@each $name, $palettes in $pp-material-themes {
+  .pp-theme-#{$name} {
+    @include mat.theme(
+      (
+        color: (
+          theme-type: color-scheme,
+          primary: list.nth($palettes, 1),
+          tertiary: list.nth($palettes, 2),
+        ),
+        typography: Roboto,
+        density: 0,
+      )
+    );
+  }
+}
+
+// Which half of every light-dark() above is used. Also the real CSS `color-scheme`, so that native
+// widgets — scrollbars, date and colour pickers, form controls — match the previewed application rather
+// than the page hosting it.
+.pp-scheme-light {
+  color-scheme: light;
+}
+
+.pp-scheme-dark {
+  color-scheme: dark;
+}
+
+.pp-scheme-auto {
+  color-scheme: light dark;
+}

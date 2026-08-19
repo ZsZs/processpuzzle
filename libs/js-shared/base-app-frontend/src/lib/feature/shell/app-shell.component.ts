@@ -4,7 +4,7 @@ import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/mat
 import { RouterOutlet } from '@angular/router';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
-import { layoutOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeClassOf, themeVarsOf } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
 
 /**
@@ -22,18 +22,24 @@ import { NavOrientation } from './region-nav.component';
  * details form re-renders through ordinary signal propagation instead of a clear-and-rebuild that would
  * drop scroll position and focus on every keystroke.
  *
- * Not yet handled, each deliberately: **no routes are registered** under the outlet — that is the
- * nested router context, which needs `EntityTabDescriptor` to be able to carry child routes; and
- * `materialTheme` / `colorScheme` are not applied, because a Material theme wants `:root` and does not
- * scope to a subtree. Only the `--pp-*` overrides are, and those cascade.
+ * The whole theme is applied here, not only the brand colours: `--pp-*` overrides as a style binding and
+ * the definition's `materialTheme` / `colorScheme` as a class selecting one of the scoped Material themes
+ * in `src/theme/pp-material-themes.scss`. Both work because a Material theme is a set of custom
+ * properties and nothing else. That file is a **global stylesheet the application registers**; if it is
+ * not registered the classes below still land and the shell simply inherits the host's theme. See it for
+ * the one thing this cannot reach — CDK overlays, which render outside the shell's subtree.
+ *
+ * Not yet handled, deliberately: **no routes are registered** under the outlet. That is the nested router
+ * context, which needs `EntityTabDescriptor` to be able to carry child routes.
  */
 @Component({
   selector: 'pp-app-shell',
   standalone: true,
   imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet],
-  // Theme custom properties go on the host rather than on a wrapper, so the element that *is* the shell
-  // is also the element they cascade from — and so the host can be the grid, see the styles below.
-  host: { '[style]': 'themeVars()' },
+  // Both theme bindings go on the host rather than on a wrapper, so the element that *is* the shell is
+  // also the element they cascade from — and so the host can be the grid, see the stylesheet. `[class]`
+  // selects one of the scoped Material themes there; `[style]` carries the `--pp-*` overrides.
+  host: { '[class]': 'themeClass()', '[style]': 'themeVars()' },
   template: `
     @if (headerView() || topNavView()) {
       <div class="pp-app-shell__top">
@@ -63,45 +69,7 @@ import { NavOrientation } from './region-nav.component';
       <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
     }
   `,
-  styles: [
-    `
-      /*
-       * The host itself is the three-row grid — header, content, footer — rather than a wrapper inside it.
-       * That is what lets a *caller* decide how tall the shell is: a height or a min-height set on
-       * pp-app-shell from outside sizes the grid directly, and the 1fr row absorbs the difference, so the
-       * footer sits at the bottom of whatever space the host is given. Through a wrapper it could not: a
-       * percentage height inside a parent that has only a min-height resolves to auto, the 1fr row
-       * collapses to its content, and the footer rides up under the header.
-       *
-       * height: 100% covers the other case — an ancestor chain that does have definite heights, as the
-       * standalone runtime host will.
-       */
-      :host {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        height: 100%;
-      }
-      .pp-app-shell__top {
-        align-items: stretch;
-        display: flex;
-        background-color: var(--pp-surface-header);
-      }
-      /* min-height: 0 keeps the sidenav container from being sized by its content and overflowing the
-         1fr row — a grid item's automatic minimum size is its content, not zero. */
-      .pp-app-shell__body {
-        height: 100%;
-        min-height: 0;
-      }
-      .pp-app-shell__sidenav {
-        background-color: var(--pp-surface-sidenav);
-        color: var(--pp-on-sidenav);
-        min-width: 200px;
-      }
-      .pp-app-shell__content {
-        padding: 16px 20px 24px;
-      }
-    `,
-  ],
+  styleUrl: 'app-shell.component.scss',
 })
 export class AppShellComponent {
   /**
@@ -115,6 +83,7 @@ export class AppShellComponent {
 
   protected readonly layout = computed(() => layoutOf(this.definition()));
   protected readonly themeVars = computed(() => themeVarsOf(this.definition()));
+  protected readonly themeClass = computed(() => themeClassOf(this.definition()));
 
   private readonly regionViews = computed(() =>
     (this.definition()?.regions ?? []).map((region) => this.regionRenderer.render(region, this.definition())).filter((view): view is RegionView => view !== undefined),

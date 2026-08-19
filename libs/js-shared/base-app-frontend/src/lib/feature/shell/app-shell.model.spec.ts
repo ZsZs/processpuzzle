@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
-import { layoutOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeClassOf, themeVarsOf } from './app-shell.model';
 
 describe('layoutOf', () => {
   it('defaults an app that declares no layout to a left sidenav, open, in side mode', () => {
@@ -61,6 +61,38 @@ describe('layoutOf', () => {
     const layout = layoutOf(new AppDefinition({ preset: 'top-nav', layout: { preset: 'sidenav-left' } }));
 
     expect(layout.preset).toBe('top-nav');
+  });
+});
+
+describe('themeClassOf', () => {
+  it('names the scoped Material theme and the scheme that selects its light-dark half', () => {
+    expect(themeClassOf(new AppDefinition({ materialTheme: 'rose-red', colorScheme: 'dark' }))).toBe('pp-theme-rose-red pp-scheme-dark');
+  });
+
+  it('defaults an unstated scheme to light', () => {
+    expect(themeClassOf(new AppDefinition({ materialTheme: 'azure-blue' }))).toBe('pp-theme-azure-blue pp-scheme-light');
+  });
+
+  it('passes auto through, which the stylesheet turns into color-scheme: light dark', () => {
+    expect(themeClassOf(new AppDefinition({ materialTheme: 'cyan-orange', colorScheme: 'auto' }))).toBe('pp-theme-cyan-orange pp-scheme-auto');
+  });
+
+  it('applies nothing at all when no Material theme is named', () => {
+    // Including when a scheme *is* named: a scheme without a theme is half a theme, and inheriting the
+    // host application's is the honest reading. See the note on themeClassOf.
+    expect(themeClassOf(new AppDefinition({ id: 'demo' }))).toBe('');
+    expect(themeClassOf(new AppDefinition({ colorScheme: 'dark' }))).toBe('');
+    expect(themeClassOf(undefined)).toBe('');
+  });
+
+  it('falls back to the nested theme object when nothing flattened it', () => {
+    expect(themeClassOf(new AppDefinition({ theme: { materialTheme: 'magenta-violet', colorScheme: 'dark' } }))).toBe('pp-theme-magenta-violet pp-scheme-dark');
+  });
+
+  it('prefers the flattened fields over the nested ones, as a save does', () => {
+    const definition = new AppDefinition({ materialTheme: 'rose-red', colorScheme: 'light', theme: { materialTheme: 'azure-blue', colorScheme: 'dark' } });
+
+    expect(themeClassOf(definition)).toBe('pp-theme-rose-red pp-scheme-light');
   });
 });
 

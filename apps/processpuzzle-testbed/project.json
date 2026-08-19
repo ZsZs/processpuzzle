@@ -73,6 +73,7 @@
         "styles": [
           "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
           "apps/processpuzzle-testbed/src/custom-theme.scss",
+          "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss",
           "apps/processpuzzle-testbed/src/styles.scss",
           "node_modules/prismjs/themes/prism-okaidia.css",
           "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",

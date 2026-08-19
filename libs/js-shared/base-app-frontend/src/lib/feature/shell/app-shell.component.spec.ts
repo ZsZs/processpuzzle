@@ -197,5 +197,56 @@ describe('AppShellComponent', () => {
 
       expect(shellElement().style.getPropertyValue('--pp-surface-sidenav')).toBe('');
     });
+
+    it('selects the scoped Material theme by class on the host', async () => {
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'rose-red', colorScheme: 'dark' }));
+
+      expect([...shellElement().classList]).toEqual(expect.arrayContaining(['pp-theme-rose-red', 'pp-scheme-dark']));
+    });
+
+    it('wears no theme class when the definition names no Material theme', async () => {
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo' }));
+
+      expect([...shellElement().classList].filter((name) => name.startsWith('pp-theme-') || name.startsWith('pp-scheme-'))).toEqual([]);
+    });
+
+    it('swaps the theme class when the definition is edited', async () => {
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'azure-blue' }));
+
+      fixture.componentRef.setInput('definition', new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'cyan-orange' }));
+      fixture.detectChanges();
+
+      expect([...shellElement().classList]).toContain('pp-theme-cyan-orange');
+      expect([...shellElement().classList]).not.toContain('pp-theme-azure-blue');
+    });
+  });
+});
+
+/**
+ * The host `[class]` binding writes to the same element a parent template may have put its own classes
+ * on — the preview does exactly that kind of outside-in styling. Angular is supposed to merge rather
+ * than replace; this pins it, because a silent clobber would break a caller's layout with no error.
+ */
+describe('AppShellComponent host class merging', () => {
+  @Component({
+    selector: 'pp-shell-host',
+    standalone: true,
+    imports: [AppShellComponent],
+    template: `<pp-app-shell class="caller-owned" [definition]="definition" />`,
+  })
+  class ShellHostComponent {
+    definition = new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'azure-blue', colorScheme: 'auto' });
+  }
+
+  it('keeps a class set by the caller alongside the theme classes it adds', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [ShellHostComponent], providers: [provideRouter([])] });
+
+    const hostFixture = TestBed.createComponent(ShellHostComponent);
+    hostFixture.detectChanges();
+    await hostFixture.whenStable();
+
+    const shell = hostFixture.nativeElement.querySelector('pp-app-shell') as HTMLElement;
+    expect([...shell.classList]).toEqual(expect.arrayContaining(['caller-owned', 'pp-theme-azure-blue', 'pp-scheme-auto']));
   });
 });
