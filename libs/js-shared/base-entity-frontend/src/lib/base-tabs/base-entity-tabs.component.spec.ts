@@ -1,5 +1,5 @@
 import { BaseEntityTabsComponent } from './base-entity-tabs.component';
-import { DummyComponent, setupContainerComponentTest, TEST_ENTITY_TAB_SEGMENT } from '../../test-setup';
+import { DummyComponent, HOSTED_SCREENS_SEGMENT, setupContainerComponentTest, TEST_ENTITY_TAB_SEGMENT } from '../../test-setup';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { describe, expect, it, vi } from 'vitest';
@@ -177,6 +177,38 @@ describe('BaseEntityTabsComponent', () => {
       expect(component.store.currentTab()).toBe('TestEntity - ' + TEST_ENTITY_TAB_SEGMENT);
       expect(tabLinks(fixture)[0].nativeElement.getAttribute('aria-selected')).toBe('false');
       expect(tabLinks(fixture)[2].nativeElement.getAttribute('aria-selected')).toBe('true');
+    });
+
+    /**
+     * `BaseFormNavigatorSingletonStore` is a singleton whose `activeRouteSegment` names the **innermost**
+     * screen in the URL. When a container tab hosts another entity's screens — base-app's Preview tab — that
+     * innermost screen is not this entity's, and reading it lit this tab bar's own List link up while the
+     * container tab was the thing on display.
+     */
+    it('stays active while another entity’s screens are open inside it', async () => {
+      const { fixture, component, store, formNavigator } = await setupWithPreviewTab();
+      store.setCurrentEntity('1');
+
+      await formNavigator.navigateToUrl(`/test-entity/1/${TEST_ENTITY_TAB_SEGMENT}/${HOSTED_SCREENS_SEGMENT}/hosted-entity/list`);
+      fixture.detectChanges();
+
+      expect(component.store.currentTab()).toBe('TestEntity - ' + TEST_ENTITY_TAB_SEGMENT);
+      expect(tabLinks(fixture)[0].nativeElement.getAttribute('aria-selected')).toBe('false');
+      expect(tabLinks(fixture)[2].nativeElement.getAttribute('aria-selected')).toBe('true');
+    });
+
+    /**
+     * The other side of the same rule: an embedded child *is* part of this entity's aggregate, so its form
+     * keeps the owner's Details tab active — which is where the user came from and goes back to.
+     */
+    it('follows an embedded child of its own aggregate onto the Details tab', async () => {
+      const { fixture, component, store, formNavigator } = await setupWithPreviewTab();
+      store.setCurrentEntity('1');
+
+      await formNavigator.navigateToUrl('/test-entity/1/details/embedded-component/embedded_1_1/details');
+      fixture.detectChanges();
+
+      expect(component.store.currentTab()).toBe('TestEntity - details');
     });
 
     it('deregisters its tab on destroy', async () => {

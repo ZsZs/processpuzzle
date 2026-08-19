@@ -224,6 +224,27 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       return store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
     }
 
+    /**
+     * Whether the screen currently on display is **this entity's own**.
+     *
+     * This is a singleton: `activeRouteSegment` names the *innermost* screen in the URL, which is the right
+     * answer for the tab bar and toolbar of the entity that screen belongs to and the wrong one for every
+     * other entity rendered on the same page. They diverge as soon as one entity's screens are mounted below
+     * another's — the designer's Preview tab, where a previewed application's list lives at
+     * `…/app-definition/<id>/preview/order-list/order/list`: the hosting `App Definition` read `LIST_ROUTE`
+     * and lit its own List link up and showed its own list toolbar over somebody else's list.
+     *
+     * The innermost breadcrumb level answers it, since a level exists exactly where a route owns an entity's
+     * URL segment. A URL that names no entity at all counts as this one's, so a host that renders entity
+     * screens without declaring `entityName` on the route keeps today's behaviour rather than losing its
+     * toolbar.
+     */
+    function showsScreenOf(entityName: string): boolean {
+      const breadcrumb = store.breadcrumb();
+      const innermost = breadcrumb[breadcrumb.length - 1];
+      return !innermost || innermost.entityName === entityName;
+    }
+
     function determineCurrentUrl(): string {
       return Reflect.get(route, '_routerState').snapshot.url;
     }
@@ -455,6 +476,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       navigateToTab,
       navigateToUrl,
       registerTabSegments,
+      showsScreenOf,
       destroyNavigationTracking,
       initializeNavigationTracking,
       popFormSnapshot,

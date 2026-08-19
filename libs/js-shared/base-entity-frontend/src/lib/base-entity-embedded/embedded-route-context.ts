@@ -37,8 +37,10 @@ export interface EmbeddedRouteContext {
  * page refresh resolve to the same row as a drill-down.
  *
  * The entity name sits on the container route and the id on its `:entityId/details` child, and the router
- * hands both **down** to the routes nested below them. Two rules undo that inheritance:
+ * hands both **down** to the routes nested below them. Three rules undo that inheritance:
  *
+ * - a name counts only from the route that *declares* it in its config, not from every descendant that
+ *   inherited it — see {@link declaredEntityName};
  * - a name repeated while the level below it still has no id is that level's own details route echoing its
  *   container, not a new level — whereas a repeat *after* an id is a genuinely self-nesting child
  *   (`app-nav-item/a/details/app-nav-item/b/details`), which `App Nav Item` needs;
@@ -65,7 +67,7 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
   const levels: EmbeddedBreadcrumbLevel[] = [];
   let url = '';
   for (const current of snapshots) {
-    const entityName = current.data[ENTITY_NAME_ROUTE_DATA_KEY];
+    const entityName = declaredEntityName(current);
     const deepestLevel = levels[levels.length - 1];
     if (typeof entityName === 'string' && entityName.length > 0 && (deepestLevel?.entityName !== entityName || deepestLevel.entityId !== undefined)) {
       levels.push({ entityName, entityId: undefined, url, baseUrl: url });
@@ -81,6 +83,24 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
   }
 
   return levels;
+}
+
+/**
+ * The entity name this route **declares**, as opposed to one it inherited.
+ *
+ * `snapshot.data` is the merge of the route's own data with its ancestors', so every route below an
+ * entity's container reports that entity's name — including routes that have nothing to do with it. In the
+ * designer's Preview tab that produced a second, spurious level: `app-definition` declares the name,
+ * `:entityId/preview` supplies the id, and the previewed application's own `home` route then reported the
+ * same name *after* an id had been seen, which the repeat rule below reads as a genuinely new level. The
+ * status bar showed `Demo › Demo`.
+ *
+ * Reading the *config* is the same distinction {@link declaresEntityId} already makes for the id, and for the
+ * same reason: a level exists because some route owns an entity's URL segment, and that route is the one that
+ * declares the name.
+ */
+function declaredEntityName(snapshot: ActivatedRouteSnapshot): unknown {
+  return snapshot.routeConfig?.data?.[ENTITY_NAME_ROUTE_DATA_KEY];
 }
 
 /** True when `:entityId` is this route's own segment rather than one inherited from an ancestor. */

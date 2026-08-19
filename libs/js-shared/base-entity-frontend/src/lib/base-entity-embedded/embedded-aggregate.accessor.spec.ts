@@ -19,19 +19,26 @@ function embeddedAttr(attrName: string, linkedEntityType: string): BaseEntityAtt
   return attr;
 }
 
-/** Builds the snapshot chain the router would have produced, `data` and `params` inheritance included. */
+/**
+ * Builds the snapshot chain the router would have produced, `data` and `params` inheritance included: `data`
+ * is the inherited merge on every snapshot, while `routeConfig.data` carries only what a route declares —
+ * which is what `readEmbeddedBreadcrumb` counts a level from.
+ */
 function routerStateFor(levels: Array<{ entityName: string; entityId?: string }>): Router {
   const root = { data: {}, params: {}, parent: null, firstChild: null } as unknown as ActivatedRouteSnapshot;
   let deepest = root;
 
   let params: Record<string, string> = {};
+  let data: Record<string, string> = {};
   for (const level of levels) {
-    const data = { entityName: level.entityName };
-    const container = { data, params, parent: deepest, firstChild: null, routeConfig: { path: 'container' } } as unknown as ActivatedRouteSnapshot;
+    data = { ...data, entityName: level.entityName };
+    const declared = { entityName: level.entityName };
+    const container = { data, params, parent: deepest, firstChild: null, routeConfig: { path: 'container', data: declared } } as unknown as ActivatedRouteSnapshot;
     Reflect.set(deepest, 'firstChild', container);
     deepest = container;
     if (level.entityId !== undefined) {
       params = { ...params, entityId: level.entityId };
+      // Declares no name of its own — it only inherits its container's.
       const details = { data, params, parent: container, firstChild: null, routeConfig: { path: ':entityId/details' } } as unknown as ActivatedRouteSnapshot;
       Reflect.set(container, 'firstChild', details);
       deepest = details;

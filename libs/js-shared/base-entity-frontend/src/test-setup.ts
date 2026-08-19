@@ -127,6 +127,10 @@ export class DummyOutletComponent {}
 /** URL segment of the extra tab the test entity offers. */
 export const TEST_ENTITY_TAB_SEGMENT = 'preview';
 
+/** An entity whose screens are hosted *inside* `TestEntity`'s extra tab — see TEST_ENTITY_ROUTES. */
+export const HOSTED_ENTITY_NAME = 'Hosted Entity';
+export const HOSTED_SCREENS_SEGMENT = 'hosted-screens';
+
 export const TEST_ENTITY_ROUTES: Routes = [
   {
     path: 'test-entity',
@@ -135,7 +139,20 @@ export const TEST_ENTITY_ROUTES: Routes = [
       { path: BaseUrlSegments.ListForm, component: DummyComponent },
       // Stands in for an entity's extra tab (see EntityTabDescriptor) — a sibling of the details route,
       // sharing its `<entity>/<id>` prefix, which is the shape the navigator counts back over.
-      { path: ':' + BaseUrlSegments.EntityID + '/' + TEST_ENTITY_TAB_SEGMENT, component: DummyComponent },
+      //
+      // A *container* tab, like base-app's Preview: it hosts another entity's screens below it, which is the
+      // one arrangement where the innermost screen in the URL is not this entity's. The nested shape mirrors
+      // what `entityScreenRoute` emits — a host segment, then the hosted entity's own snake-case segment.
+      {
+        path: ':' + BaseUrlSegments.EntityID + '/' + TEST_ENTITY_TAB_SEGMENT,
+        component: DummyOutletComponent,
+        children: [
+          {
+            path: HOSTED_SCREENS_SEGMENT,
+            children: [{ path: 'hosted-entity', data: { [ENTITY_NAME_ROUTE_DATA_KEY]: HOSTED_ENTITY_NAME }, children: [{ path: BaseUrlSegments.ListForm, component: DummyComponent }] }],
+          },
+        ],
+      },
       {
         path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
         component: DummyOutletComponent,

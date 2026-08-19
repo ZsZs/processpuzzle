@@ -124,9 +124,38 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
     return this.entityDescriptor().entityName + ' - ' + tab.segment;
   }
 
+  /**
+   * The extra tab of *this* entity that the URL is inside, when the screen on display belongs to an entity
+   * outside this one's aggregate altogether.
+   *
+   * `showsScreenOf` is what decides it, shared with `BaseEntityToolbarComponent`, which has the same problem
+   * for the same reason: `activeRouteSegment` is a singleton naming the **innermost** screen in the URL. The
+   * designer's Preview tab is where they diverge — a previewed application's own list lives at
+   * `…/preview/order-list/order/list`, so the *hosting* `App Definition` tab bar read `LIST_ROUTE` and lit its
+   * own List link up while the Preview tab was the thing on display.
+   *
+   * Deciding it by "is the innermost screen mine?" rather than by the URL's shape is what makes this hold for
+   * any depth: an embedded child of this entity *is* mine to follow (drilling into `App Region` keeps the
+   * owner's Details tab active, as before), while another entity's screens hosted inside one of my tabs are
+   * not — they are that tab.
+   */
+  private hostedTab(): EntityTabDescriptor | undefined {
+    if (this.formNavigator.showsScreenOf(this.entityDescriptor().entityName)) return undefined;
+
+    // This entity's own tabs, not the store's merged list: another entity's tab segment says nothing here.
+    const segments = this.formNavigator.determineCurrentUrl().split('/');
+    return this.entityDescriptor().extraTabs.find((tab) => segments.includes(tab.segment));
+  }
+
   private registerEffects() {
     effect(() => {
       const activeSegment = this.formNavigator.activeRouteSegment();
+      // Read before the three-way below, because the URL may end on a screen that is not this entity's at all.
+      const hostedTab = this.hostedTab();
+      if (hostedTab) {
+        this.store.tabIsActive(this.tabName(hostedTab));
+        return;
+      }
       if (activeSegment === RouteSegments.DETAILS_ROUTE) {
         this.store.tabIsActive(this.detailsTabName());
       } else if (activeSegment === RouteSegments.ENTITY_TAB_ROUTE) {
