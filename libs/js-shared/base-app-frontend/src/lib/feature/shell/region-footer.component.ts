@@ -23,6 +23,12 @@ import { WidgetListComponent } from '../widget-list.component';
         justify-content: space-between;
         padding: 8px 16px;
       }
+      /* Beside one another, as in the header — see the note there on why the list stays unopinionated. */
+      pp-widget-list {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+      }
     `,
   ],
 })

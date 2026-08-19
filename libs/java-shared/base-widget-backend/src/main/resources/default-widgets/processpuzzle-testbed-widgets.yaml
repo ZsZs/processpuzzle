@@ -13,9 +13,18 @@
 # passes through the same mapper and the same key/port validation as a definition a designer saves.
 # Keys are lowercase-hyphen, as the contract's WidgetKey pattern requires.
 #
-# The two widget types below are the ones the testbed already renders as Angular components, so the
-# catalogue describes what the application can actually place rather than an aspiration. They arrive as
-# drafts: publishing is the designer's decision, and it leaves the Publish action something to do.
+# Every `key` below is a key `provideBaseWidgets()` registers in base-widget-frontend's WIDGET_REGISTRY,
+# and the catalogue holds nothing else. That is the whole point of the file: a palette entry a designer
+# can place is a promise that something will render it, and a key with no component behind it is a
+# promise the shell cannot keep — it surfaces only when the app is previewed, long after the choice.
+# So the list is kept in step with base-widget.providers.ts by hand, and shrinks rather than grows
+# ahead of the implementation. They arrive as drafts: publishing is the designer's decision, and it
+# leaves the Publish action something to do.
+#
+# The widgets divide into two kinds, and the difference shows in `propsSchema`. Content widgets are
+# configured — they take props and declare a schema for them. Chrome widgets (the four at the bottom)
+# read what they need from the application's own providers, so they take no props at all, which an
+# *empty* schema says and a null one would not: null means "nobody has described this yet".
 
 widgetDefinitions:
   # The palette entry of the card grid the testbed's content pages are built from. `propsSchema` is the
@@ -73,3 +82,60 @@ widgetDefinitions:
         type: STRING
         required: true
         description: Path of the document to render.
+
+  # ── Chrome widgets ──
+  #
+  # The four below are what a header or footer region is made of. None takes props: each reads its
+  # state from a provider the hosting application already supplies — the Transloco service, the
+  # application property store, the share-buttons options, RUNTIME_CONFIGURATION. An empty
+  # `properties` map is therefore the accurate schema, and it is what stops the designer from
+  # offering a props form for a widget that has nothing to configure.
+
+  - key: language-selector
+    name: Language selector
+    translocoId: base_widget.language_selector.name
+    description: >-
+      Switches the active language, listing the locales the application was configured with.
+    category: Navigation
+    icon: translate
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+
+  - key: like-button
+    name: Like button
+    translocoId: base_widget.like_button.name
+    description: >-
+      A toggle that counts likes of the current application, persisted through the application
+      property store.
+    category: Social
+    icon: thumb_up
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+
+  - key: share-button
+    name: Share button
+    translocoId: base_widget.share_button.name
+    description: >-
+      Shares the current page to the social networks the application enabled.
+    category: Social
+    icon: share
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+
+  - key: version-button
+    name: Version button
+    translocoId: base_widget.version_button.name
+    description: >-
+      Shows the running application's version, read from its runtime configuration.
+    category: System
+    icon: info
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false

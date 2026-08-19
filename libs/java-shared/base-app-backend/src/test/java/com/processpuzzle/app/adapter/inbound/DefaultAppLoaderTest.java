@@ -9,6 +9,7 @@ import com.processpuzzle.app.model.Organization;
 import com.processpuzzle.app.model.OrganizationInput;
 import com.processpuzzle.app.model.OrganizationStatus;
 import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.RouteTarget;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -63,6 +65,18 @@ class DefaultAppLoaderTest {
 
     private static final String TESTBED_KEY = "processpuzzle-testbed";
     private static final String TESTBED_FILE = "processpuzzle-testbed-apps.yaml";
+
+    /**
+     * The registry keys {@code provideBaseWidgets()} publishes, from
+     * {@code libs/js-shared/base-widget-frontend/src/base-widget.providers.ts}, and the same list the
+     * companion {@code processpuzzle-testbed-widgets.yaml} catalogues.
+     *
+     * Duplicated rather than derived because nothing on this side of the stack can read that file. That
+     * makes it a list to keep in step by hand, which is the cost of the check — and worth paying, since
+     * the alternative is the seed naming a widget nobody implements and no build noticing.
+     */
+    private static final List<String> REGISTERED_WIDGET_TYPES =
+            List.of("cards-grid", "language-selector", "like-button", "markdown-page", "share-button", "version-button");
 
     private AppEndpoint endpoint;
     private ResourcePatternResolver resourceResolver;
@@ -173,13 +187,24 @@ class DefaultAppLoaderTest {
                 .containsExactly(RegionType.HEADER, RegionType.SIDENAV, RegionType.FOOTER);
         assertThat(sidenavOf(demo).getNavItems()).isNotEmpty();
 
-        // Every declared route is reachable and every entity widget names its entity, both of which the
-        // structural validator and the 'App Definition' rules require.
+        // One route of each kind the shell can render. A WIDGETS route with no widgets renders a blank
+        // content area, and an ENTITY route with no entityName resolves to no descriptor — both of which
+        // the structural validator and the 'App Definition' rules require to be filled in.
         assertThat(demo.getRoutes()).extracting(RouteDefinition::getPath)
-                .containsExactly("order-list", "order-entry", "order-line-list");
-        assertThat(demo.getRoutes()).allSatisfy(route ->
-                assertThat(route.getTarget().getWidgets()).isNotEmpty().allSatisfy(widget ->
-                        assertThat(entityNameOf(widget)).isNotBlank()));
+                .containsExactly("home", "order-list", "order-line-list");
+        assertThat(demo.getRoutes()).extracting(route -> route.getTarget().getKind())
+                .containsExactly(RouteTarget.KindEnum.WIDGETS, RouteTarget.KindEnum.ENTITY, RouteTarget.KindEnum.ENTITY);
+        assertThat(demo.getRoutes()).allSatisfy(route -> {
+            RouteTarget target = route.getTarget();
+            if (target.getKind() == RouteTarget.KindEnum.WIDGETS) assertThat(target.getWidgets()).isNotEmpty();
+            else assertThat(target.getEntityName()).isNotBlank();
+        });
+
+        // The check the validator cannot make. `WidgetInstance.type` is an open string it can only test
+        // for blankness, so a type no component implements is accepted here and fails much later, when
+        // the app is previewed, with the shell unable to say which widget it was.
+        assertThat(placedWidgetTypesOf(demo)).isNotEmpty().allMatch(REGISTERED_WIDGET_TYPES::contains,
+                "registered by provideBaseWidgets()");
 
         // Nothing blocking, and exactly one advisory: 'nav-order-admin' points into the mounted module,
         // whose routes an app definition cannot see. That warning is the loose coupling working, so it is
@@ -441,9 +466,13 @@ class DefaultAppLoaderTest {
         return sidenav.get();
     }
 
-    private static String entityNameOf(WidgetInstance widget) {
-        assertThat(widget.getProps()).isNotNull();
-        return String.valueOf(widget.getProps().get("entityName"));
+    /** Every widget the definition places, region widgets and route widgets alike. */
+    private static List<String> placedWidgetTypesOf(AppDefinitionInput definition) {
+        Stream<WidgetInstance> inRegions = definition.getRegions().stream()
+                .flatMap(region -> Optional.ofNullable(region.getWidgets()).orElseGet(List::of).stream());
+        Stream<WidgetInstance> inRoutes = definition.getRoutes().stream()
+                .flatMap(route -> Optional.ofNullable(route.getTarget().getWidgets()).orElseGet(List::of).stream());
+        return Stream.concat(inRegions, inRoutes).map(WidgetInstance::getType).toList();
     }
 
     /** The real structural validator, with no entity registry and no rule engine wired. */

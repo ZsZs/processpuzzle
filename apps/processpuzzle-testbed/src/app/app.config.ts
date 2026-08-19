@@ -11,7 +11,7 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, provideAppPropertyStore } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
 import { provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/util';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
@@ -68,6 +68,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-widget: the routable `Widget Definition` plus its two embedded port lists, rendered by
       // the Widgets tab of the design section's Application page.
       ...BASE_WIDGET_FACADE_PROVIDERS,
+      // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
+      // widget instance by looking its `type` up there, and provides nothing itself by design — which
+      // component answers a key is the hosting application's decision, not the shell's.
+      provideBaseWidgets(),
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {

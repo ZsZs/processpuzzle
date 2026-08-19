@@ -1,5 +1,6 @@
 import { Injectable, Type } from '@angular/core';
 import { AppDefinition, RegionDefinition, RegionType } from '../../domain/app-definition';
+import { knownRoutePathsOf } from './app-shell.model';
 import { RegionFooterComponent } from './region-footer.component';
 import { RegionHeaderComponent } from './region-header.component';
 import { RegionNavComponent } from './region-nav.component';
@@ -46,7 +47,9 @@ export class AppRegionRenderer {
       case 'sidenav':
         // `orientation` is left at the component's own default; the shell overrides it for `top-nav`,
         // because the axis follows the layout preset rather than anything authored on the region.
-        return { slot: 'sidenav', component: RegionNavComponent, inputs: { navItems: region.navItems ?? [] } };
+        // `knownPaths` comes from the definition rather than the region: whether a nav entry resolves is a
+        // question about the *application's* routes, which only this function can see from here.
+        return { slot: 'sidenav', component: RegionNavComponent, inputs: { navItems: region.navItems ?? [], knownPaths: knownRoutePathsOf(definition) } };
       default:
         // A region whose `type` the designer has not chosen yet. `RegionDefinition.type` is
         // `RegionType | undefined` precisely because a row exists before its dropdown is touched, and

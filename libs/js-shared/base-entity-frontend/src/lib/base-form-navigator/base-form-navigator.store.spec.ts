@@ -40,6 +40,10 @@ describe('BaseFormNavigatorStore', () => {
           { path: 'home', component: DummyComponent },
           { path: 'test-entity/:id/details', component: DummyComponent },
           { path: 'test-entity/:id/content', component: DummyComponent },
+          // A *container* tab: its component hosts an outlet, so screens of its own answer below it. The
+          // path deliberately ends in the letters of the list segment — that is what base-app's Preview tab
+          // looks like with an application route named `order-list` under it.
+          { path: 'test-entity/:id/content/order-list', component: DummyComponent },
           { path: 'test-entity/list', component: DummyComponent },
           { path: 'application-property/:id/details', component: DummyComponent },
           { path: 'application-property/list', component: DummyComponent },
@@ -130,6 +134,37 @@ describe('BaseFormNavigatorStore', () => {
       await store.navigateToTab('1', 'content', 'elsewhere');
 
       expect(store.returnTo()).toEqual('home');
+    });
+
+    /**
+     * A container tab keeps its own screens below it, so the URL continues past the tab segment. Read only
+     * at the end of the URL the tab went unrecognized — and since `order-list` ends in the letters of the
+     * list segment, it classified as the *list form*, which is what put an entity toolbar and an active List
+     * link on a previewed application.
+     */
+    it('stays on a container tab for a URL below it', async () => {
+      store.registerTabSegments(['content']);
+
+      await store.navigateToUrl('test-entity/1/content/order-list', 'home');
+
+      expect(store.activeRouteSegment()).toEqual(RouteSegments.ENTITY_TAB_ROUTE);
+      expect(store.activeTabSegment()).toEqual('content');
+    });
+
+    it('classifies no form at all below an unregistered tab whose path ends in a form segment’s letters', async () => {
+      await store.navigateToUrl('test-entity/1/content/order-list', 'home');
+
+      expect(store.activeRouteSegment()).toBeUndefined();
+    });
+
+    /** The prefix is located at the tab, not counted back from the end, so a container tab's depth is irrelevant. */
+    it('leaves the list reachable from below a container tab', async () => {
+      store.registerTabSegments(['content']);
+      await store.navigateToUrl('test-entity/1/content/order-list', 'home');
+
+      await store.navigateToList();
+
+      expect(store.determineCurrentUrl()).toEqual('/test-entity/list');
     });
 
     it('clears the tab segment again on a details or list route', async () => {

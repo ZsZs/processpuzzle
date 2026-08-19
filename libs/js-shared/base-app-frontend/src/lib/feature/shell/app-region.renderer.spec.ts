@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppDefinition, RegionDefinition, RegionType } from '../../domain/app-definition';
+import { AppDefinition, RegionDefinition, RegionType, RouteDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer } from './app-region.renderer';
 import { RegionFooterComponent } from './region-footer.component';
 import { RegionHeaderComponent } from './region-header.component';
@@ -42,8 +42,18 @@ describe('AppRegionRenderer', () => {
     expect(renderer.render(new RegionDefinition({ type: 'sidenav', navItems }), app)).toEqual({
       slot: 'sidenav',
       component: RegionNavComponent,
-      inputs: { navItems },
+      inputs: { navItems, knownPaths: [] },
     });
+  });
+
+  it('tells the sidenav which paths the application accounts for, routes and module mounts alike', () => {
+    const definition = new AppDefinition({
+      name: 'Demo',
+      routes: [new RouteDefinition({ path: 'orders', title: 'Orders', kind: 'WIDGETS' })],
+      modules: [{ moduleKey: 'order-admin', basePath: 'back-office' }],
+    });
+
+    expect(renderer.render(new RegionDefinition({ type: 'sidenav' }), definition)?.inputs['knownPaths']).toEqual(['orders', 'back-office']);
   });
 
   it.each(['header', 'footer', 'sidenav'] as RegionType[])('substitutes an empty collection for an absent one on %s', (type) => {

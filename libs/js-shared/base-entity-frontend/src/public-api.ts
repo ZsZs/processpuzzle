@@ -43,6 +43,9 @@ export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entit
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES, baseEntityRoutes, type EmbeddedChildRoute } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
+// Exported so a feature contributing an `EntityTabDescriptor` with `canMatch` can name the route parameter
+// this library puts in the path, rather than restating the literal `'entityId'` and drifting from it.
+export { BaseUrlSegments } from './lib/base-form-navigator/base-url-segments';
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
 export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';

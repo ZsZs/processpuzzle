@@ -53,6 +53,17 @@ import { WidgetListComponent } from '../widget-list.component';
       .pp-region-header__title {
         margin: 0;
       }
+      /*
+       * A row, because a header's widgets sit beside one another. The list component itself stays
+       * unopinionated — the same component fills a routed content area, where a landing page's widgets
+       * belong *under* one another — so the axis is the region's to choose, and a chrome row is the one
+       * place it is not the default.
+       */
+      pp-widget-list {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+      }
     `,
   ],
 })

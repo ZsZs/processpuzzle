@@ -82,6 +82,20 @@ export function themeVarsOf(definition: AppDefinition | undefined): Record<strin
   return { ...definition?.theme?.tokenOverrides, ...definition?.tokenOverrides };
 }
 
+/**
+ * The route paths this definition accounts for: its own routes' paths, plus the base path of every module
+ * it mounts.
+ *
+ * A module's *own* routes are deliberately absent. They live in the module's definition, which the router
+ * fetches only when something navigates into the mount, so they cannot be known here — which is why the
+ * consumer of this list treats a path *below* a known one as accounted for. See `toNavRows`.
+ */
+export function knownRoutePathsOf(definition: AppDefinition | undefined): string[] {
+  const declared = (definition?.routes ?? []).map((route) => route.path);
+  const mounted = (definition?.modules ?? []).map((mount) => mount.basePath);
+  return [...declared, ...mounted].filter((path): path is string => !!path);
+}
+
 /** The scheme a definition that names none is rendered in, matching the contract's own default. */
 const DEFAULT_COLOR_SCHEME: ColorScheme = 'light';
 

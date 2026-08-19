@@ -51,6 +51,39 @@ describe('baseEntityRoutes', () => {
     expect(baseEntityRoutes().map((route) => route.path)).toEqual(['', ':entityId/details', 'list']);
   });
 
+  it('leaves a leaf tab exactly as it was, with no children and no guard', () => {
+    const routes = baseEntityRoutes([], [{ segment: 'content', i18nKey: 'x.tabs.content', component: BaseEntityListComponent }]);
+    const tab = routes.find((route) => route.path === ':entityId/content');
+
+    expect(tab).toEqual({ path: ':entityId/content', component: BaseEntityListComponent });
+  });
+
+  it('carries a container tab’s children and guard onto its route', () => {
+    const guard = () => true;
+    const routes = baseEntityRoutes([], [{ segment: 'preview', i18nKey: 'x.tabs.preview', component: BaseEntityListComponent, children: [], canMatch: [guard] }]);
+    const tab = routes.find((route) => route.path === ':entityId/preview');
+
+    expect(tab?.canMatch).toEqual([guard]);
+    // An empty array, not undefined: the router reads `children` fresh on every recognition, so a guard can
+    // fill it in — which is the whole point of a tab opting in.
+    expect(tab?.children).toEqual([]);
+  });
+
+  /**
+   * The same `Routes` array is spread into more than one place in a real config — `BASE_APP_ROUTES` is
+   * mounted under the designer and standalone — so a guard assigning `route.children` must not be writing
+   * through an array shared with the other mount.
+   */
+  it('gives each call its own children array rather than aliasing the descriptor’s', () => {
+    const tab = { segment: 'preview', i18nKey: 'x.tabs.preview', component: BaseEntityListComponent, children: [] as Routes };
+
+    const first = baseEntityRoutes([], [tab]).find((route) => route.path === ':entityId/preview');
+    const second = baseEntityRoutes([], [tab]).find((route) => route.path === ':entityId/preview');
+
+    expect(first?.children).not.toBe(second?.children);
+    expect(first?.children).not.toBe(tab.children);
+  });
+
   it('hangs an embedded child below the details route, under its snake-cased entity name', () => {
     const routes = baseEntityRoutes([{ entityName: 'Embedded Component', facade: embeddedComponentFacade }]);
 

@@ -84,6 +84,47 @@ function levelUpUrl(currentUrl: string): string {
   return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
 }
 
+/**
+ * Whether the URL's last segment is exactly `segment`, anchored on the preceding `/`.
+ *
+ * Unanchored — a bare `endsWith('list')` — any path whose *letters* happen to end that way read as the
+ * list form: a previewed application's own `…/preview/order-list` classified as `LIST_ROUTE`, which put
+ * the hosting entity's toolbar on the Preview tab.
+ */
+function endsWithSegment(url: string, segment: string): boolean {
+  return url.endsWith('/' + segment);
+}
+
+/**
+ * The registered tab segment the URL sits on **or below**, innermost first.
+ *
+ * Below, and not only at the end, because a tab may be a *container*: the Preview tab hosts the previewed
+ * application's own screens, so `…/preview/order-list` is still the Preview tab. Read only at the end, such
+ * a URL classified as nothing at all — which lit the List link up while the Preview tab was on display.
+ */
+function findTabSegment(url: string, tabSegments: string[]): string | undefined {
+  const segments = url.split('/');
+  for (let index = segments.length - 1; index > 0; index--) {
+    if (tabSegments.includes(segments[index])) return segments[index];
+  }
+  return undefined;
+}
+
+/**
+ * The prefix a tab URL is built on: everything before the entity's own `<entity>/<id>/<segment>` triple,
+ * wherever that sits.
+ *
+ * Counting three levels back from the end is only right while the tab is a leaf. A container tab's URL
+ * continues past it, and the count then leaves part of the previewed application's path in the prefix —
+ * which is how the tab bar's List and Details links came to navigate to `/app-definition/demo/app-definition/demo/details`.
+ */
+function baseUrlOfTabRoute(currentUrl: string, tabSegment: string | undefined): string {
+  const segments = currentUrl.split('/');
+  const tabIndex = tabSegment ? segments.lastIndexOf(tabSegment) : -1;
+  // Shorter than `<base>/<entity>/<id>/<segment>`: the entity's screens are at the root and there is no prefix.
+  return tabIndex < 3 ? '' : segments.slice(0, tabIndex - 2).join('/');
+}
+
 function normalizeUrl(url: string): string {
   return url.startsWith('/') ? url : '/' + url;
 }
@@ -123,10 +164,12 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
       const currentUrl = Reflect.get(route, '_routerState').snapshot.url;
-      const tabSegment = store.tabSegments().find((segment) => currentUrl.endsWith('/' + segment));
-      if (currentUrl.endsWith(BaseUrlSegments.ListForm)) {
+      const tabSegment = findTabSegment(currentUrl, store.tabSegments());
+      // A list or details form the URL *ends* on wins over a tab it merely passes through: those two are the
+      // innermost screen wherever they appear, including inside a container tab.
+      if (endsWithSegment(currentUrl, BaseUrlSegments.ListForm)) {
         patchState(store, { activeRouteSegment: RouteSegments.LIST_ROUTE, activeTabSegment: undefined });
-      } else if (currentUrl.endsWith(BaseUrlSegments.DetailsForm)) {
+      } else if (endsWithSegment(currentUrl, BaseUrlSegments.DetailsForm)) {
         patchState(store, { activeRouteSegment: RouteSegments.DETAILS_ROUTE, activeTabSegment: undefined });
       } else if (tabSegment) {
         patchState(store, { activeRouteSegment: RouteSegments.ENTITY_TAB_ROUTE, activeTabSegment: tabSegment });
@@ -171,11 +214,14 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       if (level) return level.baseUrl;
 
       const currentUrl = determineCurrentUrl();
-      // An extra tab's URL has the details route's shape — `<base>/<entity>/<id>/<segment>` — so it counts
-      // back the same three levels. Reading it as the two-level list shape would leave one segment of the
-      // entity's own path in the prefix, and every URL built on it would be wrong.
-      const isEntityScopedRoute = store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE || store.activeRouteSegment() === RouteSegments.ENTITY_TAB_ROUTE;
-      return isEntityScopedRoute ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
+      // An extra tab's URL has the details route's shape — `<base>/<entity>/<id>/<segment>` — but it does
+      // not have to *end* there: a container tab carries the screens it hosts below it. So the triple is
+      // located rather than counted back from the end.
+      if (store.activeRouteSegment() === RouteSegments.ENTITY_TAB_ROUTE) return baseUrlOfTabRoute(currentUrl, store.activeTabSegment());
+      // The details form is always the end of its URL, so counting back over its own three levels holds.
+      // Reading it as the two-level list shape would leave one segment of the entity's own path in the
+      // prefix, and every URL built on it would be wrong.
+      return store.activeRouteSegment() === RouteSegments.DETAILS_ROUTE ? levelUpUrl(levelUpUrl(levelUpUrl(currentUrl))) : levelUpUrl(levelUpUrl(currentUrl));
     }
 
     function determineCurrentUrl(): string {

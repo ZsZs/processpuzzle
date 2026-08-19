@@ -1,4 +1,16 @@
 {
+  "application-properties": [
+    {
+      "id": "e98e29a3-5c20-410a-b31c-b2584102283c",
+      "name": "likes",
+      "value": "42"
+    },
+    {
+      "id": "custom-id-123",
+      "name": "theme",
+      "value": "dark"
+    }
+  ],
   "test-entity": [
     {
       "id": "1",
@@ -15,20 +27,13 @@
         "name": "ef-generic-message",
         "mimeType": "application/zip"
       },
-      "tags": [
-        "tag1",
-        "tag2"
-      ],
+      "tags": ["tag1", "tag2"],
       "additionalProperties": {
         "priority": "high",
         "owner": "alice",
         "region": "eu-west-1"
       },
-      "components": [
-        "1",
-        "2",
-        "3"
-      ],
+      "components": ["1", "2", "3"],
       "embeddedComponents": [
         {
           "id": "embedded_1_1",
@@ -82,9 +87,7 @@
       "date": "2024-02-18T20:02:27",
       "lookup": "schlüssel_2",
       "enumValue": 0,
-      "tags": [
-        "tag3"
-      ],
+      "tags": ["tag3"],
       "additionalProperties": {
         "priority": "low"
       },
@@ -94,10 +97,7 @@
         "name": "HUK24_Versicherungsschein",
         "mimeType": "application/pdf"
       },
-      "components": [
-        "4",
-        "5"
-      ],
+      "components": ["4", "5"],
       "embeddedComponents": [
         {
           "id": "embedded_2_1",
@@ -139,10 +139,7 @@
       "number": 400,
       "date": "2024-04-18T20:02:27",
       "enumValue": 0,
-      "tags": [
-        "tag1",
-        "tag2"
-      ]
+      "tags": ["tag1", "tag2"]
     },
     {
       "id": "5",
@@ -429,9 +426,7 @@
       "context": "Organization",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "key"
-      ],
+      "fields": ["key"],
       "expression": "/^[a-z0-9]+(-[a-z0-9]+)*$/.test(entity.key || '') && (entity.key || '').length >= 2 && (entity.key || '').length <= 63",
       "message": "An organization key is 2–63 characters of lowercase letters, digits and single hyphens.",
       "translocoId": "rule.organization.keyIsASlug"
@@ -443,9 +438,7 @@
       "context": "Organization",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "key"
-      ],
+      "fields": ["key"],
       "expression": "['admin', 'api', 'assets', 'auth', 'callback', 'design', 'docs', 'health', 'help', 'images', 'login', 'logout', 'oauth2', 'public', 'signup', 'static', 'status', 'support', 'swagger', 'well-known', 'www'].indexOf((entity.key || '').toLowerCase()) < 0",
       "message": "This key is reserved for the platform's own routes.",
       "translocoId": "rule.organization.keyIsNotReserved"
@@ -457,9 +450,7 @@
       "context": "Organization",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "contactEmail"
-      ],
+      "fields": ["contactEmail"],
       "expression": "entity.contactEmail == null || entity.contactEmail === '' || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(entity.contactEmail)",
       "message": "The contact email does not look like an address.",
       "translocoId": "rule.organization.contactEmailLooksValid"
@@ -471,9 +462,7 @@
       "context": "Organization",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "defaultLocale"
-      ],
+      "fields": ["defaultLocale"],
       "expression": "entity.defaultLocale == null || entity.defaultLocale === '' || /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$/.test(entity.defaultLocale)",
       "message": "A default locale looks like 'en' or 'en-GB'.",
       "translocoId": "rule.organization.defaultLocaleIsBcp47"
@@ -485,9 +474,7 @@
       "context": "App Definition",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "id"
-      ],
+      "fields": ["id"],
       "expression": "/^[a-z0-9]+(-[a-z0-9]+)*$/.test(entity.id || '') && (entity.id || '').length <= 100",
       "message": "An app id is lowercase letters, digits and single hyphens, at most 100 characters.",
       "translocoId": "rule.appDefinition.idIsRouteSafe"
@@ -499,9 +486,7 @@
       "context": "App Definition",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "routes"
-      ],
+      "fields": ["routes"],
       "expression": "(entity.routes || []).every(r => (r.path || '').split('/').length > 0 && (r.path || '').split('/').every(s => /^:?[a-z0-9]+(-[a-z0-9]+)*$/.test(s)))",
       "message": "Every route path segment must be lowercase letters, digits and single hyphens.",
       "translocoId": "rule.appDefinition.routePathsAreRouteSafe"
@@ -513,10 +498,7 @@
       "context": "App Definition",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "routes",
-        "regions"
-      ],
+      "fields": ["routes", "regions"],
       "expression": "((check) => (entity.routes || []).every(r => check((r.target || {}).widgets || [])) && (entity.regions || []).every(r => check(r.widgets || [])))( (widgets) => widgets.every(w => !(w.type === 'entity-grid' || w.type === 'entity-form') || (w.props != null && typeof w.props.entityName === 'string' && w.props.entityName.trim() !== '')))",
       "message": "An 'entity-grid' or 'entity-form' widget needs props.entityName.",
       "translocoId": "rule.appDefinition.entityWidgetsDeclareAnEntityName"
@@ -528,9 +510,7 @@
       "context": "App Definition",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "regions"
-      ],
+      "fields": ["regions"],
       "expression": "(entity.regions || []).some(r => r.type === 'sidenav' && (r.navItems || []).length > 0)",
       "message": "This app declares no sidenav navigation, so no route is reachable.",
       "translocoId": "rule.appDefinition.declaresAPopulatedSidenav"
@@ -542,9 +522,7 @@
       "context": "App Definition",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "regions"
-      ],
+      "fields": ["regions"],
       "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x, 1))((self, items, depth) => items.every(n => depth <= 2 && self(self, n.children || [], depth + 1)), r.navItems || []))",
       "message": "Sidenav entries nest more than two levels deep.",
       "translocoId": "rule.appDefinition.sidenavDepthAtMostTwo"
@@ -556,9 +534,7 @@
       "context": "App Definition",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "regions"
-      ],
+      "fields": ["regions"],
       "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x))((self, items) => items.every(n => (n.roles || []).every(role => /^[A-Z][A-Z0-9_]*$/.test(role)) && self(self, n.children || [])), r.navItems || []))",
       "message": "Roles are UPPER_SNAKE_CASE, e.g. CLAIMS_ADJUSTER.",
       "translocoId": "rule.appDefinition.navItemRolesAreUpperSnakeCase"
@@ -570,9 +546,7 @@
       "context": "App Definition",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "layout"
-      ],
+      "fields": ["layout"],
       "expression": "entity.layout == null || entity.layout.contentMaxWidth == null || entity.layout.contentMaxWidth === '' || /^[0-9]+(\\.[0-9]+)?(px|rem|em|%|vw|vh|ch)$/.test(entity.layout.contentMaxWidth)",
       "message": "Content max width needs a CSS unit, e.g. 1280px.",
       "translocoId": "rule.appDefinition.contentMaxWidthIsACssLength"
@@ -584,9 +558,7 @@
       "context": "App Definition",
       "severity": "INFO",
       "enabled": true,
-      "fields": [
-        "regions"
-      ],
+      "fields": ["regions"],
       "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x))((self, items) => items.every(n => (n.routePath == null || n.routePath === '' || (n.icon != null && n.icon !== '')) && self(self, n.children || [])), r.navItems || []))",
       "message": "A nav entry that opens a route should have an icon.",
       "translocoId": "rule.appDefinition.navigableNavItemsHaveAnIcon"
@@ -598,10 +570,7 @@
       "context": "App Definition",
       "severity": "INFO",
       "enabled": true,
-      "fields": [
-        "translocoId",
-        "routes"
-      ],
+      "fields": ["translocoId", "routes"],
       "expression": "entity.translocoId != null && entity.translocoId !== '' && (entity.routes || []).every(r => r.translocoId != null && r.translocoId !== '')",
       "message": "Give the app name and every route title a Transloco id.",
       "translocoId": "rule.appDefinition.titlesAreTranslatable"
@@ -614,9 +583,7 @@
       "context": "Order",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "lineItems"
-      ],
+      "fields": ["lineItems"],
       "expression": "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) > 0)",
       "message": "All line item quantities must be greater than zero.",
       "translocoId": "rule.order.positiveQuantities"
@@ -627,10 +594,7 @@
       "context": "Order",
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "total",
-        "lineItems"
-      ],
+      "fields": ["total", "lineItems"],
       "expression": "!entity.lineItems || Math.abs(Number(entity.total) - entity.lineItems.reduce((sum, li) => sum + Number(li.unitPrice) * Number(li.quantity), 0)) < 0.001",
       "message": "Order total does not match the sum of line item subtotals.",
       "translocoId": "rule.order.totalMatchesLineItems"
@@ -642,10 +606,7 @@
       "context": "Order",
       "severity": "WARNING",
       "enabled": true,
-      "fields": [
-        "shippingAddress",
-        "status"
-      ],
+      "fields": ["shippingAddress", "status"],
       "expression": "entity.status !== 'SHIPPED' || (entity.shippingAddress != null && entity.shippingAddress !== '')",
       "message": "A shipped order is missing its shipping address.",
       "translocoId": "rule.order.shippedRequiresAddress"
@@ -659,9 +620,7 @@
       "override": true,
       "severity": "ERROR",
       "enabled": true,
-      "fields": [
-        "lineItems"
-      ],
+      "fields": ["lineItems"],
       "expression": "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) >= 0)",
       "message": "Special order line items must have a non-negative quantity.",
       "translocoId": "rule.specialOrder.allowsZeroQuantity"
@@ -746,12 +705,7 @@
                 "type": "entity-grid",
                 "props": {
                   "entityName": "Order",
-                  "columns": [
-                    "orderNumber",
-                    "customerName",
-                    "status",
-                    "total"
-                  ],
+                  "columns": ["orderNumber", "customerName", "status", "total"],
                   "rsqlFilter": "status!=CANCELLED"
                 }
               }
@@ -789,11 +743,7 @@
                 "type": "entity-grid",
                 "props": {
                   "entityName": "Order Line",
-                  "columns": [
-                    "productName",
-                    "quantity",
-                    "unitPrice"
-                  ]
+                  "columns": ["productName", "quantity", "unitPrice"]
                 }
               }
             ]

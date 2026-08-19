@@ -73,6 +73,7 @@ export { AppPreviewComponent } from './lib/feature/app-preview.component';
 // The run-time shell. Published because the standalone runtime host mounts `AppShellComponent` exactly as
 // the Preview tab does — that being the whole reason the shell is a component with one input.
 export { AppShellComponent } from './lib/feature/shell/app-shell.component';
+export { AppShellRoutesFactory, appShellRoutesGuard } from './lib/feature/shell/app-shell-routes';
 export { AppRegionRenderer, type RegionView } from './lib/feature/shell/app-region.renderer';
 export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/app-shell.model';
 export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';
