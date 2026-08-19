@@ -79,10 +79,13 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Related Entity': RelatedEntityFacade,
           'Trunk Data': TrunkDataFacade,
           'Firestore Doc': FirestoreDocFacade,
-          // 'Order' and its embedded 'Order Line' are deliberately absent: they moved to
-          // base-entity-backend's processpuzzle-testbed-entities.yaml and are metadata now, with no
-          // compile-time facade. Until a descriptor can be synthesized from BaseEntityDefinition,
-          // RouteEntityComponent renders its "not registered" state for the app definition's Order routes.
+          // 'Order' and its embedded 'Order Line' are deliberately absent, and stay absent: they are
+          // metadata now — base-entity-backend's processpuzzle-testbed-entities.yaml — and their
+          // descriptors are synthesized from those definitions at run-time by base-entity's
+          // `EntityScreenResolver`. Registering them here would *override* that, since a compile-time
+          // facade wins by design; the demo application's Order screens are meant to exercise the
+          // metadata path end to end. An entity only needs an entry below when the application has
+          // something to add that a definition cannot express — an extra tab, a Firestore repository.
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,

@@ -95,6 +95,27 @@ function segmentsOf(snapshot: ActivatedRouteSnapshot): string {
 }
 
 /**
+ * The part of a URL chain that is **one aggregate**: the longest tail in which every level is an embedded
+ * component of the level above it.
+ *
+ * A URL may walk through entities that have nothing to do with each other. The designer's Preview tab is the
+ * case that forced this: a previewed application's screens are mounted *below* `app-definition/<id>`, so an
+ * order line's chain reads `App Definition` -> `Order` -> `Order Line`. Taking the outermost level as the
+ * aggregate root then asks `App Definition` for an embedded `Order` it has never heard of, and nothing
+ * resolves — which showed up as every embedded list in a previewed application coming up empty, and every
+ * link into an embedded row bouncing back to the form it was clicked on.
+ *
+ * Walking back from the deepest level and stopping at the first pair that is not a containment expresses
+ * "one aggregate" without needing to know *why* the outer levels are there. For an ordinary authoring URL,
+ * where the whole chain is one aggregate, it stops at the root and changes nothing.
+ */
+export function aggregateChainOf<Level extends EmbeddedRouteLevel>(levels: readonly Level[], descriptorOf: (entityName: string) => BaseEntityDescriptor | undefined): Level[] {
+  let start = levels.length - 1;
+  while (start > 0 && !!descriptorOf(levels[start - 1].entityName)?.embeddedAttrFor(levels[start].entityName)) start--;
+  return levels.slice(start);
+}
+
+/**
  * Turns the URL chain into a path into the root's payload. Resolving the hops needs the payload itself,
  * because a row's position is what addresses it — the URL carries the row's *key*, and only the aggregate
  * knows where that key currently sits.

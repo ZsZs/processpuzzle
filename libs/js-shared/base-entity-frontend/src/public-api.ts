@@ -27,6 +27,25 @@ export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.servi
 export { BASE_ENTITY_STORE, BaseEntityStore } from './lib/base-entity-store/base-entity.store';
 export { BASE_ENTITY_FACADE_REGISTRY, type BaseEntityFacadeRegistry, EntityRegistryComponent } from './lib/base-entity-facade/base-entity-facade-registry';
 export { BaseEntityDescriptorRegistry } from './lib/base-entity-facade/base-entity-descriptor.registry';
+
+// The metadata layer: an entity type declared as a `BaseEntityDefinition` row rather than as a class with a
+// facade beside it. `EntityScreenResolver` is what a run-time shell asks; the rest is exported for the
+// designer, which edits the definitions this reads.
+export type { DynamicEntity, EntityAttributeDefinition, EntityDefinition, EntityDefinitionStatus, EntityValueKind } from './lib/base-entity-definition/entity-definition';
+export { ENTITY_SERVICE_ROOT_KEY, EntityDefinitionService } from './lib/base-entity-definition/entity-definition.service';
+export { EntityDefinitionRegistry } from './lib/base-entity-definition/entity-definition.registry';
+export { controlTypeOf, descriptorOf, referenceIdFieldOf, type DefinitionLookup } from './lib/base-entity-definition/dynamic-entity.descriptor';
+export { DynamicEntityMapper } from './lib/base-entity-definition/dynamic-entity.mapper';
+export { DynamicEntityService } from './lib/base-entity-definition/dynamic-entity.service';
+export { DynamicEmbeddedEntityFacade, DynamicEntityFacade, dynamicEntityTypeOf } from './lib/base-entity-definition/dynamic-entity.facade';
+export { DynamicEntityRegistry, type ResolvedDynamicEntity } from './lib/base-entity-definition/dynamic-entity.registry';
+
+// Mounting an entity's generated screens at a route — List and Details with the tabs, toolbar and status bar.
+// The seam a host application uses, whether its entities are compiled in or defined as metadata: base-app is
+// one caller of this, not a prerequisite for it.
+export { EntityScreenResolver, type EntityScreens } from './lib/base-entity-screens/entity-screens.resolver';
+export { entityScreenRoute, type EntityScreenRouteOptions } from './lib/base-entity-screens/entity-screen-routes';
+export { BaseEntityScreensComponent, ENTITY_DESCRIPTOR_ROUTE_DATA_KEY, REQUESTED_ENTITY_ROUTE_DATA_KEY } from './lib/base-entity-screens/entity-screens.component';
 export { EmbeddedEntityFacade } from './lib/base-entity-facade/embedded-entity.facade';
 export { EmbeddedEntityService } from './lib/base-entity-service/embedded-entity.service';
 export { EmbeddedAggregateAccessor, type ResolvedEmbeddedAggregate } from './lib/base-entity-embedded/embedded-aggregate.accessor';
@@ -35,7 +54,7 @@ export { EmbeddedEntityHostComponent } from './lib/base-entity-embedded/embedded
 export type { EmbeddedBreadcrumbLevel, EmbeddedRouteContext, EmbeddedRouteLevel } from './lib/base-entity-embedded/embedded-route-context';
 export type { EmbeddedPath, EmbeddedPathStep, EmbeddedRow } from './lib/base-entity-embedded/embedded-aggregate';
 export { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
-export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
+export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments, snakeCaseName, type NavigationState } from './lib/base-form-navigator/base-form-navigator.store';
 export { NavigatorCommand, type NavigationPayload } from './lib/base-form-navigator/navigation-payload';
 export { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY, EMBEDDED_ENTITY_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-route-registry.providers';

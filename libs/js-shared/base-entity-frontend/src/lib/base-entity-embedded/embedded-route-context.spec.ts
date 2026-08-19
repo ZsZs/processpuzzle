@@ -4,7 +4,7 @@ import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { snakeCaseName } from '../base-form-navigator/base-form-navigator.store';
-import { readEmbeddedBreadcrumb, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+import { aggregateChainOf, readEmbeddedBreadcrumb, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
 
 function segments(...paths: string[]): UrlSegment[] {
   return paths.map((path) => ({ path }) as UrlSegment);
@@ -141,6 +141,69 @@ describe('readEmbeddedBreadcrumb', () => {
 
   it('returns nothing for an empty chain', () => {
     expect(readEmbeddedBreadcrumb(null)).toEqual([]);
+  });
+});
+
+describe('aggregateChainOf', () => {
+  const chain = (...levels: Array<[string, string | undefined]>) => levels.map(([entityName, entityId]) => ({ entityName, entityId }));
+
+  it('keeps a chain that is one aggregate from end to end', () => {
+    const levels = chain(['Test Entity', '1'], ['Embedded Component', 'embedded_1_1'], ['Embedded Detail', 'detail_a']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels);
+  });
+
+  /**
+   * The designer's Preview tab: a previewed application's screens are mounted below `app-definition/<id>`,
+   * so the chain starts at an entity that carries nothing embedded at all. Reading it as the aggregate root
+   * left every embedded list in a previewed application empty.
+   */
+  it('drops the levels above the aggregate — an entity the URL merely passes through', () => {
+    const levels = chain(['App Definition', 'demo'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('drops several such levels, however deep the hosting screens nest', () => {
+    const levels = chain(['App Definition', 'demo'], ['App Region', 'sidenav'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(2));
+  });
+
+  it('leaves a single level alone — there is no aggregate to find and nothing to drop', () => {
+    const levels = chain(['Test Entity', '1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels);
+  });
+
+  it('answers with the deepest level alone when its owner does not carry it, so the caller resolves nothing', () => {
+    const levels = chain(['Test Entity', '1'], ['Embedded Detail', 'detail_a']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('stops at a level whose descriptor is unknown rather than assuming containment', () => {
+    const levels = chain(['Nowhere', 'x'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('keeps a child type that nests inside itself', () => {
+    const selfNesting = {
+      'Nav Item': new BaseEntityDescriptor({ entityName: 'Nav Item', attrDescriptors: [embeddedAttr('children', 'Nav Item')] }),
+    };
+    const levels = chain(['Nav Item', 'a'], ['Nav Item', 'b'], ['Nav Item', 'c']);
+
+    expect(aggregateChainOf(levels, (entityName) => selfNesting[entityName as 'Nav Item'])).toEqual(levels);
+  });
+
+  it('preserves the extra fields of a breadcrumb level, so it can slice a breadcrumb as well as a chain', () => {
+    const levels = [
+      { entityName: 'App Definition', entityId: 'demo', url: '/app-definition/demo', baseUrl: '' },
+      { entityName: 'Test Entity', entityId: '1', url: '/test-entity/1/details', baseUrl: '/test-entity' },
+    ];
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual([levels[1]]);
   });
 });
 

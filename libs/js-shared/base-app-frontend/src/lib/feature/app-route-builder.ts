@@ -31,10 +31,16 @@ export type ModuleLoader = (moduleKey: string) => Promise<ModuleDefinition | und
 
 /**
  * Turns one authored route into the `Route` that renders it — component or `loadComponent`, `title`,
- * `data`, and any `canMatch` guard the definition's `roles` call for. Everything except `path` and
- * `children`, which {@link buildAppRoutes} owns and overwrites.
+ * `data`, and any `canMatch` guard the definition's `roles` call for. `path` is {@link buildAppRoutes}'
+ * to set; `children` it may contribute, and the authored ones are appended to them.
+ *
+ * May be asynchronous. An `ENTITY` route's screens are built from a `BaseEntityDescriptor` that has to be
+ * *fetched* when the entity exists only as metadata, and the routes below it depend on what that
+ * descriptor turns out to contain — which embedded children it carries. Making the renderer async is what
+ * lets a route be emitted complete or not at all; the alternative, a guard that fills `children` in on the
+ * way past, has no way to signal failure other than leaving the route matching nothing.
  */
-export type RouteRenderer = (definition: RouteDefinition) => Route;
+export type RouteRenderer = (definition: RouteDefinition) => Route | Promise<Route>;
 
 interface TrieNode {
   segment: string;
@@ -67,18 +73,18 @@ interface TrieNode {
  * swallowed by it. Beyond that the authored order is kept, and a duplicate path — which the backend
  * rejects as an error, so it should never arrive — keeps its first occurrence.
  */
-export function buildAppRoutes(source: AppRouteSource, renderRoute: RouteRenderer): Routes {
-  const appRoutes = emitLevel(trieOf(source.routes), [], renderRoute);
-  return [...appRoutes, ...moduleRoutesOf(source, renderRoute)];
+export async function buildAppRoutes(source: AppRouteSource, renderRoute: RouteRenderer): Promise<Routes> {
+  const appRoutes = await emitLevel(trieOf(source.routes), [], renderRoute);
+  return [...appRoutes, ...(await moduleRoutesOf(source, renderRoute))];
 }
 
-function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer): Routes {
+async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer): Promise<Routes> {
   const mounted: Routes = [];
   for (const mount of source.modules ?? []) {
     if (!mount.basePath) continue;
     const routes = source.moduleRoutes?.[mount.moduleKey];
     if (routes) {
-      if (routes.length) mounted.push({ path: mount.basePath, children: emitLevel(trieOf(routes), [], renderRoute) });
+      if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute) });
     } else if (source.loadModule) {
       mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute));
     }
@@ -112,7 +118,7 @@ function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader
     path: basePath,
     loadChildren: async () => {
       const definition = await loadModule(moduleKey);
-      const children = emitLevel(trieOf(definition?.routes), [], renderRoute);
+      const children = await emitLevel(trieOf(definition?.routes), [], renderRoute);
       if (!definition || !children.length) return [];
       const scope = moduleTranslocoScope(definition);
       const providers = [
@@ -152,17 +158,24 @@ function trieOf(routes: RouteDefinition[] | undefined): TrieNode[] {
  * The routes of one level. An authored node becomes a `Route` whose children are emitted below it; an
  * unauthored one contributes its segment to the paths of its descendants instead of a route of its own.
  */
-function emitLevel(nodes: TrieNode[], prefix: string[], renderRoute: RouteRenderer): Routes {
-  const routes = nodes.flatMap((node) => emitNode(node, prefix, renderRoute));
+async function emitLevel(nodes: TrieNode[], prefix: string[], renderRoute: RouteRenderer): Promise<Routes> {
+  const routes = (await Promise.all(nodes.map((node) => emitNode(node, prefix, renderRoute)))).flat();
   return routes.sort((left, right) => staticDepthOf(right.path) - staticDepthOf(left.path));
 }
 
-function emitNode(node: TrieNode, prefix: string[], renderRoute: RouteRenderer): Routes {
+async function emitNode(node: TrieNode, prefix: string[], renderRoute: RouteRenderer): Promise<Routes> {
   const path = [...prefix, node.segment];
-  if (!node.definition) return node.children.flatMap((child) => emitNode(child, path, renderRoute));
+  if (!node.definition) return (await Promise.all(node.children.map((child) => emitNode(child, path, renderRoute)))).flat();
 
-  const children = emitLevel(node.children, [], renderRoute);
-  const route: Route = { ...renderRoute(node.definition), path: path.join('/') };
+  const authoredChildren = await emitLevel(node.children, [], renderRoute);
+  const rendered = await renderRoute(node.definition);
+  const route: Route = { ...rendered, path: path.join('/') };
+  // The renderer's own children come first and the authored ones after, rather than the authored ones
+  // replacing them. An `ENTITY` route contributes the List and Details routes of its entity *and* may be
+  // the path prefix of other authored routes; overwriting would silently drop whichever of the two the
+  // builder happened not to know about. The renderer's include an empty-path redirect, which `pathMatch:
+  // 'full'` confines to the prefix's own URL, so it cannot shadow an authored sibling.
+  const children = [...(rendered.children ?? []), ...authoredChildren];
   if (children.length) route.children = children;
   return [route];
 }

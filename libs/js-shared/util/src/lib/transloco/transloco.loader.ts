@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Translation, TranslocoLoader, TranslocoLoaderData } from '@jsverse/transloco';
 import { catchError, map, Observable, of } from 'rxjs';
 import { RUNTIME_CONFIGURATION } from '../runtime-configuration/configuration.injection-tokens';
+import { serviceRootOf } from '../runtime-configuration/service-root';
 import { TRANSLATION_SOURCE_REGISTRY, translationSourceOf } from './translation-source';
 
 /**
@@ -70,7 +71,7 @@ export class TranslocoHttpLoader implements TranslocoLoader {
    */
   private fromBackend(scope: string | undefined, locale: string): Observable<Translation> {
     const source = translationSourceOf(this.sources, scope);
-    const root = this.serviceRoot(source.serviceRootKey);
+    const root = serviceRootOf(this.runtimeConfiguration, source.serviceRootKey);
     if (!root) return of({});
 
     const suffix = scope ? `${scope}/${locale}` : locale;
@@ -78,17 +79,5 @@ export class TranslocoHttpLoader implements TranslocoLoader {
       map((bundle) => this.requireBundle(bundle)),
       catchError(() => of({})),
     );
-  }
-
-  /**
-   * `RUNTIME_CONFIGURATION` is typed as a bare `object`, so it is read reflectively — the same way
-   * `ObjectStoreService` reads its own root. Falls back to `APP_SERVICE_ROOT`: the per-feature roots are
-   * optional, and one host serves every feature today.
-   */
-  private serviceRoot(key: string): string {
-    if (!this.runtimeConfiguration) return '';
-    const baseConfiguration = Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION');
-    if (!baseConfiguration) return '';
-    return Reflect.get(baseConfiguration, key) ?? Reflect.get(baseConfiguration, 'APP_SERVICE_ROOT') ?? '';
   }
 }

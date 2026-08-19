@@ -68,6 +68,8 @@ const DEFERRED: ReadonlyArray<readonly [string, string]> = [
   ['/organizations/{orgKey}/documents/validate', 'post'],
   ['/organizations/{orgKey}/documents/import', 'post'],
   ['/organizations/{orgKey}/documents/{documentId}/export', 'get'],
+  ['/organizations/{orgKey}/document/translations/{locale}', 'get'],
+  ['/organizations/{orgKey}/document/translations/{scope}/{locale}', 'get'],
 ];
 
 const DOCUMENT_ID = '11111111-1111-1111-1111-111111111111';

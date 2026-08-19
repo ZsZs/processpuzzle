@@ -30,7 +30,7 @@ export class AppShellRoutesFactory {
     const definition = await this.definitionOf(appId);
     if (!definition) return [];
 
-    const built = buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule: this.loadModule }, this.renderRoute);
+    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule: this.loadModule }, this.renderRoute);
     return built.length ? [indexRoute(definition, built), ...built] : built;
   }
 

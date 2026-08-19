@@ -5,7 +5,7 @@ import { BaseEntityMapper } from '../base-entity.mapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, OrderBy } from './base-entity-load-response';
 import { buildUrl } from 'build-url-ts';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { BaseEntityService } from './base-entity.service';
 import { toRsql } from './rsql';
 
@@ -20,13 +20,26 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     'Access-Control-Allow-Headers': 'Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers',
   });
 
+  /**
+   * Names of the two query parameters a filtered, sorted collection read is built from. Overridable
+   * because the workspace's contracts do not agree on them: `shared-api.yaml` and every feature that
+   * refers to it say `where` / `order`, while base-entity's *instances* resource says `rsql` / `sort`
+   * (`base-entity-api.yaml`, `listEntities`). The RSQL and the sort expression themselves are identical,
+   * so a subclass renames rather than reimplements — see `DynamicEntityService`.
+   */
+  protected readonly filterParamName: string = 'where';
+  protected readonly sortParamName: string = 'order';
+
   constructor(
     @Inject('entityMapper') protected entityMapper: BaseEntityMapper<Entity>,
     protected urlProperty: string,
     protected resourceUrl: string,
   ) {
-    const baseConf = Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION');
-    this.baseUrl = Reflect.get(baseConf, urlProperty);
+    // Through the shared helper rather than a bare read, so the fallback `BaseConfiguration` documents for
+    // the optional per-feature roots — absent, use `APP_SERVICE_ROOT` — holds for entity endpoints too and
+    // not only for the translations resource. No deployment's `BACKEND_SERVICE_ROOT` is absent, so this
+    // changes nothing for the services that were here before it.
+    this.baseUrl = serviceRootOf(this.runtimeConfiguration, urlProperty);
   }
 
   // region public accessor and mutator methods
@@ -121,9 +134,9 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const queryParams: Map<string, string> = new Map<string, string>();
     if (queryCondition.page !== undefined) queryParams.set('page', queryCondition.page.toString());
     if (queryCondition.pageSize !== undefined) queryParams.set('size', queryCondition.pageSize.toString());
-    if (queryCondition.orderBys?.length) queryParams.set('order', this.buildOrder(queryCondition.orderBys));
+    if (queryCondition.orderBys?.length) queryParams.set(this.sortParamName, this.buildOrder(queryCondition.orderBys));
     const rsql = this.buildRsql(queryCondition);
-    if (rsql) queryParams.set('where', rsql);
+    if (rsql) queryParams.set(this.filterParamName, rsql);
 
     let params: Record<string, string> | undefined = {};
     if (queryParams.size > 0) {

@@ -9,7 +9,8 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
-import { RouteEntityComponent } from '../route-entity.component';
+
+import { BaseEntityScreensComponent } from '@processpuzzle/base-entity';
 import { RouteWidgetsComponent } from '../route-widgets.component';
 import { AppShellRoutesFactory, appShellRoutesGuard } from './app-shell-routes';
 
@@ -56,7 +57,7 @@ describe('AppShellRoutesFactory', () => {
 
     expect(children.map((route) => route.path)).toEqual(['', 'orders', 'claims']);
     expect(children.find((route) => route.path === 'orders')?.component).toBe(RouteWidgetsComponent);
-    expect(children.find((route) => route.path === 'claims')?.component).toBe(RouteEntityComponent);
+    expect(children.find((route) => route.path === 'claims')?.component).toBe(BaseEntityScreensComponent);
   });
 
   it('lands the application root on its first authored route', async () => {

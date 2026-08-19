@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-descriptor.registry';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
-import { EmbeddedRouteContext, EmbeddedRouteLevel, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+import { aggregateChainOf, EmbeddedRouteContext, EmbeddedRouteLevel, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
 
 /** An embedded level resolved against the live aggregate: where its rows are, and who owns the document. */
 export interface ResolvedEmbeddedAggregate {
@@ -26,7 +26,7 @@ export class EmbeddedAggregateAccessor {
 
   /** `undefined` when no aggregate holding `entityName` is open — the caller decides whether that is an error. */
   resolve(entityName: string): ResolvedEmbeddedAggregate | undefined {
-    const levels = this.levelsFor(entityName);
+    const levels = this.aggregateOf(this.levelsFor(entityName));
     if (levels.length < 2) return undefined;
 
     const rootEntityName = levels[0].entityName;
@@ -53,7 +53,7 @@ export class EmbeddedAggregateAccessor {
    * them has to be told when that document arrives or changes.
    */
   rootStoreFor(entityName: string): BaseEntityStoreApi<BaseEntity> | undefined {
-    const levels = this.levelsFor(entityName);
+    const levels = this.aggregateOf(this.levelsFor(entityName));
     if (levels.length < 2) return undefined;
 
     return this.descriptorRegistry.getStore<BaseEntityStoreApi<BaseEntity>>(levels[0].entityName);
@@ -84,6 +84,11 @@ export class EmbeddedAggregateAccessor {
     if (levelIndex >= 0) return levels.slice(0, levelIndex + 1);
 
     return [...levels, { entityName, entityId: undefined }];
+  }
+
+  /** The levels of {@link levelsFor} that form one aggregate. See {@link aggregateChainOf}. */
+  private aggregateOf(levels: EmbeddedRouteLevel[]): EmbeddedRouteLevel[] {
+    return aggregateChainOf(levels, (entityName) => this.descriptorRegistry.getDescriptor(entityName));
   }
 
   private deepestActivatedRoute(): ActivatedRouteSnapshot {

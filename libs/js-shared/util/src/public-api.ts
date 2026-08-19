@@ -5,6 +5,7 @@ export { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYP
 export type { ConfigurationOptions } from './lib/runtime-configuration/configuration.options';
 export { centralHttpErrorInterceptor } from './lib/error-handler/central-http-error.interceptor';
 export { ConfigurationService } from './lib/runtime-configuration/configuration.service';
+export { serviceRootOf } from './lib/runtime-configuration/service-root';
 export { CentralErrorHandler } from './lib/error-handler/central-error-handler';
 export * from './lib/error-snackbar/error-snackbar.component';
 export { ErrorSnackbarService, provideErrorSnackbar } from './lib/error-snackbar/error-snackbar.service';
