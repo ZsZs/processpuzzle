@@ -174,6 +174,15 @@ class TranslationBundleImporterTest {
     }
 
     @Test
+    void acceptsBundlesThatAreMergedByTheSink() throws IOException {
+        given(file("acme-translations.yaml", "translations:\n  - scope: orders\n    locale: en\n    messages: {}\n"));
+
+        importer.importAll("base-app", (orgKey, entry) -> TranslationBundleImporter.Outcome.MERGED);
+
+        assertThat(accepted).isEmpty();
+    }
+
+    @Test
     void reportsNothingToDoWhenNoFileIsBundled() throws IOException {
         given();
 
@@ -188,8 +197,10 @@ class TranslationBundleImporterTest {
 
         Map<String, Object> merged = TranslationBundleImporter.deepMerge(base, overlay);
 
-        assertThat(merged).containsEntry("top", "base").containsEntry("extra", "added");
-        assertThat(merged.get("module")).isEqualTo(Map.of("name", "Order administration", "hint", "kept"));
+        assertThat(merged)
+                .containsEntry("top", "base")
+                .containsEntry("extra", "added")
+                .containsEntry("module", Map.of("name", "Order administration", "hint", "kept"));
     }
 
     @Test
