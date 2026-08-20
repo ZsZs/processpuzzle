@@ -6,26 +6,12 @@
 # `<orgKey>-entities.yaml` works in base-entity, `<orgKey>-state-machines.yaml` in base-state,
 # `<orgKey>-apps.yaml` in base-app, and `<orgKey>-widgets.yaml` in base-widget.
 #
-# SPEM-inspired coupling to base-state (see processpuzzle-testbed-state-machines.yaml's 'order' machine):
-#   - Task.completionStateTriggerKey: completing this task fires this triggerKey against the state
-#     machine instance bound to the work product named in its 'outputs' (or 'inputs', for tasks with no
-#     BASE_ENTITY output). Proposed field — not yet present in base-workflow-backend's domain model,
-#     since that module currently has no Java source on this branch. Introducing it here so the sample
-#     data doubles as the spec for Task when the hexagonal implementation is built.
-#   - Task.preconditionStateKey: the reverse gate — this task cannot be started unless the order's
-#     current state equals this key. Complements the existing preconditionRuleId, which gates on a
-#     base-rule PPCL rule instead of on state.
-#
-# 'cancel' is a valid trigger on the order state machine but is deliberately not fired by any task here:
-# cancellation is an out-of-band action on the order itself, not a step in the normal fulfillment path.
-
 processes:
   - id: order-fulfillment-workflow
     name: Order Fulfillment Workflow
     description: >-
       Tiny end-to-end workflow governing order review, shipment approval, and delivery confirmation in
-      the testbed environment. Each task's completion advances the order's state machine by exactly one
-      transition, and each task after the first is gated on the order already being in the right state.
+      the testbed environment.
     tools:
       - automated-check-tool
     roles:
@@ -62,7 +48,6 @@ processes:
             refId: order
             label: Reviewed Order
         preconditionRuleId: positive-quantities
-        completionStateTriggerKey: confirm
         dependsOn: [ ]
         parallel: false
         steps:
@@ -84,8 +69,6 @@ processes:
           - type: BASE_ENTITY
             refId: order
             label: Approved Order
-        preconditionStateKey: CONFIRMED
-        completionStateTriggerKey: ship
         dependsOn:
           - review-order
         parallel: false
@@ -106,8 +89,6 @@ processes:
           - type: DOCUMENT
             refId: fulfillment-invoice
             label: Delivery Confirmation & Invoice
-        preconditionStateKey: SHIPPED
-        completionStateTriggerKey: deliver
         dependsOn:
           - approve-shipment
         parallel: false
