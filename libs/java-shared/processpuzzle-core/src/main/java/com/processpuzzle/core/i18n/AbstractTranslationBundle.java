@@ -1,8 +1,7 @@
 package com.processpuzzle.core.i18n;
 
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,7 +28,6 @@ import org.hibernate.type.SqlTypes;
  * has been storing jsonb that way in CI throughout.
  */
 @MappedSuperclass
-@IdClass(TranslationBundleKey.class)
 public abstract class AbstractTranslationBundle {
 
     /**
@@ -39,17 +37,8 @@ public abstract class AbstractTranslationBundle {
      */
     public static final String ROOT_SCOPE = "_root";
 
-    @Id
-    @Column(name = "org_key", nullable = false, length = 63)
-    private String orgKey;
-
-    @Id
-    @Column(nullable = false, length = 64)
-    private String scope;
-
-    @Id
-    @Column(nullable = false, length = 16)
-    private String locale;
+    @EmbeddedId
+    private TranslationBundleKey key = new TranslationBundleKey();
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
@@ -60,34 +49,12 @@ public abstract class AbstractTranslationBundle {
     }
 
     protected AbstractTranslationBundle(String orgKey, String scope, String locale, Map<String, Object> messages) {
-        this.orgKey = orgKey;
-        this.scope = scope;
-        this.locale = locale;
+        key = new TranslationBundleKey(orgKey, scope, locale);
         this.messages = messages == null ? new LinkedHashMap<>() : new LinkedHashMap<>(messages);
     }
 
-    public String getOrgKey() {
-        return orgKey;
-    }
-
-    public void setOrgKey(String orgKey) {
-        this.orgKey = orgKey;
-    }
-
-    public String getScope() {
-        return scope;
-    }
-
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
-
-    public String getLocale() {
-        return locale;
-    }
-
-    public void setLocale(String locale) {
-        this.locale = locale;
+    public TranslationBundleKey getKey() {
+        return key;
     }
 
     public Map<String, Object> getMessages() {
