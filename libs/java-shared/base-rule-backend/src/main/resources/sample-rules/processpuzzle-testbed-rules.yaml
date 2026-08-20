@@ -1,3 +1,17 @@
+# Rules of the 'processpuzzle-testbed' organization, written against the `order`, `order-line` and
+# `special-order` entity definitions base-entity seeds in
+# default-entities/processpuzzle-testbed-entities.yaml.
+#
+# `context` is an entity *name* — `BaseEntityFormComponent` loads rules for
+# `entityDescriptor().entityName`, and a metadata-defined entity's descriptor takes its name from
+# `BaseEntityDefinition.name`. So the value here is `Order`, with the space and the capital, not the
+# definition's `order` code. A context naming no definition is not an error anywhere; the rule is simply
+# never loaded by any form.
+#
+# An expression sees the entity flat, not wrapped in the contract's `payload` envelope:
+# `DynamicEntityMapper` opens it at the repository boundary, so `entity.lineItems` and `entity.total` are
+# the attribute codes as authored. Every expression must resolve to a strict boolean — the backend engine
+# calls Value.asBoolean(), which throws on a truthy non-boolean.
 rules:
   - id: positive-quantities
     name: All line item quantities are positive
@@ -43,9 +57,11 @@ rules:
   - id: special-order-allows-zero-quantity
     name: Special orders may include zero-quantity placeholder items
     description: >-
-      Overrides 'positive-quantities' for the SpecialOrder context — demonstrates the
-      extends/override convention for relaxing a constraint inherited from a base rule.
-    context: SpecialOrder
+      Overrides 'positive-quantities' for the 'Special Order' context — demonstrates the
+      extends/override convention for relaxing a constraint inherited from a base rule. The relaxation is
+      per entity *type*, not per row: a rule's context is an entity name, which is why `special-order` is a
+      definition of its own rather than a status on `order`.
+    context: Special Order
     extends: positive-quantities
     override: true
     severity: ERROR

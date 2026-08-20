@@ -6,6 +6,7 @@ export { BaseRule, Severity } from './lib/domain/base-rule';
 export { BaseRuleEvaluatorService } from './lib/domain/base-rule-evaluator.service';
 export type { RuleEvaluationResult } from './lib/domain/rule-evaluation-result';
 export { createBaseRuleDescriptor } from './lib/domain/base-rule.descriptors';
+export { RuleContextOptions } from './lib/domain/rule-context-options.service';
 export { BaseRuleMapper } from './lib/domain/base-rule.mapper';
 export { BaseRuleService } from './lib/domain/base-rule.service';
 export { BaseRuleStore } from './lib/domain/base-rule.store';

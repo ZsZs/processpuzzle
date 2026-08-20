@@ -22,6 +22,7 @@ import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEnt
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
+import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
@@ -67,6 +68,20 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.
       provideBaseWidgets(),
+      // Binds base-entity's `RULE_ENGINE` seam to base-rule's evaluator, for the **whole application**.
+      //
+      // `BaseEntityFormComponent` injects `RULE_ENGINE` optionally and, when it finds one, loads the rules
+      // whose `context` is its descriptor's `entityName` and evaluates them on every change. Nothing else
+      // turns rules on: with the token unbound, `loadRules()` returns on its first line and the form is
+      // simply unvalidated — silently, because an application with no rule backend is a legitimate
+      // deployment (this app runs against Firestore and json-server too).
+      //
+      // Which is why this belongs here and not on a route. It used to sit on the `base-rule` route alone,
+      // which made rules a property of *which section of the testbed you were in* rather than of the entity
+      // being edited: an `Order` form validated under `/base-rule/samples` and the same generated form
+      // validated nothing under `/base-entity` or `/design`. Every form loads its own rules, or the feature
+      // does not mean anything.
+      provideBaseRuleEngine(),
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {

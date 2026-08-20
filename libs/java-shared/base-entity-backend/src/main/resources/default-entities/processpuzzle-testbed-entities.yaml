@@ -249,6 +249,111 @@ entityDefinitions:
         linkedEntityType: order-line
         isMultiValued: true
 
+  # 6. Embedded component definition: special-order-line
+  #
+  # A line shape of its own, byte-for-byte what `order-line` declares, rather than `order-line` grown a
+  # second `componentParents` entry. `DefaultEntityLoader` **creates** definitions and never updates them —
+  # `existsByCode` short-circuits — so adding a parent to `order-line` would land on a fresh database and
+  # silently not on any database that has already been seeded. And the frontend does not treat that as
+  # cosmetic: `EmbeddedComponentsListComponent.assertContainmentContract()` throws when the child does not
+  # name the owner as a parent, so the Special Order form would break on exactly the developer machines that
+  # have been running longest. A new code is the one change the loader is guaranteed to apply.
+  - code: special-order-line
+    name: Special Order Line
+    description: >-
+      A single product line of a special order. Same shape as an ordinary order line; a definition of its
+      own so that `special-order` owns its child outright.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - special-order
+    attributes:
+      - code: productName
+        name: Product
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+      - code: quantity
+        name: Quantity
+        displayOrder: 2
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+        required: true
+      - code: unitPrice
+        name: Unit Price
+        displayOrder: 3
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+        required: true
+
+  # 7. Special Order — the surface of the 'special-order-allows-zero-quantity' sample rule in
+  # base-rule's processpuzzle-testbed-rules.yaml, which `extends: positive-quantities` with
+  # `override: true`.
+  #
+  # A separate definition rather than a `status` value on `order`, because a rule's `context` is an entity
+  # *name*: the override convention relaxes a constraint for a whole entity type, and there is no way to
+  # scope a rule to a subset of one type's rows. The two definitions are deliberately near-identical —
+  # what differs is which rules apply to each, which is the whole point of the sample.
+  - code: special-order
+    name: Special Order
+    description: >-
+      An order placed outside the ordinary catalogue: it may carry zero-quantity placeholder lines for
+      items still being quoted, which the 'positive-quantities' rule forbids on an ordinary Order.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: orderNumber
+        name: 'Order #'
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: customerName
+        name: Customer
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+      - code: status
+        name: Status
+        displayOrder: 3
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - DRAFT
+          - CONFIRMED
+          - SHIPPED
+          - DELIVERED
+          - CANCELLED
+        defaultValue: DRAFT
+      - code: total
+        name: Total
+        displayOrder: 4
+        valueKind: NUMBER
+        formControlType: TEXT_BOX
+      - code: shippingAddress
+        name: Shipping Address
+        displayOrder: 5
+        valueKind: TEXT
+        formControlType: TEXTAREA
+      - code: justification
+        name: Justification
+        displayOrder: 6
+        valueKind: TEXT
+        formControlType: TEXTAREA
+      - code: lineItems
+        name: Line Items
+        displayOrder: 7
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: special-order-line
+        isMultiValued: true
+
 entities:
   # Sample Object 1
   - entityDefinitionCode: dynamic-entity
@@ -436,3 +541,37 @@ entities:
         - productName: Servo Motor
           quantity: 1
           unitPrice: 499
+
+  # Special Order 1 — carries a zero-quantity placeholder line. On an `Order` this violates
+  # 'positive-quantities'; here 'special-order-allows-zero-quantity' overrides it, so the form opens clean.
+  # That contrast *is* the sample: copy this payload into an Order and the same data is rejected.
+  - entityDefinitionCode: special-order
+    payload:
+      orderNumber: SPO-2001
+      customerName: Nordwind Logistik GmbH
+      status: DRAFT
+      total: 1250
+      justification: >-
+        Framework agreement; the second line is a placeholder until the supplier quotes the retrofit kit.
+      lineItems:
+        - productName: Conveyor Belt 12m
+          quantity: 5
+          unitPrice: 250
+        - productName: Retrofit Kit (quote pending)
+          quantity: 0
+          unitPrice: 0
+
+  # Special Order 2 — no placeholder line, and shipped, so it also satisfies 'shipped-requires-address'.
+  # A special order is not exempt from the rules it does not override.
+  - entityDefinitionCode: special-order
+    payload:
+      orderNumber: SPO-2002
+      customerName: Atelier Lumière SARL
+      status: SHIPPED
+      total: 840
+      shippingAddress: 14 Rue de la Paix, 75002 Paris, FR
+      justification: Bespoke finish requested by the customer, outside the standard catalogue.
+      lineItems:
+        - productName: Brass Fitting (custom)
+          quantity: 8
+          unitPrice: 105

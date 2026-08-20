@@ -8,10 +8,9 @@ import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embed
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { DYNAMIC_ENTITY_NAME, DYNAMIC_ENTITY_PATH, dynamicEntityScreenRoutes } from './content/base-forms/dynamic-entity/dynamic-entity.routes';
+import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_ORDER_PATH, specialOrderScreenRoutes } from './content/base-rules/rule-sample.routes';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -144,7 +143,10 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Base Rule',
     data: { icon: 'gavel', menuTitle: 'base-rule' },
     loadComponent: () => import('./content/base-rules/base-rules.component').then((comp) => comp.BaseRulesComponent),
-    providers: [LayoutService, provideBaseRuleEngine(), provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    // No `provideBaseRuleEngine()` here any more: the rule engine is bound once, application-wide, in
+    // `app.config.ts`. Having it on this route made rule validation a property of the section the user
+    // happened to be in rather than of the entity being edited.
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
     children: [
       {
         path: '',
@@ -155,9 +157,25 @@ export const appRoutes: Route[] = [
         path: 'overview',
         loadComponent: () => import('./content/base-rules/overview.component').then((comp) => comp.OverviewComponent),
       },
-      // The 'samples' tab is gone with the Order / Order Line facades it hosted — those entities now live
-      // as metadata in base-entity-backend's processpuzzle-testbed-entities.yaml. The sample rules still
-      // name 'Order' as their context; the surface that renders it returns with dynamic entity generation.
+      {
+        // The rule samples. `Order` and `Special Order` exist only as `BaseEntityDefinition` rows in
+        // base-entity-backend's processpuzzle-testbed-entities.yaml, so neither has a facade, a descriptor or
+        // a `providers` entry here — `rule-sample.routes.ts` resolves both at run-time, as the Dynamic Entity
+        // sample under `base-entity` does. What makes them *rule* samples is only that these two entities are
+        // the ones the seeded rules name as their context; the engine itself is application-wide.
+        path: 'samples',
+        loadComponent: () => import('./content/base-rules/samples.component').then((comp) => comp.SamplesComponent),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: ORDER_PATH },
+          // `data.entityName` is not decoration: `readEmbeddedBreadcrumb` pushes a level when it meets the
+          // route that *declares* the name, and takes that level's `baseUrl` from the URL accumulated so
+          // far. The name has to sit on the route contributing the entity's own segment — here — or the
+          // level records `…/samples/order` as its base and every URL built on it doubles the segment,
+          // which is a Details link and a Details tab that silently do nothing.
+          { path: ORDER_PATH, data: { entityName: ORDER_NAME }, loadChildren: orderScreenRoutes },
+          { path: SPECIAL_ORDER_PATH, data: { entityName: SPECIAL_ORDER_NAME }, loadChildren: specialOrderScreenRoutes },
+        ],
+      },
     ],
   },
   {

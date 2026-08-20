@@ -89,24 +89,24 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(5)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(7)).create(defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
-                        "order-line", "order");
+                        "order-line", "order", "special-order-line", "special-order");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(createInstanceUseCase, times(9)).create(codeCaptor.capture(), payloadCaptor.capture());
+        verify(createInstanceUseCase, times(11)).create(codeCaptor.capture(), payloadCaptor.capture());
 
-        // 'order-line' is embedded, so it contributes no instance of its own: its rows travel inside the
-        // lineItems array of the four orders below.
+        // 'order-line' and 'special-order-line' are embedded, so neither contributes an instance of its own:
+        // their rows travel inside the lineItems array of the four orders and two special orders below.
         assertThat(codeCaptor.getAllValues()).containsExactly(
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
-                "order", "order", "order", "order");
-        assertThat(payloadCaptor.getAllValues()).hasSize(9);
+                "order", "order", "order", "order", "special-order", "special-order");
+        assertThat(payloadCaptor.getAllValues()).hasSize(11);
     }
 
     @Test
@@ -115,7 +115,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(4)).create(any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(6)).create(any(BaseEntityDefinition.class));
     }
 
     @Test

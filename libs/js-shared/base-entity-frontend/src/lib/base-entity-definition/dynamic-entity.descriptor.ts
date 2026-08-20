@@ -93,7 +93,11 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
 
   return new BaseEntityDescriptor({
     entityName: definition.name,
-    entityTitle: definition.name,
+    // `entityTitle` is deliberately **not** set. It is an override of the status bar's crumb text, and a
+    // non-empty one wins over the row's own identifying value — so setting it to the definition's name made
+    // every crumb read `Order` instead of `ORD-1001`, at every level, which is the one thing the status bar
+    // exists to tell the user. Left unset, `titleAttrName()` falls through to the `isLinkToDetails`
+    // attribute, exactly as it does for a hand-written descriptor: none of those sets `entityTitle` either.
     attrDescriptors: attributes.map((attribute) => attrDescriptorOf(attribute, lookup)),
     componentParent: componentParents,
     // `isEmbedded` is dropped when no parent name resolved, because the descriptor's constructor throws on

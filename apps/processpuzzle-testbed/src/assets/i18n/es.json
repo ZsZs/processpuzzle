@@ -101,6 +101,8 @@
     "samples_tab_label": "Ejemplos",
     "samples_desc_1": "Las siguientes entidades de ejemplo demuestran las capacidades del motor de reglas:",
     "samples_desc_2": "Elija un ejemplo a continuación para explorar cómo se definen y evalúan las reglas contra él.",
+    "samples_edit_hint": "Las reglas evaluadas en estos formularios se editan en la sección Diseño:",
+    "samples_edit_link": "editar reglas",
     "intro_heading": "Motor de Reglas de ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
     "backend_heading": "Backend — base-rule-backend",

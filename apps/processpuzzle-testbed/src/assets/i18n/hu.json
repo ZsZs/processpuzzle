@@ -101,6 +101,8 @@
     "samples_tab_label": "Példák",
     "samples_desc_1": "Az alábbi példa entitások a szabálymotor képességeit mutatják be:",
     "samples_desc_2": "Válasszon egy példát alább, hogy megismerje, hogyan definiálják és értékelik ki a szabályokat rá vonatkozóan.",
+    "samples_edit_hint": "Az ezeken az űrlapokon kiértékelt szabályokat a Tervezés szakaszban lehet megadni:",
+    "samples_edit_link": "szabályok szerkesztése",
     "intro_heading": "ProcessPuzzle Szabálymotor",
     "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
     "backend_heading": "Backend — base-rule-backend",

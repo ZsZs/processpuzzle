@@ -101,6 +101,8 @@
     "samples_tab_label": "Beispiele",
     "samples_desc_1": "Die folgenden Beispielentitäten demonstrieren die Fähigkeiten der Regel-Engine:",
     "samples_desc_2": "Wählen Sie unten ein Beispiel aus, um zu erkunden, wie Regeln definiert und dagegen ausgewertet werden.",
+    "samples_edit_hint": "Die auf diesen Formularen ausgewerteten Regeln werden im Bereich Design erstellt:",
+    "samples_edit_link": "Regeln bearbeiten",
     "intro_heading": "ProcessPuzzle Regel-Engine",
     "frontend_heading": "Frontend — @processpuzzle/base-rule-frontend",
     "backend_heading": "Backend — base-rule-backend",

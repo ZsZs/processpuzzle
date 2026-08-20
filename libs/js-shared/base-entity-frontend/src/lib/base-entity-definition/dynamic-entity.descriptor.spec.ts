@@ -57,6 +57,14 @@ describe('descriptorOf', () => {
     expect(descriptor.titleAttrName()).toBe('orderNumber');
   });
 
+  it('leaves entityTitle unset, so the status bar names the row and not the type', () => {
+    // Not redundant with the assertion above: `entityTitle` is an *override* the status bar prefers over
+    // `titleAttrName()`, so setting it to the definition's name made every crumb read `Order` where it
+    // should read `ORD-1001` — with `titleAttrName()` still returning the right answer, unused.
+    expect(descriptorOf(ORDER_DEFINITION, lookup).entityTitle).toBe('');
+    expect(descriptorOf(ORDER_LINE_DEFINITION, lookup).entityTitle).toBe('');
+  });
+
   it('turns enumValues into the dropdown options', () => {
     expect(attrOf(ORDER_DEFINITION, 'status')?.getSelectables()).toEqual([
       { key: 'DRAFT', value: 'DRAFT' },
