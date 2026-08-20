@@ -29,7 +29,6 @@ import { RelatedEntityFacade } from './content/base-forms/related-entity/related
 import { EmbeddedComponentFacade } from './content/base-forms/embedded-component/embedded-component.facade';
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
-import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -53,7 +52,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       TestEntityComponentFacade,
       RelatedEntityFacade,
       TrunkDataFacade,
-      FirestoreDocFacade,
       // Embedded entities are registered like any other: their facade gives them a store, which reads and
       // writes the containing entity's document rather than an endpoint of their own. base-app ships the
       // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
@@ -78,14 +76,14 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Test Entity Component': TestEntityComponentFacade,
           'Related Entity': RelatedEntityFacade,
           'Trunk Data': TrunkDataFacade,
-          'Firestore Doc': FirestoreDocFacade,
-          // 'Order' and its embedded 'Order Line' are deliberately absent, and stay absent: they are
-          // metadata now — base-entity-backend's processpuzzle-testbed-entities.yaml — and their
-          // descriptors are synthesized from those definitions at run-time by base-entity's
-          // `EntityScreenResolver`. Registering them here would *override* that, since a compile-time
-          // facade wins by design; the demo application's Order screens are meant to exercise the
-          // metadata path end to end. An entity only needs an entry below when the application has
-          // something to add that a definition cannot express — an extra tab, a Firestore repository.
+          // 'Dynamic Entity' with its two embedded levels, and 'Order' with its 'Order Line', are
+          // deliberately absent and stay absent: they are metadata — base-entity-backend's
+          // processpuzzle-testbed-entities.yaml — and their descriptors are synthesized from those
+          // definitions at run-time by base-entity's `EntityScreenResolver`. Registering them here would
+          // *override* that, since a compile-time facade wins by design, and the two surfaces that mount
+          // them — the Dynamic Entity sample and the demo application's Order screens — exist to exercise
+          // the metadata path end to end. An entity only needs an entry below when the application has
+          // something to add that a definition cannot express: an extra tab, a hand-tuned layout.
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,

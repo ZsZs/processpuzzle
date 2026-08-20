@@ -143,15 +143,25 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
  * it is derived: the child definition's `isLinkToDetails` attribute is by construction the one that
  * titles a row, and therefore the one a user would recognize in a URL.
  *
- * **Not cosmetic.** With no `referenceIdField`, `rowId()` reads `row['id']`, which a seeded embedded row
- * does not have, and returns `''` — whereupon `indexOfRow` answers `-1` for every row and no embedded form
- * can be opened at all. Falling back to `'id'` when the child declares no title attribute keeps the
- * default behaviour for a child that does carry ids.
+ * **Not cosmetic.** With no `referenceIdField`, `rowId()` reads `row['id']`, which an embedded row does
+ * not have, and returns `''` — whereupon `indexOfRow` answers `-1` for every row and no embedded form can
+ * be opened at all. So the fallback for a child that declares no title attribute matters, and it depends
+ * on what kind of child it is:
+ * - **embedded** — its leading attribute, the first by `displayOrder`. Authoring the flag is one
+ *   checkbox, and forgetting it would otherwise make every row of that definition silently unopenable:
+ *   the list renders, the rows are there, clicking one does nothing. The leading field is what the row's
+ *   list entry is labelled with anyway, so it is also the segment a user would expect in the URL.
+ * - **not embedded** — `'id'`, the default, which is right for a child that does carry ids.
+ *
+ * A heuristic either way, and the same one twice over: uniqueness among sibling rows is the author's to
+ * guarantee, exactly as it already is for an `isLinkToDetails` attribute.
  */
 export function referenceIdFieldOf(attribute: EntityAttributeDefinition, lookup: DefinitionLookup): string {
   const child = attribute.linkedEntityType ? lookup(attribute.linkedEntityType) : undefined;
-  const titleAttribute = child?.attributes?.find((candidate) => candidate.isLinkToDetails === true);
-  return titleAttribute?.code ?? 'id';
+  const attributes = [...(child?.attributes ?? [])].sort(byDisplayOrder);
+  const titleAttribute = attributes.find((candidate) => candidate.isLinkToDetails === true);
+
+  return titleAttribute?.code ?? (child?.isEmbedded === true ? attributes[0]?.code : undefined) ?? 'id';
 }
 
 /**

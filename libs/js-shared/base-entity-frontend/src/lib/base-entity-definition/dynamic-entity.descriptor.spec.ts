@@ -163,8 +163,33 @@ describe('referenceIdFieldOf', () => {
     expect(attrOf(ORDER_DEFINITION, 'lineItems')?.referenceIdField).toBe('productName');
   });
 
-  it('falls back to id for a child that declares no title attribute, keeping the default behaviour', () => {
+  /**
+   * The whole failure mode above, reachable by forgetting one checkbox while authoring — so an embedded
+   * child that names no title attribute is keyed by its leading field instead of by an `id` it cannot have.
+   */
+  it('keys an embedded child that declares no title attribute by its leading attribute', () => {
+    const child: EntityDefinition = {
+      code: 'keyed',
+      name: 'Keyed',
+      isEmbedded: true,
+      componentParents: ['order'],
+      attributes: [
+        { code: 'note', formControlType: 'TEXTAREA', displayOrder: 2 },
+        { code: 'label', formControlType: 'TEXT', displayOrder: 1 },
+      ],
+    };
+
+    expect(referenceIdFieldOf({ code: 'rows', formControlType: 'EMBEDDED_COMPONENTS', linkedEntityType: 'keyed' }, definitionLookup([child]))).toBe('label');
+  });
+
+  it('falls back to id for a child that is not embedded, keeping the default behaviour for rows that carry ids', () => {
     const child: EntityDefinition = { code: 'keyed', name: 'Keyed', attributes: [{ code: 'label', formControlType: 'TEXT' }] };
+
+    expect(referenceIdFieldOf({ code: 'rows', formControlType: 'EMBEDDED_COMPONENTS', linkedEntityType: 'keyed' }, definitionLookup([child]))).toBe('id');
+  });
+
+  it('falls back to id for an embedded child with no attributes at all', () => {
+    const child: EntityDefinition = { code: 'keyed', name: 'Keyed', isEmbedded: true, componentParents: ['order'] };
 
     expect(referenceIdFieldOf({ code: 'rows', formControlType: 'EMBEDDED_COMPONENTS', linkedEntityType: 'keyed' }, definitionLookup([child]))).toBe('id');
   });

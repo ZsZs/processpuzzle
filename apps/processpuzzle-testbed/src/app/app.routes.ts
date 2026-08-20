@@ -7,9 +7,9 @@ import { EmbeddedComponentFacade } from './content/base-forms/embedded-component
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
+import { DYNAMIC_ENTITY_NAME, DYNAMIC_ENTITY_PATH, dynamicEntityScreenRoutes } from './content/base-forms/dynamic-entity/dynamic-entity.routes';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
-import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
@@ -126,11 +126,14 @@ export const appRoutes: Route[] = [
             children: BASE_ENTITY_ROUTES,
           },
           {
-            path: 'firestore-doc',
-            data: { entityName: 'Firestore Doc' },
-            loadComponent: () => import('./content/base-forms/firestore/firestore-doc-container.component').then((comp) => comp.FirestoreDocContainerComponent),
-            providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: FirestoreDocFacade }, provideTranslocoScope({ scope: 'firestore_doc', alias: 'firestore_doc' })],
-            children: BASE_ENTITY_ROUTES,
+            // The metadata sample. No `providers` and no `children`: `Dynamic Entity` exists only as a
+            // `BaseEntityDefinition` in base-entity-backend's seed data, so its descriptor — and with it its
+            // store, its labels and its embedded branches — is synthesized at run-time and contributed as
+            // routes by `dynamicEntityScreenRoutes`. That absence is the sample.
+            path: DYNAMIC_ENTITY_PATH,
+            data: { entityName: DYNAMIC_ENTITY_NAME },
+            loadComponent: () => import('./content/base-forms/dynamic-entity/dynamic-entity-container.component').then((comp) => comp.DynamicEntityContainerComponent),
+            loadChildren: dynamicEntityScreenRoutes,
           },
         ],
       },

@@ -23,7 +23,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
           <mat-button-toggle routerLink="test-entity-component" value="test-entity-component">Test Entity Komponente</mat-button-toggle>
           <mat-button-toggle routerLink="related-entity" value="related-entity">Related Entity</mat-button-toggle>
           <mat-button-toggle routerLink="trunk-data" value="trunk-data">Stamm Data</mat-button-toggle>
-          <mat-button-toggle routerLink="firestore-doc" value="firestore-doc">Firestore Document</mat-button-toggle>
+          <mat-button-toggle routerLink="dynamic-entity" value="dynamic-entity">Dynamic Entity</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       <mat-divider />
@@ -53,6 +53,7 @@ export class SamplesComponent implements OnInit {
           else if (currentUrl.includes('test-entity')) this.selectedButton.set('test-entity');
           else if (currentUrl.includes('related-entity')) this.selectedButton.set('related-entity');
           else if (currentUrl.includes('trunk-data')) this.selectedButton.set('trunk-data');
+          else if (currentUrl.includes('dynamic-entity')) this.selectedButton.set('dynamic-entity');
           else this.selectedButton.set('');
         }
       });

@@ -56,3 +56,71 @@ stateMachines:
         sourceStateKey: COMPLETED
         targetStateKey: ARCHIVED
         triggerKey: archive
+
+  # Order state machine — stateAttributeKey 'status' corresponds to the Status enum attribute defined
+  # on the 'order' entity in base-entity's processpuzzle-testbed-entities.yaml. Its five states and
+  # their keys match that enum exactly, since the state machine reads/writes the entity's own attribute
+  # rather than owning a separate state instance.
+  #
+  # 'cancel' is reachable from both DRAFT and CONFIRMED but is deliberately not fired by any workflow
+  # task in processpuzzle-testbed-workflows.yaml — cancellation is an out-of-band action available on
+  # the order directly, not a step in the normal fulfillment path.
+  - entityName: order
+    name: Order State Machine
+    description: >-
+      State machine governing an order's lifecycle from initial draft through delivery, driven by the
+      order-fulfillment-workflow's task completions (see base-workflow's testbed sample).
+    stateAttributeKey: status
+    initialStateKey: DRAFT
+    states:
+      - key: DRAFT
+        name: Draft
+        description: Order has been entered but not yet reviewed.
+        isFinal: false
+        isLocked: false
+      - key: CONFIRMED
+        name: Confirmed
+        description: Order has been reviewed and confirmed for fulfillment.
+        isFinal: false
+        isLocked: false
+      - key: SHIPPED
+        name: Shipped
+        description: Order has been dispatched to the customer.
+        isFinal: false
+        isLocked: false
+      - key: DELIVERED
+        name: Delivered
+        description: Order has been confirmed as delivered. Terminal, happy-path state.
+        isFinal: true
+        isLocked: true
+      - key: CANCELLED
+        name: Cancelled
+        description: Order was cancelled before delivery. Terminal, exception-path state.
+        isFinal: true
+        isLocked: true
+    transitions:
+      - key: confirm
+        name: Confirm
+        sourceStateKey: DRAFT
+        targetStateKey: CONFIRMED
+        triggerKey: confirm
+      - key: ship
+        name: Ship
+        sourceStateKey: CONFIRMED
+        targetStateKey: SHIPPED
+        triggerKey: ship
+      - key: deliver
+        name: Deliver
+        sourceStateKey: SHIPPED
+        targetStateKey: DELIVERED
+        triggerKey: deliver
+      - key: cancel-draft
+        name: Cancel (from Draft)
+        sourceStateKey: DRAFT
+        targetStateKey: CANCELLED
+        triggerKey: cancel
+      - key: cancel-confirmed
+        name: Cancel (from Confirmed)
+        sourceStateKey: CONFIRMED
+        targetStateKey: CANCELLED
+        triggerKey: cancel
