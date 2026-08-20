@@ -81,7 +81,8 @@ class DefaultWorkflowImporterTest {
             assertThat(def.getName()).isEqualTo("Order Fulfillment Workflow");
             assertThat(def.getRoles()).extracting("id").containsExactly("clerk", "manager");
             assertThat(def.getWorkProducts()).extracting("id").containsExactly("order-entity", "fulfillment-invoice");
-            assertThat(def.getTasks()).extracting("id").containsExactly("verify-order", "approve-order", "fulfill-order");
+            assertThat(def.getTasks()).extracting("id")
+                    .containsExactly("review-order", "approve-shipment", "confirm-delivery");
         }
     }
 
