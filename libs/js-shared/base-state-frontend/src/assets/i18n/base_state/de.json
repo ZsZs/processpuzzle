@@ -1,0 +1,43 @@
+{
+  "state_machine_definition": {
+    "_self": "Zustandsmaschine",
+    "entityName": "Entität",
+    "name": "Name",
+    "description": "Beschreibung",
+    "stateAttributeKey": "Zustandsattribut",
+    "initialStateKey": "Startzustand",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "states": "Zustände",
+    "transitions": "Übergänge"
+  },
+  "state_machine_state": {
+    "_self": "Zustand",
+    "key": "Schlüssel",
+    "name": "Name",
+    "description": "Beschreibung",
+    "terminal": "Endzustand",
+    "locked": "Gesperrt",
+    "metadata": "Metadaten"
+  },
+  "state_machine_transition": {
+    "_self": "Übergang",
+    "key": "Schlüssel",
+    "name": "Name",
+    "sourceStateKey": "Quellzustand",
+    "targetStateKey": "Zielzustand",
+    "triggerKey": "Auslöser",
+    "guards": "Wächter",
+    "actions": "Aktionen"
+  },
+  "state_transition_guard": {
+    "_self": "Wächter",
+    "beanName": "Bean-Name",
+    "params": "Parameter"
+  },
+  "state_transition_action": {
+    "_self": "Aktion",
+    "beanName": "Bean-Name",
+    "params": "Parameter"
+  }
+}

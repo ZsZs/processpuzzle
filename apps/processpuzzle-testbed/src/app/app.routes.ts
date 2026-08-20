@@ -13,6 +13,7 @@ import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
+import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -224,6 +225,11 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-states/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_STATE_ROUTES` brings the whole `state-machine-definition` branch — the routable definition,
+        // its embedded states and transitions, and the guards and actions below a transition — and declares
+        // its own transloco scopes, so nothing is added here. Static children rather than `loadChildren`,
+        // for the same reason as the base-document branch above.
+        children: BASE_STATE_ROUTES,
       },
     ],
   },

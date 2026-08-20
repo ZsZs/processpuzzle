@@ -1,0 +1,43 @@
+{
+  "state_machine_definition": {
+    "_self": "Machine à états",
+    "entityName": "Entité",
+    "name": "Nom",
+    "description": "Description",
+    "stateAttributeKey": "Attribut d'état",
+    "initialStateKey": "État initial",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "states": "États",
+    "transitions": "Transitions"
+  },
+  "state_machine_state": {
+    "_self": "État",
+    "key": "Clé",
+    "name": "Nom",
+    "description": "Description",
+    "terminal": "Terminal",
+    "locked": "Verrouillé",
+    "metadata": "Métadonnées"
+  },
+  "state_machine_transition": {
+    "_self": "Transition",
+    "key": "Clé",
+    "name": "Nom",
+    "sourceStateKey": "État source",
+    "targetStateKey": "État cible",
+    "triggerKey": "Déclencheur",
+    "guards": "Gardes",
+    "actions": "Actions"
+  },
+  "state_transition_guard": {
+    "_self": "Garde",
+    "beanName": "Nom du bean",
+    "params": "Paramètres"
+  },
+  "state_transition_action": {
+    "_self": "Action",
+    "beanName": "Nom du bean",
+    "params": "Paramètres"
+  }
+}

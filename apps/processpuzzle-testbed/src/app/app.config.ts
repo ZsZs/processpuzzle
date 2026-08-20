@@ -22,6 +22,7 @@ import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEnt
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
+import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE } from '@processpuzzle/base-state';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
@@ -64,6 +65,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-widget: the routable `Widget Definition` plus its two embedded port lists, rendered by
       // the Widgets tab of the design section's Application page.
       ...BASE_WIDGET_FACADE_PROVIDERS,
+      // And for base-state: the routable `State Machine Definition` plus the four embedded levels its form
+      // carries — states and transitions, and a transition's guards and actions.
+      ...BASE_STATE_FACADE_PROVIDERS,
       // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.
@@ -102,6 +106,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,
+          ...BASE_STATE_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },
@@ -110,7 +115,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // Each library declares its own entry; a scope nobody claims — a designer-authored module's, named
       // at run-time — goes to base-app, which owns ModuleDefinition. All contributions have to be here
       // rather than on route branches: a `multi` token is not merged across injectors.
-      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE].map((source) => ({
+      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE].map((source) => ({
         provide: TRANSLATION_SOURCE_REGISTRY,
         useValue: source,
         multi: true,

@@ -1,0 +1,43 @@
+{
+  "state_machine_definition": {
+    "_self": "Állapotgép",
+    "entityName": "Entitás",
+    "name": "Név",
+    "description": "Leírás",
+    "stateAttributeKey": "Állapot attribútum",
+    "initialStateKey": "Kezdő állapot",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "states": "Állapotok",
+    "transitions": "Átmenetek"
+  },
+  "state_machine_state": {
+    "_self": "Állapot",
+    "key": "Kulcs",
+    "name": "Név",
+    "description": "Leírás",
+    "terminal": "Végállapot",
+    "locked": "Zárolt",
+    "metadata": "Metaadatok"
+  },
+  "state_machine_transition": {
+    "_self": "Átmenet",
+    "key": "Kulcs",
+    "name": "Név",
+    "sourceStateKey": "Kiinduló állapot",
+    "targetStateKey": "Cél állapot",
+    "triggerKey": "Kiváltó",
+    "guards": "Őrök",
+    "actions": "Akciók"
+  },
+  "state_transition_guard": {
+    "_self": "Őr",
+    "beanName": "Bean neve",
+    "params": "Paraméterek"
+  },
+  "state_transition_action": {
+    "_self": "Akció",
+    "beanName": "Bean neve",
+    "params": "Paraméterek"
+  }
+}

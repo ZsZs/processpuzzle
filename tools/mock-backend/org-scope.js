@@ -11,7 +11,7 @@
 //
 // Used by the json-server CLI via `--middlewares` and by the Firebase `jsonServer` function, which
 // copies this file in its `sync-db` step.
-const ORG_SCOPED_PATH = /^\/organizations\/([a-z0-9][a-z0-9-]*)\/(rules|app-definitions|modules|widget-definitions)(?=[/?]|$)/;
+const ORG_SCOPED_PATH = /^\/organizations\/([a-z0-9][a-z0-9-]*)\/(rules|app-definitions|modules|widget-definitions|state-machines)(?=[/?]|$)/;
 
 function orgScopeRewrite(request, response, next) {
   request.url = request.url.replace(ORG_SCOPED_PATH, (_match, orgKey, collection) => `/${orgKey}-${collection}`);
