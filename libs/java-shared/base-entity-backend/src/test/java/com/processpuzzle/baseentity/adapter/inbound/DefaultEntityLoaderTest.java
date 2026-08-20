@@ -89,19 +89,24 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(3)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(5)).create(defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
-                .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity");
+                .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
+                        "order-line", "order");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(createInstanceUseCase, times(5)).create(codeCaptor.capture(), payloadCaptor.capture());
+        verify(createInstanceUseCase, times(9)).create(codeCaptor.capture(), payloadCaptor.capture());
 
-        assertThat(codeCaptor.getAllValues()).allMatch(code -> code.equals("dynamic-entity"));
-        assertThat(payloadCaptor.getAllValues()).hasSize(5);
+        // 'order-line' is embedded, so it contributes no instance of its own: its rows travel inside the
+        // lineItems array of the four orders below.
+        assertThat(codeCaptor.getAllValues()).containsExactly(
+                "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
+                "order", "order", "order", "order");
+        assertThat(payloadCaptor.getAllValues()).hasSize(9);
     }
 
     @Test
@@ -110,7 +115,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(2)).create(any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(4)).create(any(BaseEntityDefinition.class));
     }
 
     @Test

@@ -5,7 +5,7 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": ["dist/libs/e2e-testing"],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -16,7 +16,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/js-shared/e2e-testing",
+        "outputPath": "dist/libs/e2e-testing",
         "main": "libs/js-shared/e2e-testing/src/public-api.ts",
         "tsConfig": "libs/js-shared/e2e-testing/tsconfig.lib.json",
         "assets": ["libs/js-shared/e2e-testing/*.md"]
@@ -48,7 +48,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist/{projectRoot}"
+        "packageRoot": "dist/libs/e2e-testing"
       }
     },
     "release": {

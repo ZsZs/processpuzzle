@@ -4,7 +4,7 @@ import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { snakeCaseName } from '../base-form-navigator/base-form-navigator.store';
-import { readEmbeddedBreadcrumb, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+import { aggregateChainOf, readEmbeddedBreadcrumb, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
 
 function segments(...paths: string[]): UrlSegment[] {
   return paths.map((path) => ({ path }) as UrlSegment);
@@ -12,27 +12,40 @@ function segments(...paths: string[]): UrlSegment[] {
 
 /**
  * A stand-in for the snapshot chain the router builds. The entity name sits on the container route and the
- * id on its `:entityId/details` child — and the router **inherits** `data` down to that child, which the
- * stub reproduces because reconstructing the levels despite that repetition is the whole job. Each route
- * also carries the URL segments it matched, the way the router's own snapshots do.
+ * id on its `:entityId/details` child — and the router **inherits** both `data` and `params` down to that
+ * child and to everything below it, which the stub reproduces because reconstructing the levels despite that
+ * inheritance is the whole job. So `data` is the inherited merge on every snapshot, while `routeConfig.data`
+ * carries only what the route itself declares. Each route also carries the URL segments it matched.
  */
 function routeChain(...levels: Array<{ entityName?: string; entityId?: string }>): ActivatedRouteSnapshot {
   let deepest: ActivatedRouteSnapshot | null = null;
 
   let params: Record<string, string> = {};
+  let data: Record<string, string> = {};
   for (const level of levels) {
-    const data = level.entityName ? { entityName: level.entityName } : {};
+    if (level.entityName) data = { ...data, entityName: level.entityName };
     const url = level.entityName ? segments(snakeCaseName(level.entityName)) : [];
     // The container inherits its ancestors' params, so it sees the *owner's* entityId without declaring one.
-    const container = { data, params, url, parent: deepest, routeConfig: { path: 'container' } } as unknown as ActivatedRouteSnapshot;
+    const declared = level.entityName ? { entityName: level.entityName } : undefined;
+    const container = { data, params, url, parent: deepest, routeConfig: { path: 'container', data: declared } } as unknown as ActivatedRouteSnapshot;
     deepest = container;
     if (level.entityId !== undefined) {
       params = { ...params, entityId: level.entityId };
+      // Declares no name of its own — it only inherits its container's.
       deepest = { data, params, url: segments(level.entityId, 'details'), parent: container, routeConfig: { path: ':entityId/details' } } as unknown as ActivatedRouteSnapshot;
     }
   }
 
   return deepest as ActivatedRouteSnapshot;
+}
+
+/** Routes appended below `parent` that declare nothing and only inherit its data — a hosted application's own. */
+function inheritingRoutes(parent: ActivatedRouteSnapshot, ...paths: string[]): ActivatedRouteSnapshot {
+  let deepest = parent;
+  for (const path of paths) {
+    deepest = { data: parent.data, params: parent.params, url: segments(path), parent: deepest, routeConfig: { path } } as unknown as ActivatedRouteSnapshot;
+  }
+  return deepest;
 }
 
 function embeddedAttr(attrName: string, linkedEntityType: string, referenceIdField?: string): BaseEntityAttrDescriptor {
@@ -141,6 +154,111 @@ describe('readEmbeddedBreadcrumb', () => {
 
   it('returns nothing for an empty chain', () => {
     expect(readEmbeddedBreadcrumb(null)).toEqual([]);
+  });
+});
+
+describe('readEmbeddedBreadcrumb, for routes that only inherited an entity name', () => {
+  /**
+   * The designer's Preview tab: `app-definition` declares the name, `:entityId/preview` supplies the id, and
+   * the previewed application's own routes below it inherit the name — reported *after* an id had been seen,
+   * which the repeat rule reads as a genuinely new level. The status bar showed `Demo › Demo`.
+   */
+  it('counts a name once, from the route that declares it', () => {
+    const preview = routeChain({ entityName: 'Test Entity', entityId: '1' });
+
+    const breadcrumb = readEmbeddedBreadcrumb(inheritingRoutes(preview, 'home'));
+
+    expect(breadcrumb.map((level) => level.entityName)).toEqual(['Test Entity']);
+  });
+
+  it('counts it once however deep the hosted routes go', () => {
+    const preview = routeChain({ entityName: 'Test Entity', entityId: '1' });
+
+    const breadcrumb = readEmbeddedBreadcrumb(inheritingRoutes(preview, 'back-office', 'orders'));
+
+    expect(breadcrumb.map((level) => level.entityName)).toEqual(['Test Entity']);
+  });
+
+  /** The hosted routes still contribute their segments, so the level's own URLs stay navigable. */
+  it('leaves the level URL at the screen the level owns', () => {
+    const preview = routeChain({ entityName: 'Test Entity', entityId: '1' });
+
+    const breadcrumb = readEmbeddedBreadcrumb(inheritingRoutes(preview, 'home'));
+
+    expect(breadcrumb[0].url).toBe('/test-entity/1/details/home');
+    expect(breadcrumb[0].baseUrl).toBe('');
+  });
+
+  it('still counts a genuinely self-nesting child, which declares the name again', () => {
+    const chain = readEmbeddedRouteChain(routeChain({ entityName: 'Embedded Component', entityId: 'a' }, { entityName: 'Embedded Component', entityId: 'b' }));
+
+    expect(chain).toEqual([
+      { entityName: 'Embedded Component', entityId: 'a' },
+      { entityName: 'Embedded Component', entityId: 'b' },
+    ]);
+  });
+});
+
+describe('aggregateChainOf', () => {
+  const chain = (...levels: Array<[string, string | undefined]>) => levels.map(([entityName, entityId]) => ({ entityName, entityId }));
+
+  it('keeps a chain that is one aggregate from end to end', () => {
+    const levels = chain(['Test Entity', '1'], ['Embedded Component', 'embedded_1_1'], ['Embedded Detail', 'detail_a']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels);
+  });
+
+  /**
+   * The designer's Preview tab: a previewed application's screens are mounted below `app-definition/<id>`,
+   * so the chain starts at an entity that carries nothing embedded at all. Reading it as the aggregate root
+   * left every embedded list in a previewed application empty.
+   */
+  it('drops the levels above the aggregate — an entity the URL merely passes through', () => {
+    const levels = chain(['App Definition', 'demo'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('drops several such levels, however deep the hosting screens nest', () => {
+    const levels = chain(['App Definition', 'demo'], ['App Region', 'sidenav'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(2));
+  });
+
+  it('leaves a single level alone — there is no aggregate to find and nothing to drop', () => {
+    const levels = chain(['Test Entity', '1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels);
+  });
+
+  it('answers with the deepest level alone when its owner does not carry it, so the caller resolves nothing', () => {
+    const levels = chain(['Test Entity', '1'], ['Embedded Detail', 'detail_a']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('stops at a level whose descriptor is unknown rather than assuming containment', () => {
+    const levels = chain(['Nowhere', 'x'], ['Test Entity', '1'], ['Embedded Component', 'embedded_1_1']);
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual(levels.slice(1));
+  });
+
+  it('keeps a child type that nests inside itself', () => {
+    const selfNesting = {
+      'Nav Item': new BaseEntityDescriptor({ entityName: 'Nav Item', attrDescriptors: [embeddedAttr('children', 'Nav Item')] }),
+    };
+    const levels = chain(['Nav Item', 'a'], ['Nav Item', 'b'], ['Nav Item', 'c']);
+
+    expect(aggregateChainOf(levels, (entityName) => selfNesting[entityName as 'Nav Item'])).toEqual(levels);
+  });
+
+  it('preserves the extra fields of a breadcrumb level, so it can slice a breadcrumb as well as a chain', () => {
+    const levels = [
+      { entityName: 'App Definition', entityId: 'demo', url: '/app-definition/demo', baseUrl: '' },
+      { entityName: 'Test Entity', entityId: '1', url: '/test-entity/1/details', baseUrl: '/test-entity' },
+    ];
+
+    expect(aggregateChainOf(levels, descriptorOf)).toEqual([levels[1]]);
   });
 });
 

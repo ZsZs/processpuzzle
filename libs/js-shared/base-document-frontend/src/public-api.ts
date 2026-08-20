@@ -40,3 +40,4 @@ export {
   DOCUMENT_INPUT_PORT_I18N_SCOPE,
   DOCUMENT_OUTPUT_PORT_I18N_SCOPE,
 } from './lib/base-document.i18n';
+export { BASE_DOCUMENT_TRANSLATION_SOURCE } from './lib/base-document.i18n';

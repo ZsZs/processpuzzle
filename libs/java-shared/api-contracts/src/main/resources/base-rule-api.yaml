@@ -220,8 +220,77 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  # ── Translations ──
+  # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
+  # templates rather than one with an optional segment: 4 vs 5 segments is what makes them
+  # unambiguous, and it mirrors `assets/i18n/<lang>.json` and `assets/i18n/<scope>/<lang>.json`.
+  #
+  # `rule` is the feature's own service root. Every feature serves its own translations from its
+  # own store, so that a later split into services with separate databases moves this segment into the
+  # host rather than rewriting the resource. In the monolith it is also what keeps seven identical
+  # `/translations` paths from colliding into an ambiguous mapping at startup.
+  /organizations/{orgKey}/rule/translations/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Rule Translations
+      summary: Root translation bundle of this feature for one language
+      operationId: getRuleTranslations
+      description: >-
+        The bundle that has no transloco scope — the equivalent of `assets/i18n/<lang>.json`.
+        Answers 200 with an empty object when nothing has been seeded, rather than 404: the
+        frontend loader reaches here only after an asset miss, and an error status would make an
+        unseeded locale indistinguishable from a broken backend.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+  /organizations/{orgKey}/rule/translations/{scope}/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationScopeParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Rule Translations
+      summary: One scoped translation bundle of this feature
+      operationId: getRuleScopedTranslations
+      description: >-
+        The equivalent of `assets/i18n/<scope>/<lang>.json`. Keys are relative to the scope, as in
+        the asset files: transloco prefixes them with the scope alias itself.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this scope and locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+
 components:
   parameters:
+    TranslationLocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/Locale'
+
+    TranslationScopeParam:
+      name: scope
+      in: path
+      required: true
+      description: Transloco scope of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/TranslationScope'
+
     OrgKeyParam:
       name: orgKey
       in: path
@@ -457,3 +526,39 @@ components:
           type: array
           items:
             type: string
+
+    Locale:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical Locale — see the note on WidgetInstance there for why
+        this workspace repeats rather than $refs across files. A bare string schema generates no Java
+        class, so the repetition needs no schemaMappings entry.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    TranslationScope:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationScope. Transloco scope a bundle loads under,
+        and the directory segment its asset equivalent would have had.
+      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+      minLength: 1
+      maxLength: 64
+      example: base_app
+
+    TranslationBundle:
+      type: object
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationBundle, mapped onto the shared generated type.
+        One transloco bundle: the whole message map of an (organization, scope, locale) triple, in the
+        exact shape the frontend's asset file has. Keys are relative to the scope — transloco prefixes
+        them with the scope alias itself.
+      additionalProperties: true
+      nullable: true
+      example:
+        module:
+          name: Order administration
+        route:
+          orders: All orders

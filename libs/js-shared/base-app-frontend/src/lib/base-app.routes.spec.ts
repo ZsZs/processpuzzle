@@ -1,6 +1,7 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_APP_ROUTES } from './base-app.routes';
+import { APP_PREVIEW_TAB } from './feature/app-preview-tab';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -38,7 +39,14 @@ describe('BASE_APP_ROUTES', () => {
   });
 
   it('nests the generic list and details routes', () => {
-    expect(appDefinitionRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']);
+    expect(appDefinitionRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/preview', 'list']);
+  });
+
+  it('gives the preview screen a route of its own', () => {
+    const previewRoute = appDefinitionRoute.children?.find((child) => child.path === ':entityId/preview');
+
+    expect(previewRoute?.component).toBe(APP_PREVIEW_TAB.component);
+    expect(APP_PREVIEW_TAB.segment).toBe('preview');
   });
 
   it('hangs the regions, the routes and the module mounts below the definition being edited', async () => {

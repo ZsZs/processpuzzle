@@ -35,6 +35,7 @@ export {
   APP_DEFINITION_I18N_SCOPE,
   APP_MODULE_MOUNT_I18N_SCOPE,
   APP_NAV_ITEM_I18N_SCOPE,
+  APP_PREVIEW_I18N_KEY,
   APP_REGION_I18N_SCOPE,
   APP_ROUTE_I18N_SCOPE,
   APP_WIDGET_I18N_SCOPE,
@@ -59,10 +60,26 @@ export { ModuleDefinitionFacade } from './lib/feature/module-definition.facade';
 export { AppModuleMountFacade } from './lib/feature/app-module-mount.facade';
 export { AppNavItemFacade } from './lib/feature/app-nav-item.facade';
 export { buildAppRoutes, type AppRouteSource, type ModuleLoader, type RouteRenderer } from './lib/feature/app-route-builder';
+export { AppRouteRenderer } from './lib/feature/app-route-renderer';
+export { RouteWidgetsComponent } from './lib/feature/route-widgets.component';
+export { WidgetListComponent } from './lib/feature/widget-list.component';
+export { RouteUnsupportedComponent } from './lib/feature/route-unsupported.component';
 export { AppRegionFacade } from './lib/feature/app-region.facade';
 export { AppRouteFacade } from './lib/feature/app-route.facade';
 export { AppWidgetFacade } from './lib/feature/app-widget.facade';
 export { AppDefinitionContainerComponent } from './lib/feature/app-definition-container.component';
+export { AppPreviewComponent } from './lib/feature/app-preview.component';
+// The run-time shell. Published because the standalone runtime host mounts `AppShellComponent` exactly as
+// the Preview tab does — that being the whole reason the shell is a component with one input.
+export { AppShellComponent } from './lib/feature/shell/app-shell.component';
+export { AppShellRoutesFactory, appShellRoutesGuard } from './lib/feature/shell/app-shell-routes';
+export { AppRegionRenderer, type RegionView } from './lib/feature/shell/app-region.renderer';
+export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/app-shell.model';
+export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';
+export { RegionHeaderComponent } from './lib/feature/shell/region-header.component';
+export { RegionNavComponent, type NavOrientation } from './lib/feature/shell/region-nav.component';
+export { APP_PREVIEW_TAB } from './lib/feature/app-preview-tab';
 export { ModuleDefinitionContainerComponent } from './lib/feature/module-definition-container.component';
 export { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './lib/base-app.providers';
 export { BASE_APP_ROUTES } from './lib/base-app.routes';
+export { BASE_APP_TRANSLATION_SOURCE } from './lib/base-app.i18n';

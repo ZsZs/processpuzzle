@@ -1,3 +1,4 @@
+import type { TranslationSource } from '@processpuzzle/util';
 /**
  * Transloco scope of this library. The translations live in
  * `libs/js-shared/base-document-frontend/src/assets/i18n/base_document/*.json` and are published with
@@ -39,3 +40,18 @@ export const DOCUMENT_CONTENT_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.content`;
  */
 export const DOCUMENT_INPUT_PORT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.document_input_port`;
 export const DOCUMENT_OUTPUT_PORT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.document_output_port`;
+
+/**
+ * Where this library's transloco bundles come from when the application ships without its assets.
+ *
+ * Spread into the application's `TRANSLATION_SOURCE_REGISTRY`, the way its facades are spread into
+ * `BASE_ENTITY_FACADE_REGISTRY`. The scopes below normally arrive as static files — the build copies
+ * them into `assets/i18n/<scope>` and the loader tries the asset first — so this is reached only by a
+ * host that skips that copy step. It is declared here rather than in the application because which
+ * backend owns a scope is base-document's knowledge, not its caller's.
+ */
+export const BASE_DOCUMENT_TRANSLATION_SOURCE: TranslationSource = {
+  scopes: ['base_document'],
+  serviceRootKey: 'DOCUMENT_SERVICE_ROOT',
+  segment: 'document',
+};

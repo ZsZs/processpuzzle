@@ -6,6 +6,7 @@ import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirecti
 import { PUBLISH_BUTTON_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from '../base-app.i18n';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { createAppDefinitionDescriptor } from '../domain/app-definition.descriptors';
+import { APP_PREVIEW_TAB } from './app-preview-tab';
 
 @Component({
   selector: 'pp-app-definition-container',
@@ -14,7 +15,9 @@ import { createAppDefinitionDescriptor } from '../domain/app-definition.descript
   template: `
     <base-entity-container [entityDescriptor]="entityDescriptor"></base-entity-container>
     <ng-template #publishActionsTpl>
-      <button id="publish" type="button" mat-raised-button color="accent" [disabled]="!canPublish()" [matTooltip]="publishTooltipKey | transloco" (click)="onPublish()">{{ publishButtonKey | transloco }}</button>
+      <button id="publish" type="button" mat-raised-button color="accent" [disabled]="!canPublish()" [matTooltip]="publishTooltipKey | transloco" (click)="onPublish()">
+        {{ publishButtonKey | transloco }}
+      </button>
     </ng-template>
   `,
 })
@@ -33,6 +36,7 @@ export class AppDefinitionContainerComponent implements OnDestroy {
     this.entityDescriptor = createAppDefinitionDescriptor();
     this.entityDescriptor.store = this.store;
     this.entityDescriptor.extraFormActionsTemplate = () => this.publishActionsTpl();
+    this.entityDescriptor.extraTabs = [APP_PREVIEW_TAB];
   }
 
   ngOnDestroy(): void {

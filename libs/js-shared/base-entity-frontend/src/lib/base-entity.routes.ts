@@ -54,7 +54,7 @@ export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = [], ex
     // entity*, addressed by the same `<entity>/<id>` prefix, not a part of the details form. The prefix is
     // what BaseFormNavigatorSingletonStore.determineBaseUrl counts back over, which is why the shape has
     // to match the details route's exactly.
-    ...extraTabs.map((tab) => ({ path: ':' + BaseUrlSegments.EntityID + '/' + tab.segment, component: tab.component })),
+    ...extraTabs.map(extraTabRoute),
     { path: BaseUrlSegments.ListForm, component: BaseEntityListComponent },
   ];
 }
@@ -63,6 +63,22 @@ export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = [], ex
 export const BASE_ENTITY_ROUTES: Routes = baseEntityRoutes();
 
 // region private helper functions
+/**
+ * One extra tab's route. `canMatch` and `children` are only set when the tab asked for them, so a tab that
+ * declares neither produces exactly the route it always did.
+ *
+ * `children` is **copied**. The same `Routes` array may be spread into more than one place in an
+ * application's config — `BASE_APP_ROUTES` is mounted both under the designer and standalone — and a guard
+ * that populates a tab's children by assigning to `route.children` would otherwise be writing through an
+ * array shared with the other mount. A copy per route keeps the two independent.
+ */
+function extraTabRoute(tab: EntityTabDescriptor): Route {
+  const route: Route = { path: ':' + BaseUrlSegments.EntityID + '/' + tab.segment, component: tab.component };
+  if (tab.canMatch) route.canMatch = tab.canMatch;
+  if (tab.children) route.children = [...tab.children];
+  return route;
+}
+
 function embeddedChildRoute(child: EmbeddedChildRoute): Route {
   return {
     path: snakeCaseName(child.entityName),

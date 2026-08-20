@@ -522,7 +522,7 @@ drift.
   `-` and `_` in a scope name get camelCased into a wrong default. An unknown or route-less module
   resolves to `[]`, which is what keeps a dangling `moduleKey` a warning rather than a broken shell.
 - **Sample data** — `processpuzzle-testbed-modules` in `tools/mock-backend/db.json` holds
-  `order-admin` (scope `order_admin`, two `Order Line` routes), mounted by the testbed app at
+  `order-admin` (scope `order_admin`, two `Order` routes), mounted by the testbed app at
   `basePath: back-office`; plus the five testbed locales and the e2e relationship exclusions.
 
 ### A shared-library defect found on the way

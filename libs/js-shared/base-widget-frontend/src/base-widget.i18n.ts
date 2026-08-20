@@ -1,3 +1,4 @@
+import type { TranslationSource } from '@processpuzzle/util';
 /**
  * Transloco scope of this library's **authoring** screens. The translations live in
  * `libs/js-shared/base-widget-frontend/src/assets/i18n/base_widget/*.json` and are published with the
@@ -38,3 +39,18 @@ export const WIDGET_OUTPUT_PORT_I18N_SCOPE = `${BASE_WIDGET_TRANSLOCO_SCOPE}.wid
 /** Keys of the `Publish` form action contributed by `WidgetDefinitionContainerComponent`. */
 export const PUBLISH_BUTTON_I18N_KEY = `${BASE_WIDGET_TRANSLOCO_SCOPE}.publish.button`;
 export const PUBLISH_TOOLTIP_I18N_KEY = `${BASE_WIDGET_TRANSLOCO_SCOPE}.publish.tooltip`;
+
+/**
+ * Where this library's transloco bundles come from when the application ships without its assets.
+ *
+ * Spread into the application's `TRANSLATION_SOURCE_REGISTRY`, the way its facades are spread into
+ * `BASE_ENTITY_FACADE_REGISTRY`. The scopes below normally arrive as static files — the build copies
+ * them into `assets/i18n/<scope>` and the loader tries the asset first — so this is reached only by a
+ * host that skips that copy step. It is declared here rather than in the application because which
+ * backend owns a scope is base-widget's knowledge, not its caller's.
+ */
+export const BASE_WIDGET_TRANSLATION_SOURCE: TranslationSource = {
+  scopes: ['base_widget', 'widgets'],
+  serviceRootKey: 'WIDGET_SERVICE_ROOT',
+  segment: 'widget',
+};

@@ -31,59 +31,87 @@ moduleDefinitions:
   # A back-office slice of the same order domain the 'demo' app front-ends. It exists to show what a
   # module is for: a route list of its own, authored and versioned separately, mounted under one prefix
   # by whichever app wants it. Its routes use the ENTITY target kind, so the screens are generated from
-  # the testbed's 'Order Line' descriptor rather than composed from widgets.
+  # the testbed's 'Order' definition rather than composed from widgets.
+  #
+  # It used to target 'Order Line', which is now an embedded component of 'Order' and so has no
+  # instances — and therefore no list or detail screen — of its own. Order lines are administered on
+  # the order that carries them.
   - key: order-admin
     name: Order administration
     translocoId: order_admin.module.name
     description: >-
-      Order line administration: the generated list and detail screens of 'Order Line', kept out of
+      Back-office order administration: the generated list and detail screens of 'Order', kept out of
       the order-entry application so that back-office screens can be authored on their own.
     translocoScope: order_admin
-    # 'lines' and 'line/:id' are siblings on purpose. Had the detail route been 'lines/:id', the flat
-    # list would derive 'lines' into its Angular parent, and a generated list screen hosts no
+    # 'orders' and 'order/:id' are siblings on purpose. Had the detail route been 'orders/:id', the flat
+    # list would derive 'orders' into its Angular parent, and a generated list screen hosts no
     # router-outlet for the child to render in.
     routes:
-      - path: lines
-        title: All order lines
-        translocoId: order_admin.route.lines
+      - path: orders
+        title: All orders
+        translocoId: order_admin.route.orders
         icon: view_list
         target:
           kind: ENTITY
-          entityName: Order Line
+          entityName: Order
           entityMode: LIST
-      - path: line/:id
-        title: Order line
-        translocoId: order_admin.route.line
+      - path: order/:id
+        title: Order
+        translocoId: order_admin.route.order
         target:
           kind: ENTITY
-          entityName: Order Line
+          entityName: Order
           entityMode: DETAILS
 
 appDefinitions:
-  # A deliberately basic shell: one Material theme, the default sidenav-left layout, the three
-  # shell regions, and three routes driven by the testbed's 'Order' and 'Order Line' descriptors.
-  # It is meant to be the smallest definition that still renders something navigable.
+  # A deliberately basic shell: one Material theme, the default sidenav-left layout, the three shell
+  # regions with a widget in two of them, and one route of each kind the shell can render — WIDGETS
+  # for the landing page, ENTITY for the two screens driven by the testbed's 'Order' and 'Order Line'
+  # descriptors. It is meant to be the smallest definition that still exercises every path.
   - id: demo
     name: Demo
     translocoId: demo.app.name
     description: >-
-      Basic demonstration application: order management screens composed from the entity-driven
-      widgets, with nothing configured that the shell does not need.
+      Basic demonstration application: a widget landing page and the generated order management
+      screens, with nothing configured that the shell does not need.
     theme:
-      materialTheme: azure-blue
-      colorScheme: light
+      # Deliberately not the designer's own theme (azure-blue / light): the Preview tab renders a
+      # previewed application in its *own* Material theme, scoped to the shell, and a demo app sharing
+      # the designer's theme would produce byte-identical tokens and look like the scoping was broken.
+      materialTheme: rose-red
+      colorScheme: dark
     layout:
       preset: sidenav-left
       sidenavMode: side
       sidenavCollapsible: true
       sidenavOpenByDefault: true
       contentMaxWidth: 1280px
+    # Every `type` below is a key base-widget-frontend's `provideBaseWidgets()` registers, and no
+    # other key appears anywhere in this definition. A `WidgetInstance.type` is an open string that
+    # the validator only checks for blankness — it cannot know the frontend's registry — so a
+    # mistyped or aspirational type is accepted here and fails at render time, in the preview, with
+    # nothing to point at. Seed data is the wrong place to be aspirational about that.
     regions:
-      # header and footer are declared so the shell renders them, but carry no static widgets yet.
-      # There is no 'content' region: the content area is the router outlet the routes below fill.
+      # The header carries the brand block from the definition itself (name, logoUrl); its widgets are
+      # what goes beside it. There is no 'content' region: the content area is the router outlet the
+      # routes below fill.
       - type: header
+        widgets:
+          - id: header-language-selector
+            type: language-selector
+          # Chrome, so the header rather than a route: a like and a share act on the application the user
+          # is in, not on whatever screen happens to be open, and they stay put while the content changes.
+          - id: header-like-button
+            type: like-button
+          - id: header-share-button
+            type: share-button
       - type: sidenav
         navItems:
+          - id: nav-home
+            label: Home
+            translocoId: demo.nav.home
+            icon: home
+            routePath: home
           # A group node: no routePath, so it only expands its children.
           - id: nav-orders
             label: Orders
@@ -95,66 +123,55 @@ appDefinitions:
                 translocoId: demo.nav.orderList
                 icon: list_alt
                 routePath: order-list
-              - id: nav-order-entry
-                label: New order
-                translocoId: demo.nav.orderEntry
-                icon: add_circle
-                routePath: order-entry
-          - id: nav-order-lines
-            label: Order lines
-            translocoId: demo.nav.orderLines
-            icon: view_list
-            routePath: order-line-list
-          # Points into the module mounted below: the module's own 'lines' prefixed with its basePath.
+          # Points into the module mounted below: the module's own 'orders' prefixed with its basePath.
           # Startup logs one 'app.validation.unknown-route-reference' WARNING for this item, and should:
           # an app definition cannot see the routes of a module it mounts, which is what keeps the two
           # aggregates independent. A nav item is how a mounted module becomes reachable at all.
           - id: nav-order-admin
-            label: Order line administration
+            label: Order administration
             translocoId: demo.nav.orderAdmin
             icon: manage_search
-            routePath: back-office/lines
+            routePath: back-office/orders
       - type: footer
+        widgets:
+          - id: footer-version-button
+            type: version-button
     # Routes are flat: 'path' may be multi-segment and Angular's nesting is derived from the
-    # prefixes at registration time.
+    # prefixes at registration time. The first one authored is where the application root lands.
     routes:
+      # The one WIDGETS route: content, which is what a widget route is for — the chrome widgets that
+      # used to sit here are in the header region above, where they belong.
+      #
+      # `markdownSrc` is resolved by the *hosting* application, not by the definition: this path is
+      # served from processpuzzle-testbed's own `src/assets`, so a different host would seed a different
+      # path. Absolute, because a relative one would resolve against the document base and so against
+      # whatever route the shell is mounted under.
+      - path: home
+        title: Welcome
+        translocoId: demo.route.home
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: home-welcome-page
+              type: markdown-page
+              props:
+                markdownSrc: /assets/demo/welcome.md
+      # The entity screen is an ENTITY route rather than a widget wrapping an entity: base-entity
+      # already owns the list/detail/search/export surface of a descriptor, and a widget that took an
+      # `entityName` prop would only be a second way to ask for the same thing. `entityName` names a
+      # BaseEntityDescriptor the *hosting application* resolves. 'Order' is metadata now — seeded by
+      # base-entity's processpuzzle-testbed-entities.yaml, with no entry in the testbed's
+      # BASE_ENTITY_FACADE_REGISTRY — so this route renders RouteEntityComponent's "not registered"
+      # state until a descriptor can be synthesized from a BaseEntityDefinition.
       - path: order-list
         title: Orders
         translocoId: demo.route.orderList
         target:
-          kind: WIDGETS
-          widgets:
-            - id: order-grid
-              type: entity-grid
-              props:
-                entityName: Order
-                columns: [orderNumber, customerName, status, total]
-                rsqlFilter: "status!=CANCELLED"
-      - path: order-entry
-        title: New order
-        translocoId: demo.route.orderEntry
-        target:
-          kind: WIDGETS
-          widgets:
-            - id: order-form
-              type: entity-form
-              props:
-                entityName: Order
-                submitLabel: Save order
-                submitTranslocoId: demo.action.saveOrder
-      - path: order-line-list
-        title: Order lines
-        translocoId: demo.route.orderLineList
-        target:
-          kind: WIDGETS
-          widgets:
-            - id: order-line-grid
-              type: entity-grid
-              props:
-                entityName: Order Line
-                columns: [productName, quantity, unitPrice]
+          kind: ENTITY
+          entityName: Order
+          entityMode: LIST
     # The single composition point. The 'order-admin' module's flat routes are registered below this
-    # prefix, so its 'lines' answers at 'back-office/lines'. A module mounts no modules, so route
+    # prefix, so its 'orders' answers at 'back-office/orders'. A module mounts no modules, so route
     # structure composes exactly one level and no deeper.
     modules:
       - moduleKey: order-admin

@@ -21,7 +21,10 @@
     "sidenavOpenByDefault": "Sidenav Open By Default",
     "regions": "Regions",
     "routes": "Routes",
-    "modules": "Modules"
+    "modules": "Modules",
+    "tabs": {
+      "preview": "{{ entity }} - preview"
+    }
   },
   "app_region": {
     "_self": "Region",

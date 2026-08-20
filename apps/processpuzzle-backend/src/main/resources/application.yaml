@@ -62,26 +62,36 @@ springdoc:
   api-docs:
     path: /api-docs
 
+# Every feature serves its own translation bundles and seeds them from its own
+# default-translations/<orgKey>-translations.yaml. The flags are per feature rather than one global
+# switch because the storage is per feature — these libraries are meant to become separate services.
 base-rule:
   loadSamples: yes
+  loadDefaultTranslations: yes
 
 base-app:
   loadDefaultApps: yes
+  loadDefaultTranslations: yes
 
 base-widget:
   loadDefaultWidgets: yes
+  loadDefaultTranslations: yes
 
 base-entity:
   loadDefaultEntities: yes
+  loadDefaultTranslations: yes
 
 base-document:
   loadSamples: yes
+  loadDefaultTranslations: yes
 
 base-state:
   loadDefaultStateMachines: yes
+  loadDefaultTranslations: yes
 
 base-workflow:
   loadDefaultWorkflows: yes
+  loadDefaultTranslations: yes
 
 minio:
   endpoint: http://localhost:7000

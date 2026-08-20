@@ -329,6 +329,60 @@ components:
       maxLength: 63
       example: my-org
 
+    Locale:
+      type: string
+      description: >-
+        BCP-47 language tag — a bare language (`en`, `hu`) or language-region (`en-GB`).
+        Matched case-sensitively in the canonical form the pattern describes, so one
+        translation cannot be addressed by two spellings.
+
+        This is the canonical declaration; base-document repeats the same shape for its
+        per-document content translations. A bare `type: string` schema generates no Java
+        class, so the repetition costs nothing and needs no schemaMappings entry — the
+        same reason `OrganizationKey` is only mapped where a spec wants it narrowed.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    TranslationScope:
+      type: string
+      description: >-
+        Transloco scope a bundle loads under, and the directory segment its asset
+        equivalent would have had: `base_app` for `assets/i18n/base_app/en.json`. An
+        authored module's scope is `ModuleDefinition.translocoScope`, which is exactly the
+        case that has no asset to fall back to.
+
+        Underscores rather than hyphens by convention — the frontend has to register the
+        alias explicitly either way, because transloco camel-cases a default alias and
+        would miss every key below the scope.
+      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+      minLength: 1
+      maxLength: 64
+      example: base_app
+
+    TranslationBundle:
+      type: object
+      description: >-
+        One Transloco bundle: the whole message map of an (organization, scope, locale)
+        triple, in the exact shape the frontend's `assets/i18n/<scope>/<lang>.json` has.
+
+        Keys are **relative to the scope** — transloco prefixes them with the scope alias
+        itself, so a wrapping `<scope>:` level would resolve as `<scope>.<scope>.key` and
+        match nothing. Values are strings or nested objects; transloco flattens the nesting
+        with `.` and interpolates `{{ param }}`.
+
+        Free-form on purpose: a bundle is authored content, and the contract has no business
+        naming a tenant's keys. `nullable: true` is what stops the generator emitting a
+        `new HashMap<>()` field initialiser, which would fight the schema mapping.
+      additionalProperties: true
+      nullable: true
+      example:
+        module:
+          name: Order administration
+        route:
+          orders: All orders
+
     ErrorResponse:
       type: object
       required: [ errorId, errorText ]

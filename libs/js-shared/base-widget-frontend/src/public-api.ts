@@ -50,4 +50,4 @@ export { WidgetInputPortFacade } from './widget-definition/widget-input-port.fac
 export { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
 export { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
 export { widgetsRoutes } from './widgets.routes';
-
+export { BASE_WIDGET_TRANSLATION_SOURCE } from './base-widget.i18n';

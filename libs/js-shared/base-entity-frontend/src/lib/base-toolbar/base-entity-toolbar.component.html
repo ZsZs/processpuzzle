@@ -1,4 +1,4 @@
-<mat-toolbar *ngIf="formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE">
+<mat-toolbar *ngIf="isVisible()">
   <ng-container *transloco="let t;">
     <div class="dense-3 toolbar-inputs" [ngStyle]="{'padding-top': '12px' }">
       <base-entity-query [entityDescriptor]="entityDescriptor()"></base-entity-query>

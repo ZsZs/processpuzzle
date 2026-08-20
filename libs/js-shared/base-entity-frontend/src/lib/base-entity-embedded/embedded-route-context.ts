@@ -37,8 +37,10 @@ export interface EmbeddedRouteContext {
  * page refresh resolve to the same row as a drill-down.
  *
  * The entity name sits on the container route and the id on its `:entityId/details` child, and the router
- * hands both **down** to the routes nested below them. Two rules undo that inheritance:
+ * hands both **down** to the routes nested below them. Three rules undo that inheritance:
  *
+ * - a name counts only from the route that *declares* it in its config, not from every descendant that
+ *   inherited it — see {@link declaredEntityName};
  * - a name repeated while the level below it still has no id is that level's own details route echoing its
  *   container, not a new level — whereas a repeat *after* an id is a genuinely self-nesting child
  *   (`app-nav-item/a/details/app-nav-item/b/details`), which `App Nav Item` needs;
@@ -65,7 +67,7 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
   const levels: EmbeddedBreadcrumbLevel[] = [];
   let url = '';
   for (const current of snapshots) {
-    const entityName = current.data[ENTITY_NAME_ROUTE_DATA_KEY];
+    const entityName = declaredEntityName(current);
     const deepestLevel = levels[levels.length - 1];
     if (typeof entityName === 'string' && entityName.length > 0 && (deepestLevel?.entityName !== entityName || deepestLevel.entityId !== undefined)) {
       levels.push({ entityName, entityId: undefined, url, baseUrl: url });
@@ -83,6 +85,24 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
   return levels;
 }
 
+/**
+ * The entity name this route **declares**, as opposed to one it inherited.
+ *
+ * `snapshot.data` is the merge of the route's own data with its ancestors', so every route below an
+ * entity's container reports that entity's name — including routes that have nothing to do with it. In the
+ * designer's Preview tab that produced a second, spurious level: `app-definition` declares the name,
+ * `:entityId/preview` supplies the id, and the previewed application's own `home` route then reported the
+ * same name *after* an id had been seen, which the repeat rule below reads as a genuinely new level. The
+ * status bar showed `Demo › Demo`.
+ *
+ * Reading the *config* is the same distinction {@link declaresEntityId} already makes for the id, and for the
+ * same reason: a level exists because some route owns an entity's URL segment, and that route is the one that
+ * declares the name.
+ */
+function declaredEntityName(snapshot: ActivatedRouteSnapshot): unknown {
+  return snapshot.routeConfig?.data?.[ENTITY_NAME_ROUTE_DATA_KEY];
+}
+
 /** True when `:entityId` is this route's own segment rather than one inherited from an ancestor. */
 function declaresEntityId(snapshot: ActivatedRouteSnapshot): boolean {
   return snapshot.routeConfig?.path?.includes(':' + BaseUrlSegments.EntityID) === true;
@@ -92,6 +112,27 @@ function declaresEntityId(snapshot: ActivatedRouteSnapshot): boolean {
 function segmentsOf(snapshot: ActivatedRouteSnapshot): string {
   const segments = snapshot.url ?? [];
   return segments.map((segment) => '/' + segment.path).join('');
+}
+
+/**
+ * The part of a URL chain that is **one aggregate**: the longest tail in which every level is an embedded
+ * component of the level above it.
+ *
+ * A URL may walk through entities that have nothing to do with each other. The designer's Preview tab is the
+ * case that forced this: a previewed application's screens are mounted *below* `app-definition/<id>`, so an
+ * order line's chain reads `App Definition` -> `Order` -> `Order Line`. Taking the outermost level as the
+ * aggregate root then asks `App Definition` for an embedded `Order` it has never heard of, and nothing
+ * resolves — which showed up as every embedded list in a previewed application coming up empty, and every
+ * link into an embedded row bouncing back to the form it was clicked on.
+ *
+ * Walking back from the deepest level and stopping at the first pair that is not a containment expresses
+ * "one aggregate" without needing to know *why* the outer levels are there. For an ordinary authoring URL,
+ * where the whole chain is one aggregate, it stops at the root and changes nothing.
+ */
+export function aggregateChainOf<Level extends EmbeddedRouteLevel>(levels: readonly Level[], descriptorOf: (entityName: string) => BaseEntityDescriptor | undefined): Level[] {
+  let start = levels.length - 1;
+  while (start > 0 && !!descriptorOf(levels[start - 1].entityName)?.embeddedAttrFor(levels[start].entityName)) start--;
+  return levels.slice(start);
 }
 
 /**

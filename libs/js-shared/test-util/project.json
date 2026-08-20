@@ -9,7 +9,7 @@
     "build": {
       "executor": "@angular/build:ng-packagr",
       "dependsOn": ["^build"],
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/dist/libs/test-util"],
       "defaultConfiguration": "production",
       "options": {
         "project": "libs/js-shared/test-util/ng-package.json",
@@ -54,7 +54,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/test-util"
+        "packageRoot": "{workspaceRoot}/dist/libs/test-util"
       }
     },
     "release": {

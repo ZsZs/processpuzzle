@@ -7,7 +7,7 @@ import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { findRow, readRows } from './embedded-aggregate';
-import { readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
+import { aggregateChainOf, readEmbeddedRouteChain, resolveEmbeddedRouteContext } from './embedded-route-context';
 
 /**
  * Makes an embedded route survive a page refresh.
@@ -22,7 +22,9 @@ export const embeddedAggregateGuard: CanActivateFn = async (route: ActivatedRout
   const router = inject(Router);
   const descriptorRegistry = inject(BaseEntityDescriptorRegistry);
 
-  const levels = readEmbeddedRouteChain(route);
+  // The aggregate, not every entity the URL passes through: inside the designer's Preview tab the outermost
+  // level is the `App Definition` being previewed, which carries no embedded `Order`. See aggregateChainOf.
+  const levels = aggregateChainOf(readEmbeddedRouteChain(route), (entityName) => descriptorRegistry.getDescriptor(entityName));
   const root = levels[0];
   if (levels.length < 2 || !root?.entityId) return router.parseUrl('/');
 

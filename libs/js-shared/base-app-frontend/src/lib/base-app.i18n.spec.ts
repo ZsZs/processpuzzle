@@ -5,7 +5,7 @@ import en from '../assets/i18n/base_app/en.json';
 import es from '../assets/i18n/base_app/es.json';
 import fr from '../assets/i18n/base_app/fr.json';
 import hu from '../assets/i18n/base_app/hu.json';
-import { APP_DEFINITION_I18N_SCOPE, BASE_APP_TRANSLOCO_SCOPE, PUBLISH_BUTTON_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from './base-app.i18n';
+import { APP_DEFINITION_I18N_SCOPE, APP_PREVIEW_I18N_KEY, BASE_APP_TRANSLOCO_SCOPE, PUBLISH_BUTTON_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from './base-app.i18n';
 import { createAppDefinitionDescriptor } from './domain/app-definition.descriptors';
 
 /** Dotted key paths of a transloco translation file, as transloco flattens them under the scope alias. */
@@ -48,5 +48,9 @@ describe('base_app translations', () => {
   it('translates the Publish form action', () => {
     expect(englishKeys).toContain(PUBLISH_BUTTON_I18N_KEY.replace(`${BASE_APP_TRANSLOCO_SCOPE}.`, ''));
     expect(englishKeys).toContain(PUBLISH_TOOLTIP_I18N_KEY.replace(`${BASE_APP_TRANSLOCO_SCOPE}.`, ''));
+  });
+
+  it('translates the Preview tab', () => {
+    expect(englishKeys).toContain(APP_PREVIEW_I18N_KEY.replace(`${BASE_APP_TRANSLOCO_SCOPE}.`, ''));
   });
 });

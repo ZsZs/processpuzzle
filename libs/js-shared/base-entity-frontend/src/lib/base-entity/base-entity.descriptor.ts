@@ -1,4 +1,5 @@
 import type { TemplateRef, Type } from '@angular/core';
+import type { Route, Routes } from '@angular/router';
 import { FormControlType, type AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import type { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
@@ -26,6 +27,22 @@ export interface EntityTabDescriptor {
   component: Type<unknown>;
   /** Suffix for the link's `data-testid`; defaults to `show-<segment>`. */
   testIdSuffix?: string;
+  /**
+   * Routes to nest **below** the tab's own route, so the tab's component can host a `<router-outlet>` and
+   * the screens inside it get URLs of their own. Only a tab that is itself a container needs this; a leaf
+   * tab leaves it undefined and gets exactly the route it always did.
+   *
+   * Pass `[]` when the children are not known until navigation — they are read fresh from the route on
+   * every recognition, so a {@link canMatch} guard may fill them in. See `appShellRoutesGuard` in
+   * base-app, which builds an application's routes out of its `AppDefinition` that way.
+   */
+  children?: Routes;
+  /**
+   * Guards deciding whether the tab's route matches. Runs during recognition, before the router reads
+   * {@link children}, and may be asynchronous — which is what makes the deferred-children pattern above
+   * work on a deep link rather than only after a click.
+   */
+  canMatch?: Route['canMatch'];
 }
 
 export interface BaseEntityDescriptorOptions {
