@@ -37,9 +37,10 @@ class TranslationBundleKeyTest {
     void distinguishesEachPartOfTheIdentity() {
         TranslationBundleKey key = new TranslationBundleKey("acme", "orders", "en");
 
-        assertThat(key).isNotEqualTo(new TranslationBundleKey("other", "orders", "en"));
-        assertThat(key).isNotEqualTo(new TranslationBundleKey("acme", "catalog", "en"));
-        assertThat(key).isNotEqualTo(new TranslationBundleKey("acme", "orders", "de"));
+        assertThat(key)
+                .isNotEqualTo(new TranslationBundleKey("other", "orders", "en"))
+                .isNotEqualTo(new TranslationBundleKey("acme", "catalog", "en"))
+                .isNotEqualTo(new TranslationBundleKey("acme", "orders", "de"));
     }
 
     @Test

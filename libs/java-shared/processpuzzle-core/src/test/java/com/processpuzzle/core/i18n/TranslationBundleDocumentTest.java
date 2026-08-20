@@ -34,7 +34,9 @@ class TranslationBundleDocumentTest {
         assertThat(document.translations()).containsExactly(entry);
         assertThat(entry.scope()).isEqualTo("orders");
         assertThat(entry.messages()).containsOnly(Map.entry("title", "Orders"));
-        assertThatThrownBy(() -> document.translations().add(entry)).isInstanceOf(UnsupportedOperationException.class);
+        List<TranslationBundleDocument.Entry> documentTranslations = document.translations();
+
+        assertThatThrownBy(() -> documentTranslations.add(entry)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
