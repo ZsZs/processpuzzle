@@ -2,7 +2,7 @@ package com.processpuzzle.app.i18n;
 
 import com.processpuzzle.app.api.BaseAppTranslationsApi;
 import com.processpuzzle.core.i18n.AbstractTranslationBundle;
-import com.processpuzzle.core.i18n.TranslationBundleKey;
+import com.processpuzzle.core.i18n.TranslationBundleResponseProvider;
 import com.processpuzzle.core.logging.LogClass;
 import java.util.Map;
 import com.processpuzzle.app.usecase.OrganizationGuard;
@@ -31,11 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 @LogClass
 public class AppTranslationEndpoint implements BaseAppTranslationsApi {
 
-    private final AppTranslationRepository repository;
+    private final TranslationBundleResponseProvider<AppTranslationBundle> responseProvider;
     private final OrganizationGuard organizationGuard;
 
     public AppTranslationEndpoint(AppTranslationRepository repository, OrganizationGuard organizationGuard) {
-        this.repository = repository;
+        responseProvider = new TranslationBundleResponseProvider<>(repository::findById);
         this.organizationGuard = organizationGuard;
     }
 
@@ -53,8 +53,6 @@ public class AppTranslationEndpoint implements BaseAppTranslationsApi {
 
     private ResponseEntity<Map<String, Object>> bundle(String orgKey, String scope, String locale) {
         organizationGuard.requireAccess(orgKey);
-        return ResponseEntity.ok(repository.findById(new TranslationBundleKey(orgKey, scope, locale))
-                .map(AbstractTranslationBundle::getMessages)
-                .orElseGet(Map::of));
+        return responseProvider.bundle(orgKey, scope, locale);
     }
 }

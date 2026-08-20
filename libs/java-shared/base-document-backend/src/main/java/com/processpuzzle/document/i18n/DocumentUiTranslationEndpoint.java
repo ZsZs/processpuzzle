@@ -2,7 +2,7 @@ package com.processpuzzle.document.i18n;
 
 import com.processpuzzle.document.api.BaseDocumentTranslationsApi;
 import com.processpuzzle.core.i18n.AbstractTranslationBundle;
-import com.processpuzzle.core.i18n.TranslationBundleKey;
+import com.processpuzzle.core.i18n.TranslationBundleResponseProvider;
 import com.processpuzzle.core.logging.LogClass;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +30,10 @@ import org.springframework.web.bind.annotation.RestController;
 @LogClass
 public class DocumentUiTranslationEndpoint implements BaseDocumentTranslationsApi {
 
-    private final DocumentUiTranslationRepository repository;
+    private final TranslationBundleResponseProvider<DocumentUiTranslationBundle> responseProvider;
 
     public DocumentUiTranslationEndpoint(DocumentUiTranslationRepository repository) {
-        this.repository = repository;
+        responseProvider = new TranslationBundleResponseProvider<>(repository::findById);
     }
 
     @Override
@@ -49,8 +49,6 @@ public class DocumentUiTranslationEndpoint implements BaseDocumentTranslationsAp
     }
 
     private ResponseEntity<Map<String, Object>> bundle(String orgKey, String scope, String locale) {
-        return ResponseEntity.ok(repository.findById(new TranslationBundleKey(orgKey, scope, locale))
-                .map(AbstractTranslationBundle::getMessages)
-                .orElseGet(Map::of));
+        return responseProvider.bundle(orgKey, scope, locale);
     }
 }

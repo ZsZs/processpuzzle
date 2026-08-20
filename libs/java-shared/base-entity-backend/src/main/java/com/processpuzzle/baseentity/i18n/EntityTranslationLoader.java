@@ -1,8 +1,7 @@
 package com.processpuzzle.baseentity.i18n;
 
-import com.processpuzzle.core.i18n.TranslationBundleDocument;
 import com.processpuzzle.core.i18n.TranslationBundleImporter;
-import com.processpuzzle.core.i18n.TranslationBundleKey;
+import com.processpuzzle.core.i18n.TranslationBundleLoaderSupport;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -29,31 +28,16 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(prefix = "base-entity", name = "loadDefaultTranslations", havingValue = "true")
 public class EntityTranslationLoader {
 
-    private final EntityTranslationRepository repository;
-    private final TranslationBundleImporter importer;
+    private final TranslationBundleLoaderSupport<EntityTranslationBundle> loaderSupport;
 
     public EntityTranslationLoader(EntityTranslationRepository repository, TranslationBundleImporter importer) {
-        this.repository = repository;
-        this.importer = importer;
+        loaderSupport = new TranslationBundleLoaderSupport<>(
+                importer, repository::findById, repository::save, EntityTranslationBundle::new);
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadDefaults() {
-        importer.importAll("base-entity", this::store);
-    }
-
-    private TranslationBundleImporter.Outcome store(String orgKey, TranslationBundleDocument.Entry entry) {
-        TranslationBundleKey key = new TranslationBundleKey(orgKey, entry.scope(), entry.locale());
-        return repository.findById(key)
-                .map(existing -> {
-                    existing.setMessages(TranslationBundleImporter.deepMerge(existing.getMessages(), entry.messages()));
-                    repository.save(existing);
-                    return TranslationBundleImporter.Outcome.MERGED;
-                })
-                .orElseGet(() -> {
-                    repository.save(new EntityTranslationBundle(orgKey, entry.scope(), entry.locale(), entry.messages()));
-                    return TranslationBundleImporter.Outcome.CREATED;
-                });
+        loaderSupport.loadDefaults("base-entity");
     }
 }

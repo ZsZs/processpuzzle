@@ -1,8 +1,7 @@
 package com.processpuzzle.workflow.i18n;
 
-import com.processpuzzle.core.i18n.TranslationBundleDocument;
 import com.processpuzzle.core.i18n.TranslationBundleImporter;
-import com.processpuzzle.core.i18n.TranslationBundleKey;
+import com.processpuzzle.core.i18n.TranslationBundleLoaderSupport;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -29,31 +28,16 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(prefix = "base-workflow", name = "loadDefaultTranslations", havingValue = "true")
 public class WorkflowTranslationLoader {
 
-    private final WorkflowTranslationRepository repository;
-    private final TranslationBundleImporter importer;
+    private final TranslationBundleLoaderSupport<WorkflowTranslationBundle> loaderSupport;
 
     public WorkflowTranslationLoader(WorkflowTranslationRepository repository, TranslationBundleImporter importer) {
-        this.repository = repository;
-        this.importer = importer;
+        loaderSupport = new TranslationBundleLoaderSupport<>(
+                importer, repository::findById, repository::save, WorkflowTranslationBundle::new);
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadDefaults() {
-        importer.importAll("base-workflow", this::store);
-    }
-
-    private TranslationBundleImporter.Outcome store(String orgKey, TranslationBundleDocument.Entry entry) {
-        TranslationBundleKey key = new TranslationBundleKey(orgKey, entry.scope(), entry.locale());
-        return repository.findById(key)
-                .map(existing -> {
-                    existing.setMessages(TranslationBundleImporter.deepMerge(existing.getMessages(), entry.messages()));
-                    repository.save(existing);
-                    return TranslationBundleImporter.Outcome.MERGED;
-                })
-                .orElseGet(() -> {
-                    repository.save(new WorkflowTranslationBundle(orgKey, entry.scope(), entry.locale(), entry.messages()));
-                    return TranslationBundleImporter.Outcome.CREATED;
-                });
+        loaderSupport.loadDefaults("base-workflow");
     }
 }
