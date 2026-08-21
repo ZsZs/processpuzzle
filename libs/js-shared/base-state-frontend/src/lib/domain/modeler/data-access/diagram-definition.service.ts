@@ -2,8 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
-import { DiagramDefinition } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
-import { DiagramDefinitionMapper } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.mapper';
+import { DiagramDefinition } from '../models/diagram-definition';
+import { DiagramDefinitionMapper } from './diagram-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/diagrams`. The organization is part of the configured service

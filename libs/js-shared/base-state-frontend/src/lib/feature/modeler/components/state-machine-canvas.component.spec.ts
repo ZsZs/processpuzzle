@@ -42,16 +42,44 @@ describe('StateMachineCanvasComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  // Asserted on the model rather than on the rendered DOM: the graph is drawn by `<ng-diagram>`, whose
+  // element structure is its own and is measurement-driven, so the ids of the nodes handed to it are
+  // nowhere in this component's markup. The model is what the component is actually responsible for.
   it('should render nodes and edges', () => {
-    component.nodes = [mockNode];
-    component.edges = [mockEdge];
+    fixture.componentRef.setInput('nodes', [mockNode]);
+    fixture.componentRef.setInput('edges', [mockEdge]);
     fixture.detectChanges();
 
-    const nodeElement = fixture.nativeElement.querySelector('#state1');
-    const edgeElement = fixture.nativeElement.querySelector('#trans1');
+    expect(component.model.getNodes().map((node) => node.id)).toEqual(['state1']);
+    expect(component.model.getEdges().map((edge) => [edge.id, edge.source, edge.target])).toEqual([['trans1', 'state1', 'state2']]);
+  });
 
-    expect(nodeElement).toBeTruthy();
-    expect(edgeElement).toBeTruthy();
+  // The label is what a node template reads, and the State/Transition the properties panels edit has
+  // to survive the trip — so `data` carries both rather than one replacing the other.
+  it('should carry the label and the domain payload of every node and edge', () => {
+    fixture.componentRef.setInput('nodes', [mockNode]);
+    fixture.componentRef.setInput('edges', [mockEdge]);
+    fixture.detectChanges();
+
+    expect(component.model.getNodes()[0].data).toMatchObject({ label: 'State 1', name: 'State 1', description: 'Test State' });
+    expect(component.model.getNodes()[0].position).toEqual({ x: 100, y: 150 });
+    expect(component.model.getEdges()[0].data).toMatchObject({ label: 'Transition 1', name: 'Transition 1' });
+  });
+
+  // StateToNodeConverter leaves `position` for the layout engine to fill in, and ng-diagram requires
+  // one — an unplaced node is drawn at the origin rather than dropped.
+  it('should place a node the layout engine has not positioned yet at the origin', () => {
+    fixture.componentRef.setInput('nodes', [{ ...mockNode, position: undefined }]);
+    fixture.detectChanges();
+
+    expect(component.model.getNodes()[0].position).toEqual({ x: 0, y: 0 });
+  });
+
+  it('should start empty, rather than showing a graph nobody asked for', () => {
+    fixture.detectChanges();
+
+    expect(component.model.getNodes()).toEqual([]);
+    expect(component.model.getEdges()).toEqual([]);
   });
 
   it('should handle node click selection', () => {

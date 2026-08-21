@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
-import { DiagramDefinitionMapper } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.mapper';
-import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/test-diagram-definition';
+import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../models/diagram-definition';
+import { DiagramDefinitionMapper } from './diagram-definition.mapper';
+import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO } from '../models/test-diagram-definition';
 
 describe('DiagramDefinitionMapper', () => {
   const mapper = new DiagramDefinitionMapper();

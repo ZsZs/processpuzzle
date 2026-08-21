@@ -5,10 +5,10 @@ import { PersistedEntity } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DiagramDefinition, NodeLayout, Point } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
-import { DiagramDefinitionMapper } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.mapper';
-import { DiagramDefinitionService } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.service';
-import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/test-diagram-definition';
+import { DiagramDefinition, NodeLayout, Point } from '../models/diagram-definition';
+import { DiagramDefinitionMapper } from './diagram-definition.mapper';
+import { DiagramDefinitionService } from './diagram-definition.service';
+import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from '../models/test-diagram-definition';
 
 describe('DiagramDefinitionService', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';

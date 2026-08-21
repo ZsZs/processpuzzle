@@ -3,9 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DiagramDefinition, NodeLayout, Point } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
-import { DiagramDefinitionStore } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.store';
-import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/test-diagram-definition';
+import { DiagramDefinition, NodeLayout, Point } from '../models/diagram-definition';
+import { DiagramDefinitionStore } from './diagram-definition.store';
+import { DIAGRAM_DEFINITION_DTO, OTHER_DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from '../models/test-diagram-definition';
 
 describe('DiagramDefinitionStore', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';

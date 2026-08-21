@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
-import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
+import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../models/diagram-definition';
 
 interface PointDto {
   x?: number;

@@ -4,8 +4,8 @@ import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { BaseEntityStore, PersistedEntity } from '@processpuzzle/base-entity';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
-import { DiagramDefinition } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/models/diagram-definition';
-import { DiagramDefinitionService } from 'libs/js-shared/base-state-frontend/src/lib/domain/modeler/data-access/diagram-definition.service';
+import { DiagramDefinition } from '../models/diagram-definition';
+import { DiagramDefinitionService } from './diagram-definition.service';
 
 /** The slice of `BaseEntityStore`'s state that {@link DiagramLayoutStore} reads and patches. */
 type LayoutState = {
