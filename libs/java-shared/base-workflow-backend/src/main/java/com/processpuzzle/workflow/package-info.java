@@ -13,12 +13,9 @@
  *       (see {@code execution.adapters.outbound.rule.BaseRuleEvaluationAdapter}), so a host
  *       application that wires Base Workflow without Base Rule still runs — preconditions/postconditions
  *       are simply treated as always-satisfied.
- *   <li>{@code basestate :: domain} — read-only visibility into state/transition definitions.
- *       Base State does not yet expose an instance-level API (it is still a scaffold), so
- *       WorkProductInstance.currentState is maintained locally and refreshed by a state-change
- *       event listener once Base State publishes one; see
- *       {@code execution.usecases.outbound.WorkflowEventPublisherPort} for the outbound half of
- *       that contract.
+ *   <li>{@code state :: domain} / {@code state :: operations} — read-only visibility into
+ *       state/transition definitions and the published state-operation API used by the
+ *       {@code EntityStateGateway} adapter.
  * </ul>
  *
  * <p>base-workflow never depends on base-entity or base-artifact directly — neither currently
@@ -32,7 +29,8 @@
  */
 @ApplicationModule(
         displayName = "Base Workflow",
-        allowedDependencies = {"core", "shared", "basestate :: domain", "rule :: usecase", "rule :: domain"})
+        allowedDependencies = {
+                "core", "shared", "state :: domain", "state :: operations", "rule :: usecase", "rule :: domain"})
 package com.processpuzzle.workflow;
 
 import org.springframework.modulith.ApplicationModule;

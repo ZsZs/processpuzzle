@@ -172,7 +172,7 @@ different stages:
 | --- | --- | --- |
 | `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
-| `base-state` | scaffold | scaffold |
+| `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
 | `base-workflow` | scaffold | scaffold |
 | `base-app` | scaffold | scaffold |
 

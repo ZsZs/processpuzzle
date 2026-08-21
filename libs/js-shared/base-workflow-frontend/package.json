@@ -18,7 +18,7 @@
   "peerDependencies": {
     "@angular/common": "~22.0.1",
     "@angular/core": "~22.0.1",
-    "@processpuzzle/base-state-frontend": "^0.1.0",
+    "@processpuzzle/base-state": "^0.1.0",
     "@processpuzzle/util": "^0.8.0",
     "rxjs": "~7.8.2"
   },

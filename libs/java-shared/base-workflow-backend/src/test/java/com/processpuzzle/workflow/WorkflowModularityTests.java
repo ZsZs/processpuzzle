@@ -5,7 +5,7 @@ import org.springframework.modulith.core.ApplicationModules;
 
 /**
  * Verifies this library's {@code @ApplicationModule} declaration — in particular that its only
- * permitted reach into other feature modules is {@code basestate :: domain} and
+ * permitted reach into other feature modules is {@code state :: domain} and
  * {@code rule :: usecase} / {@code rule :: domain}, and that {@code definition} and
  * {@code execution} only cross into each other through the ports declared in
  * {@code definition.usecases.outbound} / {@code execution.usecases.outbound}, never by reaching

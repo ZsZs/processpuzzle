@@ -1,5 +1,5 @@
 {
-  "name": "@processpuzzle/base-state-frontend",
+  "name": "@processpuzzle/base-state",
   "version": "0.1.0",
   "license": "MIT",
   "author": {
@@ -16,9 +16,12 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
-    "@angular/common": "~22.0.1",
+    "@angular-architects/ngrx-toolkit": "^21.0.1",
     "@angular/core": "~22.0.1",
+    "@angular/router": "~22.0.1",
+    "@jsverse/transloco": "8.4.0",
     "@ngrx/signals": "^21.1.1",
+    "@processpuzzle/base-entity": "^0.8.2",
     "@processpuzzle/util": "^0.8.0",
     "rxjs": "~7.8.2"
   },

@@ -28,9 +28,10 @@ import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/fi
  *   so tenant isolation has to be got right twice.
  *
  * Nothing about it is broken today and no removal date is set: `ApplicationPropertyService` in
- * `widgets` and the testbed's `FirestoreDocService` still extend it, and `BaseEntityFacade.createService`
- * still returns it when `BACKEND_SERVICE_PROVIDER` is not `rest`. Those are the call sites to migrate
- * before it can go.
+ * `widgets` still extends it, and `BaseEntityFacade.createService` still returns it when
+ * `BACKEND_SERVICE_PROVIDER` is not `rest`. Those are the call sites to migrate before it can go — the
+ * testbed's own Firestore sample is gone, its entities now being served through the contract like every
+ * other deployment's.
  */
 export class BaseEntityFirestoreService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   protected collection;

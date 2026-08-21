@@ -28,11 +28,23 @@ const METADATA_SOURCES = [
     collection: 'modules',
     identifier: 'key',
   },
+  // A state machine is identified by the entity type it governs — `/state-machines/{entityName}`, see
+  // base-state-api.yaml — so that is the field mirrored onto json-server's `id`. The states in this file
+  // spell their flags `isFinal` / `isLocked`, because DefaultStateImporter binds them to base-state's own
+  // `State` record; `StateMachineDefinitionMapper` reads either spelling, so the frontend sees the same
+  // machine whether it is served from here or from the Spring backend.
+  {
+    directory: '../../libs/java-shared/base-state-backend/src/main/resources/default-state-machines',
+    suffix: '-state-machines.yaml',
+    documentKey: 'stateMachines',
+    collection: 'state-machines',
+    identifier: 'entityName',
+  },
 ];
 
 // json-server rejects '/' in collection names, so an org-scoped collection is flattened to
 // `<orgKey>-<collection>`; org-scope.js rewrites `/organizations/<orgKey>/<collection>` onto it.
-const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)|(-modules$)/;
+const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)|(-modules$)|(-state-machines$)/;
 
 function readYamlDocuments({ directory, suffix, documentKey, collection, identifier }) {
   const absoluteDirectory = path.resolve(__dirname, directory);

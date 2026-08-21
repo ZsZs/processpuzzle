@@ -1,0 +1,43 @@
+{
+  "state_machine_definition": {
+    "_self": "State Machine",
+    "entityName": "Entity",
+    "name": "Name",
+    "description": "Description",
+    "stateAttributeKey": "State Attribute",
+    "initialStateKey": "Initial State",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "states": "States",
+    "transitions": "Transitions"
+  },
+  "state_machine_state": {
+    "_self": "State",
+    "key": "Key",
+    "name": "Name",
+    "description": "Description",
+    "terminal": "Terminal",
+    "locked": "Locked",
+    "metadata": "Metadata"
+  },
+  "state_machine_transition": {
+    "_self": "Transition",
+    "key": "Key",
+    "name": "Name",
+    "sourceStateKey": "Source State",
+    "targetStateKey": "Target State",
+    "triggerKey": "Trigger",
+    "guards": "Guards",
+    "actions": "Actions"
+  },
+  "state_transition_guard": {
+    "_self": "Guard",
+    "beanName": "Bean Name",
+    "params": "Params"
+  },
+  "state_transition_action": {
+    "_self": "Action",
+    "beanName": "Bean Name",
+    "params": "Params"
+  }
+}

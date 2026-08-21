@@ -53,9 +53,9 @@ class RuleTranslationLoaderTest {
 
         ArgumentCaptor<RuleTranslationBundle> saved = ArgumentCaptor.forClass(RuleTranslationBundle.class);
         verify(repository).save(saved.capture());
-        assertThat(saved.getValue().getOrgKey()).isEqualTo(ORG);
-        assertThat(saved.getValue().getScope()).isEqualTo("a_scope");
-        assertThat(saved.getValue().getLocale()).isEqualTo("en");
+        assertThat(saved.getValue().getKey().getOrgKey()).isEqualTo(ORG);
+        assertThat(saved.getValue().getKey().getScope()).isEqualTo("a_scope");
+        assertThat(saved.getValue().getKey().getLocale()).isEqualTo("en");
         assertThat(saved.getValue().getMessages()).containsEntry("k", "v");
     }
 

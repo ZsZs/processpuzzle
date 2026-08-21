@@ -54,6 +54,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/base-state-frontend/src/assets/i18n/base_state",
+            "output": "assets/i18n/base_state"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/design/src/assets/i18n/design",
             "output": "assets/i18n/design"
           },

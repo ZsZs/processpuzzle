@@ -173,8 +173,8 @@
               <inputSpec>${project.basedir}/src/main/resources/base-state-api.yaml</inputSpec>
               <generatorName>spring</generatorName>
               <skipValidateSpec>true</skipValidateSpec>
-              <apiPackage>com.processpuzzle.basestate.api</apiPackage>
-              <modelPackage>com.processpuzzle.basestate.model</modelPackage>
+              <apiPackage>com.processpuzzle.state.api</apiPackage>
+              <modelPackage>com.processpuzzle.state.model</modelPackage>
               <schemaMappings>
                 ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
               </schemaMappings>

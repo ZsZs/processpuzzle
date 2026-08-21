@@ -5,7 +5,7 @@ import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
-import { BASE_ENTITY_FACADE_REGISTRY, BaseFormNavigatorSingletonStore, type NavigationPayload, NavigatorCommand } from '@processpuzzle/base-entity';
+import { BASE_ENTITY_FACADE_REGISTRY, type EntityDefinition, EntityDefinitionRegistry, BaseFormNavigatorSingletonStore, type NavigationPayload, NavigatorCommand } from '@processpuzzle/base-entity';
 import { BaseRule, Severity } from '../domain/base-rule';
 import { BaseRuleStore } from '../domain/base-rule.store';
 import { BaseRuleContainerComponent } from './base-rule-container.component';
@@ -42,6 +42,9 @@ describe('BaseRuleContainerComponent', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: BaseRuleStore, useValue: storeStub },
         { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: {} },
+        // Stubbed rather than left to the real one: `RuleContextOptions` fetches the tenant's definitions
+        // to fill the Context dropdown, and the real registry would reach for HttpClient.
+        { provide: EntityDefinitionRegistry, useValue: { load: async () => new Map<string, EntityDefinition>() } },
         { provide: BaseFormNavigatorSingletonStore, useValue: navigator },
       ],
     })

@@ -12,19 +12,19 @@ class AbstractTranslationBundleTest {
     void initializesAnEmptyBundleForJpa() {
         TestTranslationBundle bundle = new TestTranslationBundle();
 
-        assertThat(bundle.getOrgKey()).isNull();
-        assertThat(bundle.getScope()).isNull();
-        assertThat(bundle.getLocale()).isNull();
+        assertThat(bundle.getKey().getOrgKey()).isNull();
+        assertThat(bundle.getKey().getScope()).isNull();
+        assertThat(bundle.getKey().getLocale()).isNull();
         assertThat(bundle.getMessages()).isEmpty();
 
-        bundle.setOrgKey("acme");
-        bundle.setScope("orders");
-        bundle.setLocale("en");
+        bundle.getKey().setOrgKey("acme");
+        bundle.getKey().setScope("orders");
+        bundle.getKey().setLocale("en");
         bundle.setMessages(null);
 
-        assertThat(bundle.getOrgKey()).isEqualTo("acme");
-        assertThat(bundle.getScope()).isEqualTo("orders");
-        assertThat(bundle.getLocale()).isEqualTo("en");
+        assertThat(bundle.getKey().getOrgKey()).isEqualTo("acme");
+        assertThat(bundle.getKey().getScope()).isEqualTo("orders");
+        assertThat(bundle.getKey().getLocale()).isEqualTo("en");
         assertThat(bundle.getMessages()).isEmpty();
     }
 

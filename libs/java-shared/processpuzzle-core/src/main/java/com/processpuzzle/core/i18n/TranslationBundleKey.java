@@ -2,6 +2,8 @@ package com.processpuzzle.core.i18n;
 
 import java.io.Serializable;
 import java.util.Objects;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 
 /**
  * Composite primary key of a translation bundle: one message map per organization, transloco scope and
@@ -13,12 +15,18 @@ import java.util.Objects;
  * instantiable through a public no-arg constructor, which a record cannot provide. Field names and types
  * must match the entity's {@code @Id} fields exactly.
  */
+@Embeddable
 public class TranslationBundleKey implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Column(name = "org_key", nullable = false, length = 63)
     private String orgKey;
+
+    @Column(nullable = false, length = 64)
     private String scope;
+
+    @Column(nullable = false, length = 16)
     private String locale;
 
     public TranslationBundleKey() {

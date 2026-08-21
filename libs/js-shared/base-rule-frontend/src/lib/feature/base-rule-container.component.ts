@@ -2,18 +2,11 @@ import { Component, ComponentRef, inject, OnDestroy, OnInit, TemplateRef, viewCh
 import { CommonModule } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  BASE_ENTITY_FACADE_REGISTRY,
-  BaseEntityContainerComponent,
-  BaseEntityDescriptor,
-  BaseFormHostDirective,
-  BaseFormNavigatorSingletonStore,
-  NavigatorCommand,
-  type Selectable,
-} from '@processpuzzle/base-entity';
+import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective, BaseFormNavigatorSingletonStore, NavigatorCommand } from '@processpuzzle/base-entity';
 import { BaseRule } from '../domain/base-rule';
 import { BaseRuleStore } from '../domain/base-rule.store';
 import { createBaseRuleDescriptor } from '../domain/base-rule.descriptors';
+import { RuleContextOptions } from '../domain/rule-context-options.service';
 import { BaseRuleDryRunDialog, BaseRuleDryRunDialogData, BaseRuleDryRunDialogResult } from './base-rule-dry-run.dialog';
 
 const DRY_RUN_ATTR = 'baseRuleDryRun';
@@ -34,15 +27,16 @@ export class BaseRuleContainerComponent implements OnInit, OnDestroy {
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   readonly dryRunActionsTpl = viewChild<TemplateRef<unknown>>('dryRunActionsTpl');
   private readonly store = inject(BaseRuleStore);
-  private readonly entityRegistry = inject(BASE_ENTITY_FACADE_REGISTRY);
+  private readonly contextOptions = inject(RuleContextOptions);
   private readonly dialog = inject(MatDialog);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
-  private readonly contextOptions: ReadonlyArray<Selectable>;
   readonly baseEntityDescriptor: BaseEntityDescriptor;
 
   constructor() {
-    this.contextOptions = Object.keys(this.entityRegistry).map((name) => ({ key: name, value: name }));
-    this.baseEntityDescriptor = createBaseRuleDescriptor(() => this.contextOptions as Array<Selectable>);
+    // A callback rather than a snapshot: `RuleContextOptions` gains the metadata-defined entity names when
+    // their fetch resolves, and `getSelectables()` is re-read on every change detection, so the dropdown
+    // picks them up. Capturing an array here would freeze the list to whatever had arrived by construction.
+    this.baseEntityDescriptor = createBaseRuleDescriptor(() => this.contextOptions.options());
     this.baseEntityDescriptor.store = this.store;
     this.baseEntityDescriptor.extraFormActionsTemplate = () => this.dryRunActionsTpl();
   }

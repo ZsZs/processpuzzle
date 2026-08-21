@@ -22,6 +22,8 @@ import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEnt
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
+import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE } from '@processpuzzle/base-state';
+import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
@@ -29,7 +31,6 @@ import { RelatedEntityFacade } from './content/base-forms/related-entity/related
 import { EmbeddedComponentFacade } from './content/base-forms/embedded-component/embedded-component.facade';
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
-import { FirestoreDocFacade } from './content/base-forms/firestore/firestore-doc.facade';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -53,7 +54,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       TestEntityComponentFacade,
       RelatedEntityFacade,
       TrunkDataFacade,
-      FirestoreDocFacade,
       // Embedded entities are registered like any other: their facade gives them a store, which reads and
       // writes the containing entity's document rather than an endpoint of their own. base-app ships the
       // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
@@ -65,10 +65,27 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-widget: the routable `Widget Definition` plus its two embedded port lists, rendered by
       // the Widgets tab of the design section's Application page.
       ...BASE_WIDGET_FACADE_PROVIDERS,
+      // And for base-state: the routable `State Machine Definition` plus the four embedded levels its form
+      // carries — states and transitions, and a transition's guards and actions.
+      ...BASE_STATE_FACADE_PROVIDERS,
       // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.
       provideBaseWidgets(),
+      // Binds base-entity's `RULE_ENGINE` seam to base-rule's evaluator, for the **whole application**.
+      //
+      // `BaseEntityFormComponent` injects `RULE_ENGINE` optionally and, when it finds one, loads the rules
+      // whose `context` is its descriptor's `entityName` and evaluates them on every change. Nothing else
+      // turns rules on: with the token unbound, `loadRules()` returns on its first line and the form is
+      // simply unvalidated — silently, because an application with no rule backend is a legitimate
+      // deployment (this app runs against Firestore and json-server too).
+      //
+      // Which is why this belongs here and not on a route. It used to sit on the `base-rule` route alone,
+      // which made rules a property of *which section of the testbed you were in* rather than of the entity
+      // being edited: an `Order` form validated under `/base-rule/samples` and the same generated form
+      // validated nothing under `/base-entity` or `/design`. Every form loads its own rules, or the feature
+      // does not mean anything.
+      provideBaseRuleEngine(),
       EmbeddedComponentFacade,
       EmbeddedDetailFacade,
       {
@@ -78,17 +95,18 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           'Test Entity Component': TestEntityComponentFacade,
           'Related Entity': RelatedEntityFacade,
           'Trunk Data': TrunkDataFacade,
-          'Firestore Doc': FirestoreDocFacade,
-          // 'Order' and its embedded 'Order Line' are deliberately absent, and stay absent: they are
-          // metadata now — base-entity-backend's processpuzzle-testbed-entities.yaml — and their
-          // descriptors are synthesized from those definitions at run-time by base-entity's
-          // `EntityScreenResolver`. Registering them here would *override* that, since a compile-time
-          // facade wins by design; the demo application's Order screens are meant to exercise the
-          // metadata path end to end. An entity only needs an entry below when the application has
-          // something to add that a definition cannot express — an extra tab, a Firestore repository.
+          // 'Dynamic Entity' with its two embedded levels, and 'Order' with its 'Order Line', are
+          // deliberately absent and stay absent: they are metadata — base-entity-backend's
+          // processpuzzle-testbed-entities.yaml — and their descriptors are synthesized from those
+          // definitions at run-time by base-entity's `EntityScreenResolver`. Registering them here would
+          // *override* that, since a compile-time facade wins by design, and the two surfaces that mount
+          // them — the Dynamic Entity sample and the demo application's Order screens — exist to exercise
+          // the metadata path end to end. An entity only needs an entry below when the application has
+          // something to add that a definition cannot express: an extra tab, a hand-tuned layout.
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,
+          ...BASE_STATE_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },
@@ -97,7 +115,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // Each library declares its own entry; a scope nobody claims — a designer-authored module's, named
       // at run-time — goes to base-app, which owns ModuleDefinition. All contributions have to be here
       // rather than on route branches: a `multi` token is not merged across injectors.
-      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE].map((source) => ({
+      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE].map((source) => ({
         provide: TRANSLATION_SOURCE_REGISTRY,
         useValue: source,
         multi: true,
