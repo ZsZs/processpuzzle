@@ -3,6 +3,7 @@
  */
 
 export { BeanRef, State, StateMachineDefinition, Transition, type PropertyMap } from './lib/domain/state-machine-definition';
+export { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from './lib/domain/modeler/models/diagram-definition';
 export {
   BASE_STATE_TRANSLATION_SOURCE,
   BASE_STATE_TRANSLOCO_SCOPE,
@@ -27,6 +28,9 @@ export { BEAN_REF_ID_FIELD, createActionRefDescriptor, createGuardRefDescriptor 
 export { StateMachineDefinitionMapper } from './lib/domain/state-machine-definition.mapper';
 export { StateMachineDefinitionService } from './lib/domain/state-machine-definition.service';
 export { StateMachineDefinitionStore } from './lib/domain/state-machine-definition.store';
+export { DiagramDefinitionMapper } from './lib/domain/modeler/data-access/diagram-definition.mapper';
+export { DiagramDefinitionService } from './lib/domain/modeler/data-access/diagram-definition.service';
+export { DiagramDefinitionStore, DiagramLayoutStore } from './lib/domain/modeler/data-access/diagram-definition.store';
 export { StateMachineDefinitionFacade } from './lib/feature/state-machine-definition.facade';
 export { STATE_MODELER_TAB } from './lib/feature/state-modeler-tab';
 export { StateModelerTabComponent } from './lib/feature/state-modeler-tab.component';
