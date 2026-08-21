@@ -1,6 +1,7 @@
 package com.processpuzzle.state.adapter.inbound;
 
 import com.processpuzzle.shared.model.ErrorResponse;
+import com.processpuzzle.state.usecase.exception.DiagramDefinitionNotFoundException;
 import com.processpuzzle.state.usecase.exception.EntityObjectNotFoundException;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
 import com.processpuzzle.state.usecase.exception.StateMachineAlreadyExistsException;
@@ -31,6 +32,17 @@ class StateApiExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getErrorId()).isEqualTo("state-machine.not-found");
+        assertThat(response.getBody().getErrorText()).isEqualTo(ex.getMessage());
+    }
+
+    @Test
+    void handleDiagramNotFound_shouldReturn404() {
+        DiagramDefinitionNotFoundException ex = new DiagramDefinitionNotFoundException("org1", "invoice");
+        ResponseEntity<ErrorResponse> response = handler.handleDiagramNotFound(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("diagram-definition.not-found");
         assertThat(response.getBody().getErrorText()).isEqualTo(ex.getMessage());
     }
 

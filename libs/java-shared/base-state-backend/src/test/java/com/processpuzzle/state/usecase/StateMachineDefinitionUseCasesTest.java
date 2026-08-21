@@ -1,5 +1,7 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.state.domain.DiagramDefinition;
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionKey;
@@ -21,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class StateMachineDefinitionUseCasesTest {
@@ -29,6 +32,7 @@ class StateMachineDefinitionUseCasesTest {
     private static final String ENTITY = "order";
 
     private StateMachineDefinitionRepository repository;
+    private DiagramDefinitionRepository diagramRepository;
     private StateMachineTopologyValidator validator;
 
     private CreateStateMachineDefinition createUseCase;
@@ -43,11 +47,12 @@ class StateMachineDefinitionUseCasesTest {
     @BeforeEach
     void setUp() {
         repository = mock(StateMachineDefinitionRepository.class);
+        diagramRepository = mock(DiagramDefinitionRepository.class);
         validator = mock(StateMachineTopologyValidator.class);
 
         createUseCase = new CreateStateMachineDefinition(repository, validator);
         updateUseCase = new UpdateStateMachineDefinition(repository, validator);
-        deleteUseCase = new DeleteStateMachineDefinition(repository);
+        deleteUseCase = new DeleteStateMachineDefinition(repository, diagramRepository);
         findUseCase = new FindStateMachineDefinition(repository);
         findAllUseCase = new FindAllStateMachineDefinitions(repository);
 
@@ -105,9 +110,22 @@ class StateMachineDefinitionUseCasesTest {
     @Test
     void delete_shouldDeleteByIdWhenExists() {
         when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
+        when(diagramRepository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
 
         deleteUseCase.execute(ORG, ENTITY);
 
+        verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY));
+    }
+
+    @Test
+    void delete_shouldCascadeToTheDiagramLayout() {
+        DiagramDefinition diagram = DiagramDefinition.builder().orgKey(ORG).entityName(ENTITY).build();
+        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
+        when(diagramRepository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(diagram));
+
+        deleteUseCase.execute(ORG, ENTITY);
+
+        verify(diagramRepository).delete(diagram);
         verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY));
     }
 
@@ -117,6 +135,7 @@ class StateMachineDefinitionUseCasesTest {
 
         assertThatThrownBy(() -> deleteUseCase.execute(ORG, ENTITY))
                 .isInstanceOf(StateMachineNotFoundException.class);
+        verifyNoInteractions(diagramRepository);
     }
 
     @Test
