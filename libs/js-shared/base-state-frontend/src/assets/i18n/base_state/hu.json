@@ -14,7 +14,7 @@
       "modeler": "Állapotmodellező"
     },
     "modeler": {
-      "under_construction": "Az állapotgép-modellező fejlesztés alatt áll. Az állapotok és az átmenetek addig a Részletek fülön szerkeszthetők."
+      "save_layout": "Elrendezés mentése"
     }
   },
   "state_machine_state": {

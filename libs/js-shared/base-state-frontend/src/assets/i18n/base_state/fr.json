@@ -14,7 +14,7 @@
       "modeler": "Modeleur d'états"
     },
     "modeler": {
-      "under_construction": "Le modeleur de machine à états est en cours de construction. En attendant, les états et les transitions se modifient dans l'onglet Détails."
+      "save_layout": "Enregistrer la disposition"
     }
   },
   "state_machine_state": {

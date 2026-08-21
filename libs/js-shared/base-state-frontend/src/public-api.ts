@@ -31,6 +31,12 @@ export { StateMachineDefinitionStore } from './lib/domain/state-machine-definiti
 export { DiagramDefinitionMapper } from './lib/domain/modeler/data-access/diagram-definition.mapper';
 export { DiagramDefinitionService } from './lib/domain/modeler/data-access/diagram-definition.service';
 export { DiagramDefinitionStore, DiagramLayoutStore } from './lib/domain/modeler/data-access/diagram-definition.store';
+export { STATE_NODE_TYPE, type StateMachineGraph, type StateNode, type StateNodeData, type TransitionEdge, type TransitionEdgeData } from './lib/domain/modeler/graph/state-machine-graph';
+export { StateMachineGraphConverter } from './lib/domain/modeler/graph/converters/state-machine-graph.converter';
+export { DagreLayoutService } from './lib/domain/modeler/graph/layout/dagre-layout.service';
+export { StateMachineCanvasComponent } from './lib/feature/modeler/components/state-machine-canvas.component';
+export { StateNodeComponent } from './lib/feature/modeler/components/state-node.component';
+export { DiagramSelectionService } from './lib/feature/modeler/services/diagram-selection.service';
 export { StateMachineDefinitionFacade } from './lib/feature/state-machine-definition.facade';
 export { STATE_MODELER_TAB } from './lib/feature/state-modeler-tab';
 export { StateModelerTabComponent } from './lib/feature/state-modeler-tab.component';
