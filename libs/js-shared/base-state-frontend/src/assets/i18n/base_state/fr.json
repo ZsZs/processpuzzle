@@ -9,7 +9,13 @@
     "version": "Version",
     "updatedAt": "Modifié le",
     "states": "États",
-    "transitions": "Transitions"
+    "transitions": "Transitions",
+    "tabs": {
+      "modeler": "Modeleur d'états"
+    },
+    "modeler": {
+      "under_construction": "Le modeleur de machine à états est en cours de construction. En attendant, les états et les transitions se modifient dans l'onglet Détails."
+    }
   },
   "state_machine_state": {
     "_self": "État",

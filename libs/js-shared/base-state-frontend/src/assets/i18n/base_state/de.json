@@ -9,7 +9,13 @@
     "version": "Version",
     "updatedAt": "Geändert am",
     "states": "Zustände",
-    "transitions": "Übergänge"
+    "transitions": "Übergänge",
+    "tabs": {
+      "modeler": "Zustandsmodellierer"
+    },
+    "modeler": {
+      "under_construction": "Der Zustandsmaschinen-Modellierer ist noch in Arbeit. Zustände und Übergänge können in der Zwischenzeit auf dem Tab „Details“ bearbeitet werden."
+    }
   },
   "state_machine_state": {
     "_self": "Zustand",

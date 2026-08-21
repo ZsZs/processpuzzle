@@ -9,7 +9,13 @@
     "version": "Verzió",
     "updatedAt": "Módosítva",
     "states": "Állapotok",
-    "transitions": "Átmenetek"
+    "transitions": "Átmenetek",
+    "tabs": {
+      "modeler": "Állapotmodellező"
+    },
+    "modeler": {
+      "under_construction": "Az állapotgép-modellező fejlesztés alatt áll. Az állapotok és az átmenetek addig a Részletek fülön szerkeszthetők."
+    }
   },
   "state_machine_state": {
     "_self": "Állapot",

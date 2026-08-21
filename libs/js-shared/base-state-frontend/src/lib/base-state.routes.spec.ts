@@ -1,6 +1,8 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_STATE_ROUTES } from './base-state.routes';
+import { STATE_MODELER_TAB } from './feature/state-modeler-tab';
+import { StateModelerTabComponent } from './feature/state-modeler-tab.component';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -43,8 +45,19 @@ describe('BASE_STATE_ROUTES', () => {
     ]);
   });
 
-  it('nests the generic list and details routes', () => {
-    expect(definitionRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']);
+  it('nests the generic list and details routes, with the modeler beside them', () => {
+    // The modeler is a sibling of the details route, not a child: it is a screen *of* the definition, not
+    // a section of its form. `baseEntityRoutes` inserts the extra tabs between details and list.
+    expect(definitionRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/modeler', 'list']);
+  });
+
+  it('answers the modeler tab link with the component the tab declares', () => {
+    const modelerRoute = definitionRoute.children?.find((child) => child.path === ':entityId/modeler');
+
+    // Same constant on both sides, so the URL the tab navigates to and the URL that resolves a component
+    // cannot drift apart.
+    expect(modelerRoute?.component).toBe(STATE_MODELER_TAB.component);
+    expect(modelerRoute?.component).toBe(StateModelerTabComponent);
   });
 
   it('hangs the states and the transitions below the machine being edited', async () => {

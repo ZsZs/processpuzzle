@@ -26,6 +26,15 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const STATE_MACHINE_DEFINITION_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE}.state_machine_definition`;
 
 /**
+ * Label of the State Modeler tab, the third screen of a `State Machine Definition` beside the generic List
+ * and Details. Under `tabs` rather than beside the attribute labels, because the framework's own tab labels
+ * live in `base_entity.tabs.*` — this is the same kind of key, contributed by the feature that owns the
+ * screen. Resolved with `{ entity }` like the generic ones, so a translation may name the entity if it
+ * reads better that way.
+ */
+export const STATE_MODELER_I18N_KEY = `${STATE_MACHINE_DEFINITION_I18N_SCOPE}.tabs.modeler`;
+
+/**
  * Key roots of the nested definitions the `State Machine Definition` form contains through
  * `EMBEDDED_COMPONENTS` controls. They are children of {@link BASE_STATE_TRANSLOCO_SCOPE} rather than
  * scopes of their own, because the whole graph is edited under {@link BASE_STATE_ROUTES} and one scope

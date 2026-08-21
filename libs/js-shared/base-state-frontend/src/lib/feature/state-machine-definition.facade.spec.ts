@@ -8,6 +8,7 @@ import { StateMachineDefinitionMapper } from '../domain/state-machine-definition
 import { StateMachineDefinitionService } from '../domain/state-machine-definition.service';
 import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
 import { StateMachineDefinitionFacade } from './state-machine-definition.facade';
+import { STATE_MODELER_TAB } from './state-modeler-tab';
 
 describe('StateMachineDefinitionFacade', () => {
   let facade: StateMachineDefinitionFacade;
@@ -34,6 +35,13 @@ describe('StateMachineDefinitionFacade', () => {
     expect(facade.service).toBe(TestBed.inject(StateMachineDefinitionService));
     expect(facade.storeClass).toBe(StateMachineDefinitionStore);
     expect(facade.store).toBe(TestBed.inject(StateMachineDefinitionStore));
+  });
+
+  it('carries the State Modeler tab on the descriptor, so the tab bar renders its link', () => {
+    // `BaseEntityContainerComponent` is mounted directly by BASE_STATE_ROUTES and reads `extraTabs` off
+    // the descriptor it resolves from ACTIVE_ENTITY_FACADE — this facade is the only place it can come
+    // from. The same constant is handed to `baseEntityRoutes`, which mounts the route it links to.
+    expect(facade.descriptor.extraTabs).toEqual([STATE_MODELER_TAB]);
   });
 
   it('binds the store to the descriptor it hands out', () => {

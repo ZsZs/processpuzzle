@@ -7,6 +7,7 @@ export {
   BASE_STATE_TRANSLATION_SOURCE,
   BASE_STATE_TRANSLOCO_SCOPE,
   STATE_MACHINE_DEFINITION_I18N_SCOPE,
+  STATE_MODELER_I18N_KEY,
   STATE_MACHINE_STATE_I18N_SCOPE,
   STATE_MACHINE_TRANSITION_I18N_SCOPE,
   STATE_TRANSITION_ACTION_I18N_SCOPE,
@@ -27,6 +28,8 @@ export { StateMachineDefinitionMapper } from './lib/domain/state-machine-definit
 export { StateMachineDefinitionService } from './lib/domain/state-machine-definition.service';
 export { StateMachineDefinitionStore } from './lib/domain/state-machine-definition.store';
 export { StateMachineDefinitionFacade } from './lib/feature/state-machine-definition.facade';
+export { STATE_MODELER_TAB } from './lib/feature/state-modeler-tab';
+export { StateModelerTabComponent } from './lib/feature/state-modeler-tab.component';
 export { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './lib/feature/state-machine-embedded.facades';
 export { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS } from './lib/base-state.providers';
 export { BASE_STATE_ROUTES } from './lib/base-state.routes';
