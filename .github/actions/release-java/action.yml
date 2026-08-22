@@ -57,10 +57,12 @@ runs:
         distribution: 'temurin'
         cache: 'maven'
 
-    - name: Setup Maven 3.9.14
-      uses: stCarolas/setup-maven@v5.1
-      with:
-        maven-version: '3.9.14'
+    - name: Report Maven version
+      # See the note in .github/actions/lint-test-build/action.yml: the runner's
+      # preinstalled Maven replaces stCarolas/setup-maven, whose uncached tarball
+      # download from Maven Central intermittently failed with HTTP 429.
+      run: mvn -v
+      shell: bash
 
     - name: Config Git
       shell: bash
