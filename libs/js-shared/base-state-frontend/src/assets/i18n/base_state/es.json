@@ -58,5 +58,16 @@
     "_self": "Acción",
     "beanName": "Nombre del bean",
     "params": "Parámetros"
+  },
+  "entity_state_machine": {
+    "tab": "Máquina de estados",
+    "currentState": "Estado actual",
+    "final": "final",
+    "governedBy": "Gobernado por",
+    "noMachine": "Ninguna máquina de estados gobierna este tipo de entidad.",
+    "unknownState": "'{{state}}' no es un estado declarado por esta máquina.",
+    "readOnly": "Vista de solo lectura: la máquina se edita en Base State.",
+    "loading": "Cargando la máquina de estados…",
+    "noState": "Este registro aún no tiene estado."
   }
 }

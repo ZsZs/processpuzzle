@@ -403,4 +403,62 @@ describe('StateMachineCanvasComponent', () => {
       expect(component.toMachine()?.initialStateKey).toBe('NEW');
     });
   });
+  /**
+   * What the State Machine tab of a governed entity renders: the same diagram with every gesture that
+   * could change it removed, and the state the record sits in marked.
+   */
+  describe('read-only mode', () => {
+    const palette = () => (fixture.nativeElement as HTMLElement).querySelector('pp-element-palette');
+
+    function renderReadOnly(currentStateKey?: string) {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.componentRef.setInput('readOnly', true);
+      if (currentStateKey !== undefined) fixture.componentRef.setInput('currentStateKey', currentStateKey);
+      fixture.detectChanges();
+    }
+
+    it('offers the palette while editing and withholds it when read-only', () => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+      expect(palette()).not.toBeNull();
+
+      fixture.componentRef.setInput('readOnly', true);
+      fixture.detectChanges();
+      expect(palette()).toBeNull();
+    });
+
+    it('takes the drag, resize and rotate handles off every node', () => {
+      renderReadOnly();
+
+      expect(component.model.getNodes().map((node) => node.draggable)).toEqual([false, false]);
+      expect(component.model.getNodes().every((node) => node.resizable === false && node.rotatable === false)).toBe(true);
+    });
+
+    it('leaves the nodes alone while editing, so the modeler keeps its defaults', () => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+
+      expect(component.model.getNodes().every((node) => node.draggable === undefined)).toBe(true);
+    });
+
+    it('marks the state the record is in, and only that one', () => {
+      renderReadOnly('DELIVERED');
+
+      const marked = component.model.getNodes().filter((node) => (node.data as { isCurrent?: boolean }).isCurrent);
+      expect(marked.map((node) => node.id)).toEqual(['DELIVERED']);
+    });
+
+    /**
+     * An object may be sitting in a state a later edit removed. Marking nothing is the same tolerance a
+     * stale layout row gets, and better than refusing to draw the machine.
+     */
+    it('marks nothing for a state the machine no longer declares, and nothing when no record is named', () => {
+      renderReadOnly('WITHDRAWN');
+      expect(component.model.getNodes().some((node) => (node.data as { isCurrent?: boolean }).isCurrent)).toBe(false);
+
+      fixture.componentRef.setInput('currentStateKey', undefined);
+      fixture.detectChanges();
+      expect(component.model.getNodes().some((node) => (node.data as { isCurrent?: boolean }).isCurrent)).toBe(false);
+    });
+  });
 });

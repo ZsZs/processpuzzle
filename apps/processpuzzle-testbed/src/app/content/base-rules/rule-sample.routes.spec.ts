@@ -6,7 +6,7 @@ import { BaseEntityDescriptor, BaseEntityScreensComponent, ENTITY_DESCRIPTOR_ROU
 import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_ORDER_PATH, specialOrderScreenRoutes } from './rule-sample.routes';
 
 describe('rule sample screen routes', () => {
-  const screensOf = (name: string): EntityScreens => ({ descriptor: { name } as unknown as BaseEntityDescriptor, embeddedChildren: [] });
+  const screensOf = (name: string): EntityScreens => ({ descriptor: { name } as unknown as BaseEntityDescriptor, embeddedChildren: [], extraTabs: [] });
   const resolve = vi.fn<(entityName: string | undefined) => Promise<EntityScreens | undefined>>();
 
   beforeEach(() => {

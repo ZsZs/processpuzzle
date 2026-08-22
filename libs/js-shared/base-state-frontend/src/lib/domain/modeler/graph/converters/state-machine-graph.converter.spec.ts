@@ -125,6 +125,27 @@ describe('StateMachineGraphConverter', () => {
       expect(graph.edges.map((edge) => edge.id)).toEqual(['confirm']);
     });
 
+    /**
+     * The mark the State Machine tab of a governed entity is drawn by. Absent in the modeler, which draws a
+     * definition rather than any object's position in it.
+     */
+    describe('the state one object currently sits in', () => {
+      it('marks exactly the node the key names', () => {
+        const nodes = StateMachineGraphConverter.toGraph(machine, layout, 'DELIVERED').nodes;
+
+        expect(nodes.filter((node) => node.data.isCurrent).map((node) => node.id)).toEqual(['DELIVERED']);
+      });
+
+      /** A state a later edit removed leaves the object behind; drawing the machine anyway is the point. */
+      it('marks nothing for a key the machine does not declare', () => {
+        expect(StateMachineGraphConverter.toGraph(machine, layout, 'WITHDRAWN').nodes.some((node) => node.data.isCurrent)).toBe(false);
+      });
+
+      it('marks nothing when no object was named, which is what the modeler passes', () => {
+        expect(StateMachineGraphConverter.toGraph(machine, layout).nodes.every((node) => node.data.isCurrent === false)).toBe(true);
+      });
+    });
+
     it('carries the saved viewport, so reopening returns to where the user was', () => {
       expect(StateMachineGraphConverter.toGraph(machine, layout).metadata).toEqual({ viewport: { x: -120, y: 0, scale: 1.25 } });
     });

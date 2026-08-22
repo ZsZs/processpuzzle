@@ -9,6 +9,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 import { EntityScreenResolver } from './entity-screens.resolver';
+import { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './entity-tab-contributor';
 import { EntityDefinition } from '../base-entity-definition/entity-definition';
 import { TEST_ENTITY_DEFINITIONS } from '../base-entity-definition/test-entity-definition';
 
@@ -121,6 +122,74 @@ describe('EntityScreenResolver', () => {
 
       expect((await resolver.resolve('Order'))?.descriptor).toBe(descriptor);
       controller.verify();
+    });
+  });
+
+  describe('extra tabs', () => {
+    const machineTab = { segment: 'state-machine', i18nKey: 'base_state.entity_state_machine.tab', component: class {} };
+
+    /** A contributor in the shape a feature library registers, answering for one entity name only. */
+    function contributorFor(entityName: string, tab = machineTab): EntityTabContributor {
+      return { tabsFor: (descriptor) => (descriptor.entityName === entityName ? [tab] : []) };
+    }
+
+    function setupWithContributors(contributors: EntityTabContributor[], facadeProviders: Array<Record<string, unknown>> = [], facadeRegistry: Record<string, unknown> = {}) {
+      return setup([...facadeProviders, ...contributors.map((contributor) => ({ provide: ENTITY_TAB_CONTRIBUTORS, useValue: contributor, multi: true }))], facadeRegistry);
+    }
+
+    it('offers a contributed tab on a metadata-defined entity the contributor recognizes', async () => {
+      const screens = await resolve(setupWithContributors([contributorFor('Order')]), 'Order');
+
+      expect(screens?.extraTabs.map((tab) => tab.segment)).toEqual(['state-machine']);
+      // Written back onto the descriptor too, because that is what the tab bar renders the links from.
+      expect(screens?.descriptor.extraTabs.map((tab) => tab.segment)).toEqual(['state-machine']);
+    });
+
+    it('leaves an entity no contributor recognizes without extra tabs', async () => {
+      const screens = await resolve(setupWithContributors([contributorFor('Order')]), 'Order Line');
+
+      expect(screens?.extraTabs).toEqual([]);
+    });
+
+    /** A feature's own screens keep the order it declared them in; a contribution is an addition. */
+    it("appends after the descriptor's own tabs rather than replacing them", async () => {
+      const ownTab = { segment: 'modeler', i18nKey: 'own.tab', component: class {} };
+      const descriptor = compiledDescriptor('Test Entity');
+      descriptor.extraTabs = [ownTab];
+      const facadeToken = new InjectionToken<unknown>('TEST_ENTITY_FACADE');
+      const resolver = setupWithContributors([contributorFor('Test Entity')], [{ provide: facadeToken, useValue: facadeOf(descriptor) }], { 'Test Entity': facadeToken });
+
+      const screens = await resolver.resolve('Test Entity');
+
+      expect(screens?.extraTabs.map((tab) => tab.segment)).toEqual(['modeler', 'state-machine']);
+    });
+
+    /**
+     * A compile-time descriptor is a singleton, so resolving the same entity twice asks the contributors
+     * twice. Stacking the tab up would render two identical links and mount two identical routes.
+     */
+    it('does not duplicate a tab when the same descriptor is resolved again', async () => {
+      const descriptor = compiledDescriptor('Test Entity');
+      const facadeToken = new InjectionToken<unknown>('TEST_ENTITY_FACADE');
+      const resolver = setupWithContributors([contributorFor('Test Entity')], [{ provide: facadeToken, useValue: facadeOf(descriptor) }], { 'Test Entity': facadeToken });
+
+      await resolver.resolve('Test Entity');
+      const screens = await resolver.resolve('Test Entity');
+
+      expect(screens?.extraTabs.map((tab) => tab.segment)).toEqual(['state-machine']);
+      expect(descriptor.extraTabs).toHaveLength(1);
+    });
+
+    /** An optional feature that cannot make up its mind must not cost the entity its List and Details. */
+    it('keeps the other contributors when one throws', async () => {
+      const failing: EntityTabContributor = {
+        tabsFor: () => {
+          throw new Error('base-state is unreachable');
+        },
+      };
+      const screens = await resolve(setupWithContributors([failing, contributorFor('Order')]), 'Order');
+
+      expect(screens?.extraTabs.map((tab) => tab.segment)).toEqual(['state-machine']);
     });
   });
 

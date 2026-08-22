@@ -58,5 +58,16 @@
     "_self": "Akció",
     "beanName": "Bean neve",
     "params": "Paraméterek"
+  },
+  "entity_state_machine": {
+    "tab": "Állapotgép",
+    "currentState": "Jelenlegi állapot",
+    "final": "végállapot",
+    "governedBy": "Vezérli",
+    "noMachine": "Ehhez az entitástípushoz nem tartozik állapotgép.",
+    "unknownState": "A(z) '{{state}}' állapotot ez az állapotgép nem deklarálja.",
+    "readOnly": "Csak olvasható nézet — az állapotgép a Base State alatt szerkeszthető.",
+    "loading": "Állapotgép betöltése…",
+    "noState": "Ennek a rekordnak még nincs állapota."
   }
 }

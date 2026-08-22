@@ -23,6 +23,7 @@ function orderScreens(): EntityScreens {
       attrDescriptors: [new BaseEntityAttrDescriptor('orderNumber', FormControlType.TEXT_BOX, 'Order #', undefined, true)],
     }),
     embeddedChildren: [],
+    extraTabs: [],
   };
 }
 
