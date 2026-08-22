@@ -51,6 +51,7 @@ base-document:
 
 base-state:
   loadDefaultStateMachines: no
+  verifyGovernedObjectStates: no
   loadDefaultTranslations: no
 
 base-workflow:

@@ -6,6 +6,7 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.state.usecase.exception.EntityObjectNotFoundException;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,5 +88,25 @@ class BaseEntityObjectGatewayTest {
 
         assertThatThrownBy(() -> gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
                 .isInstanceOf(StaleEntityObjectVersionException.class);
+    }
+    @Test
+    void findObjects_mapsEveryObjectOfTheTypeOntoASnapshot() {
+        UUID otherId = UUID.randomUUID();
+        when(entityObjectAccess.findAll(ENTITY)).thenReturn(List.of(
+                new EntityObjectView(OBJECT_ID, 7L, Map.of("status", "DRAFT")),
+                new EntityObjectView(otherId, 2L, Map.of("status", "SHIPPED"))));
+
+        List<EntityObjectSnapshot> snapshots = gateway.findObjects(ORG, ENTITY);
+
+        assertThat(snapshots).extracting(EntityObjectSnapshot::id).containsExactly(OBJECT_ID, otherId);
+        assertThat(snapshots.getFirst().version()).isEqualTo(7L);
+        assertThat(snapshots.getFirst().payload()).containsEntry("status", "DRAFT");
+    }
+
+    @Test
+    void findObjects_returnsEmptyWhenTheTypeHasNoInstances() {
+        when(entityObjectAccess.findAll(ENTITY)).thenReturn(List.of());
+
+        assertThat(gateway.findObjects(ORG, ENTITY)).isEmpty();
     }
 }

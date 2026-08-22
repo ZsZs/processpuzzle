@@ -7,6 +7,7 @@ import com.processpuzzle.state.usecase.exception.EntityObjectNotFoundException;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
 import com.processpuzzle.state.usecase.port.EntityObjectGateway;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,13 @@ public class BaseEntityObjectGateway implements EntityObjectGateway {
         } catch (EntityObjectAccessException.NotFound e) {
             throw new EntityObjectNotFoundException(orgKey, entityName, objectId);
         }
+    }
+
+    @Override
+    public List<EntityObjectSnapshot> findObjects(String orgKey, String entityName) {
+        return entityObjectAccess.findAll(entityName).stream()
+            .map(view -> new EntityObjectSnapshot(view.id(), view.version(), view.payload()))
+            .toList();
     }
 
     @Override

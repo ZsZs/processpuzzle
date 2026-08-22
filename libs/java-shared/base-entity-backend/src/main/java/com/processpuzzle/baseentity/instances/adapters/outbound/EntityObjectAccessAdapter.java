@@ -6,6 +6,7 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,15 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
     public EntityObjectView find(String entityDefinitionCode, UUID objectId) {
         EntityObject entityObject = load(entityDefinitionCode, objectId);
         return new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EntityObjectView> findAll(String entityDefinitionCode) {
+        return repository.findAllByEntityDefinitionCode(entityDefinitionCode).stream()
+            .map(entityObject -> new EntityObjectView(
+                entityObject.getId(), version(entityObject), entityObject.getPayload()))
+            .toList();
     }
 
     @Override

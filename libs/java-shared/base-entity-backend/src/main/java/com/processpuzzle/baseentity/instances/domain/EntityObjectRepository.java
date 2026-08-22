@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -10,6 +11,8 @@ public interface EntityObjectRepository
     extends JpaRepository<EntityObject, UUID>, JpaSpecificationExecutor<EntityObject> {
 
     boolean existsByEntityDefinitionCode(String entityDefinitionCode);
+
+    List<EntityObject> findAllByEntityDefinitionCode(String entityDefinitionCode);
 
     /**
      * Blunt "does any payload anywhere contain this id" containment check, used for the

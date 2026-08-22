@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -113,5 +114,27 @@ class EntityObjectAccessAdapterTest {
             .hasMessageContaining("is at version 5, not the expected 1");
 
         verifyNoMoreInteractions(repository);
+    }
+    @Test
+    void findAll_returnsEveryObjectOfThatType() {
+        EntityObject other = EntityObject.builder()
+            .id(UUID.randomUUID()).entityDefinitionCode("order").version(2L)
+            .payload(new LinkedHashMap<>(Map.of("status", "SHIPPED"))).build();
+        when(repository.findAllByEntityDefinitionCode("order"))
+            .thenReturn(List.of(order(1L, Map.of("status", "DRAFT")), other));
+
+        List<EntityObjectView> views = adapter.findAll("order");
+
+        assertThat(views).hasSize(2);
+        assertThat(views).extracting(EntityObjectView::version).containsExactly(1L, 2L);
+        assertThat(views.getFirst().payload()).containsEntry("status", "DRAFT");
+    }
+
+    /** An unknown type is not an error here: the caller asked what exists, and nothing does. */
+    @Test
+    void findAll_unknownType_isEmptyRatherThanNotFound() {
+        when(repository.findAllByEntityDefinitionCode("nope")).thenReturn(List.of());
+
+        assertThat(adapter.findAll("nope")).isEmpty();
     }
 }

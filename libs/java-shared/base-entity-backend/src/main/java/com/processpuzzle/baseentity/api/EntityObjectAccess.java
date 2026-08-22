@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.api;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -18,6 +19,21 @@ public interface EntityObjectAccess {
      *         is a caller error, not an empty result
      */
     EntityObjectView find(String entityDefinitionCode, UUID objectId);
+
+    /**
+     * Every object of one type, for a caller that has to reason about the whole population rather
+     * than one object — base-state's startup consistency check over the entities its machines
+     * govern.
+     *
+     * <p>Unpaged and unfiltered, because the caller's question ("does any object of this type
+     * disagree with its state machine?") is not answerable from a page. That makes it a whole-table
+     * read of one entity type: acceptable for a once-per-boot pass, not for a request path.
+     *
+     * @return the objects in no guaranteed order; empty if the type has no instances or is not a
+     *         known definition code — an unknown type has no objects, which is not a caller error
+     *         the way an id of the wrong type is
+     */
+    List<EntityObjectView> findAll(String entityDefinitionCode);
 
     /**
      * Writes {@code value} at {@code attributeCode} and leaves every other key of the payload

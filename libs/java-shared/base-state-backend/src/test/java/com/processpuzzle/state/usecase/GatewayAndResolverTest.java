@@ -35,6 +35,10 @@ class GatewayAndResolverTest {
         assertThatThrownBy(() -> gateway.updateStateAttribute("org-1", "invoice", id, "status", "approved", 1L))
                 .isInstanceOf(UnsupportedOperationException.class)
                 .hasMessageContaining("No EntityObjectGateway bean is configured");
+
+        assertThatThrownBy(() -> gateway.findObjects("org-1", "invoice"))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("No EntityObjectGateway bean is configured");
     }
 
     @Test
