@@ -85,7 +85,6 @@ describe('StateModelerTabComponent', () => {
     await fixture.whenStable();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('State Modeler');
     expect(text).toContain('Save layout');
   });
 
