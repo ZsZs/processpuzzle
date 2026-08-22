@@ -14,7 +14,13 @@
       "modeler": "Modelador de estados"
     },
     "modeler": {
-      "save_layout": "Guardar disposición"
+      "save": "Guardar",
+      "palette": {
+        "title": "Elementos",
+        "start": "Inicio",
+        "end": "Fin",
+        "state": "Estado"
+      }
     }
   },
   "state_machine_state": {
@@ -22,6 +28,7 @@
     "key": "Clave",
     "name": "Nombre",
     "description": "Descripción",
+    "initial": "Estado inicial",
     "terminal": "Terminal",
     "locked": "Bloqueado",
     "metadata": "Metadatos"

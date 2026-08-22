@@ -1,7 +1,9 @@
-import { Component, effect, inject, input, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, viewChild } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { PersistedEntity } from '@processpuzzle/base-entity';
 import { STATE_MODELER_I18N_KEY } from '../base-state.i18n';
 import { DiagramDefinitionStore } from '../domain/modeler/data-access/diagram-definition.store';
+import { StateMachineDefinition } from '../domain/state-machine-definition';
 import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
 import { StateMachineCanvasComponent } from './modeler/components/state-machine-canvas.component';
 import { StatePropertiesPanelComponent } from './modeler/pages/state-properties-panel.component';
@@ -15,11 +17,10 @@ import { DiagramSelectionService } from './modeler/services/diagram-selection.se
  *
  * The host of the modeler, and the one place the machine's two halves are fetched: the topology from
  * `StateMachineDefinitionStore` and the arrangement from `DiagramDefinitionStore`. The canvas joins them
- * and gives back an arrangement to save; nothing else in the modeler talks to a store.
+ * and gives both back to be saved; nothing else in the modeler talks to a store.
  *
- * Still read-only in one respect: the properties panels show the selected state or transition but do not
- * edit it. Authoring states and transitions stays on the Details tab through its embedded lists until a
- * write path back into `StateMachineDefinition` lands, which the Add State / Add Transition gestures need.
+ * Transitions are still authored on the Details tab: the transition properties panel shows the selected
+ * one but does not edit it, and no gesture here draws a new one.
  */
 @Component({
   selector: 'pp-state-modeler-tab',
@@ -28,8 +29,8 @@ import { DiagramSelectionService } from './modeler/services/diagram-selection.se
   template: `
     <div class="pp-state-modeler">
       <div class="pp-state-modeler__toolbar">
-        <button type="button" class="pp-state-modeler__save" [disabled]="!machine() || diagramStore.isLoading()" (click)="saveLayout()">
-          {{ 'base_state.state_machine_definition.modeler.save_layout' | transloco }}
+        <button type="button" class="pp-state-modeler__save" [disabled]="!machine() || diagramStore.isLoading()" (click)="save()">
+          {{ 'base_state.state_machine_definition.modeler.save' | transloco }}
         </button>
       </div>
 
@@ -38,7 +39,12 @@ import { DiagramSelectionService } from './modeler/services/diagram-selection.se
 
         <aside class="pp-state-modeler__properties">
           @if (selection.selectedState(); as state) {
-            <pp-state-properties-panel [state]="state" />
+            <pp-state-properties-panel
+              [state]="state"
+              [initial]="selection.selectedStateIsInitial()"
+              [keyEditable]="selectedStateIsNew()"
+              (stateChanged)="canvas()?.applyStateEdit($event)"
+            />
           }
           @if (selection.selectedTransition(); as transition) {
             <pp-transition-properties-panel [transition]="transition" />
@@ -113,10 +119,23 @@ export class StateModelerTabComponent {
   protected readonly diagramStore = inject(DiagramDefinitionStore);
 
   private readonly machineStore = inject(StateMachineDefinitionStore);
-  private readonly canvas = viewChild(StateMachineCanvasComponent);
 
+  protected readonly canvas = viewChild(StateMachineCanvasComponent);
   protected readonly machine = this.machineStore.currentEntity;
   protected readonly layout = this.diagramStore.currentEntity;
+
+  /**
+   * Whether the selected state is one that has been drawn but never saved — which is the only kind whose
+   * key may still be edited. The key is what every object of the entity type carries as its status, so
+   * re-keying a state the machine has been running with would orphan the objects already sitting in it.
+   *
+   * Answered by asking the loaded machine, not the canvas: a state the machine declares is a state the
+   * backend has already seen, whatever the canvas has done to it since.
+   */
+  protected readonly selectedStateIsNew = computed(() => {
+    const selectedKey = this.selection.selectedState()?.key;
+    return selectedKey !== undefined && !(this.machine()?.states ?? []).some((state) => state.key === selectedKey);
+  });
 
   constructor() {
     // Selects the definition, so the tab bar's Details link stays enabled and the status bar keeps naming
@@ -140,12 +159,31 @@ export class StateModelerTabComponent {
   }
 
   /**
-   * Persists the arrangement as it now stands. One gesture, because `PUT /diagrams/{entityName}` is an
-   * upsert — there is no create-or-replace decision for the user to make, whether or not this machine has
+   * Persists what has been drawn: the arrangement and the topology, in that order. One gesture, because
+   * the split into two resources is the backend's business and not a decision to hand the user — and
+   * because `PUT /diagrams/{entityName}` is an upsert, so it makes no difference whether this machine has
    * been arranged before.
+   *
+   * Two rules keep the saves from undoing each other. **Both payloads are read first**, because each save
+   * writes back into a store whose signal is one of the canvas's inputs, and the canvas rebuilds its model
+   * when an input changes. And **the layout goes first**, because `saveDiagramDefinition` explicitly does
+   * not validate `stateKey` — a row naming a state the machine does not declare yet is tolerated, so a
+   * position may be persisted ahead of the state it belongs to. The reverse order would land the new state
+   * while the old arrangement was still current, and `DagreLayoutService` would park the new node in a
+   * layout row of its own choosing rather than where it was dropped.
+   *
+   * If the layout save fails the machine is left alone: an orphaned layout row is invisible and is pruned
+   * by the next save, whereas a state with no position would be parked somewhere the user did not put it.
    */
-  protected async saveLayout(): Promise<void> {
-    const layout = this.canvas()?.toLayout();
-    if (layout) await this.diagramStore.saveLayout(layout);
+  protected async save(): Promise<void> {
+    const canvas = this.canvas();
+    const layout = canvas?.toLayout();
+    const machine = canvas?.toMachine();
+    if (!layout || !machine) return;
+
+    if (!(await this.diagramStore.saveLayout(layout))) return;
+    // Derived from the loaded machine, which the store selected out of the rows it fetched — so it carries
+    // the id `update` locks on. The cast states that, since the converter's return type cannot.
+    await this.machineStore.update(machine as PersistedEntity<StateMachineDefinition>);
   }
 }

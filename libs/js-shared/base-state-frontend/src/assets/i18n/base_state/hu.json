@@ -14,7 +14,13 @@
       "modeler": "Állapotmodellező"
     },
     "modeler": {
-      "save_layout": "Elrendezés mentése"
+      "save": "Mentés",
+      "palette": {
+        "title": "Elemek",
+        "start": "Kezdet",
+        "end": "Vég",
+        "state": "Állapot"
+      }
     }
   },
   "state_machine_state": {
@@ -22,6 +28,7 @@
     "key": "Kulcs",
     "name": "Név",
     "description": "Leírás",
+    "initial": "Kezdő állapot",
     "terminal": "Végállapot",
     "locked": "Zárolt",
     "metadata": "Metaadatok"

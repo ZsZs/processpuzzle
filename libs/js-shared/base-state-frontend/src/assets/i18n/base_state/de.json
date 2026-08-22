@@ -14,7 +14,13 @@
       "modeler": "Zustandsmodellierer"
     },
     "modeler": {
-      "save_layout": "Layout speichern"
+      "save": "Speichern",
+      "palette": {
+        "title": "Elemente",
+        "start": "Start",
+        "end": "Ende",
+        "state": "Zustand"
+      }
     }
   },
   "state_machine_state": {
@@ -22,6 +28,7 @@
     "key": "Schlüssel",
     "name": "Name",
     "description": "Beschreibung",
+    "initial": "Startzustand",
     "terminal": "Endzustand",
     "locked": "Gesperrt",
     "metadata": "Metadaten"

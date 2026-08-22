@@ -200,6 +200,70 @@ describe('StateMachineGraphConverter', () => {
     });
   });
 
+  describe('toMachine', () => {
+    const graph = StateMachineGraphConverter.toGraph(machine, layout);
+
+    it('reproduces the machine it was drawn from', () => {
+      const saved = StateMachineGraphConverter.toMachine(machine, graph.nodes, graph.edges);
+
+      expect(saved.states).toEqual(machine.states);
+      expect(saved.transitions).toEqual(machine.transitions);
+      expect(saved.initialStateKey).toBe('DRAFT');
+    });
+
+    // Everything the canvas does not draw is the Details tab's business, and `version` above all: the
+    // write is optimistic-locked, so a save has to declare the version the modeler was opened at.
+    it('carries the fields the canvas does not draw', () => {
+      const saved = StateMachineGraphConverter.toMachine(machine, graph.nodes, graph.edges);
+
+      expect(saved.entityName).toBe('order');
+      expect(saved.id).toBe('order');
+      expect(saved.name).toBe('Order State Machine');
+      expect(saved.stateAttributeKey).toBe('status');
+      expect(saved.version).toBe(3);
+    });
+
+    it('adds a state the palette dropped', () => {
+      const state = new State({ key: 'STATE_1', name: 'State 1' });
+      const dropped: StateNode = { ...graph.nodes[0], id: state.key, data: { state, label: state.name, initial: false } };
+
+      const saved = StateMachineGraphConverter.toMachine(machine, [...graph.nodes, dropped], graph.edges);
+
+      expect(saved.states.map((state) => state.key)).toEqual(['DRAFT', 'DELIVERED', 'STATE_1']);
+    });
+
+    it('takes the initial state from the node marked as one', () => {
+      const nodes = graph.nodes.map((node) => ({ ...node, data: { ...node.data, initial: node.id === 'DELIVERED' } }));
+
+      expect(StateMachineGraphConverter.toMachine(machine, nodes, graph.edges).initialStateKey).toBe('DELIVERED');
+    });
+
+    // A machine whose every state was deleted still has to name *something*, and the base value is the
+    // only honest answer — the alternative is silently blanking a field the canvas never drew.
+    it('keeps the machine initial state when no node claims to be one', () => {
+      const nodes = graph.nodes.map((node) => ({ ...node, data: { ...node.data, initial: false } }));
+
+      expect(StateMachineGraphConverter.toMachine(machine, nodes, graph.edges).initialStateKey).toBe('DRAFT');
+    });
+
+    // ng-diagram removes an edge together with the node it hangs off, so this is what deleting `DELIVERED`
+    // reaches the converter as. Keeping `confirm` would post a transition to a state that no longer exists.
+    it('drops the transitions of a deleted state', () => {
+      const saved = StateMachineGraphConverter.toMachine(machine, [graph.nodes[0]], []);
+
+      expect(saved.states.map((state) => state.key)).toEqual(['DRAFT']);
+      expect(saved.transitions).toEqual([]);
+    });
+
+    // An edge the user drew has no transition behind it — no trigger, no guards — so there is nothing to
+    // save. `linking.validateConnection` is what stops one arising; this is the belt to that pair of braces.
+    it('ignores an edge that carries no transition', () => {
+      const drawn = { id: 'edge-1', source: 'DRAFT', target: 'DELIVERED' } as unknown as TransitionEdge;
+
+      expect(StateMachineGraphConverter.toMachine(machine, graph.nodes, [...graph.edges, drawn]).transitions).toEqual(machine.transitions);
+    });
+  });
+
   it('round-trips an arrangement through the graph unchanged', () => {
     const graph = StateMachineGraphConverter.toGraph(machine, layout);
     const saved = StateMachineGraphConverter.toLayout('order', graph.nodes, graph.edges, layout.viewport, layout);

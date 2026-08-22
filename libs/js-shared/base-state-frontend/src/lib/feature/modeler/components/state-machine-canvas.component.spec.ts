@@ -1,11 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DiagramDefinitionMapper } from '../../../domain/modeler/data-access/diagram-definition.mapper';
-import { STATE_NODE_TYPE } from '../../../domain/modeler/graph/state-machine-graph';
+import { STATE_NODE_TYPE, StateNode } from '../../../domain/modeler/graph/state-machine-graph';
 import { DIAGRAM_DEFINITION_DTO } from '../../../domain/modeler/models/test-diagram-definition';
+import { State } from '../../../domain/state-machine-definition';
 import { StateMachineDefinitionMapper } from '../../../domain/state-machine-definition.mapper';
 import { STATE_MACHINE_DEFINITION_DTO } from '../../../domain/test-state-machine-definition';
 import { DiagramSelectionService } from '../services/diagram-selection.service';
+import { PaletteStateKind, STATE_PALETTE_ITEMS } from './state-palette-items';
 import { StateMachineCanvasComponent } from './state-machine-canvas.component';
 
 describe('StateMachineCanvasComponent', () => {
@@ -19,7 +22,9 @@ describe('StateMachineCanvasComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StateMachineCanvasComponent],
-      providers: [DiagramSelectionService],
+      // The palette rail the canvas hosts translates its labels; without a loader every `transloco` pipe
+      // in it throws and the canvas cannot be created at all.
+      providers: [DiagramSelectionService, provideTranslocoTesting({ translations: { en: {} } })],
     }).compileComponents();
 
     fixture = TestBed.createComponent(StateMachineCanvasComponent);
@@ -177,6 +182,142 @@ describe('StateMachineCanvasComponent', () => {
       fixture.detectChanges();
 
       expect(selectionService.selectedState()).toBeUndefined();
+    });
+  });
+
+  describe('palette drops', () => {
+    /**
+     * What ng-diagram's own `PaletteDropEventHandler` does — spread the palette item, give it the id
+     * `computeNodeId` mints and the drop position, add it — followed by the component's handler. Rebuilt
+     * here rather than driven through the DOM because a drop is an HTML5 drag on an `<ng-diagram>` that has
+     * measured itself, and none of that is what these tests are about.
+     */
+    const drop = (kind: PaletteStateKind, position = { x: 300, y: 120 }): void => {
+      const item = STATE_PALETTE_ITEMS.filter((candidate) => candidate.data.kind === kind)[0];
+      const node: StateNode = { ...item, id: component.config.computeNodeId?.() ?? '', position };
+      component.model.updateNodes((nodes) => [...nodes, node]);
+      component['onPaletteItemDropped']({ node, dropPosition: position });
+    };
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+    });
+
+    it('turns a dropped symbol into a state of its own, keyed by the lowest free ordinal', () => {
+      drop('state');
+
+      const dropped = component.model.getNodes().find((node) => node.id === 'STATE_1') as StateNode;
+      expect(dropped.data.state.key).toBe('STATE_1');
+      expect(dropped.data.state.name).toBe('State 1');
+      expect(dropped.position).toEqual({ x: 300, y: 120 });
+    });
+
+    it('counts on, so two drops are two states rather than one state twice', () => {
+      drop('state');
+      drop('state', { x: 420, y: 260 });
+
+      expect(component.model.getNodes().map((node) => node.id)).toEqual(['DRAFT', 'DELIVERED', 'STATE_1', 'STATE_2']);
+    });
+
+    // The placeholder `State` in a palette item's `data` is shared by every drop of that item, so a drop
+    // that failed to replace it would give the second node the first one's state.
+    it('gives each drop a state of its own rather than the palette item placeholder', () => {
+      drop('state');
+      drop('state', { x: 420, y: 260 });
+
+      const [first, second] = component.model.getNodes().slice(2) as StateNode[];
+      expect(first.data.state).not.toBe(second.data.state);
+      expect(STATE_PALETTE_ITEMS.map((item) => item.data.state.key)).toEqual(['', '', '']);
+    });
+
+    it('makes a dropped End symbol a terminal state', () => {
+      drop('end');
+
+      const dropped = component.model.getNodes().find((node) => node.id === 'STATE_1') as StateNode;
+      expect(dropped.data.state.terminal).toBe(true);
+      expect(dropped.data.initial).toBe(false);
+    });
+
+    // A machine starts in exactly one state, so claiming the entry point has to release it too.
+    it('moves the entry point onto a dropped Start symbol, off whichever state held it', () => {
+      drop('start');
+
+      const nodes = component.model.getNodes() as StateNode[];
+      expect(nodes.filter((node) => node.data.initial).map((node) => node.id)).toEqual(['STATE_1']);
+      expect(component.toMachine()?.initialStateKey).toBe('STATE_1');
+    });
+
+    it('adds the dropped state to the machine the toolbar saves', () => {
+      drop('end');
+
+      const saved = component.toMachine();
+      expect(saved?.states.map((state) => state.key)).toEqual(['DRAFT', 'DELIVERED', 'STATE_1']);
+      expect(saved?.transitions.map((transition) => transition.key)).toEqual(['confirm']);
+      expect(saved?.version).toBe(3);
+    });
+
+    it('puts the dropped state in the arrangement the toolbar saves, at the position it was dropped at', () => {
+      drop('state', { x: 500, y: 40 });
+
+      expect(component.toLayout()?.nodes.find((node) => node.stateKey === 'STATE_1')?.position).toEqual({ x: 500, y: 40 });
+    });
+  });
+
+  describe('toMachine', () => {
+    it('reports nothing to save while no machine is loaded', () => {
+      fixture.detectChanges();
+
+      expect(component.toMachine()).toBeUndefined();
+    });
+
+    it('reproduces the loaded machine while nothing has been drawn', () => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+
+      expect(component.toMachine()).toEqual(machine);
+    });
+
+    // ng-diagram removes the edges attached to a deleted node, so the transition goes with the state.
+    it('drops a deleted state and the transitions that named it', () => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+      component.model.updateNodes((nodes) => nodes.filter((node) => node.id !== 'DELIVERED'));
+      component.model.updateEdges((edges) => edges.filter((edge) => edge.target !== 'DELIVERED'));
+
+      const saved = component.toMachine();
+
+      expect(saved?.states.map((state) => state.key)).toEqual(['DRAFT']);
+      expect(saved?.transitions).toEqual([]);
+    });
+  });
+
+  describe('applyStateEdit', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+    });
+
+    it('shows an edited name on the node and saves it with the machine', () => {
+      const renamed = new State({ ...machine.states[0], name: 'Captured' });
+
+      component.applyStateEdit({ previousKey: 'DRAFT', state: renamed, initial: true });
+
+      const node = component.model.getNodes().find((candidate) => candidate.id === 'DRAFT') as StateNode;
+      expect(node.data.label).toBe('Captured');
+      expect(component.toMachine()?.states[0].name).toBe('Captured');
+      expect(selectionService.selectedState()).toBe(renamed);
+      expect(selectionService.selectedStateIsInitial()).toBe(true);
+    });
+
+    // The node id *is* the key, so a rename of the key is a re-identification of the node.
+    it('re-keys the node when the key changes', () => {
+      const rekeyed = new State({ ...machine.states[0], key: 'NEW' });
+
+      component.applyStateEdit({ previousKey: 'DRAFT', state: rekeyed, initial: true });
+
+      expect(component.model.getNodes().map((node) => node.id)).toEqual(['NEW', 'DELIVERED']);
+      expect(component.toMachine()?.initialStateKey).toBe('NEW');
     });
   });
 });

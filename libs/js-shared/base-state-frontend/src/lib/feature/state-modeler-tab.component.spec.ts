@@ -28,7 +28,18 @@ describe('StateModelerTabComponent', () => {
           translations: {
             en: {
               'base_state.state_machine_definition.tabs.modeler': 'State Modeler',
-              'base_state.state_machine_definition.modeler.save_layout': 'Save layout',
+              'base_state.state_machine_definition.modeler.save': 'Save',
+              'base_state.state_machine_definition.modeler.palette.title': 'Elements',
+              'base_state.state_machine_definition.modeler.palette.start': 'Start',
+              'base_state.state_machine_definition.modeler.palette.end': 'End',
+              'base_state.state_machine_definition.modeler.palette.state': 'State',
+              'base_state.state_machine_state._self': 'State',
+              'base_state.state_machine_state.key': 'Key',
+              'base_state.state_machine_state.name': 'Name',
+              'base_state.state_machine_state.description': 'Description',
+              'base_state.state_machine_state.initial': 'Initial',
+              'base_state.state_machine_state.terminal': 'Terminal',
+              'base_state.state_machine_state.locked': 'Locked',
             },
           },
         }),
@@ -67,8 +78,14 @@ describe('StateModelerTabComponent', () => {
 
   function saveButton(): HTMLButtonElement {
     const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.pp-state-modeler__save');
-    if (!button) throw new Error('The Save layout button is not rendered.');
+    if (!button) throw new Error('The Save button is not rendered.');
     return button;
+  }
+
+  function field(testid: string): HTMLInputElement {
+    const element = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(`[data-testid="${testid}"]`);
+    if (!element) throw new Error(`No ${testid} field is rendered.`);
+    return element;
   }
 
   function currentMachine(): StateMachineDefinition {
@@ -77,7 +94,7 @@ describe('StateModelerTabComponent', () => {
     return machine;
   }
 
-  it('names the screen and offers the one gesture that persists an arrangement', async () => {
+  it('names the screen and offers the one gesture that persists what has been drawn', async () => {
     await render();
     flushMachines();
     flushDiagramList();
@@ -85,7 +102,20 @@ describe('StateModelerTabComponent', () => {
     await fixture.whenStable();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Save layout');
+    expect(text).toContain('Save');
+  });
+
+  // The palette is rendered by the canvas rather than by this tab, because ng-diagram's PaletteService is
+  // component-scoped — so this asserts the tab really does end up with the three symbols on screen.
+  it('offers the three symbols a machine is drawn from', async () => {
+    await render();
+    flushMachines();
+    flushDiagramList();
+    flushLayout();
+    await fixture.whenStable();
+
+    const symbols = (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid^="palette-"]');
+    expect(Array.from(symbols).map((symbol) => symbol.textContent?.trim())).toEqual(['Start', 'End', 'State']);
   });
 
   /**
@@ -163,6 +193,46 @@ describe('StateModelerTabComponent', () => {
     request.flush({ ...DIAGRAM_DEFINITION_DTO, version: 4 });
   });
 
+  /**
+   * The arrangement first, then the topology — the order matters, and is argued in {@link
+   * StateModelerTabComponent.save}: a layout row naming a state the machine does not declare yet is
+   * tolerated, whereas a state with no position gets parked wherever Dagre decides.
+   */
+  it('persists the topology too, after the arrangement', async () => {
+    await render();
+    flushMachines();
+    flushDiagramList();
+    flushLayout();
+    await fixture.whenStable();
+
+    saveButton().click();
+    controller.expectOne(`${SERVICE_ROOT}/diagrams/order`).flush({ ...DIAGRAM_DEFINITION_DTO, version: 4 });
+    await fixture.whenStable();
+
+    const request = controller.expectOne(`${SERVICE_ROOT}/state-machines/order`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body.states.map((state: { key: string }) => state.key)).toEqual(['DRAFT', 'DELIVERED']);
+    expect(request.request.body.transitions.map((transition: { key: string }) => transition.key)).toEqual(['confirm']);
+    expect(request.request.body.initialStateKey).toBe('DRAFT');
+    expect(request.request.body.version).toBe(3);
+  });
+
+  // A stale layout row is invisible and the next save prunes it; a saved state with no saved position is
+  // not, so the machine is not sent when its arrangement did not land.
+  it('leaves the machine alone when the arrangement could not be saved', async () => {
+    await render();
+    flushMachines();
+    flushDiagramList();
+    flushLayout();
+    await fixture.whenStable();
+
+    saveButton().click();
+    controller.expectOne(`${SERVICE_ROOT}/diagrams/order`).flush(null, { status: 409, statusText: 'Conflict' });
+    await fixture.whenStable();
+
+    controller.expectNone(`${SERVICE_ROOT}/state-machines/order`);
+  });
+
   it('offers nothing to save until a machine has loaded', async () => {
     await render();
 
@@ -187,9 +257,10 @@ describe('StateModelerTabComponent', () => {
     TestBed.inject(DiagramSelectionService).selectState(currentMachine().states[0]);
     fixture.detectChanges();
 
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('DRAFT');
-    expect(text).toContain('Entered but not reviewed.');
+    // Read off the fields rather than out of the tab's text: the panel is editable, so its subject is in
+    // input values, which `textContent` does not see.
+    expect(field('state-key').value).toBe('DRAFT');
+    expect(field('state-description').value).toBe('Entered but not reviewed.');
   });
 
   it('shows the properties of the transition selected on the canvas', async () => {

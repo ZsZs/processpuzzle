@@ -4,8 +4,8 @@ import { StateMachineGraph, STATE_NODE_TYPE, StateNode, TransitionEdge } from '.
 
 /**
  * Joins the two halves of a modelled state machine — the topology (`StateMachineDefinition`) and the
- * arrangement (`DiagramDefinition`) — into the graph ng-diagram draws, and takes the arrangement back
- * apart again after the user has dragged it.
+ * arrangement (`DiagramDefinition`) — into the graph ng-diagram draws, and takes both back apart again
+ * after the user has drawn on it: {@link toLayout} yields the arrangement, {@link toMachine} the topology.
  *
  * The two resources are separate on the wire for good reasons (see `DiagramDefinition`'s class comment),
  * which leaves exactly one place that has to know how they fit together. This is it: nothing else in the
@@ -66,6 +66,32 @@ export class StateMachineGraphConverter {
    * `version` is carried over from `previous` when given, because the write is optimistic-locked: saving an
    * arrangement read at version 3 has to say 3, or the server cannot tell a concurrent edit from a stale one.
    */
+  /**
+   * Takes the *topology* back off a drawn graph — the counterpart of {@link toLayout}, and the modeler's
+   * write path into `StateMachineDefinition`.
+   *
+   * The nodes and edges are the machine's states and transitions, not a projection of them: each carries
+   * its domain object in `data`, and this reads it back. That makes the drawn graph the authority on what
+   * the machine contains while the modeler is open, which is what lets the palette add a state and a
+   * deleted node remove one. Deleting a node cannot leave a dangling transition, because ng-diagram's
+   * `deleteNodes` removes the attached edges with it.
+   *
+   * Everything that is *not* drawn — the name, the description, the state attribute, and above all the
+   * `version` the save is optimistic-locked on — is carried over from `base` untouched.
+   */
+  static toMachine(base: StateMachineDefinition, nodes: StateNode[], edges: TransitionEdge[]): StateMachineDefinition {
+    return new StateMachineDefinition({
+      ...base,
+      states: nodes.map((node) => node.data.state),
+      // `data.transition` is typed as present but is not there on an edge the *user* drew, which carries
+      // only what ng-diagram's linking put in it. Such an edge names no trigger and no guard, so there is
+      // no transition to save — see the canvas's `linking.validateConnection`, which is why one should not
+      // arise in the first place.
+      transitions: edges.map((edge) => edge.data?.transition).filter((transition): transition is Transition => transition !== undefined),
+      initialStateKey: nodes.find((node) => node.data.initial)?.data.state.key ?? base.initialStateKey,
+    });
+  }
+
   static toLayout(entityName: string, nodes: StateNode[], edges: TransitionEdge[], viewport?: DiagramViewport, previous?: DiagramDefinition): DiagramDefinition {
     return new DiagramDefinition({
       entityName,

@@ -16,13 +16,21 @@ import { State, Transition } from '../../../domain/state-machine-definition';
 @Injectable({ providedIn: 'root' })
 export class DiagramSelectionService {
   private readonly selectedStateSignal = signal<State | undefined>(undefined);
+  private readonly selectedStateIsInitialSignal = signal(false);
   private readonly selectedTransitionSignal = signal<Transition | undefined>(undefined);
 
   readonly selectedState = this.selectedStateSignal.asReadonly();
+  /**
+   * Whether the selected state is the one the machine starts in. Carried alongside the state rather than
+   * derived from `StateMachineDefinition.initialStateKey`, because while the modeler is open the canvas
+   * model — not the loaded machine — is what knows which state that is.
+   */
+  readonly selectedStateIsInitial = this.selectedStateIsInitialSignal.asReadonly();
   readonly selectedTransition = this.selectedTransitionSignal.asReadonly();
 
-  selectState(state: State): void {
+  selectState(state: State, initial = false): void {
     this.selectedStateSignal.set(state);
+    this.selectedStateIsInitialSignal.set(initial);
     this.selectedTransitionSignal.set(undefined);
   }
 
