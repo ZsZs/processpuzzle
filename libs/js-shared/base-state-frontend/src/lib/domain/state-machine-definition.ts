@@ -15,10 +15,10 @@ import { BaseEntity } from '@processpuzzle/base-entity';
  * constructor. They stay plain data — the rows of a loaded machine are the parsed JSON, never instances
  * of these classes, so nothing may rely on `instanceof` or on a method.
  *
- * Field names are the *contract's*, and `StateMachineDefinitionMapper` is what makes that safe: the seed
- * YAML both backends are provisioned from spells a state's flags `isFinal` / `isLocked` (that being how
- * base-state-backend's own `State` record names them), and json-server serves that YAML verbatim. The
- * mapper reads either spelling and writes the contract's, so nothing below has to know.
+ * Field names are the *contract's* throughout, and for a state's two flags the contract, the backend's own
+ * `State` record, the seed YAML both backends are provisioned from and the persisted JSON all agree on
+ * `isFinal` / `isLocked` — so `StateMachineDefinitionMapper` passes them straight through. It did once read
+ * a second spelling; there is only one now.
  */
 
 /**
@@ -67,9 +67,9 @@ export class State implements BaseEntity {
   name: string;
   description?: string;
   /** No transition may declare this state as its source — enforced at definition save time. */
-  terminal: boolean;
+  isFinal: boolean;
   /** While an object sits in this state, only the state attribute itself may change on it. */
-  locked: boolean;
+  isLocked: boolean;
   /** UI hints only — colour, icon — for rendering the machine's graph. Opaque to the backend. */
   metadata?: PropertyMap;
 
@@ -77,8 +77,8 @@ export class State implements BaseEntity {
     this.key = init.key ?? '';
     this.name = init.name ?? '';
     this.description = init.description;
-    this.terminal = init.terminal ?? false;
-    this.locked = init.locked ?? false;
+    this.isFinal = init.isFinal ?? false;
+    this.isLocked = init.isLocked ?? false;
     this.metadata = init.metadata;
   }
 }
@@ -91,7 +91,7 @@ export class Transition implements BaseEntity {
   /** Unique within the machine. */
   key: string;
   name?: string;
-  /** Must resolve to a declared, non-terminal {@link State.key}. */
+  /** Must resolve to a declared {@link State.key} that is not final. */
   sourceStateKey: string;
   /** Must resolve to a declared {@link State.key}. */
   targetStateKey: string;

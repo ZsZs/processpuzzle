@@ -59,7 +59,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     ) {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) input.getPayload();
-        EntityObject created = createUseCase.create(entityDefinitionCode, payload);
+        EntityObject created = createUseCase.create(orgKey, entityDefinitionCode, payload);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
             .buildAndExpand(created.getId())
@@ -77,12 +77,12 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) request.getPayload();
         Long version = request.getVersion() != null ? request.getVersion().longValue() : null;
-        return ResponseEntity.ok(mapper.toModel(updateUseCase.update(id, version, payload)));
+        return ResponseEntity.ok(mapper.toModel(updateUseCase.update(orgKey, id, version, payload)));
     }
 
     @Override
     public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
-        deleteUseCase.delete(id, Boolean.TRUE.equals(cascade));
+        deleteUseCase.delete(orgKey, id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
     }
 }

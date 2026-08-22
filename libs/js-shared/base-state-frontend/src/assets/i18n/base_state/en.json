@@ -35,8 +35,8 @@
     "name": "Name",
     "description": "Description",
     "initial": "Initial",
-    "terminal": "Terminal",
-    "locked": "Locked",
+    "isFinal": "Terminal",
+    "isLocked": "Locked",
     "metadata": "Metadata"
   },
   "state_machine_transition": {

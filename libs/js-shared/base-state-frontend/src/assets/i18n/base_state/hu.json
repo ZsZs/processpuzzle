@@ -35,8 +35,8 @@
     "name": "Név",
     "description": "Leírás",
     "initial": "Kezdő állapot",
-    "terminal": "Végállapot",
-    "locked": "Zárolt",
+    "isFinal": "Végállapot",
+    "isLocked": "Zárolt",
     "metadata": "Metaadatok"
   },
   "state_machine_transition": {

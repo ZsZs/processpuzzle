@@ -1,10 +1,13 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.baseentity.api.EntityAttributeKind;
+import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.ActionRef;
 import com.processpuzzle.state.domain.GuardRef;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.Transition;
 import com.processpuzzle.state.usecase.service.GuardActionResolver;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,20 +19,65 @@ import org.springframework.stereotype.Component;
  * IllegalArgumentException}, which core's generic {@code ApiExceptionHandler} already maps to
  * {@code 400} — no feature-specific exception type needed, since these are all structurally
  * invalid requests rather than named business refusals.
+ *
+ * <p>Also the place the "only base-entity-managed entity types may have a state machine"
+ * restriction is actually enforced: {@code entityName} must be an entity definition base-entity
+ * knows, and {@code stateAttributeKey} must name a TEXT- or ENUM-valued attribute of it. Checking
+ * here rather than at write time is what turns a typo, or an attribute removed from the definition
+ * since, into a 400 on the save that introduced it instead of a machine that fails the first time
+ * it is fired.
  */
 @Component
 public class StateMachineTopologyValidator {
 
-    private final GuardActionResolver guardActionResolver;
+    /**
+     * The kinds a state attribute may have. ENUM is the normal choice and what both seeded machines
+     * use; TEXT is allowed because a definition may legitimately hold the state as free text before
+     * its enumeration is settled. Everything else — a number, a date, a reference — cannot hold a
+     * state key without lying about its own type.
+     */
+    private static final Set<EntityAttributeKind> STATE_ATTRIBUTE_KINDS =
+            EnumSet.of(EntityAttributeKind.TEXT, EntityAttributeKind.ENUM);
 
-    public StateMachineTopologyValidator(GuardActionResolver guardActionResolver) {
+    private final GuardActionResolver guardActionResolver;
+    private final EntityAttributeQuery entityAttributeQuery;
+
+    public StateMachineTopologyValidator(GuardActionResolver guardActionResolver,
+                                         EntityAttributeQuery entityAttributeQuery) {
         this.guardActionResolver = guardActionResolver;
+        this.entityAttributeQuery = entityAttributeQuery;
     }
 
-    public void validate(String initialStateKey, List<State> states, List<Transition> transitions) {
+    public void validate(String entityName, String stateAttributeKey, String initialStateKey,
+                         List<State> states, List<Transition> transitions) {
+        validateStateAttribute(entityName, stateAttributeKey);
         Set<String> stateKeys = uniqueStateKeys(states);
         requireKnownState(initialStateKey, stateKeys, "initialStateKey");
         validateTransitions(states, stateKeys, transitions);
+    }
+
+    private void validateStateAttribute(String entityName, String stateAttributeKey) {
+        if (entityName == null || entityName.isBlank()) {
+            throw new IllegalArgumentException("entityName is required");
+        }
+        if (stateAttributeKey == null || stateAttributeKey.isBlank()) {
+            throw new IllegalArgumentException("stateAttributeKey is required");
+        }
+        if (!entityAttributeQuery.entityTypeExists(entityName)) {
+            throw new IllegalArgumentException(
+                    "entityName '" + entityName + "' is not an entity type base-entity manages, so it cannot "
+                            + "have a state machine");
+        }
+
+        EntityAttributeKind kind = entityAttributeQuery.attributeKind(entityName, stateAttributeKey)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "stateAttributeKey '" + stateAttributeKey + "' is not an attribute of '" + entityName + "'"));
+
+        if (!STATE_ATTRIBUTE_KINDS.contains(kind)) {
+            throw new IllegalArgumentException(
+                    "stateAttributeKey '" + stateAttributeKey + "' on '" + entityName + "' is " + kind
+                            + "; a state attribute must be TEXT or ENUM");
+        }
     }
 
     private void validateTransitions(List<State> states, Set<String> stateKeys, List<Transition> transitions) {

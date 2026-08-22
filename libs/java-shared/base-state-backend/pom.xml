@@ -48,6 +48,18 @@
       <artifactId>processpuzzle-core</artifactId>
     </dependency>
 
+    <!--
+      base-state is the single writer of the attribute holding an object's current state, and that
+      attribute lives on a base-entity-managed EntityObject. The dependency is the deliberate cost
+      of that restriction: only entity types base-entity-backend manages may have a state machine,
+      so base-state-backend is no longer deployable without base-entity-backend beside it. Only the
+      two named interfaces are used — baseentity :: operations and baseentity :: event.
+    -->
+    <dependency>
+      <groupId>com.processpuzzle</groupId>
+      <artifactId>base-entity-backend</artifactId>
+    </dependency>
+
     <!-- Spring Boot dependencies -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

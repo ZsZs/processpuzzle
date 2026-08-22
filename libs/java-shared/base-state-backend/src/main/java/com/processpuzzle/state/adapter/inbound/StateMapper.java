@@ -101,7 +101,7 @@ public class StateMapper {
     private State toDomainState(com.processpuzzle.state.model.State s) {
         return new State(
                 s.getKey(), s.getName(), s.getDescription(),
-                Boolean.TRUE.equals(s.getTerminal()), Boolean.TRUE.equals(s.getLocked()),
+                Boolean.TRUE.equals(s.getIsFinal()), Boolean.TRUE.equals(s.getIsLocked()),
                 s.getMetadata());
     }
 
@@ -124,8 +124,8 @@ public class StateMapper {
     private List<com.processpuzzle.state.model.State> toModelStates(List<State> states) {
         return states.stream().map(s -> new com.processpuzzle.state.model.State(s.key(), s.name())
                 .description(s.description())
-                .terminal(s.isFinal())
-                .locked(s.isLocked())
+                .isFinal(s.isFinal())
+                .isLocked(s.isLocked())
                 .metadata(s.metadata())).toList();
     }
 

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.core.annotation.Order;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -42,6 +43,13 @@ public class DefaultStateImporter {
         this.resourceResolver = resourceResolver;
     }
 
+    /**
+     * Ordered after base-entity's {@code DefaultEntityLoader} ({@code @Order(10)}): every machine
+     * imported here names an entity definition and an attribute of it, and the validator rejects a
+     * machine whose entity type base-entity does not yet know. Since this importer logs its errors
+     * rather than failing startup, getting the order wrong would be silent.
+     */
+    @Order(20)
     @EventListener(ApplicationReadyEvent.class)
     public void loadDefaults() {
         Resource[] resources;

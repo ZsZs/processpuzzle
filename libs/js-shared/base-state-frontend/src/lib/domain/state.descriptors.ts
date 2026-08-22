@@ -24,10 +24,10 @@ function createStateAttrDescriptors(): AbstractAttrDescriptor[] {
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
 
-  // Both flags are shown in the table: which states are terminal and which are locked is the whole shape
+  // Both flags are shown in the table: which states are final and which are locked is the whole shape
   // of the machine's boundary, and reading it off the list beats opening five forms.
-  const terminalAttr = new BaseEntityAttrDescriptor('terminal', FormControlType.CHECKBOX, 'Terminal');
-  const lockedAttr = new BaseEntityAttrDescriptor('locked', FormControlType.CHECKBOX, 'Locked');
+  const isFinalAttr = new BaseEntityAttrDescriptor('isFinal', FormControlType.CHECKBOX, 'Terminal');
+  const isLockedAttr = new BaseEntityAttrDescriptor('isLocked', FormControlType.CHECKBOX, 'Locked');
 
   // Opaque to the backend — colour, icon, whatever renders the graph — so an open key/value editor is
   // the only shape that can carry it without the form inventing a closed list.
@@ -36,7 +36,7 @@ function createStateAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const identityRow = new FlexboxDescriptor([keyAttr, nameAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const flagRow = new FlexboxDescriptor([terminalAttr, lockedAttr], FlexDirection.ROW);
+  const flagRow = new FlexboxDescriptor([isFinalAttr, isLockedAttr], FlexDirection.ROW);
   flagRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor([identityRow, flagRow, descriptionAttr, metadataAttr], FlexDirection.COLUMN);

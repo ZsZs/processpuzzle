@@ -46,8 +46,8 @@ describe('StateNodeComponent', () => {
     expect(shape()?.textContent?.trim()).toBe('Draft');
   });
 
-  it('draws a terminal state as the final disc', async () => {
-    await render(new State({ key: 'CLOSED', name: 'Closed', terminal: true }));
+  it('draws a final state as the final disc', async () => {
+    await render(new State({ key: 'CLOSED', name: 'Closed', isFinal: true }));
 
     expect(shape()?.dataset['testid']).toBe('state-node-end');
     expect(shape()?.textContent?.trim()).toBe('Closed');
@@ -66,17 +66,17 @@ describe('StateNodeComponent', () => {
    * tooltip and the properties panel is where it is read.
    */
   it('keeps a disc a disc, showing its description as a tooltip instead', async () => {
-    await render(new State({ key: 'CLOSED', name: 'Closed', terminal: true, description: 'Nothing follows' }));
+    await render(new State({ key: 'CLOSED', name: 'Closed', isFinal: true, description: 'Nothing follows' }));
 
     expect(shape()?.querySelector('.description')).toBeNull();
     expect(shape()?.querySelector<HTMLElement>('.disc-label')?.title).toBe('Nothing follows');
   });
 
   it('dims a locked state whichever shape it has', async () => {
-    await render(new State({ key: 'DRAFT', name: 'Draft', locked: true }), true);
+    await render(new State({ key: 'DRAFT', name: 'Draft', isLocked: true }), true);
     expect(shape()?.classList.contains('locked')).toBe(true);
 
-    await render(new State({ key: 'REVIEW', name: 'Review', locked: true }));
+    await render(new State({ key: 'REVIEW', name: 'Review', isLocked: true }));
     expect(shape()?.classList.contains('locked')).toBe(true);
   });
 });

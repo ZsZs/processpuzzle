@@ -314,11 +314,11 @@ describe('StateMachineCanvasComponent', () => {
       expect(STATE_PALETTE_ITEMS.map((item) => item.data.state.key)).toEqual(['', '', '']);
     });
 
-    it('makes a dropped End symbol a terminal state', () => {
+    it('makes a dropped End symbol a final state', () => {
       drop('end');
 
       const dropped = component.model.getNodes().find((node) => node.id === 'STATE_1') as StateNode;
-      expect(dropped.data.state.terminal).toBe(true);
+      expect(dropped.data.state.isFinal).toBe(true);
       expect(dropped.data.initial).toBe(false);
     });
 

@@ -15,8 +15,8 @@ export const STATE_MACHINE_DEFINITION_DTO = {
   stateAttributeKey: 'status',
   initialStateKey: 'DRAFT',
   states: [
-    { key: 'DRAFT', name: 'Draft', description: 'Entered but not reviewed.', terminal: false, locked: false },
-    { key: 'DELIVERED', name: 'Delivered', terminal: true, locked: true, metadata: { colour: 'green' } },
+    { key: 'DRAFT', name: 'Draft', description: 'Entered but not reviewed.', isFinal: false, isLocked: false },
+    { key: 'DELIVERED', name: 'Delivered', isFinal: true, isLocked: true, metadata: { colour: 'green' } },
   ],
   transitions: [
     {
@@ -36,9 +36,9 @@ export const STATE_MACHINE_DEFINITION_DTO = {
 };
 
 /**
- * A second machine, so list specs can tell entries apart — and, deliberately, one carrying the
- * `isFinal` / `isLocked` spelling of base-state-backend's `State` record, which is what the seed YAML
- * uses and json-server therefore serves verbatim.
+ * A second machine, so list specs can tell entries apart. Deliberately leaner than the one above — no
+ * `description`, no `metadata`, no `orgKey`, no timestamps — since a list response is where the optional
+ * halves of the shape are most likely to be missing.
  */
 export const OTHER_STATE_MACHINE_DEFINITION_DTO = {
   entityName: 'dynamic-entity',

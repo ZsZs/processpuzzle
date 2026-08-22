@@ -6,10 +6,13 @@ import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.domain.event.EntityObjectUpdatedEvent;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +24,10 @@ public class UpdateEntityInstanceUseCase {
     private final EntityObjectRepository repository;
     private final EntityDefinitionLookupPort definitionLookupPort;
     private final PayloadValidatorPort payloadValidatorPort;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public EntityObject update(UUID id, Long expectedVersion, Map<String, Object> payload) {
+    /** @param orgKey see {@code CreateEntityInstanceUseCase.create} — carried into the event only. */
+    public EntityObject update(String orgKey, UUID id, Long expectedVersion, Map<String, Object> payload) {
         EntityObject entityObject = repository.findById(id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 
@@ -36,6 +41,11 @@ public class UpdateEntityInstanceUseCase {
         payloadValidatorPort.validate(definition, payload);
 
         entityObject.setPayload(payload);
-        return repository.save(entityObject);
+        EntityObject updated = repository.saveAndFlush(entityObject);
+
+        eventPublisher.publishEvent(new EntityObjectUpdatedEvent(
+            orgKey, updated.getEntityDefinitionCode(), updated.getId(), updated.getPayload(),
+            updated.getVersion() == null ? 0L : updated.getVersion(), Instant.now()));
+        return updated;
     }
 }

@@ -44,6 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class EntityObjectEndpointTest {
 
+    private static final String ORG = "test-org";
+
     @Mock
     private CreateEntityInstanceUseCase createUseCase;
     @Mock
@@ -105,7 +107,7 @@ class EntityObjectEndpointTest {
                 .version(0L)
                 .payload(Map.of("name", "ACME"))
                 .build();
-        when(createUseCase.create(eq("partner"), any())).thenReturn(entity);
+        when(createUseCase.create(eq(ORG), eq("partner"), any())).thenReturn(entity);
 
         EntityObjectInput input = new EntityObjectInput();
         input.setEntityDefinitionCode("partner");
@@ -128,7 +130,7 @@ class EntityObjectEndpointTest {
                 .version(2L)
                 .payload(Map.of("name", "ACME Updated"))
                 .build();
-        when(updateUseCase.update(eq(id), eq(1L), any())).thenReturn(entity);
+        when(updateUseCase.update(eq(ORG), eq(id), eq(1L), any())).thenReturn(entity);
 
         EntityObjectUpdate updateRequest = new EntityObjectUpdate();
         updateRequest.setVersion(1);
@@ -150,7 +152,7 @@ class EntityObjectEndpointTest {
                         .param("cascade", "false"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(id, false);
+        verify(deleteUseCase).delete(ORG, id, false);
     }
 
     @Test
@@ -161,7 +163,7 @@ class EntityObjectEndpointTest {
                         .param("cascade", "true"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(id, true);
+        verify(deleteUseCase).delete(ORG, id, true);
     }
 
     @Test
@@ -171,7 +173,7 @@ class EntityObjectEndpointTest {
         mockMvc.perform(delete("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(id, false);
+        verify(deleteUseCase).delete(ORG, id, false);
     }
 
     @Test
