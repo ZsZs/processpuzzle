@@ -1,15 +1,28 @@
-import { Component, inject, Injector, Input, OnChanges } from '@angular/core';
-import { initializeModel, NgDiagramComponent, NgDiagramConfig, NgDiagramNodeTemplateMap, PaletteItemDroppedEvent, provideNgDiagram, SelectionChangedEvent } from 'ng-diagram';
+import { Component, effect, ElementRef, inject, Injector, Input, OnChanges, signal } from '@angular/core';
+import {
+  initializeModel,
+  NgDiagramComponent,
+  NgDiagramConfig,
+  NgDiagramEdgeTemplateMap,
+  NgDiagramNodeTemplateMap,
+  PaletteItemDroppedEvent,
+  provideNgDiagram,
+  SelectionChangedEvent,
+} from 'ng-diagram';
 import { StateMachineGraphConverter } from '../../../domain/modeler/graph/converters/state-machine-graph.converter';
 import { DagreLayoutService } from '../../../domain/modeler/graph/layout/dagre-layout.service';
-import { STATE_NODE_TYPE, StateNode, StateNodeData, TransitionEdge, TransitionEdgeData } from '../../../domain/modeler/graph/state-machine-graph';
+import { STATE_NODE_TYPE, StateNode, StateNodeData, TRANSITION_EDGE_TYPE, TransitionEdge, TransitionEdgeData } from '../../../domain/modeler/graph/state-machine-graph';
 import { DiagramDefinition, DiagramViewport } from '../../../domain/modeler/models/diagram-definition';
 import { StateMachineDefinition } from '../../../domain/state-machine-definition';
 import { DiagramSelectionService } from '../services/diagram-selection.service';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { StateEdit } from '../pages/state-properties-panel.component';
+import { EdgeRoutingMenuComponent } from './edge-routing-menu.component';
+import { activeEdgeRouting, DEFAULT_EDGE_ROUTING, EdgeRoutingChoice } from './edge-routing-options';
 import { ElementPaletteComponent } from './element-palette.component';
 import { newStateData, nextStateKey, PaletteStateNodeData } from './state-palette-items';
 import { StateNodeComponent } from './state-node.component';
+import { TransitionEdgeComponent } from './transition-edge.component';
 
 /**
  * Draws one state machine, joining its topology to its saved arrangement.
@@ -31,15 +44,34 @@ import { StateNodeComponent } from './state-node.component';
 @Component({
   selector: 'pp-state-machine-canvas',
   standalone: true,
-  imports: [NgDiagramComponent, ElementPaletteComponent],
-  providers: [provideNgDiagram()],
+  imports: [NgDiagramComponent, ElementPaletteComponent, EdgeRoutingMenuComponent],
+  providers: [provideNgDiagram(), EdgeContextMenuService],
   template: `
     <pp-element-palette />
-    <ng-diagram [model]="model" [config]="config" [nodeTemplateMap]="nodeTemplateMap" (selectionChanged)="onSelectionChanged($event)" (paletteItemDropped)="onPaletteItemDropped($event)" />
+    <ng-diagram
+      [model]="model"
+      [config]="config"
+      [nodeTemplateMap]="nodeTemplateMap"
+      [edgeTemplateMap]="edgeTemplateMap"
+      (selectionChanged)="onSelectionChanged($event)"
+      (paletteItemDropped)="onPaletteItemDropped($event)"
+    />
+
+    @if (contextMenu.target(); as target) {
+      <pp-edge-routing-menu
+        [x]="menuPosition().x"
+        [y]="menuPosition().y"
+        [active]="activeRouting(target.edgeId)"
+        (chosen)="applyRouting(target.edgeId, $event)"
+        (closed)="contextMenu.close()"
+      />
+    }
   `,
   styles: `
+    /* Positioned, because the routing menu is placed inside this box - see EdgeRoutingMenuComponent. */
     :host {
       display: flex;
+      position: relative;
       height: 100%;
       min-height: 300px;
     }
@@ -57,6 +89,7 @@ export class StateMachineCanvasComponent implements OnChanges {
   @Input() layout?: DiagramDefinition;
 
   readonly nodeTemplateMap = new NgDiagramNodeTemplateMap([[STATE_NODE_TYPE, StateNodeComponent]]);
+  readonly edgeTemplateMap = new NgDiagramEdgeTemplateMap([[TRANSITION_EDGE_TYPE, TransitionEdgeComponent]]);
 
   /**
    * Two deliberate departures from ng-diagram's defaults.
@@ -68,12 +101,19 @@ export class StateMachineCanvasComponent implements OnChanges {
    * `validateConnection` refuses new edges, because an edge the user draws carries no `Transition` behind
    * it: no trigger, no guards, nothing `toMachine` could save. Drawing transitions is the next gesture the
    * modeler needs and refusing it outright is more honest than letting one be drawn and then discarded.
+   *
+   * `defaultRouting` restates ng-diagram's own default rather than leaving it implicit, because the routing
+   * menu has to tick the routing an edge is actually drawn with and most edges name none of their own.
    */
   readonly config: NgDiagramConfig = {
     computeNodeId: () => nextStateKey(this.model.getNodes().map((node) => node.id)),
     linking: { validateConnection: () => false },
+    edgeRouting: { defaultRouting: DEFAULT_EDGE_ROUTING },
   };
 
+  protected readonly contextMenu = inject(EdgeContextMenuService);
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly dagreLayout = inject(DagreLayoutService);
   private readonly selection = inject(DiagramSelectionService);
@@ -81,7 +121,27 @@ export class StateMachineCanvasComponent implements OnChanges {
   /** Empty until a machine arrives — an unloaded canvas shows nothing, not a placeholder graph. */
   model = initializeModel({ nodes: [], edges: [] }, this.injector);
 
+  /** Where the open routing menu sits, as an offset inside this component's box. */
+  private readonly menuPositionSignal = signal({ x: 0, y: 0 });
+  protected readonly menuPosition = this.menuPositionSignal.asReadonly();
+
+  constructor() {
+    // The right-click that opened the menu reports viewport coordinates, and the menu is positioned inside
+    // this box - so the offset is computed here, the one place that knows where the box is. Once per open,
+    // in an effect, rather than from the template: a getBoundingClientRect() on every change detection is a
+    // layout measurement the menu has no need of repeating.
+    effect(() => {
+      const target = this.contextMenu.target();
+      if (!target) return;
+      const bounds = this.host.nativeElement.getBoundingClientRect();
+      this.menuPositionSignal.set({ x: target.clientX - bounds.left, y: target.clientY - bounds.top });
+    });
+  }
+
   ngOnChanges(): void {
+    // Whatever changed, the graph is about to be rebuilt — so the edge an open routing menu was opened on
+    // may not survive it. Closed before anything else, since both branches below replace the model.
+    this.contextMenu.close();
     if (!this.machine) {
       this.model = initializeModel({ nodes: [], edges: [] }, this.injector);
       return;
@@ -164,6 +224,27 @@ export class StateMachineCanvasComponent implements OnChanges {
     } else if (selectedEdges.length === 1 && selectedNodes.length === 0) {
       this.selection.selectTransition((selectedEdges[0].data as TransitionEdgeData).transition);
     } else this.selection.clear();
+  }
+
+  /**
+   * The routing the edge behind the open menu is drawn with, which is the item the menu ticks. An edge the
+   * model no longer holds - deleted while its menu was open - reads as the default; the same gesture is
+   * about to close the menu either way.
+   */
+  protected activeRouting(edgeId: string): EdgeRoutingChoice {
+    return activeEdgeRouting(this.model.getEdges().find((edge) => edge.id === edgeId)?.routing);
+  }
+
+  /**
+   * Draws one transition with the chosen routing.
+   *
+   * Written into the model, so it shows at once and is picked up by the next {@link toLayout} - which is
+   * what persists it, as `EdgeLayout.routing`. Nothing else is touched: an edge carrying waypoints keeps
+   * them and the new algorithm draws its path through them, exactly as the previous one did.
+   */
+  protected applyRouting(edgeId: string, routing: EdgeRoutingChoice): void {
+    this.model.updateEdges((edges) => edges.map((edge) => (edge.id === edgeId ? { ...edge, routing } : edge)));
+    this.contextMenu.close();
   }
 
   /**

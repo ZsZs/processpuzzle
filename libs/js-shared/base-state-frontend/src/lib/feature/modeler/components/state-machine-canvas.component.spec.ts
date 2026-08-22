@@ -2,12 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DiagramDefinitionMapper } from '../../../domain/modeler/data-access/diagram-definition.mapper';
-import { STATE_NODE_TYPE, StateNode } from '../../../domain/modeler/graph/state-machine-graph';
+import { STATE_NODE_TYPE, StateNode, TRANSITION_EDGE_TYPE } from '../../../domain/modeler/graph/state-machine-graph';
 import { DIAGRAM_DEFINITION_DTO } from '../../../domain/modeler/models/test-diagram-definition';
 import { State } from '../../../domain/state-machine-definition';
 import { StateMachineDefinitionMapper } from '../../../domain/state-machine-definition.mapper';
 import { STATE_MACHINE_DEFINITION_DTO } from '../../../domain/test-state-machine-definition';
 import { DiagramSelectionService } from '../services/diagram-selection.service';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { PaletteStateKind, STATE_PALETTE_ITEMS } from './state-palette-items';
 import { StateMachineCanvasComponent } from './state-machine-canvas.component';
 
@@ -61,6 +62,88 @@ describe('StateMachineCanvasComponent', () => {
 
     expect(component.model.getNodes().map((node) => node.type)).toEqual([STATE_NODE_TYPE, STATE_NODE_TYPE]);
     expect(component.nodeTemplateMap.get(STATE_NODE_TYPE)).toBeDefined();
+  });
+
+  it('should draw every transition through the transition edge template', () => {
+    fixture.componentRef.setInput('machine', machine);
+    fixture.detectChanges();
+
+    expect(component.model.getEdges().map((edge) => edge.type)).toEqual([TRANSITION_EDGE_TYPE]);
+    expect(component.edgeTemplateMap.get(TRANSITION_EDGE_TYPE)).toBeDefined();
+  });
+
+  /**
+   * The routing menu, driven the way an edge drives it. The right-click itself belongs to
+   * `TransitionEdgeComponent`; what is asserted here is everything downstream of it — that the menu opens
+   * where the pointer was, ticks what the edge is drawn with, and that a pick reaches the model.
+   *
+   * `EdgeContextMenuService` is read off the component's own injector rather than the TestBed's, because
+   * the canvas provides it: one open menu per canvas.
+   */
+  describe('routing menu', () => {
+    const openMenuOn = (edgeId: string, clientX = 200, clientY = 150) => {
+      fixture.debugElement.injector.get(EdgeContextMenuService).open(edgeId, new MouseEvent('contextmenu', { clientX, clientY }));
+      fixture.detectChanges();
+    };
+    const menuItem = (routing: string) => (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="routing-${routing}"]`);
+    const menu = () => (fixture.nativeElement as HTMLElement).querySelector('[data-testid="edge-routing-menu"]');
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('machine', machine);
+      fixture.detectChanges();
+    });
+
+    it('shows nothing until an edge is right-clicked', () => {
+      expect(menu()).toBeNull();
+    });
+
+    // An edge that names no routing is drawn with the default, so that is what the menu has to tick.
+    it('ticks the routing the edge is drawn with', () => {
+      openMenuOn('confirm');
+
+      expect(menuItem('orthogonal')?.getAttribute('aria-checked')).toBe('true');
+      expect(menuItem('bezier')?.getAttribute('aria-checked')).toBe('false');
+    });
+
+    it('routes the edge the menu was opened on, and closes', () => {
+      openMenuOn('confirm');
+
+      menuItem('bezier')?.click();
+      fixture.detectChanges();
+
+      expect(component.model.getEdges().map((edge) => edge.routing)).toEqual(['bezier']);
+      expect(menu()).toBeNull();
+    });
+
+    // Reopened on the same edge, the menu now ticks what was picked.
+    it('reports the routing it was given the next time it opens', () => {
+      openMenuOn('confirm');
+      menuItem('bezier')?.click();
+      fixture.detectChanges();
+
+      openMenuOn('confirm');
+
+      expect(menuItem('bezier')?.getAttribute('aria-checked')).toBe('true');
+    });
+
+    // The routing is presentation, so it travels with the arrangement rather than with the machine.
+    it('persists the choice as part of the layout', () => {
+      openMenuOn('confirm');
+      menuItem('bezier')?.click();
+      fixture.detectChanges();
+
+      expect(component.toLayout()?.edges.map((edge) => [edge.transitionKey, edge.routing])).toEqual([['confirm', 'bezier']]);
+    });
+
+    // A reload replaces the graph, so the edge the menu was about to route may no longer be there.
+    it('closes when the machine is replaced', () => {
+      openMenuOn('confirm');
+
+      fixture.componentRef.setInput('machine', undefined);
+      fixture.detectChanges();
+
+      expect(menu()).toBeNull();
+    });
   });
 
   it('should honour the saved arrangement', () => {

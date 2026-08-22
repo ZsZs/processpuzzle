@@ -1,6 +1,6 @@
 import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../../models/diagram-definition';
 import { State, StateMachineDefinition, Transition } from '../../../state-machine-definition';
-import { StateMachineGraph, STATE_NODE_TYPE, StateNode, TransitionEdge } from '../state-machine-graph';
+import { StateMachineGraph, STATE_NODE_TYPE, StateNode, TRANSITION_EDGE_TYPE, TransitionEdge } from '../state-machine-graph';
 
 /**
  * Joins the two halves of a modelled state machine — the topology (`StateMachineDefinition`) and the
@@ -133,6 +133,7 @@ function toTransitionEdge(transition: Transition, layout?: EdgeLayout): Transiti
   const points = layout?.points ?? [];
   return {
     id: transition.key,
+    type: TRANSITION_EDGE_TYPE,
     source: transition.sourceStateKey,
     target: transition.targetStateKey,
     sourcePort: layout?.sourcePort,

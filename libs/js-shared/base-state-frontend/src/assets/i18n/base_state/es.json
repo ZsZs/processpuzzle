@@ -20,6 +20,12 @@
         "start": "Inicio",
         "end": "Fin",
         "state": "Estado"
+      },
+      "routing": {
+        "title": "Trazado",
+        "orthogonal": "Ángulos rectos",
+        "polyline": "Recta",
+        "bezier": "Curva"
       }
     }
   },

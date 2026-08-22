@@ -20,6 +20,12 @@
         "start": "Début",
         "end": "Fin",
         "state": "État"
+      },
+      "routing": {
+        "title": "Tracé",
+        "orthogonal": "Angles droits",
+        "polyline": "Droite",
+        "bezier": "Courbe"
       }
     }
   },

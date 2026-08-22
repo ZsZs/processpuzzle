@@ -20,6 +20,12 @@
         "start": "Kezdet",
         "end": "Vég",
         "state": "Állapot"
+      },
+      "routing": {
+        "title": "Vonalvezetés",
+        "orthogonal": "Derékszögű",
+        "polyline": "Egyenes",
+        "bezier": "Ívelt"
       }
     }
   },

@@ -18,6 +18,15 @@ import { State, Transition } from '../../state-machine-definition';
 export const STATE_NODE_TYPE = 'ppState';
 
 /**
+ * The `type` every transition edge carries, and the key `NgDiagramEdgeTemplateMap` resolves
+ * `TransitionEdgeComponent` by. Prefixed for the same reason {@link STATE_NODE_TYPE} is.
+ *
+ * A custom template for one reason: an edge has to be able to report a right-click on *itself*, and the
+ * default template offers nowhere to listen. What it draws is deliberately the default look.
+ */
+export const TRANSITION_EDGE_TYPE = 'ppTransition';
+
+/**
  * What a state node carries in ng-diagram's `data`.
  *
  * `state` is the whole {@link State}, not a projection of it: the properties panel reads its subject off

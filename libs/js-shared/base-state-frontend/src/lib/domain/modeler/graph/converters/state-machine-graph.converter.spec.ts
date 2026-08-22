@@ -5,7 +5,7 @@ import { STATE_MACHINE_DEFINITION_DTO } from '../../../test-state-machine-defini
 import { DiagramDefinitionMapper } from '../../data-access/diagram-definition.mapper';
 import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../../models/diagram-definition';
 import { DIAGRAM_DEFINITION_DTO } from '../../models/test-diagram-definition';
-import { STATE_NODE_TYPE, StateNode, TransitionEdge } from '../state-machine-graph';
+import { STATE_NODE_TYPE, StateNode, TRANSITION_EDGE_TYPE, TransitionEdge } from '../state-machine-graph';
 import { StateMachineGraphConverter } from './state-machine-graph.converter';
 
 /**
@@ -23,6 +23,7 @@ describe('StateMachineGraphConverter', () => {
 
       expect(graph.nodes.map((node) => node.id)).toEqual(['DRAFT', 'DELIVERED']);
       expect(graph.nodes.map((node) => node.type)).toEqual([STATE_NODE_TYPE, STATE_NODE_TYPE]);
+      expect(graph.edges.map((edge) => edge.type)).toEqual([TRANSITION_EDGE_TYPE]);
     });
 
     it('positions and sizes the nodes from the saved arrangement', () => {

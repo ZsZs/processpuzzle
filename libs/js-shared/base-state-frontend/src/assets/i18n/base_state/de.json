@@ -20,6 +20,12 @@
         "start": "Start",
         "end": "Ende",
         "state": "Zustand"
+      },
+      "routing": {
+        "title": "Linienführung",
+        "orthogonal": "Rechtwinklig",
+        "polyline": "Gerade",
+        "bezier": "Gebogen"
       }
     }
   },
