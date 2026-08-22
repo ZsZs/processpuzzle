@@ -34,23 +34,16 @@ describe('StateMachineDefinitionMapper', () => {
       expect(entity.orgKey).toBe('processpuzzle-testbed');
     });
 
-    it("reads the contract's terminal and locked flags", () => {
+    // One spelling on the wire now: the contract, the backend record, the seed YAML json-server serves
+    // and the persisted JSON all say `isFinal` / `isLocked`. This used to have a companion test for a
+    // second, `terminal` / `locked` spelling; there is nothing left to normalize.
+    it("reads the flags and metadata of a state", () => {
       const entity = mapper.fromDto(STATE_MACHINE_DEFINITION_DTO);
 
-      expect(entity.states[1].terminal).toBe(true);
-      expect(entity.states[1].locked).toBe(true);
+      expect(entity.states[1].isFinal).toBe(true);
+      expect(entity.states[1].isLocked).toBe(true);
+      expect(entity.states[0].isFinal).toBe(false);
       expect(entity.states[1].metadata).toEqual({ colour: 'green' });
-    });
-
-    // The seed YAML both backends are provisioned from spells these `isFinal` / `isLocked`, and
-    // json-server serves that YAML verbatim. Left unnormalized, the state form would show an unticked
-    // Terminal box for a terminal state and drop the flag on the next save.
-    it("also reads the seed YAML's isFinal and isLocked spelling", () => {
-      const entity = mapper.fromDto(OTHER_STATE_MACHINE_DEFINITION_DTO);
-
-      expect(entity.states[1].terminal).toBe(true);
-      expect(entity.states[1].locked).toBe(true);
-      expect(entity.states[0].terminal).toBe(false);
     });
 
     it('turns a machine with no transitions into empty lists rather than undefined', () => {
@@ -83,10 +76,10 @@ describe('StateMachineDefinitionMapper', () => {
       expect(dto.transitions).toEqual([]);
     });
 
-    it("writes only the contract's flag spelling, so the two cannot disagree later", () => {
+    it('round-trips a state whose optional halves are all absent', () => {
       const dto = mapper.toDto(mapper.fromDto(OTHER_STATE_MACHINE_DEFINITION_DTO));
 
-      expect(dto.states?.[1]).toEqual({ key: 'ARCHIVED', name: 'Archived', description: undefined, terminal: true, locked: true, metadata: undefined });
+      expect(dto.states?.[1]).toEqual({ key: 'ARCHIVED', name: 'Archived', description: undefined, isFinal: true, isLocked: true, metadata: undefined });
     });
 
     it('round-trips the guards and actions of a transition', () => {
@@ -104,8 +97,8 @@ describe('StateMachineDefinitionMapper', () => {
 
       const dto = mapper.toDto(entity);
 
-      expect(dto.states?.[0].terminal).toBe(false);
-      expect(dto.states?.[0].locked).toBe(false);
+      expect(dto.states?.[0].isFinal).toBe(false);
+      expect(dto.states?.[0].isLocked).toBe(false);
     });
 
     it('tolerates a raw transition row whose guard and action lists are absent', () => {

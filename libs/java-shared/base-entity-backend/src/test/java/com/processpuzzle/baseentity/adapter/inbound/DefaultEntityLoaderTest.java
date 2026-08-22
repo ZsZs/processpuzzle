@@ -63,7 +63,7 @@ class DefaultEntityLoaderTest {
                     return def;
                 });
 
-        when(createInstanceUseCase.create(anyString(), any()))
+        when(createInstanceUseCase.create(anyString(), anyString(), any()))
                 .thenAnswer(call -> {
                     String code = call.getArgument(0);
                     @SuppressWarnings("unchecked")
@@ -99,7 +99,7 @@ class DefaultEntityLoaderTest {
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(createInstanceUseCase, times(11)).create(codeCaptor.capture(), payloadCaptor.capture());
+        verify(createInstanceUseCase, times(11)).create(anyString(), codeCaptor.capture(), payloadCaptor.capture());
 
         // 'order-line' and 'special-order-line' are embedded, so neither contributes an instance of its own:
         // their rows travel inside the lineItems array of the four orders and two special orders below.
@@ -137,7 +137,7 @@ class DefaultEntityLoaderTest {
     @Test
     void survivesValidationExceptionWhenCreatingInstance() {
         doThrow(new ValidationException(List.of(new ValidationException.Violation("name", "required"))))
-                .when(createInstanceUseCase).create(anyString(), any());
+                .when(createInstanceUseCase).create(anyString(), anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
@@ -245,7 +245,7 @@ class DefaultEntityLoaderTest {
     @Test
     void survivesConflictExceptionWhenCreatingInstance() {
         doThrow(new ConflictException("already exists"))
-                .when(createInstanceUseCase).create(anyString(), any());
+                .when(createInstanceUseCase).create(anyString(), anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
@@ -253,7 +253,7 @@ class DefaultEntityLoaderTest {
     @Test
     void survivesRuntimeExceptionWhenCreatingInstance() {
         doThrow(new RuntimeException("unexpected error"))
-                .when(createInstanceUseCase).create(anyString(), any());
+                .when(createInstanceUseCase).create(anyString(), anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }

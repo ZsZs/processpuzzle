@@ -41,8 +41,8 @@ class StateMapperTest {
         com.processpuzzle.state.model.State modelState =
                 new com.processpuzzle.state.model.State("draft", "Draft")
                         .description("Draft state")
-                        .terminal(false)
-                        .locked(true)
+                        .isFinal(false)
+                        .isLocked(true)
                         .metadata(Map.of("color", "blue"));
 
         com.processpuzzle.state.model.GuardRef modelGuard =
@@ -143,8 +143,8 @@ class StateMapperTest {
         assertThat(model.getDescription()).isEqualTo("SM Description");
         assertThat(model.getStates()).hasSize(1);
         assertThat(model.getStates().get(0).getKey()).isEqualTo("draft");
-        assertThat(model.getStates().get(0).getTerminal()).isTrue();
-        assertThat(model.getStates().get(0).getLocked()).isFalse();
+        assertThat(model.getStates().get(0).getIsFinal()).isTrue();
+        assertThat(model.getStates().get(0).getIsLocked()).isFalse();
         assertThat(model.getTransitions()).hasSize(1);
         assertThat(model.getTransitions().get(0).getKey()).isEqualTo("submit");
         assertThat(model.getTransitions().get(0).getGuards().get(0).getBeanName()).isEqualTo("guard1");
@@ -197,7 +197,7 @@ class StateMapperTest {
         assertThat(view.getObjectId()).isEqualTo(objectId);
         assertThat(view.getEntityName()).isEqualTo("invoice");
         assertThat(view.getCurrentStateKey()).isEqualTo("draft");
-        assertThat(view.getTerminal()).isFalse();
+        assertThat(view.getIsFinal()).isFalse();
         assertThat(view.getEnteredStateAt()).isNotNull();
         assertThat(view.getAvailableTransitions()).hasSize(1);
         AvailableTransition at = view.getAvailableTransitions().get(0);

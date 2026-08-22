@@ -44,10 +44,15 @@ runs:
         distribution: 'temurin'
         java-version: ${{ inputs.java-version }}
         cache: 'maven'
-    - name: Setup Maven 3.9.14
-      uses: stCarolas/setup-maven@v5.1
-      with:
-        maven-version: '3.9.14'
+    - name: Report Maven version
+      # Uses the Maven preinstalled on the runner image (3.9.x) rather than
+      # downloading a pinned tarball. stCarolas/setup-maven fetched Maven from
+      # repo.maven.apache.org on every run with no cache and no retry, and
+      # Central's rate limiting made that a recurring HTTP 429 build failure.
+      # Nothing here needs a specific Maven version: no requireMavenVersion
+      # enforcer, and every call site is plain `mvn` on PATH.
+      run: mvn -v
+      shell: bash
     - name: Lint libs and apps
       run: npm run lint-${{inputs.nx_project}}
       shell: bash

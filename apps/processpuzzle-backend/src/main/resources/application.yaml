@@ -88,6 +88,10 @@ base-document:
 base-state:
   loadDefaultStateMachines: yes
   loadDefaultTranslations: yes
+  # Reports, once at startup, any object whose state attribute is absent or is not a state its
+  # machine declares. On by default; turn it off where a governed entity type holds enough rows
+  # that reading all of them at boot costs real time.
+  verifyGovernedObjectStates: yes
 
 base-workflow:
   loadDefaultWorkflows: yes

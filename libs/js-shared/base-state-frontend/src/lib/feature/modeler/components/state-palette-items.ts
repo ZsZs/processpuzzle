@@ -7,7 +7,7 @@ import { STATE_NODE_TYPE, StateNodeData } from '../../../domain/modeler/graph/st
  * {@link State} once it has been dropped.
  *
  * `base-state-api.yaml` declares no start and no end *node*: a machine's entry point is the state named by
- * `StateMachineDefinition.initialStateKey` and an exit is a state whose `terminal` flag is set. All three
+ * `StateMachineDefinition.initialStateKey` and an exit is a state whose `isFinal` flag is set. All three
  * symbols therefore produce an ordinary state, and what distinguishes them is which of those two things
  * the drop also does — which is exactly what {@link PaletteStateKind} records and nothing else in the
  * modeler has to know.
@@ -68,7 +68,7 @@ export function nextStateKey(existingKeys: Iterable<string>): string {
  * unsetting it on whichever state held it before.
  */
 export function newStateData(kind: PaletteStateKind, key: string): StateNodeData {
-  const state = new State({ key, name: defaultStateName(key), terminal: kind === 'end' });
+  const state = new State({ key, name: defaultStateName(key), isFinal: kind === 'end' });
   return { state, label: state.name, initial: kind === 'start' };
 }
 
@@ -76,14 +76,14 @@ export function newStateData(kind: PaletteStateKind, key: string): StateNodeData
  * Which of the three symbols a state *reads* as — the inverse of {@link newStateData}, and what
  * {@link StateNodeComponent} picks a shape by.
  *
- * `initial` beats `terminal`, because a machine whose one state is both its entry point and its exit still
+ * `initial` beats `isFinal`, because a machine whose one state is both its entry point and its exit still
  * has to be drawn as something, and where an object starts is the more useful of the two facts. A state
  * with neither flag is a plain one, which is also what every state of a machine written by hand on the
  * Details tab reads as until one of the two flags is set.
  */
 export function stateKind(state: State, initial: boolean): PaletteStateKind {
   if (initial) return 'start';
-  return state.terminal ? 'end' : 'state';
+  return state.isFinal ? 'end' : 'state';
 }
 
 /**

@@ -196,7 +196,7 @@ class ImportExportStateMachineDefinitionsTest {
                     transitions: []
                 """;
         doThrow(new IllegalArgumentException("invalid initialStateKey"))
-                .when(validator).validate(anyString(), any(), any());
+                .when(validator).validate(any(), any(), any(), any(), any());
 
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 

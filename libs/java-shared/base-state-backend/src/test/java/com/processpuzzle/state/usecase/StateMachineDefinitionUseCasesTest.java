@@ -70,7 +70,7 @@ class StateMachineDefinitionUseCasesTest {
 
         assertThat(def.getOrgKey()).isEqualTo(ORG);
         assertThat(def.getEntityName()).isEqualTo(ENTITY);
-        verify(validator).validate("draft", states, transitions);
+        verify(validator).validate(ENTITY, "state", "draft", states, transitions);
         verify(repository).save(any(StateMachineDefinition.class));
     }
 
@@ -95,7 +95,7 @@ class StateMachineDefinitionUseCasesTest {
         assertThat(updated.getName()).isEqualTo("New");
         assertThat(updated.getDescription()).isEqualTo("new desc");
         assertThat(updated.getStateAttributeKey()).isEqualTo("status");
-        verify(validator).validate("draft", states, transitions);
+        verify(validator).validate(ENTITY, "status", "draft", states, transitions);
     }
 
     @Test

@@ -58,13 +58,13 @@ export interface StateEdit {
     </label>
 
     <label class="pp-state-properties__flag">
-      <input type="checkbox" [checked]="state().terminal" [attr.data-testid]="'state-terminal'" (change)="editTerminal($event)" />
-      <span>{{ scope + '.terminal' | transloco }}</span>
+      <input type="checkbox" [checked]="state().isFinal" [attr.data-testid]="'state-is-final'" (change)="editIsFinal($event)" />
+      <span>{{ scope + '.isFinal' | transloco }}</span>
     </label>
 
     <label class="pp-state-properties__flag">
-      <input type="checkbox" [checked]="state().locked" [attr.data-testid]="'state-locked'" (change)="editLocked($event)" />
-      <span>{{ scope + '.locked' | transloco }}</span>
+      <input type="checkbox" [checked]="state().isLocked" [attr.data-testid]="'state-is-locked'" (change)="editIsLocked($event)" />
+      <span>{{ scope + '.isLocked' | transloco }}</span>
     </label>
   `,
   styles: `
@@ -125,12 +125,12 @@ export class StatePropertiesPanelComponent {
     this.emit({ description: value(event) || undefined });
   }
 
-  protected editTerminal(event: Event): void {
-    this.emit({ terminal: checked(event) });
+  protected editIsFinal(event: Event): void {
+    this.emit({ isFinal: checked(event) });
   }
 
-  protected editLocked(event: Event): void {
-    this.emit({ locked: checked(event) });
+  protected editIsLocked(event: Event): void {
+    this.emit({ isLocked: checked(event) });
   }
 
   /**

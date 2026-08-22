@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase.port;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -27,6 +28,11 @@ public class UnavailableEntityObjectGateway implements EntityObjectGateway {
 
     @Override
     public EntityObjectSnapshot findObject(String orgKey, String entityName, UUID objectId) {
+        throw new UnsupportedOperationException(MESSAGE);
+    }
+
+    @Override
+    public List<EntityObjectSnapshot> findObjects(String orgKey, String entityName) {
         throw new UnsupportedOperationException(MESSAGE);
     }
 

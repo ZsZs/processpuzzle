@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.core.annotation.Order;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -73,6 +74,15 @@ public class DefaultEntityLoader {
         this.resourceResolver = resourceResolver;
     }
 
+    /**
+     * Ordered ahead of base-state's {@code DefaultStateImporter}, which is {@code @Order(20)}. A
+     * state machine's {@code stateAttributeKey} is validated against the entity definition it names,
+     * so an importer running before these definitions exist would reject every seeded machine — and
+     * that importer logs rather than fails, so the application would come up with no state machines
+     * and two lines in the log. Both listeners now say what they depend on instead of relying on
+     * bean-registration order.
+     */
+    @Order(10)
     @EventListener(ApplicationReadyEvent.class)
     public void loadDefaults() {
         Resource[] resources;
@@ -117,7 +127,7 @@ public class DefaultEntityLoader {
 
         Tally instanceTally = new Tally();
         for (EntityObjectInput entity : document.entities()) {
-            instanceTally.add(createInstance(entity, fileName));
+            instanceTally.add(createInstance(orgKey, entity, fileName));
         }
 
         LOG.info("Loaded default entities from {} into organization '{}': definitions (created={}, already present={}, rejected={}), instances (created={}, already present={}, rejected={})",
@@ -157,7 +167,12 @@ public class DefaultEntityLoader {
         }
     }
 
-    private Outcome createInstance(EntityObjectInput input, String fileName) {
+    /**
+     * @param orgKey the organization this file seeds, from its name — the same value a request path
+     *               would carry, so a seeded instance's {@code EntityObjectCreatedEvent} is
+     *               indistinguishable from one created over REST and its state machine starts too
+     */
+    private Outcome createInstance(String orgKey, EntityObjectInput input, String fileName) {
         if (input == null || isBlank(input.getEntityDefinitionCode()) || input.getPayload() == null) {
             LOG.warn("Skipping an entity instance in {}: missing entityDefinitionCode or payload.", fileName);
             return Outcome.REJECTED;
@@ -166,7 +181,7 @@ public class DefaultEntityLoader {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> payload = input.getPayload();
-            EntityObject created = createInstanceUseCase.create(input.getEntityDefinitionCode(), payload);
+            EntityObject created = createInstanceUseCase.create(orgKey, input.getEntityDefinitionCode(), payload);
             LOG.info("Created default entity instance id='{}' for definition '{}'.",
                     created.getId(), input.getEntityDefinitionCode());
             return Outcome.CREATED;

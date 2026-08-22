@@ -65,13 +65,13 @@ All workflows compose the same low-level steps via reusable composite actions:
 
 | Action | Purpose |
 | --- | --- |
-| [`lint-test-build`](actions/lint-test-build/action.yml) | Setup Node 24 + Java 25 (Temurin) + Maven 3.9.14, install deps with `--legacy-peer-deps --ignore-scripts`, run `lint-<project>` and `test-<project>`, sanitize lcov paths, run SonarCloud scan, generate the environment file with the target `cicd_stage`, run `build-<project>`, and upload the coverage report as the `test-coverage-report-<sha>` artifact. Used by every `Build-*`, `Deploy-*`, and `Release-*` workflow. |
+| [`lint-test-build`](actions/lint-test-build/action.yml) | Setup Node 24 + Java 25 (Temurin), install deps with `--legacy-peer-deps --ignore-scripts`, run `lint-<project>` and `test-<project>`, sanitize lcov paths, run SonarCloud scan, generate the environment file with the target `cicd_stage`, run `build-<project>`, and upload the coverage report as the `test-coverage-report-<sha>` artifact. Used by every `Build-*`, `Deploy-*`, and `Release-*` workflow. |
 | [`build-image`](actions/build-image/action.yml) | Log in to DockerHub and build three images via `docker/build-push-action` — `zsuffazs/json-server`, `zsuffazs/<app>-firebase`, and `zsuffazs/processpuzzle-<app>` — tagging with both the supplied `app_version` (defaults to `github.sha`) and `latest`. |
 | [`e2e-test`](actions/e2e-test/action.yml) | Install Playwright browsers and run `npm run e2e-test-processpuzzle-testbed` against the requested `target_environment` (`ci`, `stage`, or `prod`). Uploads the Playwright report as the `playwright-report-<sha>` artifact. |
 | [`deploy-to-firebase`](actions/deploy-to-firebase/action.yml) | Deploys to Firebase Hosting using `FirebaseExtended/action-hosting-deploy`. Project ID and channel are inputs (e.g. `processpuzzle-testbed-stage` / `live`). |
 | [`deploy-to-aws`](actions/deploy-to-aws/action.yml) | Zips `dist/apps/processpuzzle-testbed/browser`, uploads to the `processpuzzle-testbed` S3 bucket, then creates and activates a new Elastic Beanstalk application version on `ProcessPuzzleTestbed-Dev` (eu-central-1). Currently not referenced by any workflow — kept for direct-asset EB deployments. |
 | [`deploy-to-aws-eb`](actions/deploy-to-aws-eb/action.yml) | Container-based EB deployment: substitutes AWS account/region/sha/project into `tools/docker/docker-compose-prod.yaml`, zips it, uploads to S3, and uses `einaregilsson/beanstalk-deploy` to roll it out (waits for completion). Currently not referenced by any workflow — kept for future Docker-on-EB releases. |
-| [`release-java`](actions/release-java/action.yml) | Configures Node, Java 25, Maven 3.9.14 and a GPG key, reads the project version from the POM, signs and deploys artifacts to Maven Central via `mvn deploy -Prelease`, then creates a GitHub Release tagged `<project>@<version>`. Used by `release-api-contracts.yml`. |
+| [`release-java`](actions/release-java/action.yml) | Configures Node, Java 25 and a GPG key, reads the project version from the POM, signs and deploys artifacts to Maven Central via `mvn deploy -Prelease`, then creates a GitHub Release tagged `<project>@<version>`. Used by `release-api-contracts.yml`. |
 
 ## Tasks
 ### Lint, Unit-Test, Sonar Scan
@@ -123,7 +123,8 @@ Every release workflow finishes by creating a tag and release via `elgohr/Github
 
 
 ### Tool versions
-Node `24.x`, Java `25` (Temurin), Maven `3.9.14`. All runners are `ubuntu-latest`.
+Node `24.x`, Java `25` (Temurin). All runners are `ubuntu-latest`, whose preinstalled
+Maven (3.9.x) is used as-is — no version is pinned, because nothing in the build requires one.
 
 ## Adding a New Library or Application
 1. Copy an existing pair of workflows (e.g. `build-widgets.yml` + `release-widgets.yml`) and rename them.

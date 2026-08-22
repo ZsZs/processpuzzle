@@ -5,7 +5,7 @@ import { State } from '../../../domain/state-machine-definition';
 import { StateEdit, StatePropertiesPanelComponent } from './state-properties-panel.component';
 
 describe('StatePropertiesPanelComponent', () => {
-  const state = new State({ key: 'DRAFT', name: 'Draft', description: 'Entered but not reviewed.', terminal: false, locked: false });
+  const state = new State({ key: 'DRAFT', name: 'Draft', description: 'Entered but not reviewed.', isFinal: false, isLocked: false });
 
   let fixture: ComponentFixture<StatePropertiesPanelComponent>;
   let edits: StateEdit[];
@@ -46,7 +46,7 @@ describe('StatePropertiesPanelComponent', () => {
     expect(field('state-key').value).toBe('DRAFT');
     expect(field('state-name').value).toBe('Draft');
     expect(field('state-description').value).toBe('Entered but not reviewed.');
-    expect(field('state-terminal').checked).toBe(false);
+    expect(field('state-is-final').checked).toBe(false);
   });
 
   it('emits the whole state with the edit applied, keyed by what it was before', () => {
@@ -67,10 +67,10 @@ describe('StatePropertiesPanelComponent', () => {
   });
 
   it('emits the flags as flags rather than as strings', () => {
-    tick('state-terminal');
-    tick('state-locked');
+    tick('state-is-final');
+    tick('state-is-locked');
 
-    expect(edits.map((edit) => [edit.state.terminal, edit.state.locked])).toEqual([
+    expect(edits.map((edit) => [edit.state.isFinal, edit.state.isLocked])).toEqual([
       [true, false],
       [false, true],
     ]);

@@ -34,7 +34,7 @@ import { stateKind } from './state-palette-items';
   hostDirectives: [{ directive: NgDiagramNodeSelectedDirective, inputs: ['node'] }],
   host: { '[class.ng-diagram-port-hoverable-over-node]': 'true' },
   template: `
-    <div class="state-node" [class]="'state-node--' + kind()" [class.locked]="state().locked" [attr.data-testid]="'state-node-' + kind()">
+    <div class="state-node" [class]="'state-node--' + kind()" [class.locked]="state().isLocked" [attr.data-testid]="'state-node-' + kind()">
       @if (kind() === 'state') {
         <div class="title">{{ node().data.label }}</div>
         @if (state().description) {

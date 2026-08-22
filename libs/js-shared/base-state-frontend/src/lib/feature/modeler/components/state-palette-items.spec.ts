@@ -48,7 +48,7 @@ describe('state palette items', () => {
 
     // Drawn as the entry point, since that is the more useful of the two facts about it.
     it('draws a state that both starts and ends the machine as the start', () => {
-      expect(stateKind(new State({ key: 'ONLY', terminal: true }), true)).toBe('start');
+      expect(stateKind(new State({ key: 'ONLY', isFinal: true }), true)).toBe('start');
     });
   });
 
@@ -61,10 +61,10 @@ describe('state palette items', () => {
       expect(data.label).toBe('State 7');
     });
 
-    it('marks only the end symbol terminal', () => {
-      expect(newStateData('end', 'STATE_1').state.terminal).toBe(true);
-      expect(newStateData('start', 'STATE_1').state.terminal).toBe(false);
-      expect(newStateData('state', 'STATE_1').state.terminal).toBe(false);
+    it('marks only the end symbol final', () => {
+      expect(newStateData('end', 'STATE_1').state.isFinal).toBe(true);
+      expect(newStateData('start', 'STATE_1').state.isFinal).toBe(false);
+      expect(newStateData('state', 'STATE_1').state.isFinal).toBe(false);
     });
 
     it('marks only the start symbol initial', () => {

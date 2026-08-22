@@ -2,6 +2,7 @@ package com.processpuzzle.state.usecase.port;
 
 import com.processpuzzle.state.usecase.exception.EntityObjectNotFoundException;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -15,10 +16,9 @@ import java.util.UUID;
  * what happens with no implementation supplied — deliberately a loud failure rather than a silent
  * no-op, because the operation-layer use cases exist to be trusted with writes.
  *
- * <p>Nothing implements this yet: base-entity-backend has not implemented its operation layer
- * ({@code EntityObject} persistence) in code, only its knowledge-layer descriptor scaffold. The
- * port exists so the day that lands, wiring it here is the only integration step this module
- * needs.
+ * <p>Implemented by {@code BaseEntityObjectGateway} over base-entity's published {@code
+ * EntityObjectAccess}. The port stays because the dependency is one-directional by design — base-state
+ * knows base-entity, never the reverse — and because an application may substitute its own adapter.
  */
 public interface EntityObjectGateway {
 
@@ -49,4 +49,13 @@ public interface EntityObjectGateway {
      */
     long updateStateAttribute(String orgKey, String entityName, UUID objectId,
                                String attributeKey, String newValue, long expectedVersion);
+
+    /**
+     * Every object of {@code entityName}, for a pass over the whole governed population rather
+     * than one object — see {@code GovernedStateConsistencyCheck}. A whole-type read, so it belongs
+     * to startup work and not to a request path.
+     *
+     * @return the objects in no guaranteed order; empty if the type has no instances
+     */
+    List<EntityObjectSnapshot> findObjects(String orgKey, String entityName);
 }

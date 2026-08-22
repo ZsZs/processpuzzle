@@ -32,7 +32,11 @@ info:
     unaware of state machines entirely; it does not gain an AOP aspect or a special case for
     this attribute in this version, unlike base-rule's `@Validate` aspect which genuinely
     sits in the write path because it validates arbitrary attribute changes. State has
-    exactly one legitimate entry point instead: fireStateTransition below. base-state-backend
+    exactly one legitimate entry point instead: fireStateTransition below. The one write that
+    is not a transition is the *first* one — base-state observes base-entity's ObjectCreated
+    event and writes initialStateKey onto the new object, which is why a caller never has to
+    supply a state on create and why base-entity needs no knowledge of machines to start one.
+    base-state-backend
     calls into base-entity-backend's operation-layer update as a privileged internal caller
     once a transition's guards pass, and publishes EntityObjectStateChangedEvent
     post-commit (via Spring Modulith) so base-workflow-backend can react to state changes it
@@ -169,7 +173,7 @@ paths:
         or Transition that an in-flight EntityObject currently depends on is accepted — the
         definition is the source of truth going forward — but any object left sitting in a
         currentStateKey no longer declared surfaces that fact the next time
-        getEntityObjectState is called (terminal true, availableTransitions empty), rather
+        getEntityObjectState is called (isFinal true, availableTransitions empty), rather
         than being migrated automatically.
       tags: [ Base State ]
       requestBody:
@@ -684,11 +688,11 @@ components:
         description:
           type: string
           nullable: true
-        terminal:
+        isFinal:
           type: boolean
           default: false
           description: No transition may declare this state as its sourceStateKey — enforced at definition save time.
-        locked:
+        isLocked:
           type: boolean
           default: false
           description: >-
@@ -715,7 +719,7 @@ components:
           nullable: true
         sourceStateKey:
           type: string
-          description: Must resolve to a declared State.key that is not terminal.
+          description: Must resolve to a declared State.key whose isFinal is not set.
         targetStateKey:
           type: string
           description: Must resolve to a declared State.key.
@@ -760,13 +764,20 @@ components:
           type: string
           description: >-
             The attrName, declared on entityName's current EntityDefinition, whose value
-            holds the object's current state. Must be a TEXT-valued attribute. base-state
-            is the only writer of it — see the top-level description's "Ownership and the
-            single entry point" note.
+            holds the object's current state. Must be a TEXT- or ENUM-valued attribute —
+            checked against that definition on every save, so a typo or a since-removed
+            attribute is a 400 rather than a machine that fails the first time it is fired.
+            Requiring the attribute to exist is also what restricts state machines to entity
+            types base-entity-backend manages. base-state is the only writer of it — see the
+            top-level description's "Ownership and the single entry point" note.
           example: state
         initialStateKey:
           type: string
-          description: The State.key a newly-created EntityObject of this entityName starts in. Must resolve to a declared State.key.
+          description: >-
+            The State.key a newly-created EntityObject of this entityName starts in. Must
+            resolve to a declared State.key. Written onto the object by base-state when it is
+            created — see "Ownership and the single entry point" — so an object whose state
+            attribute reads empty is one created before its machine existed, not a normal one.
         states:
           type: array
           minItems: 1
@@ -1010,7 +1021,7 @@ components:
 
     EntityObjectStateView:
       type: object
-      required: [ objectId, entityName, currentStateKey, terminal, availableTransitions ]
+      required: [ objectId, entityName, currentStateKey, isFinal, availableTransitions ]
       properties:
         objectId:
           type: string
@@ -1019,9 +1030,9 @@ components:
           type: string
         currentStateKey:
           type: string
-        terminal:
+        isFinal:
           type: boolean
-          description: True when currentStateKey resolves to a State with terminal true.
+          description: True when currentStateKey resolves to a State whose isFinal is true.
         enteredStateAt:
           type: string
           format: date-time

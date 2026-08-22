@@ -22,18 +22,18 @@ describe('StateMachineDefinition model', () => {
     expect(definition.id).toBe('');
   });
 
-  it('defaults a state to neither terminal nor locked', () => {
+  it('defaults a state to neither final nor locked', () => {
     const state = new State({ key: 'DRAFT', name: 'Draft' });
 
-    expect(state.terminal).toBe(false);
-    expect(state.locked).toBe(false);
+    expect(state.isFinal).toBe(false);
+    expect(state.isLocked).toBe(false);
   });
 
-  it('keeps the flags a terminal state was created with', () => {
-    const state = new State({ key: 'DELIVERED', name: 'Delivered', terminal: true, locked: true });
+  it('keeps the flags a final state was created with', () => {
+    const state = new State({ key: 'DELIVERED', name: 'Delivered', isFinal: true, isLocked: true });
 
-    expect(state.terminal).toBe(true);
-    expect(state.locked).toBe(true);
+    expect(state.isFinal).toBe(true);
+    expect(state.isLocked).toBe(true);
   });
 
   it('starts a transition with empty guard and action lists', () => {

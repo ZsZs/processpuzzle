@@ -3,16 +3,14 @@ import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { BeanRef, PropertyMap, State, StateMachineDefinition, Transition } from './state-machine-definition';
 
 /**
- * A state as it may arrive: the contract's `terminal` / `locked`, or the `isFinal` / `isLocked` of
- * base-state-backend's own `State` record — which is what the seed YAML spells and json-server therefore
- * serves. Both are optional, so neither reader may assume the other's spelling is absent.
+ * A state as it arrives. One spelling only: the contract, base-state-backend's own `State` record, the seed
+ * YAML json-server serves verbatim and the persisted JSON all name the flags `isFinal` / `isLocked`. This
+ * interface used to admit a second, `terminal` / `locked` spelling for the contract; that split is gone.
  */
 interface StateDto {
   key?: string;
   name?: string;
   description?: string;
-  terminal?: boolean;
-  locked?: boolean;
   isFinal?: boolean;
   isLocked?: boolean;
   metadata?: PropertyMap;
@@ -62,9 +60,9 @@ interface StateMachineDefinitionDto {
  * and treats the path segment as the source of truth, exactly as the contract says.
  *
  * The nested rows are **mapped element by element**, not passed through as `AppDefinition`'s `regions`
- * are. An embedded row is edited as the parsed JSON it arrived as, so a state whose flag is called
- * `isFinal` on the wire would leave the `terminal` control of the state form empty and silently lose the
- * flag on the next save. Normalizing here is what keeps the two spellings out of every descriptor.
+ * are. An embedded row is edited as the parsed JSON it arrived as, so a field the wire spells differently
+ * from the model would leave its control empty and silently drop the value on the next save. Mapping each
+ * row is what keeps that class of bug out of every descriptor, even now that no field is spelled two ways.
  *
  * `PUT /state-machines/{entityName}` is a **full replacement**, so `toDto` emits `states` and
  * `transitions` unconditionally — an absent list is an emptied machine, not an untouched one.
@@ -117,24 +115,23 @@ function toState(dto: StateDto): State {
     key: dto.key,
     name: dto.name,
     description: dto.description,
-    terminal: dto.terminal ?? dto.isFinal,
-    locked: dto.locked ?? dto.isLocked,
+    isFinal: dto.isFinal,
+    isLocked: dto.isLocked,
     metadata: dto.metadata,
   });
 }
 
 /**
- * Writes the contract's spelling only. The aliases are a *read* concern — they exist because the seed
- * YAML is deserialized by a Java record whose components are named `isFinal` / `isLocked` — and a payload
- * that carried both would leave two fields to disagree the next time one of them is edited.
+ * Both flags are written explicitly rather than left off when false: `PUT /state-machines/{entityName}` is a
+ * full replacement, so an absent flag is an unset one, and the form's unticked checkbox has to say so.
  */
 function fromState(state: State): StateDto {
   return {
     key: state.key,
     name: state.name,
     description: state.description,
-    terminal: state.terminal ?? false,
-    locked: state.locked ?? false,
+    isFinal: state.isFinal ?? false,
+    isLocked: state.isLocked ?? false,
     metadata: state.metadata,
   };
 }

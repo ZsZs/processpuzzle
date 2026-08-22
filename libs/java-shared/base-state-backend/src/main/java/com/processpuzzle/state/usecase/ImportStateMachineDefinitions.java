@@ -77,7 +77,8 @@ public class ImportStateMachineDefinitions {
     private void validateTopologies(Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
         for (StateMachineYamlEntry entry : byEntityName.values()) {
             try {
-                validator.validate(entry.initialStateKey(), entry.states(), entry.transitions());
+                validator.validate(entry.entityName(), entry.stateAttributeKey(),
+                        entry.initialStateKey(), entry.states(), entry.transitions());
             } catch (IllegalArgumentException e) {
                 errors.add("'" + entry.entityName() + "': " + e.getMessage());
             }
