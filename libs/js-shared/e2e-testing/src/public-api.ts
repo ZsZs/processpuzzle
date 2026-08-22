@@ -57,6 +57,6 @@ export { ArtifactFieldsetPO, type ArtifactFieldsetPOOptions, type ArtifactUpload
 
 // Suite factories
 export { defineEntityListSuite, type DefineEntityListSuiteOptions } from './lib/suites/entity-list.suite';
-export { defineEntityCrudSuite, type DefineEntityCrudSuiteOptions } from './lib/suites/entity-crud.suite';
+export { defineEntityCrudSuite, type DefineEntityCrudSuiteOptions, type ExcludedEntity } from './lib/suites/entity-crud.suite';
 export { defineEntityRelationshipSuite, type DefineEntityRelationshipSuiteOptions, type ExcludedRelationship } from './lib/suites/entity-relationship.suite';
 export { defineEntityArtifactSuite, type DefineEntityArtifactSuiteOptions, type ExcludedArtifact } from './lib/suites/entity-artifact.suite';

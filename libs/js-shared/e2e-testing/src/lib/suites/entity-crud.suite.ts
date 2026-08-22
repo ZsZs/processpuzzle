@@ -16,6 +16,22 @@ export interface DefineEntityCrudSuiteOptions {
   timeoutMs?: number;
   /** Overrides Playwright's default expect timeout for generated form control assertions. */
   expectTimeoutMs?: number;
+  /**
+   * Entities the consuming application's own contract or business rules make uncreatable from synthetic
+   * fixture data — a required embedded collection, say, or a field that has to name a real entity type.
+   * Every test of the group is still registered, and skipped with the reason, so the gap stays visible in
+   * the report rather than disappearing from it.
+   *
+   * This excludes the entity as a *subject*. It stays available as another entity's linked fixture, which
+   * is a different flow and one the exclusion must not disable.
+   */
+  excludedEntities?: ExcludedEntity[];
+}
+
+/** One entity the suite is told not to exercise, and why. */
+export interface ExcludedEntity {
+  entityName: string;
+  reason: string;
 }
 
 /**
@@ -34,10 +50,18 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
     // parent's form, and is covered by the parent's CRUD test.
     if (descriptor.isEmbedded) continue;
 
+    const excluded = options.excludedEntities?.find((entry) => entry.entityName === descriptor.entityName);
+
     test.describe(`[${descriptor.entityName}] CRUD`, () => {
       test.describe.configure({ timeout: timeoutMs });
 
       let manager: EntityCrudFixtureManager | undefined;
+
+      // In `beforeEach` rather than in each test: one place, and every test of the group is still reported,
+      // skipped with the reason. `afterEach` below stays harmless — a skipped test leaves `manager` unset.
+      test.beforeEach(() => {
+        test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
+      });
 
       test.afterEach(async ({ page }) => {
         const managerForTest = manager;
