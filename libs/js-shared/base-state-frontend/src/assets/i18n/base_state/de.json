@@ -9,13 +9,32 @@
     "version": "Version",
     "updatedAt": "Geändert am",
     "states": "Zustände",
-    "transitions": "Übergänge"
+    "transitions": "Übergänge",
+    "tabs": {
+      "modeler": "Zustandsmodellierer"
+    },
+    "modeler": {
+      "save": "Speichern",
+      "palette": {
+        "title": "Elemente",
+        "start": "Start",
+        "end": "Ende",
+        "state": "Zustand"
+      },
+      "routing": {
+        "title": "Linienführung",
+        "orthogonal": "Rechtwinklig",
+        "polyline": "Gerade",
+        "bezier": "Gebogen"
+      }
+    }
   },
   "state_machine_state": {
     "_self": "Zustand",
     "key": "Schlüssel",
     "name": "Name",
     "description": "Beschreibung",
+    "initial": "Startzustand",
     "terminal": "Endzustand",
     "locked": "Gesperrt",
     "metadata": "Metadaten"

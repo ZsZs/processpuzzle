@@ -20,6 +20,12 @@ info:
     AttributePathResolver / JsonPathExpressionBuilder pipeline for free — base-state does not
     reimplement querying.
 
+    DIAGRAM LAYER (/diagrams/{entityName}): where the states and transitions of one machine sit
+    on the graphical modeler's canvas. Purely presentational and a resource of its own rather
+    than fields on StateMachineDefinition, so that dragging a node never risks a whole-document
+    replace of the topology — the two are written by different gestures at very different rates.
+    1:1 with the state machine it lays out, and addressed by the same entityName.
+
     ## Ownership and the single entry point
 
     base-state-backend is the only writer of the state attribute. base-entity-backend stays
@@ -264,6 +270,124 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  # ── Diagram layer: the graphical modeler's layout ───────────────
+
+  /organizations/{orgKey}/diagrams:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listDiagramDefinitions
+      summary: List the organization's diagram layouts
+      tags: [ Base State Diagrams ]
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of diagram layouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_DiagramDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/diagrams/{entityName}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+    get:
+      operationId: getDiagramDefinition
+      summary: Get the diagram layout of an entity type's state machine
+      description: >-
+        404 when the machine has never been arranged. That is not an error condition for the
+        modeler — it is how it learns to fall back to an automatic layout — and it is
+        deliberately distinguishable from a layout that exists but is empty.
+      tags: [ Base State Diagrams ]
+      responses:
+        "200":
+          description: The diagram layout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagramDefinition"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: saveDiagramDefinition
+      summary: Create or replace the diagram layout of an entity type's state machine
+      description: >-
+        Whole-document replace, and an **upsert** — `201` the first time an entityName is
+        arranged, `200` every time after. Deliberately not the POST-create / PUT-replace pair
+        the /state-machines endpoints above use: there, a second definition for the same
+        entityName is a genuine user error worth a 409, whereas saving a layout twice is the
+        normal case. The client always knows entityName, so no key is ever server-assigned and
+        an upsert costs it neither a GET-then-decide round trip nor a race on first save.
+
+        Requires a state machine definition to exist for entityName — 404 otherwise, since a
+        layout for a machine that does not exist has nothing to lay out. Individual `stateKey`
+        and `transitionKey` values are **not** validated against it: updateStateMachineDefinition
+        is free to drop a state, a layout entry naming a key the machine no longer declares is
+        harmless (the modeler ignores what it cannot render, and the next save prunes it), and
+        rejecting it would make two independent, individually-valid saves fail depending only
+        on the order they arrive in.
+
+        Optimistic-locked the same way updateStateMachineDefinition is: Hibernate's own
+        `@Version` column detects a genuinely concurrent write on flush.
+      tags: [ Base State Diagrams ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiagramDefinitionInput"
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagramDefinition"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagramDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName has no state machine definition in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteDiagramDefinition
+      summary: Discard the diagram layout of an entity type's state machine
+      description: >-
+        Resets the machine to an automatic layout; the state machine definition itself is
+        untouched. Deleting the state machine definition discards its layout too, so this
+        endpoint exists for the "re-arrange from scratch" gesture rather than for cleanup.
+      tags: [ Base State Diagrams ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ── Operation layer: an object's current state ──────────────────
 
   /organizations/{orgKey}/entities/{entityName}/{objectId}/state:
@@ -457,7 +581,11 @@ components:
       required: false
       schema:
         type: string
-      description: RSQL filter expression over StateMachineDefinition fields (entityName, name). See shared-api.yaml WhereParam for the operator reference.
+      description: >-
+        RSQL filter expression. Over StateMachineDefinition fields (entityName, name) on
+        /state-machines, and over DiagramDefinition's own scalars (entityName, updatedAt) on
+        /diagrams — a diagram's nodes and edges are a serialized JSON blob and are not
+        filterable. See shared-api.yaml WhereParam for the operator reference.
     OrderParam:
       name: order
       in: query
@@ -673,6 +801,183 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StateMachineDefinition"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    # ── Diagram layer ──────────────────────────────────────────
+
+    Point:
+      type: object
+      required: [ x, y ]
+      description: A point in diagram coordinates, matching ng-diagram's own `Point`.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+
+    NodeSize:
+      type: object
+      required: [ width, height ]
+      description: >-
+        Node dimensions in diagram coordinates, matching ng-diagram's own `Size`. Named NodeSize
+        rather than Size because the generated models share a package with the Jakarta validation
+        annotations the generator itself emits: a schema called `Size` shadows
+        `jakarta.validation.constraints.Size` and breaks every `@Size`-annotated field in the
+        package, including StateMachineDefinition's.
+      properties:
+        width:
+          type: number
+          format: double
+        height:
+          type: number
+          format: double
+
+    NodeLayout:
+      type: object
+      required: [ stateKey, position ]
+      description: >-
+        Where one State sits on the canvas. An array of keyed rows rather than a map keyed by
+        stateKey, for the same reason `states` and `transitions` above are arrays: the key stays
+        visible inside the row, which is what makes an exported layout readable.
+
+        Carries only what the current, flat State model can express. Deliberately absent, and to
+        be added when the feature that needs them lands rather than speculatively: `angle` (a
+        state is never rotated), `zOrder` and `autoSize`, and any group membership — there are no
+        nested or parallel states in this version, so a node is never inside another node.
+      properties:
+        stateKey:
+          type: string
+          description: >-
+            The State.key this row positions. Not validated against the state machine's declared
+            states — see saveDiagramDefinition's description for why a stale row is tolerated.
+          example: PendingApproval
+        position:
+          $ref: "#/components/schemas/Point"
+        size:
+          # A bare $ref, not an allOf wrapper carrying `nullable`/`description`: a
+          # single-element allOf is what degrades a generated type to Object, and OpenAPI 3.0
+          # ignores siblings of a $ref anyway. Absent means the node is auto-sized by its
+          # content, which is the default.
+          $ref: "#/components/schemas/NodeSize"
+
+    EdgeLayout:
+      type: object
+      required: [ transitionKey ]
+      description: >-
+        How one Transition is drawn. The port anchors matter as much as the waypoints do: an edge
+        whose ports are not persisted is re-anchored on the next load, so the diagram reopens
+        with visibly different geometry from the one the user arranged.
+      properties:
+        transitionKey:
+          type: string
+          description: The Transition.key this row routes. Not validated — see saveDiagramDefinition.
+        points:
+          type: array
+          description: >-
+            Intermediate waypoints, in order, in diagram coordinates — ng-diagram's `Edge.points`.
+            Empty or absent means the edge is routed automatically between its two ports.
+          items:
+            $ref: "#/components/schemas/Point"
+        sourcePort:
+          type: string
+          nullable: true
+          description: The port on the source node the edge leaves from, e.g. `port-right`.
+          example: port-right
+        targetPort:
+          type: string
+          nullable: true
+          description: The port on the target node the edge arrives at, e.g. `port-left`.
+          example: port-left
+        routing:
+          type: string
+          nullable: true
+          description: >-
+            The edge's routing mode as the user chose it — ng-diagram's `Edge.routing`. Opaque to
+            base-state-backend, which stores and returns it without interpretation.
+          example: orthogonal
+
+    DiagramViewport:
+      type: object
+      required: [ x, y, scale ]
+      description: >-
+        Pan offset and zoom of the canvas. Persisted so that reopening a large machine returns to
+        the part of it the user was working on, rather than to whatever an automatic fit chooses.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        scale:
+          type: number
+          format: double
+          example: 1.0
+
+    DiagramDefinitionInput:
+      type: object
+      required: [ entityName ]
+      description: >-
+        The graphical layout of one entity type's state machine — purely presentational, and a
+        resource of its own rather than fields on StateMachineDefinition. Two reasons: dragging a
+        node must never risk a whole-document replace of the machine's topology, and the two are
+        written by different gestures at very different rates.
+
+        `nodes` and `edges` are both optional, because a machine that has been opened but never
+        arranged legitimately has neither.
+      properties:
+        entityName:
+          type: string
+          description: >-
+            The entity type whose state machine this lays out — 1:1 with it, and therefore also
+            1:1 with the StateMachineDefinition of the same name. The path segment is the source
+            of truth; this field is informational, mirroring StateMachineDefinitionInput.entityName.
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/NodeLayout"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/EdgeLayout"
+        viewport:
+          # Bare $ref for the same reason NodeLayout.size is one.
+          $ref: "#/components/schemas/DiagramViewport"
+
+    DiagramDefinition:
+      allOf:
+        - $ref: "#/components/schemas/DiagramDefinitionInput"
+        - type: object
+          properties:
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_DiagramDefinition:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagramDefinition"
         totalElements:
           type: integer
           format: int64

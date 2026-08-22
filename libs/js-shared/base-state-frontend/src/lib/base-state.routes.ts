@@ -6,6 +6,7 @@ import { STATE_MACHINE_DEFINITION_ENTITY_NAME } from './domain/state-machine-def
 import { STATE_MACHINE_STATE_ENTITY_NAME, STATE_MACHINE_TRANSITION_ENTITY_NAME, STATE_TRANSITION_ACTION_ENTITY_NAME, STATE_TRANSITION_GUARD_ENTITY_NAME } from './domain/state-entity-names';
 import { StateMachineDefinitionFacade } from './feature/state-machine-definition.facade';
 import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './feature/state-machine-embedded.facades';
+import { STATE_MODELER_TAB } from './feature/state-modeler-tab';
 
 /**
  * The authoring branch of the knowledge layer: the list and form of a `State Machine Definition`, and the
@@ -24,8 +25,12 @@ import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionA
  * `AppDefinitionContainerComponent`, which exists to contribute a Publish action and a Preview tab, a
  * state machine has no screen and no action beyond List and Details. It resolves its descriptor and its
  * store from `ACTIVE_ENTITY_FACADE` — which is also what the embedded branches below use, so every level
- * of the machine is reached the same way. The diagram this feature will eventually want is an `extraTabs`
- * entry, and that is what this route grows when the time comes.
+ * of the machine is reached the same way.
+ *
+ * The one screen beyond List and Details is the State Modeler, mounted through the `extraTabs` parameter of
+ * `baseEntityRoutes` as `:entityId/modeler` — a sibling of the details route, not a child of it. It is a
+ * placeholder for now; see {@link STATE_MODELER_TAB}. The tab link comes off the descriptor rather than from
+ * here, which is why `StateMachineDefinitionFacade` carries the same constant.
  */
 export const BASE_STATE_ROUTES: Routes = [
   {
@@ -34,7 +39,7 @@ export const BASE_STATE_ROUTES: Routes = [
     data: { icon: 'flag_circle', menuTitle: 'state.machines', entityName: STATE_MACHINE_DEFINITION_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: StateMachineDefinitionFacade }, authoringScopes()],
-    children: baseEntityRoutes(embeddedDefinitionRoutes()),
+    children: baseEntityRoutes(embeddedDefinitionRoutes(), [STATE_MODELER_TAB]),
   },
 ];
 

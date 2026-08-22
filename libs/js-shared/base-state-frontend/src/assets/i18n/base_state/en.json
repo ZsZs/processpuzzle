@@ -9,13 +9,32 @@
     "version": "Version",
     "updatedAt": "Updated At",
     "states": "States",
-    "transitions": "Transitions"
+    "transitions": "Transitions",
+    "tabs": {
+      "modeler": "State Modeler"
+    },
+    "modeler": {
+      "save": "Save",
+      "palette": {
+        "title": "Elements",
+        "start": "Start",
+        "end": "End",
+        "state": "State"
+      },
+      "routing": {
+        "title": "Routing",
+        "orthogonal": "Right angles",
+        "polyline": "Straight",
+        "bezier": "Curved"
+      }
+    }
   },
   "state_machine_state": {
     "_self": "State",
     "key": "Key",
     "name": "Name",
     "description": "Description",
+    "initial": "Initial",
     "terminal": "Terminal",
     "locked": "Locked",
     "metadata": "Metadata"

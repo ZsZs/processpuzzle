@@ -9,13 +9,32 @@
     "version": "Versión",
     "updatedAt": "Actualizado",
     "states": "Estados",
-    "transitions": "Transiciones"
+    "transitions": "Transiciones",
+    "tabs": {
+      "modeler": "Modelador de estados"
+    },
+    "modeler": {
+      "save": "Guardar",
+      "palette": {
+        "title": "Elementos",
+        "start": "Inicio",
+        "end": "Fin",
+        "state": "Estado"
+      },
+      "routing": {
+        "title": "Trazado",
+        "orthogonal": "Ángulos rectos",
+        "polyline": "Recta",
+        "bezier": "Curva"
+      }
+    }
   },
   "state_machine_state": {
     "_self": "Estado",
     "key": "Clave",
     "name": "Nombre",
     "description": "Descripción",
+    "initial": "Estado inicial",
     "terminal": "Terminal",
     "locked": "Bloqueado",
     "metadata": "Metadatos"

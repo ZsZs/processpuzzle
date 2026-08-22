@@ -2,6 +2,7 @@ package com.processpuzzle.state.adapter.inbound;
 
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
+import com.processpuzzle.state.usecase.exception.DiagramDefinitionNotFoundException;
 import com.processpuzzle.state.usecase.exception.EntityObjectNotFoundException;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
 import com.processpuzzle.state.usecase.exception.StateMachineAlreadyExistsException;
@@ -29,6 +30,11 @@ public class StateApiExceptionHandler {
     @ExceptionHandler(StateMachineNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(StateMachineNotFoundException e) {
         return error(HttpStatus.NOT_FOUND, "state-machine.not-found", e.getMessage());
+    }
+
+    @ExceptionHandler(DiagramDefinitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleDiagramNotFound(DiagramDefinitionNotFoundException e) {
+        return error(HttpStatus.NOT_FOUND, "diagram-definition.not-found", e.getMessage());
     }
 
     @ExceptionHandler(StateMachineAlreadyExistsException.class)

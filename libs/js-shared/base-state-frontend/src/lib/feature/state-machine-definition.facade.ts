@@ -5,6 +5,7 @@ import { createStateMachineDefinitionDescriptor } from '../domain/state-machine-
 import { StateMachineDefinitionMapper } from '../domain/state-machine-definition.mapper';
 import { StateMachineDefinitionService } from '../domain/state-machine-definition.service';
 import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
+import { STATE_MODELER_TAB } from './state-modeler-tab';
 
 @Injectable()
 export class StateMachineDefinitionFacade extends BaseEntityFacade<StateMachineDefinition> {
@@ -25,7 +26,18 @@ export class StateMachineDefinitionFacade extends BaseEntityFacade<StateMachineD
     return StateMachineDefinitionStore;
   }
 
+  /**
+   * The stock descriptor plus the State Modeler tab.
+   *
+   * The tab is added here rather than in `createStateMachineDefinitionDescriptor()`, which lives in
+   * `domain/` and would then have to import a `feature/` component. `BaseEntityContainerComponent` is
+   * mounted directly by {@link BASE_STATE_ROUTES} and resolves its descriptor from
+   * `ACTIVE_ENTITY_FACADE`, so this is where `BaseEntityTabsComponent` reads `extraTabs` from.
+   * `declaredDescriptor()` caches, so it runs once.
+   */
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createStateMachineDefinitionDescriptor();
+    const descriptor = createStateMachineDefinitionDescriptor();
+    descriptor.extraTabs = [STATE_MODELER_TAB];
+    return descriptor;
   }
 }

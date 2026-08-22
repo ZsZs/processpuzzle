@@ -9,13 +9,32 @@
     "version": "Verzió",
     "updatedAt": "Módosítva",
     "states": "Állapotok",
-    "transitions": "Átmenetek"
+    "transitions": "Átmenetek",
+    "tabs": {
+      "modeler": "Állapotmodellező"
+    },
+    "modeler": {
+      "save": "Mentés",
+      "palette": {
+        "title": "Elemek",
+        "start": "Kezdet",
+        "end": "Vég",
+        "state": "Állapot"
+      },
+      "routing": {
+        "title": "Vonalvezetés",
+        "orthogonal": "Derékszögű",
+        "polyline": "Egyenes",
+        "bezier": "Ívelt"
+      }
+    }
   },
   "state_machine_state": {
     "_self": "Állapot",
     "key": "Kulcs",
     "name": "Név",
     "description": "Leírás",
+    "initial": "Kezdő állapot",
     "terminal": "Végállapot",
     "locked": "Zárolt",
     "metadata": "Metaadatok"

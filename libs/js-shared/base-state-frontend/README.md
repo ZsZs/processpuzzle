@@ -16,8 +16,12 @@ persists state machines and orchestrates transitions server-side.
 The **knowledge layer** — authoring a state machine — is implemented: a `State Machine Definition` has a generated
 list and form, with its states and transitions as embedded components, and a transition's guards and actions
 embedded one level deeper. The **operation layer** of `base-state-api.yaml` — an entity object's current state and
-`fireStateTransition` — has no frontend yet; nor has the state machine diagram, which will arrive as an extra tab
-on the definition's screens.
+`fireStateTransition` — has no frontend yet.
+
+The state machine diagram has its tab: **State Modeler**, beside List and Details at
+`state-machine-definition/<entityName>/modeler`. The tab, its route and its label are in place; the canvas
+inside it is not, so it renders an *under construction* placeholder for now and states and transitions stay
+authorable on the Details tab.
 
 ## Authoring a state machine
 
@@ -60,3 +64,31 @@ generic screens address it unchanged.
 | `BaseConfiguration` key | Meaning                                                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `STATE_SERVICE_ROOT`    | `<host>/organizations/<orgKey>` the state machine endpoints hang off. Optional — falls back to `APP_SERVICE_ROOT`. |
+
+# State Machine Modeler
+## Visual overview of the layers
+YAML / API JSON
+↓
+state-machine/domain
+↓
+state-machine/data-access
+↓
+state-machine/graph
+↓
+state-machine/diagram
+↓
+state-machine/editor
+↓
+apps/processpuzzle/features/state-machine
+
+## Visual mapping of a domain model
+REST JSON
+↓
+StateMachineListResponse
+↓
+StateMachine
+↓
+StateDefinition[] + TransitionDefinition[]
+↓
+ActionDefinition[] + GuardDefinition[]
+
