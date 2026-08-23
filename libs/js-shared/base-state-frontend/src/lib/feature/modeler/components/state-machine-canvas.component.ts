@@ -13,7 +13,7 @@ import { StateMachineGraphConverter } from '../../../domain/modeler/graph/conver
 import { DagreLayoutService } from '../../../domain/modeler/graph/layout/dagre-layout.service';
 import { STATE_NODE_TYPE, StateNode, StateNodeData, TRANSITION_EDGE_TYPE, TransitionEdge, TransitionEdgeData } from '../../../domain/modeler/graph/state-machine-graph';
 import { DiagramDefinition, DiagramViewport } from '../../../domain/modeler/models/diagram-definition';
-import { StateMachineDefinition } from '../../../domain/state-machine-definition';
+import { StateMachineDefinition } from '../../../domain/definition/state-machine-definition';
 import { DiagramSelectionService } from '../services/diagram-selection.service';
 import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { StateEdit } from '../pages/state-properties-panel.component';

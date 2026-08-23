@@ -1,8 +1,8 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_STATE_ROUTES } from './base-state.routes';
-import { STATE_MODELER_TAB } from './feature/state-modeler-tab';
-import { StateModelerTabComponent } from './feature/state-modeler-tab.component';
+import { STATE_MODELER_TAB } from './feature/definition/state-modeler-tab';
+import { StateModelerTabComponent } from './feature/definition/state-modeler-tab.component';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {

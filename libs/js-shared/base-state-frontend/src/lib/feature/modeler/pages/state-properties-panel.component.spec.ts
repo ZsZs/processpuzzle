@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { State } from '../../../domain/state-machine-definition';
+import { State } from '../../../domain/definition/state-machine-definition';
 import { StateEdit, StatePropertiesPanelComponent } from './state-properties-panel.component';
 
 describe('StatePropertiesPanelComponent', () => {

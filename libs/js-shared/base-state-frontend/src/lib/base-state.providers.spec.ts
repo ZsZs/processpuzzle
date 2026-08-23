@@ -7,14 +7,14 @@ import { BASE_ENTITY_FACADE_REGISTRY, BaseEntityDescriptor } from '@processpuzzl
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS } from './base-state.providers';
-import { BeanRef, State, StateMachineDefinition, Transition } from './domain/state-machine-definition';
+import { BeanRef, State, StateMachineDefinition, Transition } from './domain/definition/state-machine-definition';
 import {
   STATE_MACHINE_DEFINITION_ENTITY_NAME,
   STATE_MACHINE_STATE_ENTITY_NAME,
   STATE_MACHINE_TRANSITION_ENTITY_NAME,
   STATE_TRANSITION_ACTION_ENTITY_NAME,
   STATE_TRANSITION_GUARD_ENTITY_NAME,
-} from './domain/state-entity-names';
+} from './domain/definition/state-entity-names';
 
 describe('BASE_STATE facade providers', () => {
   let injector: Injector;

@@ -4,7 +4,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { StateMachineDefinitionStore } from './state-machine-definition.store';
-import { OTHER_STATE_MACHINE_DEFINITION_DTO, pageOfStateMachineDefinitions, STATE_MACHINE_DEFINITION_DTO } from './test-state-machine-definition';
+import {
+  OTHER_STATE_MACHINE_DEFINITION_DTO,
+  pageOfStateMachineDefinitions,
+  STATE_MACHINE_DEFINITION_DTO
+} from './test-state-machine-definition';
 
 describe('StateMachineDefinitionStore', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';

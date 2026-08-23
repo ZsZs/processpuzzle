@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { State, Transition } from '../../../domain/state-machine-definition';
+import { State, Transition } from '../../../domain/definition/state-machine-definition';
 
 /**
  * What the user has selected on the canvas, as the domain objects rather than as diagram nodes: the

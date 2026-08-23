@@ -1,5 +1,5 @@
 import { Edge, Metadata, Node } from 'ng-diagram';
-import { State, Transition } from '../../state-machine-definition';
+import { State, Transition } from '../../definition/state-machine-definition';
 
 /**
  * The ng-diagram graph of one state machine: what {@link StateMachineGraphConverter} produces by joining a

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BaseEntityAttrDescriptor, BaseEntityDescriptor, ENTITY_TAB_CONTRIBUTORS, FormControlType } from '@processpuzzle/base-entity';
 import { describe, expect, it, vi } from 'vitest';
-import { GovernedEntityRegistry } from '../domain/governed-entity.registry';
+import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
 import { ENTITY_STATE_MACHINE_TAB, ENTITY_STATE_MACHINE_TAB_SEGMENT } from './entity-state-machine-tab';
 import { EntityStateMachineTabComponent } from './entity-state-machine-tab.component';
 import { EntityStateMachineTabContributor, provideEntityStateMachineTab } from './entity-state-machine-tab.contributor';

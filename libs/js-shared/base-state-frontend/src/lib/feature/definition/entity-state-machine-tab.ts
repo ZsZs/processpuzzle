@@ -1,5 +1,5 @@
 import type { EntityTabDescriptor } from '@processpuzzle/base-entity';
-import { ENTITY_STATE_MACHINE_I18N_KEY } from '../base-state.i18n';
+import { ENTITY_STATE_MACHINE_I18N_KEY } from '../../base-state.i18n';
 import { EntityStateMachineTabComponent } from './entity-state-machine-tab.component';
 
 /**

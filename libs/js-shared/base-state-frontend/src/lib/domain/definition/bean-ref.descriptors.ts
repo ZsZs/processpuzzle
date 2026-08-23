@@ -1,6 +1,10 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
-import { STATE_TRANSITION_ACTION_I18N_SCOPE, STATE_TRANSITION_GUARD_I18N_SCOPE } from '../base-state.i18n';
-import { STATE_MACHINE_TRANSITION_ENTITY_NAME, STATE_TRANSITION_ACTION_ENTITY_NAME, STATE_TRANSITION_GUARD_ENTITY_NAME } from './state-entity-names';
+import { STATE_TRANSITION_ACTION_I18N_SCOPE, STATE_TRANSITION_GUARD_I18N_SCOPE } from '../../base-state.i18n';
+import {
+  STATE_MACHINE_TRANSITION_ENTITY_NAME,
+  STATE_TRANSITION_ACTION_ENTITY_NAME,
+  STATE_TRANSITION_GUARD_ENTITY_NAME,
+} from './state-entity-names';
 
 export { STATE_TRANSITION_ACTION_ENTITY_NAME, STATE_TRANSITION_GUARD_ENTITY_NAME };
 

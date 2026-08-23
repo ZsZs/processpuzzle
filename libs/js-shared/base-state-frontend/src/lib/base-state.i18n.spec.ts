@@ -6,10 +6,10 @@ import es from '../assets/i18n/base_state/es.json';
 import fr from '../assets/i18n/base_state/fr.json';
 import hu from '../assets/i18n/base_state/hu.json';
 import { BASE_STATE_TRANSLATION_SOURCE, BASE_STATE_TRANSLOCO_SCOPE, STATE_MACHINE_DEFINITION_I18N_SCOPE } from './base-state.i18n';
-import { createActionRefDescriptor, createGuardRefDescriptor } from './domain/bean-ref.descriptors';
-import { createStateMachineDefinitionDescriptor } from './domain/state-machine-definition.descriptors';
-import { createStateDescriptor } from './domain/state.descriptors';
-import { createTransitionDescriptor } from './domain/transition.descriptors';
+import { createActionRefDescriptor, createGuardRefDescriptor } from './domain/definition/bean-ref.descriptors';
+import { createStateMachineDefinitionDescriptor } from './domain/definition/state-machine-definition.descriptors';
+import { createStateDescriptor } from './domain/definition/state.descriptors';
+import { createTransitionDescriptor } from './domain/definition/transition.descriptors';
 
 /** Dotted key paths of a transloco translation file, as transloco flattens them under the scope alias. */
 function flattenKeys(translations: object, prefix = ''): string[] {

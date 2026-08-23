@@ -1,8 +1,8 @@
 import { inject, Injectable, Provider } from '@angular/core';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { ENTITY_TAB_CONTRIBUTORS, type BaseEntityDescriptor, type EntityTabContributor, type EntityTabDescriptor } from '@processpuzzle/base-entity';
-import { BASE_STATE_TRANSLOCO_SCOPE } from '../base-state.i18n';
-import { GovernedEntityRegistry } from '../domain/governed-entity.registry';
+import { BASE_STATE_TRANSLOCO_SCOPE } from '../../base-state.i18n';
+import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
 import { ENTITY_STATE_MACHINE_TAB } from './entity-state-machine-tab';
 
 /**

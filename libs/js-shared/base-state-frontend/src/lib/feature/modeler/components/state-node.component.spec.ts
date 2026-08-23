@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Node, provideNgDiagram } from 'ng-diagram';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { STATE_NODE_TYPE, StateNodeData } from '../../../domain/modeler/graph/state-machine-graph';
-import { State } from '../../../domain/state-machine-definition';
+import { State } from '../../../domain/definition/state-machine-definition';
 import { StateNodeComponent } from './state-node.component';
 
 /**

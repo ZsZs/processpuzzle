@@ -1,5 +1,5 @@
 import { NgDiagramPaletteItem } from 'ng-diagram';
-import { State } from '../../../domain/state-machine-definition';
+import { State } from '../../../domain/definition/state-machine-definition';
 import { STATE_NODE_TYPE, StateNodeData } from '../../../domain/modeler/graph/state-machine-graph';
 
 /**
