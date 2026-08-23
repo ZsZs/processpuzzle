@@ -19,8 +19,8 @@ function orderDescriptor(): BaseEntityDescriptor {
   });
 }
 
-function screensOf(embeddedChildren: EntityScreens['embeddedChildren'] = []): EntityScreens {
-  return { descriptor: orderDescriptor(), embeddedChildren };
+function screensOf(embeddedChildren: EntityScreens['embeddedChildren'] = [], extraTabs: EntityScreens['extraTabs'] = []): EntityScreens {
+  return { descriptor: orderDescriptor(), embeddedChildren, extraTabs };
 }
 
 /** The route carrying the entity's own `baseEntityRoutes`, i.e. the one that declares the snake-case segment. */

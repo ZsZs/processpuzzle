@@ -7,7 +7,7 @@ import { DYNAMIC_ENTITY_NAME, DYNAMIC_ENTITY_PATH, dynamicEntityScreenRoutes } f
 
 describe('dynamicEntityScreenRoutes', () => {
   const descriptor = { name: DYNAMIC_ENTITY_NAME } as unknown as BaseEntityDescriptor;
-  const screens: EntityScreens = { descriptor, embeddedChildren: [] };
+  const screens: EntityScreens = { descriptor, embeddedChildren: [], extraTabs: [] };
   const resolve = vi.fn<(entityName: string | undefined) => Promise<EntityScreens | undefined>>();
 
   beforeEach(() => {

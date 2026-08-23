@@ -39,6 +39,15 @@ export interface StateNodeData {
   label: string;
   /** True for the one state the machine starts in, which the node template marks. */
   initial: boolean;
+  /**
+   * True for the state a *particular object* currently sits in — set only when the graph was built for one
+   * object, which is what the State Machine tab of a governed entity does. Absent everywhere else,
+   * including in the modeler: a definition being authored has no object to be anywhere.
+   *
+   * Alongside `initial` rather than derived in the template from a key the node would also have to be
+   * given, so the node template keeps reading flags rather than comparing identities.
+   */
+  isCurrent?: boolean;
 }
 
 /** What a transition edge carries in ng-diagram's `data`. Same reasoning as {@link StateNodeData}. */

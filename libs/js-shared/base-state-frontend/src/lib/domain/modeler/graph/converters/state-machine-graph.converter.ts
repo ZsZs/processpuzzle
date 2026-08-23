@@ -32,8 +32,14 @@ export class StateMachineGraphConverter {
    *
    * `layout` is optional because a machine with no arrangement is the normal starting point —
    * `GET /diagrams/{entityName}` answers 404 — and not a case the caller should have to special-case.
+   *
+   * `currentStateKey` marks the state one object is *in*, for a caller drawing the machine of a particular
+   * row rather than the definition itself. It is a key of the machine's own states; one naming a state the
+   * machine does not declare simply marks nothing, which is the same tolerance a stale layout row gets and
+   * for the same reason — an object may be sitting in a state a later edit removed, and refusing to draw
+   * the diagram is the least useful thing to do about that.
    */
-  static toGraph(machine: StateMachineDefinition, layout?: DiagramDefinition): StateMachineGraph {
+  static toGraph(machine: StateMachineDefinition, layout?: DiagramDefinition, currentStateKey?: string): StateMachineGraph {
     // Indexed once rather than searched per row: a machine with fifty states and fifty transitions would
     // otherwise be quadratic in the two lists that grow together.
     const nodeLayouts = new Map((layout?.nodes ?? []).map((node) => [node.stateKey, node]));
@@ -43,7 +49,7 @@ export class StateMachineGraphConverter {
     const nodes = (machine.states ?? []).map((state) => {
       const nodeLayout = nodeLayouts.get(state.key);
       if (!nodeLayout) unplacedStateKeys.push(state.key);
-      return toStateNode(state, machine.initialStateKey, nodeLayout);
+      return toStateNode(state, machine.initialStateKey, nodeLayout, state.key === currentStateKey);
     });
     const edges = (machine.transitions ?? []).map((transition) => toTransitionEdge(transition, edgeLayouts.get(transition.key)));
 
@@ -107,7 +113,7 @@ export class StateMachineGraphConverter {
 }
 
 // region private helper functions
-function toStateNode(state: State, initialStateKey: string, layout?: NodeLayout): StateNode {
+function toStateNode(state: State, initialStateKey: string, layout?: NodeLayout, isCurrent = false): StateNode {
   return {
     id: state.key,
     type: STATE_NODE_TYPE,
@@ -117,7 +123,7 @@ function toStateNode(state: State, initialStateKey: string, layout?: NodeLayout)
     // Left off when the layout carries none, so ng-diagram sizes the node by its content. A 0x0 box would
     // collapse it.
     ...(layout?.size ? { size: { width: layout.size.width, height: layout.size.height } } : {}),
-    data: { state, label: state.name || state.key, initial: state.key === initialStateKey },
+    data: { state, label: state.name || state.key, initial: state.key === initialStateKey, isCurrent },
   };
 }
 

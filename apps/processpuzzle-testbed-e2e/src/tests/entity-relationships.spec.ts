@@ -10,6 +10,20 @@ defineEntityRelationshipSuite({
   // base-entity's processpuzzle-testbed-entities.yaml, so it has no facade and never reaches the registry
   // this suite is generated from. Restore the exclusion if a synthesized descriptor puts it back.
   excludedRelationships: [
+    // Both entries below are the same exclusion seen from two attributes: the flow starts by creating the
+    // owner through its own form, and a State Machine Definition cannot be created from generated data at
+    // all — see the reason in entity-crud.spec.ts. So neither embedded list is ever reached. EMBEDDED_COMPONENTS
+    // stays covered by [App Definition] regions and [Test Entity] embeddedComponents.
+    {
+      entityName: 'State Machine Definition',
+      attrName: 'states',
+      reason: 'the owning state machine cannot be created from generated fixture data (states is minItems: 1, and entityName must name a real base-entity type)',
+    },
+    {
+      entityName: 'State Machine Definition',
+      attrName: 'transitions',
+      reason: 'the owning state machine cannot be created from generated fixture data (states is minItems: 1, and entityName must name a real base-entity type)',
+    },
     {
       entityName: 'App Definition',
       attrName: 'routes',

@@ -47,7 +47,9 @@ import { TransitionEdgeComponent } from './transition-edge.component';
   imports: [NgDiagramComponent, ElementPaletteComponent, EdgeRoutingMenuComponent],
   providers: [provideNgDiagram(), EdgeContextMenuService],
   template: `
-    <pp-element-palette />
+    @if (!readOnly) {
+      <pp-element-palette />
+    }
     <ng-diagram
       [model]="model"
       [config]="config"
@@ -57,7 +59,7 @@ import { TransitionEdgeComponent } from './transition-edge.component';
       (paletteItemDropped)="onPaletteItemDropped($event)"
     />
 
-    @if (contextMenu.target(); as target) {
+    @if (!readOnly && contextMenu.target(); as target) {
       <pp-edge-routing-menu
         [x]="menuPosition().x"
         [y]="menuPosition().y"
@@ -87,6 +89,25 @@ import { TransitionEdgeComponent } from './transition-edge.component';
 export class StateMachineCanvasComponent implements OnChanges {
   @Input() machine?: StateMachineDefinition;
   @Input() layout?: DiagramDefinition;
+  /**
+   * Key of the state to mark as the one an object currently sits in. Set by a caller drawing the machine
+   * of a particular row — the State Machine tab of a governed entity — and left unset by the modeler,
+   * which draws the definition itself.
+   */
+  @Input() currentStateKey?: string;
+  /**
+   * Draws the machine without offering to change it: no palette, no edge context menu, and no node that
+   * can be dragged or resized.
+   *
+   * A mode of this component rather than a viewer component of its own, because everything that makes the
+   * diagram *appear* — joining the topology to the arrangement, falling back to an automatic layout,
+   * resolving the three UML shapes — is identical either way, and a second component would be that logic
+   * copied with nothing but the gestures removed.
+   *
+   * It disables gestures, not persistence: nothing here can save, and the only writer is the modeler tab's
+   * own Save button. A read-only host simply does not render one.
+   */
+  @Input() readOnly = false;
 
   readonly nodeTemplateMap = new NgDiagramNodeTemplateMap([[STATE_NODE_TYPE, StateNodeComponent]]);
   readonly edgeTemplateMap = new NgDiagramEdgeTemplateMap([[TRANSITION_EDGE_TYPE, TransitionEdgeComponent]]);
@@ -146,10 +167,10 @@ export class StateMachineCanvasComponent implements OnChanges {
       this.model = initializeModel({ nodes: [], edges: [] }, this.injector);
       return;
     }
-    const graph = StateMachineGraphConverter.toGraph(this.machine, this.layout);
+    const graph = StateMachineGraphConverter.toGraph(this.machine, this.layout, this.currentStateKey);
     this.model = initializeModel(
       {
-        nodes: this.dagreLayout.place(graph.nodes, graph.edges, graph.unplacedStateKeys),
+        nodes: this.lockWhenReadOnly(this.dagreLayout.place(graph.nodes, graph.edges, graph.unplacedStateKeys)),
         edges: graph.edges,
         metadata: graph.metadata,
       },
@@ -245,6 +266,20 @@ export class StateMachineCanvasComponent implements OnChanges {
   protected applyRouting(edgeId: string, routing: EdgeRoutingChoice): void {
     this.model.updateEdges((edges) => edges.map((edge) => (edge.id === edgeId ? { ...edge, routing } : edge)));
     this.contextMenu.close();
+  }
+
+  /**
+   * Takes the drag and resize handles off every node in read-only mode.
+   *
+   * On the nodes rather than through a middleware, because ng-diagram 1.3 has no `readOnly` config — its
+   * own recipe is a middleware that cancels model actions, which suppresses the *effect* of a gesture the
+   * user was still invited to make. `draggable: false` is what stops the invitation. Selection is left
+   * alone on purpose: clicking a state to read it is not a change, and the panels beside a read-only
+   * canvas are worth keeping usable.
+   */
+  private lockWhenReadOnly(nodes: StateNode[]): StateNode[] {
+    if (!this.readOnly) return nodes;
+    return nodes.map((node) => ({ ...node, draggable: false, resizable: false, rotatable: false }));
   }
 
   /**

@@ -58,5 +58,16 @@
     "_self": "Aktion",
     "beanName": "Bean-Name",
     "params": "Parameter"
+  },
+  "entity_state_machine": {
+    "tab": "Zustandsautomat",
+    "currentState": "Aktueller Zustand",
+    "final": "Endzustand",
+    "governedBy": "Gesteuert von",
+    "noMachine": "Für diesen Entitätstyp gibt es keinen Zustandsautomaten.",
+    "unknownState": "'{{state}}' ist kein Zustand, den dieser Automat deklariert.",
+    "readOnly": "Nur-Lese-Ansicht — der Automat wird unter Base State bearbeitet.",
+    "loading": "Zustandsautomat wird geladen…",
+    "noState": "Dieser Datensatz hat noch keinen Zustand."
   }
 }

@@ -34,7 +34,14 @@ import { stateKind } from './state-palette-items';
   hostDirectives: [{ directive: NgDiagramNodeSelectedDirective, inputs: ['node'] }],
   host: { '[class.ng-diagram-port-hoverable-over-node]': 'true' },
   template: `
-    <div class="state-node" [class]="'state-node--' + kind()" [class.locked]="state().isLocked" [attr.data-testid]="'state-node-' + kind()">
+    <div
+      class="state-node"
+      [class]="'state-node--' + kind()"
+      [class.locked]="state().isLocked"
+      [class.current]="isCurrent()"
+      [attr.data-testid]="'state-node-' + kind()"
+      [attr.data-current]="isCurrent() ? 'true' : null"
+    >
       @if (kind() === 'state') {
         <div class="title">{{ node().data.label }}</div>
         @if (state().description) {
@@ -108,6 +115,22 @@ import { stateKind } from './state-palette-items';
     .state-node.locked {
       opacity: 0.6;
     }
+    /* The state the object being looked at is actually in. A ring drawn *outside* the shape with
+       box-shadow rather than a thicker border, because a border would change the box ng-diagram measured
+       and shift every edge anchored to this node — the mark has to be free of the layout. Applied to all
+       three shapes, since an object may perfectly well be sitting in the initial or a final state, and a
+       shadow follows the 50% border-radius of the two discs on its own. */
+    .state-node.current {
+      box-shadow:
+        0 0 0 3px var(--pp-color-light-green, rgb(92, 218, 207)),
+        0 0 0 8px rgba(92, 218, 207, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    /* The locked dimming would otherwise take the highlight down with it — and the one state worth seeing
+       clearly is the one the object is in, archived or not. */
+    .state-node.current.locked {
+      opacity: 1;
+    }
     .title {
       font-weight: 600;
     }
@@ -126,4 +149,11 @@ export class StateNodeComponent implements NgDiagramNodeTemplate<StateNodeData> 
 
   /** Which of the three UML shapes this state is drawn as. */
   protected readonly kind = computed(() => stateKind(this.state(), this.node().data.initial));
+
+  /**
+   * Whether this is the state the object being looked at currently sits in — set by
+   * `StateMachineGraphConverter` only when the graph was built for one object. Always false in the modeler,
+   * which draws the definition and not any instance of it.
+   */
+  protected readonly isCurrent = computed(() => this.node().data.isCurrent === true);
 }

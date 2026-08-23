@@ -69,7 +69,10 @@ export function entityScreenRoute({ entityName, screens, hostPath, data }: Entit
  */
 function entityScreenChildren(entityName: string, screens: EntityScreens, hostPath: string | undefined): Routes {
   const snakeCaseEntityName = snakeCaseName(entityName);
-  const entityRoutes = baseEntityRoutes(screens.embeddedChildren);
+  // `screens.extraTabs`, not `screens.descriptor.extraTabs`: the two hold the same value — the resolver
+  // writes the contributed tabs back onto the descriptor — but the routes have to be built from what the
+  // resolver decided, so that a tab the tab bar shows a link for always has a route answering to it.
+  const entityRoutes = baseEntityRoutes(screens.embeddedChildren, screens.extraTabs);
   const data = { [ENTITY_NAME_ROUTE_DATA_KEY]: entityName };
 
   if (lastSegmentOf(hostPath) === snakeCaseEntityName) return [{ path: '', data, children: entityRoutes }];

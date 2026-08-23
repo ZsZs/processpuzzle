@@ -35,6 +35,27 @@ export const STATE_MACHINE_DEFINITION_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE
 export const STATE_MODELER_I18N_KEY = `${STATE_MACHINE_DEFINITION_I18N_SCOPE}.tabs.modeler`;
 
 /**
+ * Key root of the State Machine tab — the read-only view of the machine governing *another* feature's
+ * entity, contributed onto that entity's screens by `StateMachineTabContributor`.
+ *
+ * A root of its own rather than a child of {@link STATE_MACHINE_DEFINITION_I18N_SCOPE}, because the screen
+ * is not about the `State Machine Definition` entity: it is shown on an `Order`, and its labels talk about
+ * where that order currently is.
+ */
+export const ENTITY_STATE_MACHINE_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE}.entity_state_machine`;
+
+/**
+ * Label of the State Machine tab. Resolved with `{ entity }` like every other tab label, so a translation
+ * may name the entity it is shown on.
+ *
+ * The scope this key lives in has to be *registered where the tab bar renders*, which is the governed
+ * entity's route — not base-state's. That is why `provideEntityStateMachineTab()` registers `base_state`
+ * alongside the contributor rather than leaving it to `BASE_STATE_ROUTES`: the tab appears on screens that
+ * branch of the router knows nothing about.
+ */
+export const ENTITY_STATE_MACHINE_I18N_KEY = `${ENTITY_STATE_MACHINE_I18N_SCOPE}.tab`;
+
+/**
  * Key roots of the nested definitions the `State Machine Definition` form contains through
  * `EMBEDDED_COMPONENTS` controls. They are children of {@link BASE_STATE_TRANSLOCO_SCOPE} rather than
  * scopes of their own, because the whole graph is edited under {@link BASE_STATE_ROUTES} and one scope
