@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { State, StateMachineDefinition, Transition } from '../../../state-machine-definition';
-import { StateMachineDefinitionMapper } from '../../../state-machine-definition.mapper';
-import { STATE_MACHINE_DEFINITION_DTO } from '../../../test-state-machine-definition';
+import { State, StateMachineDefinition, Transition } from '../../../definition/state-machine-definition';
+import { StateMachineDefinitionMapper } from '../../../definition/state-machine-definition.mapper';
+import { STATE_MACHINE_DEFINITION_DTO } from '../../../definition/test-state-machine-definition';
 import { DiagramDefinitionMapper } from '../../data-access/diagram-definition.mapper';
 import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../../models/diagram-definition';
 import { DIAGRAM_DEFINITION_DTO } from '../../models/test-diagram-definition';

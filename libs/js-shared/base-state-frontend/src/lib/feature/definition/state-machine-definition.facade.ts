@@ -1,10 +1,10 @@
 import { inject, Injectable, Type } from '@angular/core';
 import { BaseEntityDescriptor, BaseEntityFacade } from '@processpuzzle/base-entity';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { createStateMachineDefinitionDescriptor } from '../domain/state-machine-definition.descriptors';
-import { StateMachineDefinitionMapper } from '../domain/state-machine-definition.mapper';
-import { StateMachineDefinitionService } from '../domain/state-machine-definition.service';
-import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { createStateMachineDefinitionDescriptor } from '../../domain/definition/state-machine-definition.descriptors';
+import { StateMachineDefinitionMapper } from '../../domain/definition/state-machine-definition.mapper';
+import { StateMachineDefinitionService } from '../../domain/definition/state-machine-definition.service';
+import { StateMachineDefinitionStore } from '../../domain/definition/state-machine-definition.store';
 import { STATE_MODELER_TAB } from './state-modeler-tab';
 
 @Injectable()

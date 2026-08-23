@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityDescriptor, EmbeddedEntityFacade } from '@processpuzzle/base-entity';
-import { createActionRefDescriptor, createGuardRefDescriptor } from '../domain/bean-ref.descriptors';
-import { BeanRef, State, Transition } from '../domain/state-machine-definition';
-import { createStateDescriptor } from '../domain/state.descriptors';
-import { createTransitionDescriptor } from '../domain/transition.descriptors';
+import { createActionRefDescriptor, createGuardRefDescriptor } from '../../domain/definition/bean-ref.descriptors';
+import { BeanRef, State, Transition } from '../../domain/definition/state-machine-definition';
+import { createStateDescriptor } from '../../domain/definition/state.descriptors';
+import { createTransitionDescriptor } from '../../domain/definition/transition.descriptors';
 
 /**
  * The four embedded levels of a state machine, in one module because they are one decision: each has a

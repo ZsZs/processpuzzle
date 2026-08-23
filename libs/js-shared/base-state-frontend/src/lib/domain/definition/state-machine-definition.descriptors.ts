@@ -1,5 +1,5 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
-import { STATE_MACHINE_DEFINITION_I18N_SCOPE } from '../base-state.i18n';
+import { STATE_MACHINE_DEFINITION_I18N_SCOPE } from '../../base-state.i18n';
 import { STATE_MACHINE_DEFINITION_ENTITY_NAME, STATE_MACHINE_STATE_ENTITY_NAME, STATE_MACHINE_TRANSITION_ENTITY_NAME } from './state-entity-names';
 import { STATE_MACHINE_STATE_ID_FIELD } from './state.descriptors';
 import { STATE_MACHINE_TRANSITION_ID_FIELD } from './transition.descriptors';

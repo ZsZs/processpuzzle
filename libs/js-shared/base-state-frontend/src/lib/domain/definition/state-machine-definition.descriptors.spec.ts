@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
-import { STATE_MACHINE_DEFINITION_ENTITY_NAME, STATE_MACHINE_STATE_ENTITY_NAME, STATE_MACHINE_TRANSITION_ENTITY_NAME } from './state-entity-names';
+import {
+  STATE_MACHINE_DEFINITION_ENTITY_NAME,
+  STATE_MACHINE_STATE_ENTITY_NAME,
+  STATE_MACHINE_TRANSITION_ENTITY_NAME,
+} from './state-entity-names';
 import { createStateMachineDefinitionDescriptor } from './state-machine-definition.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {

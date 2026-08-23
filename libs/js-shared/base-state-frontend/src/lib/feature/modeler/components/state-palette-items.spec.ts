@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STATE_NODE_TYPE } from '../../../domain/modeler/graph/state-machine-graph';
-import { State } from '../../../domain/state-machine-definition';
+import { State } from '../../../domain/definition/state-machine-definition';
 import { newStateData, nextStateKey, STATE_PALETTE_ITEMS, stateKind } from './state-palette-items';
 
 describe('state palette items', () => {

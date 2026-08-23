@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Edge, EdgeLabelPosition, NgDiagramBaseEdgeComponent, NgDiagramBaseEdgeLabelComponent, NgDiagramDefaultEdgeLabelComponent } from 'ng-diagram';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TRANSITION_EDGE_TYPE, TransitionEdgeData } from '../../../domain/modeler/graph/state-machine-graph';
-import { Transition } from '../../../domain/state-machine-definition';
+import { Transition } from '../../../domain/definition/state-machine-definition';
 import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { TransitionEdgeComponent } from './transition-edge.component';
 

@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { STATE_MACHINE_STATE_I18N_SCOPE } from '../../../base-state.i18n';
-import { State } from '../../../domain/state-machine-definition';
+import { State } from '../../../domain/definition/state-machine-definition';
 
 /** One edit of the selected state, as {@link StateMachineCanvasComponent.applyStateEdit} applies it. */
 export interface StateEdit {

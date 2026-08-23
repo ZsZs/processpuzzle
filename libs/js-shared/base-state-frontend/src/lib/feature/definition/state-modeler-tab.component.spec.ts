@@ -4,12 +4,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DiagramDefinitionStore } from '../domain/modeler/data-access/diagram-definition.store';
-import { DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from '../domain/modeler/models/test-diagram-definition';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
-import { OTHER_STATE_MACHINE_DEFINITION_DTO, pageOfStateMachineDefinitions, STATE_MACHINE_DEFINITION_DTO } from '../domain/test-state-machine-definition';
-import { DiagramSelectionService } from './modeler/services/diagram-selection.service';
+import { DiagramDefinitionStore } from '../../domain/modeler/data-access/diagram-definition.store';
+import { DIAGRAM_DEFINITION_DTO, pageOfDiagramDefinitions } from '../../domain/modeler/models/test-diagram-definition';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { StateMachineDefinitionStore } from '../../domain/definition/state-machine-definition.store';
+import { OTHER_STATE_MACHINE_DEFINITION_DTO, pageOfStateMachineDefinitions, STATE_MACHINE_DEFINITION_DTO } from '../../domain/definition/test-state-machine-definition';
+import { DiagramSelectionService } from '../modeler/services/diagram-selection.service';
 import { StateModelerTabComponent } from './state-modeler-tab.component';
 
 const SERVICE_ROOT = 'http://localhost:3000/organizations/processpuzzle-testbed';

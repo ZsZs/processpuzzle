@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { Transition } from '../../../domain/state-machine-definition';
+import { Transition } from '../../../domain/definition/state-machine-definition';
 
 /** Read-only, for the same reason as {@link StatePropertiesPanelComponent}. */
 @Component({

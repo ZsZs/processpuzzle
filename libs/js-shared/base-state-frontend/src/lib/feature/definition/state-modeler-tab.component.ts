@@ -1,14 +1,14 @@
 import { Component, computed, effect, inject, input, viewChild } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { PersistedEntity } from '@processpuzzle/base-entity';
-import { STATE_MODELER_I18N_KEY } from '../base-state.i18n';
-import { DiagramDefinitionStore } from '../domain/modeler/data-access/diagram-definition.store';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
-import { StateMachineCanvasComponent } from './modeler/components/state-machine-canvas.component';
-import { StatePropertiesPanelComponent } from './modeler/pages/state-properties-panel.component';
-import { TransitionPropertiesPanelComponent } from './modeler/pages/transition-properties-panel.component';
-import { DiagramSelectionService } from './modeler/services/diagram-selection.service';
+import { STATE_MODELER_I18N_KEY } from '../../base-state.i18n';
+import { DiagramDefinitionStore } from '../../domain/modeler/data-access/diagram-definition.store';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { StateMachineDefinitionStore } from '../../domain/definition/state-machine-definition.store';
+import { StateMachineCanvasComponent } from '../modeler/components/state-machine-canvas.component';
+import { StatePropertiesPanelComponent } from '../modeler/pages/state-properties-panel.component';
+import { TransitionPropertiesPanelComponent } from '../modeler/pages/transition-properties-panel.component';
+import { DiagramSelectionService } from '../modeler/services/diagram-selection.service';
 
 /**
  * The State Modeler tab's screen, mounted at `state-machine-definition/<entityName>/modeler` by

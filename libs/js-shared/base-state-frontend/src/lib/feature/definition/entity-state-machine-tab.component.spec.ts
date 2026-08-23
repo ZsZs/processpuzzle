@@ -6,16 +6,16 @@ import { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType } from 
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GovernedEntityRegistry } from '../domain/governed-entity.registry';
-import { DiagramDefinitionMapper } from '../domain/modeler/data-access/diagram-definition.mapper';
-import { DiagramDefinitionService } from '../domain/modeler/data-access/diagram-definition.service';
-import { DIAGRAM_DEFINITION_DTO } from '../domain/modeler/models/test-diagram-definition';
-import { EntityObjectState } from '../domain/operation/entity-object-state';
-import { EntityObjectStateService } from '../domain/operation/entity-object-state.service';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { StateMachineDefinitionMapper } from '../domain/state-machine-definition.mapper';
-import { STATE_MACHINE_DEFINITION_DTO } from '../domain/test-state-machine-definition';
-import { StateMachineCanvasComponent } from './modeler/components/state-machine-canvas.component';
+import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
+import { DiagramDefinitionMapper } from '../../domain/modeler/data-access/diagram-definition.mapper';
+import { DiagramDefinitionService } from '../../domain/modeler/data-access/diagram-definition.service';
+import { DIAGRAM_DEFINITION_DTO } from '../../domain/modeler/models/test-diagram-definition';
+import { EntityObjectState } from '../../domain/operation/entity-object-state';
+import { EntityObjectStateService } from '../../domain/operation/entity-object-state.service';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { StateMachineDefinitionMapper } from '../../domain/definition/state-machine-definition.mapper';
+import { STATE_MACHINE_DEFINITION_DTO } from '../../domain/definition/test-state-machine-definition';
+import { StateMachineCanvasComponent } from '../modeler/components/state-machine-canvas.component';
 import { EntityStateMachineTabComponent } from './entity-state-machine-tab.component';
 
 /**

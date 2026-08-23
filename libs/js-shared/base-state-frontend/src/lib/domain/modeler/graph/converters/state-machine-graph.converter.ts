@@ -1,5 +1,5 @@
 import { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, Point } from '../../models/diagram-definition';
-import { State, StateMachineDefinition, Transition } from '../../../state-machine-definition';
+import { State, StateMachineDefinition, Transition } from '../../../definition/state-machine-definition';
 import { StateMachineGraph, STATE_NODE_TYPE, StateNode, TRANSITION_EDGE_TYPE, TransitionEdge } from '../state-machine-graph';
 
 /**

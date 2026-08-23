@@ -3,10 +3,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { StateMachineDefinitionMapper } from '../domain/state-machine-definition.mapper';
-import { StateMachineDefinitionService } from '../domain/state-machine-definition.service';
-import { StateMachineDefinitionStore } from '../domain/state-machine-definition.store';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { StateMachineDefinitionMapper } from '../../domain/definition/state-machine-definition.mapper';
+import { StateMachineDefinitionService } from '../../domain/definition/state-machine-definition.service';
+import { StateMachineDefinitionStore } from '../../domain/definition/state-machine-definition.store';
 import { StateMachineDefinitionFacade } from './state-machine-definition.facade';
 import { STATE_MODELER_TAB } from './state-modeler-tab';
 

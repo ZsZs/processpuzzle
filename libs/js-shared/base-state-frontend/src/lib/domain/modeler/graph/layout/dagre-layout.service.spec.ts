@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { State, Transition } from '../../../state-machine-definition';
+import { State, Transition } from '../../../definition/state-machine-definition';
 import { STATE_NODE_TYPE, StateNode, TransitionEdge } from '../state-machine-graph';
 import { DagreLayoutService } from './dagre-layout.service';
 

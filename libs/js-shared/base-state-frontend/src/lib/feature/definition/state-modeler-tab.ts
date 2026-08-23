@@ -1,5 +1,5 @@
 import { EntityTabDescriptor } from '@processpuzzle/base-entity';
-import { STATE_MODELER_I18N_KEY } from '../base-state.i18n';
+import { STATE_MODELER_I18N_KEY } from '../../base-state.i18n';
 import { StateModelerTabComponent } from './state-modeler-tab.component';
 
 /**

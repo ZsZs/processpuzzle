@@ -5,7 +5,11 @@ import { EntityDefinitionRegistry } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GovernedEntityRegistry } from './governed-entity.registry';
-import { OTHER_STATE_MACHINE_DEFINITION_DTO, pageOfStateMachineDefinitions, STATE_MACHINE_DEFINITION_DTO } from './test-state-machine-definition';
+import {
+  OTHER_STATE_MACHINE_DEFINITION_DTO,
+  pageOfStateMachineDefinitions,
+  STATE_MACHINE_DEFINITION_DTO,
+} from './test-state-machine-definition';
 
 describe('GovernedEntityRegistry', () => {
   const serviceRoot = 'http://localhost:3000/organizations/processpuzzle-testbed';

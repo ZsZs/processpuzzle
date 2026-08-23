@@ -2,11 +2,11 @@ import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { ACTIVE_ENTITY_FACADE, baseEntityRoutes, BaseEntityContainerComponent, type EmbeddedChildRoute } from '@processpuzzle/base-entity';
 import { BASE_ENTITY_TRANSLOCO_SCOPE, BASE_STATE_TRANSLOCO_SCOPE } from './base-state.i18n';
-import { STATE_MACHINE_DEFINITION_ENTITY_NAME } from './domain/state-machine-definition.descriptors';
-import { STATE_MACHINE_STATE_ENTITY_NAME, STATE_MACHINE_TRANSITION_ENTITY_NAME, STATE_TRANSITION_ACTION_ENTITY_NAME, STATE_TRANSITION_GUARD_ENTITY_NAME } from './domain/state-entity-names';
-import { StateMachineDefinitionFacade } from './feature/state-machine-definition.facade';
-import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './feature/state-machine-embedded.facades';
-import { STATE_MODELER_TAB } from './feature/state-modeler-tab';
+import { STATE_MACHINE_DEFINITION_ENTITY_NAME } from './domain/definition/state-machine-definition.descriptors';
+import { STATE_MACHINE_STATE_ENTITY_NAME, STATE_MACHINE_TRANSITION_ENTITY_NAME, STATE_TRANSITION_ACTION_ENTITY_NAME, STATE_TRANSITION_GUARD_ENTITY_NAME } from './domain/definition/state-entity-names';
+import { StateMachineDefinitionFacade } from './feature/definition/state-machine-definition.facade';
+import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './feature/definition/state-machine-embedded.facades';
+import { STATE_MODELER_TAB } from './feature/definition/state-modeler-tab';
 
 /**
  * The authoring branch of the knowledge layer: the list and form of a `State Machine Definition`, and the

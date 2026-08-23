@@ -3,14 +3,14 @@ import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { firstValueFrom } from 'rxjs';
-import { ENTITY_STATE_MACHINE_I18N_SCOPE } from '../base-state.i18n';
-import { GovernedEntityRegistry } from '../domain/governed-entity.registry';
-import { DiagramDefinitionService } from '../domain/modeler/data-access/diagram-definition.service';
-import { DiagramDefinition } from '../domain/modeler/models/diagram-definition';
-import { EntityObjectState } from '../domain/operation/entity-object-state';
-import { EntityObjectStateService } from '../domain/operation/entity-object-state.service';
-import { StateMachineDefinition } from '../domain/state-machine-definition';
-import { StateMachineCanvasComponent } from './modeler/components/state-machine-canvas.component';
+import { ENTITY_STATE_MACHINE_I18N_SCOPE } from '../../base-state.i18n';
+import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
+import { DiagramDefinitionService } from '../../domain/modeler/data-access/diagram-definition.service';
+import { DiagramDefinition } from '../../domain/modeler/models/diagram-definition';
+import { EntityObjectState } from '../../domain/operation/entity-object-state';
+import { EntityObjectStateService } from '../../domain/operation/entity-object-state.service';
+import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
+import { StateMachineCanvasComponent } from '../modeler/components/state-machine-canvas.component';
 
 /** What one load produced — kept as one signal so the three fields can never be half-updated. */
 interface TabView {

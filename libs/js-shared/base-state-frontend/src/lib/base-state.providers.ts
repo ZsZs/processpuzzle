@@ -6,9 +6,9 @@ import {
   STATE_MACHINE_TRANSITION_ENTITY_NAME,
   STATE_TRANSITION_ACTION_ENTITY_NAME,
   STATE_TRANSITION_GUARD_ENTITY_NAME,
-} from './domain/state-entity-names';
-import { StateMachineDefinitionFacade } from './feature/state-machine-definition.facade';
-import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './feature/state-machine-embedded.facades';
+} from './domain/definition/state-entity-names';
+import { StateMachineDefinitionFacade } from './feature/definition/state-machine-definition.facade';
+import { StateMachineStateFacade, StateMachineTransitionFacade, StateTransitionActionFacade, StateTransitionGuardFacade } from './feature/definition/state-machine-embedded.facades';
 
 /**
  * The facades of the whole state machine graph, to be spread into the application's `providers`.
