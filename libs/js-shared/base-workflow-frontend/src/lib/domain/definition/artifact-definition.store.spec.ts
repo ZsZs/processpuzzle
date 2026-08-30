@@ -27,7 +27,7 @@ describe('ArtifactDefinitionStore', () => {
   it('exposes an artifact with its type and its bindings intact', () => {
     store.setCurrentEntity('order-entity');
 
-    expect(store.currentEntity()?.type).toBe('ENTITY');
+    expect(store.currentEntity()?.artifactType).toBe('ENTITY');
     expect(store.currentEntity()?.stateMachineId).toBe('order');
   });
 });

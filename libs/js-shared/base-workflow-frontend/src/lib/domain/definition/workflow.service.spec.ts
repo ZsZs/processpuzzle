@@ -49,7 +49,7 @@ describe('WorkflowService', () => {
     expect(result.totalElements).toBe(1);
     const listed = result.content[0];
     expect(listed.id).toBe('order-fulfillment-workflow');
-    expect(listed.roles).toEqual(['clerk', 'manager']);
+    expect(listed.roles).toEqual([{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }]);
     expect(listed.tasks[0].taskDefinitionId).toBe('review-order');
   });
 
@@ -70,15 +70,18 @@ describe('WorkflowService', () => {
     request.flush(null);
   });
 
-  it('sends the id lists and the assignments on update', () => {
+  it('sends the Use rows, the start condition and the assignments on update', () => {
     const entity = new WorkflowMapper().fromDto(WORKFLOW_DTO) as PersistedEntity<Workflow>;
 
     service.update(entity).subscribe();
 
     const request = controller.expectOne(`${serviceRoot}/workflows/order-fulfillment-workflow`);
     expect(request.request.method).toBe('PUT');
-    expect(request.request.body.roles).toEqual(['clerk', 'manager']);
-    expect(request.request.body.artifacts).toEqual(['order-entity', 'fulfillment-invoice']);
+    expect(request.request.body.roles).toEqual([{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }]);
+    expect(request.request.body.artifacts).toEqual([{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
+    // The full-replacement PUT is what makes this load-bearing: a field absent from the body is a field
+    // the server clears, and the start condition was absent from every save until this revision.
+    expect(request.request.body.startCondition).toMatchObject({ startType: 'INPUT_ARTIFACT' });
     expect(request.request.body.tasks[0]).toMatchObject({ taskDefinitionId: 'review-order', performedBy: 'clerk' });
     request.flush(WORKFLOW_DTO);
   });

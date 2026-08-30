@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ReferenceType, StepDefinition, TaskDefinition, TaskIOReference } from './task-definition';
+import { StepDefinition, TaskDefinition, TaskStepType } from './task-definition';
 
 describe('TaskDefinition', () => {
-  it('defaults its three embedded lists and the roles able to perform it', () => {
+  it('defaults its three reference lists and its steps', () => {
     const task = new TaskDefinition();
 
     expect(task.performedByRoles).toEqual([]);
@@ -32,21 +32,11 @@ describe('TaskDefinition', () => {
   });
 });
 
-describe('TaskIOReference', () => {
-  // The contract gives a reference no `id`; `refId` is what identifies it. The declared-but-unassigned
-  // `id` exists only to satisfy TypeScript's weak-type rule against `BaseEntity`, and `declare` emits
-  // nothing — so the payload must not gain an `id` key.
-  it('carries no id key at all, the schema giving it none', () => {
-    const reference = new TaskIOReference({ type: ReferenceType.DOCUMENT, refId: 'invoice' });
-
-    expect(Object.keys(reference)).toEqual(['type', 'refId', 'label']);
-    expect('id' in reference).toBe(false);
-  });
-
-  // `ARTIFACT` is what the catalog model added, and it comes first because it is the only kind whose
-  // lifecycle base-state can govern.
-  it('mirrors the contract enum, artifact references included', () => {
-    expect(Object.keys(ReferenceType)).toEqual(['ARTIFACT', 'BASE_ENTITY', 'DOCUMENT', 'WIDGET']);
+describe('TaskStepType', () => {
+  // `SERVICE_STEP` is the one that reads `toolDefinitionId` and `toolOperation`; on a `USER_STEP` the
+  // engine ignores both.
+  it('mirrors the contract enum', () => {
+    expect(Object.keys(TaskStepType)).toEqual(['USER_STEP', 'SERVICE_STEP']);
   });
 });
 

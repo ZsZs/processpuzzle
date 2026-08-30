@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityDescriptor, EmbeddedEntityFacade } from '@processpuzzle/base-entity';
-import { WorkflowTaskAssignment } from '../../domain/definition/workflow';
+import { ArtifactUse, RequiredStartArtifact, RoleUse, ToolUse, WorkflowTaskAssignment } from '../../domain/definition/workflow';
 import { createWorkflowTaskAssignmentDescriptor } from '../../domain/definition/workflow-task-assignment.descriptors';
-import { StepDefinition, TaskIOReference } from '../../domain/definition/task-definition';
+import { createWorkflowArtifactUseDescriptor, createWorkflowRoleUseDescriptor, createWorkflowToolUseDescriptor } from '../../domain/definition/workflow-use.descriptors';
+import { createRequiredStartArtifactDescriptor } from '../../domain/definition/required-start-artifact.descriptors';
+import { StepDefinition } from '../../domain/definition/task-definition';
 import { createStepDefinitionDescriptor } from '../../domain/definition/step-definition.descriptors';
-import { createTaskInputReferenceDescriptor, createTaskOutputReferenceDescriptor } from '../../domain/definition/task-io-reference.descriptors';
 import { ToolOperation } from '../../domain/definition/tool-definition';
 import { createToolOperationDescriptor } from '../../domain/definition/tool-operation.descriptors';
 
@@ -14,16 +15,16 @@ import { createToolOperationDescriptor } from '../../domain/definition/tool-oper
  * and only its repository differs, reading and writing the aggregate's document rather than an
  * endpoint of its own.
  *
- * All four belong to a different parent, and that is the shape of the reference model: an assignment
- * to a workflow, a reference and a step to a task, an operation to a tool. Nothing embedded is shared,
- * which is precisely why it stayed embedded — a role, an artifact, a task and a tool each moved out to
- * a catalog aggregate of its own once more than one workflow needed it.
+ * Five of the seven belong to the workflow — its task assignments, the three `*Use` rows and the
+ * required artifacts of its start condition — and two to a task and a tool. That distribution is the
+ * shape of the reference model: nothing embedded is shared, which is precisely why it stayed embedded.
+ * A role, an artifact, a task and a tool each moved out to a catalog aggregate of its own once more
+ * than one workflow needed it; what stayed behind is the workflow's *use* of them.
  *
- * A task's inputs and its outputs share `TaskIOReference` as their entity type and differ only in
- * their descriptor. That is deliberate and it is also the reason they cannot share a *facade*: the
- * store a facade builds is keyed by the descriptor's entity name, and `inputs` and `outputs` are two
- * lists whose rows have to stay apart. Same arrangement as base-state's guards and actions over one
- * `BeanRef`.
+ * The three `*Use` facades cannot be collapsed into one even though the rows are the same shape over a
+ * different target: the store a facade builds is keyed by the descriptor's entity name, and `roles`,
+ * `artifacts` and `tools` are three lists whose rows have to stay apart. Same arrangement as
+ * base-state's guards and actions over one `BeanRef`.
  */
 
 @Injectable()
@@ -36,20 +37,38 @@ export class WorkflowTaskAssignmentFacade extends EmbeddedEntityFacade<WorkflowT
 }
 
 @Injectable()
-export class TaskInputReferenceFacade extends EmbeddedEntityFacade<TaskIOReference> {
-  readonly entityType = TaskIOReference;
+export class WorkflowRoleUseFacade extends EmbeddedEntityFacade<RoleUse> {
+  readonly entityType = RoleUse;
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createTaskInputReferenceDescriptor();
+    return createWorkflowRoleUseDescriptor();
   }
 }
 
 @Injectable()
-export class TaskOutputReferenceFacade extends EmbeddedEntityFacade<TaskIOReference> {
-  readonly entityType = TaskIOReference;
+export class WorkflowArtifactUseFacade extends EmbeddedEntityFacade<ArtifactUse> {
+  readonly entityType = ArtifactUse;
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createTaskOutputReferenceDescriptor();
+    return createWorkflowArtifactUseDescriptor();
+  }
+}
+
+@Injectable()
+export class WorkflowToolUseFacade extends EmbeddedEntityFacade<ToolUse> {
+  readonly entityType = ToolUse;
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createWorkflowToolUseDescriptor();
+  }
+}
+
+@Injectable()
+export class WorkflowRequiredStartArtifactFacade extends EmbeddedEntityFacade<RequiredStartArtifact> {
+  readonly entityType = RequiredStartArtifact;
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createRequiredStartArtifactDescriptor();
   }
 }
 

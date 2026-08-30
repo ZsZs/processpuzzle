@@ -1,11 +1,14 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { TASK_STEP_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
 import { TASK_DEFINITION_ENTITY_NAME, TASK_STEP_DEFINITION_ENTITY_NAME, TOOL_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { TaskStepType } from './task-definition';
 
 export { TASK_STEP_DEFINITION_ENTITY_NAME };
 
 /** A `StepDefinition` is identified by its own `id`, unique within the task that declares it. */
 export const TASK_STEP_DEFINITION_ID_FIELD = 'id';
+
+const stepTypeSelectables = toSelectables(Object.keys(TaskStepType));
 
 function createStepDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
@@ -20,11 +23,16 @@ function createStepDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
 
+  // First, because it decides whether the two tool controls below mean anything: a `SERVICE_STEP` is a
+  // call the engine makes and reads them, a `USER_STEP` is a human act and ignores them. Shown in the
+  // table for the same reason — it is what tells an automated step from a manual one at a glance.
+  const stepTypeAttr = new BaseEntityAttrDescriptor('stepType', FormControlType.DROPDOWN, 'Step Type', stepTypeSelectables);
+  stepTypeAttr.required = true;
+
   // A `Tool Definition` is a routable aggregate of its own — `/tools`, shared across workflows — so
-  // this is a real reference the framework can resolve and navigate to, unlike the `refId` of a
-  // task's inputs and outputs.
-  const toolIdAttr = new BaseEntityAttrDescriptor('toolId', FormControlType.FOREIGN_KEY, 'Tool');
-  toolIdAttr.linkedEntityType = TOOL_DEFINITION_ENTITY_NAME;
+  // this is a real reference the framework can resolve and navigate to.
+  const toolDefinitionIdAttr = new BaseEntityAttrDescriptor('toolDefinitionId', FormControlType.FOREIGN_KEY, 'Tool');
+  toolDefinitionIdAttr.linkedEntityType = TOOL_DEFINITION_ENTITY_NAME;
 
   // Plain text rather than a dropdown over the tool's operations: the options would have to come from
   // the store of *the tool chosen in the control above*, which a descriptor's static `selectables`
@@ -43,7 +51,7 @@ function createStepDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const toolRow = new FlexboxDescriptor([toolIdAttr, toolOperationAttr], FlexDirection.ROW);
+  const toolRow = new FlexboxDescriptor([stepTypeAttr, toolDefinitionIdAttr, toolOperationAttr], FlexDirection.ROW);
   toolRow.style = { 'column-gap': '10px' };
   const mappingRow = new FlexboxDescriptor([inputMappingAttr, outputMappingAttr], FlexDirection.ROW);
   mappingRow.style = { 'column-gap': '10px' };

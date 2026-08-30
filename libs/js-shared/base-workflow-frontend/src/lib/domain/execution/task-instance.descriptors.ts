@@ -1,6 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { TASK_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
-import { WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
+import { TASK_DEFINITION_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
 import { TaskInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_STEP_RESULT_ID_FIELD } from './step-result.descriptors';
@@ -25,7 +25,10 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const idAttr = readOnlyAttr('id', FormControlType.TEXT_BOX, 'Id');
   idAttr.hideInTable = true;
 
-  const taskDefinitionIdAttr = readOnlyAttr('taskDefinitionId', FormControlType.TEXT_BOX, 'Task');
+  // A disabled `FOREIGN_KEY`, for the reason the instance's `workflowId` is one: the task definition is
+  // a routable aggregate, so the control resolves its name and links to it while staying unmodifiable.
+  const taskDefinitionIdAttr = readOnlyAttr('taskDefinitionId', FormControlType.FOREIGN_KEY, 'Task');
+  taskDefinitionIdAttr.linkedEntityType = TASK_DEFINITION_ENTITY_NAME;
   taskDefinitionIdAttr.hideInTable = true;
 
   // Only set while BLOCKED, and then it is the whole story: the detail of the precondition rule that

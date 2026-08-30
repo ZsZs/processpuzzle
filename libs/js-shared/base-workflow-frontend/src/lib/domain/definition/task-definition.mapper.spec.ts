@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ReferenceType, TaskDefinition } from './task-definition';
+import { TaskDefinition, TaskStepType } from './task-definition';
 import { TaskDefinitionMapper } from './task-definition.mapper';
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO } from './test-task-definition';
 
@@ -17,13 +17,26 @@ describe('TaskDefinitionMapper', () => {
       expect(task.version).toBe(1);
     });
 
-    it('maps the nested rows rather than passing the lists through', () => {
-      expect(task.inputs[0].type).toBe(ReferenceType.ARTIFACT);
-      expect(task.inputs[0].refId).toBe('order-entity');
-      expect(task.inputs[0].label).toBe('New Order');
-      expect(task.outputs[0].label).toBe('Reviewed Order');
-      expect(task.steps[0].toolId).toBe('automated-check-tool');
+    // Plain artifact definition ids, which is what the contract has had here since the catalog split.
+    it('reads what the task consumes and produces as artifact ids', () => {
+      expect(task.inputs).toEqual(['order-entity']);
+      expect(task.outputs).toEqual(['order-entity']);
+    });
+
+    // Mapped field by field rather than passed through, which is what makes a wire-name mismatch a
+    // failure here rather than a silently empty control: the mapper read `toolId` where the contract
+    // says `toolDefinitionId`, so every service step lost its tool binding on the next save.
+    it('maps a step under the contract own field names', () => {
+      expect(task.steps[0].stepType).toBe(TaskStepType.SERVICE_STEP);
+      expect(task.steps[0].toolDefinitionId).toBe('automated-check-tool');
       expect(task.steps[0].toolOperation).toBe('inventory-check');
+    });
+
+    it('flattens inputs and outputs that arrived as whole artifacts', () => {
+      const embedded = mapper.fromDto({ id: 't1', inputs: [{ id: 'order-entity', name: 'Order' }], outputs: ['fulfillment-invoice'] });
+
+      expect(embedded.inputs).toEqual(['order-entity']);
+      expect(embedded.outputs).toEqual(['fulfillment-invoice']);
     });
 
     // Applied on the way *in* as well as out, so a payload holding embedded roles loads as ids rather
@@ -48,9 +61,11 @@ describe('TaskDefinitionMapper', () => {
       const dto = mapper.toDto(mapper.fromDto(TASK_DEFINITION_DTO));
 
       expect(dto.performedByRoles).toEqual(['clerk', 'manager']);
-      expect(dto.inputs).toHaveLength(1);
-      expect(dto.outputs).toHaveLength(1);
+      expect(dto.inputs).toEqual(['order-entity']);
+      expect(dto.outputs).toEqual(['order-entity']);
       expect(dto.steps?.[0].id).toBe('check-items');
+      expect(dto.steps?.[0].stepType).toBe(TaskStepType.SERVICE_STEP);
+      expect(dto.steps?.[0].toolDefinitionId).toBe('automated-check-tool');
     });
 
     // The save path of the `RELATED_ENTITIES` control over the roles: the user picked one from its own

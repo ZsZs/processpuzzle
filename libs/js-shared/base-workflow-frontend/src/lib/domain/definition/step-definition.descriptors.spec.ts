@@ -22,8 +22,17 @@ describe('createStepDefinitionDescriptor', () => {
     expect(descriptor.scopeRoot()).toBe('base_workflow.task_step_definition');
   });
 
-  it('describes the step, the tool it may call and the two mappings around that call', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'description', 'toolId', 'toolOperation', 'inputMapping', 'outputMapping']);
+  it('describes the step, its kind, the tool it may call and the two mappings around that call', () => {
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'description', 'stepType', 'toolDefinitionId', 'toolOperation', 'inputMapping', 'outputMapping']);
+  });
+
+  // Required, and first among the tool fields, because it decides whether they mean anything: a
+  // SERVICE_STEP is a call the engine makes and reads them, a USER_STEP is a human act and ignores them.
+  // The descriptor had no control for it at all, so every step degraded to the schema default on save.
+  it('makes the kind of step a required closed list', () => {
+    expect(byName('stepType')?.formControlType).toBe(FormControlType.DROPDOWN);
+    expect(byName('stepType')?.required).toBe(true);
+    expect(byName('stepType')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['USER_STEP', 'SERVICE_STEP']);
   });
 
   it('is identified by its own id', () => {
@@ -33,9 +42,11 @@ describe('createStepDefinitionDescriptor', () => {
 
   // A Tool Definition is a routable aggregate of this library, so this reference is one the framework can
   // resolve and navigate to — unlike the cross-feature ids elsewhere in the graph.
+  // Under the contract's own field name: the descriptor said `toolId` where the schema says
+  // `toolDefinitionId`, so a chosen tool never reached the server.
   it('resolves the tool against this library’s own aggregate', () => {
-    expect(byName('toolId')?.formControlType).toBe(FormControlType.FOREIGN_KEY);
-    expect(byName('toolId')?.linkedEntityType).toBe(TOOL_DEFINITION_ENTITY_NAME);
+    expect(byName('toolDefinitionId')?.formControlType).toBe(FormControlType.FOREIGN_KEY);
+    expect(byName('toolDefinitionId')?.linkedEntityType).toBe(TOOL_DEFINITION_ENTITY_NAME);
   });
 
   // The options would have to come from the store of *the tool chosen above*, which a descriptor's

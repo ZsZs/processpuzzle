@@ -16,19 +16,21 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name');
   nameAttr.required = true;
 
-  const typeAttr = new BaseEntityAttrDescriptor('type', FormControlType.DROPDOWN, 'Type', artifactTypeSelectables);
-  typeAttr.required = true;
+  const artifactTypeAttr = new BaseEntityAttrDescriptor('artifactType', FormControlType.DROPDOWN, 'Artifact Type', artifactTypeSelectables);
+  artifactTypeAttr.required = true;
 
   const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
 
   // Both name resources owned by *other* features and are referenced by id only — base-entity's
-  // entity types and base-state's machines. Plain text rather than a picker for the same reason
-  // `entityRoleId` is: this library holds no store for either, and the contract is explicit that
-  // base-workflow never duplicates another feature's model.
-  const entityTypeIdAttr = new BaseEntityAttrDescriptor('entityTypeId', FormControlType.TEXT_BOX, 'Entity Type');
-  entityTypeIdAttr.placeholder = 'base-entity type backing this artifact, e.g. order';
+  // entity types, base-document's documents or the widget registry, and base-state's machines. Plain
+  // text rather than a picker for the same reason `entityRoleId` is: this library holds no store for
+  // any of them, and the contract is explicit that base-workflow never duplicates another feature's
+  // model. Which of the three `artifactTypeId` names is decided by the artifact type chosen above,
+  // which is a second reason no single picker would do.
+  const artifactTypeIdAttr = new BaseEntityAttrDescriptor('artifactTypeId', FormControlType.TEXT_BOX, 'Type Id');
+  artifactTypeIdAttr.placeholder = 'The entity, document or widget this artifact is, e.g. order';
 
   const stateMachineIdAttr = new BaseEntityAttrDescriptor('stateMachineId', FormControlType.TEXT_BOX, 'State Machine');
   stateMachineIdAttr.placeholder = 'base-state machine governing its lifecycle';
@@ -40,9 +42,9 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
   updatedAtAttr.disabled = true;
 
-  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, typeAttr], FlexDirection.ROW);
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, artifactTypeAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const bindingRow = new FlexboxDescriptor([entityTypeIdAttr, stateMachineIdAttr], FlexDirection.ROW);
+  const bindingRow = new FlexboxDescriptor([artifactTypeIdAttr, stateMachineIdAttr], FlexDirection.ROW);
   bindingRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
@@ -55,7 +57,7 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 /**
  * A catalog aggregate with a list and a details screen of its own. An artifact is authored once per
  * tenant: the same `Fulfillment Invoice` is produced by one workflow and consumed by another, and a
- * task's `ARTIFACT`-typed reference names it by id.
+ * task's `inputs` and `outputs` name it by id.
  */
 export function createArtifactDefinitionDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({

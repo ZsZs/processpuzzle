@@ -9,6 +9,8 @@ export const ROLE_DEFINITION_DTO = {
   id: 'clerk',
   name: 'Order Clerk',
   description: 'Responsible for initial order entry, verification, and delivery confirmation.',
+  responsibleFor: ['order-entity'],
+  // Not in the seed, which links no role to base-entity. Kept so a spec covers the field at all.
   entityRoleId: 'clerk-role',
   version: 1,
   createdAt: '2026-08-01T09:00:00Z',
@@ -20,5 +22,6 @@ export const OTHER_ROLE_DEFINITION_DTO = {
   id: 'manager',
   name: 'Order Manager',
   description: 'Approves orders for shipment.',
+  responsibleFor: ['fulfillment-invoice'],
   version: 1,
 };

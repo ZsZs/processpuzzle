@@ -52,7 +52,7 @@ describe('ArtifactDefinitionService', () => {
 
     const request = controller.expectOne(`${serviceRoot}/artifacts/order-entity`);
     expect(request.request.method).toBe('PUT');
-    expect(request.request.body).toMatchObject({ type: 'ENTITY', entityTypeId: 'order', stateMachineId: 'order' });
+    expect(request.request.body).toMatchObject({ artifactType: 'ENTITY', artifactTypeId: 'order', stateMachineId: 'order' });
     request.flush(ARTIFACT_DEFINITION_DTO);
   });
 });

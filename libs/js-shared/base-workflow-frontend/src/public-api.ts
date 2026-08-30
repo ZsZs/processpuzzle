@@ -5,10 +5,10 @@
 // region models
 export { type PropertyMap } from './lib/domain/property-map';
 export { toReferenceIds } from './lib/domain/reference-ids';
-export { Workflow, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
+export { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
 export { RoleDefinition } from './lib/domain/definition/role-definition';
 export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifact-definition';
-export { ReferenceType, StepDefinition, TaskDefinition, TaskIOReference } from './lib/domain/definition/task-definition';
+export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';
 export { AuthType, HttpMethod, ToolDefinition, ToolOperation, type ToolAuthConfig } from './lib/domain/definition/tool-definition';
 export { ArtifactInstance, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './lib/domain/execution/workflow-instance';
 // endregion
@@ -21,14 +21,16 @@ export {
   WORKFLOW_INSTANCE_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   TASK_DEFINITION_ENTITY_NAME,
-  TASK_INPUT_REFERENCE_ENTITY_NAME,
   TASK_INSTANCE_ENTITY_NAME,
-  TASK_OUTPUT_REFERENCE_ENTITY_NAME,
   TASK_STEP_DEFINITION_ENTITY_NAME,
   TASK_STEP_RESULT_ENTITY_NAME,
   TOOL_DEFINITION_ENTITY_NAME,
   TOOL_OPERATION_ENTITY_NAME,
   WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
+  WORKFLOW_ROLE_USE_ENTITY_NAME,
+  WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
+  WORKFLOW_TOOL_USE_ENTITY_NAME,
+  WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
 } from './lib/domain/workflow-entity-names';
 // endregion
 
@@ -38,7 +40,15 @@ export { WORKFLOW_TASK_ASSIGNMENT_ID_FIELD, createWorkflowTaskAssignmentDescript
 export { createRoleDefinitionDescriptor } from './lib/domain/definition/role-definition.descriptors';
 export { createArtifactDefinitionDescriptor } from './lib/domain/definition/artifact-definition.descriptors';
 export { createTaskDefinitionDescriptor } from './lib/domain/definition/task-definition.descriptors';
-export { TASK_IO_REFERENCE_ID_FIELD, createTaskInputReferenceDescriptor, createTaskOutputReferenceDescriptor } from './lib/domain/definition/task-io-reference.descriptors';
+export {
+  WORKFLOW_ROLE_USE_ID_FIELD,
+  WORKFLOW_ARTIFACT_USE_ID_FIELD,
+  WORKFLOW_TOOL_USE_ID_FIELD,
+  createWorkflowRoleUseDescriptor,
+  createWorkflowArtifactUseDescriptor,
+  createWorkflowToolUseDescriptor,
+} from './lib/domain/definition/workflow-use.descriptors';
+export { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD, createRequiredStartArtifactDescriptor } from './lib/domain/definition/required-start-artifact.descriptors';
 export { TASK_STEP_DEFINITION_ID_FIELD, createStepDefinitionDescriptor } from './lib/domain/definition/step-definition.descriptors';
 export { createToolDefinitionDescriptor } from './lib/domain/definition/tool-definition.descriptors';
 export { TOOL_OPERATION_ID_FIELD, createToolOperationDescriptor } from './lib/domain/definition/tool-operation.descriptors';
@@ -76,7 +86,15 @@ export { WorkflowRoleDefinitionFacade } from './lib/feature/definition/role-defi
 export { ArtifactDefinitionFacade } from './lib/feature/definition/artifact-definition.facade';
 export { TaskDefinitionFacade } from './lib/feature/definition/task-definition.facade';
 export { ToolDefinitionFacade } from './lib/feature/definition/tool-definition.facade';
-export { WorkflowTaskAssignmentFacade, TaskInputReferenceFacade, TaskOutputReferenceFacade, TaskStepDefinitionFacade, ToolOperationFacade } from './lib/feature/definition/workflow-embedded.facades';
+export {
+  WorkflowTaskAssignmentFacade,
+  WorkflowRoleUseFacade,
+  WorkflowArtifactUseFacade,
+  WorkflowToolUseFacade,
+  WorkflowRequiredStartArtifactFacade,
+  TaskStepDefinitionFacade,
+  ToolOperationFacade,
+} from './lib/feature/definition/workflow-embedded.facades';
 export { WorkflowInstanceFacade } from './lib/feature/execution/workflow-instance.facade';
 export { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './lib/feature/execution/instance-embedded.facades';
 // endregion
@@ -90,10 +108,12 @@ export {
   WORKFLOW_I18N_SCOPE,
   WORKFLOW_INSTANCE_I18N_SCOPE,
   WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE,
+  WORKFLOW_ROLE_USE_I18N_SCOPE,
+  WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
+  WORKFLOW_TOOL_USE_I18N_SCOPE,
+  WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
   TASK_DEFINITION_I18N_SCOPE,
-  TASK_INPUT_REFERENCE_I18N_SCOPE,
   TASK_INSTANCE_I18N_SCOPE,
-  TASK_OUTPUT_REFERENCE_I18N_SCOPE,
   TASK_STEP_DEFINITION_I18N_SCOPE,
   TASK_STEP_RESULT_I18N_SCOPE,
   TOOL_DEFINITION_I18N_SCOPE,

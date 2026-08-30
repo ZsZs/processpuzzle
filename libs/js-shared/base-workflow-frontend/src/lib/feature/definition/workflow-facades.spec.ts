@@ -9,7 +9,7 @@ import { ArtifactDefinition } from '../../domain/definition/artifact-definition'
 import { ArtifactDefinitionMapper } from '../../domain/definition/artifact-definition.mapper';
 import { ArtifactDefinitionService } from '../../domain/definition/artifact-definition.service';
 import { ArtifactDefinitionStore } from '../../domain/definition/artifact-definition.store';
-import { Workflow, WorkflowTaskAssignment } from '../../domain/definition/workflow';
+import { ArtifactUse, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowTaskAssignment } from '../../domain/definition/workflow';
 import { WorkflowMapper } from '../../domain/definition/workflow.mapper';
 import { WorkflowService } from '../../domain/definition/workflow.service';
 import { WorkflowStore } from '../../domain/definition/workflow.store';
@@ -17,7 +17,7 @@ import { RoleDefinition } from '../../domain/definition/role-definition';
 import { RoleDefinitionMapper } from '../../domain/definition/role-definition.mapper';
 import { RoleDefinitionService } from '../../domain/definition/role-definition.service';
 import { RoleDefinitionStore } from '../../domain/definition/role-definition.store';
-import { StepDefinition, TaskDefinition, TaskIOReference } from '../../domain/definition/task-definition';
+import { StepDefinition, TaskDefinition } from '../../domain/definition/task-definition';
 import { TaskDefinitionMapper } from '../../domain/definition/task-definition.mapper';
 import { TaskDefinitionService } from '../../domain/definition/task-definition.service';
 import { TaskDefinitionStore } from '../../domain/definition/task-definition.store';
@@ -30,7 +30,15 @@ import { WorkflowFacade } from './workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './role-definition.facade';
 import { TaskDefinitionFacade } from './task-definition.facade';
 import { ToolDefinitionFacade } from './tool-definition.facade';
-import { WorkflowTaskAssignmentFacade, TaskInputReferenceFacade, TaskOutputReferenceFacade, TaskStepDefinitionFacade, ToolOperationFacade } from './workflow-embedded.facades';
+import {
+  WorkflowArtifactUseFacade,
+  WorkflowRequiredStartArtifactFacade,
+  WorkflowRoleUseFacade,
+  WorkflowTaskAssignmentFacade,
+  WorkflowToolUseFacade,
+  TaskStepDefinitionFacade,
+  ToolOperationFacade,
+} from './workflow-embedded.facades';
 
 describe('the definition-layer facades', () => {
   beforeEach(() => {
@@ -45,8 +53,10 @@ describe('the definition-layer facades', () => {
         TaskDefinitionFacade,
         ToolDefinitionFacade,
         WorkflowTaskAssignmentFacade,
-        TaskInputReferenceFacade,
-        TaskOutputReferenceFacade,
+        WorkflowRoleUseFacade,
+        WorkflowArtifactUseFacade,
+        WorkflowToolUseFacade,
+        WorkflowRequiredStartArtifactFacade,
         TaskStepDefinitionFacade,
         ToolOperationFacade,
       ],
@@ -128,7 +138,7 @@ describe('the definition-layer facades', () => {
       expect(facade.storeClass).toBe(ToolDefinitionStore);
     });
 
-    it('declare none of the four embedded', () => {
+    it('declare none of them embedded', () => {
       const catalogFacades: Array<Type<{ descriptor: BaseEntityDescriptor }>> = [WorkflowRoleDefinitionFacade, ArtifactDefinitionFacade, TaskDefinitionFacade, ToolDefinitionFacade];
 
       catalogFacades.forEach((facadeClass) => expect(TestBed.inject(facadeClass).descriptor.isEmbedded).toBeFalsy());
@@ -143,18 +153,28 @@ describe('the definition-layer facades', () => {
       expect(TestBed.inject(ToolOperationFacade).entityType).toBe(ToolOperation);
     });
 
-    // Inputs and outputs share `TaskIOReference` and differ only in their descriptor. That is also why
-    // they cannot share a facade: a facade's store is keyed by the descriptor's entity name, and the two
-    // lists' rows have to stay apart.
-    it('keep the two task-reference directions apart despite sharing a model class', () => {
-      const input = TestBed.inject(TaskInputReferenceFacade);
-      const output = TestBed.inject(TaskOutputReferenceFacade);
+    // The three `*Use` rows are the same shape over a different target, and that is exactly why each
+    // needs a facade of its own: a facade's store is keyed by the descriptor's entity name, and `roles`,
+    // `artifacts` and `tools` are three lists whose rows have to stay apart.
+    it('give each Use row its own entity, model class and store', () => {
+      const role = TestBed.inject(WorkflowRoleUseFacade);
+      const artifact = TestBed.inject(WorkflowArtifactUseFacade);
+      const tool = TestBed.inject(WorkflowToolUseFacade);
 
-      expect(input.entityType).toBe(TaskIOReference);
-      expect(output.entityType).toBe(TaskIOReference);
-      expect(input.entityName).toBe('Task Input Reference');
-      expect(output.entityName).toBe('Task Output Reference');
-      expect(output.store).not.toBe(input.store);
+      expect(role.entityType).toBe(RoleUse);
+      expect(artifact.entityType).toBe(ArtifactUse);
+      expect(tool.entityType).toBe(ToolUse);
+      expect(role.entityName).toBe('Workflow Role Use');
+      expect(artifact.entityName).toBe('Workflow Artifact Use');
+      expect(tool.entityName).toBe('Workflow Tool Use');
+      expect(new Set([role.store, artifact.store, tool.store]).size).toBe(3);
+    });
+
+    it('give the start condition its required artifacts', () => {
+      const facade = TestBed.inject(WorkflowRequiredStartArtifactFacade);
+
+      expect(facade.entityType).toBe(RequiredStartArtifact);
+      expect(facade.entityName).toBe('Workflow Required Start Artifact');
     });
 
     it('declare themselves embedded, so the framework reads them out of the owner’s payload', () => {
@@ -162,8 +182,10 @@ describe('the definition-layer facades', () => {
       // `EmbeddedEntityFacade<T>`, so an inferred array would be a union no `inject` overload accepts.
       const embeddedFacades: Array<Type<{ descriptor: BaseEntityDescriptor }>> = [
         WorkflowTaskAssignmentFacade,
-        TaskInputReferenceFacade,
-        TaskOutputReferenceFacade,
+        WorkflowRoleUseFacade,
+        WorkflowArtifactUseFacade,
+        WorkflowToolUseFacade,
+        WorkflowRequiredStartArtifactFacade,
         TaskStepDefinitionFacade,
         ToolOperationFacade,
       ];

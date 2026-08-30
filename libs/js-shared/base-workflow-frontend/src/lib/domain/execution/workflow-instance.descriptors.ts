@@ -1,6 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { WorkflowInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_INSTANCE_ID_FIELD } from './task-instance.descriptors';
@@ -21,7 +21,13 @@ function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const statusAttr = readOnlyAttr('status', FormControlType.DROPDOWN, 'Status', workflowInstanceStatusSelectables);
 
-  const workflowIdAttr = readOnlyAttr('workflowId', FormControlType.TEXT_BOX, 'Workflow');
+  // A disabled `FOREIGN_KEY` rather than a text box: the definition this run came from is a routable
+  // aggregate with a store of its own, so the control resolves its name and renders a link icon that
+  // navigates to it. Disabled suppresses only the select button — `ForeignKeyComponent` early-returns
+  // from `navigateToRelatedList()` — so the row stays unmodifiable while becoming navigable, which is
+  // what a read-only execution screen wants.
+  const workflowIdAttr = readOnlyAttr('workflowId', FormControlType.FOREIGN_KEY, 'Workflow');
+  workflowIdAttr.linkedEntityType = WORKFLOW_ENTITY_NAME;
   workflowIdAttr.hideInTable = true;
 
   // The base-entity instance this run was started for, when it was started for one — an order, a

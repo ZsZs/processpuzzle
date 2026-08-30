@@ -1,6 +1,7 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE } from '../../base-workflow.i18n';
 import { WORKFLOW_ENTITY_NAME, WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { JoinType } from './workflow';
 
 export { WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME };
 
@@ -9,9 +10,11 @@ export { WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME };
  * workflow, which is `taskDefinitionId`, and the contract's rule that a task appears at most once per
  * workflow is what makes that unique. The referencing attribute therefore has to set
  * `referenceIdField`; see the `tasks` attribute of the `Workflow` descriptor. Same
- * arrangement as {@link TASK_IO_REFERENCE_ID_FIELD}.
+ * arrangement as the `*Use` rows beside it.
  */
 export const WORKFLOW_TASK_ASSIGNMENT_ID_FIELD = 'taskDefinitionId';
+
+const joinTypeSelectables = toSelectables(Object.keys(JoinType));
 
 function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[] {
   // A real reference: the task is a catalog aggregate with a store of its own, so the framework can
@@ -36,6 +39,12 @@ function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[]
   dependsOnAttr.placeholder = 'Task ids that must complete first; empty means eligible at start';
   dependsOnAttr.hideInTable = true;
 
+  // How that set is satisfied: every task named above (ALL, the contract's default) or the first of
+  // them (ANY). Immaterial when `dependsOn` is empty, which is why it sits beside it rather than in
+  // the identity row.
+  const joinTypeAttr = new BaseEntityAttrDescriptor('joinType', FormControlType.DROPDOWN, 'Join Type', joinTypeSelectables);
+  joinTypeAttr.hideInTable = true;
+
   // Both flags are shown in the table: whether a task runs concurrently and whether it replaces an
   // inherited one is the shape of the workflow's control flow, and reading it off the list beats
   // opening every form.
@@ -44,7 +53,7 @@ function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[]
 
   const identityRow = new FlexboxDescriptor([taskDefinitionIdAttr, performedByAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const flowRow = new FlexboxDescriptor([dependsOnAttr, parallelAttr, overrideAttr], FlexDirection.ROW);
+  const flowRow = new FlexboxDescriptor([dependsOnAttr, joinTypeAttr, parallelAttr, overrideAttr], FlexDirection.ROW);
   flowRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor([identityRow, flowRow], FlexDirection.COLUMN);

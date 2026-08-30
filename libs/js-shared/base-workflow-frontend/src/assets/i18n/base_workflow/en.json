@@ -8,6 +8,13 @@
     "activeInstances": "Active Instances",
     "version": "Version",
     "updatedAt": "Updated At",
+    "startType": "Start Type",
+    "eventType": "Event Type",
+    "milestoneRef": "Milestone",
+    "preconditionExpression": "Precondition",
+    "authorizedRoles": "Authorized Roles",
+    "payloadMapping": "Payload Mapping",
+    "requiredArtifacts": "Required Artifacts",
     "roles": "Roles",
     "artifacts": "Artifacts",
     "tools": "Tools",
@@ -18,14 +25,33 @@
     "taskDefinitionId": "Task",
     "performedBy": "Performed By",
     "dependsOn": "Depends On",
+    "joinType": "Join Type",
     "parallel": "Parallel",
     "override": "Override"
+  },
+  "workflow_role_use": {
+    "_self": "Role Use",
+    "roleDefinitionId": "Role"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artifact Use",
+    "artifactDefinitionId": "Artifact"
+  },
+  "workflow_tool_use": {
+    "_self": "Tool Use",
+    "toolDefinitionId": "Tool"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Required Artifact",
+    "artifactDefinitionId": "Artifact",
+    "state": "State"
   },
   "workflow_role_definition": {
     "_self": "Role",
     "id": "Id",
     "name": "Name",
     "description": "Description",
+    "responsibleFor": "Responsible For",
     "entityRoleId": "Entity Role",
     "version": "Version",
     "updatedAt": "Updated At"
@@ -35,8 +61,8 @@
     "id": "Id",
     "name": "Name",
     "description": "Description",
-    "type": "Type",
-    "entityTypeId": "Entity Type",
+    "artifactType": "Artifact Type",
+    "artifactTypeId": "Type Id",
     "stateMachineId": "State Machine",
     "version": "Version",
     "updatedAt": "Updated At"
@@ -55,24 +81,13 @@
     "outputs": "Outputs",
     "steps": "Steps"
   },
-  "task_input_reference": {
-    "_self": "Input",
-    "type": "Type",
-    "refId": "Reference",
-    "label": "Label"
-  },
-  "task_output_reference": {
-    "_self": "Output",
-    "type": "Type",
-    "refId": "Reference",
-    "label": "Label"
-  },
   "task_step_definition": {
     "_self": "Step",
     "id": "Id",
     "name": "Name",
     "description": "Description",
-    "toolId": "Tool",
+    "stepType": "Step Type",
+    "toolDefinitionId": "Tool",
     "toolOperation": "Operation",
     "inputMapping": "Input Mapping",
     "outputMapping": "Output Mapping"

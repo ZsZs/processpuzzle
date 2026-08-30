@@ -27,13 +27,20 @@
         "name": "ef-generic-message",
         "mimeType": "application/zip"
       },
-      "tags": ["tag1", "tag2"],
+      "tags": [
+        "tag1",
+        "tag2"
+      ],
       "additionalProperties": {
         "priority": "high",
         "owner": "alice",
         "region": "eu-west-1"
       },
-      "components": ["1", "2", "3"],
+      "components": [
+        "1",
+        "2",
+        "3"
+      ],
       "embeddedComponents": [
         {
           "id": "embedded_1_1",
@@ -87,7 +94,9 @@
       "date": "2024-02-18T20:02:27",
       "lookup": "schlüssel_2",
       "enumValue": 0,
-      "tags": ["tag3"],
+      "tags": [
+        "tag3"
+      ],
       "additionalProperties": {
         "priority": "low"
       },
@@ -97,7 +106,10 @@
         "name": "HUK24_Versicherungsschein",
         "mimeType": "application/pdf"
       },
-      "components": ["4", "5"],
+      "components": [
+        "4",
+        "5"
+      ],
       "embeddedComponents": [
         {
           "id": "embedded_2_1",
@@ -139,7 +151,10 @@
       "number": 400,
       "date": "2024-04-18T20:02:27",
       "enumValue": 0,
-      "tags": ["tag1", "tag2"]
+      "tags": [
+        "tag1",
+        "tag2"
+      ]
     },
     {
       "id": "5",

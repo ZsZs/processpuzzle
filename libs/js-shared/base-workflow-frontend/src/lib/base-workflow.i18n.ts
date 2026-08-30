@@ -31,18 +31,21 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const WORKFLOW_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow`;
 
 /**
- * Key roots of the workflow's own embedded row, of the three catalog aggregates it references, and of
- * the rows nested one level deeper inside a task. They are children of
+ * Key roots of the workflow's own embedded rows — its task assignments, the three `*Use` rows and the
+ * required artifacts of its start condition — of the three catalog aggregates it references, and of the
+ * steps nested one level deeper inside a task. They are children of
  * {@link BASE_WORKFLOW_TRANSLOCO_SCOPE} rather than scopes of their own, because the whole graph is
  * edited under {@link BASE_WORKFLOW_ROUTES} and one scope registration has to cover all of it — the
  * catalog and embedded route branches add none.
  */
 export const WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_task_assignment`;
+export const WORKFLOW_ROLE_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_use`;
+export const WORKFLOW_ARTIFACT_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_artifact_use`;
+export const WORKFLOW_TOOL_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_tool_use`;
+export const WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_required_start_artifact`;
 export const WORKFLOW_ROLE_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_definition`;
 export const ARTIFACT_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_definition`;
 export const TASK_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_definition`;
-export const TASK_INPUT_REFERENCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_input_reference`;
-export const TASK_OUTPUT_REFERENCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_output_reference`;
 export const TASK_STEP_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_definition`;
 
 /** Key root of the `Tool Definition` aggregate and of the operations embedded in it. */

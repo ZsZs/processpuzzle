@@ -1,7 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { ARTIFACT_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ArtifactType } from '../definition/artifact-definition';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_DEFINITION_ENTITY_NAME, ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { readOnlyAttr } from './read-only-attr';
 
 export { ARTIFACT_INSTANCE_ENTITY_NAME };
@@ -25,7 +25,11 @@ function createArtifactInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const idAttr = readOnlyAttr('id', FormControlType.TEXT_BOX, 'Id');
   idAttr.hideInTable = true;
 
-  const artifactDefinitionIdAttr = readOnlyAttr('artifactDefinitionId', FormControlType.TEXT_BOX, 'Artifact');
+  // A disabled `FOREIGN_KEY`, for the reason the instance's `workflowId` is one: the artifact
+  // definition is a routable aggregate, so the control resolves its name and links to it while staying
+  // unmodifiable.
+  const artifactDefinitionIdAttr = readOnlyAttr('artifactDefinitionId', FormControlType.FOREIGN_KEY, 'Artifact');
+  artifactDefinitionIdAttr.linkedEntityType = ARTIFACT_DEFINITION_ENTITY_NAME;
   artifactDefinitionIdAttr.hideInTable = true;
 
   // Both are references into other features, by id only — base-entity's data and base-state's machine.

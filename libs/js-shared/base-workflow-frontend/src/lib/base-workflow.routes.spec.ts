@@ -77,18 +77,36 @@ describe('BASE_WORKFLOW_ROUTES', () => {
     // The roles, artifacts and tools a workflow involves are references now, picked from their own
     // branches — so there is no URL under a workflow that addresses them, and the assignments are the
     // only child left.
-    it('hangs only the task assignments below the workflow being edited', async () => {
+    // Five embedded levels, not one: besides the task assignments, the three `*Use` rows through which a
+    // workflow involves a role, an artifact or a tool, and the required artifacts of its start
+    // condition. A `*Use` is a URL of its own because the contract makes it an object rather than an id -
+    // the definition it names is still edited on its own branch.
+    it('hangs the assignments, the three Use rows and the required artifacts below the workflow', async () => {
       const branches = await embeddedBranchesOf(detailsOf(workflowRoute));
 
-      expect(branches.map((branch) => branch.path)).toEqual(['workflow-task-assignment']);
-      expect(branches[0].data?.['entityName']).toBe('Workflow Task Assignment');
-      expect(branches[0].data?.['embeddedEntity']).toBe(true);
+      expect(branches.map((branch) => branch.path)).toEqual([
+        'workflow-task-assignment',
+        'workflow-role-use',
+        'workflow-artifact-use',
+        'workflow-tool-use',
+        'workflow-required-start-artifact',
+      ]);
+      expect(branches.map((branch) => branch.data?.['entityName'])).toEqual([
+        'Workflow Task Assignment',
+        'Workflow Role Use',
+        'Workflow Artifact Use',
+        'Workflow Tool Use',
+        'Workflow Required Start Artifact',
+      ]);
+      branches.forEach((branch) => expect(branch.data?.['embeddedEntity']).toBe(true));
     });
 
-    it('stops at an assignment, which nests nothing', async () => {
-      const [assignmentBranch] = await embeddedBranchesOf(detailsOf(workflowRoute));
+    it('stops at each of them, none nesting anything further', async () => {
+      const branches = await embeddedBranchesOf(detailsOf(workflowRoute));
 
-      expect(await embeddedBranchesOf(await deepestDetailsOf(assignmentBranch))).toEqual([]);
+      for (const branch of branches) {
+        expect(await embeddedBranchesOf(await deepestDetailsOf(branch))).toEqual([]);
+      }
     });
   });
 
@@ -101,12 +119,14 @@ describe('BASE_WORKFLOW_ROUTES', () => {
 
     // The three rows that moved with the task when it left the workflow: none has an endpoint of its own,
     // so each is addressed through the task that carries it.
-    it('hang the inputs, the outputs and the steps below the task being edited', async () => {
+    // Only the steps. A task's `inputs` and `outputs` are artifact definition ids by contract, picked on
+    // the task's own form and edited under `artifact-definition`, so no URL below a task addresses them.
+    it('hang only the steps below the task being edited', async () => {
       const branches = await embeddedBranchesOf(detailsOf(taskRoute));
 
-      expect(branches.map((branch) => branch.path)).toEqual(['task-input-reference', 'task-output-reference', 'task-step-definition']);
-      expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['Task Input Reference', 'Task Output Reference', 'Task Step Definition']);
-      branches.forEach((branch) => expect(branch.data?.['embeddedEntity']).toBe(true));
+      expect(branches.map((branch) => branch.path)).toEqual(['task-step-definition']);
+      expect(branches[0].data?.['entityName']).toBe('Task Step Definition');
+      expect(branches[0].data?.['embeddedEntity']).toBe(true);
     });
 
     it('hangs the operations below the tool being edited', async () => {

@@ -25,3 +25,22 @@ export function normalizeEntityReferences(value: unknown, referenceIdField?: str
   normalized.forEach((reference) => assertPersistedEntity(reference));
   return normalized;
 }
+
+/**
+ * The id one raw item of a to-many reference attribute stands for — the same answer
+ * {@link normalizeEntityReferences} puts in `id`, without building the normalized object.
+ *
+ * Needed because *removing* a row has to filter the attribute's **raw** value, not the normalized copy:
+ * the payload has to keep the shape the contract asked for, so an attribute holding bare ids must still
+ * hold bare ids afterwards. Comparing `item.id` directly is what broke — on a `string[]` attribute every
+ * item's `.id` is `undefined`, so the filter matched nothing and the row could never be detached.
+ */
+export function referenceIdOf(item: unknown, referenceIdField?: string): string | undefined {
+  if (typeof item === 'string' || typeof item === 'number') return String(item);
+  if (!item || typeof item !== 'object') return undefined;
+
+  const record = item as Record<string, unknown>;
+  const idField = referenceIdField ?? 'id';
+  const value = 'id' in record ? record['id'] : record[idField];
+  return value === undefined || value === null ? undefined : String(value);
+}

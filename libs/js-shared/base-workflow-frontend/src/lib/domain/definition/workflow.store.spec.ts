@@ -36,8 +36,9 @@ describe('WorkflowStore', () => {
   it('exposes the whole workflow as current entity, not just its header fields', () => {
     store.setCurrentEntity('order-fulfillment-workflow');
 
-    expect(store.currentEntity()?.roles).toEqual(['clerk', 'manager']);
-    expect(store.currentEntity()?.artifacts).toEqual(['order-entity', 'fulfillment-invoice']);
+    expect(store.currentEntity()?.roles).toEqual([{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }]);
+    expect(store.currentEntity()?.artifacts).toEqual([{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
     expect(store.currentEntity()?.tasks[1].dependsOn).toEqual(['review-order']);
+    expect(store.currentEntity()?.startType).toBe('INPUT_ARTIFACT');
   });
 });

@@ -7,8 +7,8 @@ interface ArtifactDefinitionDto {
   id?: string;
   name?: string;
   description?: string;
-  type?: ArtifactType;
-  entityTypeId?: string;
+  artifactType?: ArtifactType;
+  artifactTypeId?: string;
   stateMachineId?: string;
   version?: number;
   createdAt?: string;
@@ -20,6 +20,11 @@ interface ArtifactDefinitionDto {
  * generated screens work with. A straight copy — the model's field names are the contract's —
  * written out field by field so a control the form may gain later cannot leak into the
  * full-replacement `PUT /artifacts/{artifactId}` unnoticed.
+ *
+ * The names were *not* the contract's until this revision: the DTO said `type` and `entityTypeId`
+ * where the schema and the backend column both say `artifactType` and `artifactTypeId`, so an
+ * artifact's kind and its backing type were dropped in both directions. Hence the field-by-field
+ * spelling being worth keeping even for a copy.
  */
 @Injectable({ providedIn: 'root' })
 export class ArtifactDefinitionMapper implements BaseEntityMapper<ArtifactDefinition> {
@@ -29,8 +34,8 @@ export class ArtifactDefinitionMapper implements BaseEntityMapper<ArtifactDefini
       id: source.id,
       name: source.name,
       description: source.description,
-      type: source.type,
-      entityTypeId: source.entityTypeId,
+      artifactType: source.artifactType,
+      artifactTypeId: source.artifactTypeId,
       stateMachineId: source.stateMachineId,
       version: source.version,
       createdAt: source.createdAt,
@@ -43,8 +48,8 @@ export class ArtifactDefinitionMapper implements BaseEntityMapper<ArtifactDefini
       id: entity.id,
       name: entity.name,
       description: entity.description,
-      type: entity.type,
-      entityTypeId: entity.entityTypeId,
+      artifactType: entity.artifactType,
+      artifactTypeId: entity.artifactTypeId,
       stateMachineId: entity.stateMachineId,
       version: entity.version,
       createdAt: entity.createdAt,

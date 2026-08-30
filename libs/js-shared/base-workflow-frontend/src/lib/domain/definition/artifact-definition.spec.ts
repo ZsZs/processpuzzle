@@ -7,15 +7,15 @@ describe('ArtifactDefinition', () => {
 
     expect(artifact.id).toBe('');
     expect(artifact.name).toBe('');
-    expect(artifact.type).toBeUndefined();
+    expect(artifact.artifactType).toBeUndefined();
   });
 
   // Both name resources owned by other features, and both are optional: an artifact whose lifecycle
   // nothing governs simply leaves them unset.
   it('leaves the cross-feature bindings undefined when nothing set them', () => {
-    const artifact = new ArtifactDefinition({ id: 'fulfillment-invoice', type: ArtifactType.DELIVERABLE });
+    const artifact = new ArtifactDefinition({ id: 'fulfillment-invoice', artifactType: ArtifactType.DOCUMENT });
 
-    expect(artifact.entityTypeId).toBeUndefined();
+    expect(artifact.artifactTypeId).toBeUndefined();
     expect(artifact.stateMachineId).toBeUndefined();
   });
 
@@ -27,9 +27,10 @@ describe('ArtifactDefinition', () => {
     expect(artifact.updatedAt).toBeUndefined();
   });
 
-  // Renamed from `WorkProductType` with its four values untouched: renaming the *values* would break
-  // seed data for no gain, and `ARTIFACT` is still SPEM's own kind name.
-  it('mirrors the contract enum, values unchanged by the rename', () => {
-    expect(Object.keys(ArtifactType)).toEqual(['ARTIFACT', 'DELIVERABLE', 'OUTCOME', 'ENTITY']);
+  // Asserted against the contract's own list rather than a copy of whatever the enum happens to hold:
+  // it carried SPEM's older ARTIFACT / DELIVERABLE / OUTCOME here, so the dropdown offered three values
+  // the backend rejects while DOCUMENT and WIDGET — both used by the seed — could not be chosen at all.
+  it('mirrors the contract enum exactly', () => {
+    expect(Object.keys(ArtifactType)).toEqual(['DOCUMENT', 'ENTITY', 'WIDGET']);
   });
 });

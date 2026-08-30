@@ -46,7 +46,7 @@ export const WORKFLOW_INSTANCE_DTO = {
       currentState: 'CONFIRMED',
       updatedAt: '2026-08-20T09:02:00Z',
     },
-    { id: '7c9e6679-0002-4a00-8000-000000000002', artifactDefinitionId: 'fulfillment-invoice', name: 'Fulfillment Invoice', type: 'DELIVERABLE', updatedAt: '2026-08-20T08:15:00Z' },
+    { id: '7c9e6679-0002-4a00-8000-000000000002', artifactDefinitionId: 'fulfillment-invoice', name: 'Fulfillment Invoice', type: 'DOCUMENT', updatedAt: '2026-08-20T08:15:00Z' },
   ],
 };
 

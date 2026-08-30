@@ -47,7 +47,7 @@ describe('TaskDefinitionService', () => {
 
   // The task's children have no endpoint of their own, so they have to reach the wire inside this
   // payload — and the roles have to arrive as ids, which is the mapper's work.
-  it('sends the nested rows and the flat role ids on update', () => {
+  it('sends the steps and the three flat id lists on update', () => {
     const entity = new TaskDefinitionMapper().fromDto(TASK_DEFINITION_DTO) as PersistedEntity<TaskDefinition>;
 
     service.update(entity).subscribe();
@@ -55,8 +55,9 @@ describe('TaskDefinitionService', () => {
     const request = controller.expectOne(`${serviceRoot}/tasks/review-order`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body.performedByRoles).toEqual(['clerk', 'manager']);
-    expect(request.request.body.inputs[0]).toMatchObject({ type: 'ARTIFACT', refId: 'order-entity' });
-    expect(request.request.body.steps[0].id).toBe('check-items');
+    expect(request.request.body.inputs).toEqual(['order-entity']);
+    expect(request.request.body.outputs).toEqual(['order-entity']);
+    expect(request.request.body.steps[0]).toMatchObject({ id: 'check-items', stepType: 'SERVICE_STEP', toolDefinitionId: 'automated-check-tool' });
     request.flush(TASK_DEFINITION_DTO);
   });
 });

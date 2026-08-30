@@ -27,7 +27,14 @@ describe('createWorkflowTaskAssignmentDescriptor', () => {
   });
 
   it('describes the task, the performing role and the ordering', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'parallel', 'override']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'joinType', 'parallel', 'override']);
+  });
+
+  // Beside `dependsOn`, which is the only thing it qualifies. Absent from the descriptor until this
+  // revision, so the full-replacement PUT cleared it on every save of a workflow that had one.
+  it('offers the two ways a dependency set can be satisfied', () => {
+    expect(byName('joinType')?.formControlType).toBe(FormControlType.DROPDOWN);
+    expect(byName('joinType')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['ALL', 'ANY']);
   });
 
   // The assignment has no id of its own: the task it assigns is what identifies it, and the contract's

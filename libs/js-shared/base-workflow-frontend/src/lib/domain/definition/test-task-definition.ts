@@ -3,23 +3,26 @@
  * `processpuzzle-testbed-workflows.yaml`.
  *
  * `performedByRoles` names both roles able to perform it; which one actually does is the referencing
- * workflow's business — see the `tasks` of `WORKFLOW_DTO`. Its inputs and outputs are
- * `ARTIFACT` references, the type the catalog model added.
+ * workflow's business — see the `tasks` of `WORKFLOW_DTO`. Its `inputs` and `outputs` are plain
+ * artifact definition ids: an artifact's own `artifactType` already says whether it is an entity, a
+ * document or a widget, so there is no separate reference type. This fixture carried typed
+ * `{ type, refId, label }` rows against a contract that has had id arrays since the catalog split.
  */
 export const TASK_DEFINITION_DTO = {
   id: 'review-order',
   name: 'Review Order',
   description: 'Review order details and validate line items before confirming it for fulfillment.',
   performedByRoles: ['clerk', 'manager'],
-  inputs: [{ type: 'ARTIFACT', refId: 'order-entity', label: 'New Order' }],
-  outputs: [{ type: 'ARTIFACT', refId: 'order-entity', label: 'Reviewed Order' }],
+  inputs: ['order-entity'],
+  outputs: ['order-entity'],
   preconditionRuleId: 'positive-quantities',
   steps: [
     {
       id: 'check-items',
       name: 'Check Line Items',
       description: 'Verify all line items are available in inventory.',
-      toolId: 'automated-check-tool',
+      stepType: 'SERVICE_STEP',
+      toolDefinitionId: 'automated-check-tool',
       toolOperation: 'inventory-check',
     },
   ],

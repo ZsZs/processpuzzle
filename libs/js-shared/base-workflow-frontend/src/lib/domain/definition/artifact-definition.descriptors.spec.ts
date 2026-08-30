@@ -26,10 +26,10 @@ describe('createArtifactDefinitionDescriptor', () => {
   });
 
   it('describes the artifact, its cross-feature bindings and its revision', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'type', 'entityTypeId', 'stateMachineId', 'version', 'updatedAt', 'description']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'artifactType', 'artifactTypeId', 'stateMachineId', 'version', 'updatedAt', 'description']);
   });
 
-  it('is identified by its own id, which a task’s ARTIFACT reference names', () => {
+  it('is identified by its own id, which a task’s inputs and outputs name', () => {
     expect(descriptor.componentIdentification()).toBe('id');
     expect(byName('id')?.required).toBe(true);
     expect(byName('id')?.isHeading).toBe(true);
@@ -37,17 +37,19 @@ describe('createArtifactDefinitionDescriptor', () => {
   });
 
   // Required and a closed list by contract: the type is what says which SPEM kind of artifact this is.
-  it('offers the four contract types as a required closed list', () => {
-    expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('type')?.required).toBe(true);
-    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['ARTIFACT', 'DELIVERABLE', 'OUTCOME', 'ENTITY']);
+  // Asserted under the contract's own field name: the descriptor called it `type` while the schema and
+  // the backend column both say `artifactType`, so the value never reached the server.
+  it('offers the contract types as a required closed list', () => {
+    expect(byName('artifactType')?.formControlType).toBe(FormControlType.DROPDOWN);
+    expect(byName('artifactType')?.required).toBe(true);
+    expect(byName('artifactType')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['DOCUMENT', 'ENTITY', 'WIDGET']);
   });
 
   // Both name resources owned by other features, and this library has a store for neither — the
   // contract is explicit that base-workflow never duplicates another feature's model.
   it('leaves both cross-feature bindings as plain text rather than pickers', () => {
-    expect(byName('entityTypeId')?.formControlType).toBe(FormControlType.TEXT_BOX);
-    expect(byName('entityTypeId')?.linkedEntityType).toBeUndefined();
+    expect(byName('artifactTypeId')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    expect(byName('artifactTypeId')?.linkedEntityType).toBeUndefined();
     expect(byName('stateMachineId')?.formControlType).toBe(FormControlType.TEXT_BOX);
     expect(byName('stateMachineId')?.linkedEntityType).toBeUndefined();
   });

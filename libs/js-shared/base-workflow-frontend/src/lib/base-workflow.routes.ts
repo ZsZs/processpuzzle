@@ -9,21 +9,31 @@ import {
   WORKFLOW_INSTANCE_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   TASK_DEFINITION_ENTITY_NAME,
-  TASK_INPUT_REFERENCE_ENTITY_NAME,
   TASK_INSTANCE_ENTITY_NAME,
-  TASK_OUTPUT_REFERENCE_ENTITY_NAME,
   TASK_STEP_DEFINITION_ENTITY_NAME,
   TASK_STEP_RESULT_ENTITY_NAME,
   TOOL_DEFINITION_ENTITY_NAME,
   TOOL_OPERATION_ENTITY_NAME,
   WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
+  WORKFLOW_ROLE_USE_ENTITY_NAME,
+  WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
+  WORKFLOW_TOOL_USE_ENTITY_NAME,
+  WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
 } from './domain/workflow-entity-names';
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
 import { WorkflowFacade } from './feature/definition/workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './feature/definition/role-definition.facade';
 import { TaskDefinitionFacade } from './feature/definition/task-definition.facade';
 import { ToolDefinitionFacade } from './feature/definition/tool-definition.facade';
-import { WorkflowTaskAssignmentFacade, TaskInputReferenceFacade, TaskOutputReferenceFacade, TaskStepDefinitionFacade, ToolOperationFacade } from './feature/definition/workflow-embedded.facades';
+import {
+  WorkflowArtifactUseFacade,
+  WorkflowRequiredStartArtifactFacade,
+  WorkflowRoleUseFacade,
+  WorkflowTaskAssignmentFacade,
+  WorkflowToolUseFacade,
+  TaskStepDefinitionFacade,
+  ToolOperationFacade,
+} from './feature/definition/workflow-embedded.facades';
 import { WorkflowInstanceFacade } from './feature/execution/workflow-instance.facade';
 import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './feature/execution/instance-embedded.facades';
 
@@ -61,7 +71,7 @@ export const BASE_WORKFLOW_ROUTES: Routes = [
     data: { icon: 'schema', menuTitle: 'workflow.workflows', entityName: WORKFLOW_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: WorkflowFacade }, authoringScopes()],
-    children: baseEntityRoutes([assignmentRoute()]),
+    children: baseEntityRoutes(embeddedWorkflowRoutes()),
   },
   {
     path: 'workflow-role-definition',
@@ -85,7 +95,7 @@ export const BASE_WORKFLOW_ROUTES: Routes = [
     data: { icon: 'assignment', menuTitle: 'workflow.tasks', entityName: TASK_DEFINITION_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: TaskDefinitionFacade }, authoringScopes()],
-    children: baseEntityRoutes(embeddedTaskRoutes()),
+    children: baseEntityRoutes([stepDefinitionRoute()]),
   },
   {
     path: 'tool-definition',
@@ -123,31 +133,42 @@ function authoringScopes() {
 }
 
 /**
- * The one embedded level of a workflow: its task assignments, below the workflow's details route.
+ * The embedded levels of a workflow, all below its details route: its task assignments, the three
+ * `*Use` rows through which it involves a role, an artifact or a tool, and the required artifacts of
+ * its start condition.
  *
- * A leaf, and the only child this branch has left — the roles, artifacts and tools a workflow involves
- * are references now, edited on their own branches and merely picked here, so no URL under a workflow
- * addresses them. An assignment has no id of its own, so the URL is what addresses it:
- * `workflow/order-fulfillment-workflow/details/workflow-task-assignment/review-order/details`,
- * resolved against the rows of the workflow above it.
+ * The `*Use` rows are URLs of their own and not merely pickers, because that is what the contract makes
+ * them: `Workflow.roles` is an array of `RoleUse` objects, each wrapping a `roleDefinitionId` and
+ * standing ready to carry whatever turns out to be true of a shared role only in this workflow. The
+ * *definition* the row names is still edited on its own branch — the row is the participation, not the
+ * role.
+ *
+ * None of the five has an id of its own, so the URL is what addresses each, resolved against the rows
+ * of the workflow above it:
+ * `workflow/order-fulfillment-workflow/details/workflow-task-assignment/review-order/details`, and
+ * `.../workflow-role-use/clerk/details` beside it.
  */
-function assignmentRoute(): EmbeddedChildRoute {
-  return { entityName: WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, facade: WorkflowTaskAssignmentFacade };
+function embeddedWorkflowRoutes(): EmbeddedChildRoute[] {
+  return [
+    { entityName: WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, facade: WorkflowTaskAssignmentFacade },
+    { entityName: WORKFLOW_ROLE_USE_ENTITY_NAME, facade: WorkflowRoleUseFacade },
+    { entityName: WORKFLOW_ARTIFACT_USE_ENTITY_NAME, facade: WorkflowArtifactUseFacade },
+    { entityName: WORKFLOW_TOOL_USE_ENTITY_NAME, facade: WorkflowToolUseFacade },
+    { entityName: WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, facade: WorkflowRequiredStartArtifactFacade },
+  ];
 }
 
 /**
- * The task as route branches: its inputs, outputs and steps hang below the task's details route.
+ * The one embedded level of a task: its steps, below the task's details route.
  *
- * The nesting mirrors the containment of `base-workflow-api.yaml` exactly, and it has to: none of the
- * three has an endpoint of its own, so each is addressed through the task that carries it —
- * `task-definition/review-order/details/task-step-definition/check-items/details`.
+ * The nesting mirrors the containment of `base-workflow-api.yaml` exactly, and it has to: a step has no
+ * endpoint of its own, so it is addressed through the task that carries it —
+ * `task-definition/review-order/details/task-step-definition/check-items/details`. What a task reads
+ * and writes has no branch here at all: `inputs` and `outputs` are artifact definition ids, picked on
+ * the task's own form and edited under `artifact-definition`.
  */
-function embeddedTaskRoutes(): EmbeddedChildRoute[] {
-  return [
-    { entityName: TASK_INPUT_REFERENCE_ENTITY_NAME, facade: TaskInputReferenceFacade },
-    { entityName: TASK_OUTPUT_REFERENCE_ENTITY_NAME, facade: TaskOutputReferenceFacade },
-    { entityName: TASK_STEP_DEFINITION_ENTITY_NAME, facade: TaskStepDefinitionFacade },
-  ];
+function stepDefinitionRoute(): EmbeddedChildRoute {
+  return { entityName: TASK_STEP_DEFINITION_ENTITY_NAME, facade: TaskStepDefinitionFacade };
 }
 
 function operationRoute(): EmbeddedChildRoute {

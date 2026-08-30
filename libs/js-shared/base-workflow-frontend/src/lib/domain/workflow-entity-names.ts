@@ -37,15 +37,34 @@ export const TASK_DEFINITION_ENTITY_NAME = 'Task Definition';
 export const WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME = 'Workflow Task Assignment';
 
 /**
- * A task's inputs and its outputs carry the same three fields — a reference type, the id it points
- * at and an optional label — and are told apart only by which list they sit in. Two names rather
- * than one shared entity, because an `EMBEDDED_COMPONENTS` control resolves its child by name and
- * `inputs` / `outputs` are two lists: `BaseEntityDescriptor.embeddedAttrFor()` refuses a child type
- * carried by two attributes, since the route segment names the entity. Same shape as base-state's
- * `State Transition Guard` / `State Transition Action` over one `BeanRef`.
+ * The three `*Use` rows of a workflow: a role, an artifact or a tool *taking part in this workflow*,
+ * as opposed to being defined by the tenant.
+ *
+ * Separate entities rather than plain id lists on the workflow, because that is what the contract
+ * says they are — `Workflow.roles` is `RoleUse[]`, and a `RoleUse` is an object wrapping
+ * `roleDefinitionId`. Each wraps only that id today, and the schema is explicit that this is
+ * deliberate: the object is where per-workflow configuration of a shared definition will go. Modelling
+ * them as ids would have to be undone the first time one of them grows a second field, and until then
+ * it silently drops every row — `toReferenceIds` looks for `.id` and a `*Use` has none.
+ *
+ * Three names rather than one shared `Use` entity, for the reason
+ * {@link WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME} and the step rows share: an `EMBEDDED_COMPONENTS`
+ * control resolves its child by name, and `BaseEntityDescriptor.embeddedAttrFor()` refuses a child
+ * type carried by two attributes, since the route segment names the entity.
  */
-export const TASK_INPUT_REFERENCE_ENTITY_NAME = 'Task Input Reference';
-export const TASK_OUTPUT_REFERENCE_ENTITY_NAME = 'Task Output Reference';
+export const WORKFLOW_ROLE_USE_ENTITY_NAME = 'Workflow Role Use';
+export const WORKFLOW_ARTIFACT_USE_ENTITY_NAME = 'Workflow Artifact Use';
+export const WORKFLOW_TOOL_USE_ENTITY_NAME = 'Workflow Tool Use';
+
+/**
+ * One artifact — and optionally the state it has to be in — that a workflow's `INPUT_ARTIFACT` start
+ * condition waits for.
+ *
+ * Embedded in the workflow because it is part of that workflow's start condition and nothing else, and
+ * an entity of its own because `requiredArtifacts` is a list the author edits row by row. The `state`
+ * is base-state's to interpret; base-workflow records it and never resolves it.
+ */
+export const WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME = 'Workflow Required Start Artifact';
 
 export const TASK_STEP_DEFINITION_ENTITY_NAME = 'Task Step Definition';
 export const TOOL_DEFINITION_ENTITY_NAME = 'Tool Definition';

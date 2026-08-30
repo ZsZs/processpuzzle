@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { createTaskDefinitionDescriptor } from './task-definition.descriptors';
-import {
-  TASK_DEFINITION_ENTITY_NAME,
-  TASK_INPUT_REFERENCE_ENTITY_NAME,
-  TASK_OUTPUT_REFERENCE_ENTITY_NAME,
-  TASK_STEP_DEFINITION_ENTITY_NAME,
-  WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
-} from '../workflow-entity-names';
+import { ARTIFACT_DEFINITION_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, TASK_STEP_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -29,7 +23,7 @@ describe('createTaskDefinitionDescriptor', () => {
     expect(byName('performedByRoles')?.i18nKey()).toBe('base_workflow.task_definition.performedByRoles');
   });
 
-  it('describes the task, its guards, its roles and its three nested lists', () => {
+  it('describes the task, its guards, its three reference lists and its steps', () => {
     expect(attrs.map((attr) => attr.attrName)).toEqual([
       'id',
       'name',
@@ -84,17 +78,25 @@ describe('createTaskDefinitionDescriptor', () => {
     expect(byName('updatedAt')?.disabled).toBe(true);
   });
 
-  // Inputs and outputs carry the same schema, so they need two entity names: `embeddedAttrFor` refuses a
-  // child type carried by two attributes, because the route segment names the entity.
-  it('keeps inputs and outputs apart by entity name', () => {
-    expect(descriptor.embeddedAttrFor(TASK_INPUT_REFERENCE_ENTITY_NAME)?.attrName).toBe('inputs');
-    expect(descriptor.embeddedAttrFor(TASK_OUTPUT_REFERENCE_ENTITY_NAME)?.attrName).toBe('outputs');
-    expect(descriptor.embeddedAttrFor(TASK_STEP_DEFINITION_ENTITY_NAME)?.attrName).toBe('steps');
+  // Artifact ids, not typed references: an artifact's own `artifactType` already says whether it is an
+  // entity, a document or a widget, so there is nothing left for a per-reference `type` to add. Both
+  // were `EMBEDDED_COMPONENTS` over a `{ type, refId, label }` row until this revision, against a
+  // contract that has had them as id arrays since the catalog split - so every input and output was
+  // dropped on load and rejected on save.
+  it('references what it reads and writes as artifact associations', () => {
+    ['inputs', 'outputs'].forEach((attrName) => {
+      expect(byName(attrName)?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
+      expect(byName(attrName)?.linkedEntityType).toBe(ARTIFACT_DEFINITION_ENTITY_NAME);
+      // Left at the default, the artifact being keyed by `id` like every catalog aggregate.
+      expect(byName(attrName)?.referenceIdField).toBe('id');
+    });
   });
 
-  it('addresses a reference by refId and a step by id', () => {
-    expect(byName('inputs')?.referenceIdField).toBe('refId');
-    expect(byName('outputs')?.referenceIdField).toBe('refId');
+  // The steps are the one thing still contained: no endpoint of their own, so they travel in the task's
+  // payload and are addressed through it.
+  it('contains only its steps, addressed by their own id', () => {
+    expect(descriptor.embeddedAttrDescriptors().map((attr) => attr.attrName)).toEqual(['steps']);
+    expect(descriptor.embeddedAttrFor(TASK_STEP_DEFINITION_ENTITY_NAME)?.attrName).toBe('steps');
     expect(byName('steps')?.referenceIdField).toBe('id');
   });
 });

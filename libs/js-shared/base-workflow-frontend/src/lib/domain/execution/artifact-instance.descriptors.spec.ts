@@ -43,7 +43,7 @@ describe('createArtifactInstanceDescriptor', () => {
 
   it('offers the artifact-type list as a dropdown, sharing the definition’s enum', () => {
     expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['ARTIFACT', 'DELIVERABLE', 'OUTCOME', 'ENTITY']);
+    expect(byName('type')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['DOCUMENT', 'ENTITY', 'WIDGET']);
   });
 
   it('declares no embedded children — an artifact instance is a leaf', () => {

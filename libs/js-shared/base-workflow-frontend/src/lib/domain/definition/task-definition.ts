@@ -3,54 +3,34 @@ import { PropertyMap } from '../property-map';
 
 /**
  * Frontend model of `TaskDefinition` — one unit of work, authored once per tenant under `/tasks` and
- * referenced by every workflow that needs it, together with the references and steps it carries.
+ * referenced by every workflow that needs it, together with the steps it carries.
  *
  * What is *not* here is the point. A shared task cannot say what has to finish before it, whether it
  * runs beside its siblings, or which one role performs it: all three answers belong to one workflow,
  * and they live on that workflow's `WorkflowTaskAssignment` instead. The task says who is *able* to
  * perform it — {@link TaskDefinition.performedByRoles} — and the workflow pins exactly one of them.
  *
- * A reference and a step stay nested, because neither has a resource of its own: they travel inside
- * the task's payload, which the full-replacement `PUT /tasks/{taskId}` requires — a control that
- * dropped them would wipe them on the next save.
+ * A step stays nested, because it has no resource of its own: it travels inside the task's payload,
+ * which the full-replacement `PUT /tasks/{taskId}` requires — a control that dropped it would wipe it
+ * on the next save. What a task reads and writes does *not* stay nested: `inputs` and `outputs` are
+ * plain artifact definition ids by contract, because an artifact's own `artifactType` already says
+ * whether it is an entity, a document or a widget, so anything a task touches is declared as an
+ * artifact of the organization first.
  *
- * The nested definitions are classes rather than interfaces, because each is an embedded entity of
- * its own: `EmbeddedEntityFacade` mints the blank row an `Add` opens the child's form on, and that
- * needs a constructor. They stay plain data — the rows of a loaded task are the parsed JSON, never
- * instances of these classes, so nothing may rely on `instanceof` or on a method.
+ * {@link StepDefinition} is a class rather than an interface, because it is an embedded entity of its
+ * own: `EmbeddedEntityFacade` mints the blank row an `Add` opens the child's form on, and that needs a
+ * constructor. It stays plain data — the rows of a loaded task are the parsed JSON, never instances of
+ * the class, so nothing may rely on `instanceof` or on a method.
  */
-
-/** What kind of resource a {@link TaskIOReference} points at. Mirrors the contract's `ReferenceType`. */
-export enum ReferenceType {
-  /** An `ArtifactDefinition` of this organization — the only kind whose lifecycle base-state governs. */
-  ARTIFACT = 'ARTIFACT',
-  BASE_ENTITY = 'BASE_ENTITY',
-  DOCUMENT = 'DOCUMENT',
-  WIDGET = 'WIDGET',
-}
 
 /**
- * A resource a task reads or writes: an artifact definition, a base-entity entity, a base-artifact
- * document or a registered widget, told apart by {@link type}.
- *
- * `refId` identifies it, which is why the class declares but never assigns `id`: the contract gives a
- * reference no key of its own. `declare` emits nothing, so the payload stays exactly the shape the
- * schema describes; it is there because `BaseEntity`'s only property is an optional `id` and
- * TypeScript's weak-type rule rejects a type that shares no property with it.
+ * Whether completing a step is a human act or a call the engine makes. `SERVICE_STEP` is the one that
+ * reads {@link StepDefinition.toolDefinitionId} and {@link StepDefinition.toolOperation}; on a
+ * `USER_STEP` those fields are ignored.
  */
-export class TaskIOReference implements BaseEntity {
-  declare readonly id?: string;
-
-  type: ReferenceType | undefined;
-  refId: string;
-  /** Display label overriding the referenced resource's own name. */
-  label?: string;
-
-  constructor(init: Partial<TaskIOReference> = {}) {
-    this.type = init.type;
-    this.refId = init.refId ?? '';
-    this.label = init.label;
-  }
+export enum TaskStepType {
+  USER_STEP = 'USER_STEP',
+  SERVICE_STEP = 'SERVICE_STEP',
 }
 
 /**
@@ -62,9 +42,11 @@ export class StepDefinition implements BaseEntity {
   id: string;
   name: string;
   description?: string;
-  /** Id of a `Tool Definition`; empty for a purely manual step. */
-  toolId?: string;
-  /** Operation id within {@link toolId}. */
+  /** Whether the engine calls a tool here or a person does the work. */
+  stepType?: TaskStepType;
+  /** Id of a `Tool Definition`; ignored on a `USER_STEP`. */
+  toolDefinitionId?: string;
+  /** Operation id within {@link toolDefinitionId}. */
   toolOperation?: string;
   /** Tool parameter name → PPCL expression over the workflow context. */
   inputMapping?: PropertyMap;
@@ -75,7 +57,8 @@ export class StepDefinition implements BaseEntity {
     this.id = init.id ?? '';
     this.name = init.name ?? '';
     this.description = init.description;
-    this.toolId = init.toolId;
+    this.stepType = init.stepType;
+    this.toolDefinitionId = init.toolDefinitionId;
     this.toolOperation = init.toolOperation;
     this.inputMapping = init.inputMapping;
     this.outputMapping = init.outputMapping;
@@ -97,8 +80,10 @@ export class TaskDefinition implements BaseEntity {
   preconditionRuleId?: string;
   /** Id of a base-rule rule guarding completion; a false verdict keeps the task ACTIVE. */
   postconditionRuleId?: string;
-  inputs: TaskIOReference[];
-  outputs: TaskIOReference[];
+  /** Ids of the `Artifact Definition`s this task reads. */
+  inputs: string[];
+  /** Ids of the `Artifact Definition`s this task produces or modifies. */
+  outputs: string[];
   steps: StepDefinition[];
   // region server-assigned
   version: number | undefined;
@@ -110,8 +95,8 @@ export class TaskDefinition implements BaseEntity {
     this.id = init.id ?? '';
     this.name = init.name ?? '';
     this.description = init.description;
-    // Empty arrays rather than undefined, so an embedded list always has something to append to and
-    // the `RELATED_ENTITIES` control over the roles has a list to add the first pick to.
+    // Empty arrays rather than undefined, so the embedded step list always has something to append to
+    // and each `RELATED_ENTITIES` control has a list to add the first pick to.
     this.performedByRoles = init.performedByRoles ?? [];
     this.preconditionRuleId = init.preconditionRuleId;
     this.postconditionRuleId = init.postconditionRuleId;

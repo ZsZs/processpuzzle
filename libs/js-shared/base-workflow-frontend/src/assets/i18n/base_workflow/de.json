@@ -8,6 +8,13 @@
     "activeInstances": "Aktive Instanzen",
     "version": "Version",
     "updatedAt": "Geändert am",
+    "startType": "Starttyp",
+    "eventType": "Ereignistyp",
+    "milestoneRef": "Meilenstein",
+    "preconditionExpression": "Vorbedingung",
+    "authorizedRoles": "Berechtigte Rollen",
+    "payloadMapping": "Nutzdatenzuordnung",
+    "requiredArtifacts": "Erforderliche Artefakte",
     "roles": "Rollen",
     "artifacts": "Artefakte",
     "tools": "Werkzeuge",
@@ -18,14 +25,33 @@
     "taskDefinitionId": "Aufgabe",
     "performedBy": "Ausgeführt von",
     "dependsOn": "Abhängig von",
+    "joinType": "Verknüpfungstyp",
     "parallel": "Parallel",
     "override": "Überschreiben"
+  },
+  "workflow_role_use": {
+    "_self": "Rollenverwendung",
+    "roleDefinitionId": "Rolle"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artefaktverwendung",
+    "artifactDefinitionId": "Artefakt"
+  },
+  "workflow_tool_use": {
+    "_self": "Werkzeugverwendung",
+    "toolDefinitionId": "Werkzeug"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Erforderliches Artefakt",
+    "artifactDefinitionId": "Artefakt",
+    "state": "Zustand"
   },
   "workflow_role_definition": {
     "_self": "Rolle",
     "id": "Id",
     "name": "Name",
     "description": "Beschreibung",
+    "responsibleFor": "Verantwortlich für",
     "entityRoleId": "Entitätsrolle",
     "version": "Version",
     "updatedAt": "Geändert am"
@@ -35,8 +61,8 @@
     "id": "Id",
     "name": "Name",
     "description": "Beschreibung",
-    "type": "Typ",
-    "entityTypeId": "Entitätstyp",
+    "artifactType": "Artefakttyp",
+    "artifactTypeId": "Typ-Id",
     "stateMachineId": "Zustandsmaschine",
     "version": "Version",
     "updatedAt": "Geändert am"
@@ -55,24 +81,13 @@
     "outputs": "Ausgaben",
     "steps": "Schritte"
   },
-  "task_input_reference": {
-    "_self": "Eingabe",
-    "type": "Typ",
-    "refId": "Referenz",
-    "label": "Bezeichnung"
-  },
-  "task_output_reference": {
-    "_self": "Ausgabe",
-    "type": "Typ",
-    "refId": "Referenz",
-    "label": "Bezeichnung"
-  },
   "task_step_definition": {
     "_self": "Schritt",
     "id": "Id",
     "name": "Name",
     "description": "Beschreibung",
-    "toolId": "Werkzeug",
+    "stepType": "Schritttyp",
+    "toolDefinitionId": "Werkzeug",
     "toolOperation": "Operation",
     "inputMapping": "Eingabezuordnung",
     "outputMapping": "Ausgabezuordnung"

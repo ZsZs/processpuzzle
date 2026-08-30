@@ -7,7 +7,8 @@ import { createWorkflowTaskAssignmentDescriptor } from './domain/definition/work
 import { createRoleDefinitionDescriptor } from './domain/definition/role-definition.descriptors';
 import { createStepDefinitionDescriptor } from './domain/definition/step-definition.descriptors';
 import { createTaskDefinitionDescriptor } from './domain/definition/task-definition.descriptors';
-import { createTaskInputReferenceDescriptor, createTaskOutputReferenceDescriptor } from './domain/definition/task-io-reference.descriptors';
+import { createWorkflowArtifactUseDescriptor, createWorkflowRoleUseDescriptor, createWorkflowToolUseDescriptor } from './domain/definition/workflow-use.descriptors';
+import { createRequiredStartArtifactDescriptor } from './domain/definition/required-start-artifact.descriptors';
 import { createToolDefinitionDescriptor } from './domain/definition/tool-definition.descriptors';
 import { createToolOperationDescriptor } from './domain/definition/tool-operation.descriptors';
 import { createArtifactInstanceDescriptor } from './domain/execution/artifact-instance.descriptors';
@@ -19,11 +20,13 @@ import { createTaskInstanceDescriptor } from './domain/execution/task-instance.d
 const allDescriptors: BaseEntityDescriptor[] = [
   createWorkflowDescriptor(),
   createWorkflowTaskAssignmentDescriptor(),
+  createWorkflowRoleUseDescriptor(),
+  createWorkflowArtifactUseDescriptor(),
+  createWorkflowToolUseDescriptor(),
+  createRequiredStartArtifactDescriptor(),
   createRoleDefinitionDescriptor(),
   createArtifactDefinitionDescriptor(),
   createTaskDefinitionDescriptor(),
-  createTaskInputReferenceDescriptor(),
-  createTaskOutputReferenceDescriptor(),
   createStepDefinitionDescriptor(),
   createToolDefinitionDescriptor(),
   createToolOperationDescriptor(),
@@ -64,8 +67,9 @@ describe('BASE_WORKFLOW_ENTITY_FACADES', () => {
   });
 
   // A registry miss is not a missing row: the control throws on first render. The reference model makes
-  // this load-bearing in a way the embedded one did not — a workflow's roles, artifacts and tools all
-  // resolve through this map now, and so does an assignment's task.
+  // this load-bearing twice over — a workflow's roles, artifacts and tools resolve their `*Use` child
+  // through this map, and the `FOREIGN_KEY` inside each of those rows resolves the catalog definition it
+  // names through it as well.
   it('registers every entity the library’s own attributes reference', () => {
     expect(referencedNames.size).toBeGreaterThan(0);
     referencedNames.forEach((entityName) => expect(BASE_WORKFLOW_ENTITY_FACADES[entityName]).toBeDefined());

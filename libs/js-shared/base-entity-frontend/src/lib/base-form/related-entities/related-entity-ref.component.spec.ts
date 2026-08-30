@@ -20,6 +20,7 @@ interface SetupOptions {
   disabled?: boolean;
   formGroup?: FormGroup;
   linkedEntityType?: string;
+  referenceIdField?: string;
 }
 
 async function setupRef(options: SetupOptions = {}) {
@@ -39,6 +40,7 @@ async function setupRef(options: SetupOptions = {}) {
   fixture.componentRef.setInput('relatedEntity', childEntity);
   fixture.componentRef.setInput('relatedEntityNameAttr', relatedEntityNameAttr);
   fixture.componentRef.setInput('disabled', options.disabled ?? false);
+  fixture.componentRef.setInput('referenceIdField', options.referenceIdField);
   fixture.componentRef.setInput('formGroup', formGroup);
   fixture.componentRef.setInput('linkedEntityType', options.linkedEntityType ?? 'LinkedEntity');
   fixture.detectChanges();
@@ -140,6 +142,35 @@ describe('RelatedEntityRefComponent', () => {
       expect(Reflect.get(entity, 'relatedItems')).toBe('not-an-array');
       expect(formGroup.get('relatedItems')?.value).toBe('not-an-array');
       expect(formGroup.get('relatedItems')?.dirty).toBe(false);
+    });
+
+    // The regression this exists for. An attribute the contract declares as `string[]` — base-workflow's
+    // `responsibleFor`, `performedByRoles`, `inputs`, `outputs`, `authorizedRoles` — holds bare ids, and
+    // every bare id's `.id` is `undefined`. Filtering on `.id` therefore matched nothing, so the row was
+    // rendered, its delete button worked, and nothing was removed: a reference could be added but never
+    // detached. The ids have to stay ids afterwards, too, or the next save sends the wrong shape.
+    it('removes a bare id from an attribute that holds ids rather than entities', async () => {
+      const entity = Object.assign(new TestEntity('parent', 'Parent'), { relatedItems: ['a', 'b'] }) as TestEntity & { relatedItems?: unknown };
+      const formGroup = new FormGroup({ relatedItems: new FormControl<unknown>(['a', 'b']) });
+      const { component } = await setupRef({ entity, relatedEntity: new TestEntity('a', 'A'), formGroup });
+
+      component.removeRelatedEntity();
+
+      expect(formGroup.get('relatedItems')?.value).toEqual(['b']);
+      expect(Reflect.get(entity, 'relatedItems')).toEqual(['b']);
+    });
+
+    // `App Region` has no `id` at all and is keyed by `type`; the removal path has to resolve the id the
+    // same way the rendering did, or the same silent no-op returns.
+    it('removes a row keyed by the configured referenceIdField', async () => {
+      const rows = [{ code: 'a', label: 'A' }, { code: 'b', label: 'B' }];
+      const entity = Object.assign(new TestEntity('parent', 'Parent'), { relatedItems: rows }) as TestEntity & { relatedItems?: unknown };
+      const formGroup = new FormGroup({ relatedItems: new FormControl<unknown>(rows) });
+      const { component } = await setupRef({ entity, relatedEntity: new TestEntity('a', 'A'), formGroup, referenceIdField: 'code' });
+
+      component.removeRelatedEntity();
+
+      expect(formGroup.get('relatedItems')?.value).toEqual([{ code: 'b', label: 'B' }]);
     });
 
     it('tolerates a missing form control on the form group', async () => {

@@ -1,13 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { TASK_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
-import {
-  TASK_DEFINITION_ENTITY_NAME,
-  TASK_INPUT_REFERENCE_ENTITY_NAME,
-  TASK_OUTPUT_REFERENCE_ENTITY_NAME,
-  TASK_STEP_DEFINITION_ENTITY_NAME,
-  WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
-} from '../workflow-entity-names';
-import { TASK_IO_REFERENCE_ID_FIELD } from './task-io-reference.descriptors';
+import { ARTIFACT_DEFINITION_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, TASK_STEP_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
 import { TASK_STEP_DEFINITION_ID_FIELD } from './step-definition.descriptors';
 
 export { TASK_DEFINITION_ENTITY_NAME };
@@ -51,20 +44,28 @@ function createTaskDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
   updatedAtAttr.disabled = true;
 
-  // region nested references and steps — kept on the entity, so the full-replacement PUT preserves them
-  // Containment: the contract nests a reference and a step inside the task that owns it and gives
-  // neither an endpoint of its own, so these rows travel inside this entity's payload and are
-  // addressed through it — `task-definition/review-order/details/task-input-reference/order/details`.
-  const inputsAttr = new BaseEntityAttrDescriptor('inputs', FormControlType.EMBEDDED_COMPONENTS, 'Inputs');
-  inputsAttr.linkedEntityType = TASK_INPUT_REFERENCE_ENTITY_NAME;
-  inputsAttr.referenceIdField = TASK_IO_REFERENCE_ID_FIELD;
+  // region what the task reads and writes — association, not containment
+  // Artifact definition ids, so a picker over the artifact catalog. Ids rather than typed references,
+  // by contract: an artifact's own `artifactType` already says whether it is an entity, a document or
+  // a widget, so there is nothing left for a per-reference `type` to add. An artifact outlives any
+  // task that names it, and removing a row only detaches the reference.
+  //
+  // The backend additionally refuses an artifact the referencing workflow has not declared in its own
+  // `artifacts` — a rule about a workflow, which a task authored on its own cannot check, so the
+  // picker offers the whole catalog.
+  const inputsAttr = new BaseEntityAttrDescriptor('inputs', FormControlType.RELATED_ENTITIES, 'Inputs');
+  inputsAttr.linkedEntityType = ARTIFACT_DEFINITION_ENTITY_NAME;
   inputsAttr.hideInTable = true;
 
-  const outputsAttr = new BaseEntityAttrDescriptor('outputs', FormControlType.EMBEDDED_COMPONENTS, 'Outputs');
-  outputsAttr.linkedEntityType = TASK_OUTPUT_REFERENCE_ENTITY_NAME;
-  outputsAttr.referenceIdField = TASK_IO_REFERENCE_ID_FIELD;
+  const outputsAttr = new BaseEntityAttrDescriptor('outputs', FormControlType.RELATED_ENTITIES, 'Outputs');
+  outputsAttr.linkedEntityType = ARTIFACT_DEFINITION_ENTITY_NAME;
   outputsAttr.hideInTable = true;
+  // endregion
 
+  // region the steps — kept on the entity, so the full-replacement PUT preserves them
+  // Containment: the contract nests a step inside the task that owns it and gives it no endpoint of
+  // its own, so these rows travel inside this entity's payload and are addressed through it —
+  // `task-definition/review-order/details/task-step-definition/check-items/details`.
   const stepsAttr = new BaseEntityAttrDescriptor('steps', FormControlType.EMBEDDED_COMPONENTS, 'Steps');
   stepsAttr.linkedEntityType = TASK_STEP_DEFINITION_ENTITY_NAME;
   stepsAttr.referenceIdField = TASK_STEP_DEFINITION_ID_FIELD;
@@ -77,10 +78,10 @@ function createTaskDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   guardRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
-  const contentRow = new FlexboxDescriptor([inputsAttr, outputsAttr, stepsAttr], FlexDirection.ROW);
-  contentRow.style = { 'column-gap': '10px' };
+  const referenceRow = new FlexboxDescriptor([performedByRolesAttr, inputsAttr, outputsAttr], FlexDirection.ROW);
+  referenceRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, guardRow, revisionRow, descriptionAttr, performedByRolesAttr, contentRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, guardRow, revisionRow, descriptionAttr, referenceRow, stepsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

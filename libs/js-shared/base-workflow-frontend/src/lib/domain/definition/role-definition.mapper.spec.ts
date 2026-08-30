@@ -32,7 +32,7 @@ describe('RoleDefinitionMapper', () => {
     it('emits exactly the contract’s fields and nothing else', () => {
       const dto = mapper.toDto(mapper.fromDto(ROLE_DEFINITION_DTO));
 
-      expect(Object.keys(dto).sort()).toEqual(['createdAt', 'description', 'entityRoleId', 'id', 'name', 'updatedAt', 'version']);
+      expect(Object.keys(dto).sort()).toEqual(['createdAt', 'description', 'entityRoleId', 'id', 'name', 'responsibleFor', 'updatedAt', 'version']);
     });
   });
 });

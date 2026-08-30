@@ -8,6 +8,13 @@
     "activeInstances": "Instancias activas",
     "version": "Versión",
     "updatedAt": "Actualizado el",
+    "startType": "Tipo de inicio",
+    "eventType": "Tipo de evento",
+    "milestoneRef": "Hito",
+    "preconditionExpression": "Precondición",
+    "authorizedRoles": "Roles autorizados",
+    "payloadMapping": "Mapeo de carga",
+    "requiredArtifacts": "Artefactos requeridos",
     "roles": "Roles",
     "artifacts": "Artefactos",
     "tools": "Herramientas",
@@ -18,14 +25,33 @@
     "taskDefinitionId": "Tarea",
     "performedBy": "Realizada por",
     "dependsOn": "Depende de",
+    "joinType": "Tipo de unión",
     "parallel": "Paralela",
     "override": "Sobrescribir"
+  },
+  "workflow_role_use": {
+    "_self": "Uso de rol",
+    "roleDefinitionId": "Rol"
+  },
+  "workflow_artifact_use": {
+    "_self": "Uso de artefacto",
+    "artifactDefinitionId": "Artefacto"
+  },
+  "workflow_tool_use": {
+    "_self": "Uso de herramienta",
+    "toolDefinitionId": "Herramienta"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Artefacto requerido",
+    "artifactDefinitionId": "Artefacto",
+    "state": "Estado"
   },
   "workflow_role_definition": {
     "_self": "Rol",
     "id": "Id",
     "name": "Nombre",
     "description": "Descripción",
+    "responsibleFor": "Responsable de",
     "entityRoleId": "Rol de entidad",
     "version": "Versión",
     "updatedAt": "Actualizado el"
@@ -35,8 +61,8 @@
     "id": "Id",
     "name": "Nombre",
     "description": "Descripción",
-    "type": "Tipo",
-    "entityTypeId": "Tipo de entidad",
+    "artifactType": "Tipo de artefacto",
+    "artifactTypeId": "Id de tipo",
     "stateMachineId": "Máquina de estados",
     "version": "Versión",
     "updatedAt": "Actualizado el"
@@ -55,24 +81,13 @@
     "outputs": "Salidas",
     "steps": "Pasos"
   },
-  "task_input_reference": {
-    "_self": "Entrada",
-    "type": "Tipo",
-    "refId": "Referencia",
-    "label": "Etiqueta"
-  },
-  "task_output_reference": {
-    "_self": "Salida",
-    "type": "Tipo",
-    "refId": "Referencia",
-    "label": "Etiqueta"
-  },
   "task_step_definition": {
     "_self": "Paso",
     "id": "Id",
     "name": "Nombre",
     "description": "Descripción",
-    "toolId": "Herramienta",
+    "stepType": "Tipo de paso",
+    "toolDefinitionId": "Herramienta",
     "toolOperation": "Operación",
     "inputMapping": "Mapeo de entrada",
     "outputMapping": "Mapeo de salida"
