@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { createTaskInstanceDescriptor, TASK_INSTANCE_ID_FIELD } from './task-instance.descriptors';
-import { PROCESS_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
+import { WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -12,9 +12,9 @@ describe('createTaskInstanceDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  it('is an embedded, read-only component of the process instance', () => {
+  it('is an embedded, read-only component of the workflow instance', () => {
     expect(descriptor.entityName).toBe(TASK_INSTANCE_ENTITY_NAME);
-    expect(descriptor.componentParents).toEqual([PROCESS_INSTANCE_ENTITY_NAME]);
+    expect(descriptor.componentParents).toEqual([WORKFLOW_INSTANCE_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);
     expect(descriptor.isAbstract).toBe(true);
     expect(attrs.every((attr) => attr.disabled)).toBe(true);
@@ -59,7 +59,7 @@ describe('createTaskInstanceDescriptor', () => {
     expect(byName('status')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED']);
   });
 
-  // The one field that explains a stuck process, so it earns a column.
+  // The one field that explains a stuck workflow, so it earns a column.
   it('shows the blocked reason in the table', () => {
     expect(byName('blockedReason')?.formControlType).toBe(FormControlType.TEXTAREA);
     expect(byName('blockedReason')?.hideInTable).toBe(false);

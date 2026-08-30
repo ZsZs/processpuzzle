@@ -18,7 +18,7 @@ public class ListArtifactInstancesUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<ArtifactInstance> findAll(String orgKey, UUID processInstanceId) {
-        return repository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId);
+    public List<ArtifactInstance> findAll(String orgKey, UUID workflowInstanceId) {
+        return repository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId);
     }
 }

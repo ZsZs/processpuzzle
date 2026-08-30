@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * The other half of {@code WorkflowValidator}'s invariant: that one refuses a process
- * naming a role which does not exist, this one refuses to remove a role a process still names.
+ * The other half of {@code WorkflowValidator}'s invariant: that one refuses a workflow
+ * naming a role which does not exist, this one refuses to remove a role a workflow still names.
  * Both checks are needed, because between them lies the whole reason the catalog is shared.
  */
 @Component
@@ -27,7 +27,7 @@ public class DeleteRoleDefinitionUseCase {
         RoleDefinition role = repository.findByOrgKeyAndId(orgKey, id)
                 .orElseThrow(() -> new NotFoundException("No role definition with id '%s'".formatted(id)));
 
-        List<String> workflows = referenceScanner.processesUsingRole(orgKey, id);
+        List<String> workflows = referenceScanner.workflowsUsingRole(orgKey, id);
         if (!workflows.isEmpty()) {
             throw new ConflictException("Role '%s' is still used by workflows %s".formatted(id, workflows));
         }

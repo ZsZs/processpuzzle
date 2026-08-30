@@ -8,7 +8,7 @@ import com.processpuzzle.workflow.execution.usecases.inbound.FindTaskInstanceUse
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
-import com.processpuzzle.workflow.model.CancelProcessInstanceRequest;
+import com.processpuzzle.workflow.model.CancelWorkflowInstanceRequest;
 import com.processpuzzle.workflow.model.CompleteTaskRequest;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
 import com.processpuzzle.workflow.model.TaskInstance;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Implements the generated {@code TaskInstancesApi} (from the "Task Instances" tag). See
- * {@code ProcessInstancesEndpoint}'s Javadoc for the same {@code {reason: string}}
+ * {@code WorkflowInstancesEndpoint}'s Javadoc for the same {@code {reason: string}}
  * generator-uncertainty note — it applies to {@code skipTask} here too.
  */
 @RestController
@@ -80,7 +80,7 @@ public class TaskInstancesEndpoint implements TaskInstancesApi {
     }
 
     @Override
-    public ResponseEntity<TaskInstance> skipTask(String orgKey, String instanceId, String taskId, CancelProcessInstanceRequest request) {
+    public ResponseEntity<TaskInstance> skipTask(String orgKey, String instanceId, String taskId, CancelWorkflowInstanceRequest request) {
         String reason = request == null ? null : request.getReason();
         var task = skipTask.skip(orgKey, UUID.fromString(instanceId), taskId, reason);
         return ResponseEntity.ok(mapper.toModel(task));

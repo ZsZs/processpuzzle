@@ -16,7 +16,7 @@ public interface ToolInvocationPort {
 
     /**
      * @param resolvedPayload already-resolved key/value pairs (from {@code StepDefinition.inputMapping}
-     *                        applied against the process context) to interpolate into
+     *                        applied against the workflow context) to interpolate into
      *                        {@code operation.payloadTemplate}.
      */
     ToolInvocationResult invoke(ToolDefinition tool, ToolOperation operation, Map<String, Object> resolvedPayload);

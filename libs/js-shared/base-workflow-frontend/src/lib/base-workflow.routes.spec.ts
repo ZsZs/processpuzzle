@@ -18,41 +18,41 @@ function detailsOf(route: Route): Route | undefined {
 }
 
 describe('BASE_WORKFLOW_ROUTES', () => {
-  const [processRoute, roleRoute, artifactRoute, taskRoute, toolRoute, instanceRoute] = BASE_WORKFLOW_ROUTES;
+  const [workflowRoute, roleRoute, artifactRoute, taskRoute, toolRoute, instanceRoute] = BASE_WORKFLOW_ROUTES;
 
   // Siblings rather than a nesting, and this is the reference model itself: a role, an artifact and a
-  // task are shared across processes, so each is an aggregate with a list screen of its own.
+  // task are shared across workflows, so each is an aggregate with a list screen of its own.
   it('registers the six routable aggregates as siblings', () => {
     expect(BASE_WORKFLOW_ROUTES.map((route) => route.path)).toEqual([
-      'process-definition',
+      'workflow',
       'workflow-role-definition',
       'artifact-definition',
       'task-definition',
       'tool-definition',
-      'process-instance',
+      'workflow-instance',
     ]);
   });
 
   // `BaseFormNavigatorSingletonStore` rebuilds a details URL from the entity name, so the path has to be
   // its snake-cased form or every link it builds misses.
   it('uses the snake-cased entity name as path on each branch', () => {
-    expect(processRoute.path).toBe('process-definition');
+    expect(workflowRoute.path).toBe('workflow');
     expect(roleRoute.path).toBe('workflow-role-definition');
     expect(artifactRoute.path).toBe('artifact-definition');
     expect(taskRoute.path).toBe('task-definition');
     expect(toolRoute.path).toBe('tool-definition');
-    expect(instanceRoute.path).toBe('process-instance');
+    expect(instanceRoute.path).toBe('workflow-instance');
   });
 
   // `readEmbeddedBreadcrumb` opens a level on the route that *declares* the name and takes its base URL
   // from the URL so far — one route deeper and every built URL doubles the segment, silently.
   it('declares the entity name on the segment-contributing route of each branch', () => {
-    expect(processRoute.data).toEqual({ icon: 'schema', menuTitle: 'workflow.processes', entityName: 'Process Definition' });
+    expect(workflowRoute.data).toEqual({ icon: 'schema', menuTitle: 'workflow.workflows', entityName: 'Workflow' });
     expect(roleRoute.data).toEqual({ icon: 'badge', menuTitle: 'workflow.roles', entityName: 'Workflow Role Definition' });
     expect(artifactRoute.data).toEqual({ icon: 'inventory_2', menuTitle: 'workflow.artifacts', entityName: 'Artifact Definition' });
     expect(taskRoute.data).toEqual({ icon: 'assignment', menuTitle: 'workflow.tasks', entityName: 'Task Definition' });
     expect(toolRoute.data).toEqual({ icon: 'build', menuTitle: 'workflow.tools', entityName: 'Tool Definition' });
-    expect(instanceRoute.data).toEqual({ icon: 'play_circle', menuTitle: 'workflow.instances', entityName: 'Process Instance' });
+    expect(instanceRoute.data).toEqual({ icon: 'play_circle', menuTitle: 'workflow.instances', entityName: 'Workflow Instance' });
     BASE_WORKFLOW_ROUTES.forEach((route) => expect(route.title).toBeTruthy());
   });
 
@@ -73,20 +73,20 @@ describe('BASE_WORKFLOW_ROUTES', () => {
     BASE_WORKFLOW_ROUTES.forEach((route) => expect(route.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']));
   });
 
-  describe('the process branch', () => {
-    // The roles, artifacts and tools a process involves are references now, picked from their own
-    // branches — so there is no URL under a process that addresses them, and the assignments are the
+  describe('the workflow branch', () => {
+    // The roles, artifacts and tools a workflow involves are references now, picked from their own
+    // branches — so there is no URL under a workflow that addresses them, and the assignments are the
     // only child left.
-    it('hangs only the task assignments below the process being edited', async () => {
-      const branches = await embeddedBranchesOf(detailsOf(processRoute));
+    it('hangs only the task assignments below the workflow being edited', async () => {
+      const branches = await embeddedBranchesOf(detailsOf(workflowRoute));
 
-      expect(branches.map((branch) => branch.path)).toEqual(['process-task-assignment']);
-      expect(branches[0].data?.['entityName']).toBe('Process Task Assignment');
+      expect(branches.map((branch) => branch.path)).toEqual(['workflow-task-assignment']);
+      expect(branches[0].data?.['entityName']).toBe('Workflow Task Assignment');
       expect(branches[0].data?.['embeddedEntity']).toBe(true);
     });
 
     it('stops at an assignment, which nests nothing', async () => {
-      const [assignmentBranch] = await embeddedBranchesOf(detailsOf(processRoute));
+      const [assignmentBranch] = await embeddedBranchesOf(detailsOf(workflowRoute));
 
       expect(await embeddedBranchesOf(await deepestDetailsOf(assignmentBranch))).toEqual([]);
     });
@@ -99,7 +99,7 @@ describe('BASE_WORKFLOW_ROUTES', () => {
       expect(await embeddedBranchesOf(detailsOf(artifactRoute))).toEqual([]);
     });
 
-    // The three rows that moved with the task when it left the process: none has an endpoint of its own,
+    // The three rows that moved with the task when it left the workflow: none has an endpoint of its own,
     // so each is addressed through the task that carries it.
     it('hang the inputs, the outputs and the steps below the task being edited', async () => {
       const branches = await embeddedBranchesOf(detailsOf(taskRoute));

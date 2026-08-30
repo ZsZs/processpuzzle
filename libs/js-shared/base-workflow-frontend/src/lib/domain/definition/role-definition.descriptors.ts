@@ -45,8 +45,8 @@ function createRoleDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
 /**
  * A catalog aggregate with a list and a details screen of its own — no `componentParent`, no
- * `isEmbedded`. A role is authored once per tenant and referenced by every process that involves it,
- * so it outlives any one process's edit.
+ * `isEmbedded`. A role is authored once per tenant and referenced by every workflow that involves it,
+ * so it outlives any one workflow's edit.
  */
 export function createRoleDefinitionDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({

@@ -27,8 +27,8 @@ function createTaskDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
   // Association, not containment: a role exists independently of this task and outlives its
   // reference, so the rows are picked from the role's own list and removing one only detaches it.
-  // The list is who is *able* to perform the task; a process pins exactly one of them, on its
-  // `Process Task Assignment`. `TaskDefinitionMapper` flattens the control's picks back to ids.
+  // The list is who is *able* to perform the task; a workflow pins exactly one of them, on its
+  // `Workflow Task Assignment`. `TaskDefinitionMapper` flattens the control's picks back to ids.
   const performedByRolesAttr = new BaseEntityAttrDescriptor('performedByRoles', FormControlType.RELATED_ENTITIES, 'Performed By Roles');
   performedByRolesAttr.linkedEntityType = WORKFLOW_ROLE_DEFINITION_ENTITY_NAME;
   performedByRolesAttr.required = true;
@@ -88,10 +88,10 @@ function createTaskDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 /**
  * A catalog aggregate with a list and a details screen of its own.
  *
- * What a task deliberately does *not* describe is where it sits in a process: `dependsOn`, `parallel`
- * and `override` all name siblings of one process, so they live on that process's
- * `Process Task Assignment` instead. Authoring a task here therefore puts it in no process — the
- * process picks it up by referencing its id.
+ * What a task deliberately does *not* describe is where it sits in a workflow: `dependsOn`, `parallel`
+ * and `override` all name siblings of one workflow, so they live on that workflow's
+ * `Workflow Task Assignment` instead. Authoring a task here therefore puts it in no workflow — the
+ * workflow picks it up by referencing its id.
  */
 export function createTaskDefinitionDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({

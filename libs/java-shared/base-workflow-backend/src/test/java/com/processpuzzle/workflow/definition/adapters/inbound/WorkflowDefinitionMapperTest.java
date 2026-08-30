@@ -16,7 +16,7 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
-import com.processpuzzle.workflow.definition.usecases.outbound.ActiveProcessInstanceExistencePort;
+import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
 import com.processpuzzle.workflow.model.ArtifactDefinitionInput;
 import com.processpuzzle.workflow.model.PageOfWorkflow;
 import com.processpuzzle.workflow.model.RoleDefinitionInput;
@@ -40,12 +40,12 @@ import static org.mockito.Mockito.when;
 
 class WorkflowDefinitionMapperTest {
 
-    private ActiveProcessInstanceExistencePort existencePort;
+    private ActiveWorkflowInstanceExistencePort existencePort;
     private WorkflowDefinitionMapper mapper;
 
     @BeforeEach
     void setUp() {
-        existencePort = mock(ActiveProcessInstanceExistencePort.class);
+        existencePort = mock(ActiveWorkflowInstanceExistencePort.class);
         mapper = new WorkflowDefinitionMapper(existencePort);
     }
 
@@ -82,7 +82,7 @@ class WorkflowDefinitionMapperTest {
         assertThat(domain.getId()).isEqualTo("wf-1");
         assertThat(domain.getName()).isEqualTo("Workflow 1");
         assertThat(domain.getDescription()).isEqualTo("Desc");
-        assertThat(domain.getExtendsProcessId()).isEqualTo("parent-wf");
+        assertThat(domain.getExtendsWorkflowId()).isEqualTo("parent-wf");
         assertThat(domain.getVersion()).isNull(); // the input above carries none
         assertThat(domain.roleDefinitionIds()).containsExactly("r1");
         assertThat(domain.artifactDefinitionIds()).containsExactly("wp1");

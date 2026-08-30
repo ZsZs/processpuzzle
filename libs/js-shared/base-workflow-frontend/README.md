@@ -10,18 +10,18 @@
 
 ## Status
 
-The **definition layer** — authoring a process — is implemented: a `Process Definition` has a generated list and
+The **definition layer** — authoring a workflow — is implemented: a `Workflow` has a generated list and
 form, with its roles, work products and tasks as embedded components, and a task's inputs, outputs and steps
 embedded one level deeper. A `Tool Definition`, the external system a step calls, is a routable aggregate of its
 own with its operations embedded in it.
 
-The **execution layer** is implemented as far as the contract allows: a `Process Instance` has a list and a form
+The **execution layer** is implemented as far as the contract allows: a `Workflow Instance` has a list and a form
 with its task and work product instances, and a task instance's step results below those — all **read-only**.
 `base-workflow-api.yaml` defines no `PUT` on the runtime side; an instance is started by `POST /instances`,
 cancelled by `DELETE`, and a task moves through `/assign`, `/complete` and `/skip`. Those four verbs have no
 front-end surface yet, so the screens monitor a run rather than drive one.
 
-No process diagram yet. When one arrives it belongs in an `extraTabs` entry beside List and Details, exactly where
+No workflow diagram yet. When one arrives it belongs in an `extraTabs` entry beside List and Details, exactly where
 base-state mounts its State Modeler.
 
 ## Authoring and monitoring a workflow
@@ -52,16 +52,16 @@ Copy `src/assets/i18n/base_workflow` to the application's `assets/i18n/base_work
 
 | Entity                     | Role                                        | Identified by |
 | -------------------------- | ------------------------------------------- | ------------- |
-| `Process Definition`       | Aggregate root, `/processes`                | `id`          |
-| `Workflow Role Definition` | Embedded in the process                     | `id`          |
-| `Work Product Definition`  | Embedded in the process                     | `id`          |
-| `Task Definition`          | Embedded in the process                     | `id`          |
+| `Workflow`       | Aggregate root, `/workflows`                | `id`          |
+| `Workflow Role Definition` | Embedded in the workflow                     | `id`          |
+| `Work Product Definition`  | Embedded in the workflow                     | `id`          |
+| `Task Definition`          | Embedded in the workflow                     | `id`          |
 | `Task Input Reference`     | Embedded in a task                          | `refId`       |
 | `Task Output Reference`    | Embedded in a task                          | `refId`       |
 | `Task Step Definition`     | Embedded in a task                          | `id`          |
 | `Tool Definition`          | Aggregate root, `/tools`                    | `id`          |
 | `Tool Operation`           | Embedded in the tool                        | `id`          |
-| `Process Instance`         | Aggregate root, `/instances`, read-only     | `id`          |
+| `Workflow Instance`         | Aggregate root, `/instances`, read-only     | `id`          |
 | `Task Instance`            | Embedded in the instance, read-only         | `id`          |
 | `Work Product Instance`    | Embedded in the instance, read-only         | `id`          |
 | `Task Step Result`         | Embedded in a task instance, read-only      | `stepId`      |

@@ -5,7 +5,7 @@ import { ArtifactDefinitionMapper } from './artifact-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/artifacts`. A resource of its own rather than a
- * sub-resource of a process: the same artifact is produced by one process and consumed by another,
+ * sub-resource of a workflow: the same artifact is produced by one workflow and consumed by another,
  * and both name it by id.
  */
 @Injectable({ providedIn: 'root' })

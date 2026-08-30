@@ -6,7 +6,7 @@
 # `<orgKey>-entities.yaml` works in base-entity, `<orgKey>-state-machines.yaml` in base-state,
 # `<orgKey>-apps.yaml` in base-app, and `<orgKey>-widgets.yaml` in base-widget.
 #
-# Five sibling sections, following SPEM's split of Method Content from Process. The four
+# Five sibling sections, following SPEM's split of Method Content from Workflow. The four
 # `*-definitions` sections are the tenant's reusable catalog: roles, artifacts, tools and tasks exist
 # in their own right, each with its own CRUD screen, and each may be referenced by any number of
 # workflows. A workflow then *uses* them — `roles`, `artifacts`, `tools` and `tasks` inside a workflow

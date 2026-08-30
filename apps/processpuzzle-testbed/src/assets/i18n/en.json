@@ -69,9 +69,9 @@
     "base-state_card_content_3": "Drive UI behaviour from the current state of the entity",
     "base-state_card_button": "See Base State Library...",
     "base-workflow_card_title": "Base Workflow",
-    "base-workflow_card_subtitle": "Long-running business processes and orchestration",
+    "base-workflow_card_subtitle": "Long-running business workflows and orchestration",
     "base-workflow_card_content": "Composes activities, decisions and waits into long-running workflows that coordinate entities, rules and states across users and systems.",
-    "base-workflow_card_content_1": "Describe processes as a sequence of tasks and gateways",
+    "base-workflow_card_content_1": "Describe workflows as a sequence of tasks and gateways",
     "base-workflow_card_content_2": "Persist and resume workflow instances across sessions",
     "base-workflow_card_content_3": "Integrate with rules and state machines for decisions",
     "base-workflow_card_button": "See Base Workflow Library...",
@@ -147,15 +147,15 @@
   "base-workflows": {
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
-    "samples_desc_1": "A workflow composes activities, decisions and waits into a long-running process that coordinates entities, rules and states across users and systems.",
-    "samples_desc_2": "The tables and forms below are generated run-time from the Process, Tool and Process Instance descriptors; roles, work products and tasks are embedded components of a process, and the instance screens are read-only.",
+    "samples_desc_1": "A workflow composes activities, decisions and waits into a long-running whole that coordinates entities, rules and states across users and systems.",
+    "samples_desc_2": "The tables and forms below are generated run-time from the Workflow, Tool and Workflow Instance descriptors; roles, work products and tasks are embedded components of a workflow, and the instance screens are read-only.",
     "intro_heading": "ProcessPuzzle Workflow Engine",
     "frontend_heading": "Frontend — @processpuzzle/base-workflow",
     "backend_heading": "Backend — base-workflow-backend",
-    "intro_paragraph_1": "The ProcessPuzzle Workflow Engine executes long-running business processes: it advances a process instance as facts arrive, assigns the resulting tasks and keeps the history of why an instance reached its current step.",
+    "intro_paragraph_1": "The ProcessPuzzle Workflow Engine executes long-running business workflows: it advances a workflow instance as facts arrive, assigns the resulting tasks and keeps the history of why an instance reached its current step.",
     "intro_paragraph_2": "The feature is split into two complementary libraries which share a common domain vocabulary:",
-    "intro_frontend_desc": "Angular services, stores and components to describe processes and monitor running instances in the browser.",
-    "intro_backend_desc": "Spring Boot module that persists workflow definitions and executes process instances on the server side."
+    "intro_frontend_desc": "Angular services, stores and components to describe workflows and monitor running instances in the browser.",
+    "intro_backend_desc": "Spring Boot module that persists workflow definitions and executes workflow instances on the server side."
   },
   "base-apps": {
     "overview_tab_label": "Overview",

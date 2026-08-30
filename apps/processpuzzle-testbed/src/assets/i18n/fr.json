@@ -62,9 +62,9 @@
     "base-state_card_content_3": "Piloter le comportement de l'UI selon l'état courant",
     "base-state_card_button": "Voir la bibliothèque Base State...",
     "base-workflow_card_title": "Base Workflow",
-    "base-workflow_card_subtitle": "Processus métier longs et orchestration",
+    "base-workflow_card_subtitle": "Workflows métier longs et orchestration",
     "base-workflow_card_content": "Compose activités, décisions et attentes en workflows de longue durée qui coordonnent entités, règles et états entre utilisateurs et systèmes.",
-    "base-workflow_card_content_1": "Décrire les processus comme une séquence de tâches et passerelles",
+    "base-workflow_card_content_1": "Décrire les workflows comme une séquence de tâches et passerelles",
     "base-workflow_card_content_2": "Persister et reprendre les instances de workflow entre sessions",
     "base-workflow_card_content_3": "S'intégrer aux règles et machines à états pour les décisions",
     "base-workflow_card_button": "Voir la bibliothèque Base Workflow...",
@@ -140,15 +140,15 @@
   "base-workflows": {
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
-    "samples_desc_1": "Un workflow compose activités, décisions et attentes en un processus de longue durée qui coordonne entités, règles et états entre utilisateurs et systèmes.",
-    "samples_desc_2": "Les tableaux et les formulaires ci-dessous sont générés à l'exécution à partir des descripteurs Processus, Outil et Instance de processus ; les rôles, les produits de travail et les tâches en sont des composants intégrés, et les écrans d'instance sont en lecture seule.",
+    "samples_desc_1": "Un workflow compose activités, décisions et attentes en un ensemble de longue durée qui coordonne entités, règles et états entre utilisateurs et systèmes.",
+    "samples_desc_2": "Les tableaux et les formulaires ci-dessous sont générés à l'exécution à partir des descripteurs Workflow, Outil et Instance de workflow ; les rôles, les produits de travail et les tâches en sont des composants intégrés, et les écrans d'instance sont en lecture seule.",
     "intro_heading": "Moteur de Workflow ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-workflow",
     "backend_heading": "Backend — base-workflow-backend",
-    "intro_paragraph_1": "Le Moteur de Workflow ProcessPuzzle exécute des processus métier de longue durée : il fait avancer une instance de processus à mesure que les faits arrivent, affecte les tâches qui en résultent et conserve l'historique des raisons pour lesquelles une instance a atteint son étape actuelle.",
+    "intro_paragraph_1": "Le Moteur de Workflow ProcessPuzzle exécute des workflows métier de longue durée : il fait avancer une instance de workflow à mesure que les faits arrivent, affecte les tâches qui en résultent et conserve l'historique des raisons pour lesquelles une instance a atteint son étape actuelle.",
     "intro_paragraph_2": "La fonctionnalité est divisée en deux bibliothèques complémentaires qui partagent un vocabulaire de domaine commun :",
-    "intro_frontend_desc": "Services, stores et composants Angular pour décrire les processus et surveiller les instances en cours dans le navigateur.",
-    "intro_backend_desc": "Module Spring Boot qui persiste les définitions de workflow et exécute les instances de processus côté serveur."
+    "intro_frontend_desc": "Services, stores et composants Angular pour décrire les workflows et surveiller les instances en cours dans le navigateur.",
+    "intro_backend_desc": "Module Spring Boot qui persiste les définitions de workflow et exécute les instances de workflow côté serveur."
   },
   "base-apps": {
     "overview_tab_label": "Aperçu",

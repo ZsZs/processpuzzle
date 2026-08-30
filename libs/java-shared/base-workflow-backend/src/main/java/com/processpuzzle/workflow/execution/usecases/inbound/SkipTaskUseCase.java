@@ -2,15 +2,15 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
-import com.processpuzzle.workflow.execution.domain.ProcessInstance;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.events.ProcessInstanceCompletedEvent;
+import com.processpuzzle.workflow.execution.events.WorkflowInstanceCompletedEvent;
 import com.processpuzzle.workflow.execution.events.TaskSkippedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
-import com.processpuzzle.workflow.execution.domain.ProcessContext;
+import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 import java.util.Map;
 
 /**
@@ -31,31 +31,31 @@ import java.util.Map;
 @Transactional
 public class SkipTaskUseCase {
 
-    private final ProcessInstanceRepository processInstanceRepository;
-    private final ResolveProcessDefinitionUseCase resolveProcessDefinition;
+    private final WorkflowInstanceRepository workflowInstanceRepository;
+    private final ResolveWorkflowUseCase resolveWorkflow;
     private final TaskInstanceRepository taskInstanceRepository;
     private final TaskActivationService taskActivationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public SkipTaskUseCase(ProcessInstanceRepository processInstanceRepository,
-                            ResolveProcessDefinitionUseCase resolveProcessDefinition,
+    public SkipTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
+                            ResolveWorkflowUseCase resolveWorkflow,
                             TaskInstanceRepository taskInstanceRepository,
                             TaskActivationService taskActivationService,
                             ApplicationEventPublisher eventPublisher) {
-        this.processInstanceRepository = processInstanceRepository;
-        this.resolveProcessDefinition = resolveProcessDefinition;
+        this.workflowInstanceRepository = workflowInstanceRepository;
+        this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
         this.taskActivationService = taskActivationService;
         this.eventPublisher = eventPublisher;
     }
 
-    public TaskInstance skip(String orgKey, UUID processInstanceId, String taskDefinitionId, String reason) {
-        ProcessInstance processInstance = processInstanceRepository.findByOrgKeyAndId(orgKey, processInstanceId)
-                .orElseThrow(() -> new NotFoundException("No process instance with id '%s'".formatted(processInstanceId)));
+    public TaskInstance skip(String orgKey, UUID workflowInstanceId, String taskDefinitionId, String reason) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByOrgKeyAndId(orgKey, workflowInstanceId)
+                .orElseThrow(() -> new NotFoundException("No workflow instance with id '%s'".formatted(workflowInstanceId)));
         TaskInstance taskInstance = taskInstanceRepository
-                .findByOrgKeyAndProcessInstanceIdAndTaskDefinitionId(orgKey, processInstanceId, taskDefinitionId)
+                .findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(orgKey, workflowInstanceId, taskDefinitionId)
                 .orElseThrow(() -> new NotFoundException(
-                        "No task '%s' in process instance '%s'".formatted(taskDefinitionId, processInstanceId)));
+                        "No task '%s' in workflow instance '%s'".formatted(taskDefinitionId, workflowInstanceId)));
 
         if (taskInstance.getStatus() == TaskInstanceStatus.COMPLETED || taskInstance.getStatus() == TaskInstanceStatus.SKIPPED) {
             throw new ConflictException("Task '%s' is already %s".formatted(taskDefinitionId, taskInstance.getStatus()));
@@ -65,21 +65,21 @@ public class SkipTaskUseCase {
         taskInstance.setSkippedAt(Instant.now());
         taskInstanceRepository.save(taskInstance);
 
-        eventPublisher.publishEvent(new TaskSkippedEvent(orgKey, processInstanceId, taskInstance.getId(), taskDefinitionId, reason));
+        eventPublisher.publishEvent(new TaskSkippedEvent(orgKey, workflowInstanceId, taskInstance.getId(), taskDefinitionId, reason));
 
-        ResolvedProcess definition =
-                resolveProcessDefinition.resolveByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId());
+        ResolvedWorkflow definition =
+                resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowInstance.getWorkflowId());
         // Skipping contributes nothing of its own, but the tasks it unblocks are guarded against the
         // context as it stands, so it has to be the assembled one and not just the initial values.
-        Map<String, Object> context = ProcessContext.assemble(
-                processInstance, taskInstanceRepository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId));
-        taskActivationService.activateEligibleTasks(orgKey, definition, processInstanceId, context);
+        Map<String, Object> context = WorkflowContext.assemble(
+                workflowInstance, taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId));
+        taskActivationService.activateEligibleTasks(orgKey, definition, workflowInstanceId, context);
 
-        if (taskActivationService.allTerminal(orgKey, processInstanceId)) {
-            processInstance.setStatus(ProcessInstanceStatus.COMPLETED);
-            processInstance.setCompletedAt(Instant.now());
-            processInstanceRepository.save(processInstance);
-            eventPublisher.publishEvent(new ProcessInstanceCompletedEvent(orgKey, processInstanceId, definition.id()));
+        if (taskActivationService.allTerminal(orgKey, workflowInstanceId)) {
+            workflowInstance.setStatus(WorkflowInstanceStatus.COMPLETED);
+            workflowInstance.setCompletedAt(Instant.now());
+            workflowInstanceRepository.save(workflowInstance);
+            eventPublisher.publishEvent(new WorkflowInstanceCompletedEvent(orgKey, workflowInstanceId, definition.id()));
         }
 
         return taskInstance;

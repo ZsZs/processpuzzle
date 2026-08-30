@@ -12,7 +12,7 @@ import java.util.Map;
  * guidance for completing the task and is not enforced by the engine; a
  * {@link TaskStepType#SERVICE_STEP} names a tool operation, and completing it triggers a call to
  * the referenced {@link ToolDefinition} through {@code ToolInvocationPort} whose result is made
- * available to later steps via the process instance context.
+ * available to later steps via the workflow instance context.
  *
  * <p>Stored as a JSONB list on {@link TaskDefinition#getSteps()}, same rationale as
  * {@link TaskUse}.
@@ -36,9 +36,9 @@ public class StepDefinition {
     /** Operation id within the referenced tool definition. */
     private String toolOperation;
 
-    /** Tool parameter name -> PPCL expression evaluated against the process context. */
+    /** Tool parameter name -> PPCL expression evaluated against the workflow context. */
     private Map<String, String> inputMapping;
 
-    /** Process context variable name -> JSONPath expression into the tool response. */
+    /** Workflow context variable name -> JSONPath expression into the tool response. */
     private Map<String, String> outputMapping;
 }

@@ -3,7 +3,7 @@
  *
  * Needed because a `RELATED_ENTITIES` control writes *whole entities* into its form control when the
  * user picks one — see `RelatedEntitiesListComponent.addSelectedEntityFromNavigatorResponse` — while
- * `ProcessDefinitionInput.roles` and its siblings are `string[]`. So a list may hold ids, entities, or
+ * `WorkflowInput.roles` and its siblings are `string[]`. So a list may hold ids, entities, or
  * both at once: ids for everything loaded from the server, entities for everything just selected.
  *
  * Applied on `fromDto` as well as on `toDto`, on purpose. Going in it is a no-op for a well-behaved

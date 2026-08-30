@@ -8,8 +8,8 @@ import com.processpuzzle.workflow.definition.domain.HttpMethod;
 import com.processpuzzle.workflow.definition.domain.ToolAuthConfig;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.usecases.outbound.PermitAllRoleMembershipPort;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleCheckResult;
 import com.processpuzzle.workflow.execution.usecases.outbound.ToolInvocationResult;
@@ -32,14 +32,14 @@ class WorkflowOutboundAdaptersTest {
     private static final String ORG = "org-1";
 
     @Test
-    void activeProcessInstanceExistenceAdapter_checksNonTerminalInstances() {
-        ProcessInstanceRepository repo = mock(ProcessInstanceRepository.class);
-        ActiveProcessInstanceExistenceAdapter adapter = new ActiveProcessInstanceExistenceAdapter(repo);
+    void activeWorkflowInstanceExistenceAdapter_checksNonTerminalInstances() {
+        WorkflowInstanceRepository repo = mock(WorkflowInstanceRepository.class);
+        ActiveWorkflowInstanceExistenceAdapter adapter = new ActiveWorkflowInstanceExistenceAdapter(repo);
 
-        EnumSet<ProcessInstanceStatus> nonTerminal = EnumSet.of(ProcessInstanceStatus.ACTIVE, ProcessInstanceStatus.SUSPENDED);
+        EnumSet<WorkflowInstanceStatus> nonTerminal = EnumSet.of(WorkflowInstanceStatus.ACTIVE, WorkflowInstanceStatus.SUSPENDED);
 
-        when(repo.existsByOrgKeyAndProcessDefinitionIdAndStatusIn(ORG, "proc-1", nonTerminal)).thenReturn(true);
-        when(repo.countByOrgKeyAndProcessDefinitionIdAndStatusIn(ORG, "proc-1", nonTerminal)).thenReturn(5L);
+        when(repo.existsByOrgKeyAndWorkflowIdAndStatusIn(ORG, "proc-1", nonTerminal)).thenReturn(true);
+        when(repo.countByOrgKeyAndWorkflowIdAndStatusIn(ORG, "proc-1", nonTerminal)).thenReturn(5L);
 
         assertThat(adapter.existsActiveInstanceOf(ORG, "proc-1")).isTrue();
         assertThat(adapter.countActiveInstancesOf(ORG, "proc-1")).isEqualTo(5L);

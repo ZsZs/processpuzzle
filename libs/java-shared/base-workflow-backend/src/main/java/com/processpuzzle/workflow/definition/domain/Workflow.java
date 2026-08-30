@@ -30,7 +30,7 @@ import org.hibernate.type.SqlTypes;
  * lists hold objects and not bare ids: {@link TaskUse} already needs the extra fields, and the
  * other three can grow them without changing the shape of this aggregate. There is no
  * {@code WorkflowUse} and no {@code WorkflowDefinition}, because a workflow is not reused inside
- * another one — it is {@link #extendsProcessId extended}, which is a different relation.
+ * another one — it is {@link #extendsWorkflowId extended}, which is a different relation.
  *
  * <p>Storing the four lists as JSONB keeps the whole workflow in a single row, which is what makes
  * {@link #version} a meaningful optimistic-lock guard over the entire definition, as "Use version
@@ -39,8 +39,8 @@ import org.hibernate.type.SqlTypes;
  * <p>Composite key (orgKey, id) mirrors {@code RuleDefinition}'s convention: {@code id} is the
  * author-chosen business identifier (e.g. {@code "order-fulfillment-workflow"}), unique per tenant.
  *
- * <p>The table is still named {@code workflow_process_definition}: the REST resource is called a
- * process ({@code /processes}, {@code ProcessDefinitionsApi}) and renaming the table under
+ * <p>The table is still named {@code workflow_definition}: the REST resource is called a
+ * workflow ({@code /workflows}, {@code WorkflowsApi}) and renaming the table under
  * {@code ddl-auto: update} would orphan the existing one rather than migrate it.
  */
 @Getter
@@ -51,7 +51,7 @@ import org.hibernate.type.SqlTypes;
 @EqualsAndHashCode(callSuper = false, of = {"orgKey", "id"})
 @ToString
 @Entity
-@Table(name = "workflow_process_definition")
+@Table(name = "workflow_definition")
 @IdClass(WorkflowKey.class)
 public class Workflow extends com.processpuzzle.workflow.common.Auditable {
 
@@ -76,7 +76,7 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
      * mirroring {@code RuleExtendsValidator} in base-rule-backend.
      */
     @SuppressWarnings("java:S1450")
-    private String extendsProcessId;
+    private String extendsWorkflowId;
 
     /**
      * How an instance of this workflow comes into being. Null means it can only be started
@@ -143,12 +143,12 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
      * collections" convention {@code ReplaceEntityDefinitionUseCase} uses for
      * {@code BaseEntityAttribute}.
      */
-    public void replaceContent(String name, String description, String extendsProcessId,
+    public void replaceContent(String name, String description, String extendsWorkflowId,
                                 WorkflowStartCondition startCondition, List<RoleUse> roles,
                                 List<ArtifactUse> artifacts, List<ToolUse> tools, List<TaskUse> tasks) {
         this.name = name;
         this.description = description;
-        this.extendsProcessId = extendsProcessId;
+        this.extendsWorkflowId = extendsWorkflowId;
         this.startCondition = startCondition;
         this.roles = new ArrayList<>(roles);
         this.artifacts = new ArrayList<>(artifacts);

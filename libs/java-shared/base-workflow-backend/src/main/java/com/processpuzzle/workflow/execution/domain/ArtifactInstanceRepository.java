@@ -12,17 +12,17 @@ public interface ArtifactInstanceRepository
 
     Optional<ArtifactInstance> findByOrgKeyAndId(String orgKey, UUID id);
 
-    List<ArtifactInstance> findByOrgKeyAndProcessInstanceId(String orgKey, UUID processInstanceId);
+    List<ArtifactInstance> findByOrgKeyAndWorkflowInstanceId(String orgKey, UUID workflowInstanceId);
 
     /**
      * {@code getArtifactInstance}'s path parameter is {@code artifactId} — by the same
      * convention task instances use ({@code taskId} = the stable {@code taskDefinitionId}, not a
      * generated instance UUID — see {@code TaskInstanceRepository}), this addresses a work
-     * product instance by its owning definition's id within the process instance, not by
+     * product instance by its owning definition's id within the workflow instance, not by
      * {@link ArtifactInstance#getId()}.
      */
-    Optional<ArtifactInstance> findByOrgKeyAndProcessInstanceIdAndArtifactDefinitionId(
-            String orgKey, UUID processInstanceId, String artifactDefinitionId);
+    Optional<ArtifactInstance> findByOrgKeyAndWorkflowInstanceIdAndArtifactDefinitionId(
+            String orgKey, UUID workflowInstanceId, String artifactDefinitionId);
 
     /** Used by the (future) base-state change listener to find the row to refresh. */
     Optional<ArtifactInstance> findByOrgKeyAndStateMachineInstanceId(String orgKey, String stateMachineInstanceId);

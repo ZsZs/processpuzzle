@@ -14,7 +14,7 @@ import java.util.List;
  * they are looking at.
  *
  * <p>The definition sections are applied before {@code workflows}, so one file can introduce a
- * workflow and everything it needs — see {@code ImportProcessDefinitionsUseCase}.
+ * workflow and everything it needs — see {@code ImportWorkflowsUseCase}.
  */
 public record WorkflowYamlDocument(
         @JsonProperty("role-definitions") List<RoleYamlEntry> roleDefinitions,

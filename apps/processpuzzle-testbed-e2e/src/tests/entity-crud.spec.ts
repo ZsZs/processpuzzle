@@ -21,21 +21,21 @@ defineEntityCrudSuite({
       reason: 'a state machine needs at least one state and an entityName/stateAttributeKey pair naming a real base-entity type, none of which generated fixture data can produce',
     },
     {
-      entityName: 'Process Definition',
-      // `tasks` is `required` in ProcessDefinitionInput, and this suite never fills an embedded list — that
+      entityName: 'Workflow',
+      // `tasks` is `required` in WorkflowInput, and this suite never fills an embedded list — that
       // is the relationship suite's job, and it needs a saved owner to start from. The POST comes back
-      // 400 request.validation-failed before anything else in the process can be exercised. Authoring a
-      // process is covered by base-workflow-frontend's own unit tests and by the seeded process in
+      // 400 request.validation-failed before anything else in the workflow can be exercised. Authoring a
+      // workflow is covered by base-workflow-frontend's own unit tests and by the seeded workflow in
       // processpuzzle-testbed-workflows.yaml.
-      reason: 'a process definition requires at least one task, and this suite cannot fill an embedded list',
+      reason: 'a workflow requires at least one task, and this suite cannot fill an embedded list',
     },
     {
-      entityName: 'Process Instance',
+      entityName: 'Workflow Instance',
       // Not a fixture problem: the runtime side of base-workflow-api.yaml has no PUT at all. An instance is
-      // started by POST /instances with a StartProcessRequest — a different schema from the instance it
+      // started by POST /instances with a StartWorkflowRequest — a different schema from the instance it
       // returns — cancelled by DELETE, and never edited. The descriptor says so with `isAbstract`, which
       // disables New, Edit, Delete and Save, so there is nothing here for a CRUD suite to drive.
-      reason: 'process instances are read-only by contract; the descriptor is isAbstract, so New/Edit/Delete/Save are all disabled',
+      reason: 'workflow instances are read-only by contract; the descriptor is isAbstract, so New/Edit/Delete/Save are all disabled',
     },
   ],
 });

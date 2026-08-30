@@ -31,13 +31,13 @@ import java.util.stream.Stream;
 @Transactional(readOnly = true)
 public class CatalogReferenceScanner {
 
-    private final WorkflowRepository processRepository;
+    private final WorkflowRepository workflowRepository;
     private final TaskDefinitionRepository taskRepository;
     private final RoleDefinitionRepository roleRepository;
 
     /** Ids of the workflows whose own role uses or task uses name {@code roleId}. */
-    public List<String> processesUsingRole(String orgKey, String roleId) {
-        return processIdsWhere(orgKey, workflow -> workflow.roleDefinitionIds().contains(roleId)
+    public List<String> workflowsUsingRole(String orgKey, String roleId) {
+        return workflowIdsWhere(orgKey, workflow -> workflow.roleDefinitionIds().contains(roleId)
                 || workflow.getTasks().stream().map(TaskUse::getPerformedBy).anyMatch(roleId::equals));
     }
 
@@ -49,8 +49,8 @@ public class CatalogReferenceScanner {
                 .toList();
     }
 
-    public List<String> processesUsingArtifact(String orgKey, String artifactId) {
-        return processIdsWhere(orgKey, workflow -> workflow.artifactDefinitionIds().contains(artifactId));
+    public List<String> workflowsUsingArtifact(String orgKey, String artifactId) {
+        return workflowIdsWhere(orgKey, workflow -> workflow.artifactDefinitionIds().contains(artifactId));
     }
 
     /** Ids of the task definitions naming {@code artifactId} among their inputs or outputs. */
@@ -73,12 +73,12 @@ public class CatalogReferenceScanner {
                 .toList();
     }
 
-    public List<String> processesAssigningTask(String orgKey, String taskId) {
-        return processIdsWhere(orgKey, workflow -> workflow.findTaskUse(taskId).isPresent());
+    public List<String> workflowsAssigningTask(String orgKey, String taskId) {
+        return workflowIdsWhere(orgKey, workflow -> workflow.findTaskUse(taskId).isPresent());
     }
 
-    public List<String> processesUsingTool(String orgKey, String toolId) {
-        return processIdsWhere(orgKey, workflow -> workflow.toolDefinitionIds().contains(toolId));
+    public List<String> workflowsUsingTool(String orgKey, String toolId) {
+        return workflowIdsWhere(orgKey, workflow -> workflow.toolDefinitionIds().contains(toolId));
     }
 
     /** Ids of the task definitions whose steps invoke {@code toolId}. */
@@ -96,8 +96,8 @@ public class CatalogReferenceScanner {
                 .anyMatch(artifactId::equals);
     }
 
-    private List<String> processIdsWhere(String orgKey, Predicate<Workflow> predicate) {
-        return processRepository.findByOrgKey(orgKey).stream()
+    private List<String> workflowIdsWhere(String orgKey, Predicate<Workflow> predicate) {
+        return workflowRepository.findByOrgKey(orgKey).stream()
                 .filter(predicate)
                 .map(Workflow::getId)
                 .toList();

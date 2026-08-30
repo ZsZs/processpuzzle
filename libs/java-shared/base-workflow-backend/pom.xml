@@ -81,7 +81,7 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
-    <!-- YAML parsing/writing for process definition import/export -->
+    <!-- YAML parsing/writing for workflow definition import/export -->
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>

@@ -27,17 +27,17 @@ export const BASE_WORKFLOW_TRANSLOCO_SCOPE = 'base_workflow';
 export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 
 // region definition layer
-/** Key root of the `Process Definition` entity name (`._self`) and of its attribute labels. */
-export const PROCESS_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.process_definition`;
+/** Key root of the `Workflow` entity name (`._self`) and of its attribute labels. */
+export const WORKFLOW_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow`;
 
 /**
- * Key roots of the process's own embedded row, of the three catalog aggregates it references, and of
+ * Key roots of the workflow's own embedded row, of the three catalog aggregates it references, and of
  * the rows nested one level deeper inside a task. They are children of
  * {@link BASE_WORKFLOW_TRANSLOCO_SCOPE} rather than scopes of their own, because the whole graph is
  * edited under {@link BASE_WORKFLOW_ROUTES} and one scope registration has to cover all of it — the
  * catalog and embedded route branches add none.
  */
-export const PROCESS_TASK_ASSIGNMENT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.process_task_assignment`;
+export const WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_task_assignment`;
 export const WORKFLOW_ROLE_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_definition`;
 export const ARTIFACT_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_definition`;
 export const TASK_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_definition`;
@@ -52,7 +52,7 @@ export const TOOL_OPERATION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.tool_
 
 // region execution layer
 /** Key roots of the run-time side: an instance and the task, artifact and step rows below it. */
-export const PROCESS_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.process_instance`;
+export const WORKFLOW_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_instance`;
 export const TASK_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_instance`;
 export const ARTIFACT_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_instance`;
 export const TASK_STEP_RESULT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_result`;

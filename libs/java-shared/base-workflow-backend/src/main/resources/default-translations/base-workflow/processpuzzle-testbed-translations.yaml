@@ -6,18 +6,18 @@
 # The `base_workflow` scope named below is the one base-workflow-frontend registers on its routes, so the
 # two halves already agree on the name. What they do *not* share is the key space: the frontend ships its
 # own bundles under `src/assets/i18n/base_workflow/`, keyed by entity name (`artifact_definition.*`,
-# `process_task_assignment.*`), and reaches this endpoint only through BASE_WORKFLOW_TRANSLATION_SOURCE
-# when a host skips the asset copy step. The keys here name *tenant data* — this sample process and its
+# `workflow_task_assignment.*`), and reaches this endpoint only through BASE_WORKFLOW_TRANSLATION_SOURCE
+# when a host skips the asset copy step. The keys here name *tenant data* — this sample workflow and its
 # roles — which no static bundle can carry.
 #
-# The keys below name the sample process in default-workflows/processpuzzle-testbed-workflows.yaml.
+# The keys below name the sample workflow in default-workflows/processpuzzle-testbed-workflows.yaml.
 
 translations:
   - scope: base_workflow
     locale: en
     messages:
-      process:
-        _self: Process
+      workflow:
+        _self: Workflow
         name: Name
       role:
         clerk: Order clerk

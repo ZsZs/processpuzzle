@@ -16,7 +16,7 @@ import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
-import com.processpuzzle.workflow.definition.usecases.inbound.ImportProcessDefinitionsUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -48,13 +48,13 @@ class DefaultWorkflowImporterTest {
 
     private static final String TESTBED_FILE = "processpuzzle-testbed-workflows.yaml";
 
-    private ImportProcessDefinitionsUseCase importUseCase;
+    private ImportWorkflowsUseCase importUseCase;
     private ResourcePatternResolver resourceResolver;
     private DefaultWorkflowImporter importer;
 
     @BeforeEach
     void setUp() {
-        importUseCase = mock(ImportProcessDefinitionsUseCase.class);
+        importUseCase = mock(ImportWorkflowsUseCase.class);
         resourceResolver = mock(ResourcePatternResolver.class);
         importer = new DefaultWorkflowImporter(importUseCase, resourceResolver);
     }
@@ -91,7 +91,7 @@ class DefaultWorkflowImporterTest {
         TaskDefinitionRepository taskRepository = mock(TaskDefinitionRepository.class);
         WorkflowValidator validator = new WorkflowValidator(
                 roleRepository, artifactRepository, toolRepository, taskRepository);
-        ImportProcessDefinitionsUseCase realImportUseCase = new ImportProcessDefinitionsUseCase(
+        ImportWorkflowsUseCase realImportUseCase = new ImportWorkflowsUseCase(
                 repository, roleRepository, artifactRepository, toolRepository, taskRepository,
                 validator, new WorkflowYamlMapper());
 
@@ -183,7 +183,7 @@ class DefaultWorkflowImporterTest {
 
     @Test
     void skipsFileWhenNameDoesNotFollowConvention() throws IOException {
-        Resource invalidNameResource = new ByteArrayResource("processes: []".getBytes(StandardCharsets.UTF_8)) {
+        Resource invalidNameResource = new ByteArrayResource("workflows: []".getBytes(StandardCharsets.UTF_8)) {
             @Override
             public String getFilename() {
                 return "invalid-name.yaml";
@@ -198,7 +198,7 @@ class DefaultWorkflowImporterTest {
 
     @Test
     void skipsFileWhenOrgKeyIsEmpty() throws IOException {
-        Resource emptyOrgResource = new ByteArrayResource("processes: []".getBytes(StandardCharsets.UTF_8)) {
+        Resource emptyOrgResource = new ByteArrayResource("workflows: []".getBytes(StandardCharsets.UTF_8)) {
             @Override
             public String getFilename() {
                 return "-workflows.yaml";

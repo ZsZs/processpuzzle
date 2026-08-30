@@ -20,7 +20,7 @@ function createStepDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
 
-  // A `Tool Definition` is a routable aggregate of its own — `/tools`, shared across processes — so
+  // A `Tool Definition` is a routable aggregate of its own — `/tools`, shared across workflows — so
   // this is a real reference the framework can resolve and navigate to, unlike the `refId` of a
   // task's inputs and outputs.
   const toolIdAttr = new BaseEntityAttrDescriptor('toolId', FormControlType.FOREIGN_KEY, 'Tool');

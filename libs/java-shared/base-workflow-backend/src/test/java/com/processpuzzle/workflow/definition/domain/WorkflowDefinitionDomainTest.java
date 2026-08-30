@@ -53,7 +53,7 @@ class WorkflowDefinitionDomainTest {
                 .name("Workflow One")
                 .description("Description")
                 .version(1L)
-                .extendsProcessId("wf-base")
+                .extendsWorkflowId("wf-base")
                 .roles(new ArrayList<>(List.of(RoleUse.builder().roleDefinitionId("analyst").build())))
                 .tasks(new ArrayList<>(List.of(taskUse)))
                 .artifacts(new ArrayList<>(List.of(ArtifactUse.builder().artifactDefinitionId("spec").build())))
@@ -65,7 +65,7 @@ class WorkflowDefinitionDomainTest {
         assertThat(def.getName()).isEqualTo("Workflow One");
         assertThat(def.getDescription()).isEqualTo("Description");
         assertThat(def.getVersion()).isEqualTo(1L);
-        assertThat(def.getExtendsProcessId()).isEqualTo("wf-base");
+        assertThat(def.getExtendsWorkflowId()).isEqualTo("wf-base");
         assertThat(def.getTasks()).containsExactly(taskUse);
 
         // The four id accessors are what the validator, resolver and export read the uses through.
@@ -145,7 +145,7 @@ class WorkflowDefinitionDomainTest {
 
         assertThat(def.getName()).isEqualTo("New Name");
         assertThat(def.getDescription()).isEqualTo("New Desc");
-        assertThat(def.getExtendsProcessId()).isEqualTo("new-parent");
+        assertThat(def.getExtendsWorkflowId()).isEqualTo("new-parent");
         assertThat(def.getStartCondition()).isSameAs(condition);
         assertThat(def.roleDefinitionIds()).containsExactly("dev");
         assertThat(def.getTasks()).containsExactly(newUse);

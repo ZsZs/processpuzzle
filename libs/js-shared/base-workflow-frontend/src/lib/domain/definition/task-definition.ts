@@ -3,12 +3,12 @@ import { PropertyMap } from '../property-map';
 
 /**
  * Frontend model of `TaskDefinition` — one unit of work, authored once per tenant under `/tasks` and
- * referenced by every process that needs it, together with the references and steps it carries.
+ * referenced by every workflow that needs it, together with the references and steps it carries.
  *
  * What is *not* here is the point. A shared task cannot say what has to finish before it, whether it
- * runs beside its siblings, or which one role performs it: all three answers belong to one process,
- * and they live on that process's `ProcessTaskAssignment` instead. The task says who is *able* to
- * perform it — {@link TaskDefinition.performedByRoles} — and the process pins exactly one of them.
+ * runs beside its siblings, or which one role performs it: all three answers belong to one workflow,
+ * and they live on that workflow's `WorkflowTaskAssignment` instead. The task says who is *able* to
+ * perform it — {@link TaskDefinition.performedByRoles} — and the workflow pins exactly one of them.
  *
  * A reference and a step stay nested, because neither has a resource of its own: they travel inside
  * the task's payload, which the full-replacement `PUT /tasks/{taskId}` requires — a control that
@@ -56,7 +56,7 @@ export class TaskIOReference implements BaseEntity {
 /**
  * One informal instruction inside a task. Free-text guidance the engine does not enforce — unless it
  * names a tool, in which case completing the step fires a REST call and the response is mapped back
- * into the process context.
+ * into the workflow context.
  */
 export class StepDefinition implements BaseEntity {
   id: string;
@@ -66,7 +66,7 @@ export class StepDefinition implements BaseEntity {
   toolId?: string;
   /** Operation id within {@link toolId}. */
   toolOperation?: string;
-  /** Tool parameter name → PPCL expression over the process context. */
+  /** Tool parameter name → PPCL expression over the workflow context. */
   inputMapping?: PropertyMap;
   /** Context variable name → JSONPath into the tool response. */
   outputMapping?: PropertyMap;
@@ -88,9 +88,9 @@ export class TaskDefinition implements BaseEntity {
   name: string;
   description?: string;
   /**
-   * `RoleDefinition.id`s able to perform this task. A list because the task is shared: each process
-   * referencing it picks exactly one of these as that process's `performedBy`. Naming a role here
-   * does not put the task in any process.
+   * `RoleDefinition.id`s able to perform this task. A list because the task is shared: each workflow
+   * referencing it picks exactly one of these as that workflow's `performedBy`. Naming a role here
+   * does not put the task in any workflow.
    */
   performedByRoles: string[];
   /** Id of a base-rule rule guarding activation; a false verdict keeps the task PENDING. */

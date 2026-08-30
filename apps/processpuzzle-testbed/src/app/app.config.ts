@@ -69,8 +69,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-state: the routable `State Machine Definition` plus the four embedded levels its form
       // carries — states and transitions, and a transition's guards and actions.
       ...BASE_STATE_FACADE_PROVIDERS,
-      // And for base-workflow: three routable aggregates — the `Process Definition` a tenant authors, the
-      // `Tool Definition`s its steps call and the `Process Instance`s it produces — plus the ten embedded
+      // And for base-workflow: three routable aggregates — the `Workflow` a tenant authors, the
+      // `Tool Definition`s its steps call and the `Workflow Instance`s it produces — plus the ten embedded
       // levels below them. All thirteen or none: a task's `performedBy` resolves through the role facade
       // and a step's `toolId` through the tool facade, so half a graph is a form that throws on render.
       ...BASE_WORKFLOW_FACADE_PROVIDERS,

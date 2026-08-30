@@ -254,9 +254,9 @@ export const appRoutes: Route[] = [
         path: 'samples',
         loadComponent: () => import('./content/base-workflows/samples.component').then((comp) => comp.SamplesComponent),
         // `BASE_WORKFLOW_ROUTES` brings all three of the library's routable aggregates — the
-        // `process-definition` branch with its roles, work products and tasks (and a task's inputs,
+        // `workflow` branch with its roles, work products and tasks (and a task's inputs,
         // outputs and steps), the `tool-definition` branch with its operations, and the read-only
-        // `process-instance` branch with its task and work product instances — and declares its own
+        // `workflow-instance` branch with its task and work product instances — and declares its own
         // transloco scopes, so nothing is added here. Static children rather than `loadChildren`, for the
         // same reason as the base-state and base-document branches above.
         children: BASE_WORKFLOW_ROUTES,

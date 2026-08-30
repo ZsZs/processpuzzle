@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Runtime tracking row for one {@code ArtifactDefinition} within a {@link ProcessInstance}.
+ * Runtime tracking row for one {@code ArtifactDefinition} within a {@link WorkflowInstance}.
  * {@code currentState} is a cache: the source of truth for state lives in base-state, addressed
  * by {@code stateMachineInstanceId}. This module refreshes the cache when it receives a state
  * change notification (see the execution.adapters.inbound state-change listener) but never writes
@@ -46,7 +46,7 @@ public class ArtifactInstance {
     private String orgKey;
 
     @Column(nullable = false)
-    private UUID processInstanceId;
+    private UUID workflowInstanceId;
 
     @Column(nullable = false)
     private String artifactDefinitionId;

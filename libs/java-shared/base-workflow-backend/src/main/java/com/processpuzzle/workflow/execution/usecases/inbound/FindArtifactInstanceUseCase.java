@@ -18,9 +18,9 @@ public class FindArtifactInstanceUseCase {
     }
 
     @Transactional(readOnly = true)
-    public ArtifactInstance find(String orgKey, UUID processInstanceId, String artifactDefinitionId) {
-        return repository.findByOrgKeyAndProcessInstanceIdAndArtifactDefinitionId(orgKey, processInstanceId, artifactDefinitionId)
+    public ArtifactInstance find(String orgKey, UUID workflowInstanceId, String artifactDefinitionId) {
+        return repository.findByOrgKeyAndWorkflowInstanceIdAndArtifactDefinitionId(orgKey, workflowInstanceId, artifactDefinitionId)
                 .orElseThrow(() -> new NotFoundException(
-                        "No artifact '%s' in process instance '%s'".formatted(artifactDefinitionId, processInstanceId)));
+                        "No artifact '%s' in workflow instance '%s'".formatted(artifactDefinitionId, workflowInstanceId)));
     }
 }

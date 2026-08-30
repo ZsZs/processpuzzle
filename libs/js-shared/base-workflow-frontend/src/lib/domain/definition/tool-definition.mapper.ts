@@ -27,7 +27,7 @@ interface ToolDefinitionDto {
 
 /**
  * Translates between the `ToolDefinition` DTO of `base-workflow-api.yaml` and the entity the
- * generated screens work with. Two translations happen here that the process mapper does not need.
+ * generated screens work with. Two translations happen here that the workflow mapper does not need.
  *
  * **`auth` is flattened and re-nested.** `fromDto` lifts `type` and `secretRef` onto the entity so
  * the form can address them, and keeps the object they came from; `toDto` merges the two edited

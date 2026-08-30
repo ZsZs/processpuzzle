@@ -13,7 +13,7 @@ describe('createArtifactDefinitionDescriptor', () => {
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
   // A catalog aggregate, and the rename the reference model brought with it: what used to be a
-  // `Work Product Definition` embedded in one process is an `Artifact Definition` of the tenant.
+  // `Work Product Definition` embedded in one workflow is an `Artifact Definition` of the tenant.
   it('is a standalone aggregate under its new name', () => {
     expect(descriptor.entityName).toBe(ARTIFACT_DEFINITION_ENTITY_NAME);
     expect(descriptor.entityName).toBe('Artifact Definition');

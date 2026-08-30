@@ -14,7 +14,7 @@ methodContent:
   roleDefinitions:
     - key: reviewer
 
-processUse:
+workflowUse:
   taskUses:
     - key: reviewOrderUse
       taskDefinition: reviewOrder

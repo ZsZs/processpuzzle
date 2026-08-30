@@ -11,7 +11,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
  * this route's children in `app.routes.ts` — the same arrangement the `base-state` and `base-app` samples
  * use, so what is demonstrated here is the library's own branches rather than a copy of them.
  *
- * Three toggles because base-workflow has three routable aggregates: the process a tenant authors, the
+ * Three toggles because base-workflow has three routable aggregates: the workflow a tenant authors, the
  * tools its steps call, and the runs it produces. The last is read-only, which the screens themselves make
  * plain — every field is disabled and Save is dead.
  */
@@ -27,9 +27,9 @@ import { TranslocoDirective } from '@jsverse/transloco';
       </div>
       <div style="margin-top: 20px">
         <mat-button-toggle-group name="workflowSample" [value]="selectedButton()" aria-label="Workflow Sample">
-          <mat-button-toggle routerLink="process-definition" value="process-definition">Process Definition</mat-button-toggle>
+          <mat-button-toggle routerLink="workflow" value="workflow">Workflow</mat-button-toggle>
           <mat-button-toggle routerLink="tool-definition" value="tool-definition">Tool Definition</mat-button-toggle>
-          <mat-button-toggle routerLink="process-instance" value="process-instance">Process Instance</mat-button-toggle>
+          <mat-button-toggle routerLink="workflow-instance" value="workflow-instance">Workflow Instance</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       <mat-divider />
@@ -39,7 +39,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 })
 export class SamplesComponent implements OnInit {
   router = inject(Router);
-  selectedButton: WritableSignal<string> = signal('process-definition');
+  selectedButton: WritableSignal<string> = signal('workflow');
 
   ngOnInit() {
     this.subscribeToRoutingEvents();
@@ -54,13 +54,14 @@ export class SamplesComponent implements OnInit {
       .subscribe((event) => {
         const currentUrl: string = event.url;
         if (currentUrl) {
-          // `process-instance` is tested before `process-definition`: both contain the substring
-          // `process-`, but only one of them contains the other's full segment — neither does, so the
-          // order is not load-bearing here, unlike a `tool` / `tool-definition` pair would be. Kept
-          // explicit anyway so adding a fourth aggregate cannot break it silently.
-          if (currentUrl.includes('process-instance')) this.selectedButton.set('process-instance');
-          else if (currentUrl.includes('tool-definition')) this.selectedButton.set('tool-definition');
-          else if (currentUrl.includes('process-definition')) this.selectedButton.set('process-definition');
+          // Order is load-bearing here, and each segment is matched with its leading slash. Both
+          // matter since the aggregate was renamed from `process-definition` to `workflow`:
+          // `workflow-instance` now begins with `workflow`, so the instance has to be tested first;
+          // and the parent route is `base-workflows`, which contains `workflow` as a bare substring,
+          // so `/workflow` is what tells the child apart from the parent that hosts it.
+          if (currentUrl.includes('/workflow-instance')) this.selectedButton.set('workflow-instance');
+          else if (currentUrl.includes('/tool-definition')) this.selectedButton.set('tool-definition');
+          else if (currentUrl.includes('/workflow')) this.selectedButton.set('workflow');
           else this.selectedButton.set('');
         }
       });

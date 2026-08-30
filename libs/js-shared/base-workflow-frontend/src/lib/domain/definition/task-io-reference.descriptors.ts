@@ -32,7 +32,7 @@ function createTaskIOReferenceAttrDescriptors(direction: string): AbstractAttrDe
   // Plain text rather than a picker, and deliberately so: which store a reference resolves against
   // depends on the `type` chosen in the control above, so there is no single entity for a
   // `FOREIGN_KEY` to name — not even for `ARTIFACT`, since one control cannot switch its linked type
-  // per row. The backend resolves it on save, and refuses an `ARTIFACT` the owning process has not
+  // per row. The backend resolves it on save, and refuses an `ARTIFACT` the owning workflow has not
   // declared in its own `artifacts`.
   const refIdAttr = new BaseEntityAttrDescriptor('refId', FormControlType.TEXT_BOX, 'Reference', undefined, true);
   refIdAttr.required = true;

@@ -44,8 +44,8 @@ class WorkflowExtendsValidatorTest {
 
     @Test
     void validate_validExtendsChain_shouldPass() {
-        Workflow parent = Workflow.builder().id("parent").extendsProcessId("grandparent").build();
-        Workflow grandparent = Workflow.builder().id("grandparent").extendsProcessId(null).build();
+        Workflow parent = Workflow.builder().id("parent").extendsWorkflowId("grandparent").build();
+        Workflow grandparent = Workflow.builder().id("grandparent").extendsWorkflowId(null).build();
 
         when(repository.findByOrgKeyAndId("org1", "parent")).thenReturn(Optional.of(parent));
         when(repository.findByOrgKeyAndId("org1", "grandparent")).thenReturn(Optional.of(grandparent));
@@ -56,8 +56,8 @@ class WorkflowExtendsValidatorTest {
 
     @Test
     void validate_cycleInExtendsChain_shouldThrow() {
-        Workflow parent = Workflow.builder().id("parent").extendsProcessId("grandparent").build();
-        Workflow grandparent = Workflow.builder().id("grandparent").extendsProcessId("proc1").build();
+        Workflow parent = Workflow.builder().id("parent").extendsWorkflowId("grandparent").build();
+        Workflow grandparent = Workflow.builder().id("grandparent").extendsWorkflowId("proc1").build();
 
         when(repository.findByOrgKeyAndId("org1", "parent")).thenReturn(Optional.of(parent));
         when(repository.findByOrgKeyAndId("org1", "grandparent")).thenReturn(Optional.of(grandparent));
@@ -69,8 +69,8 @@ class WorkflowExtendsValidatorTest {
 
     @Test
     void validate_chainTooDeep_shouldThrow() {
-        Workflow p1 = Workflow.builder().id("p1").extendsProcessId("loop").build();
-        Workflow loop = Workflow.builder().id("loop").extendsProcessId("loop").build();
+        Workflow p1 = Workflow.builder().id("p1").extendsWorkflowId("loop").build();
+        Workflow loop = Workflow.builder().id("loop").extendsWorkflowId("loop").build();
 
         when(repository.findByOrgKeyAndId("org1", "p1")).thenReturn(Optional.of(p1));
         when(repository.findByOrgKeyAndId("org1", "loop")).thenReturn(Optional.of(loop));

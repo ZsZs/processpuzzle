@@ -25,33 +25,33 @@ defineEntityRelationshipSuite({
       reason: 'the owning state machine cannot be created from generated fixture data (states is minItems: 1, and entityName must name a real base-entity type)',
     },
     // The same exclusion as above, seen from base-workflow: the flow starts by creating the owner through
-    // its own form, and neither owner can be created from generated data — a Process Definition requires at
-    // least one task, and a Process Instance is read-only by contract. See entity-crud.spec.ts for both
+    // its own form, and neither owner can be created from generated data — a Workflow requires at
+    // least one task, and a Workflow Instance is read-only by contract. See entity-crud.spec.ts for both
     // reasons. Every embedded list below those two owners is therefore unreachable.
     {
-      entityName: 'Process Definition',
+      entityName: 'Workflow',
       attrName: 'roles',
-      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+      reason: 'the owning workflow cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
     },
     {
-      entityName: 'Process Definition',
+      entityName: 'Workflow',
       attrName: 'workProducts',
-      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+      reason: 'the owning workflow cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
     },
     {
-      entityName: 'Process Definition',
+      entityName: 'Workflow',
       attrName: 'tasks',
-      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+      reason: 'the owning workflow cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
     },
     {
-      entityName: 'Process Instance',
+      entityName: 'Workflow Instance',
       attrName: 'tasks',
-      reason: 'process instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
+      reason: 'workflow instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
     },
     {
-      entityName: 'Process Instance',
+      entityName: 'Workflow Instance',
       attrName: 'workProducts',
-      reason: 'process instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
+      reason: 'workflow instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
     },
     {
       entityName: 'App Definition',

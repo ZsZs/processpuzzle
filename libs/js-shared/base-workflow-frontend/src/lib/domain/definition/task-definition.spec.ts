@@ -11,10 +11,10 @@ describe('TaskDefinition', () => {
     expect(task.steps).toEqual([]);
   });
 
-  // The three fields that moved to `ProcessTaskAssignment`. Asserted as absent rather than left
-  // untested: a shared task carrying `dependsOn` would be naming siblings of a process it knows
+  // The three fields that moved to `WorkflowTaskAssignment`. Asserted as absent rather than left
+  // untested: a shared task carrying `dependsOn` would be naming siblings of a workflow it knows
   // nothing about, which is exactly the bug the reference model exists to remove.
-  it('describes no per-process wiring at all', () => {
+  it('describes no per-workflow wiring at all', () => {
     const task = new TaskDefinition({ id: 'review-order' }) as unknown as Record<string, unknown>;
 
     expect('dependsOn' in task).toBe(false);

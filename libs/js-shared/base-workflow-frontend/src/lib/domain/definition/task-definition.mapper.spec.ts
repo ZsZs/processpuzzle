@@ -73,7 +73,7 @@ describe('TaskDefinitionMapper', () => {
     });
 
     // Listed field by field rather than spread — and what is *not* in this list is the point: the three
-    // per-process wiring fields belong to `ProcessTaskAssignment` now.
+    // per-workflow wiring fields belong to `WorkflowTaskAssignment` now.
     it('emits exactly the contract’s fields and nothing else', () => {
       const dto = mapper.toDto(mapper.fromDto(TASK_DEFINITION_DTO));
 

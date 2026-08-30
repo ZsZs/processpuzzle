@@ -3,7 +3,7 @@ info:
   title: ProcessPuzzle Workflow Engine API (base-workflow)
   description: >-
     SPEM-inspired workflow definition and execution API. Orchestrates tasks, roles,
-    artifacts and tools across a ProcessPuzzle process instance.
+    artifacts and tools across a ProcessPuzzle workflow instance.
 
     The model follows SPEM's split of Method Content from Process. Roles, artifacts, tasks and
     tools are tenant-level *definitions* — catalog resources of their own, each authored once and
@@ -31,15 +31,15 @@ servers:
 # ─────────────────────────────────────────────────────────────
 paths:
 
-  # ── Process Definitions ───────────────────────────────────
+  # ── Workflows ───────────────────────────────────
 
-  /organizations/{orgKey}/processes:
+  /organizations/{orgKey}/workflows:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
-      operationId: listProcessDefinitions
-      tags: [ Process Definitions ]
-      summary: List all process definitions
+      operationId: listWorkflows
+      tags: [ Workflows ]
+      summary: List all workflows
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
@@ -48,7 +48,7 @@ paths:
       responses:
         "200":
           description: >-
-            Paged list of process definitions, each with its role, artifact and task references. Full
+            Paged list of workflows, each with its role, artifact and task references. Full
             shape rather than a summary on purpose: base-entity's generated form reads the record out
             of the loaded list rather than re-fetching it by id, so a projection here would render an
             empty form and its save — a full replacement — would destroy what the projection dropped.
@@ -58,9 +58,9 @@ paths:
                 $ref: "#/components/schemas/PageOf_Workflow"
 
     post:
-      operationId: createProcessDefinition
-      tags: [ Process Definitions ]
-      summary: Create a new process definition
+      operationId: createWorkflow
+      tags: [ Workflows ]
+      summary: Create a new workflow
       requestBody:
         required: true
         content:
@@ -79,17 +79,17 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /organizations/{orgKey}/processes/{processId}:
+  /organizations/{orgKey}/workflows/{workflowId}:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
-      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
     get:
-      operationId: getProcessDefinition
-      tags: [ Process Definitions ]
+      operationId: getWorkflow
+      tags: [ Workflows ]
       summary: Get a workflow with its task uses and its role, artifact and tool references
       responses:
         "200":
-          description: Full process definition
+          description: Full workflow
           content:
             application/json:
               schema:
@@ -98,8 +98,8 @@ paths:
           $ref: "#/components/responses/NotFound"
 
     put:
-      operationId: updateProcessDefinition
-      tags: [ Process Definitions ]
+      operationId: updateWorkflow
+      tags: [ Workflows ]
       summary: Replace a workflow
       description: >-
         Only allowed if there are no ACTIVE instances of this workflow. Supply the `version` you last
@@ -125,10 +125,10 @@ paths:
           $ref: "#/components/responses/Conflict"
 
     delete:
-      operationId: deleteProcessDefinition
-      tags: [ Process Definitions ]
-      summary: Delete a process definition
-      description: Only allowed if there are no process instances (active or historic).
+      operationId: deleteWorkflow
+      tags: [ Workflows ]
+      summary: Delete a workflow
+      description: Only allowed if there are no workflow instances (active or historic).
       responses:
         "204":
           description: Deleted
@@ -137,13 +137,13 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /organizations/{orgKey}/processes/import:
+  /organizations/{orgKey}/workflows/import:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
     post:
-      operationId: importProcessDefinitions
-      tags: [ Process Definitions ]
-      summary: Bulk-import a workflow catalog and its process definitions from a SPEM YAML file
+      operationId: importWorkflows
+      tags: [ Workflows ]
+      summary: Bulk-import a workflow catalog and its workflows from a SPEM YAML file
       description: >-
         The file carries `role-definitions`, `artifact-definitions`, `tool-definitions`,
         `task-definitions` and `workflows` as sibling top-level sections; the four definition
@@ -173,18 +173,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportResult"
 
-  /organizations/{orgKey}/processes/{processId}/export:
+  /organizations/{orgKey}/workflows/{workflowId}/export:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
-      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
     get:
-      operationId: exportProcessDefinition
-      tags: [ Process Definitions ]
-      summary: Export a single process definition as SPEM YAML
+      operationId: exportWorkflow
+      tags: [ Workflows ]
+      summary: Export a single workflow as SPEM YAML
       description: >-
         Self-contained: the document carries the role, artifact, task and tool definitions the
         workflow references alongside the workflow itself, so the result can be fed straight back
-        to /processes/import — including into another organization.
+        to /workflows/import — including into another organization.
       responses:
         "200":
           description: YAML file
@@ -627,30 +627,30 @@ paths:
   # EXECUTION API  (runtime)
   # ─────────────────────────────────────────────────────────────
 
-  # ── Process Instances ─────────────────────────────────────
+  # ── Workflow Instances ─────────────────────────────────────
 
   /organizations/{orgKey}/instances:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:
-      operationId: listProcessInstances
-      tags: [ Process Instances ]
-      summary: List process instances
+      operationId: listWorkflowInstances
+      tags: [ Workflow Instances ]
+      summary: List workflow instances
       parameters:
-        - name: processId
+        - name: workflowId
           in: query
-          description: Filter by process definition id
+          description: Filter by workflow id
           schema:
             type: string
         - name: status
           in: query
           schema:
-            $ref: "#/components/schemas/ProcessInstanceStatus"
+            $ref: "#/components/schemas/WorkflowInstanceStatus"
         - name: entityId
           in: query
           description: >-
-            Filter by the base-entity entity instance this process is running against.
-            Useful when a process is tied to a specific entity (e.g. "delivery process for
+            Filter by the base-entity entity instance this workflow is running against.
+            Useful when a workflow is tied to a specific entity (e.g. "delivery workflow for
             Order #1234").
           schema:
             type: string
@@ -661,34 +661,34 @@ paths:
       responses:
         "200":
           description: >-
-            Paged list of process instances, each with its task and artifact instances. Full
-            shape rather than a summary, for the reason given on `listProcessDefinitions`.
+            Paged list of workflow instances, each with its task and artifact instances. Full
+            shape rather than a summary, for the reason given on `listWorkflows`.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageOf_ProcessInstance"
+                $ref: "#/components/schemas/PageOf_WorkflowInstance"
 
     post:
-      operationId: startProcessInstance
-      tags: [ Process Instances ]
-      summary: Start a new process instance
+      operationId: startWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Start a new workflow instance
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StartProcessRequest"
+              $ref: "#/components/schemas/StartWorkflowRequest"
       responses:
         "201":
           description: Instance created and first tasks activated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstance"
+                $ref: "#/components/schemas/WorkflowInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
-          description: Process definition not found
+          description: Workflow not found
           content:
             application/json:
               schema:
@@ -699,23 +699,23 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
-      operationId: getProcessInstance
-      tags: [ Process Instances ]
-      summary: Get a process instance with its task and artifact instances
+      operationId: getWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Get a workflow instance with its task and artifact instances
       responses:
         "200":
-          description: Full process instance
+          description: Full workflow instance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstance"
+                $ref: "#/components/schemas/WorkflowInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
     delete:
-      operationId: cancelProcessInstance
-      tags: [ Process Instances ]
-      summary: Cancel a running process instance
+      operationId: cancelWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Cancel a running workflow instance
       requestBody:
         content:
           application/json:
@@ -745,7 +745,7 @@ paths:
     get:
       operationId: listTaskInstances
       tags: [ Task Instances ]
-      summary: List all task instances for a process instance
+      summary: List all task instances for a workflow instance
       parameters:
         - name: status
           in: query
@@ -884,7 +884,7 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   # ── Artifact Instances ────────────────────────────────────
-  # Embedded in their process instance, unlike the ArtifactDefinition they are made from: an
+  # Embedded in their workflow instance, unlike the ArtifactDefinition they are made from: an
   # instance has no life apart from the run that produced it.
 
   /organizations/{orgKey}/instances/{instanceId}/artifacts:
@@ -895,7 +895,7 @@ paths:
       operationId: listArtifactInstances
       tags: [ Artifact Instances ]
       summary: >-
-        List artifact instances in a process instance. Each entry carries the
+        List artifact instances in a workflow instance. Each entry carries the
         current state from base-state (read-only from base-workflow's perspective)
         and the entityId linking to the actual data in base-entity.
       parameters:
@@ -1018,8 +1018,8 @@ components:
       description: >-
         Organisation key used to scope all base-workflow resources for multi-tenancy.
         Matches the orgKey convention used across processpuzzle-core (OrganizationGuard).
-    ProcessIdParam:
-      name: processId
+    WorkflowIdParam:
+      name: workflowId
       in: path
       required: true
       schema:
@@ -1108,7 +1108,7 @@ components:
   schemas:
 
     # ── Enums ──────────────────────────────────────────────
-    ProcessInstanceStatus:
+    WorkflowInstanceStatus:
       type: string
       enum: [ ACTIVE, COMPLETED, CANCELLED, SUSPENDED ]
 
@@ -1131,7 +1131,7 @@ components:
       description: >-
         How a task's `dependsOn` set is satisfied. ALL (the default) waits for every named task to
         reach a terminal status; ANY waits for the first of them. Immaterial when `dependsOn` is
-        empty — such a task is eligible from process start either way.
+        empty — such a task is eligible from workflow start either way.
 
     ArtifactType:
       type: string
@@ -1344,7 +1344,7 @@ components:
           nullable: true
           description: >-
             JSON template for the request body. Supports ${expression} placeholders evaluated as
-            PPCL expressions against the current process context.
+            PPCL expressions against the current workflow context.
         expectedStatusCodes:
           type: array
           items:
@@ -1454,7 +1454,7 @@ components:
           nullable: true
           description: >-
             Tool definition id. On a SERVICE_STEP, completing the step triggers a REST call to that
-            tool's operation; the result is made available to later steps via the process context.
+            tool's operation; the result is made available to later steps via the workflow context.
         toolOperation:
           type: string
           nullable: true
@@ -1463,15 +1463,15 @@ components:
           type: object
           nullable: true
           description: >-
-            Maps the process context and artifact instances onto tool operation inputs. Keys are
-            tool parameter names, values are PPCL expressions evaluated against the process context.
+            Maps the workflow context and artifact instances onto tool operation inputs. Keys are
+            tool parameter names, values are PPCL expressions evaluated against the workflow context.
           additionalProperties:
             type: string
         outputMapping:
           type: object
           nullable: true
           description: >-
-            Maps tool response fields back into the process context. Keys are context variable
+            Maps tool response fields back into the workflow context. Keys are context variable
             names, values are JSONPath expressions into the tool response.
           additionalProperties:
             type: string
@@ -1713,41 +1713,41 @@ components:
             When this workflow extends another, marks this task use as replacing the parent's use of
             the same task rather than adding to it.
 
-    # ── Process Instance (runtime) ─────────────────────────
-    StartProcessRequest:
+    # ── Workflow Instance (runtime) ─────────────────────────
+    StartWorkflowRequest:
       type: object
-      required: [ processDefinitionId ]
+      required: [ workflowId ]
       properties:
-        processDefinitionId:
+        workflowId:
           type: string
         entityId:
           type: string
           nullable: true
           description: >-
-            Optional base-entity entity instance this process runs against. When set,
+            Optional base-entity entity instance this workflow runs against. When set,
             it is passed as context to rule evaluation and state machine triggers.
         context:
           type: object
           nullable: true
           description: >-
             Initial key/value context variables available to rule guards, postcondition
-            expressions, and tool payload templates throughout the process instance.
+            expressions, and tool payload templates throughout the workflow instance.
           additionalProperties: true
 
-    # One flat schema rather than a `ProcessInstanceSummary` base plus an `allOf` extension: the list
+    # One flat schema rather than a `WorkflowInstanceSummary` base plus an `allOf` extension: the list
     # endpoint returns the same full shape the single GET returns, so there is no second, lighter
-    # projection left to name. See `listProcessInstances` for why.
-    ProcessInstance:
+    # projection left to name. See `listWorkflowInstances` for why.
+    WorkflowInstance:
       type: object
       properties:
         id:
           type: string
-        processDefinitionId:
+        workflowId:
           type: string
-        processDefinitionName:
+        workflowName:
           type: string
         status:
-          $ref: "#/components/schemas/ProcessInstanceStatus"
+          $ref: "#/components/schemas/WorkflowInstanceStatus"
         entityId:
           type: string
           nullable: true
@@ -1818,14 +1818,14 @@ components:
           type: object
           readOnly: true
           description: >-
-            What completing this task added to the process context: the context the caller supplied
+            What completing this task added to the workflow context: the context the caller supplied
             with the completion, merged with whatever this task's SERVICE_STEPs mapped back out of
             their tool responses.
 
-            Recorded per task rather than accumulated on the process instance, so that completing a
+            Recorded per task rather than accumulated on the workflow instance, so that completing a
             task writes only its own row — otherwise every completion would contend on the
             instance's optimistic lock and two `parallel` tasks could not be completed
-            concurrently. `ProcessInstance.context` is the fold of these.
+            concurrently. `WorkflowInstance.context` is the fold of these.
           additionalProperties: true
 
     StepResult:
@@ -1858,7 +1858,7 @@ components:
         context:
           type: object
           description: >-
-            Additional context variables to merge into the process context before
+            Additional context variables to merge into the workflow context before
             evaluating the postcondition. Useful for passing output values from
             the user's actions (e.g. reviewScore, approval decision).
           additionalProperties: true
@@ -1879,7 +1879,7 @@ components:
             accepted is false — tells the user what condition wasn't met yet.
 
     # ── Artifact Instance (runtime) ───────────────────────
-    # Embedded in its ProcessInstance, unlike the ArtifactDefinition it is made from: an instance
+    # Embedded in its WorkflowInstance, unlike the ArtifactDefinition it is made from: an instance
     # has no life apart from the run that produced it, which is why it is reached through
     # /instances/{instanceId}/artifacts rather than a resource of its own.
 
@@ -1912,7 +1912,7 @@ components:
           description: >-
             Cached current state name from base-state, refreshed when
             EntityStateChangedEvent is received. Provided here as a convenience so
-            clients don't need to query base-state just to render a process overview.
+            clients don't need to query base-state just to render a workflow overview.
         updatedAt:
           type: string
           format: date-time
@@ -1935,13 +1935,13 @@ components:
         size:
           type: integer
 
-    PageOf_ProcessInstance:
+    PageOf_WorkflowInstance:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/ProcessInstance"
+            $ref: "#/components/schemas/WorkflowInstance"
         totalElements:
           type: integer
           format: int64

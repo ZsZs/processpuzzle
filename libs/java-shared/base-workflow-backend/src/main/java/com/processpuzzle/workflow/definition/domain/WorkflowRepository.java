@@ -18,7 +18,7 @@ public interface WorkflowRepository
 
     boolean existsByOrgKeyAndId(String orgKey, String id);
 
-    List<Workflow> findByOrgKeyAndExtendsProcessId(String orgKey, String extendsProcessId);
+    List<Workflow> findByOrgKeyAndExtendsWorkflowId(String orgKey, String extendsWorkflowId);
 
     List<Workflow> findByOrgKey(String orgKey);
 }

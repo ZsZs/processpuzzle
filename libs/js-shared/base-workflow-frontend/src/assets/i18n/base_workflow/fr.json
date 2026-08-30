@@ -1,6 +1,6 @@
 {
-  "process_definition": {
-    "_self": "Processus",
+  "workflow": {
+    "_self": "Flux de travail",
     "id": "Id",
     "name": "Nom",
     "description": "Description",
@@ -13,7 +13,7 @@
     "tools": "Outils",
     "tasks": "Tâches"
   },
-  "process_task_assignment": {
+  "workflow_task_assignment": {
     "_self": "Affectation de tâche",
     "taskDefinitionId": "Tâche",
     "performedBy": "Réalisée par",
@@ -98,11 +98,11 @@
     "payloadTemplate": "Modèle de charge utile",
     "expectedStatusCodes": "Codes de statut attendus"
   },
-  "process_instance": {
-    "_self": "Instance de processus",
+  "workflow_instance": {
+    "_self": "Instance de flux de travail",
     "id": "Id",
-    "processDefinitionId": "Processus",
-    "processDefinitionName": "Nom du processus",
+    "workflowId": "Flux de travail",
+    "workflowName": "Nom du flux de travail",
     "status": "Statut",
     "entityId": "Entité",
     "startedAt": "Démarré le",

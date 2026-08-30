@@ -20,7 +20,7 @@ import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
-import com.processpuzzle.workflow.definition.usecases.outbound.ActiveProcessInstanceExistencePort;
+import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
 import com.processpuzzle.workflow.model.ArtifactDefinitionInput;
 import com.processpuzzle.workflow.model.PageOfWorkflow;
 import com.processpuzzle.workflow.model.RoleDefinitionInput;
@@ -45,7 +45,7 @@ import java.util.List;
  * <p>Roles, artifacts, tasks and tools are catalog aggregates of their own, so each has a plain
  * {@code to*Domain} / {@code to*Model} pair, and a workflow maps to <em>uses</em> of them plus its
  * own start condition. Nothing here follows a reference: turning a use's id back into a definition
- * is {@code ResolveProcessDefinitionUseCase}'s job, and doing it in a mapper would make every list
+ * is {@code ResolveWorkflowUseCase}'s job, and doing it in a mapper would make every list
  * response fetch the whole catalog.
  *
  * <p>{@code version} travels <em>into</em> the domain object on the way in, which is what makes the
@@ -62,9 +62,9 @@ import java.util.List;
 @Component
 public class WorkflowDefinitionMapper {
 
-    private final ActiveProcessInstanceExistencePort activeInstanceExistencePort;
+    private final ActiveWorkflowInstanceExistencePort activeInstanceExistencePort;
 
-    public WorkflowDefinitionMapper(ActiveProcessInstanceExistencePort activeInstanceExistencePort) {
+    public WorkflowDefinitionMapper(ActiveWorkflowInstanceExistencePort activeInstanceExistencePort) {
         this.activeInstanceExistencePort = activeInstanceExistencePort;
     }
 
@@ -76,7 +76,7 @@ public class WorkflowDefinitionMapper {
                 .id(input.getId())
                 .name(input.getName())
                 .description(input.getDescription())
-                .extendsProcessId(input.getExtends()) // see class Javadoc
+                .extendsWorkflowId(input.getExtends()) // see class Javadoc
                 .version(input.getVersion()) // null unless the caller opted into the lock check
                 .startCondition(toStartConditionDomain(input.getStartCondition()))
                 .roles(mapEach(input.getRoles(), this::toRoleUseDomain))
@@ -91,7 +91,7 @@ public class WorkflowDefinitionMapper {
         model.setId(workflow.getId());
         model.setName(workflow.getName());
         model.setDescription(workflow.getDescription());
-        model.setExtends(workflow.getExtendsProcessId()); // see class Javadoc
+        model.setExtends(workflow.getExtendsWorkflowId()); // see class Javadoc
         model.setStartCondition(toStartConditionModel(workflow.getStartCondition()));
         model.setRoles(mapEach(workflow.getRoles(), this::toRoleUseModel));
         model.setArtifacts(mapEach(workflow.getArtifacts(), this::toArtifactUseModel));

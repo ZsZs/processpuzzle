@@ -54,7 +54,7 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
 /**
  * A catalog aggregate with a list and a details screen of its own. An artifact is authored once per
- * tenant: the same `Fulfillment Invoice` is produced by one process and consumed by another, and a
+ * tenant: the same `Fulfillment Invoice` is produced by one workflow and consumed by another, and a
  * task's `ARTIFACT`-typed reference names it by id.
  */
 export function createArtifactDefinitionDescriptor(): BaseEntityDescriptor {

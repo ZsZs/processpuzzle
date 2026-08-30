@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A callable external tool (a REST API) that task steps invoke, shared across process definitions
+ * A callable external tool (a REST API) that task steps invoke, shared across workflow definitions
  * within a tenant. Composite key mirrors {@link Workflow}'s (orgKey, id).
  */
 @Getter

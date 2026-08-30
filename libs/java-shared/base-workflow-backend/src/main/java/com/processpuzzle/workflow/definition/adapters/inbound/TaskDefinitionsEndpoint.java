@@ -17,8 +17,8 @@ import java.util.List;
 /**
  * Implements the generated {@code TaskDefinitionsApi} (from the "Task Definitions" tag).
  *
- * <p>Organization-scoped, not process-scoped: a task belongs to the tenant's catalog and may be
- * referenced by any number of process definitions.
+ * <p>Organization-scoped, not workflow-scoped: a task belongs to the tenant's catalog and may be
+ * referenced by any number of workflow definitions.
  */
 @RestController
 public class TaskDefinitionsEndpoint implements TaskDefinitionsApi {

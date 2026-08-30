@@ -1,7 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { ARTIFACT_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ArtifactType } from '../definition/artifact-definition';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, PROCESS_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { readOnlyAttr } from './read-only-attr';
 
 export { ARTIFACT_INSTANCE_ENTITY_NAME };
@@ -18,7 +18,7 @@ function createArtifactInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const typeAttr = readOnlyAttr('type', FormControlType.DROPDOWN, 'Type', artifactTypeSelectables);
 
   // Cached from base-state, refreshed when base-workflow sees `EntityStateChangedEvent`. Shown in the
-  // table because where each artifact stands *is* the progress of the process; base-state stays the
+  // table because where each artifact stands *is* the progress of the workflow; base-state stays the
   // authority, and `stateMachineInstanceId` below is how a caller asks it.
   const currentStateAttr = readOnlyAttr('currentState', FormControlType.TEXT_BOX, 'Current State');
 
@@ -53,7 +53,7 @@ export function createArtifactInstanceDescriptor(): BaseEntityDescriptor {
     entityName: ARTIFACT_INSTANCE_ENTITY_NAME,
     attrDescriptors: createArtifactInstanceAttrDescriptors(),
     i18nScope: ARTIFACT_INSTANCE_I18N_SCOPE,
-    componentParent: PROCESS_INSTANCE_ENTITY_NAME,
+    componentParent: WORKFLOW_INSTANCE_ENTITY_NAME,
     isEmbedded: true,
     // Read-only by contract: base-workflow only stores the references, it never writes an artifact.
     isAbstract: true,

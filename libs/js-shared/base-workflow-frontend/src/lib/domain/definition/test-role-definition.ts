@@ -3,7 +3,7 @@
  * `processpuzzle-testbed-workflows.yaml`.
  *
  * `/roles` answers with a plain array rather than a page — see `listRoleDefinitions` in the contract —
- * so there is no envelope helper here, unlike the process and instance fixtures.
+ * so there is no envelope helper here, unlike the workflow and instance fixtures.
  */
 export const ROLE_DEFINITION_DTO = {
   id: 'clerk',

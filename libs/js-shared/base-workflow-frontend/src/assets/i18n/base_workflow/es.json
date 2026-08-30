@@ -1,6 +1,6 @@
 {
-  "process_definition": {
-    "_self": "Proceso",
+  "workflow": {
+    "_self": "Flujo de trabajo",
     "id": "Id",
     "name": "Nombre",
     "description": "Descripción",
@@ -13,7 +13,7 @@
     "tools": "Herramientas",
     "tasks": "Tareas"
   },
-  "process_task_assignment": {
+  "workflow_task_assignment": {
     "_self": "Asignación de tarea",
     "taskDefinitionId": "Tarea",
     "performedBy": "Realizada por",
@@ -98,11 +98,11 @@
     "payloadTemplate": "Plantilla de payload",
     "expectedStatusCodes": "Códigos de estado esperados"
   },
-  "process_instance": {
-    "_self": "Instancia de proceso",
+  "workflow_instance": {
+    "_self": "Instancia de flujo de trabajo",
     "id": "Id",
-    "processDefinitionId": "Proceso",
-    "processDefinitionName": "Nombre del proceso",
+    "workflowId": "Flujo de trabajo",
+    "workflowName": "Nombre del flujo de trabajo",
     "status": "Estado",
     "entityId": "Entidad",
     "startedAt": "Iniciado el",

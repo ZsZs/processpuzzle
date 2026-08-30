@@ -8,34 +8,34 @@ import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateArtifactDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.CreateProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.CreateWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateRoleDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateTaskDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateToolDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteArtifactDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.DeleteProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.DeleteWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteRoleDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteTaskDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteToolDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.ExportProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ExportWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindAllArtifactDefinitionsUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.FindAllProcessDefinitionsUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.FindAllWorkflowsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindAllRoleDefinitionsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindAllTaskDefinitionsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindAllToolDefinitionsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindArtifactDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.FindProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.FindWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindRoleDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindTaskDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.FindToolDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
-import com.processpuzzle.workflow.definition.usecases.inbound.ImportProcessDefinitionsUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceArtifactDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceRoleDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceTaskDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceToolDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.outbound.ActiveProcessInstanceExistencePort;
+import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
 import com.processpuzzle.workflow.model.ArtifactDefinitionInput;
 import com.processpuzzle.workflow.model.PageOfWorkflow;
 import com.processpuzzle.workflow.model.WorkflowInput;
@@ -68,78 +68,78 @@ import static org.mockito.Mockito.when;
  * Each of the five definition endpoints is a thin delegation layer, so one test per endpoint that
  * walks all its operations is the whole contract worth asserting: the right use case is called with
  * the org key and id from the path, and the response carries the mapped model and status. The four
- * catalog endpoints are now identical in shape — org-scoped, no process in the path — which is
+ * catalog endpoints are now identical in shape — org-scoped, no workflow in the path — which is
  * exactly what the reference-based redesign set out to achieve.
  */
 class WorkflowDefinitionEndpointsTest {
 
     private static final String ORG = "org-1";
 
-    private ActiveProcessInstanceExistencePort existencePort;
+    private ActiveWorkflowInstanceExistencePort existencePort;
     private WorkflowDefinitionMapper mapper;
 
     @BeforeEach
     void setUp() {
-        existencePort = mock(ActiveProcessInstanceExistencePort.class);
+        existencePort = mock(ActiveWorkflowInstanceExistencePort.class);
         mapper = new WorkflowDefinitionMapper(existencePort);
     }
 
     @Test
-    void processDefinitionsEndpoint_allMethods() throws IOException {
-        CreateProcessDefinitionUseCase createUseCase = mock(CreateProcessDefinitionUseCase.class);
-        ReplaceProcessDefinitionUseCase replaceUseCase = mock(ReplaceProcessDefinitionUseCase.class);
-        DeleteProcessDefinitionUseCase deleteUseCase = mock(DeleteProcessDefinitionUseCase.class);
-        FindProcessDefinitionUseCase findUseCase = mock(FindProcessDefinitionUseCase.class);
-        FindAllProcessDefinitionsUseCase findAllUseCase = mock(FindAllProcessDefinitionsUseCase.class);
-        ImportProcessDefinitionsUseCase importUseCase = mock(ImportProcessDefinitionsUseCase.class);
-        ExportProcessDefinitionUseCase exportUseCase = mock(ExportProcessDefinitionUseCase.class);
+    void workflowsEndpoint_allMethods() throws IOException {
+        CreateWorkflowUseCase createUseCase = mock(CreateWorkflowUseCase.class);
+        ReplaceWorkflowUseCase replaceUseCase = mock(ReplaceWorkflowUseCase.class);
+        DeleteWorkflowUseCase deleteUseCase = mock(DeleteWorkflowUseCase.class);
+        FindWorkflowUseCase findUseCase = mock(FindWorkflowUseCase.class);
+        FindAllWorkflowsUseCase findAllUseCase = mock(FindAllWorkflowsUseCase.class);
+        ImportWorkflowsUseCase importUseCase = mock(ImportWorkflowsUseCase.class);
+        ExportWorkflowUseCase exportUseCase = mock(ExportWorkflowUseCase.class);
 
-        ProcessDefinitionsEndpoint endpoint = new ProcessDefinitionsEndpoint(
+        WorkflowsEndpoint endpoint = new WorkflowsEndpoint(
                 createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase,
                 importUseCase, exportUseCase, mapper);
 
-        Workflow domain = Workflow.builder().orgKey(ORG).id("p1").name("Process 1").build();
+        Workflow domain = Workflow.builder().orgKey(ORG).id("p1").name("Workflow 1").build();
 
         when(createUseCase.create(eq(ORG), any(Workflow.class))).thenReturn(domain);
         when(findUseCase.findByOrgKeyAndId(ORG, "p1")).thenReturn(domain);
         when(replaceUseCase.replace(eq(ORG), eq("p1"), any(Workflow.class))).thenReturn(domain);
         when(findAllUseCase.findAll(ORG, null, null, null, null)).thenReturn(new PageImpl<>(List.of(domain)));
         when(importUseCase.execute(eq(ORG), any(InputStream.class))).thenReturn(new ImportOutcome(1, 0, List.of()));
-        when(exportUseCase.execute(ORG, "p1")).thenReturn("processes: []".getBytes(StandardCharsets.UTF_8));
+        when(exportUseCase.execute(ORG, "p1")).thenReturn("workflows: []".getBytes(StandardCharsets.UTF_8));
 
-        WorkflowInput input = new WorkflowInput().id("p1").name("Process 1");
+        WorkflowInput input = new WorkflowInput().id("p1").name("Workflow 1");
 
         // create
-        ResponseEntity<com.processpuzzle.workflow.model.Workflow> createdRes = endpoint.createProcessDefinition(ORG, input);
+        ResponseEntity<com.processpuzzle.workflow.model.Workflow> createdRes = endpoint.createWorkflow(ORG, input);
         assertThat(createdRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(createdRes.getBody().getId()).isEqualTo("p1");
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.Workflow> getRes = endpoint.getProcessDefinition(ORG, "p1");
+        ResponseEntity<com.processpuzzle.workflow.model.Workflow> getRes = endpoint.getWorkflow(ORG, "p1");
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(getRes.getBody().getId()).isEqualTo("p1");
 
         // update
-        ResponseEntity<com.processpuzzle.workflow.model.Workflow> updateRes = endpoint.updateProcessDefinition(ORG, "p1", input);
+        ResponseEntity<com.processpuzzle.workflow.model.Workflow> updateRes = endpoint.updateWorkflow(ORG, "p1", input);
         assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // list
-        ResponseEntity<PageOfWorkflow> listRes = endpoint.listProcessDefinitions(ORG, null, null, null, null);
+        ResponseEntity<PageOfWorkflow> listRes = endpoint.listWorkflows(ORG, null, null, null, null);
         assertThat(listRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listRes.getBody().getContent()).hasSize(1);
 
         // delete
-        ResponseEntity<Void> deleteRes = endpoint.deleteProcessDefinition(ORG, "p1");
+        ResponseEntity<Void> deleteRes = endpoint.deleteWorkflow(ORG, "p1");
         assertThat(deleteRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(deleteUseCase).delete(ORG, "p1");
 
         // import
-        MockMultipartFile file = new MockMultipartFile("file", "test.yaml", "text/yaml", "processes: []".getBytes());
-        ResponseEntity<ImportResult> importRes = endpoint.importProcessDefinitions(ORG, file);
+        MockMultipartFile file = new MockMultipartFile("file", "test.yaml", "text/yaml", "workflows: []".getBytes());
+        ResponseEntity<ImportResult> importRes = endpoint.importWorkflows(ORG, file);
         assertThat(importRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // export
-        ResponseEntity<Resource> exportRes = endpoint.exportProcessDefinition(ORG, "p1");
+        ResponseEntity<Resource> exportRes = endpoint.exportWorkflow(ORG, "p1");
         assertThat(exportRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(exportRes.getBody()).isNotNull();
     }
@@ -312,26 +312,26 @@ class WorkflowDefinitionEndpointsTest {
     }
 
     /**
-     * The link that was missing. {@code ReplaceProcessDefinitionUseCase} has always compared the
+     * The link that was missing. {@code ReplaceWorkflowUseCase} has always compared the
      * caller's version against the stored one, but {@code version} lived only on the read schema, so
      * over HTTP that comparison read a field nothing populated and the contract's promise of
      * lost-update protection was unreachable. These assert the version actually arrives; the guard
-     * itself is covered by {@code ProcessDefinitionUseCasesTest}.
+     * itself is covered by {@code WorkflowUseCasesTest}.
      */
     @Test
-    void updateProcessDefinition_forwardsTheCallersVersion() {
-        ReplaceProcessDefinitionUseCase replaceUseCase = mock(ReplaceProcessDefinitionUseCase.class);
-        ProcessDefinitionsEndpoint endpoint = new ProcessDefinitionsEndpoint(
-                mock(CreateProcessDefinitionUseCase.class), replaceUseCase,
-                mock(DeleteProcessDefinitionUseCase.class), mock(FindProcessDefinitionUseCase.class),
-                mock(FindAllProcessDefinitionsUseCase.class), mock(ImportProcessDefinitionsUseCase.class),
-                mock(ExportProcessDefinitionUseCase.class), mapper);
-        Workflow saved = Workflow.builder().orgKey(ORG).id("p1").name("Process 1").build();
+    void updateWorkflow_forwardsTheCallersVersion() {
+        ReplaceWorkflowUseCase replaceUseCase = mock(ReplaceWorkflowUseCase.class);
+        WorkflowsEndpoint endpoint = new WorkflowsEndpoint(
+                mock(CreateWorkflowUseCase.class), replaceUseCase,
+                mock(DeleteWorkflowUseCase.class), mock(FindWorkflowUseCase.class),
+                mock(FindAllWorkflowsUseCase.class), mock(ImportWorkflowsUseCase.class),
+                mock(ExportWorkflowUseCase.class), mapper);
+        Workflow saved = Workflow.builder().orgKey(ORG).id("p1").name("Workflow 1").build();
         when(replaceUseCase.replace(eq(ORG), eq("p1"), any(Workflow.class))).thenReturn(saved);
 
-        endpoint.updateProcessDefinition(ORG, "p1", new WorkflowInput().id("p1").name("Process 1").version(3L));
+        endpoint.updateWorkflow(ORG, "p1", new WorkflowInput().id("p1").name("Workflow 1").version(3L));
         // Omitting it stays an unconditional overwrite, so a client that never read a version still works.
-        endpoint.updateProcessDefinition(ORG, "p1", new WorkflowInput().id("p1").name("Process 1"));
+        endpoint.updateWorkflow(ORG, "p1", new WorkflowInput().id("p1").name("Workflow 1"));
 
         ArgumentCaptor<Workflow> forwarded = ArgumentCaptor.captor();
         verify(replaceUseCase, times(2)).replace(eq(ORG), eq("p1"), forwarded.capture());

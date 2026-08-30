@@ -1,9 +1,9 @@
 package com.processpuzzle.workflow.execution.domain;
 
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
-import com.processpuzzle.workflow.execution.events.ProcessInstanceCancelledEvent;
-import com.processpuzzle.workflow.execution.events.ProcessInstanceCompletedEvent;
-import com.processpuzzle.workflow.execution.events.ProcessInstanceStartedEvent;
+import com.processpuzzle.workflow.execution.events.WorkflowInstanceCancelledEvent;
+import com.processpuzzle.workflow.execution.events.WorkflowInstanceCompletedEvent;
+import com.processpuzzle.workflow.execution.events.WorkflowInstanceStartedEvent;
 import com.processpuzzle.workflow.execution.events.TaskActivatedEvent;
 import com.processpuzzle.workflow.execution.events.TaskCompletedEvent;
 import com.processpuzzle.workflow.execution.events.TaskSkippedEvent;
@@ -20,18 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowExecutionDomainTest {
 
     @Test
-    void processInstance_builderAndGettersSettersAndMethods() {
+    void workflowInstance_builderAndGettersSettersAndMethods() {
         UUID id = UUID.randomUUID();
         Instant now = Instant.now();
         Map<String, Object> ctx = new HashMap<>();
         ctx.put("k1", "v1");
 
-        ProcessInstance pi = ProcessInstance.builder()
+        WorkflowInstance pi = WorkflowInstance.builder()
                 .id(id)
                 .orgKey("org-1")
-                .processDefinitionId("proc-def-1")
-                .processDefinitionName("Proc Def 1")
-                .status(ProcessInstanceStatus.ACTIVE)
+                .workflowId("proc-def-1")
+                .workflowName("Proc Def 1")
+                .status(WorkflowInstanceStatus.ACTIVE)
                 .entityId("entity-1")
                 .initialContext(ctx)
                 .startedAt(now)
@@ -41,9 +41,9 @@ class WorkflowExecutionDomainTest {
 
         assertThat(pi.getId()).isEqualTo(id);
         assertThat(pi.getOrgKey()).isEqualTo("org-1");
-        assertThat(pi.getProcessDefinitionId()).isEqualTo("proc-def-1");
-        assertThat(pi.getProcessDefinitionName()).isEqualTo("Proc Def 1");
-        assertThat(pi.getStatus()).isEqualTo(ProcessInstanceStatus.ACTIVE);
+        assertThat(pi.getWorkflowId()).isEqualTo("proc-def-1");
+        assertThat(pi.getWorkflowName()).isEqualTo("Proc Def 1");
+        assertThat(pi.getStatus()).isEqualTo(WorkflowInstanceStatus.ACTIVE);
         assertThat(pi.getEntityId()).isEqualTo("entity-1");
         assertThat(pi.getInitialContext()).containsEntry("k1", "v1");
         assertThat(pi.getStartedAt()).isEqualTo(now);
@@ -53,13 +53,13 @@ class WorkflowExecutionDomainTest {
         pi.getInitialContext().put("k2", "v2");
         assertThat(pi.getInitialContext()).containsEntry("k2", "v2");
 
-        ProcessInstance pi2 = ProcessInstance.builder().id(id).build();
+        WorkflowInstance pi2 = WorkflowInstance.builder().id(id).build();
         assertThat(pi)
                 .isEqualTo(pi2)
                 .hasSameHashCodeAs(pi2);
         assertThat(pi.toString()).contains("org-1");
 
-        ProcessInstance empty = new ProcessInstance();
+        WorkflowInstance empty = new WorkflowInstance();
         empty.setInitialContext(new HashMap<>());
         empty.getInitialContext().put("k3", "v3");
         assertThat(empty.getInitialContext()).containsEntry("k3", "v3");
@@ -81,7 +81,7 @@ class WorkflowExecutionDomainTest {
         TaskInstance ti = TaskInstance.builder()
                 .id(id)
                 .orgKey("org-1")
-                .processInstanceId(piId)
+                .workflowInstanceId(piId)
                 .taskDefinitionId("task-1")
                 .name("Task 1")
                 .status(TaskInstanceStatus.ACTIVE)
@@ -96,7 +96,7 @@ class WorkflowExecutionDomainTest {
 
         assertThat(ti.getId()).isEqualTo(id);
         assertThat(ti.getOrgKey()).isEqualTo("org-1");
-        assertThat(ti.getProcessInstanceId()).isEqualTo(piId);
+        assertThat(ti.getWorkflowInstanceId()).isEqualTo(piId);
         assertThat(ti.getTaskDefinitionId()).isEqualTo("task-1");
         assertThat(ti.getName()).isEqualTo("Task 1");
         assertThat(ti.getStatus()).isEqualTo(TaskInstanceStatus.ACTIVE);
@@ -127,7 +127,7 @@ class WorkflowExecutionDomainTest {
         ArtifactInstance wpi = ArtifactInstance.builder()
                 .id(id)
                 .orgKey("org-1")
-                .processInstanceId(piId)
+                .workflowInstanceId(piId)
                 .artifactDefinitionId("wp-1")
                 .name("Artifact 1")
                 .type(ArtifactType.DOCUMENT)
@@ -139,7 +139,7 @@ class WorkflowExecutionDomainTest {
 
         assertThat(wpi.getId()).isEqualTo(id);
         assertThat(wpi.getOrgKey()).isEqualTo("org-1");
-        assertThat(wpi.getProcessInstanceId()).isEqualTo(piId);
+        assertThat(wpi.getWorkflowInstanceId()).isEqualTo(piId);
         assertThat(wpi.getArtifactDefinitionId()).isEqualTo("wp-1");
         assertThat(wpi.getName()).isEqualTo("Artifact 1");
         assertThat(wpi.getType()).isEqualTo(ArtifactType.DOCUMENT);
@@ -184,17 +184,17 @@ class WorkflowExecutionDomainTest {
         UUID tiId = UUID.randomUUID();
         UUID wpId = UUID.randomUUID();
 
-        ProcessInstanceStartedEvent started = new ProcessInstanceStartedEvent("org-1", piId, "proc-1", "entity-1");
+        WorkflowInstanceStartedEvent started = new WorkflowInstanceStartedEvent("org-1", piId, "proc-1", "entity-1");
         assertThat(started.orgKey()).isEqualTo("org-1");
-        assertThat(started.processInstanceId()).isEqualTo(piId);
-        assertThat(started.processDefinitionId()).isEqualTo("proc-1");
+        assertThat(started.workflowInstanceId()).isEqualTo(piId);
+        assertThat(started.workflowId()).isEqualTo("proc-1");
         assertThat(started.entityId()).isEqualTo("entity-1");
 
-        ProcessInstanceCompletedEvent completed = new ProcessInstanceCompletedEvent("org-1", piId, "proc-1");
+        WorkflowInstanceCompletedEvent completed = new WorkflowInstanceCompletedEvent("org-1", piId, "proc-1");
         assertThat(completed.orgKey()).isEqualTo("org-1");
-        assertThat(completed.processInstanceId()).isEqualTo(piId);
+        assertThat(completed.workflowInstanceId()).isEqualTo(piId);
 
-        ProcessInstanceCancelledEvent cancelled = new ProcessInstanceCancelledEvent("org-1", piId, "proc-1", "User cancelled");
+        WorkflowInstanceCancelledEvent cancelled = new WorkflowInstanceCancelledEvent("org-1", piId, "proc-1", "User cancelled");
         assertThat(cancelled.orgKey()).isEqualTo("org-1");
         assertThat(cancelled.reason()).isEqualTo("User cancelled");
 
@@ -219,9 +219,9 @@ class WorkflowExecutionDomainTest {
     }
     @Test
     void enums_allValuesCanBeInstantiated() {
-        assertThat(ProcessInstanceStatus.values()).containsExactlyInAnyOrder(
-                ProcessInstanceStatus.ACTIVE, ProcessInstanceStatus.COMPLETED,
-                ProcessInstanceStatus.CANCELLED, ProcessInstanceStatus.SUSPENDED);
+        assertThat(WorkflowInstanceStatus.values()).containsExactlyInAnyOrder(
+                WorkflowInstanceStatus.ACTIVE, WorkflowInstanceStatus.COMPLETED,
+                WorkflowInstanceStatus.CANCELLED, WorkflowInstanceStatus.SUSPENDED);
         assertThat(TaskInstanceStatus.values()).containsExactlyInAnyOrder(
                 TaskInstanceStatus.PENDING, TaskInstanceStatus.ACTIVE,
                 TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED, TaskInstanceStatus.BLOCKED);

@@ -6,7 +6,7 @@
  *
  * <p>Not exposed as a Spring Modulith named interface — nothing outside this module needs to reach
  * into definition internals; the execution layer reads definitions through
- * {@link com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase},
+ * {@link com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase},
  * which lives in the same module.
  */
 package com.processpuzzle.workflow.definition.domain;

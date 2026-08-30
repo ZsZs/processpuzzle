@@ -1,5 +1,5 @@
 /**
- * Domain events published via Spring's {@code ApplicationEventPublisher} as process instances
+ * Domain events published via Spring's {@code ApplicationEventPublisher} as workflow instances
  * progress. Published as plain events (not Spring Modulith {@code @Externalized}) — externalizing
  * to a broker is an application-level concern for the host (processpuzzle-backend) to configure,
  * not something this feature library should assume.

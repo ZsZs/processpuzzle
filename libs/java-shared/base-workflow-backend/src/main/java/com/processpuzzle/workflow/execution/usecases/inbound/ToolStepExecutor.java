@@ -24,7 +24,7 @@ import java.util.Map;
  * own an expression engine (PPCL lives in processpuzzle-core / base-rule's GraalJS engine — see
  * the ProcessPuzzle architecture notes on the rule engine). Until a shared evaluation entry point
  * is exposed to feature modules, this executor treats every mapping value as a direct top-level
- * key: {@code inputMapping} values are looked up as-is in the process context, and
+ * key: {@code inputMapping} values are looked up as-is in the workflow context, and
  * {@code outputMapping} values are looked up as-is in the tool's JSON response body. Nested-path
  * expressions in either direction are not yet supported and are logged as unresolved (become
  * {@code null}) rather than failing the step outright.

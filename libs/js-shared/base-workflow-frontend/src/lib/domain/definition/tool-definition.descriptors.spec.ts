@@ -12,7 +12,7 @@ describe('createToolDefinitionDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  it('is a routable aggregate of its own, shared across processes', () => {
+  it('is a routable aggregate of its own, shared across workflows', () => {
     expect(descriptor.entityName).toBe(TOOL_DEFINITION_ENTITY_NAME);
     expect(descriptor.componentParents).toEqual([]);
     expect(descriptor.isEmbedded).toBe(false);

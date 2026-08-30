@@ -41,7 +41,7 @@ import java.util.Locale;
 
 /**
  * Translates between the SPEM YAML document shape and the definition aggregates, in both
- * directions, for {@code ImportProcessDefinitionsUseCase} and {@code ExportProcessDefinitionUseCase}.
+ * directions, for {@code ImportWorkflowsUseCase} and {@code ExportWorkflowUseCase}.
  *
  * <p>Kept apart from {@link WorkflowDefinitionMapper} because the two speak different dialects: the
  * REST mapper works with the generated OpenAPI models, this one with hand-written records whose
@@ -125,7 +125,7 @@ public class WorkflowYamlMapper {
         workflow.replaceContent(
                 entry.name(),
                 entry.description(),
-                entry.extendsProcessId(),
+                entry.extendsWorkflowId(),
                 toStartConditionDomain(entry.startCondition()),
                 safeList(entry.roles()).stream().map(this::toRoleUseDomain).toList(),
                 safeList(entry.artifacts()).stream().map(this::toArtifactUseDomain).toList(),
@@ -265,7 +265,7 @@ public class WorkflowYamlMapper {
                 workflow.getId(),
                 workflow.getName(),
                 workflow.getDescription(),
-                workflow.getExtendsProcessId(),
+                workflow.getExtendsWorkflowId(),
                 toStartConditionYaml(workflow.getStartCondition()),
                 safeList(workflow.getRoles()).stream()
                         .map(use -> new RoleUseYaml(use.getRoleDefinitionId())).toList(),

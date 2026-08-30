@@ -1,6 +1,7 @@
 /**
- * The wire shape of `automated-check-tool`, verbatim from the `processpuzzle-testbed-tools` fixture in
- * `tools/mock-backend/db.json` — the tool the seeded process's steps reference.
+ * The wire shape of `automated-check-tool` — the tool the seeded workflow's steps reference, named as
+ * `automated-check-tool` in
+ * `base-workflow-backend/src/main/resources/default-workflows/processpuzzle-testbed-workflows.yaml`.
  *
  * `auth` arrives nested, as the contract has it; the mapper is what flattens it.
  */

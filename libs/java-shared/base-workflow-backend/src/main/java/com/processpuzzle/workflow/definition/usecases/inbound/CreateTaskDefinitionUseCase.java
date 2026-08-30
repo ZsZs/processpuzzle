@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adds a task to the organization's catalog. Nothing is checked against the processes that may
+ * Adds a task to the organization's catalog. Nothing is checked against the workflows that may
  * later reference it: a task exists on its own, and it is
- * {@code WorkflowValidator} that refuses a process naming one that does not.
+ * {@code WorkflowValidator} that refuses a workflow naming one that does not.
  */
 @Component
 @RequiredArgsConstructor

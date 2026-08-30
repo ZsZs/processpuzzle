@@ -3,7 +3,7 @@
  * `processpuzzle-testbed-workflows.yaml`.
  *
  * `performedByRoles` names both roles able to perform it; which one actually does is the referencing
- * process's business — see the `tasks` of `PROCESS_DEFINITION_DTO`. Its inputs and outputs are
+ * workflow's business — see the `tasks` of `WORKFLOW_DTO`. Its inputs and outputs are
  * `ARTIFACT` references, the type the catalog model added.
  */
 export const TASK_DEFINITION_DTO = {

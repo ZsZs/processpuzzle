@@ -1,7 +1,7 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
- * Frontend model of `ArtifactDefinition` — something a process produces or consumes whose
+ * Frontend model of `ArtifactDefinition` — something a workflow produces or consumes whose
  * *lifecycle* is worth tracking, authored once per tenant under `/artifacts`.
  *
  * That lifecycle is what separates it from a plain `TaskIOReference`: an artifact may name a

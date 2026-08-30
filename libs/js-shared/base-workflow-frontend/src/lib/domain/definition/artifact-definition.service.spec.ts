@@ -29,7 +29,7 @@ describe('ArtifactDefinitionService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  // A catalog resource of its own: one process produces the invoice, another consumes it, and both
+  // A catalog resource of its own: one workflow produces the invoice, another consumes it, and both
   // name the same record.
   it('reads the artifacts of the organization from their own collection', async () => {
     const pending = firstValueFrom(service.findAll());

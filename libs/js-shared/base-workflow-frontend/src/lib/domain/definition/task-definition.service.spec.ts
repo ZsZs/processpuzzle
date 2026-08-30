@@ -29,8 +29,8 @@ describe('TaskDefinitionService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  // A catalog resource of its own, not `/processes/{id}/tasks`: a task is authored once and picked up
-  // by every process that references its id.
+  // A catalog resource of its own, not `/workflows/{id}/tasks`: a task is authored once and picked up
+  // by every workflow that references its id.
   it('reads the tasks of the organization from their own collection', async () => {
     const pending = firstValueFrom(service.findAll());
 

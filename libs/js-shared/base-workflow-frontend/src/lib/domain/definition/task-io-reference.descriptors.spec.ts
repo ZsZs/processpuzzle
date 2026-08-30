@@ -44,6 +44,7 @@ describe.each(bothDirections)('a task %s reference', (direction, factory, entity
   it('offers the closed reference-type list as a dropdown', () => {
     expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
     expect(byName('type')?.getSelectables()).toEqual([
+      { key: 'ARTIFACT', value: 'ARTIFACT' },
       { key: 'BASE_ENTITY', value: 'BASE_ENTITY' },
       { key: 'DOCUMENT', value: 'DOCUMENT' },
       { key: 'WIDGET', value: 'WIDGET' },

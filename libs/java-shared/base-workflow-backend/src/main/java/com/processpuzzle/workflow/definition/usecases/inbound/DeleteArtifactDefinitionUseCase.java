@@ -28,7 +28,7 @@ public class DeleteArtifactDefinitionUseCase {
         ArtifactDefinition artifact = repository.findByOrgKeyAndId(orgKey, id)
                 .orElseThrow(() -> new NotFoundException("No artifact definition with id '%s'".formatted(id)));
 
-        List<String> workflows = referenceScanner.processesUsingArtifact(orgKey, id);
+        List<String> workflows = referenceScanner.workflowsUsingArtifact(orgKey, id);
         if (!workflows.isEmpty()) {
             throw new ConflictException("Artifact '%s' is still used by workflows %s".formatted(id, workflows));
         }

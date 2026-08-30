@@ -5,7 +5,7 @@ import { ToolDefinitionMapper } from './tool-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/tools`. A resource of its own rather than a sub-resource of
- * a process, exactly as the contract has it: a tool is shared across process definitions, and a
+ * a workflow, exactly as the contract has it: a tool is shared across workflow definitions, and a
  * step's `toolId` is the reference that ties the two together.
  */
 @Injectable({ providedIn: 'root' })

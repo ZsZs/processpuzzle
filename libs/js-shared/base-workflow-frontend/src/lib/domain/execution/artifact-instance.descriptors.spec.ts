@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { ARTIFACT_INSTANCE_ID_FIELD, createArtifactInstanceDescriptor } from './artifact-instance.descriptors';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, PROCESS_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -12,9 +12,9 @@ describe('createArtifactInstanceDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  it('is an embedded, read-only component of the process instance', () => {
+  it('is an embedded, read-only component of the workflow instance', () => {
     expect(descriptor.entityName).toBe(ARTIFACT_INSTANCE_ENTITY_NAME);
-    expect(descriptor.componentParents).toEqual([PROCESS_INSTANCE_ENTITY_NAME]);
+    expect(descriptor.componentParents).toEqual([WORKFLOW_INSTANCE_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);
     expect(descriptor.isAbstract).toBe(true);
     expect(attrs.every((attr) => attr.disabled)).toBe(true);

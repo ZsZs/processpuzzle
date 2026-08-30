@@ -18,7 +18,7 @@ public class ListTaskInstancesUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<TaskInstance> findAll(String orgKey, UUID processInstanceId) {
-        return repository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId);
+    public List<TaskInstance> findAll(String orgKey, UUID workflowInstanceId) {
+        return repository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId);
     }
 }

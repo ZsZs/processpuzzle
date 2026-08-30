@@ -3,10 +3,10 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.common.ValidationException;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
-import com.processpuzzle.workflow.execution.domain.ProcessInstance;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Assigns a user to an ACTIVE task. The role is the one this process pins for the task
+ * Assigns a user to an ACTIVE task. The role is the one this workflow pins for the task
  * ({@code TaskUse.performedBy}), not one of the several the shared task definition
  * merely permits. If that role has an {@code entityRoleId} configured, membership is checked via {@link RoleMembershipPort}
  * (implemented by the host application — see that port's Javadoc) and rejected with a 400 (not
@@ -33,36 +33,36 @@ import java.util.UUID;
 @Transactional
 public class AssignTaskUseCase {
 
-    private final ProcessInstanceRepository processInstanceRepository;
-    private final ResolveProcessDefinitionUseCase resolveProcessDefinition;
+    private final WorkflowInstanceRepository workflowInstanceRepository;
+    private final ResolveWorkflowUseCase resolveWorkflow;
     private final TaskInstanceRepository taskInstanceRepository;
     private final RoleMembershipPort roleMembershipPort;
 
-    public AssignTaskUseCase(ProcessInstanceRepository processInstanceRepository,
-                              ResolveProcessDefinitionUseCase resolveProcessDefinition,
+    public AssignTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
+                              ResolveWorkflowUseCase resolveWorkflow,
                               TaskInstanceRepository taskInstanceRepository,
                               ObjectProvider<RoleMembershipPort> roleMembershipPortProvider) {
-        this.processInstanceRepository = processInstanceRepository;
-        this.resolveProcessDefinition = resolveProcessDefinition;
+        this.workflowInstanceRepository = workflowInstanceRepository;
+        this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
         this.roleMembershipPort = roleMembershipPortProvider.getIfUnique(PermitAllRoleMembershipPort::new);
     }
 
-    public TaskInstance assign(String orgKey, UUID processInstanceId, String taskDefinitionId, String userId) {
-        ProcessInstance processInstance = processInstanceRepository.findByOrgKeyAndId(orgKey, processInstanceId)
-                .orElseThrow(() -> new NotFoundException("No process instance with id '%s'".formatted(processInstanceId)));
+    public TaskInstance assign(String orgKey, UUID workflowInstanceId, String taskDefinitionId, String userId) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByOrgKeyAndId(orgKey, workflowInstanceId)
+                .orElseThrow(() -> new NotFoundException("No workflow instance with id '%s'".formatted(workflowInstanceId)));
 
         TaskInstance taskInstance = taskInstanceRepository
-                .findByOrgKeyAndProcessInstanceIdAndTaskDefinitionId(orgKey, processInstanceId, taskDefinitionId)
+                .findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(orgKey, workflowInstanceId, taskDefinitionId)
                 .orElseThrow(() -> new NotFoundException(
-                        "No task '%s' in process instance '%s'".formatted(taskDefinitionId, processInstanceId)));
+                        "No task '%s' in workflow instance '%s'".formatted(taskDefinitionId, workflowInstanceId)));
 
         if (taskInstance.getStatus() != TaskInstanceStatus.ACTIVE) {
             throw new ConflictException("Task '%s' is %s, not ACTIVE — cannot assign".formatted(taskDefinitionId, taskInstance.getStatus()));
         }
 
-        ResolvedProcess definition =
-                resolveProcessDefinition.resolveByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId());
+        ResolvedWorkflow definition =
+                resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowInstance.getWorkflowId());
         var task = definition.findTask(taskDefinitionId)
                 .orElseThrow(() -> new NotFoundException("Task definition '%s' no longer exists".formatted(taskDefinitionId)));
         var role = definition.findRole(task.performedBy()).orElse(null);

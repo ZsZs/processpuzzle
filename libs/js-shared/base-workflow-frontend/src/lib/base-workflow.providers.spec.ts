@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS } from './base-workflow.providers';
 import { createArtifactDefinitionDescriptor } from './domain/definition/artifact-definition.descriptors';
-import { createProcessDefinitionDescriptor } from './domain/definition/process-definition.descriptors';
-import { createProcessTaskAssignmentDescriptor } from './domain/definition/process-task-assignment.descriptors';
+import { createWorkflowDescriptor } from './domain/definition/workflow.descriptors';
+import { createWorkflowTaskAssignmentDescriptor } from './domain/definition/workflow-task-assignment.descriptors';
 import { createRoleDefinitionDescriptor } from './domain/definition/role-definition.descriptors';
 import { createStepDefinitionDescriptor } from './domain/definition/step-definition.descriptors';
 import { createTaskDefinitionDescriptor } from './domain/definition/task-definition.descriptors';
@@ -11,14 +11,14 @@ import { createTaskInputReferenceDescriptor, createTaskOutputReferenceDescriptor
 import { createToolDefinitionDescriptor } from './domain/definition/tool-definition.descriptors';
 import { createToolOperationDescriptor } from './domain/definition/tool-operation.descriptors';
 import { createArtifactInstanceDescriptor } from './domain/execution/artifact-instance.descriptors';
-import { createProcessInstanceDescriptor } from './domain/execution/process-instance.descriptors';
+import { createWorkflowInstanceDescriptor } from './domain/execution/workflow-instance.descriptors';
 import { createStepResultDescriptor } from './domain/execution/step-result.descriptors';
 import { createTaskInstanceDescriptor } from './domain/execution/task-instance.descriptors';
 
 /** Every descriptor this library ships, so the registry can be checked against the graph itself. */
 const allDescriptors: BaseEntityDescriptor[] = [
-  createProcessDefinitionDescriptor(),
-  createProcessTaskAssignmentDescriptor(),
+  createWorkflowDescriptor(),
+  createWorkflowTaskAssignmentDescriptor(),
   createRoleDefinitionDescriptor(),
   createArtifactDefinitionDescriptor(),
   createTaskDefinitionDescriptor(),
@@ -27,7 +27,7 @@ const allDescriptors: BaseEntityDescriptor[] = [
   createStepDefinitionDescriptor(),
   createToolDefinitionDescriptor(),
   createToolOperationDescriptor(),
-  createProcessInstanceDescriptor(),
+  createWorkflowInstanceDescriptor(),
   createTaskInstanceDescriptor(),
   createArtifactInstanceDescriptor(),
   createStepResultDescriptor(),
@@ -64,7 +64,7 @@ describe('BASE_WORKFLOW_ENTITY_FACADES', () => {
   });
 
   // A registry miss is not a missing row: the control throws on first render. The reference model makes
-  // this load-bearing in a way the embedded one did not — a process's roles, artifacts and tools all
+  // this load-bearing in a way the embedded one did not — a workflow's roles, artifacts and tools all
   // resolve through this map now, and so does an assignment's task.
   it('registers every entity the library’s own attributes reference', () => {
     expect(referencedNames.size).toBeGreaterThan(0);
@@ -85,10 +85,10 @@ describe('BASE_WORKFLOW_ENTITY_FACADES', () => {
     embeddedNames.forEach((entityName) => expect(BASE_WORKFLOW_ENTITY_FACADES[entityName]).toBeDefined());
   });
 
-  // The four catalog aggregates plus the process and the run: each is reachable on its own, so each
+  // The four catalog aggregates plus the workflow and the run: each is reachable on its own, so each
   // needs a facade whether or not another entity happens to reference it.
   it('registers each of the six routable aggregates', () => {
-    ['Process Definition', 'Workflow Role Definition', 'Artifact Definition', 'Task Definition', 'Tool Definition', 'Process Instance'].forEach((entityName) =>
+    ['Workflow', 'Workflow Role Definition', 'Artifact Definition', 'Task Definition', 'Tool Definition', 'Workflow Instance'].forEach((entityName) =>
       expect(BASE_WORKFLOW_ENTITY_FACADES[entityName]).toBeDefined(),
     );
   });

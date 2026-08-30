@@ -42,20 +42,20 @@ class WorkflowValidatorTest {
     }
 
     @Test
-    void acceptsAProcessWhoseReferencesAllResolve() {
+    void acceptsAWorkflowWhoseReferencesAllResolve() {
         catalog(List.of("developer"), List.of("spec"), List.of("ci"), List.of(task("code", "developer"), task("review", "developer")));
-        Workflow process = process(List.of("developer"), List.of("spec"), List.of("ci"),
+        Workflow workflow = workflow(List.of("developer"), List.of("spec"), List.of("ci"),
                 assignment("code", "developer"), assignment("review", "developer", "code"));
 
-        assertThatCode(() -> validator.validate(process)).doesNotThrowAnyException();
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
     @Test
     void rejectsARoleReferenceTheOrganizationDoesNotHave() {
         catalog(List.of(), List.of(), List.of(), List.of());
-        Workflow process = process(List.of("ghost"), List.of(), List.of());
+        Workflow workflow = workflow(List.of("ghost"), List.of(), List.of());
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("No role definition with id 'ghost'");
     }
@@ -63,9 +63,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAnArtifactReferenceTheOrganizationDoesNotHave() {
         catalog(List.of(), List.of(), List.of(), List.of());
-        Workflow process = process(List.of(), List.of("ghost"), List.of());
+        Workflow workflow = workflow(List.of(), List.of("ghost"), List.of());
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("No artifact definition with id 'ghost'");
     }
@@ -73,9 +73,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAToolReferenceTheOrganizationDoesNotHave() {
         catalog(List.of(), List.of(), List.of(), List.of());
-        Workflow process = process(List.of(), List.of(), List.of("ghost"));
+        Workflow workflow = workflow(List.of(), List.of(), List.of("ghost"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("No tool definition with id 'ghost'");
     }
@@ -83,9 +83,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAnAssignmentOfATaskTheOrganizationDoesNotHave() {
         catalog(List.of("developer"), List.of(), List.of(), List.of());
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("ghost", "developer"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("ghost", "developer"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("No task definition with id 'ghost'");
     }
@@ -93,9 +93,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAnAssignmentWithNoPerformedBy() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("code", null));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", null));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("has no performedBy role");
     }
@@ -103,19 +103,19 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAnAssignmentWithABlankPerformedBy() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("code", "  "));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "  "));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("has no performedBy role");
     }
 
     @Test
-    void rejectsAPerformedByRoleTheProcessDoesNotDeclare() {
+    void rejectsAPerformedByRoleTheWorkflowDoesNotDeclare() {
         catalog(List.of("developer", "reviewer"), List.of(), List.of(), List.of(task("code", "developer", "reviewer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("code", "reviewer"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "reviewer"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("which the workflow does not declare in roles");
     }
@@ -123,9 +123,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAPerformedByRoleTheTaskDoesNotOffer() {
         catalog(List.of("developer", "reviewer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow process = process(List.of("developer", "reviewer"), List.of(), List.of(), assignment("code", "reviewer"));
+        Workflow workflow = workflow(List.of("developer", "reviewer"), List.of(), List.of(), assignment("code", "reviewer"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("cannot be performed by 'reviewer'");
     }
@@ -136,9 +136,9 @@ class WorkflowValidatorTest {
         TaskDefinition task = TaskDefinition.builder().id("code").name("Write code").build();
         task.setPerformedByRoles(null);
         catalog(List.of("developer"), List.of(), List.of(), List.of(task));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("cannot be performed by 'developer'");
     }
@@ -146,41 +146,41 @@ class WorkflowValidatorTest {
     @Test
     void rejectsAnAssignmentThatDependsOnItself() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "code"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "code"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("cannot depend on itself");
     }
 
     @Test
-    void rejectsADependsOnThatNamesATaskThisProcessDoesNotAssign() {
+    void rejectsADependsOnThatNamesATaskThisWorkflowDoesNotAssign() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("review", "developer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment("review", "developer", "code"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("review", "developer", "code"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("which this workflow does not use");
     }
 
-    /** A null {@code dependsOn} is the same as an empty one — the process simply waits for nothing. */
+    /** A null {@code dependsOn} is the same as an empty one — the workflow simply waits for nothing. */
     @Test
     void acceptsAnAssignmentWithANullDependsOn() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
         TaskUse assignment = assignment("code", "developer");
         assignment.setDependsOn(null);
-        Workflow process = process(List.of("developer"), List.of(), List.of(), assignment);
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment);
 
-        assertThatCode(() -> validator.validate(process)).doesNotThrowAnyException();
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
     @Test
     void rejectsTheSameTaskAssignedTwice() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow process = process(List.of("developer"), List.of(), List.of(),
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(),
                 assignment("code", "developer"), assignment("code", "developer"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Duplicate task use 'code'");
     }
@@ -188,9 +188,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsADuplicateRoleReference() {
         catalog(List.of("developer"), List.of(), List.of(), List.of());
-        Workflow process = process(List.of("developer", "developer"), List.of(), List.of());
+        Workflow workflow = workflow(List.of("developer", "developer"), List.of(), List.of());
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Duplicate role use 'developer'");
     }
@@ -198,9 +198,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsADuplicateArtifactReference() {
         catalog(List.of(), List.of("spec"), List.of(), List.of());
-        Workflow process = process(List.of(), List.of("spec", "spec"), List.of());
+        Workflow workflow = workflow(List.of(), List.of("spec", "spec"), List.of());
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Duplicate artifact use 'spec'");
     }
@@ -208,9 +208,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsADuplicateToolReference() {
         catalog(List.of(), List.of(), List.of("ci"), List.of());
-        Workflow process = process(List.of(), List.of(), List.of("ci", "ci"));
+        Workflow workflow = workflow(List.of(), List.of(), List.of("ci", "ci"));
 
-        assertThatThrownBy(() -> validator.validate(process))
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Duplicate tool use 'ci'");
     }
@@ -224,7 +224,7 @@ class WorkflowValidatorTest {
     void rejectsATaskWhoseArtifactTheWorkflowDoesNotDeclare() {
         catalog(List.of("developer"), List.of("spec"), List.of(),
                 List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of("binary"))));
-        Workflow workflow = process(List.of("developer"), List.of("spec"), List.of(), assignment("code", "developer"));
+        Workflow workflow = workflow(List.of("developer"), List.of("spec"), List.of(), assignment("code", "developer"));
 
         assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
@@ -235,7 +235,7 @@ class WorkflowValidatorTest {
     void acceptsATaskWhoseArtifactsTheWorkflowDeclares() {
         catalog(List.of("developer"), List.of("spec", "binary"), List.of(),
                 List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of("binary"))));
-        Workflow workflow = process(List.of("developer"), List.of("spec", "binary"), List.of(),
+        Workflow workflow = workflow(List.of("developer"), List.of("spec", "binary"), List.of(),
                 assignment("code", "developer"));
 
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
@@ -246,7 +246,7 @@ class WorkflowValidatorTest {
     void acceptsATaskWithNullArtifactLists() {
         catalog(List.of("developer"), List.of(), List.of(),
                 List.of(taskWithArtifacts("code", "developer", null, null)));
-        Workflow workflow = process(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
 
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
@@ -257,7 +257,7 @@ class WorkflowValidatorTest {
     void acceptsAStartConditionWhoseReferencesAllResolve() {
         catalog(List.of("developer"), List.of("spec"), List.of(), List.of(task("code", "developer")));
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of("spec"), List.of(), assignment("code", "developer")),
+                workflow(List.of("developer"), List.of("spec"), List.of(), assignment("code", "developer")),
                 WorkflowStartCondition.builder()
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
@@ -272,7 +272,7 @@ class WorkflowValidatorTest {
     @Test
     void acceptsAWorkflowWithNoStartCondition() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = process(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
+        Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
 
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
@@ -281,7 +281,7 @@ class WorkflowValidatorTest {
     void rejectsAStartConditionWithNoStartType() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
                 WorkflowStartCondition.builder().startType(null).build());
 
         assertThatThrownBy(() -> validator.validate(workflow))
@@ -293,7 +293,7 @@ class WorkflowValidatorTest {
     void rejectsARequiredStartArtifactTheOrganizationDoesNotHave() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
                 WorkflowStartCondition.builder()
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
@@ -313,7 +313,7 @@ class WorkflowValidatorTest {
     void rejectsARequiredStartArtifactTheWorkflowDoesNotDeclare() {
         catalog(List.of("developer"), List.of("spec"), List.of(), List.of(task("code", "developer")));
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
                 WorkflowStartCondition.builder()
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
@@ -329,7 +329,7 @@ class WorkflowValidatorTest {
     void rejectsAnAuthorizedStartRoleTheOrganizationDoesNotHave() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
                 WorkflowStartCondition.builder()
                         .startType(WorkflowStartConditionType.ROLE_DEFINITION)
                         .authorizedRoles(List.of("ghost"))
@@ -351,7 +351,7 @@ class WorkflowValidatorTest {
         condition.setRequiredArtifacts(null);
         condition.setAuthorizedRoles(null);
         Workflow workflow = withStartCondition(
-                process(List.of("developer"), List.of(), List.of(), assignment("code", "developer")), condition);
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")), condition);
 
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
@@ -386,7 +386,7 @@ class WorkflowValidatorTest {
                 .taskDefinitionId(taskId).performedBy(performedBy).dependsOn(List.of(dependsOn)).build();
     }
 
-    private Workflow process(List<String> roles, List<String> artifacts, List<String> tools,
+    private Workflow workflow(List<String> roles, List<String> artifacts, List<String> tools,
                                       TaskUse... tasks) {
         return Workflow.builder()
                 .orgKey("acme").id("delivery")

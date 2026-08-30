@@ -5,9 +5,9 @@ import { BASE_ENTITY_TRANSLOCO_SCOPE, BASE_WORKFLOW_TRANSLOCO_SCOPE } from './ba
 import {
   ARTIFACT_DEFINITION_ENTITY_NAME,
   ARTIFACT_INSTANCE_ENTITY_NAME,
-  PROCESS_DEFINITION_ENTITY_NAME,
-  PROCESS_INSTANCE_ENTITY_NAME,
-  PROCESS_TASK_ASSIGNMENT_ENTITY_NAME,
+  WORKFLOW_ENTITY_NAME,
+  WORKFLOW_INSTANCE_ENTITY_NAME,
+  WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   TASK_DEFINITION_ENTITY_NAME,
   TASK_INPUT_REFERENCE_ENTITY_NAME,
   TASK_INSTANCE_ENTITY_NAME,
@@ -19,24 +19,24 @@ import {
   WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
 } from './domain/workflow-entity-names';
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
-import { ProcessDefinitionFacade } from './feature/definition/process-definition.facade';
+import { WorkflowFacade } from './feature/definition/workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './feature/definition/role-definition.facade';
 import { TaskDefinitionFacade } from './feature/definition/task-definition.facade';
 import { ToolDefinitionFacade } from './feature/definition/tool-definition.facade';
-import { ProcessTaskAssignmentFacade, TaskInputReferenceFacade, TaskOutputReferenceFacade, TaskStepDefinitionFacade, ToolOperationFacade } from './feature/definition/workflow-embedded.facades';
-import { ProcessInstanceFacade } from './feature/execution/process-instance.facade';
+import { WorkflowTaskAssignmentFacade, TaskInputReferenceFacade, TaskOutputReferenceFacade, TaskStepDefinitionFacade, ToolOperationFacade } from './feature/definition/workflow-embedded.facades';
+import { WorkflowInstanceFacade } from './feature/execution/workflow-instance.facade';
 import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './feature/execution/instance-embedded.facades';
 
 /**
  * The six routable aggregates of base-workflow, as six sibling branches: the four catalog entities a
- * tenant authors — roles, artifacts, tasks and tools — the process that composes them, and the runs it
+ * tenant authors — roles, artifacts, tasks and tools — the workflow that composes them, and the runs it
  * produces.
  *
  * Siblings rather than a nesting, and that is the whole point of the reference model. A role, an
- * artifact and a task were children of one process until this contract; each is now shared across
- * processes, so each is an aggregate with a list screen of its own, addressable at `/roles`,
- * `/artifacts` and `/tasks`. What ties the six together is data — a process naming a task id, a step
- * naming a `toolId`, an instance naming a `processDefinitionId` — not the authoring URL. Same call
+ * artifact and a task were children of one workflow until this contract; each is now shared across
+ * workflows, so each is an aggregate with a list screen of its own, addressable at `/roles`,
+ * `/artifacts` and `/tasks`. What ties the six together is data — a workflow naming a task id, a step
+ * naming a `toolId`, an instance naming a `workflowId` — not the authoring URL. Same call
  * base-app makes for `app-definition` and `module-definition`.
  *
  * Each `path` has to be `snakeCaseName(entityName)`, because `BaseFormNavigatorSingletonStore` builds
@@ -50,17 +50,17 @@ import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
  *
  * The generic container is mounted directly rather than through a component of this library's own:
  * unlike base-app's `AppDefinitionContainerComponent`, which exists to contribute a Publish action and
- * a Preview tab, none of these six has a screen or an action beyond List and Details yet. The process
+ * a Preview tab, none of these six has a screen or an action beyond List and Details yet. The workflow
  * modeler this library will eventually want is the natural first `extraTabs` entry on the
- * `process-definition` branch, and it would go in exactly where base-state passes `STATE_MODELER_TAB`.
+ * `workflow` branch, and it would go in exactly where base-state passes `STATE_MODELER_TAB`.
  */
 export const BASE_WORKFLOW_ROUTES: Routes = [
   {
-    path: 'process-definition',
-    title: 'ProcessPuzzle - Processes',
-    data: { icon: 'schema', menuTitle: 'workflow.processes', entityName: PROCESS_DEFINITION_ENTITY_NAME },
+    path: 'workflow',
+    title: 'ProcessPuzzle - Workflows',
+    data: { icon: 'schema', menuTitle: 'workflow.workflows', entityName: WORKFLOW_ENTITY_NAME },
     component: BaseEntityContainerComponent,
-    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: ProcessDefinitionFacade }, authoringScopes()],
+    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: WorkflowFacade }, authoringScopes()],
     children: baseEntityRoutes([assignmentRoute()]),
   },
   {
@@ -96,11 +96,11 @@ export const BASE_WORKFLOW_ROUTES: Routes = [
     children: baseEntityRoutes([operationRoute()]),
   },
   {
-    path: 'process-instance',
-    title: 'ProcessPuzzle - Process Instances',
-    data: { icon: 'play_circle', menuTitle: 'workflow.instances', entityName: PROCESS_INSTANCE_ENTITY_NAME },
+    path: 'workflow-instance',
+    title: 'ProcessPuzzle - Workflow Instances',
+    data: { icon: 'play_circle', menuTitle: 'workflow.instances', entityName: WORKFLOW_INSTANCE_ENTITY_NAME },
     component: BaseEntityContainerComponent,
-    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: ProcessInstanceFacade }, authoringScopes()],
+    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: WorkflowInstanceFacade }, authoringScopes()],
     children: baseEntityRoutes(embeddedInstanceRoutes()),
   },
 ];
@@ -123,16 +123,16 @@ function authoringScopes() {
 }
 
 /**
- * The one embedded level of a process: its task assignments, below the process's details route.
+ * The one embedded level of a workflow: its task assignments, below the workflow's details route.
  *
- * A leaf, and the only child this branch has left — the roles, artifacts and tools a process involves
- * are references now, edited on their own branches and merely picked here, so no URL under a process
+ * A leaf, and the only child this branch has left — the roles, artifacts and tools a workflow involves
+ * are references now, edited on their own branches and merely picked here, so no URL under a workflow
  * addresses them. An assignment has no id of its own, so the URL is what addresses it:
- * `process-definition/order-fulfillment-workflow/details/process-task-assignment/review-order/details`,
- * resolved against the rows of the process above it.
+ * `workflow/order-fulfillment-workflow/details/workflow-task-assignment/review-order/details`,
+ * resolved against the rows of the workflow above it.
  */
 function assignmentRoute(): EmbeddedChildRoute {
-  return { entityName: PROCESS_TASK_ASSIGNMENT_ENTITY_NAME, facade: ProcessTaskAssignmentFacade };
+  return { entityName: WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, facade: WorkflowTaskAssignmentFacade };
 }
 
 /**

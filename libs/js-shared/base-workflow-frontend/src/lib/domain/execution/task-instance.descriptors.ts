@@ -1,7 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { TASK_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
-import { PROCESS_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
-import { TaskInstanceStatus } from './process-instance';
+import { WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
+import { TaskInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_STEP_RESULT_ID_FIELD } from './step-result.descriptors';
 
@@ -29,7 +29,7 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   taskDefinitionIdAttr.hideInTable = true;
 
   // Only set while BLOCKED, and then it is the whole story: the detail of the precondition rule that
-  // refused activation. Shown in the table because it is the one field that explains a stuck process.
+  // refused activation. Shown in the table because it is the one field that explains a stuck workflow.
   const blockedReasonAttr = readOnlyAttr('blockedReason', FormControlType.TEXTAREA, 'Blocked Reason');
   blockedReasonAttr.styleClass = 'full-width';
 
@@ -41,7 +41,7 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   skippedAtAttr.hideInTable = true;
 
   // Containment: the contract nests the step results inside the task instance, and the task instance
-  // inside the process instance, so these rows travel inside the *instance's* payload.
+  // inside the workflow instance, so these rows travel inside the *instance's* payload.
   const stepResultsAttr = readOnlyAttr('stepResults', FormControlType.EMBEDDED_COMPONENTS, 'Step Results');
   stepResultsAttr.linkedEntityType = TASK_STEP_RESULT_ENTITY_NAME;
   stepResultsAttr.referenceIdField = TASK_STEP_RESULT_ID_FIELD;
@@ -64,7 +64,7 @@ export function createTaskInstanceDescriptor(): BaseEntityDescriptor {
     entityName: TASK_INSTANCE_ENTITY_NAME,
     attrDescriptors: createTaskInstanceAttrDescriptors(),
     i18nScope: TASK_INSTANCE_I18N_SCOPE,
-    componentParent: PROCESS_INSTANCE_ENTITY_NAME,
+    componentParent: WORKFLOW_INSTANCE_ENTITY_NAME,
     isEmbedded: true,
     // Read-only by contract: a task changes through /assign, /complete and /skip, never through a PUT.
     isAbstract: true,

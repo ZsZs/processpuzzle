@@ -24,7 +24,7 @@ describe('RoleDefinitionStore', () => {
     expect(store.entities().map((entity) => entity.id)).toEqual(['clerk', 'manager']);
   });
 
-  // This store is what a process's `roles` control and an assignment's `performedBy` picker read from,
+  // This store is what a workflow's `roles` control and an assignment's `performedBy` picker read from,
   // so a role has to be reachable by the id those attributes hold.
   it('exposes a role by the id the referencing attributes name', () => {
     store.setCurrentEntity('clerk');

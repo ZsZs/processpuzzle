@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Runtime state of one {@code TaskDefinition} within a {@link ProcessInstance}. {@code orgKey}
- * and {@code processInstanceId} are denormalized onto every row (rather than relying solely on a
+ * Runtime state of one {@code TaskDefinition} within a {@link WorkflowInstance}. {@code orgKey}
+ * and {@code workflowInstanceId} are denormalized onto every row (rather than relying solely on a
  * JPA relationship) so the task endpoints -- always addressed as
  * {@code /instances/{instanceId}/tasks/{taskId}} -- can look a row up directly without loading the
- * owning process instance first.
+ * owning workflow instance first.
  */
 @Getter
 @Setter
@@ -51,9 +51,9 @@ public class TaskInstance {
     private String orgKey;
 
     @Column(nullable = false)
-    private UUID processInstanceId;
+    private UUID workflowInstanceId;
 
-    /** ID of the TaskDefinition this instance was created from, unique within the process. */
+    /** ID of the TaskDefinition this instance was created from, unique within the workflow. */
     @Column(nullable = false)
     private String taskDefinitionId;
 
@@ -80,11 +80,11 @@ public class TaskInstance {
     private List<StepResult> stepResults = new ArrayList<>();
 
     /**
-     * What completing this task added to the process context: the caller's supplied context merged
+     * What completing this task added to the workflow context: the caller's supplied context merged
      * with whatever this task's tool steps mapped back out of their responses.
      *
-     * <p>Held here rather than accumulated on {@link ProcessInstance} so that a completion writes one
-     * row — see {@link ProcessContext} for why that matters to {@code parallel} tasks.
+     * <p>Held here rather than accumulated on {@link WorkflowInstance} so that a completion writes one
+     * row — see {@link WorkflowContext} for why that matters to {@code parallel} tasks.
      * {@link #stepResults} cannot serve the same purpose: it keeps each step's raw {@code toolResponse},
      * not the context keys an {@code outputMapping} projected out of it, and it never sees the caller's
      * own values at all.

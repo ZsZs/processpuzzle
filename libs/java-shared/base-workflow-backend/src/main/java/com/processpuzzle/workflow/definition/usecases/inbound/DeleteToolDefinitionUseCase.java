@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Refuses to remove a tool a process still lists, or a task step still invokes. The step guard is new
- * with the shared catalog: a task now outlives the one process it used to belong to, so a tool can be
- * reachable through a task without any process naming it directly.
+ * Refuses to remove a tool a workflow still lists, or a task step still invokes. The step guard is new
+ * with the shared catalog: a task now outlives the one workflow it used to belong to, so a tool can be
+ * reachable through a task without any workflow naming it directly.
  */
 @Component
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class DeleteToolDefinitionUseCase {
         ToolDefinition tool = repository.findByOrgKeyAndId(orgKey, id)
                 .orElseThrow(() -> new NotFoundException("No tool definition with id '%s'".formatted(id)));
 
-        List<String> workflows = referenceScanner.processesUsingTool(orgKey, id);
+        List<String> workflows = referenceScanner.workflowsUsingTool(orgKey, id);
         if (!workflows.isEmpty()) {
             throw new ConflictException("Tool '%s' is still referenced by workflows %s".formatted(id, workflows));
         }

@@ -17,8 +17,8 @@ import java.util.List;
 /**
  * Implements the generated {@code ArtifactDefinitionsApi} (from the "Artifact Definitions" tag).
  *
- * <p>Organization-scoped, not process-scoped: a artifact belongs to the tenant's catalog and may be
- * referenced by any number of process definitions.
+ * <p>Organization-scoped, not workflow-scoped: a artifact belongs to the tenant's catalog and may be
+ * referenced by any number of workflow definitions.
  */
 @RestController
 public class ArtifactDefinitionsEndpoint implements ArtifactDefinitionsApi {

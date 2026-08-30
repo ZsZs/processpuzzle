@@ -1,6 +1,6 @@
 {
-  "process_definition": {
-    "_self": "Prozess",
+  "workflow": {
+    "_self": "Workflow",
     "id": "Id",
     "name": "Name",
     "description": "Beschreibung",
@@ -13,7 +13,7 @@
     "tools": "Werkzeuge",
     "tasks": "Aufgaben"
   },
-  "process_task_assignment": {
+  "workflow_task_assignment": {
     "_self": "Aufgabenzuordnung",
     "taskDefinitionId": "Aufgabe",
     "performedBy": "Ausgeführt von",
@@ -98,11 +98,11 @@
     "payloadTemplate": "Payload-Vorlage",
     "expectedStatusCodes": "Erwartete Statuscodes"
   },
-  "process_instance": {
-    "_self": "Prozessinstanz",
+  "workflow_instance": {
+    "_self": "Workflow-Instanz",
     "id": "Id",
-    "processDefinitionId": "Prozess",
-    "processDefinitionName": "Prozessname",
+    "workflowId": "Workflow",
+    "workflowName": "Workflow-Name",
     "status": "Status",
     "entityId": "Entität",
     "startedAt": "Gestartet am",

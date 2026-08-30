@@ -15,7 +15,7 @@ public record WorkflowYamlEntry(
         String id,
         String name,
         String description,
-        @JsonProperty("extends") String extendsProcessId,
+        @JsonProperty("extends") String extendsWorkflowId,
         StartConditionYaml startCondition,
         List<RoleUseYaml> roles,
         List<ArtifactUseYaml> artifacts,

@@ -29,7 +29,7 @@ describe('ToolDefinitionService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  // A resource of its own rather than a sub-resource of a process: a tool is shared across definitions.
+  // A resource of its own rather than a sub-resource of a workflow: a tool is shared across definitions.
   it('reads the tools of the organization from their own collection', async () => {
     const pending = firstValueFrom(service.findAll());
 

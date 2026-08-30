@@ -23,7 +23,7 @@ public class FindAllToolDefinitionsUseCase {
     }
 
     /**
-     * Not paged, unlike process definitions — ToolDefinitionsApi's list operation returns a
+     * Not paged, unlike workflow definitions — ToolDefinitionsApi's list operation returns a
      * plain array (see base-workflow-api.yaml), consistent with tools being a small,
      * catalog-sized resource per organization.
      */

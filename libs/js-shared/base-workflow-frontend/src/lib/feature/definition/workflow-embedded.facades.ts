@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityDescriptor, EmbeddedEntityFacade } from '@processpuzzle/base-entity';
-import { ProcessTaskAssignment } from '../../domain/definition/process-definition';
-import { createProcessTaskAssignmentDescriptor } from '../../domain/definition/process-task-assignment.descriptors';
+import { WorkflowTaskAssignment } from '../../domain/definition/workflow';
+import { createWorkflowTaskAssignmentDescriptor } from '../../domain/definition/workflow-task-assignment.descriptors';
 import { StepDefinition, TaskIOReference } from '../../domain/definition/task-definition';
 import { createStepDefinitionDescriptor } from '../../domain/definition/step-definition.descriptors';
 import { createTaskInputReferenceDescriptor, createTaskOutputReferenceDescriptor } from '../../domain/definition/task-io-reference.descriptors';
@@ -15,9 +15,9 @@ import { createToolOperationDescriptor } from '../../domain/definition/tool-oper
  * endpoint of its own.
  *
  * All four belong to a different parent, and that is the shape of the reference model: an assignment
- * to a process, a reference and a step to a task, an operation to a tool. Nothing embedded is shared,
+ * to a workflow, a reference and a step to a task, an operation to a tool. Nothing embedded is shared,
  * which is precisely why it stayed embedded — a role, an artifact, a task and a tool each moved out to
- * a catalog aggregate of its own once more than one process needed it.
+ * a catalog aggregate of its own once more than one workflow needed it.
  *
  * A task's inputs and its outputs share `TaskIOReference` as their entity type and differ only in
  * their descriptor. That is deliberate and it is also the reason they cannot share a *facade*: the
@@ -27,11 +27,11 @@ import { createToolOperationDescriptor } from '../../domain/definition/tool-oper
  */
 
 @Injectable()
-export class ProcessTaskAssignmentFacade extends EmbeddedEntityFacade<ProcessTaskAssignment> {
-  readonly entityType = ProcessTaskAssignment;
+export class WorkflowTaskAssignmentFacade extends EmbeddedEntityFacade<WorkflowTaskAssignment> {
+  readonly entityType = WorkflowTaskAssignment;
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createProcessTaskAssignmentDescriptor();
+    return createWorkflowTaskAssignmentDescriptor();
   }
 }
 

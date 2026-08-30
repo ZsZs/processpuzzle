@@ -18,7 +18,7 @@ describe('createTaskDefinitionDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  it('is a standalone aggregate, not a component of a process', () => {
+  it('is a standalone aggregate, not a component of a workflow', () => {
     expect(descriptor.entityName).toBe(TASK_DEFINITION_ENTITY_NAME);
     expect(descriptor.componentParents).toEqual([]);
     expect(descriptor.isEmbedded).toBeFalsy();
@@ -45,9 +45,9 @@ describe('createTaskDefinitionDescriptor', () => {
     ]);
   });
 
-  // The three fields the reference model moved to `ProcessTaskAssignment`. A shared task carrying
-  // `dependsOn` would be naming siblings of a process it knows nothing about.
-  it('describes no per-process wiring', () => {
+  // The three fields the reference model moved to `WorkflowTaskAssignment`. A shared task carrying
+  // `dependsOn` would be naming siblings of a workflow it knows nothing about.
+  it('describes no per-workflow wiring', () => {
     expect(byName('performedBy')).toBeUndefined();
     expect(byName('dependsOn')).toBeUndefined();
     expect(byName('parallel')).toBeUndefined();
@@ -63,7 +63,7 @@ describe('createTaskDefinitionDescriptor', () => {
 
   // Association, not containment: a role exists independently of this task and outlives its reference,
   // so removing a row detaches it rather than deleting the role. The list says who is *able* to perform
-  // the task; a process pins exactly one of them on its own assignment row.
+  // the task; a workflow pins exactly one of them on its own assignment row.
   it('references the roles able to perform it as an association', () => {
     expect(byName('performedByRoles')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
     expect(byName('performedByRoles')?.linkedEntityType).toBe(WORKFLOW_ROLE_DEFINITION_ENTITY_NAME);

@@ -1,8 +1,8 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
 import com.processpuzzle.workflow.definition.domain.JoinType;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
-import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess.ResolvedTask;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow.ResolvedTask;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
@@ -19,12 +19,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /**
- * The process engine's core: decides which PENDING/BLOCKED tasks of a running process instance
+ * The workflow engine's core: decides which PENDING/BLOCKED tasks of a running workflow instance
  * are eligible to become ACTIVE right now, and evaluates each one's precondition rule. Called
- * after every state-changing event within a process instance (start, task completion, task skip)
- * so the process keeps advancing on its own.
+ * after every state-changing event within a workflow instance (start, task completion, task skip)
+ * so the workflow keeps advancing on its own.
  *
- * <p>It works against a {@link ResolvedProcess} rather than a {@code Workflow} because the wiring it
+ * <p>It works against a {@link ResolvedWorkflow} rather than a {@code Workflow} because the wiring it
  * reads — {@code dependsOn}, {@code joinType}, {@code parallel} — lives on the workflow's
  * {@code TaskUse}, while the precondition rule belongs to the shared task definition; the resolved
  * view is where the two are already paired up.
@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
  * <p><b>Ordering within a dependency level:</b> a task is only a <em>candidate</em> once every
  * task in its {@code dependsOn} is COMPLETED or SKIPPED. Among candidates that share the exact
  * same {@code dependsOn} set (i.e. the same "level" of the graph), {@code parallel == false} (the
- * default) tasks run one at a time in process-definition order: a non-parallel candidate only
+ * default) tasks run one at a time in workflow-definition order: a non-parallel candidate only
  * attempts activation once no earlier sibling at that level is still ACTIVE or BLOCKED. {@code parallel == true} tasks skip that check and may all activate together. This is
  * a reasonable, defensible reading of the contract rather than a literal spec requirement — the
  * API description only says parallel "can run concurrently with its siblings that share the same
@@ -55,24 +55,24 @@ public class TaskActivationService {
     }
 
     /**
-     * Re-evaluates every non-terminal task instance of {@code processInstanceId} and activates
+     * Re-evaluates every non-terminal task instance of {@code workflowInstanceId} and activates
      * the ones now eligible. Idempotent: calling it repeatedly with no state change is a no-op.
      */
-    public void activateEligibleTasks(String orgKey, ResolvedProcess process,
-                                       java.util.UUID processInstanceId, Map<String, Object> context) {
-        List<TaskInstance> instances = taskInstanceRepository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId);
+    public void activateEligibleTasks(String orgKey, ResolvedWorkflow workflow,
+                                       java.util.UUID workflowInstanceId, Map<String, Object> context) {
+        List<TaskInstance> instances = taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId);
         Map<String, TaskInstance> byDefinitionId = instances.stream()
                 .collect(Collectors.toMap(TaskInstance::getTaskDefinitionId, t -> t));
 
         Set<TaskInstanceStatus> terminal = Set.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED);
 
-        for (ResolvedTask task : process.tasks()) {
-            activateTaskIfEligible(orgKey, task, process, processInstanceId, context, byDefinitionId, terminal);
+        for (ResolvedTask task : workflow.tasks()) {
+            activateTaskIfEligible(orgKey, task, workflow, workflowInstanceId, context, byDefinitionId, terminal);
         }
     }
 
-    private void activateTaskIfEligible(String orgKey, ResolvedTask task, ResolvedProcess process,
-                                        java.util.UUID processInstanceId, Map<String, Object> context,
+    private void activateTaskIfEligible(String orgKey, ResolvedTask task, ResolvedWorkflow workflow,
+                                        java.util.UUID workflowInstanceId, Map<String, Object> context,
                                         Map<String, TaskInstance> byDefinitionId, Set<TaskInstanceStatus> terminal) {
         TaskInstance instance = byDefinitionId.get(task.id());
         if (instance == null || (instance.getStatus() != TaskInstanceStatus.PENDING
@@ -84,7 +84,7 @@ public class TaskActivationService {
             return;
         }
 
-        if (!task.parallel() && hasActiveSiblingAtSameLevel(task, process, byDefinitionId)) {
+        if (!task.parallel() && hasActiveSiblingAtSameLevel(task, workflow, byDefinitionId)) {
             return;
         }
 
@@ -94,7 +94,7 @@ public class TaskActivationService {
             instance.setActivatedAt(Instant.now());
             instance.setBlockedReason(null);
             taskInstanceRepository.save(instance);
-            eventPublisher.publishEvent(new TaskActivatedEvent(orgKey, processInstanceId, instance.getId(), task.id()));
+            eventPublisher.publishEvent(new TaskActivatedEvent(orgKey, workflowInstanceId, instance.getId(), task.id()));
         } else {
             instance.setStatus(TaskInstanceStatus.BLOCKED);
             instance.setBlockedReason(check.detail());
@@ -105,7 +105,7 @@ public class TaskActivationService {
     /**
      * ALL (the default) waits for every named task, ANY for the first of them. An empty
      * {@code dependsOn} is satisfied under either, which is what makes a task with no dependencies
-     * eligible from process start: {@code allMatch} over nothing is true, and the ANY branch checks
+     * eligible from workflow start: {@code allMatch} over nothing is true, and the ANY branch checks
      * for emptiness explicitly rather than letting {@code anyMatch} return false.
      */
     private boolean areDependenciesSatisfied(ResolvedTask task, Map<String, TaskInstance> byDefinitionId,
@@ -123,9 +123,9 @@ public class TaskActivationService {
                 : dependsOn.stream().allMatch(isTerminal);
     }
 
-    private boolean hasActiveSiblingAtSameLevel(ResolvedTask task, ResolvedProcess process,
+    private boolean hasActiveSiblingAtSameLevel(ResolvedTask task, ResolvedWorkflow workflow,
                                                  Map<String, TaskInstance> byDefinitionId) {
-        return process.tasks().stream()
+        return workflow.tasks().stream()
                 .filter(sibling -> !sibling.id().equals(task.id()))
                 .filter(sibling -> sibling.dependsOn().equals(task.dependsOn()))
                 .filter(sibling -> !sibling.parallel())
@@ -135,8 +135,8 @@ public class TaskActivationService {
                             || siblingInstance.getStatus() == TaskInstanceStatus.BLOCKED));
     }
 
-    public boolean allTerminal(String orgKey, java.util.UUID processInstanceId) {
-        return taskInstanceRepository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId).stream()
+    public boolean allTerminal(String orgKey, java.util.UUID workflowInstanceId) {
+        return taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId).stream()
                 .allMatch(t -> t.getStatus() == TaskInstanceStatus.COMPLETED || t.getStatus() == TaskInstanceStatus.SKIPPED);
     }
 }

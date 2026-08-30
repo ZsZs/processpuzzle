@@ -2,7 +2,7 @@ import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
  * Frontend model of `ToolDefinition` — an external REST system a task's step may invoke. Defined
- * separately from a process, under `/tools`, so several processes can share one.
+ * separately from a workflow, under `/tools`, so several workflows can share one.
  */
 
 /** Mirrors the contract's `AuthType`. */
@@ -44,7 +44,7 @@ export class ToolOperation implements BaseEntity {
   method: HttpMethod | undefined;
   path: string;
   description?: string;
-  /** JSON template for the request body; `${...}` placeholders are PPCL over the process context. */
+  /** JSON template for the request body; `${...}` placeholders are PPCL over the workflow context. */
   payloadTemplate?: string;
   /**
    * HTTP status codes treated as success. `integer[]` by contract, `string[]` here: the workspace has

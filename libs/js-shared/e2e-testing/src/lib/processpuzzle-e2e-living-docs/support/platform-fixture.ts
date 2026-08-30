@@ -114,7 +114,7 @@ function makeInMemoryPlatform(): PlatformContext {
         // no-op stub: real impl POSTs the SPEM workflow to base-workflow-api.yaml
       },
       async expectTaskInstance() {
-        // no-op stub: real impl queries the ProcessInstance/TaskInstance
+        // no-op stub: real impl queries the WorkflowInstance/TaskInstance
       },
       async completeTask(_taskUseKey) {
         // no-op stub: real impl completes the task, which fires the SPEM

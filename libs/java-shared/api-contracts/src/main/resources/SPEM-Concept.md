@@ -13,7 +13,7 @@ mirroring SPEM 2.0's separation of **Method Content** from **Process**:
 |---|---|---|
 | **Definition** (Method Content) | Global, reusable | Abstract, context-free knowledge — "what this concept is" |
 | **Use** (Process) | Workflow-scoped | Binds a Definition into a specific workflow, with workflow-specific configuration |
-| **Instance / Runtime** | Process-instance-scoped | The concrete, running thing at execution time |
+| **Instance / Runtime** | Workflow-instance-scoped | The concrete, running thing at execution time |
 
 Rationale: a Definition can be reused across many workflows without
 duplication. A Use lets each workflow configure that reusable concept
@@ -31,7 +31,7 @@ mutating the shared Definition. Runtime tracks actual execution state.
   `TaskIOReference`), assigned RoleUse (performer), sequencing/position in
   the workflow graph, guards/preconditions, optionality overrides.
 - **TaskInstance** — the runtime execution of a TaskUse within a running
-  ProcessInstance. Completion fires state machine events (SPEM pattern);
+  WorkflowInstance. Completion fires state machine events (SPEM pattern);
   gates workflow progression based on artifact state.
 
 ## Artifact

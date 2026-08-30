@@ -1,6 +1,6 @@
 {
-  "process_definition": {
-    "_self": "Folyamat",
+  "workflow": {
+    "_self": "Munkafolyamat",
     "id": "Azonosító",
     "name": "Név",
     "description": "Leírás",
@@ -13,7 +13,7 @@
     "tools": "Eszközök",
     "tasks": "Tevékenységek"
   },
-  "process_task_assignment": {
+  "workflow_task_assignment": {
     "_self": "Tevékenység-hozzárendelés",
     "taskDefinitionId": "Tevékenység",
     "performedBy": "Végzi",
@@ -98,11 +98,11 @@
     "payloadTemplate": "Kérés sablon",
     "expectedStatusCodes": "Elvárt státuszkódok"
   },
-  "process_instance": {
-    "_self": "Folyamatpéldány",
+  "workflow_instance": {
+    "_self": "Munkafolyamat-példány",
     "id": "Azonosító",
-    "processDefinitionId": "Folyamat",
-    "processDefinitionName": "Folyamat neve",
+    "workflowId": "Munkafolyamat",
+    "workflowName": "Munkafolyamat neve",
     "status": "Állapot",
     "entityId": "Entitás",
     "startedAt": "Indítva",

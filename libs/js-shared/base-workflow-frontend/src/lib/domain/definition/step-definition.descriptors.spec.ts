@@ -12,7 +12,7 @@ describe('createStepDefinitionDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  it('is an embedded component of the task, two levels below the process', () => {
+  it('is an embedded component of the task, two levels below the workflow', () => {
     expect(descriptor.entityName).toBe(TASK_STEP_DEFINITION_ENTITY_NAME);
     expect(descriptor.componentParents).toEqual([TASK_DEFINITION_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);

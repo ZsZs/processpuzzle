@@ -120,7 +120,7 @@ describe('httpErrorBodyMessage', () => {
 
 describe('formatHttpError', () => {
   it('names the status and the URL', () => {
-    expect(formatHttpError(httpError(null, 503, '/api/processes'))).toBe('HTTP 503 /api/processes');
+    expect(formatHttpError(httpError(null, 503, '/api/workflows'))).toBe('HTTP 503 /api/workflows');
   });
 
   it('omits the URL when there is none, rather than printing a trailing space', () => {

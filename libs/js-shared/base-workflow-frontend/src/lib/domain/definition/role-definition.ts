@@ -2,11 +2,11 @@ import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
  * Frontend model of `RoleDefinition` — someone who performs tasks, authored once per tenant under
- * `/roles` and referenced by every process that needs it.
+ * `/roles` and referenced by every workflow that needs it.
  *
- * A catalog aggregate rather than a child of a process, exactly as the contract has it: the same
+ * A catalog aggregate rather than a child of a workflow, exactly as the contract has it: the same
  * `Order Clerk` takes part in order fulfillment and in claim handling, and describing them twice
- * would be two records to keep in step. A process names the ids it involves; a task names the ids
+ * would be two records to keep in step. A workflow names the ids it involves; a task names the ids
  * *able* to perform it.
  *
  * `entityRoleId` is the link to base-entity's own role registry: when set, base-workflow refuses to

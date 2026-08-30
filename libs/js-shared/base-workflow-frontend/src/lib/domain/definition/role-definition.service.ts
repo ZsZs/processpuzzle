@@ -5,8 +5,8 @@ import { RoleDefinitionMapper } from './role-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/roles`. A resource of its own rather than a sub-resource of
- * a process, exactly as the contract has it: a role is shared across process definitions, and a
- * process's `roles` list is the reference that ties the two together.
+ * a workflow, exactly as the contract has it: a role is shared across workflow definitions, and a
+ * workflow's `roles` list is the reference that ties the two together.
  */
 @Injectable({ providedIn: 'root' })
 export class RoleDefinitionService extends BaseEntityRestService<RoleDefinition> {

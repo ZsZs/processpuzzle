@@ -27,8 +27,8 @@ describe('RoleDefinitionService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  // A catalog resource of its own, not `/processes/{id}/roles`: the same role takes part in several
-  // processes, and describing it once is the whole point of the reference model.
+  // A catalog resource of its own, not `/workflows/{id}/roles`: the same role takes part in several
+  // workflows, and describing it once is the whole point of the reference model.
   it('reads the roles of the organization from their own collection', async () => {
     const pending = firstValueFrom(service.findAll());
 
