@@ -4,8 +4,9 @@
     "DEPLOYMENT_ENVIRONMENT": "firebase",
     "BACKEND_SERVICE_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
-    "APP_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
-    "RULE_SERVICE_ROOT": "http://localhost:3000/organizations/processpuzzle-testbed",
+    "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {
       "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
       "projectId": "processpuzzle-testbed-stage",

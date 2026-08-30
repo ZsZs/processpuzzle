@@ -274,20 +274,5 @@
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }
-  ],
-  "organizations": [
-    {
-      "id": "processpuzzle",
-      "key": "processpuzzle",
-      "name": "processpuzzle"
-    },
-    {
-      "key": "processpuzzle-testbed",
-      "name": "ProcessPuzzle Testbed",
-      "description": "Tenant of the ProcessPuzzle Testbed application, which exercises and demonstrates the capabilities of the ProcessPuzzle framework.",
-      "contactEmail": "testbed@processpuzzle.com",
-      "defaultLocale": "en",
-      "id": "processpuzzle-testbed"
-    }
   ]
 }
