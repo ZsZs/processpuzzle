@@ -1,8 +1,13 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
+import com.processpuzzle.workflow.definition.domain.Workflow;
+import com.processpuzzle.workflow.definition.domain.TaskUse;
+import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
+import com.processpuzzle.workflow.definition.domain.RoleUse;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess.ResolvedTask;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
@@ -26,6 +31,11 @@ import static org.mockito.Mockito.when;
  * Exercises {@link TaskActivationService} against an in-memory fake repository, since its
  * decision logic (dependency satisfaction, sequential-sibling ordering, precondition evaluation)
  * is exactly the part worth unit-testing in isolation from Spring/JPA.
+ *
+ * <p>The service reads a {@link ResolvedProcess}, so these tests assemble one directly rather than
+ * going through {@code ResolveProcessDefinitionUseCase} — the pairing of assignment and task
+ * definition is that use case's contract to get right, and repeating it here would only test the
+ * fixture.
  */
 class TaskActivationServiceTest {
 
@@ -49,7 +59,7 @@ class TaskActivationServiceTest {
 
     @Test
     void activatesTasksWithNoDependenciesAndLeavesDependentTasksPending() {
-        ProcessDefinition process = processWithSequentialTasks("draft", "review");
+        ResolvedProcess process = processWithSequentialTasks("draft", "review");
         List<TaskInstance> instances = pendingInstances(process);
         when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId(any(), any())).thenReturn(instances);
 
@@ -61,7 +71,7 @@ class TaskActivationServiceTest {
 
     @Test
     void activatesADependentTaskOnceItsDependencyIsCompleted() {
-        ProcessDefinition process = processWithSequentialTasks("draft", "review");
+        ResolvedProcess process = processWithSequentialTasks("draft", "review");
         List<TaskInstance> instances = pendingInstances(process);
         instanceFor(instances, "draft").setStatus(TaskInstanceStatus.COMPLETED);
         when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId(any(), any())).thenReturn(instances);
@@ -73,10 +83,9 @@ class TaskActivationServiceTest {
 
     @Test
     void nonParallelSiblingsAtTheSameLevelActivateOneAtATime() {
-        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
-        process.addRole(RoleDefinition.builder().id("developer").name("Developer").build());
-        process.addTask(TaskDefinition.builder().id("task-a").name("A").performedBy("developer").build());
-        process.addTask(TaskDefinition.builder().id("task-b").name("B").performedBy("developer").build());
+        ResolvedProcess process = process(
+                resolvedTask("task-a", "A", false),
+                resolvedTask("task-b", "B", false));
 
         List<TaskInstance> instances = pendingInstances(process);
         when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId(any(), any())).thenReturn(instances);
@@ -90,10 +99,9 @@ class TaskActivationServiceTest {
 
     @Test
     void parallelSiblingsAtTheSameLevelAllActivateTogether() {
-        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
-        process.addRole(RoleDefinition.builder().id("developer").name("Developer").build());
-        process.addTask(TaskDefinition.builder().id("task-a").name("A").performedBy("developer").parallel(true).build());
-        process.addTask(TaskDefinition.builder().id("task-b").name("B").performedBy("developer").parallel(true).build());
+        ResolvedProcess process = process(
+                resolvedTask("task-a", "A", true),
+                resolvedTask("task-b", "B", true));
 
         List<TaskInstance> instances = pendingInstances(process);
         when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId(any(), any())).thenReturn(instances);
@@ -105,10 +113,9 @@ class TaskActivationServiceTest {
 
     @Test
     void marksATaskBlockedWhenItsPreconditionFails() {
-        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
-        process.addRole(RoleDefinition.builder().id("developer").name("Developer").build());
-        process.addTask(TaskDefinition.builder().id("code").name("Write code").performedBy("developer")
-                .preconditionRuleId("needs-ticket").build());
+        TaskDefinition definition = TaskDefinition.builder().id("code").name("Write code")
+                .performedByRoles(List.of("developer")).preconditionRuleId("needs-ticket").build();
+        ResolvedProcess process = process(new ResolvedTask(assignment("code", false), definition));
 
         List<TaskInstance> instances = pendingInstances(process);
         when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId(any(), any())).thenReturn(instances);
@@ -133,22 +140,116 @@ class TaskActivationServiceTest {
         assertThat(service.allTerminal("acme", processInstanceId)).isTrue();
     }
 
-    private ProcessDefinition processWithSequentialTasks(String firstId, String secondId) {
-        ProcessDefinition process = ProcessDefinition.builder().orgKey("acme").id("delivery").build();
-        process.addRole(RoleDefinition.builder().id("developer").name("Developer").build());
-        process.addTask(TaskDefinition.builder().id(firstId).name(firstId).performedBy("developer").build());
-        process.addTask(TaskDefinition.builder().id(secondId).name(secondId).performedBy("developer")
-                .dependsOn(List.of(firstId)).build());
-        return process;
+    // ---------------------------------------------------------------- join type
+
+    /**
+     * ALL is the default and the historical behaviour: a task with two dependencies waits for both.
+     * The interesting assertion is the middle state — one dependency done is not enough.
+     */
+    @Test
+    void allJoinWaitsForEveryDependency() {
+        ResolvedProcess process = processWithJoin(JoinType.ALL);
+        List<TaskInstance> instances = pendingInstances(process);
+        UUID processInstanceId = UUID.randomUUID();
+        when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId("acme", processInstanceId)).thenReturn(instances);
+
+        instanceFor(instances, "left").setStatus(TaskInstanceStatus.COMPLETED);
+        service.activateEligibleTasks("acme", process, processInstanceId, Map.of());
+        assertThat(statusOf(instances, "join")).isEqualTo(TaskInstanceStatus.PENDING);
+
+        instanceFor(instances, "right").setStatus(TaskInstanceStatus.SKIPPED);
+        service.activateEligibleTasks("acme", process, processInstanceId, Map.of());
+        assertThat(statusOf(instances, "join")).isEqualTo(TaskInstanceStatus.ACTIVE);
     }
 
-    private List<TaskInstance> pendingInstances(ProcessDefinition process) {
-        return process.getTasks().stream()
+    /** ANY activates on the first dependency to reach a terminal status; the other never has to. */
+    @Test
+    void anyJoinActivatesOnTheFirstFinishedDependency() {
+        ResolvedProcess process = processWithJoin(JoinType.ANY);
+        List<TaskInstance> instances = pendingInstances(process);
+        UUID processInstanceId = UUID.randomUUID();
+        when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId("acme", processInstanceId)).thenReturn(instances);
+
+        service.activateEligibleTasks("acme", process, processInstanceId, Map.of());
+        assertThat(statusOf(instances, "join")).isEqualTo(TaskInstanceStatus.PENDING);
+
+        instanceFor(instances, "left").setStatus(TaskInstanceStatus.COMPLETED);
+        service.activateEligibleTasks("acme", process, processInstanceId, Map.of());
+        assertThat(statusOf(instances, "join")).isEqualTo(TaskInstanceStatus.ACTIVE);
+        assertThat(statusOf(instances, "right")).isEqualTo(TaskInstanceStatus.ACTIVE);
+    }
+
+    /**
+     * A null joinType is read as ALL rather than dropping through to some other branch — an
+     * already-persisted task use predates the field.
+     */
+    @Test
+    void anAbsentJoinTypeBehavesAsAll() {
+        ResolvedProcess process = processWithJoin(null);
+        List<TaskInstance> instances = pendingInstances(process);
+        UUID processInstanceId = UUID.randomUUID();
+        when(taskInstanceRepository.findByOrgKeyAndProcessInstanceId("acme", processInstanceId)).thenReturn(instances);
+
+        instanceFor(instances, "left").setStatus(TaskInstanceStatus.COMPLETED);
+        service.activateEligibleTasks("acme", process, processInstanceId, Map.of());
+
+        assertThat(statusOf(instances, "join")).isEqualTo(TaskInstanceStatus.PENDING);
+    }
+
+    // ---------------------------------------------------------------- fixtures
+
+    private ResolvedProcess processWithSequentialTasks(String firstId, String secondId) {
+        return process(
+                resolvedTask(firstId, firstId, false),
+                new ResolvedTask(
+                        TaskUse.builder().taskDefinitionId(secondId).performedBy("developer")
+                                .dependsOn(List.of(firstId)).build(),
+                        TaskDefinition.builder().id(secondId).name(secondId)
+                                .performedByRoles(List.of("developer")).build()));
+    }
+
+    /**
+     * Two independent tasks and one that joins them, so the two join types differ observably. Both
+     * branches are {@code parallel} — otherwise the sequential-sibling rule, not the join type,
+     * would be what holds the second branch back.
+     */
+    private ResolvedProcess processWithJoin(JoinType joinType) {
+        return process(
+                resolvedTask("left", "left", true),
+                resolvedTask("right", "right", true),
+                new ResolvedTask(
+                        TaskUse.builder().taskDefinitionId("join").performedBy("developer")
+                                .dependsOn(List.of("left", "right")).joinType(joinType).build(),
+                        TaskDefinition.builder().id("join").name("join")
+                                .performedByRoles(List.of("developer")).build()));
+    }
+
+    private ResolvedProcess process(ResolvedTask... tasks) {
+        Workflow definition = Workflow.builder().orgKey("acme").id("delivery")
+                .roles(List.of(RoleUse.builder().roleDefinitionId("developer").build()))
+                .tasks(List.of(tasks).stream().map(ResolvedTask::assignment).toList())
+                .build();
+        RoleDefinition developer = RoleDefinition.builder().orgKey("acme").id("developer").name("Developer").build();
+        return new ResolvedProcess(definition, List.of(developer), List.of(), List.of(tasks));
+    }
+
+    private ResolvedTask resolvedTask(String id, String name, boolean parallel) {
+        return new ResolvedTask(assignment(id, parallel),
+                TaskDefinition.builder().id(id).name(name).performedByRoles(List.of("developer")).build());
+    }
+
+    private TaskUse assignment(String taskDefinitionId, boolean parallel) {
+        return TaskUse.builder().taskDefinitionId(taskDefinitionId).performedBy("developer")
+                .dependsOn(List.of()).parallel(parallel).build();
+    }
+
+    private List<TaskInstance> pendingInstances(ResolvedProcess process) {
+        return process.tasks().stream()
                 .map(t -> TaskInstance.builder()
                         .id(UUID.randomUUID())
                         .orgKey("acme")
-                        .taskDefinitionId(t.getId())
-                        .name(t.getName())
+                        .taskDefinitionId(t.id())
+                        .name(t.definition().getName())
                         .status(TaskInstanceStatus.PENDING)
                         .build())
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));

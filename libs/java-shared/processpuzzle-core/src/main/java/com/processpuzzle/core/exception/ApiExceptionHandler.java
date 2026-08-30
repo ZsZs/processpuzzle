@@ -14,11 +14,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
 
 /**
- * Generic exceptions, for every module. Feature-specific advice lives beside its own endpoint
- * ({@code DocumentApiExceptionHandler}, {@code RuleApiExceptionHandler}, {@code AppApiExceptionHandler})
- * and runs first, at {@link ApiAdviceOrder#FEATURE}; because this advice already claims the exceptions
- * below, declaring any of them a second time in a feature advice would make which one wins depend on
- * bean ordering.
+ * Generic exceptions, for every module — one of the two advices that is deliberately unscoped, because
+ * a generic refusal means the same thing whichever module raised it. Feature-specific advice lives
+ * beside its own endpoint ({@code DocumentApiExceptionHandler}, {@code RuleApiExceptionHandler},
+ * {@code AppApiExceptionHandler}), is scoped to that module's package, and runs first at
+ * {@link ApiAdviceOrder#FEATURE}.
+ *
+ * <p>A feature advice may therefore re-declare an exception this one claims — {@code IllegalArgumentException}
+ * is re-declared by base-entity and base-workflow — and win deterministically for its own endpoints,
+ * because the rungs differ. What it must not do is claim a type a <em>sibling</em> feature advice also
+ * claims while sharing this rung and a scope; see {@link ApiAdviceOrder} for the stale-write incident
+ * that rule came from.
  *
  * <p>The catch-all for everything not listed here is {@link UnhandledExceptionHandler}, in a class of
  * its own and last — see there for what happened when it sat in this one.

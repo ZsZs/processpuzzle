@@ -173,7 +173,7 @@ different stages:
 | `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
-| `base-workflow` | scaffold | scaffold |
+| `base-workflow` | authoring UI for processes and tools; read-only monitoring of instances | endpoints, use cases and execution engine implemented |
 | `base-app` | scaffold | scaffold |
 
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without

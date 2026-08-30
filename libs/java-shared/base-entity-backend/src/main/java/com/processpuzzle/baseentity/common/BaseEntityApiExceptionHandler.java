@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Controller advice translating Base Entity exceptions into standard API responses according to the OpenAPI specification.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.baseentity")
 @Order(ApiAdviceOrder.FEATURE)
 public class BaseEntityApiExceptionHandler {
 

@@ -20,7 +20,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -76,6 +78,21 @@ public class TaskInstance {
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default
     private List<StepResult> stepResults = new ArrayList<>();
+
+    /**
+     * What completing this task added to the process context: the caller's supplied context merged
+     * with whatever this task's tool steps mapped back out of their responses.
+     *
+     * <p>Held here rather than accumulated on {@link ProcessInstance} so that a completion writes one
+     * row — see {@link ProcessContext} for why that matters to {@code parallel} tasks.
+     * {@link #stepResults} cannot serve the same purpose: it keeps each step's raw {@code toolResponse},
+     * not the context keys an {@code outputMapping} projected out of it, and it never sees the caller's
+     * own values at all.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    @Builder.Default
+    private Map<String, Object> contextContribution = new HashMap<>();
 
     @jakarta.persistence.Version
     private Long version;

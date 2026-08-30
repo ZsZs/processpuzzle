@@ -14,7 +14,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <p>{{ t('intro_paragraph_1') }}</p>
         <p>{{ t('intro_paragraph_2') }}</p>
         <ul>
-          <li><strong>&#64;processpuzzle/base-workflow-frontend</strong> — {{ t('intro_frontend_desc') }}</li>
+          <li><strong>&#64;processpuzzle/base-workflow</strong> — {{ t('intro_frontend_desc') }}</li>
           <li><strong>base-workflow-backend</strong> — {{ t('intro_backend_desc') }}</li>
         </ul>
         <img src="https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/processpuzzle-logo-small.jpg" width="240" alt="ProcessPuzzle" />

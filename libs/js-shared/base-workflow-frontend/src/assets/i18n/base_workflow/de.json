@@ -1,0 +1,145 @@
+{
+  "process_definition": {
+    "_self": "Prozess",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "extends": "Erweitert",
+    "activeInstances": "Aktive Instanzen",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "roles": "Rollen",
+    "artifacts": "Artefakte",
+    "tools": "Werkzeuge",
+    "tasks": "Aufgaben"
+  },
+  "process_task_assignment": {
+    "_self": "Aufgabenzuordnung",
+    "taskDefinitionId": "Aufgabe",
+    "performedBy": "Ausgeführt von",
+    "dependsOn": "Abhängig von",
+    "parallel": "Parallel",
+    "override": "Überschreiben"
+  },
+  "workflow_role_definition": {
+    "_self": "Rolle",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "entityRoleId": "Entitätsrolle",
+    "version": "Version",
+    "updatedAt": "Geändert am"
+  },
+  "artifact_definition": {
+    "_self": "Artefakt",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "type": "Typ",
+    "entityTypeId": "Entitätstyp",
+    "stateMachineId": "Zustandsmaschine",
+    "version": "Version",
+    "updatedAt": "Geändert am"
+  },
+  "task_definition": {
+    "_self": "Aufgabe",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "performedByRoles": "Ausführende Rollen",
+    "preconditionRuleId": "Vorbedingungsregel",
+    "postconditionRuleId": "Nachbedingungsregel",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "inputs": "Eingaben",
+    "outputs": "Ausgaben",
+    "steps": "Schritte"
+  },
+  "task_input_reference": {
+    "_self": "Eingabe",
+    "type": "Typ",
+    "refId": "Referenz",
+    "label": "Bezeichnung"
+  },
+  "task_output_reference": {
+    "_self": "Ausgabe",
+    "type": "Typ",
+    "refId": "Referenz",
+    "label": "Bezeichnung"
+  },
+  "task_step_definition": {
+    "_self": "Schritt",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "toolId": "Werkzeug",
+    "toolOperation": "Operation",
+    "inputMapping": "Eingabezuordnung",
+    "outputMapping": "Ausgabezuordnung"
+  },
+  "tool_definition": {
+    "_self": "Werkzeug",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "baseUrl": "Basis-URL",
+    "type": "Authentifizierungsart",
+    "secretRef": "Secret-Referenz",
+    "version": "Version",
+    "createdAt": "Erstellt am",
+    "operations": "Operationen"
+  },
+  "tool_operation": {
+    "_self": "Operation",
+    "id": "Id",
+    "method": "Methode",
+    "path": "Pfad",
+    "description": "Beschreibung",
+    "payloadTemplate": "Payload-Vorlage",
+    "expectedStatusCodes": "Erwartete Statuscodes"
+  },
+  "process_instance": {
+    "_self": "Prozessinstanz",
+    "id": "Id",
+    "processDefinitionId": "Prozess",
+    "processDefinitionName": "Prozessname",
+    "status": "Status",
+    "entityId": "Entität",
+    "startedAt": "Gestartet am",
+    "completedAt": "Abgeschlossen am",
+    "context": "Kontext",
+    "tasks": "Aufgaben",
+    "artifacts": "Artefakte"
+  },
+  "task_instance": {
+    "_self": "Aufgabeninstanz",
+    "id": "Id",
+    "taskDefinitionId": "Aufgabe",
+    "name": "Name",
+    "status": "Status",
+    "assignedTo": "Zugewiesen an",
+    "blockedReason": "Blockierungsgrund",
+    "activatedAt": "Aktiviert am",
+    "completedAt": "Abgeschlossen am",
+    "skippedAt": "Übersprungen am",
+    "stepResults": "Schrittergebnisse"
+  },
+  "artifact_instance": {
+    "_self": "Artefaktinstanz",
+    "id": "Id",
+    "artifactDefinitionId": "Artefakt",
+    "name": "Name",
+    "type": "Typ",
+    "entityId": "Entität",
+    "stateMachineInstanceId": "Zustandsmaschineninstanz",
+    "currentState": "Aktueller Zustand",
+    "updatedAt": "Geändert am"
+  },
+  "task_step_result": {
+    "_self": "Schrittergebnis",
+    "stepId": "Schritt",
+    "completedAt": "Abgeschlossen am",
+    "toolResponse": "Werkzeugantwort",
+    "error": "Fehler"
+  }
+}

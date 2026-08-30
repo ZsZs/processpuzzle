@@ -6,95 +6,151 @@
 # `<orgKey>-entities.yaml` works in base-entity, `<orgKey>-state-machines.yaml` in base-state,
 # `<orgKey>-apps.yaml` in base-app, and `<orgKey>-widgets.yaml` in base-widget.
 #
-processes:
+# Five sibling sections, following SPEM's split of Method Content from Process. The four
+# `*-definitions` sections are the tenant's reusable catalog: roles, artifacts, tools and tasks exist
+# in their own right, each with its own CRUD screen, and each may be referenced by any number of
+# workflows. A workflow then *uses* them — `roles`, `artifacts`, `tools` and `tasks` inside a workflow
+# hold `...DefinitionId` references plus whatever is true of that definition only in this workflow.
+# That is why the two levels are spelled differently: `role-definitions` is where a role is defined,
+# `roles` is where one takes part.
+#
+# The definition sections are imported before `workflows`, because the workflow validator refuses a
+# reference it cannot resolve. The import is an upsert over the whole file, all-or-nothing.
+#
+role-definitions:
+  - id: clerk
+    name: Order Clerk
+    description: Responsible for initial order entry, verification, and delivery confirmation.
+    responsibleFor:
+      - order-entity
+
+  - id: manager
+    name: Order Manager
+    description: Approves orders for shipment.
+    responsibleFor:
+      - fulfillment-invoice
+
+artifact-definitions:
+  - id: order-entity
+    name: Order
+    description: The order being processed through its lifecycle.
+    artifactType: ENTITY
+    artifactTypeId: order
+    stateMachineId: order
+
+  - id: fulfillment-invoice
+    name: Fulfillment Invoice
+    description: Generated invoice document for a delivered order.
+    artifactType: DOCUMENT
+    artifactTypeId: fulfillment-invoice
+
+tool-definitions:
+  - id: automated-check-tool
+    name: Automated Check Tool
+    description: Stand-in for the inventory and document service the order fulfillment steps call.
+    baseUrl: https://checks.example.com
+    auth:
+      type: BEARER_TOKEN
+      secretRef: AUTOMATED_CHECK_TOKEN
+    operations:
+      - id: inventory-check
+        method: POST
+        path: /v1/inventory/check
+        description: Verifies that every line item of an order is available in stock.
+        payloadTemplate: '{ "orderId": "${entityId}" }'
+        expectedStatusCodes: [ 200 ]
+
+      - id: generate-doc
+        method: POST
+        path: /v1/documents
+        description: Produces the delivery confirmation and final invoice.
+        expectedStatusCodes: [ 200, 201 ]
+
+# `inputs` and `outputs` name artifact definition ids. There is no separate reference type: an
+# artifact's own `artifactType` already says whether it is an entity, a document or a widget.
+task-definitions:
+  - id: review-order
+    name: Review Order
+    description: Review order details and validate line items before confirming it for fulfillment.
+    performedByRoles: [ clerk, manager ]
+    inputs: [ order-entity ]
+    outputs: [ order-entity ]
+    preconditionRuleId: positive-quantities
+    steps:
+      - id: check-items
+        name: Check Line Items
+        description: Verify all line items are available in inventory.
+        stepType: SERVICE_STEP
+        toolDefinitionId: automated-check-tool
+        toolOperation: inventory-check
+
+  - id: approve-shipment
+    name: Approve Shipment
+    description: Manager approval to release a confirmed order for shipment.
+    performedByRoles: [ manager ]
+    inputs: [ order-entity ]
+    outputs: [ order-entity ]
+    steps:
+      - id: manager-signoff
+        name: Manager Sign-off
+        description: Sign off on releasing the order for shipment.
+        stepType: USER_STEP
+
+  - id: confirm-delivery
+    name: Confirm Delivery
+    description: Confirm the shipped order has reached the customer and generate the invoice.
+    performedByRoles: [ clerk ]
+    inputs: [ order-entity ]
+    outputs: [ fulfillment-invoice ]
+    steps:
+      - id: generate-invoice
+        name: Generate Invoice
+        description: Produce the delivery confirmation and final invoice.
+        stepType: SERVICE_STEP
+        toolDefinitionId: automated-check-tool
+        toolOperation: generate-doc
+
+workflows:
   - id: order-fulfillment-workflow
     name: Order Fulfillment Workflow
     description: >-
       Tiny end-to-end workflow governing order review, shipment approval, and delivery confirmation in
       the testbed environment.
-    tools:
-      - automated-check-tool
+
+    # Data-driven start: an instance comes into being once a DRAFT order exists. The state name is
+    # base-state's to interpret — base-workflow records it and never resolves it.
+    startCondition:
+      startType: INPUT_ARTIFACT
+      requiredArtifacts:
+        - artifactDefinitionId: order-entity
+          state: DRAFT
+
     roles:
-      - id: clerk
-        name: Order Clerk
-        description: Responsible for initial order entry, verification, and delivery confirmation.
-        entityRoleId: clerk-role
-      - id: manager
-        name: Order Manager
-        description: Approves orders for shipment.
-        entityRoleId: manager-role
-    workProducts:
-      - id: order-entity
-        name: Order Entity
-        description: The order being processed through its lifecycle.
-        type: ENTITY
-        entityTypeId: order
-        stateMachineId: order
-      - id: fulfillment-invoice
-        name: Fulfillment Invoice
-        description: Generated invoice document for a delivered order.
-        type: DELIVERABLE
+      - roleDefinitionId: clerk
+      - roleDefinitionId: manager
+
+    # Every artifact any of the tasks below reads or writes has to be declared here, so that this
+    # list is the whole picture of what flows through the workflow.
+    artifacts:
+      - artifactDefinitionId: order-entity
+      - artifactDefinitionId: fulfillment-invoice
+
+    tools:
+      - toolDefinitionId: automated-check-tool
+
+    # Strictly sequential: each task waits for the previous one. `performedBy` picks one of the
+    # referenced task definition's performedByRoles — review-order offers both, and here the clerk
+    # does it.
     tasks:
-      - id: review-order
-        name: Review Order
-        description: Review order details and validate line items before confirming it for fulfillment.
+      - taskDefinitionId: review-order
         performedBy: clerk
-        inputs:
-          - type: BASE_ENTITY
-            refId: order
-            label: New Order
-        outputs:
-          - type: BASE_ENTITY
-            refId: order
-            label: Reviewed Order
-        preconditionRuleId: positive-quantities
         dependsOn: [ ]
-        parallel: false
-        steps:
-          - id: check-items
-            name: Check Line Items
-            description: Verify all line items are available in inventory.
-            toolId: automated-check-tool
-            toolOperation: inventory-check
 
-      - id: approve-shipment
-        name: Approve Shipment
-        description: Manager approval to release a confirmed order for shipment.
+      - taskDefinitionId: approve-shipment
         performedBy: manager
-        inputs:
-          - type: BASE_ENTITY
-            refId: order
-            label: Confirmed Order
-        outputs:
-          - type: BASE_ENTITY
-            refId: order
-            label: Approved Order
-        dependsOn:
-          - review-order
-        parallel: false
-        steps:
-          - id: manager-signoff
-            name: Manager Sign-off
-            description: Sign off on releasing the order for shipment.
+        dependsOn: [ review-order ]
 
-      - id: confirm-delivery
-        name: Confirm Delivery
-        description: Confirm the shipped order has reached the customer and generate the invoice.
+      - taskDefinitionId: confirm-delivery
         performedBy: clerk
-        inputs:
-          - type: BASE_ENTITY
-            refId: order
-            label: Shipped Order
-        outputs:
-          - type: DOCUMENT
-            refId: fulfillment-invoice
-            label: Delivery Confirmation & Invoice
-        dependsOn:
-          - approve-shipment
+        dependsOn: [ approve-shipment ]
         parallel: false
-        steps:
-          - id: generate-invoice
-            name: Generate Invoice
-            description: Produce the delivery confirmation and final invoice.
-            toolId: automated-check-tool
-            toolOperation: generate-doc

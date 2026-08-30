@@ -24,6 +24,35 @@ defineEntityRelationshipSuite({
       attrName: 'transitions',
       reason: 'the owning state machine cannot be created from generated fixture data (states is minItems: 1, and entityName must name a real base-entity type)',
     },
+    // The same exclusion as above, seen from base-workflow: the flow starts by creating the owner through
+    // its own form, and neither owner can be created from generated data — a Process Definition requires at
+    // least one task, and a Process Instance is read-only by contract. See entity-crud.spec.ts for both
+    // reasons. Every embedded list below those two owners is therefore unreachable.
+    {
+      entityName: 'Process Definition',
+      attrName: 'roles',
+      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+    },
+    {
+      entityName: 'Process Definition',
+      attrName: 'workProducts',
+      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+    },
+    {
+      entityName: 'Process Definition',
+      attrName: 'tasks',
+      reason: 'the owning process cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+    },
+    {
+      entityName: 'Process Instance',
+      attrName: 'tasks',
+      reason: 'process instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
+    },
+    {
+      entityName: 'Process Instance',
+      attrName: 'workProducts',
+      reason: 'process instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
+    },
     {
       entityName: 'App Definition',
       attrName: 'routes',

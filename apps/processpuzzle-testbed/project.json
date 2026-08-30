@@ -59,6 +59,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/base-workflow-frontend/src/assets/i18n/base_workflow",
+            "output": "assets/i18n/base_workflow"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/design/src/assets/i18n/design",
             "output": "assets/i18n/design"
           },

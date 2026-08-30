@@ -3,8 +3,12 @@
 # WorkflowTranslationLoader imports this file on startup when `base-workflow.loadDefaultTranslations`
 # is true. See base-app's file of the same name for the conventions.
 #
-# NOTE: base-workflow owns no frontend transloco scope today — the library is still a scaffold. Nothing
-# requests this bundle yet; it is seeded so the resource is exercised and the scope name is settled.
+# The `base_workflow` scope named below is the one base-workflow-frontend registers on its routes, so the
+# two halves already agree on the name. What they do *not* share is the key space: the frontend ships its
+# own bundles under `src/assets/i18n/base_workflow/`, keyed by entity name (`artifact_definition.*`,
+# `process_task_assignment.*`), and reaches this endpoint only through BASE_WORKFLOW_TRANSLATION_SOURCE
+# when a host skips the asset copy step. The keys here name *tenant data* — this sample process and its
+# roles — which no static bundle can carry.
 #
 # The keys below name the sample process in default-workflows/processpuzzle-testbed-workflows.yaml.
 

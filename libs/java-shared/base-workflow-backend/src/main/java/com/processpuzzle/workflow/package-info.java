@@ -1,6 +1,6 @@
 /**
- * Base Workflow: SPEM-inspired orchestrator that interprets process definitions (roles, work
- * products, tasks, tools) to execute and monitor long-running process instances.
+ * Base Workflow: SPEM-inspired orchestrator that interprets process definitions (roles,
+ * artifacts, tasks, tools) to execute and monitor long-running process instances.
  *
  * <p>base-workflow is a pure orchestrator, per the API contract: rule evaluation is delegated to
  * Base Rule, state machine transitions to Base State, and entity/document/widget data shape to

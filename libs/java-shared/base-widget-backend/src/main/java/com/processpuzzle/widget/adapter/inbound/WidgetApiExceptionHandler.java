@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * {@link ApiAdviceOrder#FEATURE} puts this ahead of core's catch-all — without it these ids would
  * be answered as {@code 500 internal-error}.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.widget")
 @Order(ApiAdviceOrder.FEATURE)
 public class WidgetApiExceptionHandler {
 

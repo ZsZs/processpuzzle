@@ -3,8 +3,8 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.common.ValidationException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
 import com.processpuzzle.workflow.execution.domain.ProcessInstance;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
@@ -19,8 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Assigns a user to an ACTIVE task. If the task's role ({@code TaskDefinition.performedBy}) has
- * an {@code entityRoleId} configured, membership is checked via {@link RoleMembershipPort}
+ * Assigns a user to an ACTIVE task. The role is the one this process pins for the task
+ * ({@code TaskUse.performedBy}), not one of the several the shared task definition
+ * merely permits. If that role has an {@code entityRoleId} configured, membership is checked via {@link RoleMembershipPort}
  * (implemented by the host application — see that port's Javadoc) and rejected with a 400 (not
  * 403) per base-workflow-api.yaml's declared response codes for {@code assignTask}.
  *
@@ -33,16 +34,16 @@ import java.util.UUID;
 public class AssignTaskUseCase {
 
     private final ProcessInstanceRepository processInstanceRepository;
-    private final ProcessDefinitionRepository processDefinitionRepository;
+    private final ResolveProcessDefinitionUseCase resolveProcessDefinition;
     private final TaskInstanceRepository taskInstanceRepository;
     private final RoleMembershipPort roleMembershipPort;
 
     public AssignTaskUseCase(ProcessInstanceRepository processInstanceRepository,
-                              ProcessDefinitionRepository processDefinitionRepository,
+                              ResolveProcessDefinitionUseCase resolveProcessDefinition,
                               TaskInstanceRepository taskInstanceRepository,
                               ObjectProvider<RoleMembershipPort> roleMembershipPortProvider) {
         this.processInstanceRepository = processInstanceRepository;
-        this.processDefinitionRepository = processDefinitionRepository;
+        this.resolveProcessDefinition = resolveProcessDefinition;
         this.taskInstanceRepository = taskInstanceRepository;
         this.roleMembershipPort = roleMembershipPortProvider.getIfUnique(PermitAllRoleMembershipPort::new);
     }
@@ -60,12 +61,11 @@ public class AssignTaskUseCase {
             throw new ConflictException("Task '%s' is %s, not ACTIVE — cannot assign".formatted(taskDefinitionId, taskInstance.getStatus()));
         }
 
-        ProcessDefinition definition = processDefinitionRepository
-                .findByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId())
-                .orElseThrow(() -> new NotFoundException("Process definition no longer exists"));
-        var taskDef = definition.findTask(taskDefinitionId)
+        ResolvedProcess definition =
+                resolveProcessDefinition.resolveByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId());
+        var task = definition.findTask(taskDefinitionId)
                 .orElseThrow(() -> new NotFoundException("Task definition '%s' no longer exists".formatted(taskDefinitionId)));
-        var role = definition.findRole(taskDef.getPerformedBy()).orElse(null);
+        var role = definition.findRole(task.performedBy()).orElse(null);
 
         if (role != null && role.getEntityRoleId() != null
                 && !roleMembershipPort.isMember(orgKey, userId, role.getEntityRoleId())) {

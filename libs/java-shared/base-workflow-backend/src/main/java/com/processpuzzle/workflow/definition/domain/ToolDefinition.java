@@ -23,7 +23,7 @@ import java.util.Optional;
 
 /**
  * A callable external tool (a REST API) that task steps invoke, shared across process definitions
- * within a tenant. Composite key mirrors {@link ProcessDefinition}'s (orgKey, id).
+ * within a tenant. Composite key mirrors {@link Workflow}'s (orgKey, id).
  */
 @Getter
 @Setter

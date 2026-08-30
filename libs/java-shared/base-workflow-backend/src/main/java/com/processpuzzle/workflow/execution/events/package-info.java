@@ -9,7 +9,7 @@
  * best-effort design of what base-app/base-entity/a UI would plausibly need to hear about, not a
  * negotiated contract — expect to revisit their shape once a shared event schema exists. Symmetrically,
  * this module listens for nothing from base-state yet (it doesn't publish an instance-level event
- * either — see {@code WorkProductInstance}'s Javadoc), so {@code WorkProductInstance.currentState}
+ * either — see {@code ArtifactInstance}'s Javadoc), so {@code ArtifactInstance.currentState}
  * currently never gets refreshed after creation. Wiring that up is the natural next step once
  * base-state grows past its current scaffold.
  */

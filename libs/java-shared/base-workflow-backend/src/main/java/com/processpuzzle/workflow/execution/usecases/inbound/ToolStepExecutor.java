@@ -50,19 +50,19 @@ public class ToolStepExecutor {
     }
 
     private StepResult executeStep(String orgKey, StepDefinition step, Map<String, Object> context) {
-        if (step.getToolId() == null) {
+        if (step.getToolDefinitionId() == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now()).build();
         }
 
-        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndId(orgKey, step.getToolId()).orElse(null);
+        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndId(orgKey, step.getToolDefinitionId()).orElse(null);
         if (tool == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now())
-                    .error("Tool '" + step.getToolId() + "' not found").build();
+                    .error("Tool '" + step.getToolDefinitionId() + "' not found").build();
         }
         ToolOperation operation = tool.findOperation(step.getToolOperation()).orElse(null);
         if (operation == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now())
-                    .error("Operation '" + step.getToolOperation() + "' not found on tool '" + step.getToolId() + "'").build();
+                    .error("Operation '" + step.getToolOperation() + "' not found on tool '" + step.getToolDefinitionId() + "'").build();
         }
 
         Map<String, Object> resolvedPayload = resolveInputs(step.getInputMapping(), context);

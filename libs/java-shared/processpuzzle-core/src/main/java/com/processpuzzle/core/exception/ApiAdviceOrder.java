@@ -15,6 +15,27 @@ import org.springframework.core.Ordered;
  * when a duplicate slug and an unknown document both came back as {@code 500 internal-error} instead of
  * their own ids. Hence three explicit rungs, and an advice that declares none of them is a bug waiting
  * for a bean-ordering change.
+ *
+ * <h2>Order is not enough on its own: scope the advice too</h2>
+ *
+ * <p>A rung only disambiguates advices on <em>different</em> rungs. Every feature advice sits on
+ * {@link #FEATURE}, so two of them claiming one exception type is a tie that order cannot break —
+ * and the exception types most likely to be claimed twice are the ones no feature owns: Spring's
+ * {@code OptimisticLockingFailureException}, {@code IllegalArgumentException}. Three advices claimed
+ * optimistic-lock failures at this rung, which is how a stale write on a <em>workflow</em> row came
+ * back as {@code document.stale-write}: the tie fell base-document's way, and it would have fallen
+ * differently on a different classpath order.
+ *
+ * <p>So a feature advice declares the package its own endpoints live in:
+ *
+ * <pre>{@code @RestControllerAdvice(basePackages = "com.processpuzzle.workflow")}</pre>
+ *
+ * <p>Now the tie cannot arise — the scopes are disjoint, and each module answers for its own
+ * endpoints with its own error ids. Only the two advices in this package are deliberately global,
+ * because a generic refusal and an unhandled failure are the same for every module.
+ * {@code ApiAdviceScopeTest} in the application module enforces both halves of this: that every
+ * advice is scoped or intentionally global, and that no two advices sharing a rung and a scope claim
+ * the same exception type.
  */
 public final class ApiAdviceOrder {
 

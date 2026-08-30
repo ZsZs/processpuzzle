@@ -1,0 +1,66 @@
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { ARTIFACT_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
+import { ArtifactType } from './artifact-definition';
+import { ARTIFACT_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+
+export { ARTIFACT_DEFINITION_ENTITY_NAME };
+
+const artifactTypeSelectables = toSelectables(Object.keys(ArtifactType));
+
+function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
+  const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
+  idAttr.required = true;
+  idAttr.isHeading = true;
+  idAttr.placeholder = 'Unique per organization, e.g. order-entity';
+
+  const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name');
+  nameAttr.required = true;
+
+  const typeAttr = new BaseEntityAttrDescriptor('type', FormControlType.DROPDOWN, 'Type', artifactTypeSelectables);
+  typeAttr.required = true;
+
+  const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
+  descriptionAttr.styleClass = 'full-width';
+  descriptionAttr.hideInTable = true;
+
+  // Both name resources owned by *other* features and are referenced by id only — base-entity's
+  // entity types and base-state's machines. Plain text rather than a picker for the same reason
+  // `entityRoleId` is: this library holds no store for either, and the contract is explicit that
+  // base-workflow never duplicates another feature's model.
+  const entityTypeIdAttr = new BaseEntityAttrDescriptor('entityTypeId', FormControlType.TEXT_BOX, 'Entity Type');
+  entityTypeIdAttr.placeholder = 'base-entity type backing this artifact, e.g. order';
+
+  const stateMachineIdAttr = new BaseEntityAttrDescriptor('stateMachineId', FormControlType.TEXT_BOX, 'State Machine');
+  stateMachineIdAttr.placeholder = 'base-state machine governing its lifecycle';
+
+  // Server-assigned: shown so the author can see which revision is on screen, never edited here.
+  const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
+  versionAttr.disabled = true;
+
+  const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
+  updatedAtAttr.disabled = true;
+
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, typeAttr], FlexDirection.ROW);
+  identityRow.style = { 'column-gap': '10px' };
+  const bindingRow = new FlexboxDescriptor([entityTypeIdAttr, stateMachineIdAttr], FlexDirection.ROW);
+  bindingRow.style = { 'column-gap': '10px' };
+  const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
+  revisionRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, bindingRow, revisionRow, descriptionAttr], FlexDirection.COLUMN);
+  flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
+  return [flexBoxContainer];
+}
+
+/**
+ * A catalog aggregate with a list and a details screen of its own. An artifact is authored once per
+ * tenant: the same `Fulfillment Invoice` is produced by one process and consumed by another, and a
+ * task's `ARTIFACT`-typed reference names it by id.
+ */
+export function createArtifactDefinitionDescriptor(): BaseEntityDescriptor {
+  return new BaseEntityDescriptor({
+    entityName: ARTIFACT_DEFINITION_ENTITY_NAME,
+    attrDescriptors: createArtifactDefinitionAttrDescriptors(),
+    i18nScope: ARTIFACT_DEFINITION_I18N_SCOPE,
+  });
+}

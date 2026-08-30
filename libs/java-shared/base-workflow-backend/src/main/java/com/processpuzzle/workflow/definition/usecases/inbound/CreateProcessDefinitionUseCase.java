@@ -1,10 +1,10 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionExtendsValidator;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionValidator;
+import com.processpuzzle.workflow.definition.domain.Workflow;
+import com.processpuzzle.workflow.definition.domain.WorkflowExtendsValidator;
+import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
+import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CreateProcessDefinitionUseCase {
 
-    private final ProcessDefinitionRepository repository;
-    private final ProcessDefinitionValidator validator;
-    private final ProcessDefinitionExtendsValidator extendsValidator;
+    private final WorkflowRepository repository;
+    private final WorkflowValidator validator;
+    private final WorkflowExtendsValidator extendsValidator;
 
-    public ProcessDefinition create(String orgKey, ProcessDefinition process) {
+    public Workflow create(String orgKey, Workflow process) {
         process.setOrgKey(orgKey);
         if (repository.existsByOrgKeyAndId(orgKey, process.getId())) {
             throw new ConflictException("Process definition '%s' already exists".formatted(process.getId()));

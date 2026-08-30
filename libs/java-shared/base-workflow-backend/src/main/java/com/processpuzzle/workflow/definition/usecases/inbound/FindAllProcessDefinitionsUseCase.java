@@ -2,8 +2,8 @@ package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
+import com.processpuzzle.workflow.definition.domain.Workflow;
+import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,10 +19,10 @@ public class FindAllProcessDefinitionsUseCase {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
 
-    private final ProcessDefinitionRepository repository;
-    private final RsqlSpecificationBuilder<ProcessDefinition> rsqlBuilder = new RsqlSpecificationBuilder<>();
+    private final WorkflowRepository repository;
+    private final RsqlSpecificationBuilder<Workflow> rsqlBuilder = new RsqlSpecificationBuilder<>();
 
-    public FindAllProcessDefinitionsUseCase(ProcessDefinitionRepository repository) {
+    public FindAllProcessDefinitionsUseCase(WorkflowRepository repository) {
         this.repository = repository;
     }
 
@@ -31,10 +31,10 @@ public class FindAllProcessDefinitionsUseCase {
      * OR, which would otherwise let {@code where} escape the org filter. Same guard as
      * {@code FindAllRules} in base-rule-backend.
      */
-    public Page<ProcessDefinition> findAll(String orgKey, String where, String order, Integer page, Integer size) {
-        Specification<ProcessDefinition> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public Page<Workflow> findAll(String orgKey, String where, String order, Integer page, Integer size) {
+        Specification<Workflow> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
 
-        Specification<ProcessDefinition> whereSpec = rsqlBuilder.build(where);
+        Specification<Workflow> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {
             spec = spec.and(whereSpec);
         }

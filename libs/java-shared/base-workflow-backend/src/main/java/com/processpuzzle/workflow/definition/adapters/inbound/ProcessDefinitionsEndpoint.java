@@ -10,9 +10,9 @@ import com.processpuzzle.workflow.definition.usecases.inbound.FindProcessDefinit
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportProcessDefinitionsUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ReplaceProcessDefinitionUseCase;
-import com.processpuzzle.workflow.model.PageOfProcessDefinitionSummary;
-import com.processpuzzle.workflow.model.ProcessDefinition;
-import com.processpuzzle.workflow.model.ProcessDefinitionInput;
+import com.processpuzzle.workflow.model.PageOfWorkflow;
+import com.processpuzzle.workflow.model.Workflow;
+import com.processpuzzle.workflow.model.WorkflowInput;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -61,18 +61,18 @@ public class ProcessDefinitionsEndpoint implements ProcessDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<ProcessDefinition> createProcessDefinition(String orgKey, ProcessDefinitionInput input) {
+    public ResponseEntity<Workflow> createProcessDefinition(String orgKey, WorkflowInput input) {
         var created = createProcessDefinition.create(orgKey, mapper.toDomain(orgKey, input));
         return new ResponseEntity<>(mapper.toModel(created), HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<ProcessDefinition> getProcessDefinition(String orgKey, String processId) {
+    public ResponseEntity<Workflow> getProcessDefinition(String orgKey, String processId) {
         return ResponseEntity.ok(mapper.toModel(findProcessDefinition.findByOrgKeyAndId(orgKey, processId)));
     }
 
     @Override
-    public ResponseEntity<ProcessDefinition> updateProcessDefinition(String orgKey, String processId, ProcessDefinitionInput input) {
+    public ResponseEntity<Workflow> updateProcessDefinition(String orgKey, String processId, WorkflowInput input) {
         var updated = replaceProcessDefinition.replace(orgKey, processId, mapper.toDomain(orgKey, input));
         return ResponseEntity.ok(mapper.toModel(updated));
     }
@@ -84,7 +84,7 @@ public class ProcessDefinitionsEndpoint implements ProcessDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<PageOfProcessDefinitionSummary> listProcessDefinitions(
+    public ResponseEntity<PageOfWorkflow> listProcessDefinitions(
             String orgKey, String where, String order, Integer page, Integer size) {
         return ResponseEntity.ok(mapper.toModel(findAllProcessDefinitions.findAll(orgKey, where, order, page, size)));
     }

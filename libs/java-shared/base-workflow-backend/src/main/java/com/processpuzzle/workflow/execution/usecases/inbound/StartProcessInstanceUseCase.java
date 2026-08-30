@@ -1,19 +1,18 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
-import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.WorkProductDefinition;
+import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
 import com.processpuzzle.workflow.execution.domain.ProcessInstance;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.domain.WorkProductInstance;
-import com.processpuzzle.workflow.execution.domain.WorkProductInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
 import com.processpuzzle.workflow.execution.events.ProcessInstanceStartedEvent;
-import com.processpuzzle.workflow.execution.events.WorkProductInstanceCreatedEvent;
+import com.processpuzzle.workflow.execution.events.ArtifactInstanceCreatedEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,73 +23,77 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Starts a new instance of a process definition: creates the {@link ProcessInstance}, one
  * {@link TaskInstance} per {@code TaskDefinition} (all initially PENDING), one
- * {@link WorkProductInstance} per {@code WorkProductDefinition}, then hands off to
+ * {@link ArtifactInstance} per {@code ArtifactDefinition}, then hands off to
  * {@link TaskActivationService} to activate whichever tasks are immediately eligible (those with
  * an empty {@code dependsOn}).
+ *
+ * <p>The definition arrives already resolved, so the tasks and artifacts copied into the instance
+ * are the catalog entries as they read at start time. An instance is a snapshot in that sense: it
+ * keeps the task ids and artifact names it was born with, and a later edit to a shared definition
+ * does not rewrite it.
  */
 @Component
 @Transactional
 public class StartProcessInstanceUseCase {
 
-    private final ProcessDefinitionRepository processDefinitionRepository;
+    private final ResolveProcessDefinitionUseCase resolveProcessDefinition;
     private final ProcessInstanceRepository processInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
-    private final WorkProductInstanceRepository workProductInstanceRepository;
+    private final ArtifactInstanceRepository artifactInstanceRepository;
     private final TaskActivationService taskActivationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public StartProcessInstanceUseCase(ProcessDefinitionRepository processDefinitionRepository,
+    public StartProcessInstanceUseCase(ResolveProcessDefinitionUseCase resolveProcessDefinition,
                                         ProcessInstanceRepository processInstanceRepository,
                                         TaskInstanceRepository taskInstanceRepository,
-                                        WorkProductInstanceRepository workProductInstanceRepository,
+                                        ArtifactInstanceRepository artifactInstanceRepository,
                                         TaskActivationService taskActivationService,
                                         ApplicationEventPublisher eventPublisher) {
-        this.processDefinitionRepository = processDefinitionRepository;
+        this.resolveProcessDefinition = resolveProcessDefinition;
         this.processInstanceRepository = processInstanceRepository;
         this.taskInstanceRepository = taskInstanceRepository;
-        this.workProductInstanceRepository = workProductInstanceRepository;
+        this.artifactInstanceRepository = artifactInstanceRepository;
         this.taskActivationService = taskActivationService;
         this.eventPublisher = eventPublisher;
     }
 
     public ProcessInstance start(String orgKey, String processDefinitionId, String entityId, Map<String, Object> initialContext) {
-        ProcessDefinition definition = processDefinitionRepository.findByOrgKeyAndId(orgKey, processDefinitionId)
-                .orElseThrow(() -> new NotFoundException("No process definition with id '%s'".formatted(processDefinitionId)));
+        ResolvedProcess definition = resolveProcessDefinition.resolveByOrgKeyAndId(orgKey, processDefinitionId);
 
         ProcessInstance instance = processInstanceRepository.save(ProcessInstance.builder()
                 .orgKey(orgKey)
-                .processDefinitionId(definition.getId())
-                .processDefinitionName(definition.getName())
+                .processDefinitionId(definition.id())
+                .processDefinitionName(definition.definition().getName())
                 .status(ProcessInstanceStatus.ACTIVE)
                 .entityId(entityId)
-                .context(initialContext == null ? new HashMap<>() : new HashMap<>(initialContext))
+                .initialContext(initialContext == null ? new HashMap<>() : new HashMap<>(initialContext))
                 .startedAt(Instant.now())
                 .build());
 
-        for (WorkProductDefinition wpDef : definition.getWorkProducts()) {
-            WorkProductInstance wpInstance = WorkProductInstance.builder()
+        for (ArtifactDefinition artifactDefinition : definition.artifacts()) {
+            ArtifactInstance artifact = artifactInstanceRepository.save(ArtifactInstance.builder()
                     .orgKey(orgKey)
                     .processInstanceId(instance.getId())
-                    .workProductDefinitionId(wpDef.getId())
-                    .name(wpDef.getName())
-                    .type(wpDef.getType())
+                    .artifactDefinitionId(artifactDefinition.getId())
+                    .name(artifactDefinition.getName())
+                    .type(artifactDefinition.getArtifactType())
                     .updatedAt(Instant.now())
-                    .build();
-            wpInstance = workProductInstanceRepository.save(wpInstance);
-            eventPublisher.publishEvent(new WorkProductInstanceCreatedEvent(
-                    orgKey, instance.getId(), wpInstance.getId(), wpDef.getId(), wpDef.getStateMachineId(), entityId));
+                    .build());
+            eventPublisher.publishEvent(new ArtifactInstanceCreatedEvent(orgKey, instance.getId(), artifact.getId(),
+                    artifactDefinition.getId(), artifactDefinition.getStateMachineId(), entityId));
         }
 
-        definition.getTasks().forEach(taskDef -> taskInstanceRepository.save(TaskInstance.builder()
+        definition.tasks().forEach(task -> taskInstanceRepository.save(TaskInstance.builder()
                 .orgKey(orgKey)
                 .processInstanceId(instance.getId())
-                .taskDefinitionId(taskDef.getId())
-                .name(taskDef.getName())
+                .taskDefinitionId(task.id())
+                .name(task.definition().getName())
                 .status(TaskInstanceStatus.PENDING)
                 .build()));
 
-        taskActivationService.activateEligibleTasks(orgKey, definition, instance.getId(), instance.getContext());
-        eventPublisher.publishEvent(new ProcessInstanceStartedEvent(orgKey, instance.getId(), definition.getId(), entityId));
+        // Nothing has completed yet, so the initial context *is* the assembled one.
+        taskActivationService.activateEligibleTasks(orgKey, definition, instance.getId(), instance.getInitialContext());
+        eventPublisher.publishEvent(new ProcessInstanceStartedEvent(orgKey, instance.getId(), definition.id(), entityId));
 
         return instance;
     }

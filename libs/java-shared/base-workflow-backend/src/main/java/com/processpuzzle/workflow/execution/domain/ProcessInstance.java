@@ -24,14 +24,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * A running (or finished) execution of a {@code ProcessDefinition}. Unlike the definition layer,
+ * A running (or finished) execution of a {@code Workflow}. Unlike the definition layer,
  * this is <em>not</em> a single aggregate root owning {@link TaskInstance}/{@link
- * WorkProductInstance} as cascaded child collections: tasks within a process instance are
+ * ArtifactInstance} as cascaded child collections: tasks within a process instance are
  * completed concurrently and independently by different users (that's the whole point of
- * {@code TaskDefinition.parallel}), so forcing every task completion through this entity's
+ * {@code TaskUse.parallel}), so forcing every task completion through this entity's
  * {@code @Version} would serialize unrelated task updates against each other. Each of the three
  * runtime entities has its own repository and its own optimistic lock; they're linked by
  * {@code processInstanceId} foreign keys, not JPA {@code @OneToMany} ownership.
+ *
+ * <p>Splitting the tables is only half of what that claim needs, and for a while it was the only
+ * half present: the context used to be one mutable map here that every task completion rewrote, so
+ * every completion went through this entity's {@code @Version} anyway and two concurrent
+ * completions still raced. {@link #initialContext} is now written once, at start, and each task's
+ * own contribution lives on its {@link TaskInstance} — see {@link ProcessContext}. This row is
+ * therefore written only when the <em>instance</em> changes state (started, completed, cancelled),
+ * which no two tasks do at once.
  *
  * <p>{@code processDefinitionId}/{@code processDefinitionName} are denormalized copies taken at
  * start time — a process instance keeps running under the definition version it started with even
@@ -68,10 +76,18 @@ public class ProcessInstance {
 
     private String entityId;
 
+    /**
+     * The context this instance was started with, and only that: task output is recorded on the task
+     * that produced it and folded back in by {@link ProcessContext#assemble}. Written once, which is
+     * what keeps concurrent completions of {@code parallel} tasks off this row's optimistic lock.
+     *
+     * <p>The column is still named {@code context} — renaming it under {@code ddl-auto: update} would
+     * orphan the existing one rather than migrate it.
+     */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb", nullable = false)
+    @Column(name = "context", columnDefinition = "jsonb", nullable = false)
     @Builder.Default
-    private Map<String, Object> context = new HashMap<>();
+    private Map<String, Object> initialContext = new HashMap<>();
 
     @Column(nullable = false)
     private Instant startedAt;

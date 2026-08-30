@@ -1,0 +1,145 @@
+{
+  "process_definition": {
+    "_self": "Process",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "extends": "Extends",
+    "activeInstances": "Active Instances",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "roles": "Roles",
+    "artifacts": "Artifacts",
+    "tools": "Tools",
+    "tasks": "Tasks"
+  },
+  "process_task_assignment": {
+    "_self": "Task Assignment",
+    "taskDefinitionId": "Task",
+    "performedBy": "Performed By",
+    "dependsOn": "Depends On",
+    "parallel": "Parallel",
+    "override": "Override"
+  },
+  "workflow_role_definition": {
+    "_self": "Role",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "entityRoleId": "Entity Role",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "artifact_definition": {
+    "_self": "Artifact",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "entityTypeId": "Entity Type",
+    "stateMachineId": "State Machine",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "task_definition": {
+    "_self": "Task",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "performedByRoles": "Performed By Roles",
+    "preconditionRuleId": "Precondition Rule",
+    "postconditionRuleId": "Postcondition Rule",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "inputs": "Inputs",
+    "outputs": "Outputs",
+    "steps": "Steps"
+  },
+  "task_input_reference": {
+    "_self": "Input",
+    "type": "Type",
+    "refId": "Reference",
+    "label": "Label"
+  },
+  "task_output_reference": {
+    "_self": "Output",
+    "type": "Type",
+    "refId": "Reference",
+    "label": "Label"
+  },
+  "task_step_definition": {
+    "_self": "Step",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "toolId": "Tool",
+    "toolOperation": "Operation",
+    "inputMapping": "Input Mapping",
+    "outputMapping": "Output Mapping"
+  },
+  "tool_definition": {
+    "_self": "Tool",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "baseUrl": "Base URL",
+    "type": "Auth Type",
+    "secretRef": "Secret Reference",
+    "version": "Version",
+    "createdAt": "Created At",
+    "operations": "Operations"
+  },
+  "tool_operation": {
+    "_self": "Operation",
+    "id": "Id",
+    "method": "Method",
+    "path": "Path",
+    "description": "Description",
+    "payloadTemplate": "Payload Template",
+    "expectedStatusCodes": "Expected Status Codes"
+  },
+  "process_instance": {
+    "_self": "Process Instance",
+    "id": "Id",
+    "processDefinitionId": "Process",
+    "processDefinitionName": "Process Name",
+    "status": "Status",
+    "entityId": "Entity",
+    "startedAt": "Started At",
+    "completedAt": "Completed At",
+    "context": "Context",
+    "tasks": "Tasks",
+    "artifacts": "Artifacts"
+  },
+  "task_instance": {
+    "_self": "Task Instance",
+    "id": "Id",
+    "taskDefinitionId": "Task",
+    "name": "Name",
+    "status": "Status",
+    "assignedTo": "Assigned To",
+    "blockedReason": "Blocked Reason",
+    "activatedAt": "Activated At",
+    "completedAt": "Completed At",
+    "skippedAt": "Skipped At",
+    "stepResults": "Step Results"
+  },
+  "artifact_instance": {
+    "_self": "Artifact Instance",
+    "id": "Id",
+    "artifactDefinitionId": "Artifact",
+    "name": "Name",
+    "type": "Type",
+    "entityId": "Entity",
+    "stateMachineInstanceId": "State Machine Instance",
+    "currentState": "Current State",
+    "updatedAt": "Updated At"
+  },
+  "task_step_result": {
+    "_self": "Step Result",
+    "stepId": "Step",
+    "completedAt": "Completed At",
+    "toolResponse": "Tool Response",
+    "error": "Error"
+  }
+}

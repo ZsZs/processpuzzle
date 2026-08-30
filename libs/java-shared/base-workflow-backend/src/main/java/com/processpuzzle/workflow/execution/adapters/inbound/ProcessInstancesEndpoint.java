@@ -6,12 +6,13 @@ import com.processpuzzle.workflow.execution.usecases.inbound.CancelProcessInstan
 import com.processpuzzle.workflow.execution.usecases.inbound.FindAllProcessInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindProcessInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
-import com.processpuzzle.workflow.execution.usecases.inbound.ListWorkProductInstancesUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartProcessInstanceUseCase;
 import com.processpuzzle.workflow.model.CancelProcessInstanceRequest;
-import com.processpuzzle.workflow.model.PageOfProcessInstanceSummary;
+import com.processpuzzle.workflow.model.PageOfProcessInstance;
 import com.processpuzzle.workflow.model.ProcessInstance;
 import com.processpuzzle.workflow.model.StartProcessRequest;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -38,7 +39,7 @@ public class ProcessInstancesEndpoint implements ProcessInstancesApi {
     private final FindAllProcessInstancesUseCase findAllProcessInstances;
     private final CancelProcessInstanceUseCase cancelProcessInstance;
     private final ListTaskInstancesUseCase listTaskInstances;
-    private final ListWorkProductInstancesUseCase listWorkProductInstances;
+    private final ListArtifactInstancesUseCase listArtifactInstances;
     private final WorkflowExecutionMapper mapper;
 
     public ProcessInstancesEndpoint(StartProcessInstanceUseCase startProcessInstance,
@@ -46,14 +47,14 @@ public class ProcessInstancesEndpoint implements ProcessInstancesApi {
                                      FindAllProcessInstancesUseCase findAllProcessInstances,
                                      CancelProcessInstanceUseCase cancelProcessInstance,
                                      ListTaskInstancesUseCase listTaskInstances,
-                                     ListWorkProductInstancesUseCase listWorkProductInstances,
+                                     ListArtifactInstancesUseCase listArtifactInstances,
                                      WorkflowExecutionMapper mapper) {
         this.startProcessInstance = startProcessInstance;
         this.findProcessInstance = findProcessInstance;
         this.findAllProcessInstances = findAllProcessInstances;
         this.cancelProcessInstance = cancelProcessInstance;
         this.listTaskInstances = listTaskInstances;
-        this.listWorkProductInstances = listWorkProductInstances;
+        this.listArtifactInstances = listArtifactInstances;
         this.mapper = mapper;
     }
 
@@ -69,14 +70,34 @@ public class ProcessInstancesEndpoint implements ProcessInstancesApi {
         return ResponseEntity.ok(toFullModel(orgKey, UUID.fromString(instanceId)));
     }
 
+    /**
+     * Every entry of the page carries its task and artifact instances — the same shape
+     * {@code getProcessInstance} returns. base-entity's generated form reads the record out of the list
+     * its store already loaded rather than re-fetching it by id, so a summary projection here would
+     * render an empty form whose save destroyed what the projection dropped; see the contract's note on
+     * {@code listProcessInstances}.
+     *
+     * <p>The rows come from the page itself rather than from {@link #toFullModel}: re-reading each
+     * instance by id would repeat a query the page has already answered, and would fail the whole list
+     * with a 404 for a row deleted between the two reads.
+     *
+     * <p>The two child collections are still read per row, so this is N+1 — bounded, {@code size}
+     * defaulting to 20 in the contract. If a caller ever pages much wider than that, the fix is a batch
+     * read keyed by instance id, not a return to summaries.
+     */
     @Override
-    public ResponseEntity<PageOfProcessInstanceSummary> listProcessInstances(
+    public ResponseEntity<PageOfProcessInstance> listProcessInstances(
             String orgKey, String processId, com.processpuzzle.workflow.model.ProcessInstanceStatus status,
             String entityId, String where, String order, Integer page, Integer size) {
         ProcessInstanceStatus domainStatus = status == null ? null : ProcessInstanceStatus.valueOf(status.getValue());
         var query = new FindAllProcessInstancesUseCase.Query(orgKey, processId, domainStatus, entityId, where, order, page, size);
         var result = findAllProcessInstances.findAll(query);
-        return ResponseEntity.ok(mapper.toModel(result));
+        List<ProcessInstance> content = result.getContent().stream()
+                .map(instance -> mapper.toModel(instance,
+                        listTaskInstances.findAll(orgKey, instance.getId()),
+                        listArtifactInstances.findAll(orgKey, instance.getId())))
+                .toList();
+        return ResponseEntity.ok(mapper.toPageModel(result, content));
     }
 
     @Override
@@ -89,7 +110,7 @@ public class ProcessInstancesEndpoint implements ProcessInstancesApi {
     private ProcessInstance toFullModel(String orgKey, UUID instanceId) {
         var instance = findProcessInstance.findByOrgKeyAndId(orgKey, instanceId);
         var tasks = listTaskInstances.findAll(orgKey, instanceId);
-        var workProducts = listWorkProductInstances.findAll(orgKey, instanceId);
-        return mapper.toModel(instance, tasks, workProducts);
+        var artifacts = listArtifactInstances.findAll(orgKey, instanceId);
+        return mapper.toModel(instance, tasks, artifacts);
     }
 }

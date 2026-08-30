@@ -2,8 +2,8 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolveProcessDefinitionUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedProcess;
 import com.processpuzzle.workflow.execution.domain.ProcessInstance;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.processpuzzle.workflow.execution.domain.ProcessContext;
+import java.util.Map;
 
 /**
  * Manager override: forces a task straight to SKIPPED regardless of its current (non-terminal)
@@ -30,18 +32,18 @@ import java.util.UUID;
 public class SkipTaskUseCase {
 
     private final ProcessInstanceRepository processInstanceRepository;
-    private final ProcessDefinitionRepository processDefinitionRepository;
+    private final ResolveProcessDefinitionUseCase resolveProcessDefinition;
     private final TaskInstanceRepository taskInstanceRepository;
     private final TaskActivationService taskActivationService;
     private final ApplicationEventPublisher eventPublisher;
 
     public SkipTaskUseCase(ProcessInstanceRepository processInstanceRepository,
-                            ProcessDefinitionRepository processDefinitionRepository,
+                            ResolveProcessDefinitionUseCase resolveProcessDefinition,
                             TaskInstanceRepository taskInstanceRepository,
                             TaskActivationService taskActivationService,
                             ApplicationEventPublisher eventPublisher) {
         this.processInstanceRepository = processInstanceRepository;
-        this.processDefinitionRepository = processDefinitionRepository;
+        this.resolveProcessDefinition = resolveProcessDefinition;
         this.taskInstanceRepository = taskInstanceRepository;
         this.taskActivationService = taskActivationService;
         this.eventPublisher = eventPublisher;
@@ -65,16 +67,19 @@ public class SkipTaskUseCase {
 
         eventPublisher.publishEvent(new TaskSkippedEvent(orgKey, processInstanceId, taskInstance.getId(), taskDefinitionId, reason));
 
-        ProcessDefinition definition = processDefinitionRepository
-                .findByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId())
-                .orElseThrow(() -> new NotFoundException("Process definition no longer exists"));
-        taskActivationService.activateEligibleTasks(orgKey, definition, processInstanceId, processInstance.getContext());
+        ResolvedProcess definition =
+                resolveProcessDefinition.resolveByOrgKeyAndId(orgKey, processInstance.getProcessDefinitionId());
+        // Skipping contributes nothing of its own, but the tasks it unblocks are guarded against the
+        // context as it stands, so it has to be the assembled one and not just the initial values.
+        Map<String, Object> context = ProcessContext.assemble(
+                processInstance, taskInstanceRepository.findByOrgKeyAndProcessInstanceId(orgKey, processInstanceId));
+        taskActivationService.activateEligibleTasks(orgKey, definition, processInstanceId, context);
 
         if (taskActivationService.allTerminal(orgKey, processInstanceId)) {
             processInstance.setStatus(ProcessInstanceStatus.COMPLETED);
             processInstance.setCompletedAt(Instant.now());
             processInstanceRepository.save(processInstance);
-            eventPublisher.publishEvent(new ProcessInstanceCompletedEvent(orgKey, processInstanceId, definition.getId()));
+            eventPublisher.publishEvent(new ProcessInstanceCompletedEvent(orgKey, processInstanceId, definition.id()));
         }
 
         return taskInstance;

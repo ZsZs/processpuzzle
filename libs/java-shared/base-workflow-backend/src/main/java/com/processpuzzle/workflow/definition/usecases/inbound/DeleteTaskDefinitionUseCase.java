@@ -2,37 +2,34 @@ package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
+import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+/**
+ * Refuses to remove a task any process still assigns. One guard suffices here: nothing but a process
+ * assignment points at a task — a task's own dependsOn lives on the assignment, not on the definition.
+ */
 @Component
 @RequiredArgsConstructor
 @Transactional
 public class DeleteTaskDefinitionUseCase {
 
-    private final ProcessDefinitionRepository repository;
+    private final TaskDefinitionRepository repository;
+    private final CatalogReferenceScanner referenceScanner;
 
-    public void delete(String orgKey, String processId, String taskId) {
-        ProcessDefinition process = repository.findByOrgKeyAndId(orgKey, processId)
-                .orElseThrow(() -> new NotFoundException("No process definition with id '%s'".formatted(processId)));
+    public void delete(String orgKey, String id) {
+        TaskDefinition task = repository.findByOrgKeyAndId(orgKey, id)
+                .orElseThrow(() -> new NotFoundException("No task definition with id '%s'".formatted(id)));
 
-        TaskDefinition task = process.findTask(taskId)
-                .orElseThrow(() -> new NotFoundException(
-                        "No task '%s' in process '%s'".formatted(taskId, processId)));
-
-        java.util.List<String> stillDependedOnBy = process.getTasks().stream()
-                .filter(t -> t.getDependsOn().contains(taskId))
-                .map(TaskDefinition::getId)
-                .toList();
-        if (!stillDependedOnBy.isEmpty()) {
-            throw new ConflictException(
-                    "Task '%s' is still a dependency of tasks %s".formatted(taskId, stillDependedOnBy));
+        List<String> workflows = referenceScanner.processesAssigningTask(orgKey, id);
+        if (!workflows.isEmpty()) {
+            throw new ConflictException("Task '%s' is still used by workflows %s".formatted(id, workflows));
         }
-        process.getTasks().remove(task);
-        repository.save(process);
+        repository.delete(task);
     }
 }

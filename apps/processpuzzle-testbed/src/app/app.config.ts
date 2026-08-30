@@ -23,6 +23,7 @@ import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEnt
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateMachineTab } from '@processpuzzle/base-state';
+import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE } from '@processpuzzle/base-workflow';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
@@ -68,6 +69,11 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-state: the routable `State Machine Definition` plus the four embedded levels its form
       // carries — states and transitions, and a transition's guards and actions.
       ...BASE_STATE_FACADE_PROVIDERS,
+      // And for base-workflow: three routable aggregates — the `Process Definition` a tenant authors, the
+      // `Tool Definition`s its steps call and the `Process Instance`s it produces — plus the ten embedded
+      // levels below them. All thirteen or none: a task's `performedBy` resolves through the role facade
+      // and a step's `toolId` through the tool facade, so half a graph is a form that throws on render.
+      ...BASE_WORKFLOW_FACADE_PROVIDERS,
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and
       // `Dynamic Entity` in this tenant, both of them metadata-defined entities that name base-state
       // nowhere. base-entity asks the registered contributors when it resolves an entity's screens, so
@@ -113,6 +119,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,
           ...BASE_STATE_ENTITY_FACADES,
+          ...BASE_WORKFLOW_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },
@@ -121,11 +128,13 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // Each library declares its own entry; a scope nobody claims — a designer-authored module's, named
       // at run-time — goes to base-app, which owns ModuleDefinition. All contributions have to be here
       // rather than on route branches: a `multi` token is not merged across injectors.
-      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE].map((source) => ({
-        provide: TRANSLATION_SOURCE_REGISTRY,
-        useValue: source,
-        multi: true,
-      })),
+      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE, BASE_WORKFLOW_TRANSLATION_SOURCE].map(
+        (source) => ({
+          provide: TRANSLATION_SOURCE_REGISTRY,
+          useValue: source,
+          multi: true,
+        }),
+      ),
       { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },
       { provide: AUTHENTICATION_CONFIGURATION, useValue: runtimeConfiguration.AUTHENTICATION_CONFIGURATION },

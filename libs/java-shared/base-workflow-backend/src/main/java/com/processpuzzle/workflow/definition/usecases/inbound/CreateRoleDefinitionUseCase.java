@@ -1,36 +1,29 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
-import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
+import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adds a role to an existing process definition. Mutates through the {@link ProcessDefinition}
- * aggregate root rather than a dedicated repository — see the note on
- * {@code ProcessDefinitionRepository} for why roles/tasks have no repository of their own.
+ * Adds a role to the organization's catalog. Nothing is checked against the processes that may
+ * later reference it: a role exists on its own, and it is
+ * {@code WorkflowValidator} that refuses a process naming one that does not.
  */
 @Component
 @RequiredArgsConstructor
 @Transactional
 public class CreateRoleDefinitionUseCase {
 
-    private final ProcessDefinitionRepository repository;
+    private final RoleDefinitionRepository repository;
 
-    public RoleDefinition create(String orgKey, String processId, RoleDefinition role) {
-        ProcessDefinition process = repository.findByOrgKeyAndId(orgKey, processId)
-                .orElseThrow(() -> new NotFoundException("No process definition with id '%s'".formatted(processId)));
-
-        if (process.findRole(role.getId()).isPresent()) {
-            throw new ConflictException(
-                    "Role '%s' already exists in process '%s'".formatted(role.getId(), processId));
+    public RoleDefinition create(String orgKey, RoleDefinition role) {
+        role.setOrgKey(orgKey);
+        if (repository.existsByOrgKeyAndId(orgKey, role.getId())) {
+            throw new ConflictException("Role definition '%s' already exists".formatted(role.getId()));
         }
-        process.addRole(role);
-        repository.save(process);
-        return role;
+        return repository.save(role);
     }
 }

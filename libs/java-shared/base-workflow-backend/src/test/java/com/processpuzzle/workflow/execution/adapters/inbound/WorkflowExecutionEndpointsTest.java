@@ -1,27 +1,27 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
-import com.processpuzzle.workflow.definition.domain.WorkProductType;
+import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.ProcessInstance;
 import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.domain.WorkProductInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.AssignTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CancelProcessInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindAllProcessInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindProcessInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindTaskInstanceUseCase;
-import com.processpuzzle.workflow.execution.usecases.inbound.FindWorkProductInstanceUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.FindArtifactInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
-import com.processpuzzle.workflow.execution.usecases.inbound.ListWorkProductInstancesUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartProcessInstanceUseCase;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
 import com.processpuzzle.workflow.model.CancelProcessInstanceRequest;
 import com.processpuzzle.workflow.model.CompleteTaskRequest;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
-import com.processpuzzle.workflow.model.PageOfProcessInstanceSummary;
+import com.processpuzzle.workflow.model.PageOfProcessInstance;
 import com.processpuzzle.workflow.model.StartProcessRequest;
 import java.time.Instant;
 import java.util.List;
@@ -58,7 +58,7 @@ class WorkflowExecutionEndpointsTest {
         FindAllProcessInstancesUseCase findAllUseCase = mock(FindAllProcessInstancesUseCase.class);
         CancelProcessInstanceUseCase cancelUseCase = mock(CancelProcessInstanceUseCase.class);
         ListTaskInstancesUseCase listTasksUseCase = mock(ListTaskInstancesUseCase.class);
-        ListWorkProductInstancesUseCase listWpsUseCase = mock(ListWorkProductInstancesUseCase.class);
+        ListArtifactInstancesUseCase listWpsUseCase = mock(ListArtifactInstancesUseCase.class);
 
         ProcessInstancesEndpoint endpoint = new ProcessInstancesEndpoint(
                 startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase, mapper);
@@ -87,7 +87,7 @@ class WorkflowExecutionEndpointsTest {
         assertThat(getRes.getBody().getId()).isEqualTo(instanceId.toString());
 
         // List
-        ResponseEntity<PageOfProcessInstanceSummary> listRes = endpoint.listProcessInstances(
+        ResponseEntity<PageOfProcessInstance> listRes = endpoint.listProcessInstances(
                 ORG, "p1", com.processpuzzle.workflow.model.ProcessInstanceStatus.ACTIVE, "e1", null, null, null, null);
         assertThat(listRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listRes.getBody().getContent()).hasSize(1);
@@ -151,25 +151,25 @@ class WorkflowExecutionEndpointsTest {
     }
 
     @Test
-    void workProductInstancesEndpoint_allMethods() {
-        ListWorkProductInstancesUseCase listUseCase = mock(ListWorkProductInstancesUseCase.class);
-        FindWorkProductInstanceUseCase findUseCase = mock(FindWorkProductInstanceUseCase.class);
+    void artifactInstancesEndpoint_allMethods() {
+        ListArtifactInstancesUseCase listUseCase = mock(ListArtifactInstancesUseCase.class);
+        FindArtifactInstanceUseCase findUseCase = mock(FindArtifactInstanceUseCase.class);
 
-        WorkProductInstancesEndpoint endpoint = new WorkProductInstancesEndpoint(listUseCase, findUseCase, mapper);
+        ArtifactInstancesEndpoint endpoint = new ArtifactInstancesEndpoint(listUseCase, findUseCase, mapper);
 
         UUID instanceId = UUID.randomUUID();
         UUID wpId = UUID.randomUUID();
-        WorkProductInstance wpi = WorkProductInstance.builder().id(wpId).orgKey(ORG).processInstanceId(instanceId)
-                .workProductDefinitionId("wp-1").name("WP 1").type(WorkProductType.ARTIFACT).updatedAt(Instant.now()).build();
+        ArtifactInstance wpi = ArtifactInstance.builder().id(wpId).orgKey(ORG).processInstanceId(instanceId)
+                .artifactDefinitionId("wp-1").name("WP 1").type(ArtifactType.DOCUMENT).updatedAt(Instant.now()).build();
 
         when(listUseCase.findAll(ORG, instanceId)).thenReturn(List.of(wpi));
         when(findUseCase.find(ORG, instanceId, "wp-1")).thenReturn(wpi);
 
-        ResponseEntity<List<com.processpuzzle.workflow.model.WorkProductInstance>> listRes = endpoint.listWorkProductInstances(
+        ResponseEntity<List<com.processpuzzle.workflow.model.ArtifactInstance>> listRes = endpoint.listArtifactInstances(
                 ORG, instanceId.toString(), null, null);
         assertThat(listRes.getBody()).hasSize(1);
 
-        ResponseEntity<com.processpuzzle.workflow.model.WorkProductInstance> getRes = endpoint.getWorkProductInstance(
+        ResponseEntity<com.processpuzzle.workflow.model.ArtifactInstance> getRes = endpoint.getArtifactInstance(
                 ORG, instanceId.toString(), "wp-1");
         assertThat(getRes.getBody().getId()).isEqualTo(wpId.toString());
     }

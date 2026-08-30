@@ -1,13 +1,13 @@
 package com.processpuzzle.workflow.execution.domain;
 
-import com.processpuzzle.workflow.definition.domain.WorkProductType;
+import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.events.ProcessInstanceCancelledEvent;
 import com.processpuzzle.workflow.execution.events.ProcessInstanceCompletedEvent;
 import com.processpuzzle.workflow.execution.events.ProcessInstanceStartedEvent;
 import com.processpuzzle.workflow.execution.events.TaskActivatedEvent;
 import com.processpuzzle.workflow.execution.events.TaskCompletedEvent;
 import com.processpuzzle.workflow.execution.events.TaskSkippedEvent;
-import com.processpuzzle.workflow.execution.events.WorkProductInstanceCreatedEvent;
+import com.processpuzzle.workflow.execution.events.ArtifactInstanceCreatedEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ class WorkflowExecutionDomainTest {
                 .processDefinitionName("Proc Def 1")
                 .status(ProcessInstanceStatus.ACTIVE)
                 .entityId("entity-1")
-                .context(ctx)
+                .initialContext(ctx)
                 .startedAt(now)
                 .completedAt(now.plusSeconds(60))
                 .version(1L)
@@ -45,13 +45,13 @@ class WorkflowExecutionDomainTest {
         assertThat(pi.getProcessDefinitionName()).isEqualTo("Proc Def 1");
         assertThat(pi.getStatus()).isEqualTo(ProcessInstanceStatus.ACTIVE);
         assertThat(pi.getEntityId()).isEqualTo("entity-1");
-        assertThat(pi.getContext()).containsEntry("k1", "v1");
+        assertThat(pi.getInitialContext()).containsEntry("k1", "v1");
         assertThat(pi.getStartedAt()).isEqualTo(now);
         assertThat(pi.getCompletedAt()).isEqualTo(now.plusSeconds(60));
         assertThat(pi.getVersion()).isEqualTo(1L);
 
-        pi.getContext().put("k2", "v2");
-        assertThat(pi.getContext()).containsEntry("k2", "v2");
+        pi.getInitialContext().put("k2", "v2");
+        assertThat(pi.getInitialContext()).containsEntry("k2", "v2");
 
         ProcessInstance pi2 = ProcessInstance.builder().id(id).build();
         assertThat(pi)
@@ -60,9 +60,9 @@ class WorkflowExecutionDomainTest {
         assertThat(pi.toString()).contains("org-1");
 
         ProcessInstance empty = new ProcessInstance();
-        empty.setContext(new HashMap<>());
-        empty.getContext().put("k3", "v3");
-        assertThat(empty.getContext()).containsEntry("k3", "v3");
+        empty.setInitialContext(new HashMap<>());
+        empty.getInitialContext().put("k3", "v3");
+        assertThat(empty.getInitialContext()).containsEntry("k3", "v3");
     }
 
     @Test
@@ -119,18 +119,18 @@ class WorkflowExecutionDomainTest {
     }
 
     @Test
-    void workProductInstance_builderAndGettersSetters() {
+    void artifactInstance_builderAndGettersSetters() {
         UUID id = UUID.randomUUID();
         UUID piId = UUID.randomUUID();
         Instant now = Instant.now();
 
-        WorkProductInstance wpi = WorkProductInstance.builder()
+        ArtifactInstance wpi = ArtifactInstance.builder()
                 .id(id)
                 .orgKey("org-1")
                 .processInstanceId(piId)
-                .workProductDefinitionId("wp-1")
-                .name("Work Product 1")
-                .type(WorkProductType.ARTIFACT)
+                .artifactDefinitionId("wp-1")
+                .name("Artifact 1")
+                .type(ArtifactType.DOCUMENT)
                 .entityId("entity-1")
                 .stateMachineInstanceId("sm-1")
                 .currentState("draft")
@@ -140,19 +140,19 @@ class WorkflowExecutionDomainTest {
         assertThat(wpi.getId()).isEqualTo(id);
         assertThat(wpi.getOrgKey()).isEqualTo("org-1");
         assertThat(wpi.getProcessInstanceId()).isEqualTo(piId);
-        assertThat(wpi.getWorkProductDefinitionId()).isEqualTo("wp-1");
-        assertThat(wpi.getName()).isEqualTo("Work Product 1");
-        assertThat(wpi.getType()).isEqualTo(WorkProductType.ARTIFACT);
+        assertThat(wpi.getArtifactDefinitionId()).isEqualTo("wp-1");
+        assertThat(wpi.getName()).isEqualTo("Artifact 1");
+        assertThat(wpi.getType()).isEqualTo(ArtifactType.DOCUMENT);
         assertThat(wpi.getEntityId()).isEqualTo("entity-1");
         assertThat(wpi.getStateMachineInstanceId()).isEqualTo("sm-1");
         assertThat(wpi.getCurrentState()).isEqualTo("draft");
         assertThat(wpi.getUpdatedAt()).isEqualTo(now);
 
-        WorkProductInstance wpi2 = WorkProductInstance.builder().id(id).build();
+        ArtifactInstance wpi2 = ArtifactInstance.builder().id(id).build();
         assertThat(wpi)
                 .isEqualTo(wpi2)
                 .hasSameHashCodeAs(wpi2);
-        assertThat(wpi.toString()).contains("Work Product 1");
+        assertThat(wpi.toString()).contains("Artifact 1");
     }
 
     @Test
@@ -211,10 +211,10 @@ class WorkflowExecutionDomainTest {
         assertThat(taskSkipped.reason()).isEqualTo("Skipped by rule");
         assertThat(taskSkipped.taskInstanceId()).isEqualTo(tiId);
 
-        WorkProductInstanceCreatedEvent wpCreated = new WorkProductInstanceCreatedEvent(
+        ArtifactInstanceCreatedEvent wpCreated = new ArtifactInstanceCreatedEvent(
                 "org-1", piId, wpId, "wp-def-1", "sm-1", "entity-1");
         assertThat(wpCreated.orgKey()).isEqualTo("org-1");
-        assertThat(wpCreated.workProductInstanceId()).isEqualTo(wpId);
+        assertThat(wpCreated.artifactInstanceId()).isEqualTo(wpId);
         assertThat(wpCreated.stateMachineId()).isEqualTo("sm-1");
     }
     @Test

@@ -40,11 +40,22 @@ const METADATA_SOURCES = [
     collection: 'state-machines',
     identifier: 'entityName',
   },
+  // A process definition is identified by the author-chosen id the YAML already carries —
+  // `/processes/{processId}`, see base-workflow-api.yaml — which is also what json-server keys a record
+  // by, so no `identifier` rename is needed here. The file has no `tools:` or instance sections: a
+  // ToolDefinition is a resource of its own with no YAML loader on the backend, and an instance only
+  // exists once a process has been started, so both are hand-written fixtures in db.json.
+  {
+    directory: '../../libs/java-shared/base-workflow-backend/src/main/resources/default-workflows',
+    suffix: '-workflows.yaml',
+    documentKey: 'processes',
+    collection: 'processes',
+  },
 ];
 
 // json-server rejects '/' in collection names, so an org-scoped collection is flattened to
 // `<orgKey>-<collection>`; org-scope.js rewrites `/organizations/<orgKey>/<collection>` onto it.
-const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)|(-modules$)|(-state-machines$)/;
+const GENERATED_COLLECTION = /(^organizations$)|(-rules$)|(-app-definitions$)|(-modules$)|(-state-machines$)|(-processes$)/;
 
 function readYamlDocuments({ directory, suffix, documentKey, collection, identifier }) {
   const absoluteDirectory = path.resolve(__dirname, directory);
