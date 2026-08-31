@@ -1,0 +1,166 @@
+{
+  "workflow": {
+    "_self": "Flux de travail",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "extends": "Étend",
+    "activeInstances": "Instances actives",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "startType": "Type de démarrage",
+    "eventType": "Type d'événement",
+    "milestoneRef": "Jalon",
+    "preconditionExpression": "Précondition",
+    "authorizedRoles": "Rôles autorisés",
+    "payloadMapping": "Mappage de charge utile",
+    "requiredArtifacts": "Artefacts requis",
+    "roles": "Rôles",
+    "artifacts": "Artefacts",
+    "tools": "Outils",
+    "tasks": "Tâches"
+  },
+  "workflow_task_assignment": {
+    "_self": "Affectation de tâche",
+    "taskDefinitionId": "Tâche",
+    "performedBy": "Réalisée par",
+    "dependsOn": "Dépend de",
+    "joinType": "Type de jonction",
+    "parallel": "Parallèle",
+    "override": "Remplacer"
+  },
+  "workflow_role_use": {
+    "_self": "Utilisation de rôle",
+    "roleDefinitionId": "Rôle"
+  },
+  "workflow_artifact_use": {
+    "_self": "Utilisation d'artefact",
+    "artifactDefinitionId": "Artefact"
+  },
+  "workflow_tool_use": {
+    "_self": "Utilisation d'outil",
+    "toolDefinitionId": "Outil"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Artefact requis",
+    "artifactDefinitionId": "Artefact",
+    "state": "État"
+  },
+  "workflow_role_definition": {
+    "_self": "Rôle",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "responsibleFor": "Responsable de",
+    "entityRoleId": "Rôle d'entité",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "tabs": {
+      "modeler": "Modeleur de rôles"
+    },
+    "modeler": {
+      "empty": "Aucun rôle n'a encore été défini."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artefact",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "artifactType": "Type d'artefact",
+    "artifactTypeId": "Id de type",
+    "stateMachineId": "Machine à états",
+    "version": "Version",
+    "updatedAt": "Modifié le"
+  },
+  "task_definition": {
+    "_self": "Tâche",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "performedByRoles": "Rôles exécutants",
+    "preconditionRuleId": "Règle de précondition",
+    "postconditionRuleId": "Règle de postcondition",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "inputs": "Entrées",
+    "outputs": "Sorties",
+    "steps": "Étapes"
+  },
+  "task_step_definition": {
+    "_self": "Étape",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "stepType": "Type d'étape",
+    "toolDefinitionId": "Outil",
+    "toolOperation": "Opération",
+    "inputMapping": "Mappage d'entrée",
+    "outputMapping": "Mappage de sortie"
+  },
+  "tool_definition": {
+    "_self": "Outil",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "baseUrl": "URL de base",
+    "type": "Type d'authentification",
+    "secretRef": "Référence du secret",
+    "version": "Version",
+    "createdAt": "Créé le",
+    "operations": "Opérations"
+  },
+  "tool_operation": {
+    "_self": "Opération",
+    "id": "Id",
+    "method": "Méthode",
+    "path": "Chemin",
+    "description": "Description",
+    "payloadTemplate": "Modèle de charge utile",
+    "expectedStatusCodes": "Codes de statut attendus"
+  },
+  "workflow_instance": {
+    "_self": "Instance de flux de travail",
+    "id": "Id",
+    "workflowId": "Flux de travail",
+    "workflowName": "Nom du flux de travail",
+    "status": "Statut",
+    "entityId": "Entité",
+    "startedAt": "Démarré le",
+    "completedAt": "Terminé le",
+    "context": "Contexte",
+    "tasks": "Tâches",
+    "artifacts": "Artefacts"
+  },
+  "task_instance": {
+    "_self": "Instance de tâche",
+    "id": "Id",
+    "taskDefinitionId": "Tâche",
+    "name": "Nom",
+    "status": "Statut",
+    "assignedTo": "Assignée à",
+    "blockedReason": "Motif du blocage",
+    "activatedAt": "Activée le",
+    "completedAt": "Terminée le",
+    "skippedAt": "Ignorée le",
+    "stepResults": "Résultats des étapes"
+  },
+  "artifact_instance": {
+    "_self": "Instance d'artefact",
+    "id": "Id",
+    "artifactDefinitionId": "Artefact",
+    "name": "Nom",
+    "type": "Type",
+    "entityId": "Entité",
+    "stateMachineInstanceId": "Instance de machine à états",
+    "currentState": "État actuel",
+    "updatedAt": "Modifié le"
+  },
+  "task_step_result": {
+    "_self": "Résultat d'étape",
+    "stepId": "Étape",
+    "completedAt": "Terminé le",
+    "toolResponse": "Réponse de l'outil",
+    "error": "Erreur"
+  }
+}

@@ -40,18 +40,18 @@ class TaskCompletionStateTriggerListener {
 
         switch (outcome) {
             case TransitionOutcome.Applied applied -> log.info(
-                    "Task '{}' on process instance '{}' moved {}/{} to state '{}'.",
-                    event.taskDefinitionId(), event.processInstanceId(),
+                    "Task '{}' on workflow instance '{}' moved {}/{} to state '{}'.",
+                    event.taskDefinitionId(), event.workflowInstanceId(),
                     event.stateMachineEntityName(), event.entityInstanceId(), applied.newStateKey());
             case TransitionOutcome.Rejected rejected -> log.warn(
-                    "Task '{}' on process instance '{}' completed, but trigger '{}' was rejected for {}/{}: {}. "
+                    "Task '{}' on workflow instance '{}' completed, but trigger '{}' was rejected for {}/{}: {}. "
                             + "The task stays completed; the order's state did not advance and needs attention.",
-                    event.taskDefinitionId(), event.processInstanceId(), event.completionStateTriggerKey(),
+                    event.taskDefinitionId(), event.workflowInstanceId(), event.completionStateTriggerKey(),
                     event.stateMachineEntityName(), event.entityInstanceId(), rejected.reason());
             case TransitionOutcome.Conflict conflict -> log.warn(
-                    "Task '{}' on process instance '{}' completed, but trigger '{}' hit an optimistic-lock "
+                    "Task '{}' on workflow instance '{}' completed, but trigger '{}' hit an optimistic-lock "
                             + "conflict for {}/{}: {}. Retry the trigger once the concurrent update settles.",
-                    event.taskDefinitionId(), event.processInstanceId(), event.completionStateTriggerKey(),
+                    event.taskDefinitionId(), event.workflowInstanceId(), event.completionStateTriggerKey(),
                     event.stateMachineEntityName(), event.entityInstanceId(), conflict.message());
         }
     }

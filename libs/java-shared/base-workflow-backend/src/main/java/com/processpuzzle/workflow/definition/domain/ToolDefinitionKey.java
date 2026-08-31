@@ -3,7 +3,7 @@ package com.processpuzzle.workflow.definition.domain;
 import java.io.Serializable;
 import java.util.Objects;
 
-/** Composite primary key of {@link ToolDefinition}. Same rationale as {@link ProcessDefinitionKey}. */
+/** Composite primary key of {@link ToolDefinition}. Same rationale as {@link WorkflowKey}. */
 public class ToolDefinitionKey implements Serializable {
 
     private static final long serialVersionUID = 1L;

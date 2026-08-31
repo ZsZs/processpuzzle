@@ -31,6 +31,7 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
                   [entity]="entity()"
                   [relatedEntity]="relatedEntity"
                   [relatedEntityNameAttr]="relatedEntityNameAttr()"
+                  [referenceIdField]="config().referenceIdField"
                   [disabled]="config().disabled"
                   [formGroup]="formGroup"
                   [linkedEntityType]="linkedEntityName()"

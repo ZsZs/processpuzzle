@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * disappearing between definition-save-time validation and transition-fire-time is a deployment
  * drift, not a caller mistake.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.state")
 @Order(ApiAdviceOrder.FEATURE)
 public class StateApiExceptionHandler {
 

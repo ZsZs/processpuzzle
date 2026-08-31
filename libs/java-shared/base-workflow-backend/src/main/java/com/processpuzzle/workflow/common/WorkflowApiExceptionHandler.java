@@ -14,8 +14,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * base-workflow-api.yaml. Mirrors base-entity-backend's and base-rule-backend's own advice classes;
  * each feature module owns its own so the {@code errorId}/{@code errorText} vocabulary stays close
  * to the domain that raised it.
+ *
+ * <p>Scoped to this module's package, and that scope is load-bearing rather than tidiness: the
+ * framework exceptions below ({@code ObjectOptimisticLockingFailureException},
+ * {@code IllegalArgumentException}) are claimed by other features' advices too, on the same
+ * {@link ApiAdviceOrder#FEATURE} rung, so an unscoped advice made the winner arbitrary — a stale
+ * write on a workflow row once answered {@code document.stale-write}.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.workflow")
 @Order(ApiAdviceOrder.FEATURE)
 public class WorkflowApiExceptionHandler {
 

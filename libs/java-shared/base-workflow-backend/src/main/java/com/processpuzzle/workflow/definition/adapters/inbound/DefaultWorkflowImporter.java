@@ -1,7 +1,7 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
-import com.processpuzzle.workflow.definition.usecases.inbound.ImportProcessDefinitionsUseCase;
+import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import java.io.IOException;
 import java.io.InputStream;
 import org.slf4j.Logger;
@@ -32,12 +32,12 @@ public class DefaultWorkflowImporter {
     private static final String WORKFLOWS_FILE_SUFFIX = "-workflows.yaml";
     private static final String DEFAULT_WORKFLOWS_LOCATION = "classpath*:default-workflows/*" + WORKFLOWS_FILE_SUFFIX;
 
-    private final ImportProcessDefinitionsUseCase importProcessDefinitions;
+    private final ImportWorkflowsUseCase importWorkflows;
     private final ResourcePatternResolver resourceResolver;
 
-    public DefaultWorkflowImporter(ImportProcessDefinitionsUseCase importProcessDefinitions,
+    public DefaultWorkflowImporter(ImportWorkflowsUseCase importWorkflows,
                                   ResourcePatternResolver resourceResolver) {
-        this.importProcessDefinitions = importProcessDefinitions;
+        this.importWorkflows = importWorkflows;
         this.resourceResolver = resourceResolver;
     }
 
@@ -71,7 +71,7 @@ public class DefaultWorkflowImporter {
         }
 
         try (InputStream input = resource.getInputStream()) {
-            ImportOutcome outcome = importProcessDefinitions.execute(orgKey, input);
+            ImportOutcome outcome = importWorkflows.execute(orgKey, input);
             LOG.info("Imported default workflows from {} into organization '{}': created={}, updated={}, errors={}",
                     fileName, orgKey, outcome.created(), outcome.updated(), outcome.errors() == null ? 0 : outcome.errors().size());
             if (outcome.errors() != null) {

@@ -12,8 +12,8 @@ COPY .firebaserc firebase.json firestore.indexes.json firestore.rules storage.ru
 # Emulator import data (shared with native dev)
 COPY tools/firebase/data ./tools/firebase/data
 
-# Single source of truth for mock data and its org-scope rewrite (both pulled in by `sync-db`)
-COPY tools/mock-backend/db.json tools/mock-backend/org-scope.js ./tools/mock-backend/
+# Single source of truth for the third-party-source mock data (pulled in by `sync-db`)
+COPY tools/mock-backend/db.json ./tools/mock-backend/
 
 # Functions sources + build (produces lib/index.js and syncs db.json)
 COPY tools/firebase/functions ./tools/firebase/functions

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * <p>{@link ApiAdviceOrder#FEATURE} keeps this advice ahead of core's, whose catch-all would otherwise
  * answer these refusals with {@code 500 internal-error} — see {@link ApiAdviceOrder}.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.rule")
 @Order(ApiAdviceOrder.FEATURE)
 public class RuleApiExceptionHandler {
 

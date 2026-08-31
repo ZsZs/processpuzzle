@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * <p>{@link ApiAdviceOrder#FEATURE} is not decoration: without it this advice ties with core's on
  * precedence, and core's catch-all answered every refusal below with {@code 500 internal-error}.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.document")
 @Order(ApiAdviceOrder.FEATURE)
 public class DocumentApiExceptionHandler {
 

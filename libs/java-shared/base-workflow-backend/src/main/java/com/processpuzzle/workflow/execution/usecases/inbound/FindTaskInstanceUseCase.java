@@ -18,9 +18,9 @@ public class FindTaskInstanceUseCase {
     }
 
     @Transactional(readOnly = true)
-    public TaskInstance find(String orgKey, UUID processInstanceId, String taskDefinitionId) {
-        return repository.findByOrgKeyAndProcessInstanceIdAndTaskDefinitionId(orgKey, processInstanceId, taskDefinitionId)
+    public TaskInstance find(String orgKey, UUID workflowInstanceId, String taskDefinitionId) {
+        return repository.findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(orgKey, workflowInstanceId, taskDefinitionId)
                 .orElseThrow(() -> new NotFoundException(
-                        "No task '%s' in process instance '%s'".formatted(taskDefinitionId, processInstanceId)));
+                        "No task '%s' in workflow instance '%s'".formatted(taskDefinitionId, workflowInstanceId)));
     }
 }

@@ -25,6 +25,7 @@
     "@processpuzzle/base-document": "^0.1.0",
     "@processpuzzle/base-rule": "^0.1.1",
     "@processpuzzle/base-widget": "^0.9.1",
+    "@processpuzzle/base-workflow": "^0.1.0",
     "rxjs": "~7.8.2"
   },
   "dependencies": {

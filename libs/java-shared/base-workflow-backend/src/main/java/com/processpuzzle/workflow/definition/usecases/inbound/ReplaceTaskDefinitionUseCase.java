@@ -1,44 +1,42 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionValidator;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
+import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Full replace of a task definition. Field-by-field onto the loaded row rather than saving the
+ * incoming one, so that {@code orgKey}, {@code id} and the audit columns survive — the same
+ * convention {@link ReplaceToolDefinitionUseCase} follows.
+ */
 @Component
 @RequiredArgsConstructor
 @Transactional
 public class ReplaceTaskDefinitionUseCase {
 
-    private final ProcessDefinitionRepository repository;
-    private final ProcessDefinitionValidator validator;
+    private final TaskDefinitionRepository repository;
 
-    public TaskDefinition replace(String orgKey, String processId, String taskId, TaskDefinition desiredState) {
-        ProcessDefinition process = repository.findByOrgKeyAndId(orgKey, processId)
-                .orElseThrow(() -> new NotFoundException("No process definition with id '%s'".formatted(processId)));
+    public TaskDefinition replace(String orgKey, String id, TaskDefinition desiredState) {
+        TaskDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+                .orElseThrow(() -> new NotFoundException("No task definition with id '%s'".formatted(id)));
 
-        TaskDefinition existing = process.findTask(taskId)
-                .orElseThrow(() -> new NotFoundException(
-                        "No task '%s' in process '%s'".formatted(taskId, processId)));
+        if (desiredState.getVersion() != null && !desiredState.getVersion().equals(existing.getVersion())) {
+            throw new ConflictException(
+                    "Task definition '%s' was modified concurrently — reload and retry".formatted(id));
+        }
 
         existing.setName(desiredState.getName());
         existing.setDescription(desiredState.getDescription());
-        existing.setPerformedBy(desiredState.getPerformedBy());
+        existing.setPerformedByRoles(desiredState.getPerformedByRoles());
         existing.setInputs(desiredState.getInputs());
         existing.setOutputs(desiredState.getOutputs());
         existing.setPreconditionRuleId(desiredState.getPreconditionRuleId());
         existing.setPostconditionRuleId(desiredState.getPostconditionRuleId());
         existing.setSteps(desiredState.getSteps());
-        existing.setDependsOn(desiredState.getDependsOn());
-        existing.setParallel(desiredState.isParallel());
-        existing.setOverride(desiredState.isOverride());
-
-        validator.validate(process);
-        repository.save(process);
-        return existing;
+        return repository.save(existing);
     }
 }

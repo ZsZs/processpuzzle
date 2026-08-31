@@ -24,6 +24,30 @@ defineEntityRelationshipSuite({
       attrName: 'transitions',
       reason: 'the owning state machine cannot be created from generated fixture data (states is minItems: 1, and entityName must name a real base-entity type)',
     },
+    // The same exclusion as above, seen from base-workflow: the flow starts by creating the owner through
+    // its own form, and none of these three owners can be created from generated data — a Workflow requires
+    // at least one task, a Task Definition at least one performing role, and a Workflow Instance is
+    // read-only by contract. See entity-crud.spec.ts for all three reasons. Every list below those owners is
+    // therefore unreachable, whichever control type it uses.
+    //
+    // The workflow's five embedded lists are named individually rather than by owner, because that is the
+    // shape this suite's exclusion list takes; `artifacts` and `tools` used to be RELATED_ENTITIES and
+    // `workProducts` was the pre-rename name of `artifacts`.
+    ...(['roles', 'artifacts', 'tools', 'requiredArtifacts', 'tasks', 'authorizedRoles'] as const).map((attrName) => ({
+      entityName: 'Workflow',
+      attrName,
+      reason: 'the owning workflow cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
+    })),
+    ...(['performedByRoles', 'inputs', 'outputs', 'steps'] as const).map((attrName) => ({
+      entityName: 'Task Definition',
+      attrName,
+      reason: 'the owning task cannot be created from generated fixture data (performedByRoles is minItems: 1, and this suite cannot fill a relationship control)',
+    })),
+    ...(['tasks', 'artifacts'] as const).map((attrName) => ({
+      entityName: 'Workflow Instance',
+      attrName,
+      reason: 'workflow instances are read-only by contract — the descriptor is isAbstract, so no owner can be created here',
+    })),
     {
       entityName: 'App Definition',
       attrName: 'routes',

@@ -1,0 +1,12 @@
+key: order
+displayName: "Order"
+description: "A customer purchase order — the core business entity in this scenario."
+attributes:
+  - key: customerId
+    type: STRING
+    required: true
+  - key: total
+    type: DECIMAL
+    required: true
+  - key: status
+    type: STRING

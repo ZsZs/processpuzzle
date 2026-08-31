@@ -153,6 +153,24 @@ describe('TEXT_BOX fixture values', () => {
   });
 });
 
+describe('TAGS fixture values', () => {
+  const noContext = {} as never;
+
+  it('generates string tags by default', () => {
+    const tester = createControlTester(attr({ attrName: 'tags', formControlType: 'TAGS' }));
+
+    expect(tester.createValue(noContext)).toBe('alpha,beta');
+    expect(tester.updateValue(noContext, { tags: 'alpha,beta' })).toBe('alpha,beta,gamma');
+  });
+
+  it('generates numeric tags when inputType is number', () => {
+    const tester = createControlTester(attr({ attrName: 'expectedStatusCodes', formControlType: 'TAGS', options: { inputType: 'number' } }));
+
+    expect(tester.createValue(noContext)).toBe('200,201');
+    expect(tester.updateValue(noContext, { expectedStatusCodes: '200,201' })).toBe('200,201,204');
+  });
+});
+
 describe('DROPDOWN option values', () => {
   const dropdown = (fixture: Record<string, unknown>) => createControlTester(attr({ attrName: 'status', formControlType: 'DROPDOWN', ...fixture }));
   const noContext = {} as never;

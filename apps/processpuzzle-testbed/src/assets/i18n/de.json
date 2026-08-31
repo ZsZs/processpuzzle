@@ -62,9 +62,9 @@
     "base-state_card_content_3": "UI-Verhalten anhand des aktuellen Zustands steuern",
     "base-state_card_button": "Siehe Base State-Bibliothek...",
     "base-workflow_card_title": "Base Workflow",
-    "base-workflow_card_subtitle": "Langlaufende Geschäftsprozesse und Orchestrierung",
+    "base-workflow_card_subtitle": "Langlaufende Geschäfts-Workflows und Orchestrierung",
     "base-workflow_card_content": "Verbindet Aktivitäten, Entscheidungen und Wartezustände zu langlaufenden Workflows, die Entitäten, Regeln und Zustände über Benutzer und Systeme hinweg koordinieren.",
-    "base-workflow_card_content_1": "Prozesse als Folge von Aufgaben und Gateways beschreiben",
+    "base-workflow_card_content_1": "Workflows als Folge von Aufgaben und Gateways beschreiben",
     "base-workflow_card_content_2": "Workflow-Instanzen sitzungsübergreifend persistieren und fortsetzen",
     "base-workflow_card_content_3": "Integration mit Regeln und Zustandsmaschinen für Entscheidungen",
     "base-workflow_card_button": "Siehe Base Workflow-Bibliothek...",
@@ -140,15 +140,15 @@
   "base-workflows": {
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
-    "samples_desc_1": "Ein Workflow verbindet Aktivitäten, Entscheidungen und Wartezustände zu einem langlaufenden Prozess, der Entitäten, Regeln und Zustände über Benutzer und Systeme hinweg koordiniert.",
-    "samples_desc_2": "Diese Bibliothek ist noch ein Gerüst, daher gibt es hier noch nichts zu zeigen.",
+    "samples_desc_1": "Ein Workflow verbindet Aktivitäten, Entscheidungen und Wartezustände zu einem langlaufenden Ganzen, das Entitäten, Regeln und Zustände über Benutzer und Systeme hinweg koordiniert.",
+    "samples_desc_2": "Die Tabellen und Formulare unten werden zur Laufzeit aus den Workflow-, Werkzeug- und Workflow-Instanz-Deskriptoren erzeugt; Rollen, Arbeitsergebnisse und Aufgaben sind eingebettete Komponenten eines Workflows, und die Instanzansichten sind schreibgeschützt.",
     "intro_heading": "ProcessPuzzle Workflow-Engine",
-    "frontend_heading": "Frontend — @processpuzzle/base-workflow-frontend",
+    "frontend_heading": "Frontend — @processpuzzle/base-workflow",
     "backend_heading": "Backend — base-workflow-backend",
-    "intro_paragraph_1": "Die ProcessPuzzle Workflow-Engine führt langlaufende Geschäftsprozesse aus: Sie bringt eine Prozessinstanz voran, sobald Fakten eintreffen, weist die entstehenden Aufgaben zu und bewahrt die Historie, warum eine Instanz ihren aktuellen Schritt erreicht hat.",
+    "intro_paragraph_1": "Die ProcessPuzzle Workflow-Engine führt langlaufende Geschäfts-Workflows aus: Sie bringt eine Workflow-Instanz voran, sobald Fakten eintreffen, weist die entstehenden Aufgaben zu und bewahrt die Historie, warum eine Instanz ihren aktuellen Schritt erreicht hat.",
     "intro_paragraph_2": "Das Feature ist in zwei sich ergänzende Bibliotheken aufgeteilt, die ein gemeinsames Domänenvokabular verwenden:",
-    "intro_frontend_desc": "Angular-Dienste, Stores und Komponenten zum Beschreiben von Prozessen und zum Überwachen laufender Instanzen im Browser.",
-    "intro_backend_desc": "Spring-Boot-Modul, das Workflow-Definitionen speichert und Prozessinstanzen serverseitig ausführt."
+    "intro_frontend_desc": "Angular-Dienste, Stores und Komponenten zum Beschreiben von Workflows und zum Überwachen laufender Instanzen im Browser.",
+    "intro_backend_desc": "Spring-Boot-Modul, das Workflow-Definitionen speichert und Workflow-Instanzen serverseitig ausführt."
   },
   "base-apps": {
     "overview_tab_label": "Übersicht",

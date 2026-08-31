@@ -1,0 +1,20 @@
+key: order-lifecycle
+description: "Flat state machine governing an Order from creation through fulfillment."
+entity: order
+states: [DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, FULFILLED]
+transitions:
+  - triggerKey: submit
+    from: DRAFT
+    to: SUBMITTED
+  - triggerKey: startReview
+    from: SUBMITTED
+    to: UNDER_REVIEW
+  - triggerKey: approve
+    from: UNDER_REVIEW
+    to: APPROVED
+  - triggerKey: reject
+    from: UNDER_REVIEW
+    to: REJECTED
+  - triggerKey: fulfill
+    from: APPROVED
+    to: FULFILLED

@@ -1,0 +1,36 @@
+key: order-review-workflow
+description: >
+  SPEM-style workflow: a Reviewer completes the "review order" task, which
+  fires the state machine's approve/reject transition on the Order.
+methodContent:
+  taskDefinitions:
+    - key: reviewOrder
+      description: "Reviewer checks the order and its attached document."
+  artifactDefinitions:
+    - key: orderArtifact
+      entity: order
+    - key: orderDocumentArtifact
+      entity: orderDocument
+  roleDefinitions:
+    - key: reviewer
+
+workflowUse:
+  taskUses:
+    - key: reviewOrderUse
+      taskDefinition: reviewOrder
+      roleUse: reviewerUse
+  artifactUses:
+    - key: orderArtifactUse
+      artifactDefinition: orderArtifact
+    - key: orderDocumentArtifactUse
+      artifactDefinition: orderDocumentArtifact
+  roleUses:
+    - key: reviewerUse
+      roleDefinition: reviewer
+  taskIOReferences:
+    - taskUse: reviewOrderUse
+      artifactUse: orderArtifactUse
+      referenceType: INPUT
+    - taskUse: reviewOrderUse
+      artifactUse: orderDocumentArtifactUse
+      referenceType: INPUT

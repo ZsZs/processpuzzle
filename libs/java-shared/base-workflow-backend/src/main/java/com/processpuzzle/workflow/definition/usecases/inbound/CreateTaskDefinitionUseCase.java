@@ -1,34 +1,29 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
-import com.processpuzzle.workflow.common.NotFoundException;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinition;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.ProcessDefinitionValidator;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
+import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Adds a task to the organization's catalog. Nothing is checked against the workflows that may
+ * later reference it: a task exists on its own, and it is
+ * {@code WorkflowValidator} that refuses a workflow naming one that does not.
+ */
 @Component
 @RequiredArgsConstructor
 @Transactional
 public class CreateTaskDefinitionUseCase {
 
-    private final ProcessDefinitionRepository repository;
-    private final ProcessDefinitionValidator validator;
+    private final TaskDefinitionRepository repository;
 
-    public TaskDefinition create(String orgKey, String processId, TaskDefinition task) {
-        ProcessDefinition process = repository.findByOrgKeyAndId(orgKey, processId)
-                .orElseThrow(() -> new NotFoundException("No process definition with id '%s'".formatted(processId)));
-
-        if (process.findTask(task.getId()).isPresent()) {
-            throw new ConflictException(
-                    "Task '%s' already exists in process '%s'".formatted(task.getId(), processId));
+    public TaskDefinition create(String orgKey, TaskDefinition task) {
+        task.setOrgKey(orgKey);
+        if (repository.existsByOrgKeyAndId(orgKey, task.getId())) {
+            throw new ConflictException("Task definition '%s' already exists".formatted(task.getId()));
         }
-        process.addTask(task);
-        validator.validate(process);
-        repository.save(process);
-        return task;
+        return repository.save(task);
     }
 }

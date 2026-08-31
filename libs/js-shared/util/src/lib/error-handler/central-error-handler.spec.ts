@@ -49,12 +49,12 @@ describe('CentralErrorHandler', () => {
     const error = new HttpErrorResponse({
       status: 503,
       statusText: 'Service Unavailable',
-      url: '/api/processes',
+      url: '/api/workflows',
     });
 
     errorHandler.handleError(error);
 
-    expect(logger.error).toHaveBeenCalledWith('HTTP 503 /api/processes', error);
+    expect(logger.error).toHaveBeenCalledWith('HTTP 503 /api/workflows', error);
   });
 
   it('shows Error messages through the optional error message reporter', () => {
@@ -112,7 +112,7 @@ describe('CentralErrorHandler', () => {
       error: { message: 'Backend validation failed' },
       status: 400,
       statusText: 'Bad Request',
-      url: '/api/processes',
+      url: '/api/workflows',
     });
 
     TestBed.resetTestingModule();
@@ -197,7 +197,7 @@ describe('CentralErrorHandler', () => {
     const error = new HttpErrorResponse({
       error: 'Backend crashed',
       status: 500,
-      url: '/api/processes',
+      url: '/api/workflows',
     });
 
     TestBed.resetTestingModule();
@@ -215,7 +215,7 @@ describe('CentralErrorHandler', () => {
     const error = new HttpErrorResponse({
       error: null,
       status: 500,
-      url: '/api/processes',
+      url: '/api/workflows',
     });
 
     TestBed.resetTestingModule();

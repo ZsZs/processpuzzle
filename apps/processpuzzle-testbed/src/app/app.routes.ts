@@ -14,6 +14,7 @@ import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
+import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -252,6 +253,13 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-workflows/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_WORKFLOW_ROUTES` brings all three of the library's routable aggregates — the
+        // `workflow` branch with its roles, work products and tasks (and a task's inputs,
+        // outputs and steps), the `tool-definition` branch with its operations, and the read-only
+        // `workflow-instance` branch with its task and work product instances — and declares its own
+        // transloco scopes, so nothing is added here. Static children rather than `loadChildren`, for the
+        // same reason as the base-state and base-document branches above.
+        children: BASE_WORKFLOW_ROUTES,
       },
     ],
   },

@@ -12,4 +12,3 @@ node_modules/
 # Synced from tools/mock-backend by `npm run sync-db`
 db.json
 lib/db.json
-org-scope.js

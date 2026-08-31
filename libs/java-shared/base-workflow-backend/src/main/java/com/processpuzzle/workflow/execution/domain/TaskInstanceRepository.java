@@ -10,11 +10,11 @@ import java.util.UUID;
 public interface TaskInstanceRepository
         extends JpaRepository<TaskInstance, UUID>, JpaSpecificationExecutor<TaskInstance> {
 
-    Optional<TaskInstance> findByOrgKeyAndProcessInstanceIdAndTaskDefinitionId(
-            String orgKey, UUID processInstanceId, String taskDefinitionId);
+    Optional<TaskInstance> findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(
+            String orgKey, UUID workflowInstanceId, String taskDefinitionId);
 
-    List<TaskInstance> findByOrgKeyAndProcessInstanceId(String orgKey, UUID processInstanceId);
+    List<TaskInstance> findByOrgKeyAndWorkflowInstanceId(String orgKey, UUID workflowInstanceId);
 
-    List<TaskInstance> findByOrgKeyAndProcessInstanceIdAndStatus(
-            String orgKey, UUID processInstanceId, TaskInstanceStatus status);
+    List<TaskInstance> findByOrgKeyAndWorkflowInstanceIdAndStatus(
+            String orgKey, UUID workflowInstanceId, TaskInstanceStatus status);
 }

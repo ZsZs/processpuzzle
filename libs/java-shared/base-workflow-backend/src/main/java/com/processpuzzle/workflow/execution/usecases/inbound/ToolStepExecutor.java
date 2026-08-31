@@ -24,7 +24,7 @@ import java.util.Map;
  * own an expression engine (PPCL lives in processpuzzle-core / base-rule's GraalJS engine — see
  * the ProcessPuzzle architecture notes on the rule engine). Until a shared evaluation entry point
  * is exposed to feature modules, this executor treats every mapping value as a direct top-level
- * key: {@code inputMapping} values are looked up as-is in the process context, and
+ * key: {@code inputMapping} values are looked up as-is in the workflow context, and
  * {@code outputMapping} values are looked up as-is in the tool's JSON response body. Nested-path
  * expressions in either direction are not yet supported and are logged as unresolved (become
  * {@code null}) rather than failing the step outright.
@@ -50,19 +50,19 @@ public class ToolStepExecutor {
     }
 
     private StepResult executeStep(String orgKey, StepDefinition step, Map<String, Object> context) {
-        if (step.getToolId() == null) {
+        if (step.getToolDefinitionId() == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now()).build();
         }
 
-        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndId(orgKey, step.getToolId()).orElse(null);
+        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndId(orgKey, step.getToolDefinitionId()).orElse(null);
         if (tool == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now())
-                    .error("Tool '" + step.getToolId() + "' not found").build();
+                    .error("Tool '" + step.getToolDefinitionId() + "' not found").build();
         }
         ToolOperation operation = tool.findOperation(step.getToolOperation()).orElse(null);
         if (operation == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now())
-                    .error("Operation '" + step.getToolOperation() + "' not found on tool '" + step.getToolId() + "'").build();
+                    .error("Operation '" + step.getToolOperation() + "' not found on tool '" + step.getToolDefinitionId() + "'").build();
         }
 
         Map<String, Object> resolvedPayload = resolveInputs(step.getInputMapping(), context);

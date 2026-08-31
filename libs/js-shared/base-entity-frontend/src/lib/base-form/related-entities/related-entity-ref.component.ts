@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
+import { referenceIdOf } from '../entity-references';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
 
 export interface RelatedEntityNameAttr {
@@ -42,6 +43,12 @@ export class RelatedEntityRefComponent<Entity extends BaseEntity, RelatedEntity 
   relatedEntity: InputSignal<PersistedEntity<RelatedEntity>> = input.required<PersistedEntity<RelatedEntity>>();
   relatedEntityNameAttr: InputSignal<RelatedEntityNameAttr> = input.required<RelatedEntityNameAttr>();
   disabled: InputSignal<boolean> = input(false);
+  /**
+   * Which field of a raw row carries the id, when it is not `id` — the owning attribute's
+   * `referenceIdField`. Needed on this component and not only on the list, because removal filters the
+   * attribute's raw value and has to resolve each item's id the same way the rendering did.
+   */
+  referenceIdField: InputSignal<string | undefined> = input<string | undefined>(undefined);
   formGroup: InputSignal<FormGroup> = input.required<FormGroup>();
   linkedEntityType: InputSignal<string> = input.required<string>();
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
@@ -73,7 +80,13 @@ export class RelatedEntityRefComponent<Entity extends BaseEntity, RelatedEntity 
       return;
     }
 
-    const remainingEntities = relatedEntities.filter((relatedEntity) => (relatedEntity as BaseEntity).id !== this.relatedEntity().id);
+    // Resolved through `referenceIdOf` rather than read off `.id`, because what is filtered here is the
+    // attribute's **raw** value: an attribute the contract declares as `string[]` holds bare ids, whose
+    // `.id` is `undefined`, so comparing it matched nothing and no row could ever be detached. Filtering
+    // the raw array rather than the normalized copy is deliberate — it keeps ids as ids and whole
+    // entities as whole entities, so the payload shape survives the removal.
+    const targetId = this.relatedEntity().id;
+    const remainingEntities = relatedEntities.filter((relatedEntity) => referenceIdOf(relatedEntity, this.referenceIdField()) !== targetId);
     entity[relatedEntitiesAttrName] = remainingEntities;
 
     const control = this.formGroup().get(relatedEntitiesAttrName);

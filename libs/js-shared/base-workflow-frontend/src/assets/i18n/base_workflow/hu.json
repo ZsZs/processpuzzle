@@ -1,0 +1,166 @@
+{
+  "workflow": {
+    "_self": "Munkafolyamat",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "extends": "Kiterjeszti",
+    "activeInstances": "Aktív példányok",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "startType": "Indítás típusa",
+    "eventType": "Esemény típusa",
+    "milestoneRef": "Mérföldkő",
+    "preconditionExpression": "Előfeltétel",
+    "authorizedRoles": "Jogosult szerepkörök",
+    "payloadMapping": "Adattartalom-hozzárendelés",
+    "requiredArtifacts": "Szükséges artefaktumok",
+    "roles": "Szerepkörök",
+    "artifacts": "Artefaktumok",
+    "tools": "Eszközök",
+    "tasks": "Tevékenységek"
+  },
+  "workflow_task_assignment": {
+    "_self": "Tevékenység-hozzárendelés",
+    "taskDefinitionId": "Tevékenység",
+    "performedBy": "Végzi",
+    "dependsOn": "Előfeltételei",
+    "joinType": "Egyesítés típusa",
+    "parallel": "Párhuzamos",
+    "override": "Felülírás"
+  },
+  "workflow_role_use": {
+    "_self": "Szerepkör használat",
+    "roleDefinitionId": "Szerepkör"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artefaktum használat",
+    "artifactDefinitionId": "Artefaktum"
+  },
+  "workflow_tool_use": {
+    "_self": "Eszköz használat",
+    "toolDefinitionId": "Eszköz"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Szükséges artefaktum",
+    "artifactDefinitionId": "Artefaktum",
+    "state": "Állapot"
+  },
+  "workflow_role_definition": {
+    "_self": "Szerepkör",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "responsibleFor": "Felelős érte",
+    "entityRoleId": "Entitás szerepkör",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "tabs": {
+      "modeler": "Szerepkörmodellező"
+    },
+    "modeler": {
+      "empty": "Még nincs szerepkör definiálva."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artefaktum",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "artifactType": "Artefaktum típusa",
+    "artifactTypeId": "Típus azonosító",
+    "stateMachineId": "Állapotgép",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
+  "task_definition": {
+    "_self": "Tevékenység",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "performedByRoles": "Végrehajtó szerepkörök",
+    "preconditionRuleId": "Előfeltétel szabály",
+    "postconditionRuleId": "Utófeltétel szabály",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "inputs": "Bemenetek",
+    "outputs": "Kimenetek",
+    "steps": "Lépések"
+  },
+  "task_step_definition": {
+    "_self": "Lépés",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "stepType": "Lépés típusa",
+    "toolDefinitionId": "Eszköz",
+    "toolOperation": "Művelet",
+    "inputMapping": "Bemenet leképezés",
+    "outputMapping": "Kimenet leképezés"
+  },
+  "tool_definition": {
+    "_self": "Eszköz",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "baseUrl": "Alap URL",
+    "type": "Hitelesítés típusa",
+    "secretRef": "Titok hivatkozás",
+    "version": "Verzió",
+    "createdAt": "Létrehozva",
+    "operations": "Műveletek"
+  },
+  "tool_operation": {
+    "_self": "Művelet",
+    "id": "Azonosító",
+    "method": "Metódus",
+    "path": "Útvonal",
+    "description": "Leírás",
+    "payloadTemplate": "Kérés sablon",
+    "expectedStatusCodes": "Elvárt státuszkódok"
+  },
+  "workflow_instance": {
+    "_self": "Munkafolyamat-példány",
+    "id": "Azonosító",
+    "workflowId": "Munkafolyamat",
+    "workflowName": "Munkafolyamat neve",
+    "status": "Állapot",
+    "entityId": "Entitás",
+    "startedAt": "Indítva",
+    "completedAt": "Befejezve",
+    "context": "Kontextus",
+    "tasks": "Tevékenységek",
+    "artifacts": "Artefaktumok"
+  },
+  "task_instance": {
+    "_self": "Tevékenységpéldány",
+    "id": "Azonosító",
+    "taskDefinitionId": "Tevékenység",
+    "name": "Név",
+    "status": "Állapot",
+    "assignedTo": "Felelős",
+    "blockedReason": "Blokkolás oka",
+    "activatedAt": "Aktiválva",
+    "completedAt": "Befejezve",
+    "skippedAt": "Kihagyva",
+    "stepResults": "Lépés eredmények"
+  },
+  "artifact_instance": {
+    "_self": "Artefaktum példány",
+    "id": "Azonosító",
+    "artifactDefinitionId": "Artefaktum",
+    "name": "Név",
+    "type": "Típus",
+    "entityId": "Entitás",
+    "stateMachineInstanceId": "Állapotgép példány",
+    "currentState": "Jelenlegi állapot",
+    "updatedAt": "Módosítva"
+  },
+  "task_step_result": {
+    "_self": "Lépés eredmény",
+    "stepId": "Lépés",
+    "completedAt": "Befejezve",
+    "toolResponse": "Eszköz válasz",
+    "error": "Hiba"
+  }
+}

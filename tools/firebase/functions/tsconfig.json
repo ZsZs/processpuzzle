@@ -17,7 +17,6 @@
   "include": [
     "./**/*.ts",
     "./**/*.d.ts",
-    "./org-scope.js",
     "./package.json"
   ],
   "//": "Specs are ESM (top-level await) and must never reach the deployed bundle; tsconfig.spec.json type-checks them instead.",

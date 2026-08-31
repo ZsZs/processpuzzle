@@ -62,9 +62,9 @@
     "base-state_card_content_3": "Az UI viselkedésének vezérlése az entitás aktuális állapota alapján",
     "base-state_card_button": "Lásd a Base State könyvtárat...",
     "base-workflow_card_title": "Base Workflow",
-    "base-workflow_card_subtitle": "Hosszú lefutású üzleti folyamatok és vezénylés",
+    "base-workflow_card_subtitle": "Hosszú lefutású üzleti munkafolyamatok és vezénylés",
     "base-workflow_card_content": "Tevékenységeket, döntéseket és várakozásokat fűz össze hosszú lefutású munkafolyamatokká, amelyek koordinálják az entitásokat, szabályokat és állapotokat felhasználók és rendszerek között.",
-    "base-workflow_card_content_1": "Folyamatok leírása feladatok és átjárók sorozataként",
+    "base-workflow_card_content_1": "Munkafolyamatok leírása feladatok és átjárók sorozataként",
     "base-workflow_card_content_2": "Munkafolyamat-példányok mentése és folytatása munkamenetek között",
     "base-workflow_card_content_3": "Integráció szabályokkal és állapotgépekkel döntéshozatalhoz",
     "base-workflow_card_button": "Lásd a Base Workflow könyvtárat...",
@@ -140,15 +140,15 @@
   "base-workflows": {
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Példák",
-    "samples_desc_1": "A munkafolyamat tevékenységeket, döntéseket és várakozásokat fűz össze hosszú lefutású folyamattá, amely felhasználók és rendszerek között koordinálja az entitásokat, szabályokat és állapotokat.",
-    "samples_desc_2": "Ez a könyvtár még csak váz, így itt egyelőre nincs mit bemutatni.",
+    "samples_desc_1": "A munkafolyamat tevékenységeket, döntéseket és várakozásokat fűz össze hosszú lefutású egésszé, amely felhasználók és rendszerek között koordinálja az entitásokat, szabályokat és állapotokat.",
+    "samples_desc_2": "Az alábbi táblák és űrlapok futásidőben, a Munkafolyamat, az Eszköz és a Munkafolyamat-példány deszkriptoraiból készülnek; a szerepkörök, a munkatermékek és a tevékenységek a munkafolyamat beágyazott komponensei, a példány képernyői pedig csak olvashatók.",
     "intro_heading": "ProcessPuzzle Munkafolyamat-motor",
-    "frontend_heading": "Frontend — @processpuzzle/base-workflow-frontend",
+    "frontend_heading": "Frontend — @processpuzzle/base-workflow",
     "backend_heading": "Backend — base-workflow-backend",
-    "intro_paragraph_1": "A ProcessPuzzle Munkafolyamat-motor hosszú lefutású üzleti folyamatokat hajt végre: a beérkező tények hatására lépteti a folyamatpéldányt, kiosztja a keletkező feladatokat, és megőrzi annak történetét, hogy egy példány miért jutott az aktuális lépéséhez.",
+    "intro_paragraph_1": "A ProcessPuzzle Munkafolyamat-motor hosszú lefutású üzleti munkafolyamatokat hajt végre: a beérkező tények hatására lépteti a munkafolyamat-példányt, kiosztja a keletkező feladatokat, és megőrzi annak történetét, hogy egy példány miért jutott az aktuális lépéséhez.",
     "intro_paragraph_2": "A funkció két egymást kiegészítő könyvtárra oszlik, amelyek közös tárgyterületi szókincset használnak:",
-    "intro_frontend_desc": "Angular szolgáltatások, store-ok és komponensek a folyamatok leírásához és a futó példányok böngészőben történő megfigyeléséhez.",
-    "intro_backend_desc": "Spring Boot modul, amely tárolja a munkafolyamat-definíciókat és a szerveroldalon futtatja a folyamatpéldányokat."
+    "intro_frontend_desc": "Angular szolgáltatások, store-ok és komponensek a munkafolyamatok leírásához és a futó példányok böngészőben történő megfigyeléséhez.",
+    "intro_backend_desc": "Spring Boot modul, amely tárolja a munkafolyamat-definíciókat és a szerveroldalon futtatja a munkafolyamat-példányokat."
   },
   "base-apps": {
     "overview_tab_label": "Áttekintés",

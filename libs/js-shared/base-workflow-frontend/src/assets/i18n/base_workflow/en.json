@@ -1,0 +1,166 @@
+{
+  "workflow": {
+    "_self": "Workflow",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "extends": "Extends",
+    "activeInstances": "Active Instances",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "startType": "Start Type",
+    "eventType": "Event Type",
+    "milestoneRef": "Milestone",
+    "preconditionExpression": "Precondition",
+    "authorizedRoles": "Authorized Roles",
+    "payloadMapping": "Payload Mapping",
+    "requiredArtifacts": "Required Artifacts",
+    "roles": "Roles",
+    "artifacts": "Artifacts",
+    "tools": "Tools",
+    "tasks": "Tasks"
+  },
+  "workflow_task_assignment": {
+    "_self": "Task Assignment",
+    "taskDefinitionId": "Task",
+    "performedBy": "Performed By",
+    "dependsOn": "Depends On",
+    "joinType": "Join Type",
+    "parallel": "Parallel",
+    "override": "Override"
+  },
+  "workflow_role_use": {
+    "_self": "Role Use",
+    "roleDefinitionId": "Role"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artifact Use",
+    "artifactDefinitionId": "Artifact"
+  },
+  "workflow_tool_use": {
+    "_self": "Tool Use",
+    "toolDefinitionId": "Tool"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Required Artifact",
+    "artifactDefinitionId": "Artifact",
+    "state": "State"
+  },
+  "workflow_role_definition": {
+    "_self": "Role",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "responsibleFor": "Responsible For",
+    "entityRoleId": "Entity Role",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "tabs": {
+      "modeler": "Role Modeler"
+    },
+    "modeler": {
+      "empty": "No roles have been defined yet."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artifact",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "artifactType": "Artifact Type",
+    "artifactTypeId": "Type Id",
+    "stateMachineId": "State Machine",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "task_definition": {
+    "_self": "Task",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "performedByRoles": "Performed By Roles",
+    "preconditionRuleId": "Precondition Rule",
+    "postconditionRuleId": "Postcondition Rule",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "inputs": "Inputs",
+    "outputs": "Outputs",
+    "steps": "Steps"
+  },
+  "task_step_definition": {
+    "_self": "Step",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "stepType": "Step Type",
+    "toolDefinitionId": "Tool",
+    "toolOperation": "Operation",
+    "inputMapping": "Input Mapping",
+    "outputMapping": "Output Mapping"
+  },
+  "tool_definition": {
+    "_self": "Tool",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "baseUrl": "Base URL",
+    "type": "Auth Type",
+    "secretRef": "Secret Reference",
+    "version": "Version",
+    "createdAt": "Created At",
+    "operations": "Operations"
+  },
+  "tool_operation": {
+    "_self": "Operation",
+    "id": "Id",
+    "method": "Method",
+    "path": "Path",
+    "description": "Description",
+    "payloadTemplate": "Payload Template",
+    "expectedStatusCodes": "Expected Status Codes"
+  },
+  "workflow_instance": {
+    "_self": "Workflow Instance",
+    "id": "Id",
+    "workflowId": "Workflow",
+    "workflowName": "Workflow Name",
+    "status": "Status",
+    "entityId": "Entity",
+    "startedAt": "Started At",
+    "completedAt": "Completed At",
+    "context": "Context",
+    "tasks": "Tasks",
+    "artifacts": "Artifacts"
+  },
+  "task_instance": {
+    "_self": "Task Instance",
+    "id": "Id",
+    "taskDefinitionId": "Task",
+    "name": "Name",
+    "status": "Status",
+    "assignedTo": "Assigned To",
+    "blockedReason": "Blocked Reason",
+    "activatedAt": "Activated At",
+    "completedAt": "Completed At",
+    "skippedAt": "Skipped At",
+    "stepResults": "Step Results"
+  },
+  "artifact_instance": {
+    "_self": "Artifact Instance",
+    "id": "Id",
+    "artifactDefinitionId": "Artifact",
+    "name": "Name",
+    "type": "Type",
+    "entityId": "Entity",
+    "stateMachineInstanceId": "State Machine Instance",
+    "currentState": "Current State",
+    "updatedAt": "Updated At"
+  },
+  "task_step_result": {
+    "_self": "Step Result",
+    "stepId": "Step",
+    "completedAt": "Completed At",
+    "toolResponse": "Tool Response",
+    "error": "Error"
+  }
+}

@@ -2,17 +2,12 @@ package com.processpuzzle.workflow.definition.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,29 +19,34 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * A unit of work within a {@link ProcessDefinition}, performed by a {@link RoleDefinition}.
- * {@code id} is unique only within the owning process. Not addressable independently: the tasks
- * sub-resource endpoints always resolve through the owning process aggregate.
+ * The reusable half of a task: what it is, which artifacts it reads and writes, which rules guard
+ * it, and which roles are <em>able</em> to perform it. A catalog entity like
+ * {@link RoleDefinition} — the same task takes part in many workflows.
+ *
+ * <p>The per-workflow half lives in {@link TaskUse} instead, and has to: which single role performs
+ * the task, what must finish before it, and whether it may run beside its siblings are all
+ * properties of one <em>workflow</em>, not of the task. {@code dependsOn} names siblings of one
+ * workflow and {@code override} belongs to that workflow's {@code extends} chain, so neither can
+ * live on something shared.
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = "technicalId")
-@ToString(exclude = "process")
+@EqualsAndHashCode(callSuper = false, of = {"orgKey", "id"})
+@ToString
 @Entity
-@Table(
-    name = "workflow_task_definition",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"process_org_key", "process_id", "id"}))
-public class TaskDefinition {
+@Table(name = "workflow_task_definition")
+@IdClass(TaskDefinitionKey.class)
+public class TaskDefinition extends com.processpuzzle.workflow.common.Auditable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "technical_id")
-    private UUID technicalId;
+    @Column(name = "org_key", nullable = false)
+    private String orgKey;
 
-    /** Task code, unique within the owning process definition. */
+    /** Task code, chosen by the author and unique per organization. */
+    @Id
     @Column(nullable = false)
     private String id;
 
@@ -55,21 +55,33 @@ public class TaskDefinition {
 
     private String description;
 
-    /** Role definition id (of the owning process) that performs this task. */
-    @Column(nullable = false)
-    private String performedBy;
-
-    /** Resources this task reads. See {@link TaskIOReference}. */
+    /**
+     * Ids of the {@link RoleDefinition}s able to perform this task. A list because the task is
+     * shared: each workflow referencing it picks exactly one of these as that workflow's
+     * {@link TaskUse#getPerformedBy()}. Naming a role here does not put the task into any
+     * workflow.
+     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default
-    private List<TaskIOReference> inputs = new ArrayList<>();
+    private List<String> performedByRoles = new ArrayList<>();
 
-    /** Resources this task produces or modifies. Same reference model as inputs. */
+    /**
+     * Ids of the {@link ArtifactDefinition}s this task reads. Ids rather than typed references: an
+     * artifact's own {@link ArtifactDefinition#getArtifactType()} already says whether it is an
+     * entity, a document or a widget, so anything a task touches is declared as an artifact of the
+     * organization.
+     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default
-    private List<TaskIOReference> outputs = new ArrayList<>();
+    private List<String> inputs = new ArrayList<>();
+
+    /** Ids of the {@link ArtifactDefinition}s this task produces or modifies. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    @Builder.Default
+    private List<String> outputs = new ArrayList<>();
 
     /**
      * ID of a rule in base-rule. Evaluated when this task is a candidate to become ACTIVE. If it
@@ -88,36 +100,6 @@ public class TaskDefinition {
     @Builder.Default
     private List<StepDefinition> steps = new ArrayList<>();
 
-    /**
-     * Task definition ids (within the same process) that must be COMPLETED before this task can
-     * become ACTIVE. Empty means the task is eligible from process start.
-     */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    @Builder.Default
-    private List<String> dependsOn = new ArrayList<>();
-
-    /**
-     * When true, this task can run concurrently with its siblings that share the same dependsOn.
-     * When false (default), tasks within the same dependency level run sequentially in
-     * definition order — enforced by {@code TaskActivationService} in the execution layer.
-     */
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean parallel = false;
-
-    /**
-     * When this ProcessDefinition extends another, marks this task as replacing an
-     * identically-named task from the parent rather than adding to it.
-     */
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean override = false;
-
-    @ManyToOne
-    @JoinColumns({
-        @JoinColumn(name = "process_org_key", referencedColumnName = "org_key"),
-        @JoinColumn(name = "process_id", referencedColumnName = "id")
-    })
-    private ProcessDefinition process;
+    @Version
+    private Long version;
 }

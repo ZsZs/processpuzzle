@@ -3,7 +3,7 @@ package com.processpuzzle.workflow.execution.usecases.outbound;
 import java.util.Map;
 
 /**
- * Evaluates a single named rule from base-rule against a process instance's context. Implemented
+ * Evaluates a single named rule from base-rule against a workflow instance's context. Implemented
  * by {@code BaseRuleEvaluationAdapter}, which wraps {@code rule.usecase.EvaluateObject} — the
  * only rule-evaluation entry point base-rule exposes as a named interface (see
  * {@code com.processpuzzle.workflow.package-info}).
@@ -25,7 +25,7 @@ public interface RuleEvaluationPort {
      * @param ruleId the value of {@code TaskDefinition.preconditionRuleId} or
      *               {@code .postconditionRuleId} — used as base-rule's {@code context} parameter,
      *               see class Javadoc.
-     * @param context the process instance's current context map, passed as the "entity" being
+     * @param context the workflow instance's current context map, passed as the "entity" being
      *                evaluated.
      * @return {@link RuleCheckResult#ALWAYS_PASSES} when {@code ruleId} is null (no rule
      *         configured for this gate) or when base-rule isn't wired into the host application.

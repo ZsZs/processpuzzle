@@ -42,8 +42,16 @@ describe('design translations', () => {
 
   // The regression this exists for: `design.modules` was referenced by base-app's route for a whole
   // release without ever being added here, and the sidenav rendered the key itself.
-  it('translates every menu title the design routes declare', () => {
-    const declaredKeys = menuTitlesOf(DESIGN_ROUTES).map((menuTitle) => menuTitle.replace(`${DESIGN_TRANSLOCO_SCOPE}.`, ''));
+  //
+  // Filtered to the keys of *this* scope, because not every mounted branch names one. base-app's routes
+  // do declare `design.*` menu titles — an inversion the tab files call out — but base-workflow's six
+  // branches name keys of their own `base_workflow` scope, and holding this bundle responsible for
+  // another library's key space would fail the moment any such branch is mounted here.
+  it('translates every menu title the design routes declare in its own scope', () => {
+    const scopePrefix = `${DESIGN_TRANSLOCO_SCOPE}.`;
+    const declaredKeys = menuTitlesOf(DESIGN_ROUTES)
+      .filter((menuTitle) => menuTitle.startsWith(scopePrefix))
+      .map((menuTitle) => menuTitle.slice(scopePrefix.length));
 
     expect(declaredKeys.length).toBeGreaterThan(0);
     expect(englishKeys).toEqual(expect.arrayContaining(declaredKeys));

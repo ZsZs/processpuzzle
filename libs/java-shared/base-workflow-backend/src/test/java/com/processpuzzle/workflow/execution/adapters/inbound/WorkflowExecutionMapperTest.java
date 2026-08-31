@@ -1,16 +1,15 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
-import com.processpuzzle.workflow.definition.domain.WorkProductType;
-import com.processpuzzle.workflow.execution.domain.ProcessInstance;
-import com.processpuzzle.workflow.execution.domain.ProcessInstanceStatus;
+import com.processpuzzle.workflow.definition.domain.ArtifactType;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.domain.WorkProductInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
-import com.processpuzzle.workflow.model.PageOfProcessInstanceSummary;
-import com.processpuzzle.workflow.model.ProcessInstanceSummary;
+import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,51 +30,58 @@ class WorkflowExecutionMapperTest {
         mapper = new WorkflowExecutionMapper();
     }
 
+    /**
+     * The page wraps rows the caller has already assembled — the endpoint maps each instance together
+     * with its task and artifact instances, which this mapper has no repository to reach. Only the
+     * paging metadata is this method's business.
+     */
     @Test
-    void toSummaryModel_and_pageModel() {
+    void toPageModel_wrapsAlreadyAssembledRows() {
         UUID id = UUID.randomUUID();
         Instant now = Instant.now();
-        ProcessInstance instance = ProcessInstance.builder()
+        WorkflowInstance instance = WorkflowInstance.builder()
                 .id(id)
                 .orgKey("org-1")
-                .processDefinitionId("proc-def-1")
-                .processDefinitionName("Process Name")
-                .status(ProcessInstanceStatus.ACTIVE)
+                .workflowId("proc-def-1")
+                .workflowName("Workflow Name")
+                .status(WorkflowInstanceStatus.ACTIVE)
                 .entityId("entity-1")
                 .startedAt(now)
                 .build();
 
-        ProcessInstanceSummary summary = mapper.toSummaryModel(instance);
-        assertThat(summary.getId()).isEqualTo(id.toString());
-        assertThat(summary.getProcessDefinitionId()).isEqualTo("proc-def-1");
-        assertThat(summary.getStatus().getValue()).isEqualTo("ACTIVE");
+        com.processpuzzle.workflow.model.WorkflowInstance row = mapper.toModel(instance, List.of(), List.of());
+        assertThat(row.getId()).isEqualTo(id.toString());
+        assertThat(row.getWorkflowId()).isEqualTo("proc-def-1");
+        assertThat(row.getStatus().getValue()).isEqualTo("ACTIVE");
 
-        PageOfProcessInstanceSummary pageModel = mapper.toModel(new PageImpl<>(List.of(instance), PageRequest.of(0, 10), 1));
-        assertThat(pageModel.getContent()).hasSize(1);
+        PageOfWorkflowInstance pageModel =
+                mapper.toPageModel(new PageImpl<>(List.of(instance), PageRequest.of(0, 10), 1), List.of(row));
+        assertThat(pageModel.getContent()).containsExactly(row);
         assertThat(pageModel.getTotalElements()).isEqualTo(1);
+        assertThat(pageModel.getSize()).isEqualTo(10);
     }
 
     @Test
-    void toModel_fullProcessInstance() {
+    void toModel_fullWorkflowInstance() {
         UUID procId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
         UUID wpId = UUID.randomUUID();
         Instant now = Instant.now();
 
-        ProcessInstance proc = ProcessInstance.builder()
+        WorkflowInstance proc = WorkflowInstance.builder()
                 .id(procId)
                 .orgKey("org-1")
-                .processDefinitionId("proc-def-1")
-                .processDefinitionName("Process Name")
-                .status(ProcessInstanceStatus.ACTIVE)
-                .context(Map.of("key", "value"))
+                .workflowId("proc-def-1")
+                .workflowName("Workflow Name")
+                .status(WorkflowInstanceStatus.ACTIVE)
+                .initialContext(Map.of("key", "value"))
                 .startedAt(now)
                 .build();
 
         TaskInstance task = TaskInstance.builder()
                 .id(taskId)
                 .orgKey("org-1")
-                .processInstanceId(procId)
+                .workflowInstanceId(procId)
                 .taskDefinitionId("task-def-1")
                 .name("Task Name")
                 .status(TaskInstanceStatus.ACTIVE)
@@ -84,13 +90,13 @@ class WorkflowExecutionMapperTest {
                 .stepResults(List.of(StepResult.builder().stepId("step-1").completedAt(now).toolResponse(Map.of("res", "ok")).build()))
                 .build();
 
-        WorkProductInstance wp = WorkProductInstance.builder()
+        ArtifactInstance wp = ArtifactInstance.builder()
                 .id(wpId)
                 .orgKey("org-1")
-                .processInstanceId(procId)
-                .workProductDefinitionId("wp-def-1")
-                .name("Work Product Name")
-                .type(WorkProductType.ARTIFACT)
+                .workflowInstanceId(procId)
+                .artifactDefinitionId("wp-def-1")
+                .name("Artifact Name")
+                .type(ArtifactType.DOCUMENT)
                 .entityId("ent-1")
                 .stateMachineInstanceId("sm-1")
                 .currentState("DRAFT")
@@ -101,8 +107,8 @@ class WorkflowExecutionMapperTest {
         assertThat(model.getId()).isEqualTo(procId.toString());
         assertThat(model.getTasks()).hasSize(1);
         assertThat(model.getTasks().get(0).getId()).isEqualTo(taskId.toString());
-        assertThat(model.getWorkProducts()).hasSize(1);
-        assertThat(model.getWorkProducts().get(0).getId()).isEqualTo(wpId.toString());
+        assertThat(model.getArtifacts()).hasSize(1);
+        assertThat(model.getArtifacts().get(0).getId()).isEqualTo(wpId.toString());
     }
 
     @Test
@@ -111,7 +117,7 @@ class WorkflowExecutionMapperTest {
         TaskInstance task = TaskInstance.builder()
                 .id(taskId)
                 .orgKey("org-1")
-                .processInstanceId(UUID.randomUUID())
+                .workflowInstanceId(UUID.randomUUID())
                 .taskDefinitionId("task-def-1")
                 .name("Task Name")
                 .status(TaskInstanceStatus.COMPLETED)

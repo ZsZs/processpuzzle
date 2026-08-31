@@ -38,7 +38,7 @@ import java.util.List;
  * below from being answered by core's catch-all as {@code 500 internal-error} — see
  * {@link ApiAdviceOrder} for the incident that made the ladder explicit.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processpuzzle.app")
 @Order(ApiAdviceOrder.FEATURE)
 public class AppApiExceptionHandler {
 

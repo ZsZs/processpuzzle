@@ -12,7 +12,7 @@ package com.processpuzzle.workflow.execution.domain;
  */
 public record TaskCompletedEvent(
         String orgKey,
-        String processInstanceId,
+        String workflowInstanceId,
         String taskDefinitionId,
         String completionStateTriggerKey,
         String stateMachineEntityName,

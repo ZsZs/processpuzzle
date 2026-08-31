@@ -10,6 +10,11 @@ export interface BaseConfiguration {
   readonly APPLICATION_VERSION: string;
   readonly DEPLOYMENT_ENVIRONMENT: 'docker' | 'k8s' | 'firebase';
   readonly BACKEND_SERVICE_PROVIDER: 'rest' | 'firestore';
+  /**
+   * Root of the *third-party* REST sources an application integrates with — not of the platform's own
+   * features, which every deployment reaches through `APP_SERVICE_ROOT` and its per-feature siblings
+   * below. In dev and CI this is the json-server mock (see `tools/mock-backend/README.md`).
+   */
   readonly BACKEND_SERVICE_ROOT: string;
   readonly OBJECT_STORE_SERVICE_ROOT: string;
   readonly RULE_SERVICE_ROOT: string;

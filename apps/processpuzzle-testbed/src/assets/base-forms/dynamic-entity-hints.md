@@ -90,11 +90,13 @@ hand-tuned layout. That is why neither `Dynamic Entity` nor the demo application
 #### 7. What it needs to run
 
 The Java backend, which imports the seed file because `apps/processpuzzle-backend`'s `application.yaml` sets
-`base-entity.loadDefaultEntities: yes`, and a run-time configuration pointing at it: `config.dev.json` or
-`config.ci.json`, whose `APP_SERVICE_ROOT` is `http://localhost:8080/organizations/processpuzzle-testbed`.
+`base-entity.loadDefaultEntities: yes`, and a run-time configuration pointing at it: every stage's
+`APP_SERVICE_ROOT` does — `http://localhost:8080/organizations/processpuzzle-testbed` in `config.dev.json`
+and `config.ci.json`. Nothing here is served by the json-server mock on `:3000`; that stands in for
+third-party sources only (see `tools/mock-backend/README.md`).
 
-Under `config.common.json` that root is json-server on `:3000`, which serves no `entity-definitions`, so
-`EntityDefinitionService` answers an empty list and this page reads *"No entity type registered for 'Dynamic
-Entity' yet."* That is the designed degradation, not a defect: whatever names an entity — an `AppDefinition`
-route, a hand-written route like this one — is allowed to be ahead of what is deployed, and the link that
-leads here still has to render something.
+Point `APP_SERVICE_ROOT` at a host that serves no `entity-definitions` and `EntityDefinitionService`
+answers an empty list, so this page reads *"No entity type registered for 'Dynamic Entity' yet."* That is
+the designed degradation, not a defect: whatever names an entity — an `AppDefinition` route, a
+hand-written route like this one — is allowed to be ahead of what is deployed, and the link that leads
+here still has to render something.

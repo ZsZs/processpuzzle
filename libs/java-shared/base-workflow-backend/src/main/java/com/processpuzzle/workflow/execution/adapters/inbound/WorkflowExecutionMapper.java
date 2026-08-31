@@ -1,12 +1,11 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
-import com.processpuzzle.workflow.execution.domain.ProcessInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
-import com.processpuzzle.workflow.execution.domain.WorkProductInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
-import com.processpuzzle.workflow.model.PageOfProcessInstanceSummary;
-import com.processpuzzle.workflow.model.ProcessInstanceSummary;
+import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
 import com.processpuzzle.workflow.model.StepResult;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -14,43 +13,45 @@ import java.time.ZoneOffset;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 
 /** Maps between execution-layer domain objects and the generated {@code workflow.model} classes. */
 @Component
 public class WorkflowExecutionMapper {
 
-    // -- Process Instance --------------------------------------------------
+    // -- Workflow Instance --------------------------------------------------
 
-    public com.processpuzzle.workflow.model.ProcessInstanceSummary toSummaryModel(ProcessInstance instance) {
-        return new ProcessInstanceSummary()
-                .id(instance.getId().toString())
-                .processDefinitionId(instance.getProcessDefinitionId())
-                .processDefinitionName(instance.getProcessDefinitionName())
-                .status(com.processpuzzle.workflow.model.ProcessInstanceStatus.fromValue(instance.getStatus().name()))
-                .entityId(instance.getEntityId())
-                .startedAt(toOffsetDateTime(instance.getStartedAt()))
-                .completedAt(toOffsetDateTime(instance.getCompletedAt()));
-    }
-
-    public com.processpuzzle.workflow.model.ProcessInstance toModel(ProcessInstance instance, List<TaskInstance> tasks,
-                                                                      List<WorkProductInstance> workProducts) {
-        com.processpuzzle.workflow.model.ProcessInstance model = new com.processpuzzle.workflow.model.ProcessInstance();
+    public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
+                                                                      List<ArtifactInstance> artifacts) {
+        com.processpuzzle.workflow.model.WorkflowInstance model = new com.processpuzzle.workflow.model.WorkflowInstance();
         model.setId(instance.getId().toString());
-        model.setProcessDefinitionId(instance.getProcessDefinitionId());
-        model.setProcessDefinitionName(instance.getProcessDefinitionName());
-        model.setStatus(com.processpuzzle.workflow.model.ProcessInstanceStatus.fromValue(instance.getStatus().name()));
+        model.setWorkflowId(instance.getWorkflowId());
+        model.setWorkflowName(instance.getWorkflowName());
+        model.setStatus(com.processpuzzle.workflow.model.WorkflowInstanceStatus.fromValue(instance.getStatus().name()));
         model.setEntityId(instance.getEntityId());
         model.setStartedAt(toOffsetDateTime(instance.getStartedAt()));
         model.setCompletedAt(toOffsetDateTime(instance.getCompletedAt()));
-        model.setContext(instance.getContext());
+        // Assembled, not stored: the API's `context` is still the *current* context, it is simply
+        // derived from the task contributions rather than from a field. Costs no query — the task
+        // instances are already here because the response carries them.
+        model.setContext(WorkflowContext.assemble(instance, tasks));
         model.setTasks(tasks.stream().map(this::toModel).toList());
-        model.setWorkProducts(workProducts.stream().map(this::toModel).toList());
+        model.setArtifacts(artifacts.stream().map(this::toModel).toList());
         return model;
     }
 
-    public PageOfProcessInstanceSummary toModel(Page<ProcessInstance> page) {
-        List<ProcessInstanceSummary> content = page.getContent().stream().map(this::toSummaryModel).toList();
-        return new PageOfProcessInstanceSummary()
+    /**
+     * One page of <em>full</em> instances. The caller supplies the already-mapped rows rather than the
+     * domain page, because assembling an instance needs its task and artifact instances, which
+     * this mapper has no repository to reach — see {@code WorkflowInstancesEndpoint.listWorkflowInstances}.
+     *
+     * <p>Full rather than a summary projection for the reason spelled out on
+     * {@code WorkflowDefinitionMapper.toModel(Page)}: base-entity's generated form reads the record out
+     * of the loaded list, so a lighter shape here would render an empty form.
+     */
+    public PageOfWorkflowInstance toPageModel(Page<WorkflowInstance> page,
+                                              List<com.processpuzzle.workflow.model.WorkflowInstance> content) {
+        return new PageOfWorkflowInstance()
                 .content(content)
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
@@ -75,7 +76,8 @@ public class WorkflowExecutionMapper {
                         .stepId(sr.getStepId())
                         .completedAt(toOffsetDateTime(sr.getCompletedAt()))
                         .toolResponse(sr.getToolResponse())
-                        .error(sr.getError())).toList());
+                        .error(sr.getError())).toList())
+                .contextContribution(instance.getContextContribution());
     }
 
     public CompleteTaskResponse toModel(CompleteTaskUseCase.Result result) {
@@ -85,14 +87,14 @@ public class WorkflowExecutionMapper {
                 .postconditionDetail(result.postconditionDetail());
     }
 
-    // -- Work Product Instance ------------------------------------------------
+    // -- Artifact Instance ------------------------------------------------
 
-    public com.processpuzzle.workflow.model.WorkProductInstance toModel(WorkProductInstance instance) {
-        return new com.processpuzzle.workflow.model.WorkProductInstance()
+    public com.processpuzzle.workflow.model.ArtifactInstance toModel(ArtifactInstance instance) {
+        return new com.processpuzzle.workflow.model.ArtifactInstance()
                 .id(instance.getId().toString())
-                .workProductDefinitionId(instance.getWorkProductDefinitionId())
+                .artifactDefinitionId(instance.getArtifactDefinitionId())
                 .name(instance.getName())
-                .type(com.processpuzzle.workflow.model.WorkProductType.fromValue(instance.getType().name()))
+                .type(com.processpuzzle.workflow.model.ArtifactType.fromValue(instance.getType().name()))
                 .entityId(instance.getEntityId())
                 .stateMachineInstanceId(instance.getStateMachineInstanceId())
                 .currentState(instance.getCurrentState())

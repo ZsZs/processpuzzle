@@ -19,7 +19,7 @@ No feature hard-codes what your application is *about*. Each one interprets a de
 | `base-entity` | `BaseEntityDescriptor` + `BaseEntityAttributeDescriptor`s | Reactive form, Material table, RSQL search, PDF export |
 | `base-rule` | `BaseRule` records (expression + context + severity) | Validation feedback on any generated form |
 | `base-state` | State/transition definitions | Allowed transitions and current-state projections |
-| `base-workflow` | Workflow (process) definitions | Long-running process execution and monitoring |
+| `base-workflow` | Workflow definitions | Long-running workflow execution and monitoring |
 | `base-app` | Workspace / navigation / panel layout definitions | The shell that hosts everything else |
 
 The pay-off is that **extension is configuration, not code**:
@@ -144,7 +144,7 @@ sequenceDiagram
     E-)S: EntityChanged
     S->>S: resolve allowed transition
     S-)W: StateChanged
-    W->>W: advance process instance
+    W->>W: advance workflow instance
     W-)E: WorkflowAction (create / update entities)
     W-)D: TaskAssigned
     D--)User: task appears in the workspace
@@ -173,7 +173,7 @@ different stages:
 | `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
-| `base-workflow` | scaffold | scaffold |
+| `base-workflow` | authoring UI for workflows and tools; read-only monitoring of instances | endpoints, use cases and execution engine implemented |
 | `base-app` | scaffold | scaffold |
 
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without

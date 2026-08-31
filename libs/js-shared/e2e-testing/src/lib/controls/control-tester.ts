@@ -319,10 +319,12 @@ class TagsControlTester extends ControlTester {
   }
 
   override createValue(_context: ControlDataContext): string {
+    if (this.inputType() === 'number') return '200,201';
     return 'alpha,beta';
   }
 
   override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
+    if (this.inputType() === 'number') return `${original[this.attr.attrName] ?? ''},204`;
     return `${original[this.attr.attrName] ?? ''},gamma`;
   }
 
@@ -346,6 +348,10 @@ class TagsControlTester extends ControlTester {
       .split(',')
       .map((token) => token.trim())
       .filter(Boolean);
+  }
+
+  private inputType(): string {
+    return (this.attr.options as { inputType?: string } | undefined)?.inputType ?? 'text';
   }
 }
 
@@ -650,9 +656,7 @@ export function artifactTestersFor(descriptor: BaseEntityDescriptor): ArtifactCo
  * JSON, so the class's own method is not available on them.
  */
 export function parentReferenceAttrName(childDescriptor: BaseEntityDescriptor, ownerEntityName: string): string | undefined {
-  return (childDescriptor.attrDescriptors as BaseEntityAttrDescriptor[]).find(
-    (attr) => (attr.formControlType as string) === 'FOREIGN_KEY' && attr.linkedEntityType === ownerEntityName,
-  )?.attrName;
+  return (childDescriptor.attrDescriptors as BaseEntityAttrDescriptor[]).find((attr) => (attr.formControlType as string) === 'FOREIGN_KEY' && attr.linkedEntityType === ownerEntityName)?.attrName;
 }
 
 export function identificationAttrFromTesters(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor | undefined {
