@@ -24,7 +24,17 @@ import {
   TOOL_DEFINITION_I18N_SCOPE,
   TOOL_OPERATION_I18N_SCOPE,
   WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,
+  WORKFLOW_ROLE_MODELER_I18N_KEY,
 } from './base-workflow.i18n';
+
+/**
+ * Dotted key paths of a bundle, as transloco flattens them under the scope alias — so a block with nested
+ * keys (`workflow_role_definition.tabs.modeler`) is compared at the depth it is actually looked up at. A
+ * top-level-keys-only comparison would pass a locale missing every nested key below a block it does have.
+ */
+function flattenKeys(translations: object, prefix = ''): string[] {
+  return Object.entries(translations).flatMap(([key, value]) => (typeof value === 'object' && value !== null ? flattenKeys(value, `${prefix}${key}.`) : [`${prefix}${key}`]));
+}
 
 const entityScopes = [
   WORKFLOW_I18N_SCOPE,
@@ -45,7 +55,10 @@ const entityScopes = [
   TASK_STEP_RESULT_I18N_SCOPE,
 ];
 
-const locales: Array<[string, Record<string, Record<string, string>>]> = [
+/** A block holds attribute labels and, since the modeler, nested groups of screen labels beside them. */
+type TranslationBlock = Record<string, string | Record<string, unknown>>;
+
+const locales: Array<[string, Record<string, TranslationBlock>]> = [
   ['en', englishBundle],
   ['de', germanBundle],
   ['es', spanishBundle],
@@ -93,9 +106,20 @@ describe.each(locales)('the %s bundle', (_locale, bundle) => {
     Object.values(bundle).forEach((block) => expect(block['_self']).toBeTruthy());
   });
 
+  // Flattened, so a locale that has the `modeler` block but not the `modeler.empty` key inside it fails.
   it('translates the same keys the English bundle does', () => {
-    Object.entries(englishBundle as Record<string, Record<string, string>>).forEach(([blockName, englishBlock]) => {
-      expect(Object.keys(bundle[blockName]).sort()).toEqual(Object.keys(englishBlock).sort());
-    });
+    expect(flattenKeys(bundle).sort()).toEqual(flattenKeys(englishBundle).sort());
+  });
+
+  it('leaves no key empty', () => {
+    const value = (key: string) => key.split('.').reduce<unknown>((node, segment) => (node as Record<string, unknown>)[segment], bundle);
+
+    expect(flattenKeys(bundle).every((key) => typeof value(key) === 'string' && (value(key) as string).trim().length > 0)).toBe(true);
+  });
+
+  // The label of the tab the roles branch mounts. Named here rather than left to the parity check, because
+  // an untranslated tab renders its raw key in the tab bar.
+  it('labels the Role Modeler tab', () => {
+    expect(flattenKeys(bundle)).toContain(WORKFLOW_ROLE_MODELER_I18N_KEY.slice(`${BASE_WORKFLOW_TRANSLOCO_SCOPE}.`.length));
   });
 });

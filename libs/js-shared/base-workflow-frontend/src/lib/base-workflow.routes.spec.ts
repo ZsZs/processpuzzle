@@ -1,6 +1,8 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_WORKFLOW_ROUTES } from './base-workflow.routes';
+import { ROLE_MODELER_TAB } from './feature/definition/role-modeler-tab';
+import { RoleModelerTabComponent } from './feature/definition/role-modeler-tab.component';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -69,8 +71,24 @@ describe('BASE_WORKFLOW_ROUTES', () => {
     ]);
   });
 
-  it('gives each branch the generic list and details routes and no extra tab', () => {
-    BASE_WORKFLOW_ROUTES.forEach((route) => expect(route.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']));
+  it('gives every branch but the roles one the generic list and details routes and nothing else', () => {
+    BASE_WORKFLOW_ROUTES.filter((route) => route !== roleRoute).forEach((route) => expect(route.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']));
+  });
+
+  // The first perspective of the Workflow Modeler, and a sibling of the details route rather than a child
+  // of it: it is a screen *of* the role, not a section of its form. `baseEntityRoutes` inserts the extra
+  // tabs between details and list.
+  it('puts the modeler beside the roles branch’s generic screens', () => {
+    expect(roleRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/modeler', 'list']);
+  });
+
+  it('answers the modeler tab link with the component the tab declares', () => {
+    const modelerRoute = roleRoute.children?.find((child) => child.path === ':entityId/modeler');
+
+    // The same constant on both sides, so the URL the tab bar navigates to and the URL that resolves a
+    // component cannot drift apart.
+    expect(modelerRoute?.component).toBe(ROLE_MODELER_TAB.component);
+    expect(modelerRoute?.component).toBe(RoleModelerTabComponent);
   });
 
   describe('the workflow branch', () => {

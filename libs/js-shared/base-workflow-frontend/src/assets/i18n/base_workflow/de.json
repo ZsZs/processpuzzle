@@ -54,7 +54,13 @@
     "responsibleFor": "Verantwortlich für",
     "entityRoleId": "Entitätsrolle",
     "version": "Version",
-    "updatedAt": "Geändert am"
+    "updatedAt": "Geändert am",
+    "tabs": {
+      "modeler": "Rollenmodellierer"
+    },
+    "modeler": {
+      "empty": "Es wurden noch keine Rollen definiert."
+    }
   },
   "artifact_definition": {
     "_self": "Artefakt",

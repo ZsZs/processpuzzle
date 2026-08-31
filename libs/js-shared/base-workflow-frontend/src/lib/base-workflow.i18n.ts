@@ -44,6 +44,20 @@ export const WORKFLOW_ARTIFACT_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE
 export const WORKFLOW_TOOL_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_tool_use`;
 export const WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_required_start_artifact`;
 export const WORKFLOW_ROLE_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_definition`;
+
+/**
+ * Label of the Role Modeler tab, the third screen of a `Role Definition` beside the generic List and
+ * Details. Under `tabs` rather than beside the attribute labels, because the framework's own tab labels
+ * live in `base_entity.tabs.*` — this is the same kind of key, contributed by the feature that owns the
+ * screen. Resolved with `{ entity }` like the generic ones, so a translation may name the entity if it
+ * reads better that way.
+ *
+ * A child of {@link WORKFLOW_ROLE_DEFINITION_I18N_SCOPE} rather than a `base_workflow.modeler` block of
+ * its own: `base-workflow.i18n.spec.ts` asserts that every top-level block corresponds to an entity
+ * scope, and the modeler's own few labels belong to the screen they are on. The legend's element names are
+ * not here at all — they come from each entity's `_self` key, see `modelerElementNameKey`.
+ */
+export const WORKFLOW_ROLE_MODELER_I18N_KEY = `${WORKFLOW_ROLE_DEFINITION_I18N_SCOPE}.tabs.modeler`;
 export const ARTIFACT_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_definition`;
 export const TASK_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_definition`;
 export const TASK_STEP_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_definition`;

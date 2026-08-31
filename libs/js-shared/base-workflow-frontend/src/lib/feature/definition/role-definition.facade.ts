@@ -5,6 +5,7 @@ import { createRoleDefinitionDescriptor } from '../../domain/definition/role-def
 import { RoleDefinitionMapper } from '../../domain/definition/role-definition.mapper';
 import { RoleDefinitionService } from '../../domain/definition/role-definition.service';
 import { RoleDefinitionStore } from '../../domain/definition/role-definition.store';
+import { ROLE_MODELER_TAB } from './role-modeler-tab';
 
 @Injectable()
 export class WorkflowRoleDefinitionFacade extends BaseEntityFacade<RoleDefinition> {
@@ -25,7 +26,14 @@ export class WorkflowRoleDefinitionFacade extends BaseEntityFacade<RoleDefinitio
     return RoleDefinitionStore;
   }
 
+  /**
+   * The generated descriptor, plus the modeler tab. Contributed here rather than in the descriptor factory
+   * because this is the one place `BaseEntityTabsComponent` reads tabs from — and because the factory is
+   * pure domain metadata, which a component reference is not.
+   */
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createRoleDefinitionDescriptor();
+    const descriptor = createRoleDefinitionDescriptor();
+    descriptor.extraTabs = [ROLE_MODELER_TAB];
+    return descriptor;
   }
 }

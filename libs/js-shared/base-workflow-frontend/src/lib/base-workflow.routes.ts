@@ -23,6 +23,7 @@ import {
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
 import { WorkflowFacade } from './feature/definition/workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './feature/definition/role-definition.facade';
+import { ROLE_MODELER_TAB } from './feature/definition/role-modeler-tab';
 import { TaskDefinitionFacade } from './feature/definition/task-definition.facade';
 import { ToolDefinitionFacade } from './feature/definition/tool-definition.facade';
 import {
@@ -60,9 +61,9 @@ import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
  *
  * The generic container is mounted directly rather than through a component of this library's own:
  * unlike base-app's `AppDefinitionContainerComponent`, which exists to contribute a Publish action and
- * a Preview tab, none of these six has a screen or an action beyond List and Details yet. The workflow
- * modeler this library will eventually want is the natural first `extraTabs` entry on the
- * `workflow` branch, and it would go in exactly where base-state passes `STATE_MODELER_TAB`.
+ * a Preview tab, none of these six needs a screen or an action beyond what `extraTabs` contributes. The
+ * modeler is the first such entry — {@link ROLE_MODELER_TAB} on the roles branch, with the Tasks and
+ * Workflows perspectives to follow on their own branches.
  */
 export const BASE_WORKFLOW_ROUTES: Routes = [
   {
@@ -79,7 +80,9 @@ export const BASE_WORKFLOW_ROUTES: Routes = [
     data: { icon: 'badge', menuTitle: 'workflow.roles', entityName: WORKFLOW_ROLE_DEFINITION_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: WorkflowRoleDefinitionFacade }, authoringScopes()],
-    children: baseEntityRoutes(),
+    // The Roles perspective of the modeler, mounted at `:entityId/modeler` beside the generic List and
+    // Details. The same constant is on the descriptor, which is what renders the tab's link.
+    children: baseEntityRoutes([], [ROLE_MODELER_TAB]),
   },
   {
     path: 'artifact-definition',

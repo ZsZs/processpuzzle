@@ -54,7 +54,13 @@
     "responsibleFor": "Felelős érte",
     "entityRoleId": "Entitás szerepkör",
     "version": "Verzió",
-    "updatedAt": "Módosítva"
+    "updatedAt": "Módosítva",
+    "tabs": {
+      "modeler": "Szerepkörmodellező"
+    },
+    "modeler": {
+      "empty": "Még nincs szerepkör definiálva."
+    }
   },
   "artifact_definition": {
     "_self": "Artefaktum",

@@ -6,9 +6,7 @@ import path from 'path';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const environment = process.env['ENVIRONMENT'] || 'dev';
-if (process.env['ENVIRONMENT']) {
-  dotenv.config({ path: `./env/.env.${process.env['ENVIRONMENT']}` });
-}
+dotenv.config({ path: path.join(__dirname, 'env', `.env.${environment}`) });
 const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localhost:4200';
 export const testConfig = { routePrefix: '/base-entity/samples' };
 

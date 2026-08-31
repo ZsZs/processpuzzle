@@ -28,6 +28,7 @@ import { ToolDefinitionStore } from '../../domain/definition/tool-definition.sto
 import { ArtifactDefinitionFacade } from './artifact-definition.facade';
 import { WorkflowFacade } from './workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './role-definition.facade';
+import { ROLE_MODELER_TAB } from './role-modeler-tab';
 import { TaskDefinitionFacade } from './task-definition.facade';
 import { ToolDefinitionFacade } from './tool-definition.facade';
 import {
@@ -87,8 +88,9 @@ describe('the definition-layer facades', () => {
       expect(facade.attrDescriptors.length).toBeGreaterThan(0);
     });
 
-    // No third screen yet. A workflow modeler would go here, as base-state's does — the same constant
-    // handed to `baseEntityRoutes` and to the descriptor, so link and route cannot drift.
+    // No third screen yet. The Workflows perspective of the modeler goes here when it lands, the same way
+    // the Roles one already sits on the role facade: one constant handed both to `baseEntityRoutes` and to
+    // the descriptor, so link and route cannot drift.
     it('declares no extra tab yet', () => {
       expect(TestBed.inject(WorkflowFacade).descriptor.extraTabs).toEqual([]);
     });
@@ -136,6 +138,20 @@ describe('the definition-layer facades', () => {
       expect(facade.mapper).toBe(TestBed.inject(ToolDefinitionMapper));
       expect(facade.service).toBe(TestBed.inject(ToolDefinitionService));
       expect(facade.storeClass).toBe(ToolDefinitionStore);
+    });
+
+    /**
+     * The descriptor is the one place `BaseEntityTabsComponent` reads tabs from, so this is what renders
+     * the Modeler link — the route alone would leave the screen reachable only by typing its URL.
+     */
+    it('give the role the Role Modeler tab beside its generic screens', () => {
+      expect(TestBed.inject(WorkflowRoleDefinitionFacade).descriptor.extraTabs).toEqual([ROLE_MODELER_TAB]);
+    });
+
+    it('leave the other three catalogs with no extra tab', () => {
+      const others: Array<Type<{ descriptor: BaseEntityDescriptor }>> = [ArtifactDefinitionFacade, TaskDefinitionFacade, ToolDefinitionFacade];
+
+      others.forEach((facadeClass) => expect(TestBed.inject(facadeClass).descriptor.extraTabs).toEqual([]));
     });
 
     it('declare none of them embedded', () => {
