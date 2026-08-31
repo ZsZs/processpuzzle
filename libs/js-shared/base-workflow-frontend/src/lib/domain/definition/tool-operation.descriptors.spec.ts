@@ -33,7 +33,11 @@ describe('createToolOperationDescriptor', () => {
 
   it('offers the closed HTTP method list as a required dropdown', () => {
     expect(byName('method')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('method')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+    expect(
+      byName('method')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.value),
+    ).toEqual(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
     expect(byName('method')?.required).toBe(true);
     expect(byName('path')?.required).toBe(true);
   });
@@ -43,6 +47,7 @@ describe('createToolOperationDescriptor', () => {
   it('edits the status codes as chips, there being no numeric-array control', () => {
     expect(byName('expectedStatusCodes')?.formControlType).toBe(FormControlType.TAGS);
     expect(byName('expectedStatusCodes')?.hideInTable).toBe(true);
+    expect(byName('expectedStatusCodes')?.options).toEqual({ inputType: 'number' });
   });
 
   it('gives the body template a textarea and keeps it out of the table', () => {

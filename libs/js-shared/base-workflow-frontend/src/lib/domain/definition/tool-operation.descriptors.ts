@@ -36,7 +36,7 @@ function createToolOperationAttrDescriptors(): AbstractAttrDescriptor[] {
   // workspace, and `TagsComponent` edits strings — so the model holds strings and
   // `ToolDefinitionMapper` converts at the wire boundary. The alternative, an
   // `ADDITIONAL_PROPERTIES` map, would ask the author for keys that do not exist.
-  const expectedStatusCodesAttr = new BaseEntityAttrDescriptor('expectedStatusCodes', FormControlType.TAGS, 'Expected Status Codes');
+  const expectedStatusCodesAttr = new BaseEntityAttrDescriptor('expectedStatusCodes', FormControlType.TAGS, 'Expected Status Codes', undefined, undefined, { inputType: 'number' });
   expectedStatusCodesAttr.placeholder = 'Empty defaults to 200, 201, 204';
   expectedStatusCodesAttr.hideInTable = true;
 
