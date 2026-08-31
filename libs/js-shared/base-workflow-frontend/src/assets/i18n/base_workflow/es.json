@@ -18,7 +18,18 @@
     "roles": "Roles",
     "artifacts": "Artefactos",
     "tools": "Herramientas",
-    "tasks": "Tareas"
+    "tasks": "Tareas",
+    "tabs": {
+      "modeler": "Modelador de flujo de trabajo"
+    },
+    "modeler": {
+      "empty": "Este flujo de trabajo aún no tiene tareas.",
+      "lanes": "Carriles",
+      "data": "Productos de trabajo",
+      "tools": "Herramientas",
+      "unassigned": "Sin asignar",
+      "join_any": "cualquiera"
+    }
   },
   "workflow_task_assignment": {
     "_self": "Asignación de tarea",

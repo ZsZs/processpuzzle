@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { BASE_WORKFLOW_ROUTES } from './base-workflow.routes';
 import { ROLE_MODELER_TAB } from './feature/definition/role-modeler-tab';
 import { RoleModelerTabComponent } from './feature/definition/role-modeler-tab.component';
+import { WORKFLOW_MODELER_TAB } from './feature/definition/workflow-modeler-tab';
+import { WorkflowModelerTabComponent } from './feature/definition/workflow-modeler-tab.component';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -71,24 +73,34 @@ describe('BASE_WORKFLOW_ROUTES', () => {
     ]);
   });
 
-  it('gives every branch but the roles one the generic list and details routes and nothing else', () => {
-    BASE_WORKFLOW_ROUTES.filter((route) => route !== roleRoute).forEach((route) => expect(route.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']));
+  it('gives every branch without a modeler the generic list and details routes and nothing else', () => {
+    BASE_WORKFLOW_ROUTES.filter((route) => route !== roleRoute && route !== workflowRoute).forEach((route) =>
+      expect(route.children?.map((child) => child.path)).toEqual(['', ':entityId/details', 'list']),
+    );
   });
 
-  // The first perspective of the Workflow Modeler, and a sibling of the details route rather than a child
-  // of it: it is a screen *of* the role, not a section of its form. `baseEntityRoutes` inserts the extra
-  // tabs between details and list.
+  // Both perspectives of the modeler are siblings of their details route rather than children of it: each is
+  // a screen *of* its entity, not a section of its form. `baseEntityRoutes` inserts the extra tabs between
+  // details and list. Both use the `modeler` segment, and neither collides — a segment is only ever appended
+  // to its own entity's `<entity>/<id>/`.
   it('puts the modeler beside the roles branch’s generic screens', () => {
     expect(roleRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/modeler', 'list']);
   });
 
-  it('answers the modeler tab link with the component the tab declares', () => {
-    const modelerRoute = roleRoute.children?.find((child) => child.path === ':entityId/modeler');
+  it('puts the modeler beside the workflow branch’s generic screens', () => {
+    expect(workflowRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/modeler', 'list']);
+  });
+
+  it.each([
+    ['roles', () => roleRoute, ROLE_MODELER_TAB, RoleModelerTabComponent],
+    ['workflow', () => workflowRoute, WORKFLOW_MODELER_TAB, WorkflowModelerTabComponent],
+  ] as const)('answers the %s modeler tab link with the component the tab declares', (_branch, route, tab, component) => {
+    const modelerRoute = route().children?.find((child) => child.path === ':entityId/modeler');
 
     // The same constant on both sides, so the URL the tab bar navigates to and the URL that resolves a
     // component cannot drift apart.
-    expect(modelerRoute?.component).toBe(ROLE_MODELER_TAB.component);
-    expect(modelerRoute?.component).toBe(RoleModelerTabComponent);
+    expect(modelerRoute?.component).toBe(tab.component);
+    expect(modelerRoute?.component).toBe(component);
   });
 
   describe('the workflow branch', () => {

@@ -18,7 +18,18 @@
     "roles": "Rollen",
     "artifacts": "Artefakte",
     "tools": "Werkzeuge",
-    "tasks": "Aufgaben"
+    "tasks": "Aufgaben",
+    "tabs": {
+      "modeler": "Workflow-Modellierer"
+    },
+    "modeler": {
+      "empty": "Dieser Workflow hat noch keine Aufgaben.",
+      "lanes": "Bahnen",
+      "data": "Arbeitsergebnisse",
+      "tools": "Werkzeuge",
+      "unassigned": "Nicht zugewiesen",
+      "join_any": "beliebig"
+    }
   },
   "workflow_task_assignment": {
     "_self": "Aufgabenzuordnung",

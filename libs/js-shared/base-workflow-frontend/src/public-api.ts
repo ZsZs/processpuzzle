@@ -103,23 +103,36 @@ export { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
 export {
   elementEdgeId,
   elementNodeId,
+  isLaneNode,
+  laneNodeId,
+  WORKFLOW_LANE_TYPE,
   WORKFLOW_NODE_TYPE,
+  WORKFLOW_RELATION_EDGE_TYPE,
   type WorkflowEdge,
   type WorkflowEdgeData,
   type WorkflowElementKind,
   type WorkflowGraph,
+  type WorkflowLaneNode,
   type WorkflowNode,
   type WorkflowNodeData,
+  type WorkflowRelation,
 } from './lib/domain/modeler/workflow-graph';
 export { modelerIconUrl } from './lib/domain/modeler/modeler-icons';
 export { modelerElementNameKey } from './lib/domain/modeler/modeler-element-names';
 export { WorkflowLayoutService } from './lib/domain/modeler/graph/workflow-layout.service';
+export { SwimlaneLayoutService } from './lib/domain/modeler/graph/swimlane-layout.service';
 export { RoleResponsibilityGraphConverter } from './lib/domain/modeler/graph/role-responsibility-graph.converter';
-export { WorkflowDiagramComponent } from './lib/feature/modeler/components/workflow-diagram.component';
+export { WorkflowFlowGraphConverter, type WorkflowFlowGraphOptions } from './lib/domain/modeler/graph/workflow-flow-graph.converter';
+export { REFUSE_CONNECTION, REFUSE_GROUPING, WorkflowDiagramComponent, type WorkflowGraphLayout } from './lib/feature/modeler/components/workflow-diagram.component';
 export { WorkflowElementNodeComponent } from './lib/feature/modeler/components/workflow-element-node.component';
+export { WorkflowLaneNodeComponent } from './lib/feature/modeler/components/workflow-lane-node.component';
+export { WorkflowRelationEdgeComponent } from './lib/feature/modeler/components/workflow-relation-edge.component';
 export { ModelerLegendComponent } from './lib/feature/modeler/components/modeler-legend.component';
+export { ModelerLayerTogglesComponent, type ModelerLayers } from './lib/feature/modeler/components/modeler-layer-toggles.component';
 export { ROLE_MODELER_TAB } from './lib/feature/definition/role-modeler-tab';
 export { RoleModelerTabComponent } from './lib/feature/definition/role-modeler-tab.component';
+export { WORKFLOW_MODELER_TAB } from './lib/feature/definition/workflow-modeler-tab';
+export { WorkflowModelerTabComponent } from './lib/feature/definition/workflow-modeler-tab.component';
 // endregion
 
 // region application wiring
@@ -143,6 +156,7 @@ export {
   TOOL_OPERATION_I18N_SCOPE,
   WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,
   WORKFLOW_ROLE_MODELER_I18N_KEY,
+  WORKFLOW_MODELER_I18N_KEY,
 } from './lib/base-workflow.i18n';
 export { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS } from './lib/base-workflow.providers';
 export { BASE_WORKFLOW_ROUTES } from './lib/base-workflow.routes';

@@ -18,7 +18,18 @@
     "roles": "Roles",
     "artifacts": "Artifacts",
     "tools": "Tools",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "tabs": {
+      "modeler": "Workflow Modeler"
+    },
+    "modeler": {
+      "empty": "This workflow has no tasks yet.",
+      "lanes": "Lanes",
+      "data": "Work products",
+      "tools": "Tools",
+      "unassigned": "Unassigned",
+      "join_any": "any"
+    }
   },
   "workflow_task_assignment": {
     "_self": "Task Assignment",

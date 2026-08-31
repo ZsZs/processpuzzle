@@ -58,6 +58,20 @@ export const WORKFLOW_ROLE_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SC
  * not here at all — they come from each entity's `_self` key, see `modelerElementNameKey`.
  */
 export const WORKFLOW_ROLE_MODELER_I18N_KEY = `${WORKFLOW_ROLE_DEFINITION_I18N_SCOPE}.tabs.modeler`;
+
+/**
+ * Label of the Workflow Modeler tab, the third screen of a `Workflow` beside the generic List and Details.
+ *
+ * Same arrangement as {@link WORKFLOW_ROLE_MODELER_I18N_KEY} and for the same reasons: under the entity's
+ * own `tabs` block, because `base-workflow.i18n.spec.ts` asserts that every top-level block of the bundle
+ * corresponds to an entity scope, and a screen's labels belong to the entity whose screen it is.
+ *
+ * Its siblings under `workflow.modeler.*` — `empty`, the three layer toggles, `unassigned` and `join_any` —
+ * are built from {@link WORKFLOW_I18N_SCOPE} where they are used rather than each given a constant here.
+ * Only the tab label needs one, because two files have to agree on it: the descriptor the tab bar reads and
+ * the bundle.
+ */
+export const WORKFLOW_MODELER_I18N_KEY = `${WORKFLOW_I18N_SCOPE}.tabs.modeler`;
 export const ARTIFACT_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_definition`;
 export const TASK_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_definition`;
 export const TASK_STEP_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_definition`;

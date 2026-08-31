@@ -18,7 +18,18 @@
     "roles": "Rôles",
     "artifacts": "Artefacts",
     "tools": "Outils",
-    "tasks": "Tâches"
+    "tasks": "Tâches",
+    "tabs": {
+      "modeler": "Modeleur de flux de travail"
+    },
+    "modeler": {
+      "empty": "Ce flux de travail n'a encore aucune tâche.",
+      "lanes": "Couloirs",
+      "data": "Produits de travail",
+      "tools": "Outils",
+      "unassigned": "Non attribué",
+      "join_any": "au choix"
+    }
   },
   "workflow_task_assignment": {
     "_self": "Affectation de tâche",

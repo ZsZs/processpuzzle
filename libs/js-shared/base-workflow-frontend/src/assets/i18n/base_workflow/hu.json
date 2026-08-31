@@ -18,7 +18,18 @@
     "roles": "Szerepkörök",
     "artifacts": "Artefaktumok",
     "tools": "Eszközök",
-    "tasks": "Tevékenységek"
+    "tasks": "Tevékenységek",
+    "tabs": {
+      "modeler": "Munkafolyamat-modellező"
+    },
+    "modeler": {
+      "empty": "Ennek a munkafolyamatnak még nincsenek tevékenységei.",
+      "lanes": "Sávok",
+      "data": "Munkatermékek",
+      "tools": "Eszközök",
+      "unassigned": "Nincs hozzárendelve",
+      "join_any": "bármelyik"
+    }
   },
   "workflow_task_assignment": {
     "_self": "Tevékenység-hozzárendelés",
