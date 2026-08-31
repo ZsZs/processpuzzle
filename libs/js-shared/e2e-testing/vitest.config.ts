@@ -17,6 +17,8 @@ export default defineConfig({
   root: __dirname,
   test: {
     environment: 'node',
+    // These scenarios are collected by Playwright through their local playwright.config.ts.
+    exclude: ['**/*.e2e.spec.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
