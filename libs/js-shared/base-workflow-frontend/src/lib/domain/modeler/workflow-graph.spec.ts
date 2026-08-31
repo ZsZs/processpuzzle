@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { elementEdgeId, elementNodeId } from './workflow-graph';
+import { elementEdgeId, elementNodeId, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE } from './workflow-graph';
 
 describe('elementNodeId', () => {
   it('names a node by its kind and its own id', () => {
@@ -30,5 +30,28 @@ describe('elementEdgeId', () => {
 
   it('distinguishes the two directions', () => {
     expect(elementEdgeId('a', 'b')).not.toBe(elementEdgeId('b', 'a'));
+  });
+});
+
+describe('laneNodeId', () => {
+  it('names a lane by the role that performs in it', () => {
+    expect(laneNodeId('clerk')).toBe('lane:clerk');
+  });
+
+  /**
+   * The reason a lane does not reuse the role's own node id. A graph may hold both — a role card in the
+   * Roles perspective, a lane in the Workflows one — and one shared id would silently drop whichever
+   * arrived second.
+   */
+  it('does not collide with the role’s own element node', () => {
+    expect(laneNodeId('clerk')).not.toBe(elementNodeId('role', 'clerk'));
+  });
+});
+
+describe('template keys', () => {
+  // Three flat registries share one namespace per diagram, so the values have to differ from each other as
+  // well as be prefixed against whatever another feature might register.
+  it('are distinct from one another', () => {
+    expect(new Set([WORKFLOW_NODE_TYPE, WORKFLOW_LANE_TYPE, WORKFLOW_RELATION_EDGE_TYPE]).size).toBe(3);
   });
 });

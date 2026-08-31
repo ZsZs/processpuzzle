@@ -24,6 +24,7 @@ import { ArtifactDefinitionFacade } from './feature/definition/artifact-definiti
 import { WorkflowFacade } from './feature/definition/workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './feature/definition/role-definition.facade';
 import { ROLE_MODELER_TAB } from './feature/definition/role-modeler-tab';
+import { WORKFLOW_MODELER_TAB } from './feature/definition/workflow-modeler-tab';
 import { TaskDefinitionFacade } from './feature/definition/task-definition.facade';
 import { ToolDefinitionFacade } from './feature/definition/tool-definition.facade';
 import {
@@ -62,8 +63,10 @@ import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
  * The generic container is mounted directly rather than through a component of this library's own:
  * unlike base-app's `AppDefinitionContainerComponent`, which exists to contribute a Publish action and
  * a Preview tab, none of these six needs a screen or an action beyond what `extraTabs` contributes. The
- * modeler is the first such entry — {@link ROLE_MODELER_TAB} on the roles branch, with the Tasks and
- * Workflows perspectives to follow on their own branches.
+ * modeler contributes two such entries — {@link WORKFLOW_MODELER_TAB} on the workflow branch and
+ * {@link ROLE_MODELER_TAB} on the roles one — with the Tasks perspective to follow on its own. Both use the
+ * `modeler` segment and neither collides: a tab's segment is only ever appended to its own entity's
+ * `<entity>/<id>/`.
  */
 export const BASE_WORKFLOW_ROUTES: Routes = [
   {
@@ -72,7 +75,10 @@ export const BASE_WORKFLOW_ROUTES: Routes = [
     data: { icon: 'schema', menuTitle: 'workflow.workflows', entityName: WORKFLOW_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: WorkflowFacade }, authoringScopes()],
-    children: baseEntityRoutes(embeddedWorkflowRoutes()),
+    // The Workflows perspective of the modeler, at `:entityId/modeler`, beside the generic List and Details
+    // and beside the workflow's own embedded levels. The same constant is on the descriptor, which is what
+    // renders the tab's link.
+    children: baseEntityRoutes(embeddedWorkflowRoutes(), [WORKFLOW_MODELER_TAB]),
   },
   {
     path: 'workflow-role-definition',

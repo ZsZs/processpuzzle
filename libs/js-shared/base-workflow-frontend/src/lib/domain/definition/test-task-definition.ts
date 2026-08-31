@@ -38,3 +38,32 @@ export const OTHER_TASK_DEFINITION_DTO = {
   performedByRoles: ['manager'],
   version: 1,
 };
+
+/**
+ * The third and last task of the seeded workflow, verbatim from the same `task-definitions:` section.
+ *
+ * Here because `WORKFLOW_DTO.tasks` names three tasks and the two above are only two of them: without this
+ * row the last link of the chain resolves to nothing, and a spec drawing the workflow would be asserting
+ * against a dangling reference rather than against the seed. It is also the only task whose `outputs` differ
+ * from its `inputs` and the only one calling `generate-doc`, so it is what makes an artifact-flow or a tool
+ * relation observable at all.
+ */
+export const THIRD_TASK_DEFINITION_DTO = {
+  id: 'confirm-delivery',
+  name: 'Confirm Delivery',
+  description: 'Confirm the shipped order has reached the customer and generate the invoice.',
+  performedByRoles: ['clerk'],
+  inputs: ['order-entity'],
+  outputs: ['fulfillment-invoice'],
+  steps: [
+    {
+      id: 'generate-invoice',
+      name: 'Generate Invoice',
+      description: 'Produce the delivery confirmation and final invoice.',
+      stepType: 'SERVICE_STEP',
+      toolDefinitionId: 'automated-check-tool',
+      toolOperation: 'generate-doc',
+    },
+  ],
+  version: 1,
+};

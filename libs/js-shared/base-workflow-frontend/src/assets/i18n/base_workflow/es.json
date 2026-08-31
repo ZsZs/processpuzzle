@@ -18,7 +18,39 @@
     "roles": "Roles",
     "artifacts": "Artefactos",
     "tools": "Herramientas",
-    "tasks": "Tareas"
+    "tasks": "Tareas",
+    "tabs": {
+      "modeler": "Modelador de flujo de trabajo"
+    },
+    "modeler": {
+      "empty": "Este flujo de trabajo aún no tiene tareas.",
+      "lanes": "Carriles",
+      "data": "Productos de trabajo",
+      "tools": "Herramientas",
+      "unassigned": "Sin asignar",
+      "join_any": "cualquiera",
+      "save": "Guardar diseño",
+      "properties": {
+        "none": "Seleccione un elemento para ver sus propiedades.",
+        "lane": "Carril",
+        "name": "Nombre",
+        "description": "Descripción",
+        "id": "Identificador",
+        "unresolved": "Esta referencia no corresponde a ninguna entrada del catálogo.",
+        "relation_heading": "Relación",
+        "relation": "Tipo",
+        "label": "Etiqueta",
+        "relations": {
+          "sequence": "Depende de",
+          "implicit": "Se ejecuta después (orden de declaración)",
+          "input": "Lee",
+          "output": "Escribe",
+          "tool": "Llama a",
+          "start": "Requerido al inicio",
+          "unknown": "Relacionado con"
+        }
+      }
+    }
   },
   "workflow_task_assignment": {
     "_self": "Asignación de tarea",

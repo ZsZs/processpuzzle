@@ -1,4 +1,4 @@
-import { Edge, Node } from 'ng-diagram';
+import { Edge, GroupNode, Node } from 'ng-diagram';
 
 /**
  * The ng-diagram graph of one modeler perspective, and the vocabulary every perspective shares.
@@ -26,6 +26,27 @@ import { Edge, Node } from 'ng-diagram';
 export const WORKFLOW_NODE_TYPE = 'ppWorkflowElement';
 
 /**
+ * The `type` of a **lane** — the ng-diagram group node the Workflows perspective puts one of per performing
+ * role, and the key {@link WorkflowLaneNodeComponent} is registered under.
+ *
+ * A second node type rather than a sixth {@link WorkflowElementKind}, because a lane is not drawn like an
+ * element at all: it is a band the width of the whole diagram with a header down its left edge, and
+ * ng-diagram resolves a group node through a template of its own shape
+ * (`NgDiagramGroupNodeTemplate`). Its `data` is still {@link WorkflowNodeData} with `kind: 'role'`, so the
+ * header's symbol and name come from the same two helpers as every other element's.
+ */
+export const WORKFLOW_LANE_TYPE = 'ppWorkflowLane';
+
+/**
+ * The `type` of an edge that says *which* relation it is, and the key
+ * {@link WorkflowRelationEdgeComponent} is registered under in the canvas's edge template map.
+ *
+ * Only the Workflows perspective sets it. A Roles edge leaves `type` unset and so keeps ng-diagram's own
+ * default edge template, exactly as before — one relation on screen needs no distinguishing.
+ */
+export const WORKFLOW_RELATION_EDGE_TYPE = 'ppWorkflowRelation';
+
+/**
  * What a node stands for, which is also which symbol it is drawn with — the five files in
  * `src/assets/modeler`. See {@link modelerIconUrl}.
  *
@@ -46,6 +67,15 @@ export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workf
  */
 export interface WorkflowNodeData {
   kind: WorkflowElementKind;
+  /**
+   * The id of the catalog entry behind this node — the raw one, without the `kind:` prefix the node's own
+   * id carries. Set so that the properties panel can name what it is showing without having to take a
+   * composite node id back apart; the prefix is this module's business, not a panel's.
+   *
+   * Optional because a node's `data` is what a *template* draws, and neither the card nor the lane draws
+   * an id. A perspective that has no panel need not fill it in.
+   */
+  elementId?: string;
   /** What the element is called: its `name`, or its id when it has no name. */
   label: string;
   /** Shown under the label when the element has one. */
@@ -65,26 +95,64 @@ export interface WorkflowNodeData {
 }
 
 /**
+ * What one edge *means*, which is also how it is drawn — see {@link WorkflowRelationEdgeComponent}.
+ *
+ * The split that matters is `sequence`/`implicit` against the rest: the first two are the workflow's
+ * control flow and are drawn solid, everything else is a data or tool association and is drawn dashed, the
+ * same distinction BPMN makes between a sequence flow and an association.
+ *
+ * - `sequence` — a `dependsOn` entry, the only flow relation the model states outright.
+ * - `implicit` — the order two `parallel: false` siblings sharing a `dependsOn` set actually run in, which
+ *   is their position in `Workflow.tasks` and exists nowhere as data. Drawn distinctly rather than as a
+ *   plain sequence edge, so a reader can tell a declared dependency from one inferred from declaration
+ *   order — the second changes when the rows are reordered and the first does not.
+ * - `input` / `output` — a `TaskDefinition.inputs` / `.outputs` entry.
+ * - `tool` — a `SERVICE_STEP`'s `toolDefinitionId`.
+ * - `start` — a `Workflow.requiredArtifacts` entry feeding a task that depends on nothing. The model has no
+ *   start element, and this is the nearest honest thing to one.
+ */
+export type WorkflowRelation = 'sequence' | 'implicit' | 'input' | 'output' | 'tool' | 'start';
+
+/**
  * What a modeler edge carries in ng-diagram's `data`.
  *
- * `label` is optional and unused by the Roles perspective: a line from a role to an artifact already reads
- * as responsibility, and the one relation on screen needs no naming. A Task perspective, where an edge is
- * an input, an output or a tool call, is what it is here for.
+ * Both fields are optional and both are unused by the Roles perspective: a line from a role to an artifact
+ * already reads as responsibility, and the one relation on screen needs neither naming nor distinguishing.
+ * The Workflows perspective, where an edge is a dependency, an input, an output or a tool call, is what
+ * they are here for.
  */
 export interface WorkflowEdgeData {
+  /** Which relation this is. Absent leaves the edge on ng-diagram's default template. */
+  relation?: WorkflowRelation;
+  /** Written at the edge's midpoint when set. Used for the `ANY` join, the model's only gateway. */
   label?: string;
 }
 
 export type WorkflowNode = Node<WorkflowNodeData>;
+export type WorkflowLaneNode = GroupNode<WorkflowNodeData>;
 export type WorkflowEdge = Edge<WorkflowEdgeData>;
+
+/**
+ * Whether a node is a lane rather than an element.
+ *
+ * ng-diagram's `Node` is a union of `SimpleNode | GroupNode`, so `node.isGroup` does not type-check on one
+ * — the property exists on only one arm. This is the same `'isGroup' in node` test the library narrows with
+ * internally, named once here rather than repeated at each of the half-dozen places that has to sort the
+ * lanes out from what is in them.
+ */
+export function isLaneNode(node: WorkflowNode): node is WorkflowLaneNode {
+  return 'isGroup' in node;
+}
 
 /**
  * A converted perspective, ready for `initializeModel` once the nodes have been through
  * {@link WorkflowLayoutService}.
  *
- * No viewport and no "which nodes are unplaced", both of which `StateMachineGraph` carries: these diagrams
- * persist no arrangement, so every node is placed by the layout service on every build and there is no
- * saved position for one to be missing from.
+ * No viewport and no "which nodes are unplaced", both of which `StateMachineGraph` carries — and both stay
+ * absent now that the Workflows perspective does persist an arrangement. The viewport belongs to
+ * `WorkflowDiagram`, the resource that stores it, rather than to the projection of the workflow; and there is
+ * no unplaced list because the layout service places *every* node before a saved arrangement is applied over
+ * it, so a node the arrangement does not mention is not unplaced, merely un-overridden.
  */
 export interface WorkflowGraph {
   nodes: WorkflowNode[];
@@ -112,4 +180,16 @@ export function elementNodeId(kind: WorkflowElementKind, id: string): string {
  */
 export function elementEdgeId(sourceNodeId: string, targetNodeId: string): string {
   return `${sourceNodeId}->${targetNodeId}`;
+}
+
+/**
+ * The node id of the lane a role performs its tasks in.
+ *
+ * Distinct from `elementNodeId('role', roleId)` on purpose. A lane and a role card are two different things
+ * a diagram may hold at once — the Roles perspective draws the card, the Workflows perspective draws the
+ * lane — and sharing one id would mean a graph could not carry both, which is the kind of constraint that
+ * only shows up as a silently missing node.
+ */
+export function laneNodeId(roleId: string): string {
+  return `lane:${roleId}`;
 }

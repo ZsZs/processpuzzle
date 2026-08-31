@@ -4,6 +4,7 @@ import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowExtendsValidator;
+import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
@@ -161,7 +162,8 @@ class WorkflowUseCasesTest {
 
     @Test
     void deleteWorkflow_successAndConflicts() {
-        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, activePort);
+        WorkflowDiagramRepository diagramRepo = mock(WorkflowDiagramRepository.class);
+        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, diagramRepo, activePort);
         Workflow existing = Workflow.builder().orgKey(ORG).id("proc1").build();
 
         when(workflowRepo.findByOrgKeyAndId(ORG, "proc1")).thenReturn(Optional.of(existing));
@@ -170,6 +172,9 @@ class WorkflowUseCasesTest {
 
         useCase.delete(ORG, "proc1");
         verify(workflowRepo).delete(existing);
+        // The modeler's arrangement goes with the workflow it arranged: addressed only by that
+        // workflow's id, an orphaned layout is unreachable and would resurface if the id were reused.
+        verify(diagramRepo).deleteByOrgKeyAndWorkflowId(ORG, "proc1");
 
         // Active instances conflict
         when(activePort.existsActiveInstanceOf(ORG, "proc1")).thenReturn(true);

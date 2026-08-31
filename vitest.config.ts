@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'jsdom',
+    disableConsoleIntercept: true,
     reporters: ['default'],
     coverage: {
       provider: 'v8',

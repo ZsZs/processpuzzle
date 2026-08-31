@@ -18,7 +18,39 @@
     "roles": "Roles",
     "artifacts": "Artifacts",
     "tools": "Tools",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "tabs": {
+      "modeler": "Workflow Modeler"
+    },
+    "modeler": {
+      "empty": "This workflow has no tasks yet.",
+      "lanes": "Lanes",
+      "data": "Work products",
+      "tools": "Tools",
+      "unassigned": "Unassigned",
+      "join_any": "any",
+      "save": "Save layout",
+      "properties": {
+        "none": "Select an element to see its properties.",
+        "lane": "Lane",
+        "name": "Name",
+        "description": "Description",
+        "id": "Identifier",
+        "unresolved": "This reference does not resolve to a catalog entry.",
+        "relation_heading": "Relation",
+        "relation": "Kind",
+        "label": "Label",
+        "relations": {
+          "sequence": "Depends on",
+          "implicit": "Runs after (declaration order)",
+          "input": "Reads",
+          "output": "Writes",
+          "tool": "Calls",
+          "start": "Required at start",
+          "unknown": "Related to"
+        }
+      }
+    }
   },
   "workflow_task_assignment": {
     "_self": "Task Assignment",

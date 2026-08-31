@@ -29,6 +29,7 @@ import { ArtifactDefinitionFacade } from './artifact-definition.facade';
 import { WorkflowFacade } from './workflow.facade';
 import { WorkflowRoleDefinitionFacade } from './role-definition.facade';
 import { ROLE_MODELER_TAB } from './role-modeler-tab';
+import { WORKFLOW_MODELER_TAB } from './workflow-modeler-tab';
 import { TaskDefinitionFacade } from './task-definition.facade';
 import { ToolDefinitionFacade } from './tool-definition.facade';
 import {
@@ -88,11 +89,10 @@ describe('the definition-layer facades', () => {
       expect(facade.attrDescriptors.length).toBeGreaterThan(0);
     });
 
-    // No third screen yet. The Workflows perspective of the modeler goes here when it lands, the same way
-    // the Roles one already sits on the role facade: one constant handed both to `baseEntityRoutes` and to
-    // the descriptor, so link and route cannot drift.
-    it('declares no extra tab yet', () => {
-      expect(TestBed.inject(WorkflowFacade).descriptor.extraTabs).toEqual([]);
+    // The Workflows perspective of the modeler, the same way the Roles one sits on the role facade: one
+    // constant handed both to `baseEntityRoutes` and to the descriptor, so link and route cannot drift.
+    it('declares the modeler tab', () => {
+      expect(TestBed.inject(WorkflowFacade).descriptor.extraTabs).toEqual([WORKFLOW_MODELER_TAB]);
     });
   });
 
