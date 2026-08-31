@@ -28,7 +28,28 @@
       "data": "Munkatermékek",
       "tools": "Eszközök",
       "unassigned": "Nincs hozzárendelve",
-      "join_any": "bármelyik"
+      "join_any": "bármelyik",
+      "save": "Elrendezés mentése",
+      "properties": {
+        "none": "Válasszon egy elemet a tulajdonságai megtekintéséhez.",
+        "lane": "Sáv",
+        "name": "Név",
+        "description": "Leírás",
+        "id": "Azonosító",
+        "unresolved": "Ez a hivatkozás nem mutat katalógusbejegyzésre.",
+        "relation_heading": "Kapcsolat",
+        "relation": "Fajta",
+        "label": "Címke",
+        "relations": {
+          "sequence": "Ettől függ",
+          "implicit": "Ezután fut (deklarációs sorrend)",
+          "input": "Olvassa",
+          "output": "Írja",
+          "tool": "Meghívja",
+          "start": "Induláshoz szükséges",
+          "unknown": "Kapcsolódik ehhez"
+        }
+      }
     }
   },
   "workflow_task_assignment": {

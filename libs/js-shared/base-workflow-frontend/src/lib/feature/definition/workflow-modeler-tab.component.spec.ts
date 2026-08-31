@@ -10,8 +10,10 @@ import { OTHER_ROLE_DEFINITION_DTO, ROLE_DEFINITION_DTO } from '../../domain/def
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO } from '../../domain/definition/test-task-definition';
 import { TOOL_DEFINITION_DTO } from '../../domain/definition/test-tool-definition';
 import { pageOfWorkflows, WORKFLOW_DTO } from '../../domain/definition/test-workflow';
+import { pageOfWorkflowDiagrams, WORKFLOW_DIAGRAM_DTO } from '../../domain/modeler/models/test-workflow-diagram';
 import { elementNodeId, isLaneNode, laneNodeId } from '../../domain/modeler/workflow-graph';
 import { WorkflowDiagramComponent } from '../modeler/components/workflow-diagram.component';
+import { WorkflowSelectionService } from '../modeler/services/workflow-selection.service';
 import { WorkflowModelerTabComponent } from './workflow-modeler-tab.component';
 
 const SERVICE_ROOT = 'http://localhost:3000/organizations/processpuzzle-testbed';
@@ -36,6 +38,16 @@ describe('WorkflowModelerTabComponent', () => {
               'base_workflow.workflow.modeler.tools': 'Tools',
               'base_workflow.workflow.modeler.unassigned': 'Unassigned',
               'base_workflow.workflow.modeler.join_any': 'any',
+              'base_workflow.workflow.modeler.save': 'Save layout',
+              'base_workflow.workflow.modeler.properties.none': 'Select an element to see its properties.',
+              'base_workflow.workflow.modeler.properties.name': 'Name',
+              'base_workflow.workflow.modeler.properties.id': 'Identifier',
+              'base_workflow.workflow.modeler.properties.description': 'Description',
+              'base_workflow.workflow.modeler.properties.unresolved': 'This reference does not resolve to a catalog entry.',
+              'base_workflow.workflow.modeler.properties.lane': 'Lane',
+              'base_workflow.workflow.modeler.properties.relation_heading': 'Relation',
+              'base_workflow.workflow.modeler.properties.relation': 'Kind',
+              'base_workflow.workflow.modeler.properties.relations.sequence': 'Depends on',
               'base_workflow.workflow_role_definition._self': 'Role',
               'base_workflow.task_definition._self': 'Task',
               'base_workflow.artifact_definition._self': 'Artifact',
@@ -57,11 +69,13 @@ describe('WorkflowModelerTabComponent', () => {
   }
 
   /**
-   * The five loads this screen makes, each issued by one store's own root-scoped `onInit`. Injecting a store
-   * *is* the request for its catalog, which is why five requests exist on a route branch whose other screens
-   * make one — a workflow holds ids, and a diagram needs names.
+   * The loads this screen makes, each issued by one store's own root-scoped `onInit`. Injecting a store *is*
+   * the request for its contents, which is why so many requests exist on a route branch whose other screens
+   * make one — a workflow holds ids, a diagram needs names, and an arrangement is a resource of its own.
    *
-   * `/workflows` answers with a page envelope; the four catalogs answer with plain arrays.
+   * `/workflows` and `/workflow-diagrams` answer with a page envelope; the four catalogs answer with plain
+   * arrays. The `/workflow-diagrams` *list* is `BaseEntityStore.onInit`'s doing and is not what this screen
+   * reads — `loadLayout` fetches the one layout by id, which is {@link flushLayout}.
    */
   function flushEverything(rows: { workflows?: object[]; tasks?: object[] } = {}): void {
     const { workflows = [WORKFLOW_DTO], tasks = [TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO] } = rows;
@@ -70,11 +84,24 @@ describe('WorkflowModelerTabComponent', () => {
     controller.expectOne(`${SERVICE_ROOT}/roles`).flush([ROLE_DEFINITION_DTO, OTHER_ROLE_DEFINITION_DTO]);
     controller.expectOne(`${SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
     controller.expectOne(`${SERVICE_ROOT}/tools`).flush([TOOL_DEFINITION_DTO]);
+    controller.expectOne(`${SERVICE_ROOT}/workflow-diagrams`).flush(pageOfWorkflowDiagrams());
+  }
+
+  /**
+   * Answers the arrangement lookup for one workflow. A 404 is the normal answer — it is how the modeler
+   * learns to keep its automatic swimlane layout — and the canvas is not rendered until this has settled
+   * either way, so every test that expects a diagram has to call it.
+   */
+  function flushLayout(entityId = 'order-fulfillment-workflow', layout?: object): void {
+    const request = controller.expectOne(`${SERVICE_ROOT}/workflow-diagrams/${entityId}`);
+    if (layout) request.flush(layout);
+    else request.flush({ errorId: 'workflow.notFound' }, { status: 404, statusText: 'Not Found' });
   }
 
   async function loaded(entityId?: string): Promise<void> {
     await render(entityId);
     flushEverything();
+    flushLayout(entityId);
     await fixture.whenStable();
   }
 
@@ -119,6 +146,7 @@ describe('WorkflowModelerTabComponent', () => {
     flushEverything({
       workflows: [WORKFLOW_DTO, { id: 'claim-handling-workflow', name: 'Claim Handling', tasks: [{ taskDefinitionId: 'review-order', performedBy: 'clerk' }] }],
     });
+    flushLayout('claim-handling-workflow');
     await fixture.whenStable();
 
     expect(graph().nodes.map((node: { id: string }) => node.id)).toEqual([laneNodeId('clerk'), elementNodeId('task', 'review-order'), elementNodeId('artifact', 'order-entity'), elementNodeId('tool', 'automated-check-tool')]);
@@ -137,6 +165,7 @@ describe('WorkflowModelerTabComponent', () => {
     it('says so when the workflow has no tasks', async () => {
       await render('empty-workflow');
       flushEverything({ workflows: [{ id: 'empty-workflow', name: 'Empty', tasks: [] }] });
+      flushLayout('empty-workflow');
       await fixture.whenStable();
 
       expect(query('workflow-modeler-diagram')).toBeNull();
@@ -151,6 +180,7 @@ describe('WorkflowModelerTabComponent', () => {
     it('draws nothing until the task catalog has arrived too', async () => {
       await render();
       flushEverything({ tasks: [] });
+      flushLayout();
       await fixture.whenStable();
 
       expect(query('workflow-modeler-diagram')).toBeNull();
@@ -201,5 +231,142 @@ describe('WorkflowModelerTabComponent', () => {
     await loaded();
 
     ['role', 'task', 'artifact', 'tool'].forEach((kind) => expect(query(`modeler-legend-${kind}`)).not.toBeNull());
+  });
+
+  describe('the saved arrangement', () => {
+    /** What the canvas was handed, which is what decides where the nodes end up. */
+    function savedLayout() {
+      return fixture.debugElement.query(By.directive(WorkflowDiagramComponent)).componentInstance.savedLayout;
+    }
+
+    it('lets the user rearrange what is drawn', async () => {
+      await loaded();
+
+      expect(fixture.debugElement.query(By.directive(WorkflowDiagramComponent)).componentInstance.editable).toBe(true);
+    });
+
+    it('hands the canvas the layout that was read', async () => {
+      await render();
+      flushEverything();
+      flushLayout('order-fulfillment-workflow', WORKFLOW_DIAGRAM_DTO);
+      await fixture.whenStable();
+
+      expect(savedLayout()?.nodes.map((node: { nodeId: string }) => node.nodeId)).toContain('task:review-order');
+    });
+
+    // A workflow that has never been arranged is the normal starting point, and keeps the automatic layout.
+    it('hands the canvas nothing when the workflow has never been arranged', async () => {
+      await loaded();
+
+      expect(savedLayout()).toBeUndefined();
+      expect(query('workflow-modeler-error')).toBeNull();
+    });
+
+    /**
+     * `WorkflowDiagramStore` is root-scoped, so navigating from one workflow's modeler to another's leaves
+     * the previous layout current until the new lookup resolves — and applying it would move this workflow's
+     * tasks to another one's positions.
+     */
+    it('does not apply another workflow s layout', async () => {
+      await render();
+      flushEverything();
+      flushLayout('order-fulfillment-workflow', { ...WORKFLOW_DIAGRAM_DTO, workflowId: 'claim-handling-workflow' });
+      await fixture.whenStable();
+
+      expect(savedLayout()).toBeUndefined();
+    });
+
+    /**
+     * The canvas frames itself when its model is created, so one created before the lookup settles would fit
+     * the automatic layout and then have to re-frame to the saved viewport.
+     */
+    it('draws nothing until the arrangement lookup has settled', async () => {
+      await render();
+      flushEverything();
+      await fixture.whenStable();
+
+      expect(query('workflow-modeler-diagram')).toBeNull();
+    });
+  });
+
+  describe('saving', () => {
+    it('writes the arrangement with one PUT, addressed by the workflow id', async () => {
+      await loaded();
+
+      query('workflow-modeler-save')?.click();
+      await fixture.whenStable();
+
+      const request = controller.expectOne(`${SERVICE_ROOT}/workflow-diagrams/order-fulfillment-workflow`);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body.workflowId).toBe('order-fulfillment-workflow');
+      // Every node on the canvas has a position by the time it is saved — that is the layout's whole job.
+      expect(request.request.body.nodes.length).toBeGreaterThan(0);
+      request.flush({ ...WORKFLOW_DIAGRAM_DTO, version: 3 });
+    });
+
+    // Nothing to arrange, so nothing to save — and no request to send.
+    it('offers no save while there is no diagram', async () => {
+      await render('empty-workflow');
+      flushEverything({ workflows: [{ id: 'empty-workflow', name: 'Empty', tasks: [] }] });
+      flushLayout('empty-workflow');
+      await fixture.whenStable();
+
+      expect((query('workflow-modeler-save') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    /**
+     * A rejected save has nothing to roll back — the canvas and the server are both exactly as they were —
+     * so the only thing owed to the user is the reason.
+     */
+    it('shows why a save was refused', async () => {
+      await loaded();
+
+      query('workflow-modeler-save')?.click();
+      await fixture.whenStable();
+      controller
+        .expectOne(`${SERVICE_ROOT}/workflow-diagrams/order-fulfillment-workflow`)
+        .flush({ errorId: 'workflow.versionConflict', errorText: 'Reload and retry.' }, { status: 409, statusText: 'Conflict' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(query('workflow-modeler-error')?.textContent).toContain('Reload and retry.');
+    });
+  });
+
+  describe('the properties column', () => {
+    let selection: WorkflowSelectionService;
+
+    beforeEach(() => {
+      selection = TestBed.inject(WorkflowSelectionService);
+    });
+
+    it('asks for a selection while there is none', async () => {
+      await loaded();
+
+      expect(query('workflow-modeler-no-selection')).not.toBeNull();
+    });
+
+    it('shows the selected element', async () => {
+      await loaded();
+
+      selection.selectElement({ kind: 'task', elementId: 'review-order', label: 'Review Order' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(query('element-name')?.textContent).toContain('Review Order');
+      expect(query('element-kind')?.textContent).toContain('Task');
+      expect(query('workflow-modeler-no-selection')).toBeNull();
+    });
+
+    it('shows the selected relation instead', async () => {
+      await loaded();
+
+      selection.selectRelation({ relation: 'sequence' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(query('relation-kind')?.textContent).toContain('Depends on');
+      expect(query('element-name')).toBeNull();
+    });
   });
 });

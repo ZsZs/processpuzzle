@@ -623,6 +623,128 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  # ── Workflow Diagrams ─────────────────────────────────────
+  # Where one workflow's tasks, lanes, work products and tools sit on the graphical modeler's
+  # canvas. Purely presentational, and a resource of its own rather than fields on Workflow, for
+  # the two reasons base-state-api.yaml's diagram layer gives: dragging a task must never risk a
+  # whole-document replace of the workflow's composition, and the two are written by different
+  # gestures at very different rates, so one `version` would make an arrangement and an edit
+  # collide for no reason.
+  #
+  # 1:1 with the workflow it lays out, and addressed by the same workflowId. Unlike base-state's
+  # layout, a row is keyed by an opaque nodeId/edgeId rather than by a domain key: a modeler node
+  # stands for a task, a lane, an artifact or a tool, so its id is composite (`task:<id>`,
+  # `lane:<roleId>`) and an edge's is derived from the two ends it joins.
+
+  /organizations/{orgKey}/workflow-diagrams:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listWorkflowDiagrams
+      tags: [ Workflow Diagrams ]
+      summary: List the organization's workflow diagram layouts
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of diagram layouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_WorkflowDiagram"
+
+  /organizations/{orgKey}/workflow-diagrams/{workflowId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
+    get:
+      operationId: getWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Get the diagram layout of one workflow
+      description: >-
+        404 when the workflow has never been arranged. That is not an error condition for the
+        modeler — it is how it learns to keep the automatic swimlane layout — and it is
+        deliberately distinguishable from a layout that exists but is empty.
+      responses:
+        "200":
+          description: The diagram layout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: saveWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Create or replace the diagram layout of one workflow
+      description: >-
+        Whole-document replace, and an **upsert** — `201` the first time a workflow is arranged,
+        `200` every time after. Deliberately not the POST-create / PUT-replace pair /workflows
+        uses: there, a second workflow with the same id is a genuine user error worth a 409,
+        whereas saving a layout twice is the normal case. The client always knows workflowId, so
+        nothing is server-assigned and an upsert costs neither a GET-then-decide round trip nor a
+        race on first save.
+
+        Requires the workflow to exist — 404 otherwise, since a layout for a workflow that does
+        not exist has nothing to lay out. Individual `nodeId` and `edgeId` values are **not**
+        validated against it: updateWorkflow is free to drop a task, a layout row naming a node
+        nothing renders any more is harmless (the modeler ignores what it cannot place, and the
+        next save prunes it), and rejecting it would make two independent, individually-valid
+        saves fail depending only on the order they arrive in.
+
+        Optimistic-locked the same way updateWorkflow is, and by the same mechanism: supply the
+        `version` you last read and the write is refused with 409 unless it still matches. Two
+        modelers who both opened version 3 therefore cannot both save over it. Omitting `version`
+        overwrites unconditionally, which is what the first save of a workflow necessarily does.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDiagramInput"
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: workflowId names no workflow in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Discard the diagram layout of one workflow
+      description: >-
+        Resets the modeler to its automatic swimlane layout; the workflow itself is untouched.
+        Deleting the workflow discards its layout too, so this endpoint exists for the
+        "re-arrange from scratch" gesture rather than for cleanup.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ─────────────────────────────────────────────────────────────
   # EXECUTION API  (runtime)
   # ─────────────────────────────────────────────────────────────
@@ -2011,3 +2133,190 @@ components:
           name: Order administration
         route:
           orders: All orders
+
+    # ── Diagram layer ──────────────────────────────────────────
+
+    Point:
+      type: object
+      required: [ x, y ]
+      description: A point in diagram coordinates, matching ng-diagram's own `Point`.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+
+    NodeSize:
+      type: object
+      required: [ width, height ]
+      description: >-
+        Node dimensions in diagram coordinates, matching ng-diagram's own `Size`. Named NodeSize
+        rather than Size because the generated models share a package with the Jakarta validation
+        annotations the generator itself emits: a schema called `Size` shadows
+        `jakarta.validation.constraints.Size` and breaks every `@Size`-annotated field in the
+        package.
+      properties:
+        width:
+          type: number
+          format: double
+        height:
+          type: number
+          format: double
+
+    DiagramNodeLayout:
+      type: object
+      required: [ nodeId, position ]
+      description: >-
+        Where one modeler node sits on the canvas. An array of keyed rows rather than a map keyed
+        by nodeId, for the same reason the workflow's own collections are arrays: the key stays
+        visible inside the row, which is what makes an exported layout readable.
+
+        Keyed by the *diagram* node id rather than by a domain key, which is the one place this
+        layer departs from base-state's: a node stands for a task, a lane, an artifact or a tool,
+        and those ids are only unique within their own catalog — so the modeler prefixes them
+        (`task:<id>`, `lane:<roleId>`, `artifact:<id>`, `tool:<id>`) and the prefixed form is what
+        identifies a row. Opaque to base-workflow-backend, which stores and returns it without
+        interpretation.
+      properties:
+        nodeId:
+          type: string
+          description: >-
+            The modeler node this row positions. Not validated against the workflow — see
+            saveWorkflowDiagram's description for why a stale row is tolerated.
+          example: task:approve-order
+        position:
+          $ref: "#/components/schemas/Point"
+        size:
+          # A bare $ref, not an allOf wrapper carrying `nullable`/`description`: a single-element
+          # allOf is what degrades a generated type to Object, and OpenAPI 3.0 ignores siblings of
+          # a $ref anyway. Absent means the node keeps whatever size the layout computed — which
+          # for a lane is the band that holds its tasks.
+          $ref: "#/components/schemas/NodeSize"
+
+    DiagramEdgeLayout:
+      type: object
+      required: [ edgeId ]
+      description: >-
+        How one relation is drawn. The port anchors matter as much as the waypoints do: an edge
+        whose ports are not persisted is re-anchored on the next load, so the diagram reopens with
+        visibly different geometry from the one the user arranged.
+      properties:
+        edgeId:
+          type: string
+          description: >-
+            The modeler edge this row routes, which the modeler derives from the two node ids it
+            joins. Not validated — see saveWorkflowDiagram.
+          example: task:approve-order->task:ship-order
+        points:
+          type: array
+          description: >-
+            Intermediate waypoints, in order, in diagram coordinates — ng-diagram's `Edge.points`.
+            Empty or absent means the edge is routed automatically between its two ports.
+          items:
+            $ref: "#/components/schemas/Point"
+        sourcePort:
+          type: string
+          nullable: true
+          description: The port on the source node the edge leaves from, e.g. `port-right`.
+          example: port-right
+        targetPort:
+          type: string
+          nullable: true
+          description: The port on the target node the edge arrives at, e.g. `port-left`.
+          example: port-left
+        routing:
+          type: string
+          nullable: true
+          description: >-
+            The edge's routing mode as the user chose it — ng-diagram's `Edge.routing`. Opaque to
+            base-workflow-backend, which stores and returns it without interpretation.
+          example: orthogonal
+
+    DiagramViewport:
+      type: object
+      required: [ x, y, scale ]
+      description: >-
+        Pan offset and zoom of the canvas. Persisted so that reopening a large workflow returns to
+        the part of it the user was working on, rather than to whatever an automatic fit chooses.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        scale:
+          type: number
+          format: double
+          example: 1.0
+
+    WorkflowDiagramInput:
+      type: object
+      required: [ workflowId ]
+      description: >-
+        The graphical layout of one workflow — purely presentational, and a resource of its own
+        rather than fields on Workflow. Two reasons: dragging a task must never risk a
+        whole-document replace of the workflow's composition, and the two are written by different
+        gestures at very different rates.
+
+        `nodes` and `edges` are both optional, because a workflow that has been opened but never
+        arranged legitimately has neither.
+      properties:
+        workflowId:
+          type: string
+          description: >-
+            The workflow this lays out — 1:1 with it. The path segment is the source of truth;
+            this field is informational, mirroring WorkflowInput's own id.
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagramNodeLayout"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagramEdgeLayout"
+        viewport:
+          # Bare $ref for the same reason DiagramNodeLayout.size is one.
+          $ref: "#/components/schemas/DiagramViewport"
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read, exactly as WorkflowInput.version — when supplied, the
+            write is refused with 409 unless it still matches the stored one. Omit it to overwrite
+            unconditionally, which is what the *first* save of a workflow does: nothing has been
+            stored yet, so there is no version to have read.
+
+    WorkflowDiagram:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowDiagramInput"
+        - type: object
+          properties:
+            orgKey:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_WorkflowDiagram:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowDiagram"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer

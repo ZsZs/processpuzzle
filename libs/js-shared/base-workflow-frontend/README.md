@@ -21,9 +21,9 @@ with its task and work product instances, and a task instance's step results bel
 cancelled by `DELETE`, and a task moves through `/assign`, `/complete` and `/skip`. Those four verbs have no
 front-end surface yet, so the screens monitor a run rather than drive one.
 
-The **modeler** is read-only, and mounted where base-state mounts its State Modeler: an `extraTabs` entry
-beside List and Details, at `<entity>/<id>/modeler`. Two of its three planned perspectives exist, and they
-share everything except a converter and a layout:
+The **modeler** is mounted where base-state mounts its State Modeler: an `extraTabs` entry beside List and
+Details, at `<entity>/<id>/modeler`. Two of its three planned perspectives exist, and they share everything
+except a converter and a layout:
 
 | Perspective | Tab on | Draws |
 | --- | --- | --- |
@@ -39,8 +39,18 @@ qualifies; and the order two `parallel: false` siblings actually run in, which i
 drawn: a parent's tasks are not merged client-side, so a lone node for the parent would suggest the diagram
 accounted for what it inherits.
 
-Composition stays on the generated form — nothing in the modeler writes, and no arrangement is persisted, so
-every node is placed on every build.
+Composition stays on the generated form: nothing in the modeler changes what a workflow *contains*. What it
+does change is where things sit. The Workflows perspective is **editable and its arrangement is persisted** —
+tasks drag, lanes resize, and Save writes a `WorkflowDiagram` through `PUT /workflow-diagrams/{workflowId}`, a
+resource of its own so that a cosmetic drag never risks a whole-document replace of the composition. New edges
+and lane membership changes stay refused, because an edge is a `dependsOn` entry and a lane *is*
+`WorkflowTaskAssignment.performedBy`. Selecting a node or an edge shows its properties in a read-only panel
+beside the canvas.
+
+`SwimlaneLayoutService` still places every node on every build; `applySavedLayout` then moves whatever was
+arranged on top of that, which is why a task added since the last save appears in the right lane instead of at
+the origin. The Roles perspective is unchanged — read-only, laid out afresh each time, with no natural key to
+persist an arrangement under.
 
 ## Authoring and monitoring a workflow
 

@@ -344,6 +344,7 @@ function laneNode(roleId: string, role: RoleDefinition | undefined, unassignedLa
     position: { x: 0, y: 0 },
     data: {
       kind: 'role',
+      elementId: roleId,
       label: roleId === UNASSIGNED_ROLE_ID ? unassignedLabel : role?.name || roleId,
       description: role?.description,
       unresolved: roleId === UNASSIGNED_ROLE_ID || role === undefined,
@@ -364,6 +365,7 @@ function taskNode(taskId: string, definition: TaskDefinition | undefined, laneRo
     ...(laneRoleId === undefined ? {} : { groupId: laneNodeId(laneRoleId) }),
     data: {
       kind: 'task',
+      elementId: taskId,
       label: definition ? definition.name || taskId : taskId,
       description: definition?.description,
       unresolved: definition === undefined,
@@ -380,6 +382,7 @@ function artifactNode(artifactId: string, artifact: ArtifactDefinition | undefin
     autoSize: true,
     data: {
       kind: 'artifact',
+      elementId: artifactId,
       label: artifact ? artifact.name || artifactId : artifactId,
       description: artifact?.description,
       unresolved: artifact === undefined,
@@ -396,6 +399,7 @@ function toolNode(toolId: string, tool: ToolDefinition | undefined): WorkflowNod
     autoSize: true,
     data: {
       kind: 'tool',
+      elementId: toolId,
       label: tool ? tool.name || toolId : toolId,
       description: tool?.description,
       unresolved: tool === undefined,

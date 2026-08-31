@@ -67,6 +67,15 @@ export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workf
  */
 export interface WorkflowNodeData {
   kind: WorkflowElementKind;
+  /**
+   * The id of the catalog entry behind this node — the raw one, without the `kind:` prefix the node's own
+   * id carries. Set so that the properties panel can name what it is showing without having to take a
+   * composite node id back apart; the prefix is this module's business, not a panel's.
+   *
+   * Optional because a node's `data` is what a *template* draws, and neither the card nor the lane draws
+   * an id. A perspective that has no panel need not fill it in.
+   */
+  elementId?: string;
   /** What the element is called: its `name`, or its id when it has no name. */
   label: string;
   /** Shown under the label when the element has one. */
@@ -139,9 +148,11 @@ export function isLaneNode(node: WorkflowNode): node is WorkflowLaneNode {
  * A converted perspective, ready for `initializeModel` once the nodes have been through
  * {@link WorkflowLayoutService}.
  *
- * No viewport and no "which nodes are unplaced", both of which `StateMachineGraph` carries: these diagrams
- * persist no arrangement, so every node is placed by the layout service on every build and there is no
- * saved position for one to be missing from.
+ * No viewport and no "which nodes are unplaced", both of which `StateMachineGraph` carries — and both stay
+ * absent now that the Workflows perspective does persist an arrangement. The viewport belongs to
+ * `WorkflowDiagram`, the resource that stores it, rather than to the projection of the workflow; and there is
+ * no unplaced list because the layout service places *every* node before a saved arrangement is applied over
+ * it, so a node the arrangement does not mention is not unplaced, merely un-overridden.
  */
 export interface WorkflowGraph {
   nodes: WorkflowNode[];

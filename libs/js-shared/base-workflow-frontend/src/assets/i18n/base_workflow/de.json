@@ -28,7 +28,28 @@
       "data": "Arbeitsergebnisse",
       "tools": "Werkzeuge",
       "unassigned": "Nicht zugewiesen",
-      "join_any": "beliebig"
+      "join_any": "beliebig",
+      "save": "Layout speichern",
+      "properties": {
+        "none": "Wählen Sie ein Element, um seine Eigenschaften zu sehen.",
+        "lane": "Bahn",
+        "name": "Name",
+        "description": "Beschreibung",
+        "id": "Kennung",
+        "unresolved": "Diese Referenz verweist auf keinen Katalogeintrag.",
+        "relation_heading": "Beziehung",
+        "relation": "Art",
+        "label": "Bezeichnung",
+        "relations": {
+          "sequence": "Hängt ab von",
+          "implicit": "Läuft danach (Deklarationsreihenfolge)",
+          "input": "Liest",
+          "output": "Schreibt",
+          "tool": "Ruft auf",
+          "start": "Zu Beginn erforderlich",
+          "unknown": "Bezogen auf"
+        }
+      }
     }
   },
   "workflow_task_assignment": {

@@ -123,7 +123,15 @@ export { WorkflowLayoutService } from './lib/domain/modeler/graph/workflow-layou
 export { SwimlaneLayoutService } from './lib/domain/modeler/graph/swimlane-layout.service';
 export { RoleResponsibilityGraphConverter } from './lib/domain/modeler/graph/role-responsibility-graph.converter';
 export { WorkflowFlowGraphConverter, type WorkflowFlowGraphOptions } from './lib/domain/modeler/graph/workflow-flow-graph.converter';
+export { applySavedLayout, toDiagram } from './lib/domain/modeler/graph/workflow-diagram.converter';
+export { DiagramEdgeLayout, DiagramNodeLayout, DiagramViewport, NodeSize, Point, WorkflowDiagram } from './lib/domain/modeler/models/workflow-diagram';
+export { WorkflowDiagramMapper } from './lib/domain/modeler/data-access/workflow-diagram.mapper';
+export { WorkflowDiagramService } from './lib/domain/modeler/data-access/workflow-diagram.service';
+export { WorkflowDiagramLayoutStore, WorkflowDiagramStore } from './lib/domain/modeler/data-access/workflow-diagram.store';
 export { REFUSE_CONNECTION, REFUSE_GROUPING, WorkflowDiagramComponent, type WorkflowGraphLayout } from './lib/feature/modeler/components/workflow-diagram.component';
+export { PROPERTIES_I18N_SCOPE, WorkflowElementPropertiesPanelComponent } from './lib/feature/modeler/pages/workflow-element-properties-panel.component';
+export { WorkflowRelationPropertiesPanelComponent } from './lib/feature/modeler/pages/workflow-relation-properties-panel.component';
+export { WorkflowSelectionService } from './lib/feature/modeler/services/workflow-selection.service';
 export { WorkflowElementNodeComponent } from './lib/feature/modeler/components/workflow-element-node.component';
 export { WorkflowLaneNodeComponent } from './lib/feature/modeler/components/workflow-lane-node.component';
 export { WorkflowRelationEdgeComponent } from './lib/feature/modeler/components/workflow-relation-edge.component';

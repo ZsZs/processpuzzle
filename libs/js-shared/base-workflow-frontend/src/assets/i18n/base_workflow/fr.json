@@ -28,7 +28,28 @@
       "data": "Produits de travail",
       "tools": "Outils",
       "unassigned": "Non attribué",
-      "join_any": "au choix"
+      "join_any": "au choix",
+      "save": "Enregistrer la disposition",
+      "properties": {
+        "none": "Sélectionnez un élément pour voir ses propriétés.",
+        "lane": "Couloir",
+        "name": "Nom",
+        "description": "Description",
+        "id": "Identifiant",
+        "unresolved": "Cette référence ne correspond à aucune entrée du catalogue.",
+        "relation_heading": "Relation",
+        "relation": "Type",
+        "label": "Libellé",
+        "relations": {
+          "sequence": "Dépend de",
+          "implicit": "S’exécute ensuite (ordre de déclaration)",
+          "input": "Lit",
+          "output": "Écrit",
+          "tool": "Appelle",
+          "start": "Requis au démarrage",
+          "unknown": "En relation avec"
+        }
+      }
     }
   },
   "workflow_task_assignment": {

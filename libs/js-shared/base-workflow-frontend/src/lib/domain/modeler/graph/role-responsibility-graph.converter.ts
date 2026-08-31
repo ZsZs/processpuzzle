@@ -72,7 +72,7 @@ function toRoleNode(role: RoleDefinition, highlighted: boolean): WorkflowNode {
     type: WORKFLOW_NODE_TYPE,
     position: { x: 0, y: 0 },
     autoSize: true,
-    data: { kind: 'role', label: role.name || role.id, description: role.description, highlighted },
+    data: { kind: 'role', elementId: role.id, label: role.name || role.id, description: role.description, highlighted },
   };
 }
 
@@ -90,6 +90,7 @@ function toArtifactNode(artifactId: string, artifact?: ArtifactDefinition): Work
     autoSize: true,
     data: {
       kind: 'artifact',
+      elementId: artifactId,
       label: artifact ? artifact.name || artifact.id : artifactId,
       description: artifact?.description,
       unresolved: artifact === undefined,

@@ -51,8 +51,11 @@ const STRIP_GAP = 48;
  * exactly what discarding `y` gives up. Acceptable because a lane's tasks are *ordered* by the flow, so a
  * skipping edge is the exception; and because the alternative is to let a role's tasks leave their lane.
  *
- * No persisted arrangement, like every perspective of this modeler: every node is placed on every build, so
- * there is nothing to preserve and no way for a fresh layout to undo something someone did by hand.
+ * No knowledge of the persisted arrangement, which the Workflows perspective does have. This service places
+ * *everything*, every time — it has to, since a lane's band is measured from the tasks in it — and
+ * `applySavedLayout` then moves whatever the user arranged on top of that result. Keeping the two apart is
+ * what makes a task added since the last save appear in the right lane rather than at the origin: it is
+ * placed here and simply not overridden. See `workflow-diagram.converter.ts`.
  */
 @Injectable({ providedIn: 'root' })
 export class SwimlaneLayoutService {
