@@ -1,4 +1,31 @@
 {
+  "entity_attribute": {
+    "_self": "Attribut",
+    "code": "Code",
+    "name": "Name",
+    "valueKind": "Wertart",
+    "formControlType": "Steuerelementtyp",
+    "displayOrder": "Anzeigereihenfolge",
+    "required": "Erforderlich",
+    "isMultiValued": "Mehrwertig",
+    "indexed": "Indiziert",
+    "isLinkToDetails": "Benennt den Datensatz",
+    "linkedEntityType": "Verknüpfte Entität",
+    "defaultValue": "Standardwert",
+    "enumValues": "Aufzählungswerte"
+  },
+  "entity_definition": {
+    "_self": "Entitätsdefinition",
+    "code": "Code",
+    "name": "Name",
+    "description": "Beschreibung",
+    "status": "Status",
+    "isEmbedded": "Eingebettet",
+    "componentParents": "Übergeordnete Komponenten",
+    "attributes": "Attribute",
+    "version": "Version",
+    "updatedAt": "Aktualisiert am"
+  },
   "artifact": {
     "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen."
   },

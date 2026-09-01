@@ -11,6 +11,22 @@ import type { TranslationSource } from '@processpuzzle/util';
 export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 
 /**
+ * Key roots of the two entities of the **authoring** branch — the screens with which a tenant declares its
+ * entity types (`base-entity-authoring/`).
+ *
+ * Children of {@link BASE_ENTITY_TRANSLOCO_SCOPE} rather than scopes of their own, and this is the one
+ * feature where that is not merely convenient: the labels of the entity being authored and the framework's
+ * own `base_entity.tabs.*` are owned by the same library, so one scope registration covers the whole branch
+ * and `BASE_ENTITY_AUTHORING_ROUTES` registers exactly one.
+ *
+ * These label the *authoring form*, not the entities it declares. The label of a declared entity comes from
+ * its own definition and is resolved through {@link EntityLabelPipe}'s fallback, which is why no key here
+ * ever names a tenant's entity.
+ */
+export const ENTITY_DEFINITION_I18N_SCOPE = `${BASE_ENTITY_TRANSLOCO_SCOPE}.entity_definition`;
+export const ENTITY_ATTRIBUTE_I18N_SCOPE = `${BASE_ENTITY_TRANSLOCO_SCOPE}.entity_attribute`;
+
+/**
  * Where this library's transloco bundles come from when the application ships without its assets.
  *
  * Spread into the application's `TRANSLATION_SOURCE_REGISTRY`, the way its facades are spread into

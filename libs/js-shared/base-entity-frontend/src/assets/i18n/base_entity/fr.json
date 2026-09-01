@@ -1,4 +1,31 @@
 {
+  "entity_attribute": {
+    "_self": "Attribut",
+    "code": "Code",
+    "name": "Nom",
+    "valueKind": "Type de valeur",
+    "formControlType": "Type de contrôle",
+    "displayOrder": "Ordre d'affichage",
+    "required": "Obligatoire",
+    "isMultiValued": "Multivaleur",
+    "indexed": "Indexé",
+    "isLinkToDetails": "Titre de l'enregistrement",
+    "linkedEntityType": "Entité liée",
+    "defaultValue": "Valeur par défaut",
+    "enumValues": "Valeurs d'énumération"
+  },
+  "entity_definition": {
+    "_self": "Définition d'entité",
+    "code": "Code",
+    "name": "Nom",
+    "description": "Description",
+    "status": "Statut",
+    "isEmbedded": "Intégrée",
+    "componentParents": "Composants parents",
+    "attributes": "Attributs",
+    "version": "Version",
+    "updatedAt": "Mis à jour le"
+  },
   "artifact": {
     "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer."
   },

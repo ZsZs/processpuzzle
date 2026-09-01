@@ -1,4 +1,31 @@
 {
+  "entity_attribute": {
+    "_self": "Attribútum",
+    "code": "Kód",
+    "name": "Név",
+    "valueKind": "Értéktípus",
+    "formControlType": "Vezérlő típusa",
+    "displayOrder": "Megjelenítési sorrend",
+    "required": "Kötelező",
+    "isMultiValued": "Többértékű",
+    "indexed": "Indexelt",
+    "isLinkToDetails": "A rekord címe",
+    "linkedEntityType": "Kapcsolt entitás",
+    "defaultValue": "Alapértelmezett érték",
+    "enumValues": "Felsorolás értékei"
+  },
+  "entity_definition": {
+    "_self": "Entitásdefiníció",
+    "code": "Kód",
+    "name": "Név",
+    "description": "Leírás",
+    "status": "Állapot",
+    "isEmbedded": "Beágyazott",
+    "componentParents": "Szülő komponensek",
+    "attributes": "Attribútumok",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
   "artifact": {
     "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra."
   },
