@@ -12,7 +12,7 @@ interface StepResultDto {
   error?: string;
 }
 
-interface TaskInstanceDto {
+export interface TaskInstanceDto {
   id?: string;
   taskDefinitionId?: string;
   name?: string;
@@ -98,7 +98,7 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
   }
 }
 
-// region private helper functions
+// region row helpers — private but for toTaskInstance, which the task verbs share
 function toStepResult(dto: StepResultDto): StepResult {
   return new StepResult({ stepId: dto.stepId, completedAt: dto.completedAt, toolResponse: dto.toolResponse, error: dto.error });
 }
@@ -107,7 +107,13 @@ function fromStepResult(result: StepResult): StepResultDto {
   return { stepId: result.stepId, completedAt: result.completedAt, toolResponse: result.toolResponse, error: result.error };
 }
 
-function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
+/**
+ * Wire → model for one task instance, exported because the three task verbs answer with exactly this
+ * shape: `TaskActionService` maps `/assign`, `/complete` and `/skip` responses through it rather than
+ * repeating the field list, which is what keeps a renamed wire field from showing blank on the
+ * dashboard while the instance screens still read it correctly.
+ */
+export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
   return new TaskInstance({
     id: dto.id,
     taskDefinitionId: dto.taskDefinitionId,

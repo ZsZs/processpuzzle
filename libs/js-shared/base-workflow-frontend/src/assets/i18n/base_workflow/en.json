@@ -175,7 +175,41 @@
     "activatedAt": "Activated At",
     "completedAt": "Completed At",
     "skippedAt": "Skipped At",
-    "stepResults": "Step Results"
+    "stepResults": "Step Results",
+    "dashboard": {
+      "title": "My tasks",
+      "scopes": {
+        "mine": "My tasks",
+        "team": "Team",
+        "process": "Process"
+      },
+      "run": "Run",
+      "run_none": "Pick a run to see its board.",
+      "empty": {
+        "mine": "Nothing assigned to you.",
+        "team": "Nothing to claim right now.",
+        "process": "This run has no tasks."
+      },
+      "error": "The runs could not be loaded.",
+      "select_prompt": "Select a task from the list.",
+      "claim": "Claim task",
+      "locked": "Open to anyone holding the required role. Claim it to start working — the steps and the completion form unlock once it is yours.",
+      "steps": "Steps",
+      "steps_none": "This task declares no steps.",
+      "step_user": "user step",
+      "step_service": "service step",
+      "artifacts_in": "Reads",
+      "artifacts_out": "Writes",
+      "artifacts_none": "This task declares no artifacts.",
+      "not_created": "not created yet",
+      "note": "Notes (added to the workflow context)",
+      "complete": "Complete task",
+      "skip": "Skip",
+      "skip_reason": "Reason for skipping",
+      "unstated_refusal": "Not accepted yet, and the server gave no detail.",
+      "unassigned": "unassigned",
+      "assigned_to": "Assigned to"
+    }
   },
   "artifact_instance": {
     "_self": "Artifact Instance",

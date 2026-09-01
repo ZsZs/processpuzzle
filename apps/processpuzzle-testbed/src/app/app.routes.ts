@@ -14,7 +14,7 @@ import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
-import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
+import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -253,13 +253,20 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-workflows/samples.component').then((comp) => comp.SamplesComponent),
-        // `BASE_WORKFLOW_ROUTES` brings all three of the library's routable aggregates — the
-        // `workflow` branch with its roles, work products and tasks (and a task's inputs,
-        // outputs and steps), the `tool-definition` branch with its operations, and the read-only
-        // `workflow-instance` branch with its task and work product instances — and declares its own
-        // transloco scopes, so nothing is added here. Static children rather than `loadChildren`, for the
-        // same reason as the base-state and base-document branches above.
-        children: BASE_WORKFLOW_ROUTES,
+        // Two spreads, because base-workflow has two kinds of screen and mounts them separately.
+        //
+        // `BASE_WORKFLOW_ROUTES` brings the six *authoring* aggregates — the `workflow` branch with its
+        // task assignments and `*Use` rows, the four catalogs it composes (roles, artifacts, tasks with
+        // their steps, tools with their operations) and the read-only `workflow-instance` branch with its
+        // task and artifact instances. `WORKFLOW_DASHBOARD_ROUTES` brings the one *operations* screen: the
+        // task dashboard, which drives runs through `/assign`, `/complete` and `/skip` rather than editing
+        // definitions. Both declare their own transloco scopes, so nothing is added here.
+        //
+        // The dashboard is also the default, which is what makes `/base-workflow/samples` itself land on
+        // it: this route had no default child before, so the outlet under the toggle bar was simply empty
+        // until a sample was picked. Static children rather than `loadChildren`, for the same reason as the
+        // base-state and base-document branches above.
+        children: [{ path: '', pathMatch: 'full', redirectTo: WORKFLOW_DASHBOARD_PATH }, ...WORKFLOW_DASHBOARD_ROUTES, ...BASE_WORKFLOW_ROUTES],
       },
     ],
   },

@@ -1162,6 +1162,10 @@ components:
       name: taskId
       in: path
       required: true
+      description: >-
+        The task's `taskDefinitionId`, **not** `TaskInstance.id`. A task appears at most once per
+        workflow, so its definition id addresses it unambiguously within a run — which is what every
+        task-scoped operation below resolves it by. Passing the UUID in `TaskInstance.id` answers 404.
       schema:
         type: string
     ArtifactIdParam:

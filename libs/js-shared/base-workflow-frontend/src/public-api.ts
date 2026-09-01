@@ -11,6 +11,7 @@ export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifa
 export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';
 export { AuthType, HttpMethod, ToolDefinition, ToolOperation, type ToolAuthConfig } from './lib/domain/definition/tool-definition';
 export { ArtifactInstance, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './lib/domain/execution/workflow-instance';
+export { INBOX_SCOPES, statusOf, type DashboardTask, type InboxScope, type ResolvedArtifact } from './lib/domain/dashboard/dashboard-task';
 // endregion
 
 // region entity names
@@ -78,6 +79,10 @@ export { ToolDefinitionStore } from './lib/domain/definition/tool-definition.sto
 export { WorkflowInstanceMapper } from './lib/domain/execution/workflow-instance.mapper';
 export { WorkflowInstanceService } from './lib/domain/execution/workflow-instance.service';
 export { WorkflowInstanceStore } from './lib/domain/execution/workflow-instance.store';
+export { toTaskInstance, type TaskInstanceDto } from './lib/domain/execution/workflow-instance.mapper';
+export { CurrentUserContext, PROCESS_OWNER_ROLE } from './lib/domain/dashboard/current-user.context';
+export { TaskActionService, type CompleteTaskResult } from './lib/domain/dashboard/task-action.service';
+export { KANBAN_COLUMNS, UNSTATED_REFUSAL, WorkflowDashboardStore, type KanbanColumn } from './lib/domain/dashboard/workflow-dashboard.store';
 // endregion
 
 // region facades
@@ -143,6 +148,19 @@ export { WORKFLOW_MODELER_TAB } from './lib/feature/definition/workflow-modeler-
 export { WorkflowModelerTabComponent } from './lib/feature/definition/workflow-modeler-tab.component';
 // endregion
 
+// region task dashboard
+export { WorkflowDashboardComponent } from './lib/feature/dashboard/workflow-dashboard.component';
+export { TaskListComponent } from './lib/feature/dashboard/task-list.component';
+export { TaskDetailComponent } from './lib/feature/dashboard/task-detail.component';
+export { ProcessBoardComponent } from './lib/feature/dashboard/process-board.component';
+export { StepChecklistComponent } from './lib/feature/dashboard/step-checklist.component';
+export { ArtifactPanelComponent } from './lib/feature/dashboard/artifact-panel.component';
+export { ArtifactChipComponent } from './lib/feature/dashboard/artifact-chip.component';
+export { CompletionFormComponent } from './lib/feature/dashboard/completion-form.component';
+export { TaskStatusBadgeComponent } from './lib/feature/dashboard/task-status-badge.component';
+export { WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from './lib/workflow-dashboard.routes';
+// endregion
+
 // region application wiring
 export {
   ARTIFACT_DEFINITION_I18N_SCOPE,
@@ -160,6 +178,7 @@ export {
   TASK_INSTANCE_I18N_SCOPE,
   TASK_STEP_DEFINITION_I18N_SCOPE,
   TASK_STEP_RESULT_I18N_SCOPE,
+  TASK_DASHBOARD_I18N_SCOPE,
   TOOL_DEFINITION_I18N_SCOPE,
   TOOL_OPERATION_I18N_SCOPE,
   WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,

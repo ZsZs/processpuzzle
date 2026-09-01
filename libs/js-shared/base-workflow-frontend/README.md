@@ -15,11 +15,36 @@ form, with its roles, work products and tasks as embedded components, and a task
 embedded one level deeper. A `Tool Definition`, the external system a step calls, is a routable aggregate of its
 own with its operations embedded in it.
 
-The **execution layer** is implemented as far as the contract allows: a `Workflow Instance` has a list and a form
-with its task and work product instances, and a task instance's step results below those — all **read-only**.
-`base-workflow-api.yaml` defines no `PUT` on the runtime side; an instance is started by `POST /instances`,
-cancelled by `DELETE`, and a task moves through `/assign`, `/complete` and `/skip`. Those four verbs have no
-front-end surface yet, so the screens monitor a run rather than drive one.
+The **execution layer** has two surfaces, and the split is the point. The *generated* screens monitor a run:
+a `Workflow Instance` has a list and a form with its task and work product instances, and a task instance's
+step results below those — all **read-only**, because `base-workflow-api.yaml` defines no `PUT` on the
+runtime side. The **task dashboard** drives one. An instance is started by `POST /instances` and cancelled
+by `DELETE`; a task moves through `/assign`, `/complete` and `/skip`, and those three verbs are what the
+dashboard is built on. Starting a run still has no front-end surface, deliberately: it is not a task
+somebody was assigned.
+
+The **task dashboard** is the end-user screen — "My Tasks" rather than "Workflow Instances". Three queues
+over one selection: the tasks assigned to you, the unassigned `ACTIVE` ones you could claim, and one run's
+tasks grouped by status as a board for whoever owns the process. Selecting a task opens its workspace: the
+`TaskDefinition.steps` checklist joined with the run's `StepResult`s, the artifacts it reads and writes
+resolved against the run's `ArtifactInstance`s, and the completion form.
+
+It owns no data. Every row is derived from `WorkflowInstanceStore` plus the four catalog stores, so the
+dashboard and the generated instance screens read one cache rather than two that can disagree — which is
+also why no new endpoint was needed: `listWorkflowInstances` already answers with full instances, tasks
+nested, so the run a task belongs to is known the moment the task is read.
+
+Mounted through `WORKFLOW_DASHBOARD_ROUTES`, a branch of its own rather than a seventh entry in
+`BASE_WORKFLOW_ROUTES`: those six are authoring aggregates that `DESIGN_ROUTES` spreads into the Workflow
+Designer, and an operations screen does not belong inside a designer. A host mounts both where it wants
+both — the testbed does, under `/base-workflow/samples`.
+
+The host has to provide a `CurrentUserContext`: the dashboard needs to know which user and which roles, and
+this library does not depend on `@processpuzzle/auth`. Roles are the outstanding gap — `User` carries none
+yet — so the Team queue currently offers every claimable task (the backend still refuses a claim by a user
+without the role) and the Skip override stays hidden. See
+[docs/workflow-dashboard](docs/workflow-dashboard/design.md) for the screens, the decisions and what is
+still open.
 
 The **modeler** is mounted where base-state mounts its State Modeler: an `extraTabs` entry beside List and
 Details, at `<entity>/<id>/modeler`. Two of its three planned perspectives exist, and they share everything

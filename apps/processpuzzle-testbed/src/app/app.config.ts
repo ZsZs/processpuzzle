@@ -29,7 +29,8 @@ import {
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateMachineTab } from '@processpuzzle/base-state';
-import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE } from '@processpuzzle/base-workflow';
+import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE, CurrentUserContext } from '@processpuzzle/base-workflow';
+import { SessionUserContext } from './content/base-workflows/session-user.context';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
@@ -85,6 +86,12 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // levels below them. All thirteen or none: a task's `performedBy` resolves through the role facade
       // and a step's `toolId` through the tool facade, so half a graph is a form that throws on render.
       ...BASE_WORKFLOW_FACADE_PROVIDERS,
+      // Closes base-workflow's session seam onto this application's real session, so the task dashboard
+      // knows whose inbox it is showing. Application-wide rather than on the `base-workflow` route, for the
+      // reason `provideBaseRuleEngine()` below spells out at length: who the signed-in user is cannot be a
+      // property of which section of the testbed you happen to be in, and a second mount of the dashboard
+      // would otherwise show an empty inbox for no visible reason.
+      { provide: CurrentUserContext, useClass: SessionUserContext },
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and
       // `Dynamic Entity` in this tenant, both of them metadata-defined entities that name base-state
       // nowhere. base-entity asks the registered contributors when it resolves an entity's screens, so
