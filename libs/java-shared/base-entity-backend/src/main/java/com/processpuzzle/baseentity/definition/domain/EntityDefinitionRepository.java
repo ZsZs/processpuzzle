@@ -17,7 +17,7 @@ public interface EntityDefinitionRepository
 
     /** Definitions that still declare {@code parentCode} anywhere in componentParents — used by the delete guard. */
     @Query(
-        value = "select * from base_entity_definition d where d.component_parents @> to_jsonb(cast(:parentCode as text))",
+        value = "select * from base_entity_definition d where d.component_parents @> jsonb_build_array(cast(:parentCode as text))",
         nativeQuery = true)
     List<BaseEntityDefinition> findByComponentParentsContaining(@Param("parentCode") String parentCode);
 }
