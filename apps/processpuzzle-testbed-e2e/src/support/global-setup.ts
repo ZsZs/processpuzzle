@@ -11,11 +11,12 @@ export default createGlobalSetup({
   //
   // `App Definition` is listed for completeness rather than effect: it is *also* mounted eagerly under
   // `/base-app/samples`, so the registry does report a route for it and the override — applied with `??=` —
-  // never fires. `Widget Definition` is the opposite case and the reason this option exists: it is mounted
-  // *only* under `/design/application`, so without the entry the generated CRUD and list specs would fall
-  // back to `/base-entity/samples/widget-definition` and every one of them would fail with NG04002.
+  // never fires. `Entity Definition` and `Widget Definition` are mounted only below the lazy `/design`
+  // branch, so without their entries the generated suites fall back to `/base-entity/samples/...` and
+  // every test of either entity fails against an unrelated route.
   routeOverrides: {
     'App Definition': '/design/application/app-definition',
+    'Entity Definition': '/design/entities/entity-definition',
     'Widget Definition': '/design/application/widget-definition',
   },
 });
