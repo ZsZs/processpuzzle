@@ -175,7 +175,41 @@
     "activatedAt": "Aktiviert am",
     "completedAt": "Abgeschlossen am",
     "skippedAt": "Übersprungen am",
-    "stepResults": "Schrittergebnisse"
+    "stepResults": "Schrittergebnisse",
+    "dashboard": {
+      "title": "Meine Aufgaben",
+      "scopes": {
+        "mine": "Meine Aufgaben",
+        "team": "Team",
+        "process": "Prozess"
+      },
+      "run": "Ausführung",
+      "run_none": "Wählen Sie eine Ausführung, um ihre Tafel zu sehen.",
+      "empty": {
+        "mine": "Ihnen ist nichts zugewiesen.",
+        "team": "Derzeit gibt es nichts zu übernehmen.",
+        "process": "Diese Ausführung hat keine Aufgaben."
+      },
+      "error": "Die Ausführungen konnten nicht geladen werden.",
+      "select_prompt": "Wählen Sie eine Aufgabe aus der Liste.",
+      "claim": "Aufgabe übernehmen",
+      "locked": "Offen für alle mit der erforderlichen Rolle. Übernehmen Sie sie, um zu beginnen — die Schritte und das Abschlussformular werden freigegeben, sobald sie Ihnen gehört.",
+      "steps": "Schritte",
+      "steps_none": "Diese Aufgabe deklariert keine Schritte.",
+      "step_user": "Benutzerschritt",
+      "step_service": "Dienstschritt",
+      "artifacts_in": "Liest",
+      "artifacts_out": "Schreibt",
+      "artifacts_none": "Diese Aufgabe deklariert keine Artefakte.",
+      "not_created": "noch nicht erstellt",
+      "note": "Notizen (werden dem Workflow-Kontext hinzugefügt)",
+      "complete": "Aufgabe abschließen",
+      "skip": "Überspringen",
+      "skip_reason": "Grund für das Überspringen",
+      "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
+      "unassigned": "nicht zugewiesen",
+      "assigned_to": "Zugewiesen an"
+    }
   },
   "artifact_instance": {
     "_self": "Artefaktinstanz",

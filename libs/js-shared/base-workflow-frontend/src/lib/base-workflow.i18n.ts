@@ -87,6 +87,23 @@ export const WORKFLOW_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.wo
 export const TASK_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_instance`;
 export const ARTIFACT_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_instance`;
 export const TASK_STEP_RESULT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_result`;
+
+/**
+ * Key root of the task dashboard's own labels — the queue toggle, the step and artifact headings, the
+ * completion form.
+ *
+ * A `dashboard` block under {@link TASK_INSTANCE_I18N_SCOPE} rather than a `base_workflow.dashboard`
+ * block of its own, for the same reason the modeler's labels sit under the entity whose screen they are
+ * on: `base-workflow.i18n.spec.ts` asserts that every top-level block of the bundle corresponds to an
+ * entity scope. `task_instance` is the right parent because a task instance is what every one of these
+ * labels is about — the dashboard is the screen that *acts* on the rows the generated Task Instance
+ * screens only display.
+ *
+ * Status values are deliberately **not** here. Nothing in this workspace translates an enum value — the
+ * generated screens show `ACTIVE` as `ACTIVE` — so a dashboard that translated the same value in its
+ * badges would disagree with the Task Instance list one route away.
+ */
+export const TASK_DASHBOARD_I18N_SCOPE = `${TASK_INSTANCE_I18N_SCOPE}.dashboard`;
 // endregion
 
 /**

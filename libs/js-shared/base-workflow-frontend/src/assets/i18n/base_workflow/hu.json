@@ -175,7 +175,41 @@
     "activatedAt": "Aktiválva",
     "completedAt": "Befejezve",
     "skippedAt": "Kihagyva",
-    "stepResults": "Lépés eredmények"
+    "stepResults": "Lépés eredmények",
+    "dashboard": {
+      "title": "Feladataim",
+      "scopes": {
+        "mine": "Feladataim",
+        "team": "Csapat",
+        "process": "Folyamat"
+      },
+      "run": "Futás",
+      "run_none": "Válasszon egy futást a tábla megtekintéséhez.",
+      "empty": {
+        "mine": "Nincs Önhöz rendelt feladat.",
+        "team": "Jelenleg nincs átvehető feladat.",
+        "process": "Ennek a futásnak nincsenek feladatai."
+      },
+      "error": "A futásokat nem sikerült betölteni.",
+      "select_prompt": "Válasszon egy feladatot a listából.",
+      "claim": "Feladat átvétele",
+      "locked": "Bárki számára nyitott, aki rendelkezik a szükséges szereppel. Vegye át a munka megkezdéséhez — a lépések és a befejező űrlap akkor nyílnak meg, ha már az Öné.",
+      "steps": "Lépések",
+      "steps_none": "Ez a feladat nem határoz meg lépéseket.",
+      "step_user": "felhasználói lépés",
+      "step_service": "szolgáltatáslépés",
+      "artifacts_in": "Olvassa",
+      "artifacts_out": "Írja",
+      "artifacts_none": "Ez a feladat nem határoz meg terméket.",
+      "not_created": "még nem jött létre",
+      "note": "Megjegyzések (a munkafolyamat kontextusához adva)",
+      "complete": "Feladat befejezése",
+      "skip": "Kihagyás",
+      "skip_reason": "A kihagyás oka",
+      "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
+      "unassigned": "nincs hozzárendelve",
+      "assigned_to": "Hozzárendelve"
+    }
   },
   "artifact_instance": {
     "_self": "Artefaktum példány",

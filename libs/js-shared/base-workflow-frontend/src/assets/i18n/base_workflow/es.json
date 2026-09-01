@@ -175,7 +175,41 @@
     "activatedAt": "Activada el",
     "completedAt": "Completada el",
     "skippedAt": "Omitida el",
-    "stepResults": "Resultados de pasos"
+    "stepResults": "Resultados de pasos",
+    "dashboard": {
+      "title": "Mis tareas",
+      "scopes": {
+        "mine": "Mis tareas",
+        "team": "Equipo",
+        "process": "Proceso"
+      },
+      "run": "Ejecución",
+      "run_none": "Elija una ejecución para ver su tablero.",
+      "empty": {
+        "mine": "No tiene nada asignado.",
+        "team": "No hay nada que reclamar ahora mismo.",
+        "process": "Esta ejecución no tiene tareas."
+      },
+      "error": "No se pudieron cargar las ejecuciones.",
+      "select_prompt": "Seleccione una tarea de la lista.",
+      "claim": "Reclamar tarea",
+      "locked": "Abierta a cualquiera que tenga el rol requerido. Recláme la para empezar a trabajar: los pasos y el formulario de finalización se desbloquean cuando es suya.",
+      "steps": "Pasos",
+      "steps_none": "Esta tarea no declara pasos.",
+      "step_user": "paso de usuario",
+      "step_service": "paso de servicio",
+      "artifacts_in": "Lee",
+      "artifacts_out": "Escribe",
+      "artifacts_none": "Esta tarea no declara artefactos.",
+      "not_created": "aún no creado",
+      "note": "Notas (se añaden al contexto del flujo de trabajo)",
+      "complete": "Completar tarea",
+      "skip": "Omitir",
+      "skip_reason": "Motivo de la omisión",
+      "unstated_refusal": "Todavía no aceptada, y el servidor no dio detalles.",
+      "unassigned": "sin asignar",
+      "assigned_to": "Asignada a"
+    }
   },
   "artifact_instance": {
     "_self": "Instancia de artefacto",

@@ -175,7 +175,41 @@
     "activatedAt": "Activée le",
     "completedAt": "Terminée le",
     "skippedAt": "Ignorée le",
-    "stepResults": "Résultats des étapes"
+    "stepResults": "Résultats des étapes",
+    "dashboard": {
+      "title": "Mes tâches",
+      "scopes": {
+        "mine": "Mes tâches",
+        "team": "Équipe",
+        "process": "Processus"
+      },
+      "run": "Exécution",
+      "run_none": "Choisissez une exécution pour voir son tableau.",
+      "empty": {
+        "mine": "Rien ne vous est attribué.",
+        "team": "Rien à réclamer pour le moment.",
+        "process": "Cette exécution n’a aucune tâche."
+      },
+      "error": "Les exécutions n’ont pas pu être chargées.",
+      "select_prompt": "Sélectionnez une tâche dans la liste.",
+      "claim": "Réclamer la tâche",
+      "locked": "Ouverte à quiconque détient le rôle requis. Réclamez-la pour commencer — les étapes et le formulaire d’achèvement se déverrouillent dès qu’elle est à vous.",
+      "steps": "Étapes",
+      "steps_none": "Cette tâche ne déclare aucune étape.",
+      "step_user": "étape utilisateur",
+      "step_service": "étape de service",
+      "artifacts_in": "Lit",
+      "artifacts_out": "Écrit",
+      "artifacts_none": "Cette tâche ne déclare aucun artéfact.",
+      "not_created": "pas encore créé",
+      "note": "Notes (ajoutées au contexte du flux de travail)",
+      "complete": "Terminer la tâche",
+      "skip": "Ignorer",
+      "skip_reason": "Motif de l’omission",
+      "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
+      "unassigned": "non attribuée",
+      "assigned_to": "Attribuée à"
+    }
   },
   "artifact_instance": {
     "_self": "Instance d'artefact",
