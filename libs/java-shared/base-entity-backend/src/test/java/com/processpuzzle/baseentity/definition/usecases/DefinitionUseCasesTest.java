@@ -97,8 +97,19 @@ class DefinitionUseCasesTest {
 
     @Test
     void replaceEntityDefinition_success() {
-        BaseEntityDefinition existing = BaseEntityDefinition.builder().id(UUID.randomUUID()).code("partner").name("Old").build();
-        BaseEntityDefinition update = BaseEntityDefinition.builder().code("partner").name("New").build();
+        BaseEntityAttribute existingAttribute = BaseEntityAttribute.builder().code("email").name("Old email").build();
+        BaseEntityDefinition existing = BaseEntityDefinition.builder()
+            .id(UUID.randomUUID())
+            .code("partner")
+            .name("Old")
+            .attributes(new ArrayList<>(List.of(existingAttribute)))
+            .build();
+        BaseEntityAttribute updatedAttribute = BaseEntityAttribute.builder().code("email").name("New email").build();
+        BaseEntityDefinition update = BaseEntityDefinition.builder()
+            .code("partner")
+            .name("New")
+            .attributes(List.of(updatedAttribute))
+            .build();
 
         when(repository.findByCode("partner")).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -106,6 +117,8 @@ class DefinitionUseCasesTest {
         BaseEntityDefinition result = replaceUseCase.replace("partner", update);
 
         assertThat(result.getName()).isEqualTo("New");
+        assertThat(result.getAttributes()).containsExactly(existingAttribute);
+        assertThat(existingAttribute.getName()).isEqualTo("New email");
         verify(validator).validate(existing);
         verify(repository).save(existing);
     }
@@ -126,6 +139,7 @@ class DefinitionUseCasesTest {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().code("partner").build();
         when(repository.findByCode("partner")).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf("partner")).thenReturn(false);
+        when(repository.findAll()).thenReturn(List.of(existing));
 
         deleteUseCase.delete("partner");
 
@@ -273,10 +287,13 @@ class DefinitionUseCasesTest {
     @Test
     void deleteEntityDefinition_hasComponentParentDependents_throwsConflict() {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().code("address").build();
+        BaseEntityDefinition dependent = BaseEntityDefinition.builder()
+            .code("partner")
+            .componentParents(List.of("address"))
+            .build();
         when(repository.findByCode("address")).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf("address")).thenReturn(false);
-        when(repository.findByComponentParentsContaining("address"))
-                .thenReturn(List.of(BaseEntityDefinition.builder().code("partner").build()));
+        when(repository.findAll()).thenReturn(List.of(existing, dependent));
 
         assertThatThrownBy(() -> deleteUseCase.delete("address"))
                 .isInstanceOf(ConflictException.class)

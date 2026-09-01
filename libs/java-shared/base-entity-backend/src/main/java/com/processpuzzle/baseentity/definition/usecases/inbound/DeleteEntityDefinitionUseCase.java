@@ -24,7 +24,9 @@ public class DeleteEntityDefinitionUseCase {
         if (instanceExistenceCheckPort.existsAnyInstanceOf(code)) {
             throw new ConflictException("'%s' still has instances — delete them first".formatted(code));
         }
-        if (!repository.findByComponentParentsContaining(code).isEmpty()) {
+        boolean isComponentParent = repository.findAll().stream()
+            .anyMatch(candidate -> candidate.getComponentParents().contains(code));
+        if (isComponentParent) {
             throw new ConflictException("'%s' is still declared as a componentParent by another definition".formatted(code));
         }
         repository.delete(definition);
