@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_RULE_ROUTES } from '@processpuzzle/base-rule';
+import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WIDGET_ROUTES } from '@processpuzzle/base-widget';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
@@ -30,11 +31,32 @@ export const DESIGN_ROUTES: Routes = [
   // BASE_ENTITY_FACADE_REGISTRY, and this library cannot contribute to that token without replacing it.
   ...BASE_DOCUMENT_ROUTES,
   ...BASE_RULE_ROUTES,
+  // The States section: base-state's `State Machine Definition` branch, with the four embedded levels its
+  // form carries — states and transitions, and a transition's guards and actions — and the State Modeler
+  // the branch mounts beside its details route.
+  //
+  // Nested under `states` rather than spread at this level like BASE_RULE_ROUTES and BASE_DOCUMENT_ROUTES,
+  // because `/design/states` is what the sidenav entry and the Designer Home card already address, while
+  // `BASE_STATE_ROUTES` mounts at `state-machine-definition` — `snakeCaseName(entityName)`, which
+  // `BaseFormNavigatorSingletonStore` builds its details URL from and so cannot be renamed. The redirect
+  // is what makes the section itself open something.
+  //
+  // Componentless rather than a tabbed page like Workflows and Application: the section holds one routable
+  // entity, and a tab bar with a single button repeats the sidenav entry beside it. The `menuTitle` stays
+  // on this route because DesignSidenavComponent lists the top-level routes that declare one, and
+  // translates the key from this library's `design` scope — base-state's own route names `state.machines`,
+  // a key of the `base_state` scope, which the sidenav does not register.
+  //
+  // As for base-app, base-document, base-widget and base-workflow, the hosting application has to spread
+  // BASE_STATE_FACADE_PROVIDERS and BASE_STATE_ENTITY_FACADES into its own providers: every level of the
+  // machine resolves its store and descriptor through BASE_ENTITY_FACADE_REGISTRY, and this library cannot
+  // contribute to that token without replacing it. The branch declares its own transloco scopes, so this
+  // route adds none.
   {
     path: 'states',
     title: 'ProcessPuzzle Design - States',
     data: { icon: 'flag_circle', menuTitle: 'design.states' },
-    component: UnderConstructionComponent,
+    children: [{ path: '', pathMatch: 'full', redirectTo: 'state-machine-definition' }, ...BASE_STATE_ROUTES],
   },
   // One section, six tabs — see WorkflowDesignerComponent. `BASE_WORKFLOW_ROUTES` is spread unchanged, so
   // its branches keep their own transloco scopes and stay mountable elsewhere (the testbed mounts them a
