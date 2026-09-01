@@ -4,6 +4,7 @@ import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer/workflow-designer.tabs';
 import { APPLICATION_DESIGNER_TABS } from './application-designer/application-designer.tabs';
 import { DESIGN_ROUTES } from './design.routes';
+import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
 
@@ -11,6 +12,7 @@ describe('DESIGN_ROUTES', () => {
   const applicationRoute = DESIGN_ROUTES.find((route) => route.path === 'application');
   const workflowsRoute = DESIGN_ROUTES.find((route) => route.path === 'workflows');
   const statesRoute = DESIGN_ROUTES.find((route) => route.path === 'states');
+  const entitiesRoute = DESIGN_ROUTES.find((route) => route.path === 'entities');
 
   it('hosts the application section on the tabbed designer page', () => {
     expect(applicationRoute?.component).toBe(ApplicationDesignerComponent);
@@ -80,6 +82,40 @@ describe('DESIGN_ROUTES', () => {
 
     it('does not expose the state machine as a section of its own', () => {
       expect(DESIGN_ROUTES.map((route) => route.path)).not.toContain('state-machine-definition');
+    });
+  });
+
+  describe('the Entities section', () => {
+    it('hosts the base-entity authoring branch instead of the placeholder', () => {
+      expect(entitiesRoute?.component).toBeUndefined();
+      expect(entitiesRoute?.component).not.toBe(UnderConstructionComponent);
+      expect(entitiesRoute?.data).toEqual({ icon: 'checkbook', menuTitle: 'design.entities' });
+      expect(entitiesRoute?.title).toBeDefined();
+    });
+
+    /** The branch registers the `base_entity` scope and binds the active facade, so the section adds none. */
+    it('registers no providers of its own', () => {
+      expect(entitiesRoute?.providers).toBeUndefined();
+    });
+
+    /**
+     * `/design/entities` is what the sidenav entry and the Designer Home card address, while the branch
+     * mounts at `snakeCaseName('Entity Definition')` — a segment `BaseFormNavigatorSingletonStore` builds
+     * its details URL from, and so one this section cannot rename.
+     */
+    it('opens the entity definition when the section itself is addressed', () => {
+      expect(entitiesRoute?.children?.[0]).toEqual({ path: '', pathMatch: 'full', redirectTo: 'entity-definition' });
+    });
+
+    it('mounts every branch of BASE_ENTITY_AUTHORING_ROUTES below it', () => {
+      const childPaths = (entitiesRoute?.children ?? []).map((child) => child.path);
+
+      expect(childPaths).toEqual(expect.arrayContaining(BASE_ENTITY_AUTHORING_ROUTES.map((route) => route.path)));
+      expect(childPaths).toContain('entity-definition');
+    });
+
+    it('does not expose the entity definition as a section of its own', () => {
+      expect(DESIGN_ROUTES.map((route) => route.path)).not.toContain('entity-definition');
     });
   });
 

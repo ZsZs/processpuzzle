@@ -18,7 +18,13 @@ import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_ENTITY_FACADE_REGISTRY, BASE_ENTITY_TRANSLATION_SOURCE, provideEntityRouteRegistry } from '@processpuzzle/base-entity';
+import {
+  BASE_ENTITY_AUTHORING_ENTITY_FACADES,
+  BASE_ENTITY_AUTHORING_FACADE_PROVIDERS,
+  BASE_ENTITY_FACADE_REGISTRY,
+  BASE_ENTITY_TRANSLATION_SOURCE,
+  provideEntityRouteRegistry,
+} from '@processpuzzle/base-entity';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
@@ -60,6 +66,11 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // whole definition graph — the routable `App Definition` and the four embedded levels below it — as
       // one list, so a consuming application cannot register half of it.
       ...BASE_APP_FACADE_PROVIDERS,
+      // And for base-entity's own authoring branch — the `Entity Definition` a tenant declares its entity
+      // types with, plus the `Entity Attribute` level its form carries. The two entities *below* it in
+      // meaning (`Order`, `Dynamic Entity`) are not registered anywhere and must not be; see the comment on
+      // BASE_ENTITY_FACADE_REGISTRY.
+      ...BASE_ENTITY_AUTHORING_FACADE_PROVIDERS,
       // Same shape for base-document: the routable `Document` plus the two embedded port lists its form
       // carries, which the design section's document route renders.
       ...BASE_DOCUMENT_FACADE_PROVIDERS,
@@ -115,6 +126,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           // them — the Dynamic Entity sample and the demo application's Order screens — exist to exercise
           // the metadata path end to end. An entity only needs an entry below when the application has
           // something to add that a definition cannot express: an extra tab, a hand-tuned layout.
+          ...BASE_ENTITY_AUTHORING_ENTITY_FACADES,
           ...BASE_APP_ENTITY_FACADES,
           ...BASE_DOCUMENT_ENTITY_FACADES,
           ...BASE_WIDGET_ENTITY_FACADES,

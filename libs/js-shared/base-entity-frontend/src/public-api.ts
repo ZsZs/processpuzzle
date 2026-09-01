@@ -31,7 +31,10 @@ export { BaseEntityDescriptorRegistry } from './lib/base-entity-facade/base-enti
 // The metadata layer: an entity type declared as a `BaseEntityDefinition` row rather than as a class with a
 // facade beside it. `EntityScreenResolver` is what a run-time shell asks; the rest is exported for the
 // designer, which edits the definitions this reads.
-export type { DynamicEntity, EntityAttributeDefinition, EntityDefinition, EntityDefinitionStatus, EntityValueKind } from './lib/base-entity-definition/entity-definition';
+export type { DynamicEntity, EntityDefinitionStatus, EntityValueKind } from './lib/base-entity-definition/entity-definition';
+// Value exports, not type-only: the two are classes because `BaseEntityStore.createEntity()` mints the blank
+// row an `Add` opens a form on, and a facade names its `entityType`. See the module comment.
+export { EntityAttributeDefinition, EntityDefinition, ENTITY_DEFINITION_STATUSES, ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from './lib/base-entity-definition/entity-definition';
 export { ENTITY_SERVICE_ROOT_KEY, EntityDefinitionService } from './lib/base-entity-definition/entity-definition.service';
 export { EntityDefinitionRegistry } from './lib/base-entity-definition/entity-definition.registry';
 export { controlTypeOf, descriptorOf, referenceIdFieldOf, type DefinitionLookup } from './lib/base-entity-definition/dynamic-entity.descriptor';
@@ -73,4 +76,18 @@ export { PdfExportService } from './lib/pdf-service/pdf-export.service';
 export type { PdfColumnDefinition, PdfExportOptions, PdfExportResult } from './lib/pdf-service/pdf-export.types';
 export { entityDescriptorToPdfColumns } from './lib/pdf-service/entity-descriptor-to-pdf-columns';
 export { PdfExportOptionsDialog, type PdfExportDialogResult } from './lib/pdf-service/pdf-export-options.dialog';
-export { BASE_ENTITY_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLOCO_SCOPE } from './lib/i18n/base-entity.i18n';
+export { BASE_ENTITY_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLOCO_SCOPE, ENTITY_ATTRIBUTE_I18N_SCOPE, ENTITY_DEFINITION_I18N_SCOPE } from './lib/i18n/base-entity.i18n';
+
+// The authoring branch of the knowledge layer: the CRUD screens with which a tenant *declares* its entity
+// types, mounted by the designer at `/design/entities`. The counterpart of the metadata layer above — that
+// one reads a definition and synthesizes screens from it, this one writes the definition.
+export { BASE_ENTITY_AUTHORING_ROUTES } from './lib/base-entity-authoring/base-entity-authoring.routes';
+export { BASE_ENTITY_AUTHORING_ENTITY_FACADES, BASE_ENTITY_AUTHORING_FACADE_PROVIDERS } from './lib/base-entity-authoring/base-entity-authoring.providers';
+export { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './lib/base-entity-authoring/entity-authoring-names';
+export { createEntityDefinitionDescriptor } from './lib/base-entity-authoring/entity-definition.descriptors';
+export { createEntityAttributeDescriptor, ENTITY_ATTRIBUTE_ID_FIELD } from './lib/base-entity-authoring/entity-attribute.descriptors';
+export { EntityDefinitionMapper } from './lib/base-entity-authoring/entity-definition.mapper';
+export { EntityDefinitionAuthoringService } from './lib/base-entity-authoring/entity-definition-authoring.service';
+export { EntityDefinitionStore } from './lib/base-entity-authoring/entity-definition.store';
+export { EntityAttributeFacade, EntityDefinitionFacade } from './lib/base-entity-authoring/entity-definition.facade';
+export { EntityDefinitionContainerComponent } from './lib/base-entity-authoring/entity-definition-container.component';
