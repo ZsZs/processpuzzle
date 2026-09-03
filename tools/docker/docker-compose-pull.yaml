@@ -14,7 +14,7 @@
 # reuses what is already on disk. Use `npm run stack-pull` to refresh, or
 # `npm run stack-up-build` when you deliberately want the CI build path.
 services:
-  processpuzzle-testbed:
+  processpuzzle-testbed-frontend:
     pull_policy: missing
   processpuzzle-admin-frontend:
     pull_policy: missing

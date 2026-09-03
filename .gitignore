@@ -76,7 +76,7 @@ Thumbs.db
 
 .angular
 .firebase
-apps/processpuzzle-testbed/src/run-time-conf/config.custom.json
+apps/processpuzzle-testbed-frontend/src/run-time-conf/config.custom.json
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

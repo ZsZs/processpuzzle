@@ -1,8 +1,8 @@
-name: Release-Testbed
+name: Release-ProcessPuzzle-Testbed-Frontend
 on:
   push:
     branches:
-      - "release/processpuzzle-testbed/*"
+      - "release/processpuzzle-testbed-frontend/*"
 permissions:
   id-token: write
   contents: write
@@ -23,7 +23,7 @@ jobs:
         name: Get Version from package.json
         uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          path: apps/processpuzzle-testbed
+          path: apps/processpuzzle-testbed-frontend
 
       - name: Install Node
         uses: actions/setup-node@v5
@@ -45,8 +45,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: 'apps/processpuzzle-testbed'
-          nx_project: testbed
+          base_dir: 'apps/processpuzzle-testbed-frontend'
+          nx_project: processpuzzle-testbed-frontend
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           firebase_token: ${{ secrets.FIREBASE_API_KEY }}
@@ -111,13 +111,13 @@ jobs:
       - name: Copy package.json
         shell: bash
         run: |
-          cp -R apps/processpuzzle-testbed/package.json dist/apps/processpuzzle-testbed
-          cp -R apps/processpuzzle-testbed/README.md dist/apps/processpuzzle-testbed
-          rm dist/apps/processpuzzle-testbed/browser/environments/environment.ts
+          cp -R apps/processpuzzle-testbed-frontend/package.json dist/apps/processpuzzle-testbed-frontend
+          cp -R apps/processpuzzle-testbed-frontend/README.md dist/apps/processpuzzle-testbed-frontend
+          rm dist/apps/processpuzzle-testbed-frontend/browser/environments/environment.ts
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=processpuzzle-testbed --access public --no-cloud
+        run: npx nx release publish --projects=processpuzzle-testbed-frontend --access public --no-cloud
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

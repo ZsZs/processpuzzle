@@ -214,7 +214,7 @@ checklist demands already exists for `widgets` and gets edited rather than added
    `base-document-frontend`'s `base-document.ts` — from `@processpuzzle/base-entity` to
    `@processpuzzle/base-widget`. `base-entity-frontend` then has no widget responsibility at all,
    which is the cleanup the token's comment asked for.
-6. Theme path `src/theme/pp-colors.css` changes → update `apps/processpuzzle-testbed/project.json`
+6. Theme path `src/theme/pp-colors.css` changes → update `apps/processpuzzle-testbed-frontend/project.json`
    styles and the README theming section.
 7. Rename the Sonar project (`processpuzzle_widgets` → `processpuzzle_base_widget_frontend`) via the
    admin API; rename both GitHub workflows.

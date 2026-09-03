@@ -1,5 +1,5 @@
 # Default entity definitions and sample objects of the 'processpuzzle-testbed' organization —
-# the tenant behind apps/processpuzzle-testbed.
+# the tenant behind apps/processpuzzle-testbed-frontend.
 #
 # DefaultEntityLoader imports this file on startup when `base-entity.loadDefaultEntities` is true. The
 # owning organization is the part of the file name before `-entities.yaml`, exactly as `<orgKey>-apps.yaml`

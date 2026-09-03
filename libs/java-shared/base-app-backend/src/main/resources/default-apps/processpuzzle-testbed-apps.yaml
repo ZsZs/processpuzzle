@@ -1,5 +1,5 @@
 # Default app definitions of the 'processpuzzle-testbed' organization — the tenant behind
-# apps/processpuzzle-testbed.
+# apps/processpuzzle-testbed-frontend.
 #
 # DefaultAppLoader imports this file on startup when `base-app.loadDefaultApps` is true. The owning
 # organization is the part of the file name before `-apps.yaml`, exactly as `<orgKey>-rules.yaml`

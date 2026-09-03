@@ -117,7 +117,7 @@
       "org-admin-frontend",
       "platform-admin-frontend",
       "processpuzzle-admin-frontend",
-      "processpuzzle-testbed",
+      "processpuzzle-testbed-frontend",
       "processpuzzle-ui",
       "test-util",
       "util",

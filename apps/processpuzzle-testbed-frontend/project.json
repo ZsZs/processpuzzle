@@ -1,9 +1,9 @@
 {
-  "name": "processpuzzle-testbed",
+  "name": "processpuzzle-testbed-frontend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/processpuzzle-testbed/src",
+  "sourceRoot": "apps/processpuzzle-testbed-frontend/src",
   "tags": ["type:app"],
   "targets": {
     "build": {
@@ -11,20 +11,20 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/processpuzzle-testbed",
-        "index": "apps/processpuzzle-testbed/src/index.html",
-        "browser": "apps/processpuzzle-testbed/src/main.ts",
+        "outputPath": "dist/apps/processpuzzle-testbed-frontend",
+        "index": "apps/processpuzzle-testbed-frontend/src/index.html",
+        "browser": "apps/processpuzzle-testbed-frontend/src/main.ts",
         "polyfills": [],
-        "tsConfig": "apps/processpuzzle-testbed/tsconfig.app.json",
+        "tsConfig": "apps/processpuzzle-testbed-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/processpuzzle-testbed/public"
+            "input": "apps/processpuzzle-testbed-frontend/public"
           },
           {
             "glob": "**/*",
-            "input": "apps/processpuzzle-testbed/src/assets",
+            "input": "apps/processpuzzle-testbed-frontend/src/assets",
             "output": "assets"
           },
           {
@@ -82,14 +82,14 @@
             "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/base_widget",
             "output": "assets/i18n/base_widget"
           },
-          "apps/processpuzzle-testbed/src/environments",
-          "apps/processpuzzle-testbed/src/run-time-conf"
+          "apps/processpuzzle-testbed-frontend/src/environments",
+          "apps/processpuzzle-testbed-frontend/src/run-time-conf"
         ],
         "styles": [
           "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
-          "apps/processpuzzle-testbed/src/custom-theme.scss",
+          "apps/processpuzzle-testbed-frontend/src/custom-theme.scss",
           "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss",
-          "apps/processpuzzle-testbed/src/styles.scss",
+          "apps/processpuzzle-testbed-frontend/src/styles.scss",
           "node_modules/prismjs/themes/prism-okaidia.css",
           "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
           "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.css",
@@ -143,21 +143,21 @@
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "proxyConfig": "apps/processpuzzle-testbed/proxy.conf.json"
+        "proxyConfig": "apps/processpuzzle-testbed-frontend/proxy.conf.json"
       },
       "configurations": {
         "production": {
-          "buildTarget": "processpuzzle-testbed:build:production"
+          "buildTarget": "processpuzzle-testbed-frontend:build:production"
         },
         "development": {
-          "buildTarget": "processpuzzle-testbed:build:development"
+          "buildTarget": "processpuzzle-testbed-frontend:build:development"
         }
       }
     },
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",
       "options": {
-        "buildTarget": "processpuzzle-testbed:build"
+        "buildTarget": "processpuzzle-testbed-frontend:build"
       }
     },
     "lint": {
@@ -178,8 +178,8 @@
       "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
-        "runnerConfig": "apps/processpuzzle-testbed/vitest.config.ts",
-        "tsConfig": "apps/processpuzzle-testbed/tsconfig.spec.json",
+        "runnerConfig": "apps/processpuzzle-testbed-frontend/vitest.config.ts",
+        "tsConfig": "apps/processpuzzle-testbed-frontend/tsconfig.spec.json",
         "coverage": true
       },
       "configurations": {
@@ -192,15 +192,15 @@
     "serve-static": {
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "processpuzzle-testbed:build",
+        "buildTarget": "processpuzzle-testbed-frontend:build",
         "port": 4200,
-        "staticFilePath": "dist/apps/processpuzzle-testbed/browser",
+        "staticFilePath": "dist/apps/processpuzzle-testbed-frontend/browser",
         "spa": true
       }
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-testbed"
+        "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-testbed-frontend"
       }
     },
     "release": {

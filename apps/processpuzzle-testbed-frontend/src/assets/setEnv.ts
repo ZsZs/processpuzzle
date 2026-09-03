@@ -26,7 +26,7 @@ function writeFileUsingFS(targetPath: string, environmentFileContent: string) {
 }
 
 // Providing path to the `environments` directory
-const envDir = 'apps/processpuzzle-testbed/src/environments';
+const envDir = 'apps/processpuzzle-testbed-frontend/src/environments';
 
 // creates the `environments` directory if it does not exist
 if (!exists(envDir)) {
@@ -80,7 +80,7 @@ writeFileUsingFS(`${envDir}/environment.ts`, fileContent);
 // Emit runtime-env.json so main.ts can load it in non-Docker stages (dev/stage/prod).
 // In Docker (ci), docker-entrypoint.sh overwrites this file from container env vars at startup.
 // Values are stringified the same way as the TS env file above (missing env → literal "undefined").
-const assetsDir = 'apps/processpuzzle-testbed/src/assets';
+const assetsDir = 'apps/processpuzzle-testbed-frontend/src/assets';
 const runtimeEnvContent =
   JSON.stringify(
     {
@@ -97,8 +97,8 @@ writeFileUsingFS(`${assetsDir}/runtime-env.json`, runtimeEnvContent);
 // rather than runtime-env.json (per-deployment env). ConfigurationService merges it into
 // RuntimeConfiguration.BASE_CONFIGURATION at bootstrap.
 function syncApplicationVersion() {
-  const packageJsonPath = 'apps/processpuzzle-testbed/package.json';
-  const commonConfigPath = 'apps/processpuzzle-testbed/src/run-time-conf/config.common.json';
+  const packageJsonPath = 'apps/processpuzzle-testbed-frontend/package.json';
+  const commonConfigPath = 'apps/processpuzzle-testbed-frontend/src/run-time-conf/config.common.json';
   const version = JSON.parse(readSync(packageJsonPath, 'utf8')).version;
   const commonConfig = JSON.parse(readSync(commonConfigPath, 'utf8'));
   commonConfig.BASE_CONFIGURATION = { ...commonConfig.BASE_CONFIGURATION, APPLICATION_VERSION: version };

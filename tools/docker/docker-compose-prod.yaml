@@ -3,12 +3,12 @@ networks:
     driver: bridge
 
 services:
-  processpuzzle-testbed:
+  processpuzzle-testbed-frontend:
     depends_on:
       - json-server
     image:
-      zsuffazs/processpuzzle-testbed:IMAGE_TAG
-    container_name: processpuzzle-testbed
+      zsuffazs/processpuzzle-testbed-frontend:IMAGE_TAG
+    container_name: processpuzzle-testbed-frontend
     ports:
       - "8080:80"
     networks:

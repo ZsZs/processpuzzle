@@ -98,7 +98,7 @@ run-time-conf/config.${PIPELINE_STAGE}.json
 ...CONFIGURATION_OVERRIDES (optional)
 ```
 
-Typical bootstrap (see `apps/processpuzzle-testbed/src/main.ts`):
+Typical bootstrap (see `apps/processpuzzle-testbed-frontend/src/main.ts`):
 
 ```typescript
 async function bootstrap() {

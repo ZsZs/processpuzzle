@@ -9,7 +9,7 @@ export default defineConfig({
       reportsDirectory: join(__dirname, 'reports/coverage'),
       reporter: ['lcov', 'html', 'text'],
       cleanOnRerun: true,
-      exclude: ['apps/!(processpuzzle-testbed)/**'],
+      exclude: ['apps/!(processpuzzle-testbed-frontend)/**'],
     },
   },
 });

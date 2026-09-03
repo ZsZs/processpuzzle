@@ -6,7 +6,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ZsZs/processpuzzle.git",
-    "directory": "apps/processpuzzle-testbed"
+    "directory": "apps/processpuzzle-testbed-frontend"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "dependencies": {}

@@ -4,7 +4,7 @@
 ProcessPuzzle is a Low-Code platform for content management and business workflow based applications. For more details see [the ProcessPuzzle website](https://processpuzzle.com). 
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
-- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed) – Web application to test and demonstrate the framework capabilities
+- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
 - [ProcessPuzzle UI](/apps/processpuzzle-ui) – Web application to help you to define your own business application.
 
 Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over

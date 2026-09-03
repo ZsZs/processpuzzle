@@ -1,6 +1,6 @@
 # ProcessPuzzle Testbed
-![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-testbed.yml/badge.svg)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_testbed&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_testbed&branch=develop)
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-processpuzzle-testbed-frontend.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_testbed_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_testbed_frontend&branch=develop)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Ftestbed?style=flat)](https://www.npmjs.com/package/@processpuzzle/testbed)
 
 ## Introduction
@@ -56,7 +56,7 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 
 ### How the runtime layer is materialised in containers
 
-The Dockerfile at `tools/docker/testbed/Dockerfile` is **stage-agnostic** — it just bundles the built Angular app under nginx. At container start, `docker-entrypoint.sh` **overwrites** the bundled `assets/runtime-env.json` with values from the container env:
+The Dockerfile at `tools/docker/processpuzzle-testbed-frontend/Dockerfile` is **stage-agnostic** — it just bundles the built Angular app under nginx. At container start, `docker-entrypoint.sh` **overwrites** the bundled `assets/runtime-env.json` with values from the container env:
 
 ```sh
 envsubst '${PIPELINE_STAGE} ${FIREBASE_API_KEY}' \

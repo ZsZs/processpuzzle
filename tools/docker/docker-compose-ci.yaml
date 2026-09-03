@@ -3,7 +3,7 @@ networks:
     driver: bridge
 
 services:
-  processpuzzle-testbed:
+  processpuzzle-testbed-frontend:
     pull_policy: build
     depends_on:
       testbed-backend:
@@ -14,11 +14,11 @@ services:
         condition: service_healthy
     build:
       context: ../../
-      dockerfile: tools/docker/testbed/Dockerfile
+      dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
       args:
         CICD_STAGE: ci
-    image: zsuffazs/processpuzzle-testbed:latest
-    container_name: processpuzzle-testbed
+    image: zsuffazs/processpuzzle-testbed-frontend:latest
+    container_name: processpuzzle-testbed-frontend
     environment:
       PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
       FIREBASE_API_KEY: ${FIREBASE_API_KEY}

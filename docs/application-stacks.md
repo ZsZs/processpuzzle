@@ -9,7 +9,7 @@ whose names drift is a stack that fails at run time in a way no test catches.
 
 > **Status.** Decided 2026-09-02; the infrastructure and backend half was implemented the same day.
 > Per-stack PostgreSQL databases, one backend deployment per stack, the renamed realms and the MinIO
-> bucket prefix are in place, as is the admin application rename. The `processpuzzle-ui` repurposing
+> bucket prefix are in place, as are the admin and testbed application renames. The `processpuzzle-ui` repurposing
 > and the subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
 
 ## The three stacks
@@ -19,7 +19,7 @@ whose names drift is a stack that fails at run time in a way no test catches.
 | **Purpose** | Try out framework features | Public product site + customer onboarding | Internal staff administration |
 | **Audience** | Anyone, self-registered | Anyone, anonymous | ProcessPuzzle employees only |
 | **Hostname** | `testbed.processpuzzle.com` | `processpuzzle.com` | `admin.processpuzzle.com` |
-| **Nx application** | `processpuzzle-testbed` | `processpuzzle-ui` | `processpuzzle-admin-frontend` |
+| **Nx application** | `processpuzzle-testbed-frontend` | `processpuzzle-ui` | `processpuzzle-admin-frontend` |
 | **Keycloak realm** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **Organization key** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] |
@@ -135,6 +135,7 @@ stays visible.
 | Trusted realm property | `processpuzzle.security.platform-realm` | `…stack-realm` — "the realm this instance serves", which is what it always meant |
 | Admin application | `apps/platform-admin`, container `platform-admin` | `apps/processpuzzle-admin-frontend`, container `processpuzzle-admin-frontend`; image `zsuffazs/processpuzzle-admin-frontend`, Sonar key `processpuzzle_processpuzzle_admin_frontend`. The `platform-admin-frontend` / `platform-admin-backend` **libraries** keep their names. |
 | Backend application | `apps/processpuzzle-backend`, artifact `processpuzzle-backend`, image `zsuffazs/processpuzzle-backend` | `apps/processpuzzle-testbed-backend`, artifact `processpuzzle-testbed-backend`, image `zsuffazs/processpuzzle-testbed-backend`, main class `ProcessPuzzleTestbedBackendApplication`. Still one image for both deployments, so the `admin-backend` service runs the testbed-named image until a separate admin backend exists. |
+| Testbed application | `apps/processpuzzle-testbed`, container `processpuzzle-testbed`, image `zsuffazs/processpuzzle-testbed` | `apps/processpuzzle-testbed-frontend`, container `processpuzzle-testbed-frontend`, image `zsuffazs/processpuzzle-testbed-frontend`, Sonar key `processpuzzle_testbed_frontend`. The npm package stays `@processpuzzle/testbed` so its version history and release tags survive. |
 
 ### Still to do
 

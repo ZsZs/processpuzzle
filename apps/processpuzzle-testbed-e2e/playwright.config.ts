@@ -36,7 +36,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run serve-processpuzzle-testbed',
+    command: 'npm run serve-processpuzzle-testbed-frontend',
     url: baseURL,
     reuseExistingServer: true,
     cwd: workspaceRoot,

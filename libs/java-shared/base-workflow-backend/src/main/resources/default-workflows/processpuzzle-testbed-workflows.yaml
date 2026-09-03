@@ -1,5 +1,5 @@
 # Default workflow definitions for the 'processpuzzle-testbed' organization —
-# the tenant behind apps/processpuzzle-testbed.
+# the tenant behind apps/processpuzzle-testbed-frontend.
 #
 # DefaultWorkflowImporter imports this file on startup when `base-workflow.loadDefaultWorkflows` is true.
 # The owning organization is the part of the file name before `-workflows.yaml`, exactly as
