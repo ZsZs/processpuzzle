@@ -1,16 +1,12 @@
 package com.processpuzzle.app.adapter.inbound;
 
+import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
-import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.ModuleDefinition;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
-import com.processpuzzle.app.model.Organization;
-import com.processpuzzle.app.model.OrganizationInput;
-import com.processpuzzle.app.model.OrganizationStatus;
 import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RouteTarget;
-import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.shared.model.WidgetInstance;
@@ -20,9 +16,9 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
-import com.processpuzzle.rule.usecase.EvaluateObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -37,8 +33,10 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,40 +78,62 @@ class DefaultAppLoaderTest {
 
     private AppEndpoint endpoint;
     private ResourcePatternResolver resourceResolver;
+    private Set<String> knownTenants;
+    private ObjectProvider<TenantDirectory> tenantDirectoryProvider;
     private DefaultAppLoader loader;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() throws IOException {
         endpoint = mock(AppEndpoint.class);
         resourceResolver = mock(ResourcePatternResolver.class);
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { bundledTestbedFile() });
-        keyIs(availableKey(TESTBED_KEY));
-        when(endpoint.provisionOrganization(any())).thenAnswer(call -> provisioned(call.getArgument(0)));
+        knownTenants = new HashSet<>(Set.of(TESTBED_KEY, "other-org"));
+        tenantDirectoryProvider = mock(ObjectProvider.class);
+        when(tenantDirectoryProvider.getIfAvailable()).thenReturn(new TenantDirectory() {
+            @Override
+            public boolean exists(String orgKey) {
+                return knownTenants.contains(orgKey);
+            }
+        });
         when(endpoint.createAppDefinition(anyString(), any())).thenAnswer(call -> created(call.getArgument(1)));
         when(endpoint.createModuleDefinition(anyString(), any())).thenAnswer(call -> createdModule(call.getArgument(1)));
-        loader = new DefaultAppLoader(endpoint, resourceResolver);
+        loader = new DefaultAppLoader(endpoint, tenantDirectoryProvider, resourceResolver);
     }
 
     @Test
-    void provisionsTheOrganizationNamedByTheFileAndCreatesItsDefinitions() {
+    void loadsTheDefinitionsIntoTheTenantNamedByTheFile() {
         loader.loadDefaults();
-
-        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
-        verify(endpoint).provisionOrganization(organization.capture());
-        assertThat(organization.getValue().getKey()).isEqualTo(TESTBED_KEY);
-        assertThat(organization.getValue().getName()).isEqualTo("ProcessPuzzle Testbed");
-        assertThat(organization.getValue().getDefaultLocale()).isEqualTo("en");
 
         verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
+    /**
+     * The loader used to provision the tenant when its key was still free. It does not any more:
+     * platform-admin owns the aggregate and seeds it from
+     * {@code default-organizations/<orgKey>-organization.yaml} before this runs. A file naming a
+     * tenant that does not exist is skipped, exactly as base-entity's and base-rule's loaders have
+     * always treated one.
+     */
     @Test
-    void loadsIntoAnExistingOrganizationInsteadOfReprovisioningIt() {
-        keyIs(takenKey(TESTBED_KEY));
+    void skipsAFileNamingATenantThatDoesNotExist() {
+        knownTenants.remove(TESTBED_KEY);
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).provisionOrganization(any());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+    }
+
+    /**
+     * A library that cannot answer the question must not answer it with "no" -- with no directory
+     * bean the port permits, and the file loads.
+     */
+    @Test
+    void withNoTenantDirectoryWired_loadsAnyway() {
+        when(tenantDirectoryProvider.getIfAvailable()).thenReturn(null);
+
+        loader.loadDefaults();
+
         verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
@@ -137,37 +157,21 @@ class DefaultAppLoaderTest {
     }
 
     @Test
-    void skipsAFileWhoseKeyIsNotClaimable() {
-        keyIs(reservedKey("api"));
-        resolvesTo(yamlFile("api-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
-
-        loader.loadDefaults();
-
-        verify(endpoint, never()).provisionOrganization(any());
-        verify(endpoint, never()).createAppDefinition(anyString(), any());
-    }
-
-    @Test
     void skipsAFileNotNamedAfterAnOrganization() {
         resolvesTo(yamlFile("apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).checkOrganizationKey(anyString());
         verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
     @Test
-    void provisionsAFileWithoutAnOrganizationBlockUnderItsOwnKey() {
-        keyIs(availableKey("other-org"));
+    void loadsAnyTenantTheDirectoryKnows_notOnlyTheBundledOne() {
         resolvesTo(yamlFile("other-org-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
 
         loader.loadDefaults();
 
-        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
-        verify(endpoint).provisionOrganization(organization.capture());
-        assertThat(organization.getValue().getKey()).isEqualTo("other-org");
-        assertThat(organization.getValue().getName()).isEqualTo("other-org");
+        verify(endpoint).createAppDefinition(eq("other-org"), any(AppDefinitionInput.class));
     }
 
     @Test
@@ -290,7 +294,6 @@ class DefaultAppLoaderTest {
     void aModuleWithoutAUsableKey_isRejectedWithoutReachingTheEndpoint() {
         resolvesTo(yamlFile("other-org-apps.yaml",
                 "moduleDefinitions:\n  - name: Nameless\n  - key: \"   \"\n    name: Blank\n"));
-        keyIs(availableKey("other-org"));
 
         loader.loadDefaults();
 
@@ -300,7 +303,6 @@ class DefaultAppLoaderTest {
     @Test
     void aFileDeclaringNoModules_seedsNone() {
         resolvesTo(yamlFile("other-org-apps.yaml", "appDefinitions:\n  - id: demo\n    name: Demo\n"));
-        keyIs(availableKey("other-org"));
 
         loader.loadDefaults();
 
@@ -317,7 +319,7 @@ class DefaultAppLoaderTest {
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
 
-        verify(endpoint, never()).checkOrganizationKey(anyString());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
     @Test
@@ -326,7 +328,6 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).checkOrganizationKey(anyString());
         verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
@@ -336,48 +337,22 @@ class DefaultAppLoaderTest {
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
 
-        verify(endpoint, never()).provisionOrganization(any());
         verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
+    /** A directory that cannot answer is a reason to skip the file, not to fail startup. */
     @Test
-    void aFailingKeyCheck_skipsTheFile() {
-        when(endpoint.checkOrganizationKey(anyString())).thenThrow(new IllegalStateException("no database"));
+    void aFailingTenantLookup_skipsTheFileWithoutFailingStartup() {
+        when(tenantDirectoryProvider.getIfAvailable()).thenReturn(new TenantDirectory() {
+            @Override
+            public boolean exists(String orgKey) {
+                throw new IllegalStateException("no database");
+            }
+        });
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
 
         verify(endpoint, never()).createAppDefinition(anyString(), any());
-    }
-
-    @Test
-    void aKeyCheckThatAnswersNothing_skipsTheFile() {
-        when(endpoint.checkOrganizationKey(anyString())).thenReturn(ResponseEntity.ok(null));
-
-        loader.loadDefaults();
-
-        verify(endpoint, never()).createAppDefinition(anyString(), any());
-    }
-
-    @Test
-    void aFailingProvisioning_skipsTheFile() {
-        doThrow(new IllegalStateException("no database")).when(endpoint).provisionOrganization(any());
-
-        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
-
-        verify(endpoint, never()).createAppDefinition(anyString(), any());
-    }
-
-    /** Provisioning answering without a starter app is odd but not a reason to stop loading. */
-    @Test
-    void provisioningThatAnswersNoStarterApp_stillLoadsTheDefinitions() {
-        doReturn(new ResponseEntity<>(new ProvisioningResult(), HttpStatus.CREATED))
-                .when(endpoint).provisionOrganization(any());
-        loader.loadDefaults();
-
-        doReturn(ResponseEntity.ok(null)).when(endpoint).provisionOrganization(any());
-        loader.loadDefaults();
-
-        verify(endpoint, times(2)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     /** A blank id is as unusable as an absent one: the id is the app's route path segment. */
@@ -385,25 +360,9 @@ class DefaultAppLoaderTest {
     void anEntryWithoutAUsableId_isRejectedWithoutReachingTheEndpoint() {
         resolvesTo(yamlFile("other-org-apps.yaml",
                 "appDefinitions:\n  - name: Nameless\n  - id: \"   \"\n    name: Blank\n"));
-        keyIs(availableKey("other-org"));
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).createAppDefinition(anyString(), any());
-    }
-
-    /** An organization block that names nothing still has to yield a provisionable payload. */
-    @Test
-    void aFileWithAnUnnamedTenantAndNoDefinitions_provisionsUnderItsOwnKey() {
-        resolvesTo(yamlFile("other-org-apps.yaml", "organization:\n  description: Only a description.\n"));
-        keyIs(availableKey("other-org"));
-
-        loader.loadDefaults();
-
-        ArgumentCaptor<OrganizationInput> organization = ArgumentCaptor.forClass(OrganizationInput.class);
-        verify(endpoint).provisionOrganization(organization.capture());
-        assertThat(organization.getValue().getName()).isEqualTo("other-org");
-        assertThat(organization.getValue().getDescription()).isEqualTo("Only a description.");
         verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
@@ -432,7 +391,7 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).checkOrganizationKey(anyString());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
     /** {@code -apps.yaml} on its own names no organization, so there is nowhere to put its contents. */
@@ -442,7 +401,7 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint, never()).checkOrganizationKey(anyString());
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
     }
 
     // --- helpers -----------------------------------------------------------------------------
@@ -480,13 +439,8 @@ class DefaultAppLoaderTest {
     private static AppDefinitionValidator structuralValidator() {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        ObjectProvider<EvaluateObject> evaluateObjectProvider = mock(ObjectProvider.class);
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
-        return new AppDefinitionValidator(entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
-    }
-
-    private void keyIs(KeyAvailability availability) {
-        when(endpoint.checkOrganizationKey(anyString())).thenReturn(ResponseEntity.ok(availability));
+        return new AppDefinitionValidator(entityRegistryProvider,
+                new AppRuleValidator(AppTestFixtures.noRuleEvaluator()));
     }
 
     private void resolvesTo(Resource... resources) {
@@ -495,29 +449,6 @@ class DefaultAppLoaderTest {
         } catch (IOException e) {
             throw new AssertionError(e);
         }
-    }
-
-    private static KeyAvailability availableKey(String key) {
-        return new KeyAvailability(key, true);
-    }
-
-    private static KeyAvailability takenKey(String key) {
-        KeyAvailability availability = new KeyAvailability(key, false);
-        availability.setErrorId("organization.key.taken");
-        return availability;
-    }
-
-    private static KeyAvailability reservedKey(String key) {
-        KeyAvailability availability = new KeyAvailability(key, false);
-        availability.setErrorId("organization.key.reserved");
-        return availability;
-    }
-
-    private static ResponseEntity<ProvisioningResult> provisioned(OrganizationInput input) {
-        Organization organization = new Organization(input.getKey(), input.getName(), OrganizationStatus.ACTIVE);
-        AppDefinition starter = new AppDefinition();
-        starter.setId("app");
-        return new ResponseEntity<>(new ProvisioningResult(organization, starter), HttpStatus.CREATED);
     }
 
     private static ResponseEntity<ModuleDefinition> createdModule(ModuleDefinitionInput input) {

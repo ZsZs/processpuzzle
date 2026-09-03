@@ -8,11 +8,12 @@ import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.adapter.inbound.dto.AppYamlDocument;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.model.AppDefinitionInput;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +38,7 @@ import java.util.Optional;
 public class ImportAppDefinitions {
 
     private final AppDefinitionRepository repository;
-    private final OrganizationRepository organizationRepository;
+    private final ObjectProvider<TenantDirectory> tenantDirectoryProvider;
     private final AppDefinitionValidator validator;
     private final OrganizationGuard guard;
     private final AppMapper mapper;
@@ -46,12 +47,12 @@ public class ImportAppDefinitions {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     public ImportAppDefinitions(AppDefinitionRepository repository,
-                                OrganizationRepository organizationRepository,
+                                ObjectProvider<TenantDirectory> tenantDirectoryProvider,
                                 AppDefinitionValidator validator,
                                 OrganizationGuard guard,
                                 AppMapper mapper) {
         this.repository = repository;
-        this.organizationRepository = organizationRepository;
+        this.tenantDirectoryProvider = tenantDirectoryProvider;
         this.validator = validator;
         this.guard = guard;
         this.mapper = mapper;
@@ -60,8 +61,8 @@ public class ImportAppDefinitions {
     @Transactional
     public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
         guard.requireDesign(orgKey);
-        if (!organizationRepository.existsById(orgKey)) {
-            throw new OrganizationNotFoundException(orgKey);
+        if (!tenantDirectory().exists(orgKey)) {
+            throw new UnknownTenantException(orgKey);
         }
 
         AppYamlDocument document = yamlMapper.readValue(input, AppYamlDocument.class);
@@ -118,5 +119,15 @@ public class ImportAppDefinitions {
             return "An app definition entry is missing 'id' and was skipped.";
         }
         return null;
+    }
+
+    /**
+     * Resolved per call rather than in the constructor: the directory is contributed by the
+     * application, and a library must stay usable when it is absent. The default port permits, so an
+     * unwired deployment behaves as it did before the check existed.
+     */
+    private TenantDirectory tenantDirectory() {
+        TenantDirectory directory = tenantDirectoryProvider.getIfAvailable();
+        return directory == null ? new TenantDirectory() { } : directory;
     }
 }

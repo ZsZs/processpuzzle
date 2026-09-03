@@ -14,14 +14,12 @@ import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.ColorScheme;
-import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
-import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.Severity;
@@ -32,9 +30,6 @@ import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.model.OrganizationUpdate;
-import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
-import com.processpuzzle.platformadmin.usecase.OrganizationDetails;
 import com.processpuzzle.shared.model.ImportResult;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -396,43 +391,6 @@ public class AppMapper {
     }
 
     // --- organizations -------------------------------------------------------------------
-
-    public com.processpuzzle.app.model.Organization toModel(
-            com.processpuzzle.platformadmin.domain.Organization organization) {
-        com.processpuzzle.app.model.Organization model = new com.processpuzzle.app.model.Organization(
-                organization.getKey(),
-                organization.getName(),
-                com.processpuzzle.app.model.OrganizationStatus.fromValue(organization.getStatus().name()));
-        model.setDescription(organization.getDescription());
-        model.setContactEmail(organization.getContactEmail());
-        model.setDefaultLocale(organization.getDefaultLocale());
-        model.setCreatedAt(toOffsetDateTime(organization.getCreatedAt()));
-        model.setUpdatedAt(toOffsetDateTime(organization.getUpdatedAt()));
-        return model;
-    }
-
-    public ProvisioningResult toModel(com.processpuzzle.platformadmin.domain.Organization organization,
-                                      com.processpuzzle.app.domain.AppDefinition starterApp) {
-        return new ProvisioningResult(toModel(organization), toModel(starterApp));
-    }
-
-    /**
-     * Maps the tenant-facing update payload onto the use-case-level record the relocated
-     * {@code UpdateOrganization} takes. The use case deliberately accepts neither contract's DTO —
-     * {@code app.model.OrganizationUpdate} belongs to this Modulith module, and depending on it from
-     * {@code platformadmin} would close a cycle. See {@code OrganizationDetails}.
-     */
-    public OrganizationDetails toDetails(OrganizationUpdate input) {
-        return new OrganizationDetails(input.getName(), input.getDescription(),
-                input.getContactEmail(), input.getDefaultLocale());
-    }
-
-    public KeyAvailability toModel(KeyCheckOutcome outcome) {
-        KeyAvailability model = new KeyAvailability(outcome.key(), outcome.available());
-        model.setErrorId(outcome.errorId());
-        model.setSuggestions(outcome.suggestions());
-        return model;
-    }
 
     // --- outcomes ------------------------------------------------------------------------
 

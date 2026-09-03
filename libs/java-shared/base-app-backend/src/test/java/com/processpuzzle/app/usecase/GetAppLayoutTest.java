@@ -1,13 +1,12 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
-import com.processpuzzle.platformadmin.domain.Organization;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
@@ -35,12 +34,13 @@ import static org.mockito.Mockito.when;
 class GetAppLayoutTest {
 
     private final AppDefinitionRepository repository = mock(AppDefinitionRepository.class);
-    private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+    private final ObjectProvider<TenantDirectory> tenantDirectory =
+            AppTestFixtures.tenantDirectoryWithLocale("my-org", "en-GB");
 
     @Test
     void publishedRequestBeforeAnyPublish_is404() {
-        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
         stored(graphWithRoles());
+        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
 
         assertThatThrownBy(() -> getAppLayout.execute("my-org", "claims-app", false))
                 .isInstanceOf(AppNotPublishedException.class);
@@ -140,13 +140,11 @@ class GetAppLayoutTest {
     private void stored(AppGraph graph) {
         AppDefinition definition = new AppDefinition("my-org", "claims-app", "Claims", null, null, graph);
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
-        when(organizationRepository.findById("my-org")).thenReturn(Optional.of(new Organization(
-                "my-org", "My Org", null, null, "en-GB", OrganizationStatus.ACTIVE)));
     }
 
     private GetAppLayout layoutUseCase(OrganizationAccessPolicy policy) {
         OrganizationGuard guard = guard(policy);
-        return new GetAppLayout(repository, organizationRepository, guard, new NavVisibilityFilter(guard));
+        return new GetAppLayout(repository, tenantDirectory, guard, new NavVisibilityFilter(guard));
     }
 
     private GetRouteDefinition pageUseCase(OrganizationAccessPolicy policy) {

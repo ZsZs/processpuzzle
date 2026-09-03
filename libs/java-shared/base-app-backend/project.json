@@ -11,9 +11,7 @@
   "sourceRoot": "libs/java-shared/base-app-backend/src",
   "implicitDependencies": [
     "api-contracts",
-    "processpuzzle-core",
-    "base-rule-backend",
-    "platform-admin-backend"
+    "processpuzzle-core"
   ],
   "targets": {
     "build": {

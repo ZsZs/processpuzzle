@@ -4,9 +4,6 @@ import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
-import com.processpuzzle.platformadmin.domain.Organization;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +36,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * PostgreSQL; only a test against PostgreSQL could keep them that way.
  */
 /*
- * Both scans name platformadmin.domain as well as this module's own. base-app genuinely reads
- * Organization at run-time — GetAppLayout resolves a tenant's default locale, and AppMapper renders
- * the organization projection this test checks — so the entity has to be on the same schema here
- * exactly as it is in the application. Scoping the scans to app.domain alone made every test in this
- * class fail on an unsatisfiable OrganizationRepository the moment the aggregate moved.
+ * Both scans used to name platformadmin.domain as well, because base-app read Organization directly:
+ * GetAppLayout resolved a tenant's default locale from its repository and AppMapper rendered an
+ * organization projection. It reads neither now — the locale arrives through the TenantDirectory
+ * port and the projection is platform-admin's own — so this module's schema is its own again, which
+ * is the point. An Organization round-trip belongs in platform-admin's OrganizationTest.
  */
 @DataJpaTest(showSql = false)
-@EntityScan({"com.processpuzzle.app.domain", "com.processpuzzle.platformadmin.domain"})
-@EnableJpaRepositories({"com.processpuzzle.app.domain", "com.processpuzzle.platformadmin.domain"})
+@EntityScan("com.processpuzzle.app.domain")
+@EnableJpaRepositories("com.processpuzzle.app.domain")
 class AppDefinitionPersistenceTest {
 
     @Configuration
@@ -59,13 +56,9 @@ class AppDefinitionPersistenceTest {
     @Autowired
     private AppDefinitionRepository repository;
 
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
     @BeforeEach
     void seed() {
         repository.deleteAll();
-        organizationRepository.deleteAll();
     }
 
     @Test
@@ -169,20 +162,6 @@ class AppDefinitionPersistenceTest {
         assertThat(repository.findByOrgKey("org-b")).hasSize(1);
     }
 
-    @Test
-    void organization_roundTripsWithTimestamps() {
-        organizationRepository.saveAndFlush(new Organization("my-org", "My Org Ltd.", "desc",
-                "ops@my-org.example", "en-GB", OrganizationStatus.ACTIVE));
-
-        Optional<Organization> reloaded = organizationRepository.findById("my-org");
-
-        assertThat(reloaded).isPresent();
-        assertThat(reloaded.get().getStatus()).isEqualTo(OrganizationStatus.ACTIVE);
-        assertThat(reloaded.get().getDefaultLocale()).isEqualTo("en-GB");
-        assertThat(reloaded.get().getCreatedAt()).isNotNull();
-        assertThat(reloaded.get().getUpdatedAt()).isNotNull();
-    }
-
     /**
      * The tenant filter is a {@link Specification} lambda, so it is only really exercised against a
      * database — a mocked repository would accept one that filtered on the wrong attribute.
@@ -206,7 +185,6 @@ class AppDefinitionPersistenceTest {
     @Test
     void persistedTimestampsMapOntoTheContractAsUtcOffsets() {
         repository.saveAndFlush(new AppDefinition("my-org", "claims-app", "Claims", null, null, fullGraph()));
-        organizationRepository.saveAndFlush(new Organization("my-org", "My Org Ltd.", null, null, null, null));
         AppMapper mapper = new AppMapper();
 
         AppDefinition definition = repository.findByOrgKeyAndId("my-org", "claims-app").orElseThrow();
@@ -216,8 +194,6 @@ class AppDefinitionPersistenceTest {
                 .satisfies(stamp -> assertThat(stamp.getOffset()).isEqualTo(ZoneOffset.UTC));
         assertThat(model.getCreatedAt().toInstant()).isEqualTo(definition.getCreatedAt());
         assertThat(model.getUpdatedAt()).isNotNull();
-        assertThat(mapper.toModel(organizationRepository.findById("my-org").orElseThrow()).getCreatedAt())
-                .isNotNull();
     }
 
     private static AppGraph fullGraph() {

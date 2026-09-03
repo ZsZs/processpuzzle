@@ -9,9 +9,7 @@ import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsExce
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
@@ -53,8 +51,13 @@ import java.util.List;
 @Order(ApiAdviceOrder.FEATURE)
 public class AppApiExceptionHandler {
 
-    @ExceptionHandler(OrganizationNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleOrganizationNotFound(OrganizationNotFoundException ex) {
+    /**
+     * Same {@code errorId} and status the relocated {@code OrganizationNotFoundException} produced.
+     * Only the Java type changed: base-app raises its own now, rather than compiling against
+     * platform-admin's, and a client cannot tell the difference.
+     */
+    @ExceptionHandler(UnknownTenantException.class)
+    public ResponseEntity<ErrorResponse> handleUnknownTenant(UnknownTenantException ex) {
         return error(HttpStatus.NOT_FOUND, "organization.not-found", ex.getMessage());
     }
 
@@ -91,19 +94,9 @@ public class AppApiExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "app.not-published", ex.getMessage());
     }
 
-    @ExceptionHandler(OrganizationAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleOrganizationExists(OrganizationAlreadyExistsException ex) {
-        return error(HttpStatus.CONFLICT, "organization.key.taken", ex.getMessage());
-    }
-
     @ExceptionHandler(AppDefinitionAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleAppExists(AppDefinitionAlreadyExistsException ex) {
         return error(HttpStatus.CONFLICT, "app.already-exists", ex.getMessage());
-    }
-
-    @ExceptionHandler(OrganizationKeyInvalidException.class)
-    public ResponseEntity<ErrorResponse> handleKeyInvalid(OrganizationKeyInvalidException ex) {
-        return error(HttpStatus.BAD_REQUEST, ex.getErrorId(), ex.getMessage());
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -12,9 +13,6 @@ import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.app.usecase.Severity;
-import com.processpuzzle.rule.usecase.EvaluateObject;
-import com.processpuzzle.rule.usecase.EvaluationOutcome;
-import com.processpuzzle.rule.usecase.RuleViolation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -32,19 +30,16 @@ class AppDefinitionValidatorTest {
 
     private AppDefinitionValidator validator;
     private ObjectProvider<EntityNameRegistry> entityRegistryProvider;
-    private ObjectProvider<EvaluateObject> evaluateObjectProvider;
-    private EvaluateObject evaluateObject;
+    private ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
         entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        evaluateObjectProvider = mock(ObjectProvider.class);
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
-        evaluateObject = mock(EvaluateObject.class);
+        ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();
         validator = new AppDefinitionValidator(entityRegistryProvider,
-                new AppRuleValidator(evaluateObjectProvider));
+                new AppRuleValidator(ruleEvaluatorProvider));
     }
 
     @Test
@@ -314,9 +309,7 @@ class AppDefinitionValidatorTest {
 
     @Test
     void violatedErrorRule_isReportedAndBlocksPersisting() {
-        givenViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
-                com.processpuzzle.rule.domain.Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.",
-                "rule.appDefinition.idIsRouteSafe"));
+        givenViolations(new RuleEvaluator.Violation("app-id-is-route-safe", "An app id is lowercase letters, digits and single hyphens.", "rule.appDefinition.idIsRouteSafe", Severity.ERROR));
 
         List<AppValidationProblem> problems = validator.validate("my-org", validInput());
 
@@ -328,8 +321,7 @@ class AppDefinitionValidatorTest {
 
     @Test
     void violatedWarningRule_isReportedButDoesNotBlockPersisting() {
-        givenViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
-                com.processpuzzle.rule.domain.Severity.WARNING, "This app declares no sidenav navigation.", null));
+        givenViolations(new RuleEvaluator.Violation("app-declares-a-populated-sidenav", "This app declares no sidenav navigation.", null, Severity.WARNING));
 
         List<AppValidationProblem> problems = validator.validate("my-org", validInput());
 
@@ -341,8 +333,7 @@ class AppDefinitionValidatorTest {
     /** A rule author who declares no Transloco key still gets a stable, rule-specific identifier. */
     @Test
     void violationWithoutTranslocoId_getsAnErrorIdDerivedFromTheRuleId() {
-        givenViolations(new RuleViolation("titles-are-translatable", "Titles are translatable",
-                com.processpuzzle.rule.domain.Severity.INFO, "Give every route title a Transloco id.", "  "));
+        givenViolations(new RuleEvaluator.Violation("titles-are-translatable", "Give every route title a Transloco id.", "  ", Severity.INFO));
 
         assertThat(errorIds(validator.validate("my-org", validInput())))
                 .containsExactly("app.validation.rule.titles-are-translatable");
@@ -351,8 +342,7 @@ class AppDefinitionValidatorTest {
     /** The stored-definition path publishing uses must consult the rules too. */
     @Test
     void storedDefinition_isAlsoEvaluatedAgainstTheRules() {
-        givenViolations(new RuleViolation("route-ids-are-route-safe", "Page ids are route-safe",
-                com.processpuzzle.rule.domain.Severity.ERROR, "Every route id must be lowercase.", null));
+        givenViolations(new RuleEvaluator.Violation("route-ids-are-route-safe", "Every route id must be lowercase.", null, Severity.ERROR));
 
         AppDefinition stored = new AppDefinition("claims-app", "Claims Management");
         stored.setRoutes(List.of(route("Page_One", "Claims")));
@@ -364,7 +354,6 @@ class AppDefinitionValidatorTest {
     @Test
     void rulesAreNotConsultedWhenNoRuleEngineIsWired() {
         assertThat(validator.validate("my-org", validInput())).isEmpty();
-        verifyNoInteractions(evaluateObject);
     }
 
     /** Publishing validates what is stored, so the stored path needs the same missing-body answer. */
@@ -582,11 +571,11 @@ class AppDefinitionValidatorTest {
         return widget;
     }
 
-    private void givenViolations(RuleViolation... violations) {
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
-        boolean passed = java.util.Arrays.stream(violations).noneMatch(v -> v.severity() == com.processpuzzle.rule.domain.Severity.ERROR);
-        when(evaluateObject.execute(any(), any(), any()))
-                .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
+    private void givenViolations(RuleEvaluator.Violation... violations) {
+        // Built before the stubbing call: AppTestFixtures.ruleEvaluator() itself mocks and stubs, and
+        // Mockito rejects that nested inside a when(...) argument as an unfinished stubbing.
+        RuleEvaluator evaluator = AppTestFixtures.ruleEvaluator(violations).getIfAvailable();
+        when(ruleEvaluatorProvider.getIfAvailable()).thenReturn(evaluator);
     }
 
     /** Mutable on purpose — every test above bends one part of it out of shape. */

@@ -112,6 +112,11 @@ base-workflow:
   loadDefaultTranslations: yes
 
 platform-admin:
+  # Seeds the tenants this deployment starts with, from default-organizations/<orgKey>-organization.yaml.
+  # Runs before every feature's own loader, which is required rather than tidy: those files are named
+  # after the tenant they seed and now skip a tenant that does not exist instead of creating one.
+  # Turning this off on an empty database leaves every other seed file with nowhere to land.
+  loadDefaultOrganizations: yes
   # Seeds the bundled plan catalog (free / team / enterprise). Create-only: an existing plan code is
   # never repriced, so leaving this on cannot overwrite what a deployment charges.
   loadDefaultPlans: yes

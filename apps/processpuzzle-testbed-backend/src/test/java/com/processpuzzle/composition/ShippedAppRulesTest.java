@@ -1,16 +1,18 @@
-package com.processpuzzle.app.usecase.service;
+package com.processpuzzle.composition;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.NavItem;
 import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.RouteTarget;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
+import com.processpuzzle.app.usecase.service.AppRuleValidator;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.app.usecase.Severity;
@@ -43,10 +45,16 @@ import static org.mockito.Mockito.when;
  * base-rule, and a mismatch here is silent. A rule reading {@code r.type === 'sidenav'} against a
  * region serialized as {@code SIDENAV} simply never fires.
  *
+ * <p><b>It lives in the application, not in base-app, because it needs both features.</b> It was
+ * {@code AppRuleValidatorTest} in base-app-backend, which is exactly the coupling that library no
+ * longer has: base-app knows only its own {@link RuleEvaluator} port. The two halves meet in
+ * {@link BaseAppPortsConfiguration}, so the test of whether they agree belongs beside it. What it
+ * exercises is that adapter's translation as much as the expressions themselves.
+ *
  * <p>The rule repository is mocked rather than backed by a database: what is under test is the shape of
  * the input and the expressions themselves, not JPA.
  */
-class AppRuleValidatorTest {
+class ShippedAppRulesTest {
 
     private static final String ORG = "my-org";
     private static final String SAMPLE_RULES = "/sample-rules/processpuzzle-rules.yaml";
@@ -62,8 +70,10 @@ class AppRuleValidatorTest {
                 .thenReturn(shippedAppDefinitionRules());
 
         ruleEngine = new RuleEngine();
-        ObjectProvider<EvaluateObject> provider = mock(ObjectProvider.class);
-        when(provider.getIfAvailable()).thenReturn(new EvaluateObject(repository, ruleEngine));
+        RuleEvaluator evaluator = new BaseAppPortsConfiguration()
+                .ruleEvaluator(new EvaluateObject(repository, ruleEngine));
+        ObjectProvider<RuleEvaluator> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(evaluator);
         ruleValidator = new AppRuleValidator(provider);
     }
 
@@ -118,7 +128,7 @@ class AppRuleValidatorTest {
     @Test
     void entityGridWithoutAnEntityName_violatesAnErrorRule() {
         AppDefinitionInput input = conformingInput();
-        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(new WidgetInstance("widget-grid", "entity-grid")));
+        input.getRoutes().getFirst().setTarget(widgetsTarget(new WidgetInstance("widget-grid", "entity-grid")));
 
         assertThat(errorIds(ruleValidator.validate(ORG, input)))
                 .contains("rule.appDefinition.entityWidgetsDeclareAnEntityName");
@@ -133,7 +143,7 @@ class AppRuleValidatorTest {
         grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
         WidgetInstance container = new WidgetInstance("widget-tabs", "tab-group");
         container.setProps(Map.of("childIds", List.of("widget-grid")));
-        input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(container, grid));
+        input.getRoutes().getFirst().setTarget(widgetsTarget(container, grid));
 
         assertThat(ruleValidator.validate(ORG, input)).isEmpty();
     }
@@ -174,7 +184,7 @@ class AppRuleValidatorTest {
     @SuppressWarnings("unchecked")
     private static List<RuleDefinition> shippedAppDefinitionRules() throws IOException {
         ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
-        try (InputStream input = AppRuleValidatorTest.class.getResourceAsStream(SAMPLE_RULES)) {
+        try (InputStream input = ShippedAppRulesTest.class.getResourceAsStream(SAMPLE_RULES)) {
             assertThat(input).as("bundled sample rules " + SAMPLE_RULES).isNotNull();
             Map<String, List<Map<String, Object>>> document = yaml.readValue(input, Map.class);
             List<RuleDefinition> rules = new ArrayList<>();
@@ -206,7 +216,7 @@ class AppRuleValidatorTest {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         input.setTranslocoId("claimsApp.name");
 
-        RouteDefinition route = AppTestFixtures.routeDefinition("claims-list", "Claims");
+        RouteDefinition route = routeDefinition("claims-list", "Claims");
         route.setTranslocoId("claimsApp.route.claimsList");
         input.setRoutes(new ArrayList<>(List.of(route)));
 
@@ -232,5 +242,24 @@ class AppRuleValidatorTest {
     private static Severity severityOf(List<AppValidationProblem> problems, String errorId) {
         return problems.stream().filter(problem -> problem.errorId().equals(errorId))
                 .map(AppValidationProblem::severity).findFirst().orElseThrow();
+    }
+
+    /**
+     * Copied from base-app's {@code AppTestFixtures} rather than imported. base-app's test jar is not
+     * a dependency of this application, and making it one would put a feature library's test scaffolding
+     * on the classpath of every other -- a smaller version of the coupling this test moved here to avoid.
+     */
+    private static RouteDefinition routeDefinition(String path, String title, WidgetInstance... widgets) {
+        return new RouteDefinition(path, title, widgetsTarget(widgets));
+    }
+
+    /**
+     * Built over {@link java.util.Arrays#asList} rather than {@code List.of} so a test can hand it a
+     * null entry and check that the validator names its position instead of throwing.
+     */
+    private static RouteTarget widgetsTarget(WidgetInstance... widgets) {
+        RouteTarget target = new RouteTarget(RouteTarget.KindEnum.WIDGETS);
+        target.setWidgets(new ArrayList<>(java.util.Arrays.asList(widgets)));
+        return target;
     }
 }

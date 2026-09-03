@@ -53,12 +53,146 @@ servers:
     description: Default API root
 
 tags:
+  - name: Organizations
+    description: >-
+      The tenant-facing half of the organization aggregate: sign-up, key availability, and
+      read/update/delete of one own organization. Reached at `/organizations*`, without the
+      `/platform` prefix, and gated per tenant rather than on staff authority.
   - name: Platform Organizations
     description: Organization lifecycle across all tenants.
   - name: Platform Billing
     description: Read-only plan, subscription, usage and invoice queries.
 
 paths:
+  /organizations:
+    post:
+      operationId: provisionOrganization
+      tags: [ Organizations ]
+      summary: Request an application for a new organization
+      description: >-
+        The public sign-up entry point, and the only unauthenticated operation in this
+        contract. Creates the organization in `PROVISIONING` status; its identity realm is
+        created after commit, and features that own tenant-scoped seed data create theirs in
+        response to the provisioning event. The `key` must be available (see
+        `checkOrganizationKey`) and must not be a reserved path segment; 409 otherwise.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "201":
+          description: >-
+            The organization as committed. Unlike the operation this replaces, the response
+            does not carry a starter app definition: base-app creates that in a
+            `BEFORE_COMMIT` listener on the provisioning event, so it exists by the time this
+            returns, but naming it here would put base-app's model in platform-admin's
+            contract. The designer opens it at the well-known starter app id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/key-availability:
+    get:
+      operationId: checkOrganizationKey
+      tags: [ Organizations ]
+      summary: Check whether an organization key can be claimed
+      description: >-
+        Live feedback for the sign-up form. Reports the key as unavailable both when it is
+        already taken and when it is a reserved platform path segment, so the caller does
+        not have to know the reserved list.
+      parameters:
+        - name: key
+          in: query
+          required: true
+          description: >-
+            Deliberately an unconstrained string rather than an `OrganizationKey`. This endpoint
+            reports as the user types, so partial or malformed input ("m", "My Org") has to come
+            back as `available: false` with an `errorId` the form can render - bean-validating the
+            parameter would reject it with a bare 400 before the handler ran. The slug rules are
+            enforced inside the operation and on every path parameter elsewhere.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Availability of the requested key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeyAvailability"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /organizations/{orgKey}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: getOrganization
+      tags: [ Organizations ]
+      summary: Get an organization
+      responses:
+        "200":
+          description: The organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateOrganization
+      tags: [ Organizations ]
+      summary: Update an organization's descriptive fields
+      description: >-
+        `key` is immutable - it is the public URL of the tenant's application and the scope
+        of all its metadata. Renaming would orphan every id; provision a new organization
+        instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteOrganization
+      tags: [ Organizations ]
+      summary: Delete an organization and everything scoped by it
+      description: >-
+        Cascades across features: app definitions, entity descriptors, rules, state and
+        workflow definitions belonging to this organization are removed with it. The cascade
+        is carried by `OrganizationDeletedEvent`, which each feature observes to remove its
+        own rows - platform-admin does not know what they are. Irreversible.
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   /platform/organizations:
     get:
       operationId: listOrganizations
@@ -414,6 +548,47 @@ components:
         observable, see the provisioning note in this contract's description. `ACTIVE` once the
         tenant is usable, `SUSPENDED` when access is revoked but data retained.
       enum: [ PROVISIONING, ACTIVE, SUSPENDED ]
+
+    OrganizationInput:
+      type: object
+      description: Sign-up payload - what a client supplies when requesting their own application.
+      required: [ key, name ]
+      properties:
+        key:
+          $ref: "#/components/schemas/OrganizationKey"
+        name:
+          type: string
+          description: Display name of the organization.
+          example: My Organization Ltd.
+        description:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        defaultLocale:
+          type: string
+          description: BCP-47 tag used as the Transloco active language for the tenant's app.
+          example: en-GB
+
+    KeyAvailability:
+      type: object
+      required: [ key, available ]
+      properties:
+        key:
+          $ref: "#/components/schemas/OrganizationKey"
+        available:
+          type: boolean
+        errorId:
+          type: string
+          description: >-
+            Present when `available` is false - why the key cannot be claimed, as a
+            Transloco key the sign-up form can render.
+          example: organization.key.reserved
+        suggestions:
+          type: array
+          description: Available alternatives derived from the requested key.
+          items:
+            $ref: "#/components/schemas/OrganizationKey"
 
     OrganizationUpdate:
       type: object

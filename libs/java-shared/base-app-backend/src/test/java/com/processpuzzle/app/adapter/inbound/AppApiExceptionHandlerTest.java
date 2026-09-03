@@ -5,10 +5,8 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsExcepti
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.junit.jupiter.api.Test;
@@ -31,9 +29,14 @@ class AppApiExceptionHandlerTest {
 
     private final AppApiExceptionHandler handler = new AppApiExceptionHandler();
 
+    /**
+     * Unchanged errorId and status. Only the exception type changed: base-app raises its own
+     * {@link UnknownTenantException} rather than platform-admin's {@code OrganizationNotFoundException},
+     * and this is what pins that a client cannot tell.
+     */
     @Test
     void anUnknownOrganizationIs404() {
-        assertThatResponse(handler.handleOrganizationNotFound(new OrganizationNotFoundException(ORG_KEY)))
+        assertThatResponse(handler.handleUnknownTenant(new UnknownTenantException(ORG_KEY)))
                 .isEqualTo(HttpStatus.NOT_FOUND, "organization.not-found", ORG_KEY);
     }
 
@@ -58,23 +61,9 @@ class AppApiExceptionHandlerTest {
     }
 
     @Test
-    void aTakenOrganizationKeyIs409() {
-        assertThatResponse(handler.handleOrganizationExists(new OrganizationAlreadyExistsException(ORG_KEY)))
-                .isEqualTo(HttpStatus.CONFLICT, "organization.key.taken", ORG_KEY);
-    }
-
-    @Test
     void aTakenAppDefinitionIdIs409() {
         assertThatResponse(handler.handleAppExists(new AppDefinitionAlreadyExistsException(ORG_KEY, APP_ID)))
                 .isEqualTo(HttpStatus.CONFLICT, "app.already-exists", APP_ID);
-    }
-
-    /** The key check's own identifier is carried through, so the sign-up form can say why. */
-    @Test
-    void aMalformedOrganizationKeyIs400WithTheCheckSpecificIdentifier() {
-        assertThatResponse(handler.handleKeyInvalid(new OrganizationKeyInvalidException(
-                "organization.key.reserved", "Organization key cannot be claimed: 'api'.")))
-                .isEqualTo(HttpStatus.BAD_REQUEST, "organization.key.reserved", "'api'");
     }
 
     @Test

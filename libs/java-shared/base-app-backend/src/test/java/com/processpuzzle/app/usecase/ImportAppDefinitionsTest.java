@@ -1,12 +1,13 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,7 @@ class ImportAppDefinitionsTest {
             """;
 
     private AppDefinitionRepository repository;
-    private OrganizationRepository organizationRepository;
+    private ObjectProvider<TenantDirectory> tenantDirectory;
     private ImportAppDefinitions importAppDefinitions;
 
     @BeforeEach
@@ -65,10 +66,9 @@ class ImportAppDefinitionsTest {
         when(repository.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
         when(repository.findByOrgKeyAndId(anyString(), anyString())).thenReturn(Optional.empty());
 
-        organizationRepository = mock(OrganizationRepository.class);
-        when(organizationRepository.existsById(anyString())).thenReturn(true);
+        tenantDirectory = AppTestFixtures.tenantDirectory(ORG_KEY);
 
-        importAppDefinitions = new ImportAppDefinitions(repository, organizationRepository,
+        importAppDefinitions = new ImportAppDefinitions(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.permissiveGuard(), new AppMapper());
     }
 
@@ -177,7 +177,7 @@ class ImportAppDefinitionsTest {
         when(lenient.validate(anyString(), any())).thenReturn(List.of(
                 new AppValidationProblem("/", "rule.appDefinition.titlesAreTranslatable",
                         "Give every route title a Transloco id.", Severity.INFO)));
-        ImportAppDefinitions withAdvice = new ImportAppDefinitions(repository, organizationRepository,
+        ImportAppDefinitions withAdvice = new ImportAppDefinitions(repository, tenantDirectory,
                 lenient, AppTestFixtures.permissiveGuard(), new AppMapper());
 
         ImportOutcome outcome = withAdvice.execute(ORG_KEY, yaml(VALID_FILE));
@@ -198,10 +198,12 @@ class ImportAppDefinitionsTest {
 
     @Test
     void unknownOrganization_is404BeforeTheFileIsEvenRead() {
-        when(organizationRepository.existsById(ORG_KEY)).thenReturn(false);
+        ImportAppDefinitions withoutTheTenant = new ImportAppDefinitions(repository,
+                AppTestFixtures.tenantDirectory(), AppTestFixtures.structuralValidator(),
+                AppTestFixtures.permissiveGuard(), new AppMapper());
 
-        assertThatThrownBy(() -> importAppDefinitions.execute(ORG_KEY, yaml(VALID_FILE)))
-                .isInstanceOf(OrganizationNotFoundException.class);
+        assertThatThrownBy(() -> withoutTheTenant.execute(ORG_KEY, yaml(VALID_FILE)))
+                .isInstanceOf(UnknownTenantException.class);
 
         verifyNoInteractions(repository);
     }
@@ -214,13 +216,13 @@ class ImportAppDefinitionsTest {
 
     @Test
     void aPrincipalWithoutDesignRights_isRejectedBeforeAnythingIsRead() {
-        ImportAppDefinitions guarded = new ImportAppDefinitions(repository, organizationRepository,
+        ImportAppDefinitions guarded = new ImportAppDefinitions(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.denyingGuard(), new AppMapper());
 
         assertThatThrownBy(() -> guarded.execute(ORG_KEY, yaml(VALID_FILE)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
 
-        verifyNoInteractions(repository, organizationRepository);
+        verifyNoInteractions(repository);
     }
 
     @Test

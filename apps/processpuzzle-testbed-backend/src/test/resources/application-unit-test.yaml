@@ -59,6 +59,7 @@ base-workflow:
   loadDefaultTranslations: no
 
 platform-admin:
+  loadDefaultOrganizations: no
   loadDefaultPlans: no
 
 org-admin:

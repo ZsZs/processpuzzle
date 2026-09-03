@@ -94,7 +94,6 @@ graph TD
     workflowBE --> stateBE
     workflowBE --> core
     workflowBE --> contracts
-    appBE --> ruleBE
     appBE --> core
     appBE --> contracts
   end
@@ -108,7 +107,11 @@ graph TD
 ```
 
 The frontend dependency edges above are the real `package.json` dependencies; the backend edges are the real
-`pom.xml` dependencies. Note that the two layers mirror each other's shape but are **independently
+`pom.xml` dependencies. Note that `base-app-backend` names no other feature: what it needs from
+outside itself — does this tenant exist, what do its governance rules say — it declares as an
+outbound port in `app :: port`, and the deploying application supplies the adapter. `base-state` and
+`base-workflow` still carry a compile dependency on the features they adapt, though the calls
+themselves already go through their own ports. Note that the two layers mirror each other's shape but are **independently
 versioned and independently usable** — a `base-entity` application can run against plain REST, `json-server`
 or Firestore without any ProcessPuzzle backend at all.
 

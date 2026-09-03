@@ -2,36 +2,24 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinition;
-import com.processpuzzle.platformadmin.domain.Organization;
-import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
-import com.processpuzzle.app.model.OrganizationInput;
-import com.processpuzzle.app.model.OrganizationUpdate;
 import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
-import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
-import com.processpuzzle.platformadmin.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
-import com.processpuzzle.platformadmin.usecase.DeleteOrganization;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
-import com.processpuzzle.platformadmin.usecase.FindOrganization;
 import com.processpuzzle.app.usecase.GetAppLayout;
 import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
-import com.processpuzzle.app.usecase.ProvisionTenant;
-import com.processpuzzle.platformadmin.usecase.OrganizationDetails;
 import com.processpuzzle.app.usecase.CreateModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteModuleDefinition;
 import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
@@ -39,7 +27,6 @@ import com.processpuzzle.app.usecase.FindModuleDefinition;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
-import com.processpuzzle.platformadmin.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.shared.model.ImportResult;
@@ -83,11 +70,6 @@ import static org.mockito.Mockito.when;
  */
 class AppEndpointTest {
 
-    private ProvisionTenant provisionTenant;
-    private CheckOrganizationKey checkOrganizationKey;
-    private FindOrganization findOrganization;
-    private UpdateOrganization updateOrganization;
-    private DeleteOrganization deleteOrganization;
     private CreateAppDefinition createAppDefinition;
     private FindAppDefinition findAppDefinition;
     private FindAllAppDefinitions findAllAppDefinitions;
@@ -108,11 +90,6 @@ class AppEndpointTest {
 
     @BeforeEach
     void setUp() {
-        provisionTenant = mock(ProvisionTenant.class);
-        checkOrganizationKey = mock(CheckOrganizationKey.class);
-        findOrganization = mock(FindOrganization.class);
-        updateOrganization = mock(UpdateOrganization.class);
-        deleteOrganization = mock(DeleteOrganization.class);
         createAppDefinition = mock(CreateAppDefinition.class);
         findAppDefinition = mock(FindAppDefinition.class);
         findAllAppDefinitions = mock(FindAllAppDefinitions.class);
@@ -130,78 +107,11 @@ class AppEndpointTest {
         importAppDefinitions = mock(ImportAppDefinitions.class);
         exportAppDefinition = mock(ExportAppDefinition.class);
 
-        endpoint = new AppEndpoint(provisionTenant, checkOrganizationKey, findOrganization,
-                updateOrganization, deleteOrganization, createAppDefinition, findAppDefinition,
+        endpoint = new AppEndpoint(createAppDefinition, findAppDefinition,
                 findAllAppDefinitions, updateAppDefinition, deleteAppDefinition, publishAppDefinition,
                 createModuleDefinition, findModuleDefinition, findAllModuleDefinitions,
                 updateModuleDefinition, deleteModuleDefinition, getAppLayout, getRouteDefinition, validateAppDefinition, importAppDefinitions,
                 exportAppDefinition, new AppMapper());
-    }
-
-    // --- organizations -------------------------------------------------------------------
-
-    @Test
-    void provisioningAnOrganizationAnswers201WithTheTenantAndItsStarterApp() {
-        when(provisionTenant.execute(any())).thenReturn(
-                new ProvisionTenant.Result(organization(), AppTestFixtures.storedDefinition()));
-
-        ResponseEntity<ProvisioningResult> response =
-                endpoint.provisionOrganization(new OrganizationInput(ORG_KEY, "My Organization Ltd."));
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getOrganization().getKey()).isEqualTo(ORG_KEY);
-        assertThat(response.getBody().getAppDefinition().getId()).isEqualTo(APP_ID);
-    }
-
-    @Test
-    void checkingAKeyAnswersTheOutcomeIncludingItsSuggestions() {
-        when(checkOrganizationKey.execute("my-org")).thenReturn(
-                KeyCheckOutcome.unavailable("my-org", "organization.key.taken", List.of("my-org-1")));
-
-        ResponseEntity<KeyAvailability> response = endpoint.checkOrganizationKey("my-org");
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getAvailable()).isFalse();
-        assertThat(response.getBody().getErrorId()).isEqualTo("organization.key.taken");
-        assertThat(response.getBody().getSuggestions()).containsExactly("my-org-1");
-    }
-
-    @Test
-    void readingAnOrganizationAnswersItsModel() {
-        when(findOrganization.execute(ORG_KEY)).thenReturn(organization());
-
-        assertThat(endpoint.getOrganization(ORG_KEY).getBody()).isNotNull()
-                .satisfies(model -> assertThat(model.getContactEmail()).isEqualTo("ops@my-org.example"));
-    }
-
-    /**
-     * The use case takes {@link OrganizationDetails}, not this contract's DTO — it lives in another
-     * Modulith module and cannot see {@code app.model}. What the endpoint forwards is therefore the
-     * mapped record, and losing a field in that mapping is exactly what this asserts against.
-     */
-    @Test
-    void updatingAnOrganizationForwardsTheMappedDetailsAndAnswersTheUpdatedModel() {
-        OrganizationUpdate input = new OrganizationUpdate("My Organization GmbH");
-        input.setDescription("Now German.");
-        input.setContactEmail("ops@my-org.example");
-        input.setDefaultLocale("de-DE");
-        OrganizationDetails expected = new OrganizationDetails("My Organization GmbH", "Now German.",
-                "ops@my-org.example", "de-DE");
-        when(updateOrganization.execute(ORG_KEY, expected)).thenReturn(organization());
-
-        assertThat(endpoint.updateOrganization(ORG_KEY, input).getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(updateOrganization).execute(ORG_KEY, expected);
-    }
-
-    @Test
-    void deletingAnOrganizationAnswers204WithNoBody() {
-        ResponseEntity<Void> response = endpoint.deleteOrganization(ORG_KEY);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(response.getBody()).isNull();
-        verify(deleteOrganization).execute(ORG_KEY);
     }
 
     // --- app definitions -----------------------------------------------------------------
@@ -479,8 +389,4 @@ class AppEndpointTest {
         return file;
     }
 
-    private static Organization organization() {
-        return new Organization(ORG_KEY, "My Organization Ltd.", "Insurance.", "ops@my-org.example",
-                "en-GB", OrganizationStatus.ACTIVE);
-    }
 }
