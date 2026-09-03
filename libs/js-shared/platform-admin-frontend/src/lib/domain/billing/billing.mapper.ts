@@ -1,6 +1,16 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
-import { BillingInterval, Invoice, InvoiceStatus, OrganizationBilling, Plan, Subscription, SubscriptionStatus } from './billing';
+import {
+  BillingInterval,
+  Invoice,
+  InvoiceProperties,
+  InvoiceStatus,
+  OrganizationBilling,
+  Plan,
+  Subscription,
+  SubscriptionProperties,
+  SubscriptionStatus,
+} from './billing';
 
 type PlanDto = Partial<Plan>;
 type SubscriptionDto = Partial<Subscription>;
@@ -27,17 +37,18 @@ export class PlanMapper implements BaseEntityMapper<Plan> {
 export class SubscriptionMapper implements BaseEntityMapper<Subscription> {
   fromDto(dto: unknown): Subscription {
     const source = dto as SubscriptionDto;
-    return new Subscription(
-      source.id,
-      source.orgKey,
-      source.planCode,
-      source.status as SubscriptionStatus | undefined,
-      source.currentPeriodStart,
-      source.currentPeriodEnd,
-      source.canceledAt,
-      source.createdAt,
-      source.updatedAt,
-    );
+    const properties: SubscriptionProperties = {
+      id: source.id,
+      orgKey: source.orgKey,
+      planCode: source.planCode,
+      status: source.status as SubscriptionStatus | undefined,
+      currentPeriodStart: source.currentPeriodStart,
+      currentPeriodEnd: source.currentPeriodEnd,
+      canceledAt: source.canceledAt,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
+    };
+    return new Subscription(properties);
   }
 
   toDto(entity: Subscription): unknown {
@@ -49,19 +60,20 @@ export class SubscriptionMapper implements BaseEntityMapper<Subscription> {
 export class InvoiceMapper implements BaseEntityMapper<Invoice> {
   fromDto(dto: unknown): Invoice {
     const source = dto as InvoiceDto;
-    return new Invoice(
-      source.id,
-      source.orgKey,
-      source.number,
-      source.status as InvoiceStatus | undefined,
-      source.currency,
-      source.totalMinor,
-      source.periodStart,
-      source.periodEnd,
-      source.issuedAt,
-      source.paidAt,
-      source.lines,
-    );
+    const properties: InvoiceProperties = {
+      id: source.id,
+      orgKey: source.orgKey,
+      number: source.number,
+      status: source.status as InvoiceStatus | undefined,
+      currency: source.currency,
+      totalMinor: source.totalMinor,
+      periodStart: source.periodStart,
+      periodEnd: source.periodEnd,
+      issuedAt: source.issuedAt,
+      paidAt: source.paidAt,
+      lines: source.lines,
+    };
+    return new Invoice(properties);
   }
 
   toDto(entity: Invoice): unknown {

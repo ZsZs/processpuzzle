@@ -88,27 +88,29 @@ export class Subscription implements BaseEntity {
   createdAt: string | undefined;
   updatedAt: string | undefined;
 
-  constructor(
-    id?: string,
-    orgKey?: string,
-    planCode?: string,
-    status?: SubscriptionStatus,
-    currentPeriodStart?: string,
-    currentPeriodEnd?: string,
-    canceledAt?: string,
-    createdAt?: string,
-    updatedAt?: string,
-  ) {
-    this.id = id ?? '';
-    this.orgKey = orgKey ?? '';
-    this.planCode = planCode ?? '';
-    this.status = status ?? SubscriptionStatus.TRIALING;
-    this.currentPeriodStart = currentPeriodStart;
-    this.currentPeriodEnd = currentPeriodEnd;
-    this.canceledAt = canceledAt;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
+  constructor(properties: SubscriptionProperties = {}) {
+    this.id = properties.id ?? '';
+    this.orgKey = properties.orgKey ?? '';
+    this.planCode = properties.planCode ?? '';
+    this.status = properties.status ?? SubscriptionStatus.TRIALING;
+    this.currentPeriodStart = properties.currentPeriodStart;
+    this.currentPeriodEnd = properties.currentPeriodEnd;
+    this.canceledAt = properties.canceledAt;
+    this.createdAt = properties.createdAt;
+    this.updatedAt = properties.updatedAt;
   }
+}
+
+export interface SubscriptionProperties {
+  id?: string;
+  orgKey?: string;
+  planCode?: string;
+  status?: SubscriptionStatus;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  canceledAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** One metric's measured quantity for one tenant over one period. */
@@ -145,35 +147,37 @@ export class Invoice implements BaseEntity {
   paidAt: string | undefined;
   lines: InvoiceLine[];
 
-  constructor(
-    id?: string,
-    orgKey?: string,
-    invoiceNumber?: string,
-    status?: InvoiceStatus,
-    currency?: string,
-    totalMinor?: number,
-    periodStart?: string,
-    periodEnd?: string,
-    issuedAt?: string,
-    paidAt?: string,
-    lines?: InvoiceLine[],
-  ) {
-    this.id = id ?? '';
-    this.orgKey = orgKey ?? '';
-    this.number = invoiceNumber;
-    this.status = status ?? InvoiceStatus.DRAFT;
-    this.currency = currency ?? 'EUR';
-    this.totalMinor = totalMinor ?? 0;
-    this.periodStart = periodStart;
-    this.periodEnd = periodEnd;
-    this.issuedAt = issuedAt;
-    this.paidAt = paidAt;
-    this.lines = lines ?? [];
+  constructor(properties: InvoiceProperties = {}) {
+    this.id = properties.id ?? '';
+    this.orgKey = properties.orgKey ?? '';
+    this.number = properties.number;
+    this.status = properties.status ?? InvoiceStatus.DRAFT;
+    this.currency = properties.currency ?? 'EUR';
+    this.totalMinor = properties.totalMinor ?? 0;
+    this.periodStart = properties.periodStart;
+    this.periodEnd = properties.periodEnd;
+    this.issuedAt = properties.issuedAt;
+    this.paidAt = properties.paidAt;
+    this.lines = properties.lines ?? [];
   }
 
   get total(): string {
     return formatMinor(this.totalMinor, this.currency);
   }
+}
+
+export interface InvoiceProperties {
+  id?: string;
+  orgKey?: string;
+  number?: string;
+  status?: InvoiceStatus;
+  currency?: string;
+  totalMinor?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  issuedAt?: string;
+  paidAt?: string;
+  lines?: InvoiceLine[];
 }
 
 /**

@@ -14,6 +14,17 @@ export enum OrganizationStatus {
   SUSPENDED = 'SUSPENDED',
 }
 
+export interface OrganizationProperties {
+  key?: string;
+  name?: string;
+  description?: string;
+  contactEmail?: string;
+  defaultLocale?: string;
+  status?: OrganizationStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /**
  * A tenant.
  *
@@ -36,25 +47,16 @@ export class Organization implements BaseEntity {
   createdAt: string | undefined;
   updatedAt: string | undefined;
 
-  constructor(
-    key?: string,
-    name?: string,
-    description?: string,
-    contactEmail?: string,
-    defaultLocale?: string,
-    status?: OrganizationStatus,
-    createdAt?: string,
-    updatedAt?: string,
-  ) {
-    this.key = key ?? '';
+  constructor(properties: OrganizationProperties = {}) {
+    this.key = properties.key ?? '';
     this.id = this.key;
-    this.name = name ?? '';
-    this.description = description;
-    this.contactEmail = contactEmail;
-    this.defaultLocale = defaultLocale;
-    this.status = status ?? OrganizationStatus.PROVISIONING;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
+    this.name = properties.name ?? '';
+    this.description = properties.description;
+    this.contactEmail = properties.contactEmail;
+    this.defaultLocale = properties.defaultLocale;
+    this.status = properties.status ?? OrganizationStatus.PROVISIONING;
+    this.createdAt = properties.createdAt;
+    this.updatedAt = properties.updatedAt;
   }
 
   /** Whether the tenant is usable — the only state in which its members can obtain a token. */

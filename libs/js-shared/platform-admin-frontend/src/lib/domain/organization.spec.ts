@@ -6,20 +6,20 @@ describe('Organization', () => {
   it('uses the tenant key as its BaseEntity id', () => {
     // Not decoration: every /platform/organizations/{orgKey} call is keyed by this value, so a
     // separate generated id would make the list and the form address rows the API does not know.
-    const organization = new Organization('my-org', 'My Organization Ltd.');
+    const organization = new Organization({ key: 'my-org', name: 'My Organization Ltd.' });
 
     expect(organization.id).toBe('my-org');
     expect(organization.key).toBe('my-org');
   });
 
   it('defaults to PROVISIONING, which is what a freshly created tenant really is', () => {
-    expect(new Organization('my-org', 'My Org').status).toBe(OrganizationStatus.PROVISIONING);
+    expect(new Organization({ key: 'my-org', name: 'My Org' }).status).toBe(OrganizationStatus.PROVISIONING);
   });
 
   it('reports its lifecycle state', () => {
-    const provisioning = new Organization('a', 'A', undefined, undefined, undefined, OrganizationStatus.PROVISIONING);
-    const active = new Organization('b', 'B', undefined, undefined, undefined, OrganizationStatus.ACTIVE);
-    const suspended = new Organization('c', 'C', undefined, undefined, undefined, OrganizationStatus.SUSPENDED);
+    const provisioning = new Organization({ key: 'a', name: 'A', status: OrganizationStatus.PROVISIONING });
+    const active = new Organization({ key: 'b', name: 'B', status: OrganizationStatus.ACTIVE });
+    const suspended = new Organization({ key: 'c', name: 'C', status: OrganizationStatus.SUSPENDED });
 
     expect([provisioning.isProvisioning, provisioning.isActive, provisioning.isSuspended]).toEqual([true, false, false]);
     expect([active.isProvisioning, active.isActive, active.isSuspended]).toEqual([false, true, false]);
@@ -57,7 +57,16 @@ describe('OrganizationMapper', () => {
   // dropped fields are simply not in OrganizationUpdate.
   it('sends only the four mutable fields, never the key, the status or the timestamps', () => {
     const dto = mapper.toDto(
-      new Organization('my-org', 'My Org', 'Insurance.', 'ops@my-org.example', 'en-GB', OrganizationStatus.ACTIVE, '2026-08-01T00:00:00Z', '2026-09-01T00:00:00Z'),
+      new Organization({
+        key: 'my-org',
+        name: 'My Org',
+        description: 'Insurance.',
+        contactEmail: 'ops@my-org.example',
+        defaultLocale: 'en-GB',
+        status: OrganizationStatus.ACTIVE,
+        createdAt: '2026-08-01T00:00:00Z',
+        updatedAt: '2026-09-01T00:00:00Z',
+      }),
     );
 
     expect(dto).toEqual({

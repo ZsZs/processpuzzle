@@ -91,7 +91,7 @@ export interface AssignAdminDialogResult {
 })
 export class AssignAdminDialog {
   readonly data = inject<AssignAdminDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(MatDialogRef<AssignAdminDialog, AssignAdminDialogResult | undefined>);
+  private readonly dialogRef = inject(MatDialogRef<AssignAdminDialog, AssignAdminDialogResult>);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly form = this.formBuilder.nonNullable.group({
@@ -102,7 +102,7 @@ export class AssignAdminDialog {
   });
 
   onCancel(): void {
-    this.dialogRef.close(undefined);
+    this.dialogRef.close();
   }
 
   onSubmit(): void {

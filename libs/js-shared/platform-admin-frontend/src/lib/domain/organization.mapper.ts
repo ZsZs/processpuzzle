@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
-import { Organization, OrganizationStatus } from './organization';
+import { Organization, OrganizationProperties, OrganizationStatus } from './organization';
 
 type OrganizationDto = Partial<Organization>;
 
@@ -8,16 +8,17 @@ type OrganizationDto = Partial<Organization>;
 export class OrganizationMapper implements BaseEntityMapper<Organization> {
   fromDto(dto: unknown): Organization {
     const source = dto as OrganizationDto;
-    return new Organization(
-      source.key,
-      source.name,
-      source.description,
-      source.contactEmail,
-      source.defaultLocale,
-      source.status as OrganizationStatus | undefined,
-      source.createdAt,
-      source.updatedAt,
-    );
+    const properties: OrganizationProperties = {
+      key: source.key,
+      name: source.name,
+      description: source.description,
+      contactEmail: source.contactEmail,
+      defaultLocale: source.defaultLocale,
+      status: source.status as OrganizationStatus | undefined,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
+    };
+    return new Organization(properties);
   }
 
   /**
