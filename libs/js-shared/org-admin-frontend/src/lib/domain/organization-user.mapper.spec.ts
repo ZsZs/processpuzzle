@@ -29,7 +29,19 @@ describe('OrganizationUserMapper', () => {
   // as immutable; roles have their own endpoint precisely so that a name correction cannot rewrite
   // somebody's permissions.
   it('sends neither the username nor the roles', () => {
-    const dto = mapper.toDto(new OrganizationUser('kc-1', 'ada', 'ada@my-org.example', 'Ada', 'Lovelace', false, true, '2026-08-01T00:00:00Z', ['org-admin'])) as object;
+    const dto = mapper.toDto(
+      new OrganizationUser({
+        id: 'kc-1',
+        username: 'ada',
+        email: 'ada@my-org.example',
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        enabled: false,
+        emailVerified: true,
+        createdAt: '2026-08-01T00:00:00Z',
+        roles: ['org-admin'],
+      }),
+    ) as object;
 
     expect(dto).toEqual({ email: 'ada@my-org.example', firstName: 'Ada', lastName: 'Lovelace', enabled: false });
     expect(Object.keys(dto)).not.toContain('username');

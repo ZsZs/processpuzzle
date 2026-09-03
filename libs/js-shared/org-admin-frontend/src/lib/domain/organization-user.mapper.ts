@@ -9,7 +9,7 @@ type OrganizationRoleDto = Partial<OrganizationRole>;
 export class OrganizationUserMapper implements BaseEntityMapper<OrganizationUser> {
   fromDto(dto: unknown): OrganizationUser {
     const source = dto as OrganizationUserDto;
-    return new OrganizationUser(source.id, source.username, source.email, source.firstName, source.lastName, source.enabled, source.emailVerified, source.createdAt, source.roles);
+    return new OrganizationUser(source);
   }
 
   /**

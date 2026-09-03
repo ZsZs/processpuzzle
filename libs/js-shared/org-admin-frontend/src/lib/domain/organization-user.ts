@@ -1,5 +1,17 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 
+export interface OrganizationUserProperties {
+  id?: string;
+  username?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  enabled?: boolean;
+  emailVerified?: boolean;
+  createdAt?: string;
+  roles?: string[];
+}
+
 /**
  * A user of one organization, as the tenant's Keycloak realm holds it.
  *
@@ -25,26 +37,16 @@ export class OrganizationUser implements BaseEntity {
   createdAt: string | undefined;
   roles: string[];
 
-  constructor(
-    id?: string,
-    username?: string,
-    email?: string,
-    firstName?: string,
-    lastName?: string,
-    enabled?: boolean,
-    emailVerified?: boolean,
-    createdAt?: string,
-    roles?: string[],
-  ) {
-    this.id = id ?? '';
-    this.username = username ?? '';
-    this.email = email;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.enabled = enabled ?? true;
-    this.emailVerified = emailVerified ?? false;
-    this.createdAt = createdAt;
-    this.roles = roles ?? [];
+  constructor(properties: OrganizationUserProperties = {}) {
+    this.id = properties.id ?? '';
+    this.username = properties.username ?? '';
+    this.email = properties.email;
+    this.firstName = properties.firstName;
+    this.lastName = properties.lastName;
+    this.enabled = properties.enabled ?? true;
+    this.emailVerified = properties.emailVerified ?? false;
+    this.createdAt = properties.createdAt;
+    this.roles = properties.roles ?? [];
   }
 
   /** First and last name joined, falling back to the username — what a list column should show. */

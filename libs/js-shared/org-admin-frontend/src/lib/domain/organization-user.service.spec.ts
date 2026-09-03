@@ -137,7 +137,9 @@ describe('OrganizationUserService', () => {
 
     fallbackService.delete('kc-1').subscribe();
 
-    fallbackController.expectOne(`${usersUrl}/kc-1`).flush(null);
+    const request = fallbackController.expectOne(`${usersUrl}/kc-1`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 
   // The token is read inside the constructor's `super(...)` call, so the URL is fixed once and cannot
@@ -148,7 +150,9 @@ describe('OrganizationUserService', () => {
 
     otherService.delete('kc-1').subscribe();
 
-    otherController.expectOne(`${serviceRoot}/organizations/other-org/admin/users/kc-1`).flush(null);
+    const request = otherController.expectOne(`${serviceRoot}/organizations/other-org/admin/users/kc-1`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 });
 
@@ -193,10 +197,12 @@ describe('OrganizationRoleService', () => {
     expect(roles[1].id).toBe('accountant');
   });
 
-  it('reads the roles one user holds from a sub-resource of that user', () => {
-    service.findByUser('kc-1').subscribe();
+  it('reads the roles one user holds from a sub-resource of that user', async () => {
+    const pending = firstValueFrom(service.findByUser('kc-1'));
 
     controller.expectOne(`${adminUrl}/users/kc-1/roles`).flush([{ name: 'org-member', platformManaged: true }]);
+
+    expect((await pending).map((role) => role.name)).toEqual(['org-member']);
   });
 
   /**

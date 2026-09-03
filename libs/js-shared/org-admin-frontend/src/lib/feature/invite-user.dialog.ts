@@ -123,7 +123,7 @@ export class InviteUserDialog {
   readonly data = inject<InviteUserDialogData>(MAT_DIALOG_DATA);
   readonly selected = new Set<string>();
 
-  private readonly dialogRef = inject(MatDialogRef<InviteUserDialog, InviteUserDialogResult | undefined>);
+  private readonly dialogRef = inject(MatDialogRef<InviteUserDialog, InviteUserDialogResult>);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly form = this.formBuilder.nonNullable.group({

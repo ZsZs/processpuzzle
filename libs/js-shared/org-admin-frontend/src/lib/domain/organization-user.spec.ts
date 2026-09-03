@@ -1,23 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { OrganizationRole, OrganizationUser } from './organization-user';
-import { OrganizationRoleMapper, OrganizationUserMapper } from './organization-user.mapper';
 
 describe('OrganizationUser', () => {
   it('is enabled by default, because an invitation creates a usable account', () => {
-    expect(new OrganizationUser('kc-1', 'ada').enabled).toBe(true);
+    expect(new OrganizationUser({ id: 'kc-1', username: 'ada' }).enabled).toBe(true);
   });
 
   it('shows a full name when it has one and falls back to the username', () => {
-    expect(new OrganizationUser('kc-1', 'ada', undefined, 'Ada', 'Lovelace').displayName).toBe('Ada Lovelace');
-    expect(new OrganizationUser('kc-1', 'ada', undefined, 'Ada').displayName).toBe('Ada');
-    expect(new OrganizationUser('kc-1', 'ada').displayName).toBe('ada');
+    expect(new OrganizationUser({ id: 'kc-1', username: 'ada', firstName: 'Ada', lastName: 'Lovelace' }).displayName).toBe('Ada Lovelace');
+    expect(new OrganizationUser({ id: 'kc-1', username: 'ada', firstName: 'Ada' }).displayName).toBe('Ada');
+    expect(new OrganizationUser({ id: 'kc-1', username: 'ada' }).displayName).toBe('ada');
   });
 
   it('joins its roles for the read-only table column', () => {
-    const withRoles = new OrganizationUser('kc-1', 'ada', undefined, undefined, undefined, true, false, undefined, ['org-admin', 'org-member']);
+    const withRoles = new OrganizationUser({ id: 'kc-1', username: 'ada', roles: ['org-admin', 'org-member'] });
 
     expect(withRoles.roleNames).toBe('org-admin, org-member');
-    expect(new OrganizationUser('kc-1', 'ada').roleNames).toBe('');
+    expect(new OrganizationUser({ id: 'kc-1', username: 'ada' }).roleNames).toBe('');
   });
 });
 
