@@ -34,7 +34,7 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
     /** Forces the invitee to set their own password on first login; no administrator ever knows it. */
     private static final String UPDATE_PASSWORD = "UPDATE_PASSWORD";
 
-    private static final String ADMIN_REALMS_PATH = "/admin/realms/";
+    private static final String ADMIN_REALMS_PATH = "/admin/realms";
     private static final String ENABLED = "enabled";
     private static final int CONFLICT = 409;
     private static final int NOT_FOUND = 404;
@@ -57,7 +57,7 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
             representation.put("internationalizationEnabled", true);
             representation.put("defaultLocale", defaultLocale.split("-")[0]);
         }
-        client.exchangeTolerating(HttpMethod.POST, "/admin/realms", representation, CONFLICT);
+        client.exchangeTolerating(HttpMethod.POST, ADMIN_REALMS_PATH, representation, CONFLICT);
 
         createTenantClient(realm);
         createRealmRole(realm, ORG_ADMIN_ROLE, "May administer this organization's users and roles.");
@@ -77,7 +77,7 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
 
     @Override
     public void deleteRealm(String realm) {
-        client.exchangeTolerating(HttpMethod.DELETE, ADMIN_REALMS_PATH + realm, null, NOT_FOUND);
+        client.exchangeTolerating(HttpMethod.DELETE, realmPath(realm), null, NOT_FOUND);
         LOG.info("Keycloak realm '{}' deleted.", realm);
     }
 
@@ -92,7 +92,7 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
         representation.put("emailVerified", false);
         representation.put("requiredActions", List.of(UPDATE_PASSWORD));
 
-        String userId = client.createAndReturnId(ADMIN_REALMS_PATH + realm + "/users", representation)
+        String userId = client.createAndReturnId(realmPath(realm) + "/users", representation)
                 .orElseThrow(() -> new IdentityProviderUnavailableException(
                         "Keycloak created a user in realm '" + realm + "' but returned no id."));
 
@@ -111,14 +111,14 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
         }
         List<Map<String, Object>> mappings = new ArrayList<>(roles.size());
         for (String role : roles) {
-            client.exchange(HttpMethod.GET, ADMIN_REALMS_PATH + realm + "/roles/" + role, null, Map.class)
+            client.exchange(HttpMethod.GET, realmPath(realm) + "/roles/" + role, null, Map.class)
                     .ifPresentOrElse(
                             found -> mappings.add(Map.of("id", found.get("id"), "name", found.get("name"))),
                             () -> LOG.warn("Realm '{}' has no role '{}'; not granted.", realm, role));
         }
         if (!mappings.isEmpty()) {
             client.exchange(HttpMethod.POST,
-                    ADMIN_REALMS_PATH + realm + "/users/" + userId + "/role-mappings/realm",
+                    realmPath(realm) + "/users/" + userId + "/role-mappings/realm",
                     mappings, null);
         }
     }
@@ -141,18 +141,22 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
         clientRepresentation.put("webOrigins", List.of(properties.getTenantWebOrigin()));
         clientRepresentation.put("attributes", Map.of("pkce.code.challenge.method", "S256"));
 
-        client.exchangeTolerating(HttpMethod.POST, ADMIN_REALMS_PATH + realm + "/clients",
+        client.exchangeTolerating(HttpMethod.POST, realmPath(realm) + "/clients",
                 clientRepresentation, CONFLICT);
     }
 
     private void createRealmRole(String realm, String name, String description) {
-        client.exchangeTolerating(HttpMethod.POST, ADMIN_REALMS_PATH + realm + "/roles",
+        client.exchangeTolerating(HttpMethod.POST, realmPath(realm) + "/roles",
                 Map.of("name", name, "description", description), CONFLICT);
     }
 
     private void setEnabled(String realm, boolean enabled) {
-        client.exchange(HttpMethod.PUT, ADMIN_REALMS_PATH + realm,
+        client.exchange(HttpMethod.PUT, realmPath(realm),
                 Map.of("realm", realm, ENABLED, enabled), null);
         LOG.info("Keycloak realm '{}' {}.", realm, enabled ? "enabled" : "disabled");
+    }
+
+    private static String realmPath(String realm) {
+        return ADMIN_REALMS_PATH + "/" + realm;
     }
 }

@@ -172,8 +172,9 @@ class CheckOrganizationKeyTest {
 
         List<String> suggestions = checkOrganizationKey.execute("my-org").suggestions();
 
-        assertThat(suggestions).doesNotContain("my-org", "my-org-app");
-        assertThat(suggestions).hasSizeLessThanOrEqualTo(3);
-        assertThat(suggestions).allSatisfy(suggestion -> assertThat(suggestion).startsWith("my-org-"));
+        assertThat(suggestions)
+                .doesNotContain("my-org", "my-org-app")
+                .hasSizeLessThanOrEqualTo(3)
+                .allSatisfy(suggestion -> assertThat(suggestion).startsWith("my-org-"));
     }
 }
