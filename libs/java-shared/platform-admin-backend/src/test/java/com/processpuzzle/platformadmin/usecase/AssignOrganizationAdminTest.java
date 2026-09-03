@@ -1,10 +1,11 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationStatusConflictException;
@@ -55,7 +56,7 @@ class AssignOrganizationAdminTest {
         assertThat(result.userId()).isEqualTo("kc-user-1");
         assertThat(result.realm()).isEqualTo(ORG_KEY);
         assertThat(result.roles())
-                .containsExactly(IdentityRealmPort.ORG_ADMIN_ROLE, IdentityRealmPort.ORG_MEMBER_ROLE);
+                .containsExactly(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
         assertThat(result.user()).isEqualTo(USER);
     }
 

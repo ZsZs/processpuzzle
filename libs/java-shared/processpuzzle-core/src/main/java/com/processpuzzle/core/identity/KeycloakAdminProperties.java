@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.adapter.outbound;
+package com.processpuzzle.core.identity;
 
 import lombok.Getter;
 import lombok.Setter;

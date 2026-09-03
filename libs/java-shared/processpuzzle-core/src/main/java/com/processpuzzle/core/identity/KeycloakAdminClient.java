@@ -1,6 +1,5 @@
-package com.processpuzzle.platformadmin.adapter.outbound;
+package com.processpuzzle.core.identity;
 
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;

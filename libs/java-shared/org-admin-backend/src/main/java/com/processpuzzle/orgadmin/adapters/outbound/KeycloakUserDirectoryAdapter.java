@@ -1,14 +1,14 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
+import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
-import com.processpuzzle.platformadmin.adapter.outbound.KeycloakAdminClient;
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
-import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
+import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -54,7 +54,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     /** The two roles created with every realm, which ProcessPuzzle itself interprets. */
     private static final Set<String> PLATFORM_ROLES =
-            Set.of(IdentityRealmPort.ORG_ADMIN_ROLE, IdentityRealmPort.ORG_MEMBER_ROLE);
+            Set.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
 
     private final KeycloakAdminClient client;
 

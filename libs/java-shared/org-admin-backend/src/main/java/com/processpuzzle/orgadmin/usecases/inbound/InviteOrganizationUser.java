@@ -1,8 +1,8 @@
 package com.processpuzzle.orgadmin.usecases.inbound;
 
+import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
-import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
@@ -38,7 +38,7 @@ public class InviteOrganizationUser {
         if (requested != null) {
             requested.stream().filter(role -> role != null && !role.isBlank()).forEach(effective::add);
         }
-        effective.add(IdentityRealmPort.ORG_MEMBER_ROLE);
+        effective.add(TenantRoles.ORG_MEMBER);
         return List.copyOf(effective);
     }
 }

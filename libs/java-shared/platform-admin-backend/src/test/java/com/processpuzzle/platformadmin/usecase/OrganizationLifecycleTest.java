@@ -5,7 +5,7 @@ import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationStatusConflictException;

@@ -1,6 +1,9 @@
 package com.processpuzzle.platformadmin.adapter.outbound;
 
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
+import com.processpuzzle.core.tenancy.TenantRoles;
+import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakAdminProperties;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,10 +59,10 @@ class KeycloakAdminAdapterTest {
                 .containsEntry("redirectUris", List.of("https://app.example/acme/*"))
                 .containsEntry("webOrigins", List.of("https://app.example"));
         verify(client).exchangeTolerating(HttpMethod.POST, "/admin/realms/acme/roles",
-                Map.of("name", IdentityRealmPort.ORG_ADMIN_ROLE,
+                Map.of("name", TenantRoles.ORG_ADMIN,
                         "description", "May administer this organization's users and roles."), 409);
         verify(client).exchangeTolerating(HttpMethod.POST, "/admin/realms/acme/roles",
-                Map.of("name", IdentityRealmPort.ORG_MEMBER_ROLE, "description", "Member of this organization."),
+                Map.of("name", TenantRoles.ORG_MEMBER, "description", "Member of this organization."),
                 409);
     }
 

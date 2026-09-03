@@ -1,6 +1,5 @@
-package com.processpuzzle.platformadmin.adapter.outbound;
+package com.processpuzzle.core.identity;
 
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;

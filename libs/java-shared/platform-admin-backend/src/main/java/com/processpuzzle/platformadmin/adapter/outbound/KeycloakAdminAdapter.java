@@ -1,6 +1,9 @@
 package com.processpuzzle.platformadmin.adapter.outbound;
 
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
+import com.processpuzzle.core.tenancy.TenantRoles;
+import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakAdminProperties;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +63,8 @@ public class KeycloakAdminAdapter implements IdentityRealmPort {
         client.exchangeTolerating(HttpMethod.POST, ADMIN_REALMS_PATH, representation, CONFLICT);
 
         createTenantClient(realm);
-        createRealmRole(realm, ORG_ADMIN_ROLE, "May administer this organization's users and roles.");
-        createRealmRole(realm, ORG_MEMBER_ROLE, "Member of this organization.");
+        createRealmRole(realm, TenantRoles.ORG_ADMIN, "May administer this organization's users and roles.");
+        createRealmRole(realm, TenantRoles.ORG_MEMBER, "Member of this organization.");
         LOG.info("Keycloak realm '{}' is ready.", realm);
     }
 

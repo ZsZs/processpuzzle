@@ -2,7 +2,7 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.orgadmin.usecases.outbound.NoOpUserDirectoryPort;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
-import com.processpuzzle.platformadmin.adapter.outbound.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakAdminClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;

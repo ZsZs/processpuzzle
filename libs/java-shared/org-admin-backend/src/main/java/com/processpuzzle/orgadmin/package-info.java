@@ -28,12 +28,15 @@
  * <ul>
  *   <li>{@code platformadmin :: usecase} — {@code FindOrganization} and {@code OrganizationGuard}.
  *   <li>{@code platformadmin :: domain} — {@code OrganizationStatus}, to recognise a suspended tenant.
- *   <li>{@code platformadmin :: exception} — {@code OrganizationNotFoundException} and
- *       {@code OrganizationAccessDeniedException}, which this module's own advice must name because
- *       {@code @RestControllerAdvice(basePackages = ...)} matches on the controller's package.
- *   <li>{@code platformadmin :: keycloak} — the shared admin client. A second one would mean a second
- *       token cache and a second copy of {@code keycloak.admin.*} free to drift; see that package.
+ *   <li>{@code platformadmin :: exception} — {@code OrganizationNotFoundException}, which this
+ *       module's own advice must name because {@code @RestControllerAdvice(basePackages = ...)}
+ *       matches on the controller's package.
  * </ul>
+ *
+ * <p>The Keycloak admin client is <em>not</em> on that list any more. It was, as
+ * {@code platformadmin :: keycloak}, so that both modules shared one token cache; it is now
+ * {@link com.processpuzzle.core.identity.KeycloakAdminClient} and reached through core, which gives
+ * the same single cache without an edge between two features.
  *
  * <p>There is no reverse edge, and there must not be: platform-admin knows nothing about users.
  */
@@ -42,7 +45,7 @@
         allowedDependencies = {
                 "core", "shared",
                 "platformadmin :: usecase", "platformadmin :: domain",
-                "platformadmin :: exception", "platformadmin :: keycloak"})
+                "platformadmin :: exception"})
 package com.processpuzzle.orgadmin;
 
 import org.springframework.modulith.ApplicationModule;

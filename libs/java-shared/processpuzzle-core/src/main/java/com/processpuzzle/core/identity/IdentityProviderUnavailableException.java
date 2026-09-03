@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.usecase.exception;
+package com.processpuzzle.core.identity;
 
 /**
  * The identity provider could not be reached, or refused the operation.
