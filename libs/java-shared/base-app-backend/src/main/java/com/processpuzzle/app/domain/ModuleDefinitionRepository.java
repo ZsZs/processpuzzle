@@ -18,6 +18,11 @@ public interface ModuleDefinitionRepository extends JpaRepository<ModuleDefiniti
 
     List<ModuleDefinition> findByOrgKey(String orgKey);
 
-    /** Called by {@code DeleteOrganization}: modules are scoped by the organization like everything else. */
+    /**
+     * Called by {@code TenantDataCleaner} when the tenant is deleted: modules are scoped by the
+     * organization like everything else. It used to be called by {@code DeleteOrganization}
+     * directly, which was possible while base-app owned that use case; the cascade now arrives as
+     * {@code OrganizationDeletedEvent}.
+     */
     void deleteByOrgKey(String orgKey);
 }

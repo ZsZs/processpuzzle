@@ -5,17 +5,19 @@ import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationRepository;
-import com.processpuzzle.app.domain.OrganizationStatus;
+import com.processpuzzle.platformadmin.domain.Organization;
+import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
-import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.app.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -143,11 +145,13 @@ class GetAppLayoutTest {
     }
 
     private GetAppLayout layoutUseCase(OrganizationAccessPolicy policy) {
-        return new GetAppLayout(repository, organizationRepository, guard(policy));
+        OrganizationGuard guard = guard(policy);
+        return new GetAppLayout(repository, organizationRepository, guard, new NavVisibilityFilter(guard));
     }
 
     private GetRouteDefinition pageUseCase(OrganizationAccessPolicy policy) {
-        return new GetRouteDefinition(repository, guard(policy));
+        OrganizationGuard guard = guard(policy);
+        return new GetRouteDefinition(repository, guard, new NavVisibilityFilter(guard));
     }
 
     @SuppressWarnings("unchecked")

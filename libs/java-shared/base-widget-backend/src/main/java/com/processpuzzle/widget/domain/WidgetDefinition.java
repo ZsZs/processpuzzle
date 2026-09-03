@@ -5,12 +5,13 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * The description of a widget <em>type</em>: what it is called, what props it takes, and what ports
@@ -20,7 +21,7 @@ import java.time.Instant;
  *
  * <p>{@code name}, {@code category} and friends are real columns because {@code listWidgetDefinitions}
  * filters and sorts on them via RSQL. {@code propsSchema} and the two port lists are opaque JSON in
- * a {@code @Lob}: nothing queries inside them, and the backend never interprets them. Same division
+ * long text: nothing queries inside them, and the backend never interprets them. Same division
  * base-app makes between its header fields and its graph.
  *
  * <h2>Why {@code version} is not {@code @Version}</h2>
@@ -66,17 +67,17 @@ public class WidgetDefinition {
     @Column(length = 100)
     private String icon;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Column(name = "props_schema")
     @Convert(converter = JsonMapConverter.class)
     private java.util.Map<String, Object> propsSchema;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Column(name = "input_ports")
     @Convert(converter = PortListConverter.class)
     private java.util.List<Port> inputPorts;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Column(name = "output_ports")
     @Convert(converter = PortListConverter.class)
     private java.util.List<Port> outputPorts;

@@ -34,5 +34,16 @@ export interface BaseConfiguration {
   readonly WIDGET_SERVICE_ROOT?: string;
   readonly STATE_SERVICE_ROOT?: string;
   readonly WORKFLOW_SERVICE_ROOT?: string;
+  /**
+   * Roots of the two administration surfaces.
+   *
+   * Unlike the per-feature roots above these are deliberately *not* org-scoped: every platform-admin
+   * path starts with `/platform`, and org-admin carries the tenant inside its own paths
+   * (`/organizations/{orgKey}/admin/...`). Falling back to `APP_SERVICE_ROOT` would therefore append
+   * those to a root that already ends in `/organizations/<orgKey>` and produce a doubled segment, so
+   * an application hosting either surface configures the root explicitly.
+   */
+  readonly PLATFORM_ADMIN_SERVICE_ROOT?: string;
+  readonly ORG_ADMIN_SERVICE_ROOT?: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

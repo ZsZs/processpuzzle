@@ -19,7 +19,7 @@ import java.util.List;
  * bind to is not obvious, and this way it is explicit and identical to the Jackson 2
  * {@code ObjectMapper} already used for YAML import/export in {@code ImportRules}/{@code
  * ExportRules}. See {@link StateMachineDefinition}'s class javadoc for why the column is a plain
- * portable {@code @Lob} rather than a Postgres-specific {@code jsonb}.
+ * portable {@code @JdbcTypeCode(SqlTypes.LONG32VARCHAR)} rather than a Postgres-specific {@code jsonb}.
  */
 @Converter
 public class StatesConverter implements AttributeConverter<List<State>, String> {

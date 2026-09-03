@@ -57,3 +57,25 @@ base-state:
 base-workflow:
   loadDefaultWorkflows: no
   loadDefaultTranslations: no
+
+platform-admin:
+  loadDefaultPlans: no
+
+org-admin:
+  loadDefaults: no
+
+processpuzzle:
+  security:
+    # Left false in tests as in production, so the two agree about what the filter chain does. The
+    # security tests exercise the resolver and the policies directly rather than by flipping this.
+    require-authentication: false
+    issuer-base-url: http://localhost:8180
+    # Mirrors SecurityTestTokens: the boot tests model the ADMIN deployment, whose CORS origin
+    # localhost:9091 is what CorsHeadersOnRejectedRequestTest asserts on.
+    stack-realm: processpuzzle-admin
+
+keycloak:
+  admin:
+    # Unset, so IdentityRealmConfiguration and UserDirectoryConfiguration both select their no-op:
+    # no test should reach for a Keycloak that is not running.
+    client-secret: ""

@@ -5,7 +5,6 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -13,6 +12,8 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * A document's language-invariant half: metadata, port declarations and access control.
@@ -91,11 +92,11 @@ public class Document {
     @Column(name = "is_public", nullable = false)
     private boolean isPublic;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = DocumentRolesConverter.class)
     private DocumentRoles roles = DocumentRoles.unrestricted();
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = DocumentPortsConverter.class)
     private DocumentPorts ports = DocumentPorts.empty();
 

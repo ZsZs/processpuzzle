@@ -1,0 +1,8 @@
+{
+  "/platform/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "http://localhost:8083",
+    "logLevel": "debug"
+  }
+}

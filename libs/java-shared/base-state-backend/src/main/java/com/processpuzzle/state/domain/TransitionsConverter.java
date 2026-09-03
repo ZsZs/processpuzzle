@@ -12,7 +12,8 @@ import java.util.List;
  * Converts {@link StateMachineDefinition#getTransitions()} to and from a single serialized JSON
  * text column. See {@link StatesConverter} for why this uses a plain Jackson 2
  * {@code ObjectMapper} rather than Hibernate's built-in JSON format mapper, and why the column is
- * a plain portable {@code @Lob} rather than a Postgres-specific {@code jsonb}.
+ * a plain portable {@code @JdbcTypeCode(SqlTypes.LONG32VARCHAR)} rather than a Postgres-specific
+ * {@code jsonb}.
  */
 @Converter
 public class TransitionsConverter implements AttributeConverter<List<Transition>, String> {

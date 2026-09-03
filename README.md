@@ -6,6 +6,9 @@ ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
 - [ProcessPuzzle Testbed](/apps/processpuzzle-testbed) – Web application to test and demonstrate the framework capabilities
 - [ProcessPuzzle UI](/apps/processpuzzle-ui) – Web application to help you to define your own business application.
+
+Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over
+shared infrastructure — see [Application stacks](/docs/application-stacks.md) for the naming rules and the target state.
 ## Architecture
 ProcessPuzzle is organized around five **features** — `base-entity`, `base-rule`, `base-state`, `base-workflow`
 and `base-app`. Three principles hold them together: every feature is **metadata-driven**, every feature has
@@ -227,7 +230,9 @@ topology locally. A real project additionally needs three manual GCP settings th
 **Docker Compose** — `tools/docker/docker-compose-ci.yaml` (CI / local) and `docker-compose-prod.yaml`
 (production) compose NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend
 (where feature modules are Modulith modules and the events above are in-process application events), Keycloak
-backed by PostgreSQL for identity, and MinIO for object storage behind `processpuzzle-store`.
+for identity, PostgreSQL behind both, and MinIO for object storage behind `processpuzzle-store`. The backend
+is deployed **once per application stack** — same image, its own database, realm and bucket prefix each; see
+[Application stacks](/docs/application-stacks.md).
 
 Running both topologies in CI is deliberate: it keeps platform-specific concerns confined to the adapter layer,
 so neither platform can quietly become the only one that works.

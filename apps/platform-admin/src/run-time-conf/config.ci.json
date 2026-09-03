@@ -1,0 +1,6 @@
+{
+  "BASE_CONFIGURATION": {
+    "PIPELINE_STAGE": "ci",
+    "PLATFORM_ADMIN_SERVICE_ROOT": "http://localhost:8083"
+  }
+}

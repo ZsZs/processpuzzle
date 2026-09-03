@@ -2,8 +2,8 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinition;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationStatus;
+import com.processpuzzle.platformadmin.domain.Organization;
+import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
 import com.processpuzzle.app.model.KeyAvailability;
@@ -17,20 +17,21 @@ import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
-import com.processpuzzle.app.usecase.CheckOrganizationKey;
+import com.processpuzzle.platformadmin.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
-import com.processpuzzle.app.usecase.DeleteOrganization;
+import com.processpuzzle.platformadmin.usecase.DeleteOrganization;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
-import com.processpuzzle.app.usecase.FindOrganization;
+import com.processpuzzle.platformadmin.usecase.FindOrganization;
 import com.processpuzzle.app.usecase.GetAppLayout;
 import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.KeyCheckOutcome;
-import com.processpuzzle.app.usecase.ProvisionOrganization;
+import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
+import com.processpuzzle.app.usecase.ProvisionTenant;
+import com.processpuzzle.platformadmin.usecase.OrganizationDetails;
 import com.processpuzzle.app.usecase.CreateModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteModuleDefinition;
 import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
@@ -38,7 +39,7 @@ import com.processpuzzle.app.usecase.FindModuleDefinition;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
-import com.processpuzzle.app.usecase.UpdateOrganization;
+import com.processpuzzle.platformadmin.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.rule.domain.Severity;
 import com.processpuzzle.shared.model.ImportResult;
@@ -82,7 +83,7 @@ import static org.mockito.Mockito.when;
  */
 class AppEndpointTest {
 
-    private ProvisionOrganization provisionOrganization;
+    private ProvisionTenant provisionTenant;
     private CheckOrganizationKey checkOrganizationKey;
     private FindOrganization findOrganization;
     private UpdateOrganization updateOrganization;
@@ -107,7 +108,7 @@ class AppEndpointTest {
 
     @BeforeEach
     void setUp() {
-        provisionOrganization = mock(ProvisionOrganization.class);
+        provisionTenant = mock(ProvisionTenant.class);
         checkOrganizationKey = mock(CheckOrganizationKey.class);
         findOrganization = mock(FindOrganization.class);
         updateOrganization = mock(UpdateOrganization.class);
@@ -129,7 +130,7 @@ class AppEndpointTest {
         importAppDefinitions = mock(ImportAppDefinitions.class);
         exportAppDefinition = mock(ExportAppDefinition.class);
 
-        endpoint = new AppEndpoint(provisionOrganization, checkOrganizationKey, findOrganization,
+        endpoint = new AppEndpoint(provisionTenant, checkOrganizationKey, findOrganization,
                 updateOrganization, deleteOrganization, createAppDefinition, findAppDefinition,
                 findAllAppDefinitions, updateAppDefinition, deleteAppDefinition, publishAppDefinition,
                 createModuleDefinition, findModuleDefinition, findAllModuleDefinitions,
@@ -141,8 +142,8 @@ class AppEndpointTest {
 
     @Test
     void provisioningAnOrganizationAnswers201WithTheTenantAndItsStarterApp() {
-        when(provisionOrganization.execute(any())).thenReturn(
-                new ProvisionOrganization.Result(organization(), AppTestFixtures.storedDefinition()));
+        when(provisionTenant.execute(any())).thenReturn(
+                new ProvisionTenant.Result(organization(), AppTestFixtures.storedDefinition()));
 
         ResponseEntity<ProvisioningResult> response =
                 endpoint.provisionOrganization(new OrganizationInput(ORG_KEY, "My Organization Ltd."));
@@ -175,13 +176,23 @@ class AppEndpointTest {
                 .satisfies(model -> assertThat(model.getContactEmail()).isEqualTo("ops@my-org.example"));
     }
 
+    /**
+     * The use case takes {@link OrganizationDetails}, not this contract's DTO — it lives in another
+     * Modulith module and cannot see {@code app.model}. What the endpoint forwards is therefore the
+     * mapped record, and losing a field in that mapping is exactly what this asserts against.
+     */
     @Test
-    void updatingAnOrganizationForwardsThePayloadAndAnswersTheUpdatedModel() {
+    void updatingAnOrganizationForwardsTheMappedDetailsAndAnswersTheUpdatedModel() {
         OrganizationUpdate input = new OrganizationUpdate("My Organization GmbH");
-        when(updateOrganization.execute(ORG_KEY, input)).thenReturn(organization());
+        input.setDescription("Now German.");
+        input.setContactEmail("ops@my-org.example");
+        input.setDefaultLocale("de-DE");
+        OrganizationDetails expected = new OrganizationDetails("My Organization GmbH", "Now German.",
+                "ops@my-org.example", "de-DE");
+        when(updateOrganization.execute(ORG_KEY, expected)).thenReturn(organization());
 
         assertThat(endpoint.updateOrganization(ORG_KEY, input).getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(updateOrganization).execute(ORG_KEY, input);
+        verify(updateOrganization).execute(ORG_KEY, expected);
     }
 
     @Test

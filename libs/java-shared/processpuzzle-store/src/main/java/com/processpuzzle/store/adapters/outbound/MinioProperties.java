@@ -19,6 +19,17 @@ public class MinioProperties {
     private String accessKey;
     private String secretKey;
     private String publicEndpoint;
+    /**
+     * Prepended to every bucket name this application chooses, as {@code <prefix>-<purpose>} — so
+     * {@code processpuzzle-admin} yields {@code processpuzzle-admin-documents}. One MinIO serves every
+     * application stack, and the prefix is the whole isolation between them; see
+     * docs/application-stacks.md.
+     *
+     * <p>Empty by default, which keeps the flat bucket names an existing deployment already holds
+     * objects in. {@link com.processpuzzle.store.usecases.inbound.BucketNameFinder} is the only place
+     * that applies it, because it is the only place a bucket name is chosen rather than echoed back.
+     */
+    private String bucketPrefix = "";
     private Map<String, String> buckets;
     private Map<String, String> mimeTypes;
     private Thumbnail thumbnail = new Thumbnail();

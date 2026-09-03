@@ -7,6 +7,8 @@ import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +27,14 @@ public class GetRouteDefinition {
 
     private final AppDefinitionRepository repository;
     private final OrganizationGuard guard;
+    private final NavVisibilityFilter navVisibility;
 
-    public GetRouteDefinition(AppDefinitionRepository repository, OrganizationGuard guard) {
+    public GetRouteDefinition(AppDefinitionRepository repository,
+                              OrganizationGuard guard,
+                              NavVisibilityFilter navVisibility) {
         this.repository = repository;
         this.guard = guard;
+        this.navVisibility = navVisibility;
     }
 
     public AppRoute execute(String orgKey, String appId, String routePath, boolean draft) {
@@ -47,7 +53,7 @@ public class GetRouteDefinition {
         }
 
         AppRoute route = graph.findRoute(routePath);
-        if (route == null || !guard.isRouteReachable(graph.regions(), routePath)) {
+        if (route == null || !navVisibility.isRouteReachable(graph.regions(), routePath)) {
             throw new RouteDefinitionNotFoundException(orgKey, appId, routePath);
         }
         return route;

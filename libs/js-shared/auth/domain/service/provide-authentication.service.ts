@@ -13,6 +13,15 @@ export interface AuthenticationConfiguration {
   readonly AUTHENTICATION_PROVIDER?: 'local-auth' | 'firebase-auth' | 'oauth2' | 'keycloak';
   readonly AUTHENTICATION_SERVICE_ROOT?: string;
   readonly AUTH_SERVICE_CONFIG?: KeycloakAuthConfig | FirebaseAuthConfig;
+  /**
+   * Realm to authenticate against when `AUTH_SERVICE_CONFIG.realm` is a `{orgKey}` template and the
+   * URL names no tenant — a landing page or a sign-up form.
+   *
+   * Read before `bootstrapApplication` by the hosting application's `main.ts`, not by anything in
+   * this library: by the time these providers run the realm has already been substituted. It is
+   * declared here so the value sits next to the template it qualifies in `run-time-conf`.
+   */
+  readonly FALLBACK_AUTH_REALM?: string;
 }
 
 // Single source of truth for which providers the factory below can construct.

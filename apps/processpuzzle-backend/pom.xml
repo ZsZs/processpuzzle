@@ -60,6 +60,30 @@
             <artifactId>base-widget-backend</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>platform-admin-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
+            <artifactId>org-admin-backend</artifactId>
+        </dependency>
+
+        <!--
+            The resource server. Realm-per-tenant means one issuer per organization, which is what
+            JwtIssuerAuthenticationManagerResolver exists for — see SecurityConfig.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Spring dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -94,11 +118,22 @@
             <version>3.0.2</version>
         </dependency>
 
-        <!-- Embedded database for development and integration tests -->
+        <!-- The runtime datasource for every deployment. One PostgreSQL database per application
+             stack, created by tools/docker/postgresql/init-db.sql - see docs/application-stacks.md. -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- H2 is for tests only, and the scope is what enforces that: every application-unit-test.yaml
+             pins its own H2 URL and the H2Dialect, so a test never touches a running PostgreSQL, and a
+             deployment can never fall back to an in-memory database because the driver happened to be
+             on the classpath. -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

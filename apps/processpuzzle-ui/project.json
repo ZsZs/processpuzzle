@@ -5,6 +5,7 @@
   "prefix": "app",
   "sourceRoot": "apps/processpuzzle-ui/src",
   "tags": ["type:app"],
+  "implicitDependencies": ["org-admin-frontend"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -16,30 +17,39 @@
         "browser": "apps/processpuzzle-ui/src/main.ts",
         "polyfills": [],
         "tsConfig": "apps/processpuzzle-ui/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
         "assets": [
-          {
-            "glob": "**/*",
-            "input": "apps/processpuzzle-ui/public"
-          }
+          { "glob": "**/*", "input": "apps/processpuzzle-ui/src/assets", "output": "assets" },
+          { "glob": "**/*", "input": "libs/js-shared/auth/feature/assets/auth", "output": "assets/auth" },
+          { "glob": "**/*", "input": "libs/js-shared/auth/feature/assets/i18n/auth", "output": "assets/i18n/auth" },
+          { "glob": "**/*", "input": "libs/js-shared/base-entity-frontend/src/assets/i18n/base_entity", "output": "assets/i18n/base_entity" },
+          { "glob": "**/*", "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/widgets", "output": "assets/i18n/widgets" },
+          { "glob": "**/*", "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/base_widget", "output": "assets/i18n/base_widget" },
+          { "glob": "**/*", "input": "libs/js-shared/org-admin-frontend/src/assets/i18n/org_admin", "output": "assets/i18n/org_admin" },
+          "apps/processpuzzle-ui/src/run-time-conf"
         ],
-        "styles": ["apps/processpuzzle-ui/src/styles.css"],
-        "scripts": []
+        "styles": [
+          "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
+          "apps/processpuzzle-ui/src/custom-theme.scss",
+          "apps/processpuzzle-ui/src/styles.scss"
+        ],
+        "allowedCommonJsDependencies": ["build-url-ts", "reflect-metadata"]
       },
       "configurations": {
         "production": {
-          "budgets": [
+          "baseHref": "/",
+          "fileReplacements": [
             {
-              "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
-            },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "replace": "apps/processpuzzle-ui/src/environments/environment.ts",
+              "with": "apps/processpuzzle-ui/src/environments/environment.prod.ts"
             }
           ],
-          "outputHashing": "all"
+          "budgets": [
+            { "type": "initial", "maximumWarning": "3mb", "maximumError": "5mb" },
+            { "type": "anyComponentStyle", "maximumWarning": "24kb", "maximumError": "32kb" }
+          ],
+          "outputHashing": "all",
+          "sourceMap": { "scripts": true, "styles": true, "hidden": false, "vendor": false }
         },
         "development": {
           "optimization": false,
@@ -51,48 +61,68 @@
     "serve": {
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
+      "options": {
+        "proxyConfig": "apps/processpuzzle-ui/proxy.conf.json",
+        "port": 4202
+      },
       "configurations": {
-        "production": {
-          "buildTarget": "processpuzzle-ui:build:production"
-        },
-        "development": {
-          "buildTarget": "processpuzzle-ui:build:development"
-        }
+        "production": { "buildTarget": "processpuzzle-ui:build:production" },
+        "development": { "buildTarget": "processpuzzle-ui:build:development" }
       }
     },
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",
-      "options": {
-        "buildTarget": "processpuzzle-ui:build"
-      }
+      "options": { "buildTarget": "processpuzzle-ui:build" }
     },
     "lint": {
-      "inputs": [
-        "default",
-        "{workspaceRoot}/.eslintrc.json",
-        "{workspaceRoot}/.eslintignore",
-        "{workspaceRoot}/eslint.config.js",
-        {
-          "externalDependencies": ["eslint"]
-        }
-      ]
+      "configurations": {
+        "ci": { "format": "../../tools/eslint/console-and-json.formatter.mjs" },
+        "dev": { "format": "html", "output-file": "reports/eslint/eslint.html" }
+      },
+      "outputs": ["{projectRoot}/reports/eslint/eslint.json", "{projectRoot}/reports/eslint/eslint.html", "{options.outputFile}"]
     },
     "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "@nx/angular:unit-test",
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
+        "runnerConfig": "apps/processpuzzle-ui/vitest.config.ts",
         "tsConfig": "apps/processpuzzle-ui/tsconfig.spec.json",
         "coverage": true
+      },
+      "configurations": {
+        "ci": { "coverage": true, "coverageReporters": ["lcov", "json-summary"] }
       }
     },
     "serve-static": {
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "processpuzzle-ui:build",
-        "port": 4200,
+        "port": 4202,
         "staticFilePath": "dist/apps/processpuzzle-ui/browser",
         "spa": true
+      }
+    },
+    "nx-release-publish": {
+      "options": { "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-ui" }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment patch"
+      },
+      "configurations": {
+        "major": { "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment major" },
+        "minor": { "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment minor" },
+        "patch": { "command": "node tools/scripts/release-js-lib.mjs prepare --project {projectName} --increment patch" }
+      }
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build", "processpuzzle-backend:build"],
+      "options": {
+        "command": "docker compose -f tools/docker/docker-compose-ci.yaml build processpuzzle-ui"
       }
     }
   }

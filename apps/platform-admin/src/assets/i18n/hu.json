@@ -1,0 +1,31 @@
+{
+  "navigation": {
+    "home": "Kezdőlap",
+    "platform": {
+      "organizations": "Szervezetek",
+      "plans": "Csomagok",
+      "subscriptions": "Előfizetések",
+      "invoices": "Számlák"
+    }
+  },
+  "home": {
+    "title": "Platform adminisztráció",
+    "subtitle": "Bérlők, azonosítási tartományaik és a számlázásuk.",
+    "organizations": {
+      "title": "Szervezetek",
+      "text": "Bérlő létrehozása, első adminisztrátorának kijelölése, felfüggesztése vagy törlése. Minden bérlő önálló azonosítási tartományt kap."
+    },
+    "plans": {
+      "title": "Csomagok",
+      "text": "A kínált előfizetési csomagok és az általuk adott korlátok."
+    },
+    "subscriptions": {
+      "title": "Előfizetések",
+      "text": "Melyik bérlő melyik csomagot használja, és mióta."
+    },
+    "invoices": {
+      "title": "Számlák",
+      "text": "Mi került kiszámlázásra, bérlőnként és időszakonként."
+    }
+  }
+}

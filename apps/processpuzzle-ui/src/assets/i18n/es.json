@@ -1,0 +1,17 @@
+{
+  "navigation": {
+    "home": "Inicio",
+    "admin": {
+      "users": "Usuarios"
+    }
+  },
+  "home": {
+    "title": "ProcessPuzzle",
+    "subtitle": "Diseñe su aplicación y administre a quienes la usan.",
+    "noTenant": "Abra su organización en /<clave-de-su-organización>/admin para iniciar sesión y gestionar sus usuarios.",
+    "users": {
+      "title": "Usuarios",
+      "text": "Invite personas a su organización, active o desactive sus cuentas y asigne sus roles."
+    }
+  }
+}

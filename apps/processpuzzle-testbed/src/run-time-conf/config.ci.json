@@ -17,7 +17,7 @@
     "AUTHENTICATION_PROVIDER": "keycloak",
     "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070",
     "AUTH_SERVICE_CONFIG": {
-      "realm": "processpuzzle",
+      "realm": "processpuzzle-testbed",
       "clientId": "processpuzzle-testbed",
       "authServerUrl": "http://localhost:7070"
     }

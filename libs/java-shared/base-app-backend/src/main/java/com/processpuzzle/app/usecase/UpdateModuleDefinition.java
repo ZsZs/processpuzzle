@@ -7,6 +7,7 @@ import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

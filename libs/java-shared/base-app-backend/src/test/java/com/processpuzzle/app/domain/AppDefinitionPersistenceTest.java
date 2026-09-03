@@ -4,6 +4,9 @@ import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
+import com.processpuzzle.platformadmin.domain.Organization;
+import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +27,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Proves the mapping actually binds before anything is built on top of it: the composite
- * {@code @IdClass}, the {@code @Convert} + {@code @Lob} JSON column, and Specification queries.
- * {@code @Lob} composed with an {@code AttributeConverter} has a history of breaking across
- * Hibernate releases, so this is deliberately the first test in the feature.
+ * {@code @IdClass}, the {@code @Convert} + long-text JSON column, and Specification queries.
+ * A converter composed with an explicit JDBC type has a history of breaking across Hibernate
+ * releases, so this is deliberately the first test in the feature.
+ *
+ * <p>Note what this test cannot tell you, and did not: it runs on H2, and the column was
+ * {@code @Lob} until the runtime datasource became PostgreSQL — where {@code @Lob} on a
+ * {@code String} means an {@code oid} large-object reference rather than {@code text}, writes fine
+ * and fails on read. H2 mapped the same annotation to a CLOB, so the round-trip below passed either
+ * way. The columns are now {@code @JdbcTypeCode(SqlTypes.LONG32VARCHAR)}, checked against real
+ * PostgreSQL; only a test against PostgreSQL could keep them that way.
+ */
+/*
+ * Both scans name platformadmin.domain as well as this module's own. base-app genuinely reads
+ * Organization at run-time — GetAppLayout resolves a tenant's default locale, and AppMapper renders
+ * the organization projection this test checks — so the entity has to be on the same schema here
+ * exactly as it is in the application. Scoping the scans to app.domain alone made every test in this
+ * class fail on an unsatisfiable OrganizationRepository the moment the aggregate moved.
  */
 @DataJpaTest(showSql = false)
-@EntityScan("com.processpuzzle.app.domain")
-@EnableJpaRepositories("com.processpuzzle.app.domain")
+@EntityScan({"com.processpuzzle.app.domain", "com.processpuzzle.platformadmin.domain"})
+@EnableJpaRepositories({"com.processpuzzle.app.domain", "com.processpuzzle.platformadmin.domain"})
 class AppDefinitionPersistenceTest {
 
     @Configuration

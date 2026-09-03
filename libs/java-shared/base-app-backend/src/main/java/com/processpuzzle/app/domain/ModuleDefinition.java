@@ -5,13 +5,14 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * A lazily-loadable slice of an application: its own flat route list, its own transloco scope, its
@@ -54,7 +55,7 @@ public class ModuleDefinition {
     @Column(name = "transloco_scope", length = 100)
     private String translocoScope;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Column(name = "routes")
     @Convert(converter = RouteListConverter.class)
     private List<AppRoute> routes;

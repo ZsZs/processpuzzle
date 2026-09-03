@@ -1,0 +1,26 @@
+mat-toolbar {
+  background-color: var(--pp-surface-header);
+}
+
+.app-header {
+  height: auto;
+}
+
+.app-logo {
+  margin: 5px;
+  border: 5px solid var(--pp-color-white);
+}
+
+mat-menu {
+  width: 100%;
+}
+
+.handset-layout {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+button.handset-layout > span:nth-child(2) {
+  margin-bottom: 20px;
+}

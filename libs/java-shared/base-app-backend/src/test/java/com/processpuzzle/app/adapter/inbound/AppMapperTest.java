@@ -29,7 +29,7 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.KeyCheckOutcome;
+import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
 import com.processpuzzle.rule.domain.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
@@ -368,9 +368,9 @@ class AppMapperTest {
 
     @Test
     void anOrganizationMapsWithItsStatusAndDescriptiveFields() {
-        com.processpuzzle.app.domain.Organization organization = new com.processpuzzle.app.domain.Organization(
+        com.processpuzzle.platformadmin.domain.Organization organization = new com.processpuzzle.platformadmin.domain.Organization(
                 "my-org", "My Organization Ltd.", "Insurance.", "ops@my-org.example", "en-GB",
-                com.processpuzzle.app.domain.OrganizationStatus.SUSPENDED);
+                com.processpuzzle.platformadmin.domain.OrganizationStatus.SUSPENDED);
 
         com.processpuzzle.app.model.Organization model = mapper.toModel(organization);
 
@@ -385,7 +385,7 @@ class AppMapperTest {
 
     @Test
     void provisioningAnswersTheTenantAndItsStarterAppTogether() {
-        com.processpuzzle.app.domain.Organization organization = new com.processpuzzle.app.domain.Organization(
+        com.processpuzzle.platformadmin.domain.Organization organization = new com.processpuzzle.platformadmin.domain.Organization(
                 "my-org", "My Organization Ltd.", null, null, null, null);
         com.processpuzzle.app.domain.AppDefinition starter = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "app", "My Organization Ltd.", null, null, AppGraph.empty());

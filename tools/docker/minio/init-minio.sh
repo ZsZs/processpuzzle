@@ -4,7 +4,25 @@ set -e
 # ── Configuration ──────────────────────────────────────────────────────────────
 MINIO_ALIAS="local"
 MINIO_ENDPOINT="http://localhost:9000"
-BUCKETS="documents images"
+
+# One MinIO serves every application stack, isolated by bucket prefix: bucket names are
+# <stack-prefix>-<purpose>, and the prefix is each backend MINIO_BUCKET_PREFIX. See
+# docs/application-stacks.md.
+#
+# PURPOSES must match minio.buckets in libs/java-shared/processpuzzle-store/src/main/resources/
+# minio-config.yaml. This script used to create two of the eight; the other six worked anyway,
+# because UploadObject asks CreateBucket for whatever bucket it needs and MinIO makes it on the
+# spot. So the list here is a convenience — a console with the expected buckets already in it — and
+# not a precondition. Adding a purpose to minio-config.yaml without adding it here is not a bug.
+STACK_PREFIXES="processpuzzle-testbed processpuzzle-admin"
+PURPOSES="configuration text images documents audio video archives logs"
+
+BUCKETS=""
+for PREFIX in ${STACK_PREFIXES}; do
+  for PURPOSE in ${PURPOSES}; do
+    BUCKETS="${BUCKETS} ${PREFIX}-${PURPOSE}"
+  done
+done
 
 # ── Start MinIO server in background ──────────────────────────────────────────
 echo "Starting MinIO server..."

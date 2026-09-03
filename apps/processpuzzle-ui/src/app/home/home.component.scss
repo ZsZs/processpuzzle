@@ -1,0 +1,22 @@
+.subtitle {
+  margin-bottom: 1.5rem;
+}
+
+.section-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.section-card {
+  cursor: pointer;
+  padding: 1rem;
+  background-color: var(--pp-surface-card);
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}

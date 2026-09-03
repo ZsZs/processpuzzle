@@ -1,0 +1,19 @@
+// Material theme of the platform administration application.
+//
+// Emitted under `html`, unlike `base-app-frontend`'s `pp-material-themes.scss`: this application hosts
+// no previewed tenant application, so there is no subtree that has to wear a different theme, and the
+// document-wide form is what CDK overlays (dialogs, menus, `mat-select` panels) inherit — they render
+// into `.cdk-overlay-container` under `<body>`, outside any themed subtree.
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}

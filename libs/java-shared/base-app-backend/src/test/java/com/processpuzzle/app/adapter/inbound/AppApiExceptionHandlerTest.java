@@ -5,10 +5,10 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsExcepti
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsException;
-import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.junit.jupiter.api.Test;

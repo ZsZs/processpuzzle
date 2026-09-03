@@ -20,3 +20,196 @@ services:
       - "3000:3000"
     networks:
       - processpuzzle
+
+  # The staff administration surface. It is the only service published on 80, and it reverse-proxies
+  # /api/ to admin-backend and /auth/ to keycloak — see tools/docker/platform-admin/nginx.conf. That
+  # single origin is what makes token validation work here without the split URLs ci needs: the issuer
+  # the browser is redirected to and the address this backend reads signing keys from are one URL.
+  platform-admin:
+    depends_on:
+      admin-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    image: zsuffazs/platform-admin:IMAGE_TAG
+    container_name: platform-admin
+    environment:
+      PIPELINE_STAGE: prod
+    ports:
+      - "80:80"
+    networks:
+      - processpuzzle
+
+  # The tenant surface: the ProcessPuzzle designer plus each organization's own administration at
+  # /<orgKey>/admin. It reverse-proxies /api/ and /auth/ exactly as platform-admin does, so a tenant
+  # user never leaves this origin either.
+  #
+  # PUBLIC_APP_ORIGIN must name this service's public URL. The backend interpolates it into every
+  # provisioned realm's redirect URI and web origin, so a mismatch is not a misconfiguration that
+  # shows up at deploy time — it shows up as a tenant unable to complete login, one realm at a time.
+  #
+  # A real deployment gives this and platform-admin separate hostnames behind one ingress; in this
+  # single-host compose the published port is what distinguishes them.
+  processpuzzle-ui:
+    depends_on:
+      testbed-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    image: zsuffazs/processpuzzle-ui:IMAGE_TAG
+    container_name: processpuzzle-ui
+    environment:
+      PIPELINE_STAGE: prod
+    ports:
+      - "8081:80"
+    networks:
+      - processpuzzle
+
+  # ── One backend deployment per application stack ────────────────────────────────────────────────
+  #
+  # The same image twice, each owning one stack's database, realm and bucket prefix — see
+  # docs/application-stacks.md. The service NAMES are load-bearing: the two nginx configurations
+  # resolve them when they load, so renaming one here without renaming it there keeps a frontend
+  # container from starting at all.
+  #
+  # Neither is published: each is reached through the /api/ location of the frontend that fronts it,
+  # which is what puts the browser and the backend on one origin and so lets token validation work
+  # here with a single URL — jwks-base-url stays unset and falls back to issuer-base-url.
+  admin-backend:
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    image: zsuffazs/processpuzzle-backend:IMAGE_TAG
+    container_name: admin-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processpuzzle_admin
+      SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:?PROCESSPUZZLE_DB_PASSWORD must be set}
+      PROCESSPUZZLE_SECURITY_STACK_REALM: processpuzzle-admin
+      MINIO_BUCKET_PREFIX: processpuzzle-admin
+
+      # Realm and user management. Reached over the compose network, so the URL carries the /auth
+      # prefix Keycloak is mounted under but not the public host.
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080/auth
+      # No default: an empty secret silently disables realm creation, which in production would look
+      # like organizations that never leave PROVISIONING.
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:?PLATFORM_ADMIN_CLIENT_SECRET must be set}
+      KEYCLOAK_ADMIN_TENANT_REDIRECT_URI: ${PUBLIC_APP_ORIGIN:?PUBLIC_APP_ORIGIN must be set}/{orgKey}/*
+      KEYCLOAK_ADMIN_TENANT_WEB_ORIGIN: ${PUBLIC_APP_ORIGIN}
+
+      # Both halves of token validation agree on the public origin, because the browser reaches
+      # Keycloak through the same reverse proxy this container does.
+      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PUBLIC_ADMIN_ORIGIN:?PUBLIC_ADMIN_ORIGIN must be set}/auth
+      PROCESSPUZZLE_SECURITY_REQUIRE_AUTHENTICATION: "true"
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+      start_period: 30s
+
+  testbed-backend:
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    image: zsuffazs/processpuzzle-backend:IMAGE_TAG
+    container_name: testbed-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processpuzzle_testbed
+      SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
+      PROCESSPUZZLE_SECURITY_STACK_REALM: processpuzzle-testbed
+      MINIO_BUCKET_PREFIX: processpuzzle-testbed
+
+      # No KEYCLOAK_ADMIN_CLIENT_SECRET: provisioning tenants is a staff action, so only the admin
+      # instance gets the credential. The identity ports fall back to their no-ops here.
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080/auth
+
+      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PUBLIC_APP_ORIGIN}/auth
+      PROCESSPUZZLE_SECURITY_REQUIRE_AUTHENTICATION: "true"
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+      start_period: 30s
+
+  keycloak:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: zsuffazs/testbed-keycloak:IMAGE_TAG
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?KEYCLOAK_ADMIN_USERNAME must be set}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set}
+
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: "edge"
+      # Not published directly; it is served under /auth of the admin origin. Keycloak has to be told
+      # that prefix, because it builds the absolute URLs in its discovery document itself — stripping
+      # a prefix it does not know about makes it advertise endpoints the browser cannot reach.
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HOSTNAME: ${PUBLIC_ADMIN_ORIGIN}/auth
+      KC_HOSTNAME_STRICT: "true"
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # One-shot: creates the master-realm service account platform-admin-backend uses to manage tenant
+  # realms. Idempotent, so it re-runs safely on every deployment.
+  keycloak-init:
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    image: zsuffazs/testbed-keycloak-init:IMAGE_TAG
+    container_name: keycloak-init
+    environment:
+      KC_URL: http://keycloak:8080/auth
+      KC_ADMIN: ${KEYCLOAK_ADMIN_USERNAME}
+      KC_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      PLATFORM_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET}
+    networks:
+      - processpuzzle
+    restart: "no"
+
+  postgres:
+    image: zsuffazs/testbed-postgres:IMAGE_TAG
+    container_name: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
