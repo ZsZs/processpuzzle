@@ -69,7 +69,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TenantAuthenticationManagerResolver implements AuthenticationManagerResolver<String> {
 
     private static final Logger LOG = LoggerFactory.getLogger(TenantAuthenticationManagerResolver.class);
-    private static final String REALMS_SEGMENT = "/realms/";
     /** Keycloak's JWKS endpoint, relative to a realm. */
     private static final String CERTS_PATH = "/protocol/openid-connect/certs";
 
@@ -107,7 +106,7 @@ public class TenantAuthenticationManagerResolver implements AuthenticationManage
         if (issuer == null) {
             return null;
         }
-        String expectedPrefix = trimTrailingSlash(properties.getIssuerBaseUrl()) + REALMS_SEGMENT;
+        String expectedPrefix = trimTrailingSlash(properties.getIssuerBaseUrl()) + SecurityConstants.REALMS_SEGMENT;
         if (!issuer.startsWith(expectedPrefix)) {
             return null;
         }
@@ -123,7 +122,7 @@ public class TenantAuthenticationManagerResolver implements AuthenticationManage
 
     private AuthenticationManager managerFor(String issuer, String realm) {
         String jwkSetUri = trimTrailingSlash(properties.getJwksBaseUrl())
-                + REALMS_SEGMENT + realm + CERTS_PATH;
+                + SecurityConstants.REALMS_SEGMENT + realm + CERTS_PATH;
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(decoder(issuer, jwkSetUri));
         provider.setJwtAuthenticationConverter(new RealmRoleConverter());
         // After construction, not before: the old log line claimed success on the line immediately

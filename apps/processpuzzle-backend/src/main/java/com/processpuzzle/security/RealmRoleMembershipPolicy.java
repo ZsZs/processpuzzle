@@ -1,6 +1,8 @@
 package com.processpuzzle.security;
 
 import com.processpuzzle.workflow.execution.usecases.outbound.RoleMembershipPort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,15 +41,14 @@ public class RealmRoleMembershipPolicy implements RoleMembershipPort {
         if (!principal.isAuthenticated() || !principal.isMemberOf(orgKey)) {
             return true;
         }
-        if (!isCurrentPrincipal(userId)) {
-            return true;
-        }
-        return principal.authorities().contains(entityRoleId);
+        return !isCurrentPrincipal(userId) || principal.authorities().contains(entityRoleId);
     }
 
     private boolean isCurrentPrincipal(String userId) {
-        return userId != null && userId.equals(
-                org.springframework.security.core.context.SecurityContextHolder.getContext()
-                        .getAuthentication().getName());
+        if (userId == null) {
+            return false;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && userId.equals(authentication.getName());
     }
 }

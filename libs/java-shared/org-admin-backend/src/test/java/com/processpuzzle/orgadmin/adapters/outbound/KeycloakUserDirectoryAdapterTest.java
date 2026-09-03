@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,11 +44,11 @@ class KeycloakUserDirectoryAdapterTest {
 
     @Test
     void findsUsersWithEncodedSearchRolesAndAnHonestNextPageEstimate() {
+        when(client.getList(anyString())).thenReturn(List.of(role("org-member")));
         when(client.getList("/admin/realms/acme/users?first=5&max=5&search=Ada+Lovelace"))
                 .thenReturn(List.of(user("user-1", true, 1000L), user("user-2", false, null),
                         user("user-3", true, 2000L), user("user-4", true, 3000L),
                         user("user-5", true, 4000L)));
-        when(client.getList(anyString())).thenReturn(List.of(role("org-member")));
 
         DirectoryPage page = adapter.findUsers(REALM, "Ada Lovelace", 1, 5);
 
@@ -119,11 +120,11 @@ class KeycloakUserDirectoryAdapterTest {
     @Test
     void translatesDuplicateAndTransportFailures() {
         UserDirectoryPort.NewUser user = new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null);
-        when(client.createAndReturnId(anyString(), any())).thenThrow(unavailable("409 Conflict"));
+        doThrow(unavailable("409 Conflict")).when(client).createAndReturnId(anyString(), any());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
                 .isInstanceOf(UserAlreadyExistsException.class);
 
-        when(client.createAndReturnId(anyString(), any())).thenThrow(unavailable("down"));
+        doThrow(unavailable("down")).when(client).createAndReturnId(anyString(), any());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
                 .isInstanceOf(DirectoryUnavailableException.class)
                 .hasCauseInstanceOf(IdentityProviderUnavailableException.class);

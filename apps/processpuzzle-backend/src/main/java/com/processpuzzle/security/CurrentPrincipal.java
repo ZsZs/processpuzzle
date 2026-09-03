@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 @Component
 public class CurrentPrincipal {
 
-    private static final String REALMS_SEGMENT = "/realms/";
-
     private final SecurityProperties properties;
 
     public CurrentPrincipal(SecurityProperties properties) {
@@ -86,7 +84,7 @@ public class CurrentPrincipal {
     }
 
     private static String realmOf(String issuer) {
-        int at = issuer.lastIndexOf(REALMS_SEGMENT);
-        return at < 0 ? issuer : issuer.substring(at + REALMS_SEGMENT.length());
+        int at = issuer.lastIndexOf(SecurityConstants.REALMS_SEGMENT);
+        return at < 0 ? issuer : issuer.substring(at + SecurityConstants.REALMS_SEGMENT.length());
     }
 }

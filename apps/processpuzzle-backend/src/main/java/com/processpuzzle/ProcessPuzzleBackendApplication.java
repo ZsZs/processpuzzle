@@ -22,7 +22,7 @@ import org.springframework.modulith.Modulith;
 @EntityScan(basePackages = "com.processpuzzle")
 public class ProcessPuzzleBackendApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(ProcessPuzzleBackendApplication.class, args);
     }
 
