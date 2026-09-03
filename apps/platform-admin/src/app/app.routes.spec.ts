@@ -39,7 +39,7 @@ describe('appRoutes', () => {
     expect(routeFor('').redirectTo).toBe('home');
 
     const navigable = appRoutes.filter((route) => route.title !== null && route.title !== undefined);
-    expect(navigable.length).toBe(PLATFORM_ADMIN_ROUTES.length + 1);
+    expect(navigable).toHaveLength(PLATFORM_ADMIN_ROUTES.length + 1);
     for (const route of navigable) {
       expect(route.data?.['icon'], `route '${route.path}' has no icon`).toEqual(expect.any(String));
       expect(route.data?.['menuTitle'], `route '${route.path}' has no menuTitle`).toEqual(expect.any(String));

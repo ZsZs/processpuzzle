@@ -35,7 +35,7 @@ describe('SidenavComponent', () => {
   it('template structure contains: mat-nav-list, one item per titled route', () => {
     expect(layoutService.isSmallDevice()).toBeFalsy();
     expect(fixture.debugElement.query(By.css('mat-nav-list')).nativeElement).toBeTruthy();
-    expect(fixture.debugElement.queryAll(By.css('mat-list-item')).length).toBe(component.routes.length);
+    expect(fixture.debugElement.queryAll(By.css('mat-list-item'))).toHaveLength(component.routes.length);
   });
 
   it('renders the translated label, untrimmed', async () => {

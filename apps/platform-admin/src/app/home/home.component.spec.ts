@@ -35,7 +35,7 @@ describe('HomeComponent', () => {
 
   it('renders one card per section, each linking to its screen', () => {
     const cards = fixture.debugElement.queryAll(By.css('mat-card'));
-    expect(cards.length).toBe(component.sections.length);
+    expect(cards).toHaveLength(component.sections.length);
 
     for (const section of component.sections) {
       const card = fixture.debugElement.query(By.css(`[test-id="home-card-${section.key}"]`));
