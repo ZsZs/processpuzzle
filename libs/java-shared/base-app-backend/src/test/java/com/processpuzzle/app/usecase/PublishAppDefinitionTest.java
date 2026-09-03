@@ -20,7 +20,7 @@ import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
@@ -161,7 +161,7 @@ class PublishAppDefinitionTest {
     @Test
     void aDefinitionTrippingOnlyAWarningRule_isStillSavedAndPublished() {
         givenRuleViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
-                Severity.WARNING, "This app declares no sidenav navigation.", null));
+                com.processpuzzle.rule.domain.Severity.WARNING, "This app declares no sidenav navigation.", null));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -172,7 +172,7 @@ class PublishAppDefinitionTest {
     @Test
     void aDefinitionTrippingAnErrorRule_isRejected() {
         givenRuleViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
-                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.", null));
+                com.processpuzzle.rule.domain.Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.", null));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -204,7 +204,7 @@ class PublishAppDefinitionTest {
     /** Wires the rule module in for this test, with the given violations on every evaluation. */
     private void givenRuleViolations(RuleViolation... violations) {
         when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
-        boolean passed = Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
+        boolean passed = Arrays.stream(violations).noneMatch(v -> v.severity() == com.processpuzzle.rule.domain.Severity.ERROR);
         when(evaluateObject.execute(any(), any(), any()))
                 .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
     }

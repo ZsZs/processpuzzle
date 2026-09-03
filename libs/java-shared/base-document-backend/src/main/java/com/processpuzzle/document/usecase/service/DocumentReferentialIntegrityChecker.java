@@ -7,7 +7,7 @@ import com.processpuzzle.document.domain.DocumentInputPort;
 import com.processpuzzle.document.domain.DocumentOutputPort;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

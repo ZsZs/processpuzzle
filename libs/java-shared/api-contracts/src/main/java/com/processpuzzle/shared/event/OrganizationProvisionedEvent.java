@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.domain.event;
+package com.processpuzzle.shared.event;
 
 /**
  * A tenant's row has been committed as {@code PROVISIONING}, and its identity realm now needs to be

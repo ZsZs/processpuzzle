@@ -11,7 +11,7 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;

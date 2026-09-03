@@ -41,7 +41,7 @@ import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
 import com.processpuzzle.platformadmin.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.shared.model.ImportResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -370,8 +370,7 @@ public class DocumentMapper {
         model.setPath(problem.path());
         model.setErrorId(problem.errorId());
         model.setErrorText(problem.errorText());
-        // DocumentValidationProblem.severity() is base-rule's own enum (see that class for why);
-        // this is the one place that has to bridge it into the generated model's own enum.
+        // Bridges the use-case enum into the generated model's own; the one place that has to.
         model.setSeverity(com.processpuzzle.document.model.Severity.fromValue(problem.severity().name()));
         model.setLocale(problem.locale());
         return model;

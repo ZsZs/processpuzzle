@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processpuzzle.app.usecase.AppValidationProblem;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
@@ -97,7 +98,17 @@ public class AppRuleValidator {
      */
     private static AppValidationProblem toProblem(RuleViolation violation) {
         return new AppValidationProblem("/", errorIdOf(violation), violation.message(),
-                violation.severity());
+                toAppSeverity(violation.severity()));
+    }
+
+    /**
+     * Base Rule's severity and this module's are separate enums with, today, identical constants —
+     * see {@link Severity} for why they are not shared. Translating by name is what an adapter would
+     * do if base-rule answered over HTTP, so a constant added on one side surfaces here as a failure
+     * to map rather than as a silent compile-time coupling.
+     */
+    private static Severity toAppSeverity(com.processpuzzle.rule.domain.Severity severity) {
+        return severity == null ? Severity.ERROR : Severity.valueOf(severity.name());
     }
 
     /**

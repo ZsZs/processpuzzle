@@ -1,6 +1,6 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

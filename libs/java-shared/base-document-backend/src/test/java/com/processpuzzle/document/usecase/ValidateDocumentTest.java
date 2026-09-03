@@ -5,7 +5,7 @@ import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

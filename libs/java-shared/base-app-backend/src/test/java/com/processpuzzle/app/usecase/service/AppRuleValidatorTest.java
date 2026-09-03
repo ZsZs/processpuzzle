@@ -13,7 +13,7 @@ import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
 import org.junit.jupiter.api.AfterEach;
@@ -188,7 +188,7 @@ class AppRuleValidatorTest {
                         (String) entry.get("description"),
                         (String) entry.get("context"),
                         (String) entry.get("expression"),
-                        Severity.valueOf((String) entry.get("severity")),
+                        com.processpuzzle.rule.domain.Severity.valueOf((String) entry.get("severity")),
                         (String) entry.get("message"),
                         (String) entry.get("translocoId"),
                         null, false, true));

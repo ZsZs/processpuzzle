@@ -1,17 +1,16 @@
 package com.processpuzzle.app.usecase;
 
-import com.processpuzzle.rule.domain.Severity;
-
 import java.io.Serializable;
 import java.util.List;
 
 /**
  * One thing wrong with a candidate app definition.
  *
- * <p>{@link Severity} is Base Rule's own enum rather than a copy: a problem may originate from a
- * {@code RuleDefinition}, whose severity is carried through verbatim, and re-declaring the scale here
- * would mean mapping between two identical enums for no gain. It is the single type Base Rule exposes
- * as its {@code domain} named interface, precisely so that a caller can read an evaluation result.
+ * <p>{@link Severity} is this module's own enum. It was Base Rule's, on the argument that a problem
+ * may originate from a {@code RuleDefinition} and re-declaring the scale would mean mapping between
+ * two identical enums for no gain. The mapping is the point: {@code AppRuleValidator} now translates
+ * by name, which is exactly what an adapter would do if base-rule answered over HTTP, and base-app
+ * no longer compiles against another feature for three constants.
  *
  * @param path JSON-pointer-like location of the offending node, e.g. {@code /regions/0/navItems/1/routePath}
  * @param errorId stable, machine-readable identifier, usable as a Transloco key by the designer

@@ -2,7 +2,7 @@ package com.processpuzzle.platformadmin.usecase;
 
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
-import com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent;
+import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;

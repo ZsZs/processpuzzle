@@ -48,13 +48,6 @@
       <artifactId>processpuzzle-core</artifactId>
     </dependency>
 
-    <!-- A document is validated against the organization's own base-rule records in addition to
-         the structural checks in ValidateDocument. -->
-    <dependency>
-      <groupId>com.processpuzzle</groupId>
-      <artifactId>base-rule-backend</artifactId>
-    </dependency>
-
     <!-- Spring Boot dependencies -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

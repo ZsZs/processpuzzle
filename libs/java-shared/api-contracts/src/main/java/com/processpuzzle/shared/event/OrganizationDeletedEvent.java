@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.domain.event;
+package com.processpuzzle.shared.event;
 
 /**
  * A tenant is being deleted, and every feature holding data scoped by {@code orgKey} should remove

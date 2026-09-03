@@ -26,7 +26,7 @@ import com.processpuzzle.document.model.PublishedContent;
 import com.processpuzzle.document.usecase.DocumentTranslationView;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
 import com.processpuzzle.document.usecase.ImportOutcome;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import com.processpuzzle.shared.model.ImportResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;

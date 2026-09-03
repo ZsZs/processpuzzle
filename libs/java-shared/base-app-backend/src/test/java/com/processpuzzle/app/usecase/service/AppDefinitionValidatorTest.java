@@ -11,7 +11,7 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
@@ -315,7 +315,7 @@ class AppDefinitionValidatorTest {
     @Test
     void violatedErrorRule_isReportedAndBlocksPersisting() {
         givenViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
-                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.",
+                com.processpuzzle.rule.domain.Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.",
                 "rule.appDefinition.idIsRouteSafe"));
 
         List<AppValidationProblem> problems = validator.validate("my-org", validInput());
@@ -329,7 +329,7 @@ class AppDefinitionValidatorTest {
     @Test
     void violatedWarningRule_isReportedButDoesNotBlockPersisting() {
         givenViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
-                Severity.WARNING, "This app declares no sidenav navigation.", null));
+                com.processpuzzle.rule.domain.Severity.WARNING, "This app declares no sidenav navigation.", null));
 
         List<AppValidationProblem> problems = validator.validate("my-org", validInput());
 
@@ -342,7 +342,7 @@ class AppDefinitionValidatorTest {
     @Test
     void violationWithoutTranslocoId_getsAnErrorIdDerivedFromTheRuleId() {
         givenViolations(new RuleViolation("titles-are-translatable", "Titles are translatable",
-                Severity.INFO, "Give every route title a Transloco id.", "  "));
+                com.processpuzzle.rule.domain.Severity.INFO, "Give every route title a Transloco id.", "  "));
 
         assertThat(errorIds(validator.validate("my-org", validInput())))
                 .containsExactly("app.validation.rule.titles-are-translatable");
@@ -352,7 +352,7 @@ class AppDefinitionValidatorTest {
     @Test
     void storedDefinition_isAlsoEvaluatedAgainstTheRules() {
         givenViolations(new RuleViolation("route-ids-are-route-safe", "Page ids are route-safe",
-                Severity.ERROR, "Every route id must be lowercase.", null));
+                com.processpuzzle.rule.domain.Severity.ERROR, "Every route id must be lowercase.", null));
 
         AppDefinition stored = new AppDefinition("claims-app", "Claims Management");
         stored.setRoutes(List.of(route("Page_One", "Claims")));
@@ -584,7 +584,7 @@ class AppDefinitionValidatorTest {
 
     private void givenViolations(RuleViolation... violations) {
         when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
-        boolean passed = java.util.Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
+        boolean passed = java.util.Arrays.stream(violations).noneMatch(v -> v.severity() == com.processpuzzle.rule.domain.Severity.ERROR);
         when(evaluateObject.execute(any(), any(), any()))
                 .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
     }

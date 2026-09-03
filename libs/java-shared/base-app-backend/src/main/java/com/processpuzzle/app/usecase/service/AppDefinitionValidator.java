@@ -12,7 +12,7 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 

@@ -43,7 +43,7 @@
         displayName = "Base App",
         allowedDependencies = {
                 "core", "shared", "rule :: usecase", "rule :: domain",
-                "platformadmin :: usecase", "platformadmin :: domain", "platformadmin :: event", "platformadmin :: exception"})
+                "platformadmin :: usecase", "platformadmin :: domain", "platformadmin :: exception"})
 package com.processpuzzle.app;
 
 import org.springframework.modulith.ApplicationModule;

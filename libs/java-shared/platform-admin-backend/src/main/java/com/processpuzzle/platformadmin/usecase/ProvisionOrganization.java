@@ -3,7 +3,7 @@ package com.processpuzzle.platformadmin.usecase;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.domain.event.OrganizationProvisionedEvent;
+import com.processpuzzle.shared.event.OrganizationProvisionedEvent;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
 import org.springframework.context.ApplicationEventPublisher;
