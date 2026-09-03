@@ -123,15 +123,15 @@ public class PlatformAdminMapper {
         return model;
     }
 
-    public UsageRecord toModel(com.processpuzzle.platformadmin.domain.UsageRecord record) {
+    public UsageRecord toModel(com.processpuzzle.platformadmin.domain.UsageRecord usageRecord) {
         UsageRecord model = new UsageRecord(
-                record.getId(),
-                record.getOrgKey(),
-                UsageMetric.fromValue(record.getMetric().name()),
-                record.getQuantity(),
-                toOffsetDateTime(record.getPeriodStart()),
-                toOffsetDateTime(record.getPeriodEnd()));
-        model.setRecordedAt(toOffsetDateTime(record.getRecordedAt()));
+                usageRecord.getId(),
+                usageRecord.getOrgKey(),
+                UsageMetric.fromValue(usageRecord.getMetric().name()),
+                usageRecord.getQuantity(),
+                toOffsetDateTime(usageRecord.getPeriodStart()),
+                toOffsetDateTime(usageRecord.getPeriodEnd()));
+        model.setRecordedAt(toOffsetDateTime(usageRecord.getRecordedAt()));
         return model;
     }
 

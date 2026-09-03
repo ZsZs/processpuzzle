@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
  * ordering assertions here are the correctness argument, not incidental detail: the realm call goes
  * first, so that a failure leaves the status unchanged and the operation simply retryable.
  */
+@SuppressWarnings("java:S5778")
 class OrganizationLifecycleTest {
 
     private OrganizationRepository repository;

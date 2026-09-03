@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Reading, updating and deleting a tenant. */
+@SuppressWarnings("java:S5778")
 class OrganizationCrudTest {
 
     private OrganizationRepository organizationRepository;

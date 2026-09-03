@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
  * which is correct here and nowhere else — so what these tests pin down is that the staff gate is
  * consulted before the repository, and that the RSQL is passed through rather than being narrowed.
  */
+@SuppressWarnings("java:S5778")
 class FindAllOrganizationsTest {
 
     private OrganizationRepository repository;

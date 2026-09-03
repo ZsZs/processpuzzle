@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
  * test here because rendering either as an error would break the screen for the majority of tenants
  * (nothing in this platform creates subscriptions yet).
  */
+@SuppressWarnings("java:S5778")
 class BillingQueriesTest {
 
     private com.processpuzzle.platformadmin.domain.OrganizationRepository organizations;
@@ -164,8 +165,9 @@ class BillingQueriesTest {
     }
 
     private static Invoice invoice() {
-        return new Invoice("inv-1", ORG_KEY, "2026-0001", InvoiceStatus.PAID, "EUR", 4900L,
-                Instant.parse("2026-08-01T00:00:00Z"), Instant.parse("2026-09-01T00:00:00Z"),
-                List.of(new InvoiceLine("Team plan, August", null, 1L, 4900L, 4900L)));
+        return new Invoice("inv-1", ORG_KEY,
+                new Invoice.Details("2026-0001", InvoiceStatus.PAID, "EUR", 4900L,
+                        Instant.parse("2026-08-01T00:00:00Z"), Instant.parse("2026-09-01T00:00:00Z"),
+                        List.of(new InvoiceLine("Team plan, August", null, 1L, 4900L, 4900L))));
     }
 }

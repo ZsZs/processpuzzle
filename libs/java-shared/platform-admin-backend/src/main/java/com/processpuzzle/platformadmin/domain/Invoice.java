@@ -72,18 +72,20 @@ public class Invoice {
         // required by JPA
     }
 
-    public Invoice(String id, String orgKey, String number, InvoiceStatus status, String currency,
-                   long totalMinor, Instant periodStart, Instant periodEnd, List<InvoiceLine> lines) {
+    public Invoice(String id, String orgKey, Details details) {
         this.id = id;
         this.orgKey = orgKey;
-        this.number = number;
-        this.status = status == null ? InvoiceStatus.DRAFT : status;
-        this.currency = currency == null ? "EUR" : currency;
-        this.totalMinor = totalMinor;
-        this.periodStart = periodStart;
-        this.periodEnd = periodEnd;
-        this.lines = lines == null ? new ArrayList<>() : new ArrayList<>(lines);
+        this.number = details.number();
+        this.status = details.status() == null ? InvoiceStatus.DRAFT : details.status();
+        this.currency = details.currency() == null ? "EUR" : details.currency();
+        this.totalMinor = details.totalMinor();
+        this.periodStart = details.periodStart();
+        this.periodEnd = details.periodEnd();
+        this.lines = details.lines() == null ? new ArrayList<>() : new ArrayList<>(details.lines());
     }
+
+    public record Details(String number, InvoiceStatus status, String currency, long totalMinor,
+                          Instant periodStart, Instant periodEnd, List<InvoiceLine> lines) {}
 
     public String getId() {
         return id;

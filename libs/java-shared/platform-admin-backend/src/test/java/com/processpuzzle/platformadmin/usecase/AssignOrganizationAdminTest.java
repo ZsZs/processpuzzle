@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("java:S5778")
 class AssignOrganizationAdminTest {
 
     private static final IdentityRealmPort.NewUser USER =

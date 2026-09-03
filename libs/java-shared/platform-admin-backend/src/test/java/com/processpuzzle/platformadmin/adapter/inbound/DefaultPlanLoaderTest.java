@@ -15,8 +15,6 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -44,7 +43,7 @@ class DefaultPlanLoaderTest {
 
     /** The bundled catalog: proves the shipped YAML actually parses, not merely that parsing works. */
     @Test
-    void seedsTheBundledCatalog() throws IOException {
+    void seedsTheBundledCatalog() {
         loaderOver(new PathMatchingResourcePatternResolver()).loadDefaults();
 
         ArgumentCaptor<Plan> saved = ArgumentCaptor.forClass(Plan.class);
@@ -101,7 +100,7 @@ class DefaultPlanLoaderTest {
                 """)).loadDefaults();
 
         ArgumentCaptor<Plan> saved = ArgumentCaptor.forClass(Plan.class);
-        verify(repository, org.mockito.Mockito.times(2)).save(saved.capture());
+        verify(repository, times(2)).save(saved.capture());
         assertThat(saved.getAllValues()).extracting(Plan::getInterval)
                 .containsExactly(BillingInterval.MONTHLY, BillingInterval.MONTHLY);
     }

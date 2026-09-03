@@ -207,7 +207,8 @@ class PlatformAdminMapperTest {
     }
 
     private static Invoice invoice(InvoiceLine... lines) {
-        return new Invoice("inv-1", "my-org", "2026-0001", InvoiceStatus.PAID, "EUR", 4900L,
-                PERIOD_START, PERIOD_END, List.of(lines));
+        return new Invoice("inv-1", "my-org",
+                new Invoice.Details("2026-0001", InvoiceStatus.PAID, "EUR", 4900L,
+                        PERIOD_START, PERIOD_END, List.of(lines)));
     }
 }

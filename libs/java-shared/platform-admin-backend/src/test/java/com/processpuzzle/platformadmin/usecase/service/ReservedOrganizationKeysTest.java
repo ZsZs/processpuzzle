@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * An organization key becomes a top-level path segment of the public site, so it shares a namespace
  * with the platform's own URLs — a tenant called {@code api} would shadow the REST API.
  */
+@SuppressWarnings("java:S5778")
 class ReservedOrganizationKeysTest {
 
     @Test

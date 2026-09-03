@@ -138,13 +138,14 @@ class BillingPersistenceTest {
 
     @Test
     void anInvoicesLinesRoundTripAndItIsListedNewestPeriodFirst() {
-        invoices.saveAndFlush(new Invoice("inv-jul", "my-org", "2026-0001", InvoiceStatus.PAID, "EUR",
-                4900L, PERIOD_START.minusSeconds(ONE_MONTH_SECONDS), PERIOD_START,
-                List.of(new InvoiceLine("Team plan, July", null, 1L, 4900L, 4900L))));
-        invoices.saveAndFlush(new Invoice("inv-aug", "my-org", null, InvoiceStatus.DRAFT, "EUR",
-                5100L, PERIOD_START, PERIOD_END,
-                List.of(new InvoiceLine("Team plan, August", null, 1L, 4900L, 4900L),
-                        new InvoiceLine("API overage", UsageMetric.API_CALLS, 200L, 1L, 200L))));
+        invoices.saveAndFlush(new Invoice("inv-jul", "my-org",
+                new Invoice.Details("2026-0001", InvoiceStatus.PAID, "EUR",
+                        4900L, PERIOD_START.minusSeconds(ONE_MONTH_SECONDS), PERIOD_START,
+                        List.of(new InvoiceLine("Team plan, July", null, 1L, 4900L, 4900L)))));
+        invoices.saveAndFlush(new Invoice("inv-aug", "my-org",
+                new Invoice.Details(null, InvoiceStatus.DRAFT, "EUR", 5100L, PERIOD_START, PERIOD_END,
+                        List.of(new InvoiceLine("Team plan, August", null, 1L, 4900L, 4900L),
+                                new InvoiceLine("API overage", UsageMetric.API_CALLS, 200L, 1L, 200L)))));
 
         List<Invoice> found = invoices.findByOrgKeyOrderByPeriodStartDesc("my-org");
 
@@ -157,8 +158,9 @@ class BillingPersistenceTest {
     /** A DRAFT has an identity but no number: numbers must be gapless once issued. */
     @Test
     void aDraftInvoiceRoundTripsWithoutANumber() {
-        invoices.saveAndFlush(new Invoice("draft", "my-org", null, InvoiceStatus.DRAFT, "EUR",
-                0L, PERIOD_START, PERIOD_END, List.of()));
+        invoices.saveAndFlush(new Invoice("draft", "my-org",
+                new Invoice.Details(null, InvoiceStatus.DRAFT, "EUR", 0L, PERIOD_START, PERIOD_END,
+                        List.of())));
 
         assertThat(invoices.findById("draft")).isPresent().get().satisfies(invoice -> {
             assertThat(invoice.getNumber()).isNull();

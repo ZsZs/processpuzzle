@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("java:S5778")
 class PlatformOrganizationEndpointTest {
 
     private FindAllOrganizations findAllOrganizations;

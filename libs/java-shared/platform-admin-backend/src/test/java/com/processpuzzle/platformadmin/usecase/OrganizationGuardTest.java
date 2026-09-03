@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
  * <p>The nav-filtering half of this class stayed in base-app as {@code NavVisibilityFilterTest}: it
  * walks base-app's {@code Region}/{@code NavNode}, which this module cannot see.
  */
+@SuppressWarnings("java:S5778")
 class OrganizationGuardTest {
 
     @Test
