@@ -1,12 +1,12 @@
 {
-  "name": "@processpuzzle/processpuzzle-ui-app",
+  "name": "@processpuzzle/processpuzzle-biz-frontend",
   "version": "0.1.0",
   "description": "ProcessPuzzle Low-Code designer and organization administration application",
   "private": false,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ZsZs/processpuzzle.git",
-    "directory": "apps/processpuzzle-ui"
+    "directory": "apps/processpuzzle-biz-frontend"
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "dependencies": {}

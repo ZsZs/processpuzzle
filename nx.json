@@ -118,7 +118,7 @@
       "platform-admin-frontend",
       "processpuzzle-admin-frontend",
       "processpuzzle-testbed-frontend",
-      "processpuzzle-ui",
+      "processpuzzle-biz-frontend",
       "test-util",
       "util",
       "base-widget-frontend",

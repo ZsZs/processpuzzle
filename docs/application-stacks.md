@@ -9,7 +9,7 @@ whose names drift is a stack that fails at run time in a way no test catches.
 
 > **Status.** Decided 2026-09-02; the infrastructure and backend half was implemented the same day.
 > Per-stack PostgreSQL databases, one backend deployment per stack, the renamed realms and the MinIO
-> bucket prefix are in place, as are the admin and testbed application renames. The `processpuzzle-ui` repurposing
+> bucket prefix are in place, as are all three application renames. The `processpuzzle-biz-frontend` repurposing
 > and the subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
 
 ## The three stacks
@@ -19,12 +19,12 @@ whose names drift is a stack that fails at run time in a way no test catches.
 | **Purpose** | Try out framework features | Public product site + customer onboarding | Internal staff administration |
 | **Audience** | Anyone, self-registered | Anyone, anonymous | ProcessPuzzle employees only |
 | **Hostname** | `testbed.processpuzzle.com` | `processpuzzle.com` | `admin.processpuzzle.com` |
-| **Nx application** | `processpuzzle-testbed-frontend` | `processpuzzle-ui` | `processpuzzle-admin-frontend` |
+| **Nx application** | `processpuzzle-testbed-frontend` | `processpuzzle-biz-frontend` | `processpuzzle-admin-frontend` |
 | **Keycloak realm** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **Organization key** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] |
 | **MinIO bucket prefix** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
-| **Backend** | `testbed-backend` (host 8080) | `processpuzzle-ui-backend` (new, onboarding only) | `admin-backend` (host 8083) |
+| **Backend** | `testbed-backend` (host 8080) | `processpuzzle-biz-backend` (new, onboarding only) | `admin-backend` (host 8083) |
 
 The pattern is deliberately mechanical: **for stacks #1 and #3 the realm name, the organization key and
 the bucket prefix are the same string**, and the database is that string upper-cased with dashes
@@ -49,7 +49,7 @@ exempts is only its own name — a testbed backend still refuses `processpuzzle-
 `tools/docker/keycloak/import/<stack>-realm.json`, complete with the stack's public client and users. So
 `OrganizationRealmProvisioner` skips realm creation for that one key — the organization still reaches
 `ACTIVE`, since the realm it names is already serving requests — and skips realm *deletion* for it too.
-Both halves matter. Creating would add a tenant `processpuzzle-ui` client and the org roles to a realm that
+Both halves matter. Creating would add a tenant `processpuzzle-biz` client and the org roles to a realm that
 is not a tenant realm; deleting would remove the realm every user of the stack authenticates against, in
 response to nothing more than a row being deleted.
 
@@ -71,7 +71,7 @@ The public face of the product at `processpuzzle.com`: marketing content and the
 prospective customers. Anonymous throughout, so it has **no realm, no organization key, no PostgreSQL
 database and no bucket prefix**, and it does not call `processpuzzle-testbed-backend`. Onboarding needs a
 little server-side work (capture a prospect, provision a trial), and that is a separate, small
-`processpuzzle-ui-backend` rather than an exception carved into the platform backend.
+`processpuzzle-biz-backend` rather than an exception carved into the platform backend.
 
 Keeping this stack free of Keycloak is what lets it be cached, mirrored and taken to a CDN without a
 session story.
@@ -136,18 +136,20 @@ stays visible.
 | Admin application | `apps/platform-admin`, container `platform-admin` | `apps/processpuzzle-admin-frontend`, container `processpuzzle-admin-frontend`; image `zsuffazs/processpuzzle-admin-frontend`, Sonar key `processpuzzle_processpuzzle_admin_frontend`. The `platform-admin-frontend` / `platform-admin-backend` **libraries** keep their names. |
 | Backend application | `apps/processpuzzle-backend`, artifact `processpuzzle-backend`, image `zsuffazs/processpuzzle-backend` | `apps/processpuzzle-testbed-backend`, artifact `processpuzzle-testbed-backend`, image `zsuffazs/processpuzzle-testbed-backend`, main class `ProcessPuzzleTestbedBackendApplication`. Still one image for both deployments, so the `admin-backend` service runs the testbed-named image until a separate admin backend exists. |
 | Testbed application | `apps/processpuzzle-testbed`, container `processpuzzle-testbed`, image `zsuffazs/processpuzzle-testbed` | `apps/processpuzzle-testbed-frontend`, container `processpuzzle-testbed-frontend`, image `zsuffazs/processpuzzle-testbed-frontend`, Sonar key `processpuzzle_testbed_frontend`. The npm package stays `@processpuzzle/testbed` so its version history and release tags survive. |
+| Tenant application | `apps/processpuzzle-ui`, container `processpuzzle-ui`, image `zsuffazs/processpuzzle-ui`, Sonar key `processpuzzle_processpuzzle_ui` | `apps/processpuzzle-biz-frontend`, container `processpuzzle-biz-frontend`, image `zsuffazs/processpuzzle-biz-frontend`, Sonar key `processpuzzle_biz_frontend`, npm package `@processpuzzle/processpuzzle-biz-frontend` (never published, so nothing to preserve), e2e project `processpuzzle-biz-e2e`. A rename only — the repurposing below is still outstanding. |
+| Tenant realm client id | `processpuzzle-ui` | `processpuzzle-biz` — `keycloak.admin.tenant-client-id` and the SPA's `AUTH_SERVICE_CONFIG.clientId` must agree, so both moved together. Realms provisioned before this hold the old client and need a `down -v` reset locally. |
 
 ### Still to do
 
 | Area | Today | Target |
 | --- | --- | --- |
 | Testbed self-service roles | Do not exist | A registered user may grant themselves roles |
-| `processpuzzle-ui` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend` | Public site + onboarding, no Keycloak, no platform backend |
-| `processpuzzle-ui-backend` | Does not exist | Small onboarding-only backend |
+| `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend` | Public site + onboarding, no Keycloak, no platform backend |
+| `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend |
 | Hostnames | Ports on `localhost` (9090 / 9091 / 9092) | Subdomains of `processpuzzle.com` |
 | Schema management | Hibernate `ddl-auto: update` | A migration tool |
 
-**`processpuzzle-ui` changes meaning**, and that is the one item that is more than a rename. It is today
+**`processpuzzle-biz-frontend` changes meaning**, and that is the one item that is more than a rename. It is today
 the tenant-facing org-admin application, which decision #2 turns into the public product site; the
 org-admin surface needs a home before that change lands — see the open question below. Until then it
 stays pointed at `testbed-backend`, which contradicts the table at the top of this document on purpose.

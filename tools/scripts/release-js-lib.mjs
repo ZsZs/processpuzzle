@@ -39,7 +39,7 @@ const PROJECTS = new Map([
   ['base-widget-frontend', 'libs/js-shared/base-widget-frontend'],
   ['processpuzzle-testbed-frontend', 'apps/processpuzzle-testbed-frontend'],
   ['processpuzzle-admin-frontend', 'apps/processpuzzle-admin-frontend'],
-  ['processpuzzle-ui', 'apps/processpuzzle-ui'],
+  ['processpuzzle-biz-frontend', 'apps/processpuzzle-biz-frontend'],
 ]);
 
 const INCREMENTS = new Set(['major', 'minor', 'patch']);

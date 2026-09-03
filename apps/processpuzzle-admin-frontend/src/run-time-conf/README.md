@@ -10,7 +10,7 @@ Two keys are worth knowing about:
   `/organizations/<orgKey>`.
 - **`AUTH_SERVICE_CONFIG.realm`** is the fixed `processpuzzle-admin` realm and never resolved from
   the URL. This application administers *all* tenants; its staff users do not belong to any one of
-  them. That is the whole difference from `processpuzzle-ui`, which substitutes the tenant's realm
+  them. That is the whole difference from `processpuzzle-biz-frontend`, which substitutes the tenant's realm
   from the first path segment before bootstrap.
 
 The realm, its `platform-admin` role and its seed user are imported by

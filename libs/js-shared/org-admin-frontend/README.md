@@ -24,7 +24,7 @@ its next login.
 
 ## Host application
 
-Mounted inside `processpuzzle-ui` under the tenant's own URL space:
+Mounted inside `processpuzzle-biz-frontend` under the tenant's own URL space:
 
 ```ts
 { path: 'admin', loadChildren: () => import('@processpuzzle/org-admin').then((m) => m.ORG_ADMIN_ROUTES) }

@@ -25,7 +25,7 @@ async function loadEnvironment(): Promise<EnvironmentVariables> {
 }
 
 /**
- * No realm resolution here, unlike `processpuzzle-ui`.
+ * No realm resolution here, unlike `processpuzzle-biz-frontend`.
  *
  * This application administers every tenant, so its users are staff of the platform and belong to
  * the fixed `processpuzzle-admin` realm named in `run-time-conf/config.common.json`. Reading a

@@ -1,7 +1,7 @@
 /**
  * Resolves a tenant's Keycloak realm from the URL, before Angular bootstraps.
  *
- * Realm-per-organization means the SPA cannot be built with its realm baked in: `processpuzzle-ui`
+ * Realm-per-organization means the SPA cannot be built with its realm baked in: `processpuzzle-biz-frontend`
  * serves every tenant from one bundle, and which realm to authenticate against is only knowable from
  * the URL the user arrived at. `KeycloakAuthService` constructs its `Keycloak` instance eagerly from
  * `AUTH_SERVICE_CONFIG.realm`, so the substitution has to happen before `bootstrapApplication` — see

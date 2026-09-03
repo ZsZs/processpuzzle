@@ -52,7 +52,7 @@ app:
   cors:
     # 4200 is the Angular dev server; 9090 is where tools/docker/docker-compose-ci.yaml publishes the testbed,
     # which calls this backend cross-origin at localhost:8080. 9091 is the processpuzzle-admin-frontend app and 9092 is
-    # processpuzzle-ui in the same compose file, and 4201/4202 are their dev servers. An origin missing here
+    # processpuzzle-biz-frontend in the same compose file, and 4201/4202 are their dev servers. An origin missing here
     # is rejected with a bare 403 carrying no CORS headers, so the browser reports only a blocked request
     # and the frontend sees HTTP status 0 — name every origin that reaches this backend directly.
     #
@@ -166,7 +166,7 @@ keycloak:
     client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
     # The public client created in every tenant realm. One name for all tenants, because the frontend
     # resolves the realm from the URL and would otherwise need a per-tenant client id too.
-    tenant-client-id: processpuzzle-ui
+    tenant-client-id: processpuzzle-biz
     # {orgKey} is substituted with the realm name, so one tenant's client cannot redirect into
     # another tenant's URL space.
     tenant-redirect-uri: http://localhost:4202/{orgKey}/*

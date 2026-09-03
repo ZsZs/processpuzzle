@@ -45,7 +45,7 @@ public class KeycloakAdminProperties {
      * against. One name for all tenants on purpose: the frontend resolves the realm from the URL and
      * would otherwise have to know a per-tenant client id too.
      */
-    private String tenantClientId = "processpuzzle-ui";
+    private String tenantClientId = "processpuzzle-biz";
 
     /**
      * Redirect URI pattern registered on each tenant's client. {@code {orgKey}} is substituted with

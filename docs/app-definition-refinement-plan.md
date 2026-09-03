@@ -437,7 +437,7 @@ cannot edit a nested discriminated union.
 
 **Verified:** `base-app-frontend` 16 files / **157 tests** pass (97.05% statements, 93.84% branches;
 the route builder at 100%); lint and build green for `base-app-frontend`, `processpuzzle-testbed`,
-`processpuzzle-testbed-e2e` and `processpuzzle-ui`. The mock backend's 13 rules are now field-for-field
+`processpuzzle-testbed-e2e` and `processpuzzle-biz-frontend`. The mock backend's 13 rules are now field-for-field
 identical to `sample-rules/processpuzzle-rules.yaml`, so json-server and Spring return the same verdicts
 and the same messages.
 
@@ -536,7 +536,7 @@ URL"* while asserting `endsWith('/node')`. Both fixed.
 
 **Verified:** `base-app-frontend` 23 files / **209 tests** (97.02% statements, 93.6% branches);
 `base-entity-frontend` green; lint and build green for both libraries, `processpuzzle-testbed`,
-`processpuzzle-testbed-e2e` and `processpuzzle-ui`.
+`processpuzzle-testbed-e2e` and `processpuzzle-biz-frontend`.
 
 ## Phase 5.5 — One Application section, three tabs ✅ DONE (2026-08-13)
 

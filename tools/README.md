@@ -27,7 +27,7 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 | --- | --- | --- | --- | --- |
 | `processpuzzle-testbed-frontend` | `processpuzzle-testbed-frontend` | `zsuffazs/processpuzzle-testbed-frontend` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
 | `processpuzzle-admin-frontend` | `processpuzzle-admin-frontend` | `zsuffazs/processpuzzle-admin-frontend` | `9091 → 80` | Angular staff administration app; calls `admin-backend`. |
-| `processpuzzle-ui` | `processpuzzle-ui` | `zsuffazs/processpuzzle-ui` | `9092 → 80` | Angular tenant app; still calls `testbed-backend` (see below). |
+| `processpuzzle-biz-frontend` | `processpuzzle-biz-frontend` | `zsuffazs/processpuzzle-biz-frontend` | `9092 → 80` | Angular tenant app; still calls `testbed-backend` (see below). |
 | `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
 | `admin-backend` | `admin-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8083 → 8080` | The same image for the **admin** stack: database `processpuzzle_admin`, realm `processpuzzle-admin`, bucket prefix `processpuzzle-admin`. |
 | `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
@@ -37,7 +37,7 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 | `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by both backends; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`. |
 | `json-server` | `json-server` | `zsuffazs/json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
 
-> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). That is why the second backend is published on `8083` rather than the next free-looking number. The testbed backend keeps `8080` because the Playwright suite, the testbed runtime configuration and `processpuzzle-ui` all name it.
+> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). That is why the second backend is published on `8083` rather than the next free-looking number. The testbed backend keeps `8080` because the Playwright suite, the testbed runtime configuration and `processpuzzle-biz-frontend` all name it.
 
 > **First start.** `tools/docker/postgresql/init-db.sql` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `docker compose -f tools/docker/docker-compose-ci.yaml down -v`.
 
@@ -45,13 +45,13 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 
 Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime.
 
-One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). `processpuzzle-ui` pointing at the testbed backend is a known inconsistency, kept until that application is repurposed as the public site.
+One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). `processpuzzle-biz-frontend` pointing at the testbed backend is a known inconsistency, kept until that application is repurposed as the public site.
 
 ```mermaid
 graph TD
     testbed[processpuzzle-testbed-frontend<br/>host :9090]
     admin[processpuzzle-admin-frontend<br/>host :9091]
-    ui[processpuzzle-ui<br/>host :9092]
+    ui[processpuzzle-biz-frontend<br/>host :9092]
     tbackend[testbed-backend<br/>host :8080]
     abackend[admin-backend<br/>host :8083]
     keycloak[keycloak<br/>host :7070]

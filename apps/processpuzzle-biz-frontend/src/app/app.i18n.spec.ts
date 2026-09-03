@@ -14,7 +14,7 @@ import { createAppRoutes } from './app.routes';
  * the missing translation it is, and no build or type check sees it. The same holds for a language
  * that falls behind English.
  */
-describe('processpuzzle-ui translations', () => {
+describe('processpuzzle-biz-frontend translations', () => {
   const bundles: Record<string, Record<string, unknown>> = { de, en, es, fr, hu };
 
   const lookup = (bundle: Record<string, unknown>, key: string): unknown =>

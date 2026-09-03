@@ -50,14 +50,14 @@ services:
   #
   # A real deployment gives this and processpuzzle-admin-frontend separate hostnames behind one ingress; in this
   # single-host compose the published port is what distinguishes them.
-  processpuzzle-ui:
+  processpuzzle-biz-frontend:
     depends_on:
       testbed-backend:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-    image: zsuffazs/processpuzzle-ui:IMAGE_TAG
-    container_name: processpuzzle-ui
+    image: zsuffazs/processpuzzle-biz-frontend:IMAGE_TAG
+    container_name: processpuzzle-biz-frontend
     environment:
       PIPELINE_STAGE: prod
     ports:

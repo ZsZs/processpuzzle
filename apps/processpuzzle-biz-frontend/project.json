@@ -1,9 +1,9 @@
 {
-  "name": "processpuzzle-ui",
+  "name": "processpuzzle-biz-frontend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/processpuzzle-ui/src",
+  "sourceRoot": "apps/processpuzzle-biz-frontend/src",
   "tags": ["type:app"],
   "implicitDependencies": ["org-admin-frontend"],
   "targets": {
@@ -12,26 +12,26 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/processpuzzle-ui",
-        "index": "apps/processpuzzle-ui/src/index.html",
-        "browser": "apps/processpuzzle-ui/src/main.ts",
+        "outputPath": "dist/apps/processpuzzle-biz-frontend",
+        "index": "apps/processpuzzle-biz-frontend/src/index.html",
+        "browser": "apps/processpuzzle-biz-frontend/src/main.ts",
         "polyfills": [],
-        "tsConfig": "apps/processpuzzle-ui/tsconfig.app.json",
+        "tsConfig": "apps/processpuzzle-biz-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
-          { "glob": "**/*", "input": "apps/processpuzzle-ui/src/assets", "output": "assets" },
+          { "glob": "**/*", "input": "apps/processpuzzle-biz-frontend/src/assets", "output": "assets" },
           { "glob": "**/*", "input": "libs/js-shared/auth/feature/assets/auth", "output": "assets/auth" },
           { "glob": "**/*", "input": "libs/js-shared/auth/feature/assets/i18n/auth", "output": "assets/i18n/auth" },
           { "glob": "**/*", "input": "libs/js-shared/base-entity-frontend/src/assets/i18n/base_entity", "output": "assets/i18n/base_entity" },
           { "glob": "**/*", "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/widgets", "output": "assets/i18n/widgets" },
           { "glob": "**/*", "input": "libs/js-shared/base-widget-frontend/src/assets/i18n/base_widget", "output": "assets/i18n/base_widget" },
           { "glob": "**/*", "input": "libs/js-shared/org-admin-frontend/src/assets/i18n/org_admin", "output": "assets/i18n/org_admin" },
-          "apps/processpuzzle-ui/src/run-time-conf"
+          "apps/processpuzzle-biz-frontend/src/run-time-conf"
         ],
         "styles": [
           "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
-          "apps/processpuzzle-ui/src/custom-theme.scss",
-          "apps/processpuzzle-ui/src/styles.scss"
+          "apps/processpuzzle-biz-frontend/src/custom-theme.scss",
+          "apps/processpuzzle-biz-frontend/src/styles.scss"
         ],
         "allowedCommonJsDependencies": ["build-url-ts", "reflect-metadata"]
       },
@@ -40,8 +40,8 @@
           "baseHref": "/",
           "fileReplacements": [
             {
-              "replace": "apps/processpuzzle-ui/src/environments/environment.ts",
-              "with": "apps/processpuzzle-ui/src/environments/environment.prod.ts"
+              "replace": "apps/processpuzzle-biz-frontend/src/environments/environment.ts",
+              "with": "apps/processpuzzle-biz-frontend/src/environments/environment.prod.ts"
             }
           ],
           "budgets": [
@@ -62,17 +62,17 @@
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "proxyConfig": "apps/processpuzzle-ui/proxy.conf.json",
+        "proxyConfig": "apps/processpuzzle-biz-frontend/proxy.conf.json",
         "port": 4202
       },
       "configurations": {
-        "production": { "buildTarget": "processpuzzle-ui:build:production" },
-        "development": { "buildTarget": "processpuzzle-ui:build:development" }
+        "production": { "buildTarget": "processpuzzle-biz-frontend:build:production" },
+        "development": { "buildTarget": "processpuzzle-biz-frontend:build:development" }
       }
     },
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",
-      "options": { "buildTarget": "processpuzzle-ui:build" }
+      "options": { "buildTarget": "processpuzzle-biz-frontend:build" }
     },
     "lint": {
       "configurations": {
@@ -87,8 +87,8 @@
       "dependsOn": ["^build"],
       "options": {
         "runner": "vitest",
-        "runnerConfig": "apps/processpuzzle-ui/vitest.config.ts",
-        "tsConfig": "apps/processpuzzle-ui/tsconfig.spec.json",
+        "runnerConfig": "apps/processpuzzle-biz-frontend/vitest.config.ts",
+        "tsConfig": "apps/processpuzzle-biz-frontend/tsconfig.spec.json",
         "coverage": true
       },
       "configurations": {
@@ -98,14 +98,14 @@
     "serve-static": {
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "processpuzzle-ui:build",
+        "buildTarget": "processpuzzle-biz-frontend:build",
         "port": 4202,
-        "staticFilePath": "dist/apps/processpuzzle-ui/browser",
+        "staticFilePath": "dist/apps/processpuzzle-biz-frontend/browser",
         "spa": true
       }
     },
     "nx-release-publish": {
-      "options": { "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-ui" }
+      "options": { "packageRoot": "{workspaceRoot}/dist/apps/processpuzzle-biz-frontend" }
     },
     "release": {
       "executor": "nx:run-commands",
@@ -122,7 +122,7 @@
       "executor": "nx:run-commands",
       "dependsOn": ["build", "processpuzzle-testbed-backend:build"],
       "options": {
-        "command": "docker compose -f tools/docker/docker-compose-ci.yaml build processpuzzle-ui"
+        "command": "docker compose -f tools/docker/docker-compose-ci.yaml build processpuzzle-biz-frontend"
       }
     }
   }

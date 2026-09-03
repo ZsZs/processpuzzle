@@ -30,7 +30,7 @@ public interface IdentityRealmPort {
     String ORG_MEMBER_ROLE = "org-member";
 
     /**
-     * Creates the tenant's realm, its public {@code processpuzzle-ui} client and the two realm roles
+     * Creates the tenant's realm, its public {@code processpuzzle-biz} client and the two realm roles
      * ProcessPuzzle itself interprets ({@link #ORG_ADMIN_ROLE}, {@link #ORG_MEMBER_ROLE}).
      *
      * <p>Idempotent: an already-existing realm is left alone rather than reported as an error, so a

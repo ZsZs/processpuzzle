@@ -18,7 +18,7 @@ services:
     pull_policy: missing
   processpuzzle-admin-frontend:
     pull_policy: missing
-  processpuzzle-ui:
+  processpuzzle-biz-frontend:
     pull_policy: missing
   testbed-backend:
     pull_policy: missing

@@ -9,7 +9,7 @@
     "FALLBACK_AUTH_REALM": "processpuzzle-admin",
     "AUTH_SERVICE_CONFIG": {
       "realm": "{orgKey}",
-      "clientId": "processpuzzle-ui",
+      "clientId": "processpuzzle-biz",
       "authServerUrl": "/auth"
     }
   },
