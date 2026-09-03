@@ -1,17 +1,17 @@
-name: Build-Platform-Admin
+name: Build-ProcessPuzzle-Admin-Frontend
 on:
   push:
     branches:
       - "feature/**"
       - "develop"
     paths:
-      - 'apps/platform-admin/**'
+      - 'apps/processpuzzle-admin-frontend/**'
       - 'libs/js-shared/platform-admin-frontend/**'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "develop" ]
     paths:
-      - 'apps/platform-admin/**'
+      - 'apps/processpuzzle-admin-frontend/**'
       - 'libs/js-shared/platform-admin-frontend/**'
   workflow_run:
     workflows: [ "Build-Platform-Admin-Frontend" ]
@@ -39,8 +39,8 @@ jobs:
         name: Lint test and build the application
         uses: ./.github/actions/lint-test-build
         with:
-          base_dir: 'apps/platform-admin'
-          nx_project: platform-admin
+          base_dir: 'apps/processpuzzle-admin-frontend'
+          nx_project: processpuzzle-admin-frontend
           github_token: ${{secrets.GITHUB_TOKEN}}
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}

@@ -9,8 +9,8 @@ whose names drift is a stack that fails at run time in a way no test catches.
 
 > **Status.** Decided 2026-09-02; the infrastructure and backend half was implemented the same day.
 > Per-stack PostgreSQL databases, one backend deployment per stack, the renamed realms and the MinIO
-> bucket prefix are in place. The application renames, the `processpuzzle-ui` repurposing and the
-> subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
+> bucket prefix are in place, as is the admin application rename. The `processpuzzle-ui` repurposing
+> and the subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
 
 ## The three stacks
 
@@ -19,7 +19,7 @@ whose names drift is a stack that fails at run time in a way no test catches.
 | **Purpose** | Try out framework features | Public product site + customer onboarding | Internal staff administration |
 | **Audience** | Anyone, self-registered | Anyone, anonymous | ProcessPuzzle employees only |
 | **Hostname** | `testbed.processpuzzle.com` | `processpuzzle.com` | `admin.processpuzzle.com` |
-| **Nx application** | `processpuzzle-testbed` | `processpuzzle-ui` | `processpuzzle-admin` |
+| **Nx application** | `processpuzzle-testbed` | `processpuzzle-ui` | `processpuzzle-admin-frontend` |
 | **Keycloak realm** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **Organization key** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] |
@@ -69,7 +69,7 @@ the reason the testbed must never share a database, a realm or a bucket with ano
 
 The public face of the product at `processpuzzle.com`: marketing content and the onboarding funnel for
 prospective customers. Anonymous throughout, so it has **no realm, no organization key, no PostgreSQL
-database and no bucket prefix**, and it does not call `processpuzzle-backend`. Onboarding needs a
+database and no bucket prefix**, and it does not call `processpuzzle-testbed-backend`. Onboarding needs a
 little server-side work (capture a prospect, provision a trial), and that is a separate, small
 `processpuzzle-ui-backend` rather than an exception carved into the platform backend.
 
@@ -100,7 +100,7 @@ separating the *namespaces* is the whole design:
 
 ### One backend deployment per stack
 
-`processpuzzle-backend` is deployed **once per stack that needs it** — the same image, twice, each
+`processpuzzle-testbed-backend` is deployed **once per stack that needs it** — the same image, twice, each
 instance configured with a single stack's database, realm and bucket prefix. The backend therefore
 stays a single-tenant application, and decoupling is a property of the deployment rather than logic
 inside it.
@@ -133,12 +133,13 @@ stays visible.
 | Stack organization keys | Claimable by a customer | Reserved in `ReservedOrganizationKeys.DEFAULTS`, except the key the deployment itself serves |
 | Stack realm lifecycle | Provisioned like a tenant's, so the stack's own bootstrap wrote to it | Infrastructure-owned: `OrganizationRealmProvisioner` creates and deletes no realm for the deployment's own stack key |
 | Trusted realm property | `processpuzzle.security.platform-realm` | `…stack-realm` — "the realm this instance serves", which is what it always meant |
+| Admin application | `apps/platform-admin`, container `platform-admin` | `apps/processpuzzle-admin-frontend`, container `processpuzzle-admin-frontend`; image `zsuffazs/processpuzzle-admin-frontend`, Sonar key `processpuzzle_processpuzzle_admin_frontend`. The `platform-admin-frontend` / `platform-admin-backend` **libraries** keep their names. |
+| Backend application | `apps/processpuzzle-backend`, artifact `processpuzzle-backend`, image `zsuffazs/processpuzzle-backend` | `apps/processpuzzle-testbed-backend`, artifact `processpuzzle-testbed-backend`, image `zsuffazs/processpuzzle-testbed-backend`, main class `ProcessPuzzleTestbedBackendApplication`. Still one image for both deployments, so the `admin-backend` service runs the testbed-named image until a separate admin backend exists. |
 
 ### Still to do
 
 | Area | Today | Target |
 | --- | --- | --- |
-| Admin application | `apps/platform-admin`, container `platform-admin` | `apps/processpuzzle-admin` |
 | Testbed self-service roles | Do not exist | A registered user may grant themselves roles |
 | `processpuzzle-ui` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend` | Public site + onboarding, no Keycloak, no platform backend |
 | `processpuzzle-ui-backend` | Does not exist | Small onboarding-only backend |

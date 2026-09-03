@@ -103,7 +103,7 @@ tools/docker/**/pubsub-debug.log
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
-/apps/processpuzzle-backend/target/
+/apps/processpuzzle-testbed-backend/target/
 /**/.flattened-pom.xml
 /.junie/
 

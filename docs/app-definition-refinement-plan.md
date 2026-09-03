@@ -289,7 +289,7 @@ The nx `project.json` deliberately omits `-am` from **both** `build` and `test`.
 template it was copied from uses `mvn -pl … -am test`, which is the pattern that races on shared
 upstream modules like `api-contracts` under parallel `run-many`.
 
-**Verified the way the checklist demands**: `mvn test -pl apps/processpuzzle-backend
+**Verified the way the checklist demands**: `mvn test -pl apps/processpuzzle-testbed-backend
 -Dtest=ModularityTests` prints `# Base Widget` among the detected modules and passes, so the module
 is genuinely wired rather than merely compiling. Full backend suite green.
 
@@ -338,7 +338,7 @@ Port shapes reuse `base-document`'s existing `PortType` / `AttributeVisibility`,
 shared spec rather than duplicated.
 
 Modulith module `widget` under `com.processpuzzle.widget`. Verify with
-`mvn test -pl apps/processpuzzle-backend -Dtest=ModularityTests` and grep the log for a
+`mvn test -pl apps/processpuzzle-testbed-backend -Dtest=ModularityTests` and grep the log for a
 `# Base Widget` heading.
 
 **The payoff to build for:** `propsSchema` turns widget props into a *generated form* in the designer

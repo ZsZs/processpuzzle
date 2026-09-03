@@ -28,7 +28,7 @@ import org.springframework.web.client.RestClient;
  *
  * <p><b>Secrets:</b> {@code ToolAuthConfig.secretRef} is resolved from {@link Environment} — i.e.
  * application properties / environment variables — not a dedicated secret store. Swap this for a
- * Vault-backed resolver if/when processpuzzle-backend adopts one; the {@link ToolInvocationPort}
+ * Vault-backed resolver if/when processpuzzle-testbed-backend adopts one; the {@link ToolInvocationPort}
  * boundary means that swap never touches the use case layer.
  *
  * <p><b>Unverified against a real build:</b> the exact generic signature of

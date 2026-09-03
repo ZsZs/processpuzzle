@@ -89,7 +89,7 @@ hand-tuned layout. That is why neither `Dynamic Entity` nor the demo application
 
 #### 7. What it needs to run
 
-The Java backend, which imports the seed file because `apps/processpuzzle-backend`'s `application.yaml` sets
+The Java backend, which imports the seed file because `apps/processpuzzle-testbed-backend`'s `application.yaml` sets
 `base-entity.loadDefaultEntities: yes`, and a run-time configuration pointing at it: every stage's
 `APP_SERVICE_ROOT` does — `http://localhost:8080/organizations/processpuzzle-testbed` in `config.dev.json`
 and `config.ci.json`. Nothing here is served by the json-server mock on `:3000`; that stands in for

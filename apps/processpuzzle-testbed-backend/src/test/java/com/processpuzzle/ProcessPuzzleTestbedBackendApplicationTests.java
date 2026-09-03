@@ -8,12 +8,12 @@ import org.springframework.context.ApplicationContext;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class ProcessPuzzleBackendApplicationTests {
+class ProcessPuzzleTestbedBackendApplicationTests {
 
     private final ApplicationContext applicationContext;
 
     @Autowired
-    ProcessPuzzleBackendApplicationTests(ApplicationContext applicationContext) {
+    ProcessPuzzleTestbedBackendApplicationTests(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 

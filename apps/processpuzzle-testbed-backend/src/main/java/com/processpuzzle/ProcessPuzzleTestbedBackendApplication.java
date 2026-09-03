@@ -17,13 +17,13 @@ import org.springframework.modulith.Modulith;
  * repositories are spread across sibling packages and saying so reads better than relying on the
  * default.
  */
-@Modulith(systemName = "ProcessPuzzle Backend")
+@Modulith(systemName = "ProcessPuzzle Testbed Backend")
 @EnableJpaRepositories(basePackages = "com.processpuzzle")
 @EntityScan(basePackages = "com.processpuzzle")
-public class ProcessPuzzleBackendApplication {
+public class ProcessPuzzleTestbedBackendApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ProcessPuzzleBackendApplication.class, args);
+        SpringApplication.run(ProcessPuzzleTestbedBackendApplication.class, args);
     }
 
 }

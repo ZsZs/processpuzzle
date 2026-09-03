@@ -9,9 +9,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>processpuzzle-backend</artifactId>
-    <name>ProcessPuzzle :: Backend Application</name>
-    <description>ProcessPuzzle Backend Application</description>
+    <artifactId>processpuzzle-testbed-backend</artifactId>
+    <name>ProcessPuzzle :: Testbed Backend Application</name>
+    <description>ProcessPuzzle Testbed Backend Application</description>
 
     <dependencies>
         <!-- Module dependencies -->

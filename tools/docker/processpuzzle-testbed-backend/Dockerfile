@@ -10,8 +10,8 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY dist/apps/processpuzzle-backend/processpuzzle-backend.jar ./processpuzzle-backend.jar
+COPY dist/apps/processpuzzle-testbed-backend/processpuzzle-testbed-backend.jar ./processpuzzle-testbed-backend.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/processpuzzle-backend.jar"]
+ENTRYPOINT ["java", "-jar", "/app/processpuzzle-testbed-backend.jar"]

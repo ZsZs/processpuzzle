@@ -38,7 +38,7 @@ const PROJECTS = new Map([
   ['util', 'libs/js-shared/util'],
   ['base-widget-frontend', 'libs/js-shared/base-widget-frontend'],
   ['processpuzzle-testbed', 'apps/processpuzzle-testbed'],
-  ['platform-admin', 'apps/platform-admin'],
+  ['processpuzzle-admin-frontend', 'apps/processpuzzle-admin-frontend'],
   ['processpuzzle-ui', 'apps/processpuzzle-ui'],
 ]);
 

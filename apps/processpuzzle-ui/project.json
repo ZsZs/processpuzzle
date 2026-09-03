@@ -120,7 +120,7 @@
     },
     "docker-build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build", "processpuzzle-backend:build"],
+      "dependsOn": ["build", "processpuzzle-testbed-backend:build"],
       "options": {
         "command": "docker compose -f tools/docker/docker-compose-ci.yaml build processpuzzle-ui"
       }

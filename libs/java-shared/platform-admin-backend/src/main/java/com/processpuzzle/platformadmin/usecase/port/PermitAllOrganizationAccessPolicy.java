@@ -12,7 +12,7 @@ package com.processpuzzle.platformadmin.usecase.port;
  * {@code /platform/**} — which deletes tenants — is reachable by anyone who can reach the port at
  * all. Any deployment serving more than one tenant, or exposed beyond a developer's machine, must
  * provide a real implementation; see {@code OrganizationGuard} for how it is picked up, and
- * {@code apps/processpuzzle-backend}'s {@code SecurityConfig} for the one that ships.
+ * {@code apps/processpuzzle-testbed-backend}'s {@code SecurityConfig} for the one that ships.
  *
  * <p>Deliberately not a {@code @Component}: it is instantiated as a fallback by
  * {@code OrganizationGuard}, so a real policy bean never has to compete with it.

@@ -205,7 +205,7 @@ graph LR
 
   subgraph DC["Platform 2 — Docker Compose (self-hosted)"]
     nginx["NgInx<br/>serves Angular, reverse proxy"]
-    boot["Spring Boot Modulith<br/>processpuzzle-backend"]
+    boot["Spring Boot Modulith<br/>processpuzzle-testbed-backend"]
     kc["Keycloak<br/>identity (+ PostgreSQL)"]
     minio["MinIO<br/>S3 object storage"]
     pg[("PostgreSQL")]

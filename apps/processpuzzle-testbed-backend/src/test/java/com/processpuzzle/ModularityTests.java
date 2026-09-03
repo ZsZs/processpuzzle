@@ -13,7 +13,7 @@ import org.springframework.modulith.core.ApplicationModules;
  */
 class ModularityTests {
 
-    private final ApplicationModules modules = ApplicationModules.of(ProcessPuzzleBackendApplication.class);
+    private final ApplicationModules modules = ApplicationModules.of(ProcessPuzzleTestbedBackendApplication.class);
 
     @Test
     void verifiesModuleStructure() {

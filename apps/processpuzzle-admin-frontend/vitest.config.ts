@@ -11,7 +11,7 @@ export default defineConfig({
       cleanOnRerun: true,
       // Negated glob names THIS directory: without it every other application's files leak into
       // the report. See [[vitest-coverage-scoping]].
-      exclude: ['apps/!(platform-admin)/**'],
+      exclude: ['apps/!(processpuzzle-admin-frontend)/**'],
     },
   },
 });

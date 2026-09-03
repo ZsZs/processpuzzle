@@ -1,6 +1,6 @@
 spring:
   application:
-    name: processpuzzle-backend
+    name: processpuzzle-testbed-backend
   # PostgreSQL, one database per application stack — see docs/application-stacks.md. The defaults name
   # the TESTBED stack on the compose postgres service published port, so a backend started outside
   # Docker against a running compose stack needs no configuration at all.
@@ -51,7 +51,7 @@ management:
 app:
   cors:
     # 4200 is the Angular dev server; 9090 is where tools/docker/docker-compose-ci.yaml publishes the testbed,
-    # which calls this backend cross-origin at localhost:8080. 9091 is the platform-admin app and 9092 is
+    # which calls this backend cross-origin at localhost:8080. 9091 is the processpuzzle-admin-frontend app and 9092 is
     # processpuzzle-ui in the same compose file, and 4201/4202 are their dev servers. An origin missing here
     # is rejected with a bare 403 carrying no CORS headers, so the browser reports only a blocked request
     # and the frontend sees HTTP status 0 — name every origin that reaches this backend directly.
@@ -68,7 +68,7 @@ app:
 info:
   app:
     name: ${spring.application.name}
-    description: ProcessPuzzle Backend Application
+    description: ProcessPuzzle Testbed Backend Application
 
 springdoc:
   swagger-ui:

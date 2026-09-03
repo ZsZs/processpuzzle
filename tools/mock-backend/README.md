@@ -13,7 +13,7 @@ with. It is not a backend for the platform's own features.
 
 Everything the platform itself owns — entities and entity definitions, rules, app and module
 definitions, widget definitions, state machines, workflows, documents, organizations — is served by
-`apps/processpuzzle-backend` (`:8080`) from the seed YAML in each `libs/java-shared/base-*-backend`
+`apps/processpuzzle-testbed-backend` (`:8080`) from the seed YAML in each `libs/java-shared/base-*-backend`
 library. The frontend reaches it through `APP_SERVICE_ROOT` and its per-feature siblings
 (`RULE_SERVICE_ROOT`, `STATE_SERVICE_ROOT`, …); only `BACKEND_SERVICE_ROOT` points here.
 

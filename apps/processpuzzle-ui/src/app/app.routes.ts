@@ -21,7 +21,7 @@ import { ORG_ADMIN_ROUTES } from '@processpuzzle/org-admin';
  * `BaseFormNavigatorSingletonStore` rebuilds details URLs from the entity name: it prefers the
  * breadcrumb, whose `baseUrl` accumulates from the root down to the route that declares `entityName`
  * in its own `routeConfig.data` — which `ORG_ADMIN_ROUTES` does, on the segment-contributing route.
- * `apps/platform-admin` had to spread its library routes at the top level for exactly the reason
+ * `apps/processpuzzle-admin-frontend` had to spread its library routes at the top level for exactly the reason
  * that does not apply here.
  *
  * The header and the sidenav both render `router.config.filter(route => route.title)`, which is why

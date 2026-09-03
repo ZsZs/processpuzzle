@@ -26,10 +26,10 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 | Service | Container | Image | Host port → container | Purpose |
 | --- | --- | --- | --- | --- |
 | `processpuzzle-testbed` | `processpuzzle-testbed` | `zsuffazs/processpuzzle-testbed` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
-| `platform-admin` | `platform-admin` | `zsuffazs/platform-admin` | `9091 → 80` | Angular staff administration app; calls `admin-backend`. |
+| `processpuzzle-admin-frontend` | `processpuzzle-admin-frontend` | `zsuffazs/processpuzzle-admin-frontend` | `9091 → 80` | Angular staff administration app; calls `admin-backend`. |
 | `processpuzzle-ui` | `processpuzzle-ui` | `zsuffazs/processpuzzle-ui` | `9092 → 80` | Angular tenant app; still calls `testbed-backend` (see below). |
-| `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
-| `admin-backend` | `admin-backend` | `zsuffazs/processpuzzle-backend` | `8083 → 8080` | The same image for the **admin** stack: database `processpuzzle_admin`, realm `processpuzzle-admin`, bucket prefix `processpuzzle-admin`. |
+| `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
+| `admin-backend` | `admin-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8083 → 8080` | The same image for the **admin** stack: database `processpuzzle_admin`, realm `processpuzzle-admin`, bucket prefix `processpuzzle-admin`. |
 | `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
 | `keycloak-init` | `testbed-keycloak-init` | `zsuffazs/testbed-keycloak-init` | — | One-shot: creates the `master`-realm service account the backend uses to provision tenant realms. Idempotent. |
 | `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for both stacks, one database each; volume `postgres_data`. |
@@ -50,7 +50,7 @@ One backend per application stack; see [`docs/application-stacks.md`](../docs/ap
 ```mermaid
 graph TD
     testbed[processpuzzle-testbed<br/>host :9090]
-    admin[platform-admin<br/>host :9091]
+    admin[processpuzzle-admin-frontend<br/>host :9091]
     ui[processpuzzle-ui<br/>host :9092]
     tbackend[testbed-backend<br/>host :8080]
     abackend[admin-backend<br/>host :8083]

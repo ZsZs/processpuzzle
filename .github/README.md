@@ -78,7 +78,7 @@ All workflows compose the same low-level steps via reusable composite actions:
 Provided by [`lint-test-build`](actions/lint-test-build/action.yml). Each project exposes npm scripts `lint-<project>`, `test-<project>`, `config-env-<project>`, and `build-<project>` that the action invokes. Coverage is normalised by `tools/scripts/sanitize-lcov.cjs` so SonarCloud can resolve source paths from the monorepo root; the per-project `sonar-project.properties` file points `sonar.projectBaseDir` at the project directory.
 
 ### Docker Compose, Publish
-For `build-testbed.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-ci.yaml` so the Playwright suite can run against a real stack. For `deploy-testbed.yml` and `release-testbed.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
+For `build-testbed.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-ci.yaml` so the Playwright suite can run against a real stack. For `deploy-testbed.yml` and `release-testbed.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
 
 ### E2E Test
 Runs in the `feature/**` testbed build against the `ci` environment using the [`e2e-test`](actions/e2e-test/action.yml) action.

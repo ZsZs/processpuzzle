@@ -42,7 +42,7 @@
   </scm>
 
   <modules>
-    <module>apps/processpuzzle-backend</module>
+    <module>apps/processpuzzle-testbed-backend</module>
     <module>libs/java-shared/api-contracts</module>
     <module>libs/java-shared/base-app-backend</module>
     <module>libs/java-shared/base-document-backend</module>

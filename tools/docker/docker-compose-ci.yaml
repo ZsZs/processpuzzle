@@ -33,7 +33,7 @@ services:
       timeout: 5s
       interval: 20s
 
-  platform-admin:
+  processpuzzle-admin-frontend:
     pull_policy: build
     depends_on:
       admin-backend:
@@ -42,11 +42,11 @@ services:
         condition: service_healthy
     build:
       context: ../../
-      dockerfile: tools/docker/platform-admin/Dockerfile
+      dockerfile: tools/docker/processpuzzle-admin-frontend/Dockerfile
       args:
         CICD_STAGE: ci
-    image: zsuffazs/platform-admin:latest
-    container_name: platform-admin
+    image: zsuffazs/processpuzzle-admin-frontend:latest
+    container_name: processpuzzle-admin-frontend
     environment:
       # The only variable the image takes; it selects run-time-conf/config.<stage>.json. There is no
       # FIREBASE_API_KEY here — this application talks to nothing but the backend and Keycloak.
@@ -116,8 +116,8 @@ services:
         condition: service_completed_successfully
     build:
       context: ../../
-      dockerfile: tools/docker/backend/Dockerfile
-    image: zsuffazs/processpuzzle-backend:latest
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    image: zsuffazs/processpuzzle-testbed-backend:latest
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
@@ -157,7 +157,7 @@ services:
       #
       # Reading them from the issuer URL is what made every authenticated request answer 500 — see
       # TenantAuthenticationManagerResolver. A single-origin deployment sets only the first of these,
-      # which is what the /auth/ block in tools/docker/platform-admin/nginx.conf arranges for prod.
+      # which is what the /auth/ block in tools/docker/processpuzzle-admin-frontend/nginx.conf arranges for prod.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: http://localhost:7070
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: http://keycloak:8080
     ports:
@@ -190,8 +190,8 @@ services:
         condition: service_completed_successfully
     build:
       context: ../../
-      dockerfile: tools/docker/backend/Dockerfile
-    image: zsuffazs/processpuzzle-backend:latest
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    image: zsuffazs/processpuzzle-testbed-backend:latest
     container_name: admin-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
