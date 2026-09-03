@@ -12,12 +12,12 @@ import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 

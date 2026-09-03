@@ -6,7 +6,7 @@ import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspend
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserNotFoundException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.springframework.core.annotation.Order;

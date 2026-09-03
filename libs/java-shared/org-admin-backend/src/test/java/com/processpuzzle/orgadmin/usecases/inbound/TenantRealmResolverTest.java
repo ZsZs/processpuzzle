@@ -4,7 +4,7 @@ import com.processpuzzle.orgadmin.OrgAdminTestFixtures;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.platformadmin.usecase.FindOrganization;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import org.junit.jupiter.api.Test;
 

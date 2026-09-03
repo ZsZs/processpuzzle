@@ -8,7 +8,7 @@
  * <ul>
  *   <li>{@code base-app} — which used to own this aggregate. Its {@code ProvisionTenant} calls
  *       {@link com.processpuzzle.platformadmin.usecase.ProvisionOrganization}, and every one of its
- *       own use cases calls {@link com.processpuzzle.platformadmin.usecase.OrganizationGuard}.
+ *       own use cases calls {@link com.processpuzzle.core.tenancy.OrganizationGuard}.
  *   <li>{@code org-admin} — which resolves a tenant's realm through
  *       {@link com.processpuzzle.platformadmin.usecase.FindOrganization} and refuses unknown or
  *       suspended tenants before touching the user directory.

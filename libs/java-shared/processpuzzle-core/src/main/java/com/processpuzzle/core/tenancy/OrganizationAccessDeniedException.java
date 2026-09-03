@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.usecase.exception;
+package com.processpuzzle.core.tenancy;
 
 /**
  * The principal may not act on this organization — typically an {@code orgKey} that does not match

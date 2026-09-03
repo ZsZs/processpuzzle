@@ -1,7 +1,7 @@
 package com.processpuzzle.security;
 
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;

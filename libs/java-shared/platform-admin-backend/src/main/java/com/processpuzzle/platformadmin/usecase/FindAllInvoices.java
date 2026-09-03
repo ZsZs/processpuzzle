@@ -1,5 +1,6 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.platformadmin.domain.Invoice;

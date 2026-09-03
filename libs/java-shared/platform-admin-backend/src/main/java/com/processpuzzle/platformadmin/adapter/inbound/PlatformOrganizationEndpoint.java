@@ -12,7 +12,7 @@ import com.processpuzzle.platformadmin.usecase.AssignOrganizationAdmin;
 import com.processpuzzle.platformadmin.usecase.DeleteOrganization;
 import com.processpuzzle.platformadmin.usecase.FindAllOrganizations;
 import com.processpuzzle.platformadmin.usecase.FindOrganization;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.usecase.SuspendOrganization;
 import com.processpuzzle.platformadmin.usecase.UpdateOrganization;
 import org.springframework.http.HttpStatus;

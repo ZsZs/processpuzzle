@@ -1,9 +1,5 @@
-package com.processpuzzle.platformadmin.usecase;
+package com.processpuzzle.core.tenancy;
 
-import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -24,6 +20,11 @@ import static org.mockito.Mockito.when;
  *
  * <p>The nav-filtering half of this class stayed in base-app as {@code NavVisibilityFilterTest}: it
  * walks base-app's {@code Region}/{@code NavNode}, which this module cannot see.
+ *
+ * <p>The three guard factories below were {@code PlatformAdminTestFixtures}' before the guard moved
+ * to core. They are inlined rather than published from a shared test artifact because core must not
+ * depend on a feature library's test tree — the feature libraries keep their own copies, as they
+ * already did of each other's.
  */
 @SuppressWarnings("java:S5778")
 class OrganizationGuardTest {
@@ -45,12 +46,12 @@ class OrganizationGuardTest {
     @Test
     void accessAndDesignChecksAreDelegatedToThePolicy() {
         assertThatCode(() -> {
-            OrganizationGuard permitted = PlatformAdminTestFixtures.permissiveGuard();
+            OrganizationGuard permitted = permissiveGuard();
             permitted.requireAccess("my-org");
             permitted.requireDesign("my-org");
         }).doesNotThrowAnyException();
 
-        OrganizationGuard denied = PlatformAdminTestFixtures.denyingGuard();
+        OrganizationGuard denied = denyingGuard();
         assertThatThrownBy(() -> denied.requireAccess("my-org"))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
         assertThatThrownBy(() -> denied.requireDesign("my-org"))
@@ -63,10 +64,10 @@ class OrganizationGuardTest {
      */
     @Test
     void theStaffCheckIsDelegatedToThePolicyToo() {
-        assertThatCode(() -> PlatformAdminTestFixtures.permissiveGuard().requirePlatformAdmin())
+        assertThatCode(() -> permissiveGuard().requirePlatformAdmin())
                 .doesNotThrowAnyException();
 
-        assertThatThrownBy(() -> PlatformAdminTestFixtures.denyingGuard().requirePlatformAdmin())
+        assertThatThrownBy(() -> denyingGuard().requirePlatformAdmin())
                 .isInstanceOf(OrganizationAccessDeniedException.class);
     }
 
@@ -90,11 +91,41 @@ class OrganizationGuardTest {
     }
 
     private static OrganizationGuard withRoles(boolean granted) {
-        return PlatformAdminTestFixtures.guardWith(new OrganizationAccessPolicy() {
+        return guardWith(new OrganizationAccessPolicy() {
             @Override
             public boolean hasAnyRole(Collection<String> requiredRoles) {
                 return granted;
             }
         });
+    }
+
+    private static OrganizationGuard permissiveGuard() {
+        return guardWith(new PermitAllOrganizationAccessPolicy());
+    }
+
+    private static OrganizationGuard denyingGuard() {
+        return guardWith(new OrganizationAccessPolicy() {
+            @Override
+            public void requireAccess(String orgKey) {
+                throw new OrganizationAccessDeniedException(orgKey);
+            }
+
+            @Override
+            public void requireDesign(String orgKey) {
+                throw new OrganizationAccessDeniedException(orgKey);
+            }
+
+            @Override
+            public void requirePlatformAdmin() {
+                throw new OrganizationAccessDeniedException("platform");
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static OrganizationGuard guardWith(OrganizationAccessPolicy policy) {
+        ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
+        when(provider.getIfUnique(any())).thenReturn(policy);
+        return new OrganizationGuard(provider);
     }
 }

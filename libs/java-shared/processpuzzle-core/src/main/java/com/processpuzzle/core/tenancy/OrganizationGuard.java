@@ -1,7 +1,5 @@
-package com.processpuzzle.platformadmin.usecase;
+package com.processpuzzle.core.tenancy;
 
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 

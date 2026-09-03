@@ -1,9 +1,10 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.usecase.port;
+package com.processpuzzle.core.tenancy;
 
 /**
  * Development stand-in that permits everything, used when the deploying application supplies no

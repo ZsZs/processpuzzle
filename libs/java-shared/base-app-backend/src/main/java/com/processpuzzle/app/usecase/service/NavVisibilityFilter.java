@@ -2,7 +2,7 @@ package com.processpuzzle.app.usecase.service;
 
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

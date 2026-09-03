@@ -1,10 +1,11 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationStatusConflictException;
 import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;

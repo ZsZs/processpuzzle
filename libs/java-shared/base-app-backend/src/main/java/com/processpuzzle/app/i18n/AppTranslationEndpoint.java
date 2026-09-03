@@ -4,7 +4,7 @@ import com.processpuzzle.app.api.BaseAppTranslationsApi;
 import com.processpuzzle.core.i18n.AbstractTranslationBundle;
 import com.processpuzzle.core.i18n.TranslationBundleResponseProvider;
 import com.processpuzzle.core.logging.LogClass;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;

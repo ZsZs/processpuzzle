@@ -1,19 +1,21 @@
 /**
- * Ports Platform Admin depends on but cannot implement itself: who the caller is
- * ({@link com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy}, supplied by the
- * deploying application, which is where identity actually lives) and the identity provider a tenant's
- * realm is created in ({@link com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort},
- * implemented in this module's own outbound adapter but replaceable).
+ * The one port Platform Admin depends on but cannot implement itself: the identity provider a
+ * tenant's realm is created in
+ * ({@link com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort}, implemented in this
+ * module's own outbound adapter but replaceable).
  *
- * <p>Both ship with a permissive or inert fallback —
- * {@link com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy} and
- * {@link com.processpuzzle.platformadmin.usecase.port.NoOpIdentityRealmPort} — so the library and its
- * tests run with neither Spring Security nor Keycloak present. Read each one's Javadoc before
- * deploying: the first enforces nothing at all.
+ * <p>It ships with an inert fallback
+ * ({@link com.processpuzzle.platformadmin.usecase.port.NoOpIdentityRealmPort}) so the library and
+ * its tests run with no Keycloak present.
+ *
+ * <p>{@code OrganizationAccessPolicy} was the second port here, and is now
+ * {@link com.processpuzzle.core.tenancy.OrganizationAccessPolicy}. It never belonged to this
+ * feature: deciding who the caller is is infrastructure every feature needs, and leaving it here
+ * meant base-app compiled against platform-admin for nothing but an authorization check. This
+ * module is now one of its consumers rather than its owner.
  *
  * <p>Exposed as the {@code port} named interface, separately from {@code usecase}: this is the side
- * of the module other code plugs into, not the side it calls. base-app consumes it because the
- * access policy moved here with the aggregate.
+ * of the module other code plugs into, not the side it calls.
  */
 @NamedInterface("port")
 package com.processpuzzle.platformadmin.usecase.port;

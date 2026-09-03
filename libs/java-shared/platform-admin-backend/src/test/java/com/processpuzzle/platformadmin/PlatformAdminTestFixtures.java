@@ -2,10 +2,10 @@ package com.processpuzzle.platformadmin;
 
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import org.springframework.beans.factory.ObjectProvider;
 
 import static org.mockito.ArgumentMatchers.any;

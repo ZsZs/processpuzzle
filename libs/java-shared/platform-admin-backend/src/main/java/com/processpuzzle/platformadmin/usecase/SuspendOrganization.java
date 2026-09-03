@@ -1,5 +1,6 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;

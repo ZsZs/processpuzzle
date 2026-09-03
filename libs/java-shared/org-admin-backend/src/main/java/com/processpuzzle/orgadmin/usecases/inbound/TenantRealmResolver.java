@@ -4,7 +4,7 @@ import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspend
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.platformadmin.usecase.FindOrganization;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,7 +41,7 @@ public class TenantRealmResolver {
 
     /**
      * @return the realm to administer; always equal to the tenant's own key
-     * @throws com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException
      *         when the caller is not an administrator of this tenant
      * @throws com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException
      *         when no such organization exists

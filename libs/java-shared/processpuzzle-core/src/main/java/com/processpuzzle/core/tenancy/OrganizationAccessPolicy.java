@@ -1,4 +1,4 @@
-package com.processpuzzle.platformadmin.usecase.port;
+package com.processpuzzle.core.tenancy;
 
 import java.util.Collection;
 
@@ -26,7 +26,7 @@ public interface OrganizationAccessPolicy {
      * 403 here: the {@code orgKey} path segment is not an authorization decision on its own, and
      * without this check editing the URL is enough to read another tenant's metadata.
      *
-     * @throws com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException when denied
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException when denied
      */
     default void requireAccess(String orgKey) {
         // permitted by default
@@ -36,7 +36,7 @@ public interface OrganizationAccessPolicy {
      * Rejects the call when the principal may not author metadata for {@code orgKey} — used for the
      * designer's draft preview.
      *
-     * @throws com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException when denied
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException when denied
      */
     default void requireDesign(String orgKey) {
         // permitted by default
@@ -54,7 +54,7 @@ public interface OrganizationAccessPolicy {
      * {@link PermitAllOrganizationAccessPolicy} exists purely as a development stand-in. A
      * deployment that reaches the internet must supply a real policy; see that class.
      *
-     * @throws com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException
      *         when denied
      */
     default void requirePlatformAdmin() {
