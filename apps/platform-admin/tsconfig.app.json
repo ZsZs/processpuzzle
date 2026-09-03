@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "sourceMap": true,
+    "declarationMap": true,
+    "inlineSources": true
+  },
+  "files": ["src/main.ts"],
+  "include": ["src/**/*.d.ts", "./package.json"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"],
+  "references": [
+    {
+      "path": "../../libs/js-shared/util"
+    },
+    {
+      "path": "../../libs/js-shared/auth"
+    },
+    {
+      "path": "../../libs/js-shared/base-entity"
+    },
+    {
+      "path": "../../libs/js-shared/base-widget-frontend"
+    },
+    {
+      "path": "../../libs/js-shared/platform-admin-frontend"
+    }
+  ]
+}

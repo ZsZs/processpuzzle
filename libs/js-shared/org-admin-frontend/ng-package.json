@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../../dist/libs/org-admin-frontend",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "assets": [{ "glob": "**/*", "input": "src/assets", "output": "assets" }]
+}

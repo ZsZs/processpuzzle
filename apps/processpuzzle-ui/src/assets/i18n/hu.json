@@ -1,0 +1,17 @@
+{
+  "navigation": {
+    "home": "Kezdőlap",
+    "admin": {
+      "users": "Felhasználók"
+    }
+  },
+  "home": {
+    "title": "ProcessPuzzle",
+    "subtitle": "Tervezze meg az alkalmazását, és kezelje a használóit.",
+    "noTenant": "Nyissa meg a szervezetét a /<szervezet-kulcsa>/admin címen a bejelentkezéshez és a felhasználók kezeléséhez.",
+    "users": {
+      "title": "Felhasználók",
+      "text": "Meghívhat személyeket a szervezetbe, engedélyezheti vagy letilthatja a fiókjukat, és szerepeket rendelhet hozzájuk."
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "navigation": {
+    "home": "Home",
+    "admin": {
+      "users": "Users"
+    }
+  },
+  "home": {
+    "title": "ProcessPuzzle",
+    "subtitle": "Design your application, and administer the people who use it.",
+    "noTenant": "Open your organization at /<your-organization-key>/admin to sign in and manage its users.",
+    "users": {
+      "title": "Users",
+      "text": "Invite people into your organization, enable or disable their accounts, and assign their roles."
+    }
+  }
+}

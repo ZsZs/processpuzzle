@@ -12,9 +12,11 @@ import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
-import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +119,7 @@ class GetRouteDefinitionTest {
     @Test
     void aPageOnlyReachableThroughANavItemThePrincipalCannotSee_isReportedAsMissing() {
         given(new AppDefinition(ORG_KEY, APP_ID, "Claims Management", null, null, nestedGraph()));
-        GetRouteDefinition withoutTheRole = new GetRouteDefinition(repository,
+        GetRouteDefinition withoutTheRole = routeUseCase(
                 AppTestFixtures.guardWith(new OrganizationAccessPolicy() {
                     @Override
                     public boolean hasAnyRole(Collection<String> requiredRoles) {
@@ -131,7 +133,7 @@ class GetRouteDefinitionTest {
 
     @Test
     void theDraftRouteRequiresDesignRightsWhileTheRuntimeRouteRequiresMembership() {
-        GetRouteDefinition denied = new GetRouteDefinition(repository, AppTestFixtures.denyingGuard());
+        GetRouteDefinition denied = routeUseCase(AppTestFixtures.denyingGuard());
 
         assertThatThrownBy(() -> denied.execute(ORG_KEY, APP_ID, ROUTE_PATH, true))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
@@ -140,7 +142,16 @@ class GetRouteDefinitionTest {
     }
 
     private GetRouteDefinition permissive() {
-        return new GetRouteDefinition(repository, AppTestFixtures.permissiveGuard());
+        return routeUseCase(AppTestFixtures.permissiveGuard());
+    }
+
+    /**
+     * The reachability walk lives in {@link NavVisibilityFilter} now — it reads base-app's nav tree,
+     * so it could not travel to platform-admin with the guard. Both are built from the same guard here
+     * so that a policy handed in still governs both the 403 and the "reported as missing" path.
+     */
+    private GetRouteDefinition routeUseCase(OrganizationGuard guard) {
+        return new GetRouteDefinition(repository, guard, new NavVisibilityFilter(guard));
     }
 
     private void given(AppDefinition definition) {

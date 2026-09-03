@@ -16,10 +16,37 @@ minio/
 
 | Resource | Value |
 |---|---|
-| Buckets | `documents`, `images` |
+| Buckets | `<stack-prefix>-<purpose>` for each of the two stacks — 16 in all; see below |
 | Bucket policy | Private (authenticated only) |
 | Admin user | `minioadmin` / `minioadmin` |
 | Service account | `springboot` / `springboot123` |
+
+## Buckets are per application stack
+
+One MinIO serves every application stack, and the **bucket prefix is the whole isolation between
+them** — see [`docs/application-stacks.md`](../../../docs/application-stacks.md). A bucket is named
+`<stack-prefix>-<purpose>`, e.g. `processpuzzle-admin-documents`.
+
+- **prefixes**: `processpuzzle-testbed`, `processpuzzle-admin` — each backend's `MINIO_BUCKET_PREFIX`.
+- **purposes**: `configuration`, `text`, `images`, `documents`, `audio`, `video`, `archives`, `logs` —
+  `minio.buckets` in `libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml`.
+
+`BucketNameFinder` is the only place that applies the prefix, because it is the only place a bucket
+name is *chosen*: `ObjectEndpoint` echoes back names the server handed out earlier, and `UploadObject`
+asks `CreateBucket` for whatever it needs. The prefix defaults to empty, so a deployment that sets
+nothing keeps the flat names.
+
+Two things follow from that:
+
+- **`init-minio.sh` is a convenience, not a precondition.** It used to create two of the eight
+  purposes and the other six worked anyway, because `CreateBucket` makes a missing bucket on demand.
+  Adding a purpose to `minio-config.yaml` without adding it here is not a bug.
+- **Objects in the old unprefixed `documents` / `images` buckets are unreachable**, since nothing looks
+  in them any more. Local development data only.
+
+> **Not wired up in production.** `tools/docker/docker-compose-prod.yaml` has no MinIO service at all,
+> and `minio-config.yaml` hard-codes `http://localhost:7000`. Production object storage is broken
+> independently of the prefixing above.
 
 ## Usage
 
@@ -52,6 +79,7 @@ minio:
   endpoint: http://localhost:9000
   access-key: springboot
   secret-key: springboot123
+  bucket-prefix: processpuzzle-testbed   # or set MINIO_BUCKET_PREFIX
   buckets:
     documents: documents
     images: images

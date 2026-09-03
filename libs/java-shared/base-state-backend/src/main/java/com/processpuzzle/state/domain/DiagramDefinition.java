@@ -5,7 +5,6 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -14,6 +13,8 @@ import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * The graphical layout of one {@link StateMachineDefinition}: where its states sit on the
@@ -32,9 +33,9 @@ import java.util.List;
  * reproduce what the user arranged, and a machine with no row here simply falls back to an
  * automatic layout ({@code DagreLayoutService} / {@code ElkLayoutService} on the frontend).
  *
- * <p>{@code nodes} and {@code edges} are serialized JSON blobs in portable {@code @Lob} text
- * columns, exactly as {@link StateMachineDefinition}'s {@code states}/{@code transitions} are, and
- * for the same reasons — see that class's javadoc for why a converter beats
+ * <p>{@code nodes} and {@code edges} are serialized JSON blobs in portable long-text columns,
+ * exactly as {@link StateMachineDefinition}'s {@code states}/{@code transitions} are, and for the
+ * same reasons — see that class's javadoc for why a converter beats
  * {@code @ElementCollection} and why the column is not a Postgres-specific {@code jsonb}. The
  * viewport, being three scalars rather than a collection, is three plain nullable columns instead:
  * a converter would buy nothing.
@@ -52,12 +53,12 @@ public class DiagramDefinition {
     @Column(name = "entity_name", length = 100)
     private String entityName;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = NodeLayoutsConverter.class)
     @Column(nullable = false)
     private List<NodeLayout> nodes = new ArrayList<>();
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = EdgeLayoutsConverter.class)
     @Column(nullable = false)
     private List<EdgeLayout> edges = new ArrayList<>();

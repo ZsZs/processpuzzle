@@ -1,0 +1,80 @@
+{
+  "organization": {
+    "_self": "Organization",
+    "key": "Key",
+    "name": "Name",
+    "description": "Description",
+    "contactEmail": "Contact e-mail",
+    "defaultLocale": "Default locale",
+    "status": "Status",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "actions": {
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "assignAdmin": "Assign administrator…"
+    },
+    "messages": {
+      "suspended": "Suspended {{orgKey}}. Its members can no longer sign in; nothing was deleted.",
+      "activated": "Activated {{orgKey}}.",
+      "adminAssigned": "{{username}} is now an administrator of {{realm}}. They set their own password on first sign-in."
+    },
+    "assign_admin": {
+      "title": "Assign an administrator of {{orgKey}}",
+      "username": "Username",
+      "email": "E-mail",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "note": "The invitee sets their own password on first sign-in. No password is set here, and none is sent.",
+      "usernameRequired": "A username is required.",
+      "emailRequired": "An e-mail address is required — the password reset is sent to it.",
+      "emailInvalid": "That is not an e-mail address.",
+      "submit": "Assign",
+      "cancel": "Cancel"
+    },
+    "billing": {
+      "_self": "Billing",
+      "tab": "Billing",
+      "noSubscription": "This organization has no subscription.",
+      "withdrawnPlan": "The plan this subscription names is no longer in the catalog.",
+      "usage": "Usage this period",
+      "invoices": "Invoices"
+    }
+  },
+  "plan": {
+    "_self": "Plan",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "interval": "Interval",
+    "currency": "Currency",
+    "price": "Price",
+    "amountMinor": "Price (minor units)",
+    "limits": "Limits"
+  },
+  "subscription": {
+    "_self": "Subscription",
+    "orgKey": "Organization",
+    "planCode": "Plan",
+    "status": "Status",
+    "currentPeriodStart": "Period from",
+    "currentPeriodEnd": "Period to",
+    "canceledAt": "Cancelled",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "invoice": {
+    "_self": "Invoice",
+    "number": "Number",
+    "orgKey": "Organization",
+    "status": "Status",
+    "currency": "Currency",
+    "total": "Total",
+    "totalMinor": "Total (minor units)",
+    "periodStart": "Period from",
+    "periodEnd": "Period to",
+    "issuedAt": "Issued",
+    "paidAt": "Paid",
+    "lines": "Lines"
+  }
+}

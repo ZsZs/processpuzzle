@@ -5,7 +5,6 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -13,6 +12,8 @@ import jakarta.persistence.Version;
 
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * The editable content of one locale of one document. This is what an author works on; readers
@@ -56,7 +57,7 @@ public class DocumentDraft {
     @Column(length = 6)
     private String locale;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = DocumentContentConverter.class)
     private DocumentContent content = DocumentContent.empty();
 

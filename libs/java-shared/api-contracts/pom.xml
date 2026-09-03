@@ -271,6 +271,60 @@
             </configuration>
           </execution>
           <execution>
+            <id>generate-platform-admin-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/platform-admin-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.platformadmin.api</apiPackage>
+              <modelPackage>com.processpuzzle.platformadmin.model</modelPackage>
+              <!-- Organization / OrganizationStatus / OrganizationUpdate are declared in
+                   base-app-api.yaml and repeated verbatim here, because no spec in this module
+                   uses cross-file $ref (swagger-parser cannot resolve them on Windows). They are
+                   NOT mapped onto the app models: platform-admin owns the aggregate, so its
+                   generated types are the canonical pair for the moved use cases, and base-app's
+                   stay as the tenant-facing projection they already were. The two are structurally
+                   identical, which is the point — AppMapper and PlatformAdminMapper each build
+                   their own. Only the genuinely shared ErrorResponse is redirected. -->
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-org-admin-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/org-admin-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.orgadmin.api</apiPackage>
+              <modelPackage>com.processpuzzle.orgadmin.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
             <id>generate-entity-api</id>
             <goals>
               <goal>generate</goal>

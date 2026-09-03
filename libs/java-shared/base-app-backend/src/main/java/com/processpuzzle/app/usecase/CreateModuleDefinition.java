@@ -3,12 +3,13 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
-import com.processpuzzle.app.domain.OrganizationRepository;
+import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

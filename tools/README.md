@@ -16,7 +16,7 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 Two compose files at `tools/docker/`:
 
-- **`docker-compose-ci.yaml`** — full local CI stack: testbed, Spring backend, Keycloak (+ Postgres), MinIO, Firebase emulators, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
+- **`docker-compose-ci.yaml`** — full local CI stack: the three Angular applications, one Spring backend per application stack, Keycloak (+ Postgres), MinIO, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
 - **`docker-compose-prod.yaml`** — slim image pull definition for the registry images. Used to smoke-test a published image, not to build.
 
 Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/init-db.sql`, `firebase/serve.sh`).
@@ -26,37 +26,56 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 | Service | Container | Image | Host port → container | Purpose |
 | --- | --- | --- | --- | --- |
 | `processpuzzle-testbed` | `processpuzzle-testbed` | `zsuffazs/processpuzzle-testbed` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
-| `processpuzzle-backend` | `processpuzzle-backend` | `zsuffazs/processpuzzle-backend` | `8080 → 8080` | Spring Boot backend; talks to MinIO for object storage. |
-| `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider for the testbed. Stores realm data in Postgres. |
-| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak; volume `postgres_data`. |
-| `pgweb` | `testbed-pgweb` | `zsuffazs/testbed-pgweb` | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. |
-| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by the backend; volume `minio-data`. |
-| `firebase` | `testbed-firebase` | `zsuffazs/testbed-firebase` | `4000` UI, `4400` hub, `4600` logging, `5001` functions, `8081` firestore, `8085` pubsub, `9099` auth, `9199` storage | Firebase emulator suite + local Functions; seeded from `tools/firebase/data`. |
+| `platform-admin` | `platform-admin` | `zsuffazs/platform-admin` | `9091 → 80` | Angular staff administration app; calls `admin-backend`. |
+| `processpuzzle-ui` | `processpuzzle-ui` | `zsuffazs/processpuzzle-ui` | `9092 → 80` | Angular tenant app; still calls `testbed-backend` (see below). |
+| `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
+| `admin-backend` | `admin-backend` | `zsuffazs/processpuzzle-backend` | `8083 → 8080` | The same image for the **admin** stack: database `processpuzzle_admin`, realm `processpuzzle-admin`, bucket prefix `processpuzzle-admin`. |
+| `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
+| `keycloak-init` | `testbed-keycloak-init` | `zsuffazs/testbed-keycloak-init` | — | One-shot: creates the `master`-realm service account the backend uses to provision tenant realms. Idempotent. |
+| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for both stacks, one database each; volume `postgres_data`. |
+| `pgweb` | `testbed-pgweb` | `zsuffazs/testbed-pgweb` | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. Points at `processpuzzle_testbed`; showing another database means editing `PGWEB_DATABASE_URL`. |
+| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by both backends; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`. |
 | `json-server` | `json-server` | `zsuffazs/json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
 
-> **Port note.** Firestore emulator owns host port `8081`. pgweb is published on host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`).
+> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). That is why the second backend is published on `8083` rather than the next free-looking number. The testbed backend keeps `8080` because the Playwright suite, the testbed runtime configuration and `processpuzzle-ui` all name it.
+
+> **First start.** `tools/docker/postgresql/init-db.sql` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `docker compose -f tools/docker/docker-compose-ci.yaml down -v`.
 
 ### Service dependency diagram
 
 Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime.
 
+One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). `processpuzzle-ui` pointing at the testbed backend is a known inconsistency, kept until that application is repurposed as the public site.
+
 ```mermaid
 graph TD
     testbed[processpuzzle-testbed<br/>host :9090]
-    backend[processpuzzle-backend<br/>host :8080]
+    admin[platform-admin<br/>host :9091]
+    ui[processpuzzle-ui<br/>host :9092]
+    tbackend[testbed-backend<br/>host :8080]
+    abackend[admin-backend<br/>host :8083]
     keycloak[keycloak<br/>host :7070]
+    kcinit[keycloak-init<br/>one-shot]
     postgres[(postgres<br/>host :5432)]
     pgweb[pgweb<br/>host :8082]
     minio[(minio<br/>host :7000 / :7001)]
-    firebase[firebase emulators<br/>host :4000/:5001/:8081/:9099/...]
     jsonserver[json-server<br/>host :3000]
 
-    testbed -- REST --> backend
+    testbed -- REST --> tbackend
     testbed -- OIDC --> keycloak
     testbed -- REST --> jsonserver
-    testbed -- SDK --> firebase
+    admin -- REST --> abackend
+    admin -- OIDC --> keycloak
+    ui -- REST --> tbackend
+    ui -- OIDC --> keycloak
 
-    backend -- S3 --> minio
+    tbackend -- S3 --> minio
+    tbackend -- JDBC --> postgres
+    tbackend -- "JWKS / admin API" --> keycloak
+    abackend -- S3 --> minio
+    abackend -- JDBC --> postgres
+    abackend -- "JWKS / admin API" --> keycloak
+    kcinit -- "Admin CLI" --> keycloak
     keycloak -- JDBC --> postgres
     pgweb -- read-only --> postgres
 
@@ -113,10 +132,20 @@ Firebase Hosting deploys are static-file uploads; there is no container entrypoi
 ## Running the CI stack locally
 
 ```sh
-# from repo root
-pnpm nx run processpuzzle-testbed:docker-build   # builds testbed + backend images
-cd tools/docker
-docker compose -f docker-compose-ci.yaml up
+# from repo root — this workspace is npm, not pnpm; `pnpm nx` quarantines packages and breaks the build
+npx nx run processpuzzle-testbed:docker-build   # builds testbed + backend images
+docker compose -f tools/docker/docker-compose-ci.yaml up
 ```
 
 A `.env` file in `tools/docker/` is the typical place for `PIPELINE_STAGE` and `FIREBASE_API_KEY`. Keep it gitignored.
+`FIREBASE_API_KEY` is not optional even though nothing in the `ci` stack talks to Firebase: the testbed's
+entrypoint (`tools/docker/testbed/docker-entrypoint.sh`) fails fast on an unset one, so the container exits
+before nginx starts. Any non-empty value will do locally. The other two frontends do not read it.
+
+**Budget four minutes for a cold `up`, and do not read a transient `unhealthy` as a failure.** Measured
+locally: Keycloak 40 s on a fresh database but 96 s against a reused one (it spends the difference trying to
+reach cluster peers a previous container recorded), and each backend ~145 s, because Spring Modulith computes
+the module structure with ArchUnit at startup and both backends now do it at once. The healthchecks carry
+`start_period` values that cover this (150 s / 240 s); a probe that fails inside `start_period` does not count
+against `retries`. Without them, `depends_on: condition: service_healthy` aborts the whole `up` with
+`dependency failed to start` while the services in question are merely still booting.

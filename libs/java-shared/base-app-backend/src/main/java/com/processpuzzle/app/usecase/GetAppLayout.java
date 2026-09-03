@@ -3,10 +3,12 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationRepository;
+import com.processpuzzle.platformadmin.domain.Organization;
+import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,13 +32,16 @@ public class GetAppLayout {
     private final AppDefinitionRepository repository;
     private final OrganizationRepository organizationRepository;
     private final OrganizationGuard guard;
+    private final NavVisibilityFilter navVisibility;
 
     public GetAppLayout(AppDefinitionRepository repository,
                         OrganizationRepository organizationRepository,
-                        OrganizationGuard guard) {
+                        OrganizationGuard guard,
+                        NavVisibilityFilter navVisibility) {
         this.repository = repository;
         this.organizationRepository = organizationRepository;
         this.guard = guard;
+        this.navVisibility = navVisibility;
     }
 
     public Result execute(String orgKey, String appId, boolean draft) {
@@ -55,7 +60,7 @@ public class GetAppLayout {
             throw new AppNotPublishedException(orgKey, appId);
         }
 
-        AppGraph filtered = graph.withRegions(guard.filterRegions(graph.regions()));
+        AppGraph filtered = graph.withRegions(navVisibility.filterRegions(graph.regions()));
         String defaultLocale = organizationRepository.findById(orgKey)
                 .map(Organization::getDefaultLocale)
                 .orElse(null);

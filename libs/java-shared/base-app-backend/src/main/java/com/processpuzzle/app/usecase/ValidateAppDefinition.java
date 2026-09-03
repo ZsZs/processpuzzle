@@ -2,6 +2,7 @@ package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

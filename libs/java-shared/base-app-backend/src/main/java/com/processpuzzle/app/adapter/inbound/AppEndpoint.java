@@ -14,27 +14,27 @@ import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.ValidationResult;
-import com.processpuzzle.app.usecase.CheckOrganizationKey;
+import com.processpuzzle.platformadmin.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
 import com.processpuzzle.app.usecase.CreateModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
 import com.processpuzzle.app.usecase.DeleteModuleDefinition;
-import com.processpuzzle.app.usecase.DeleteOrganization;
+import com.processpuzzle.platformadmin.usecase.DeleteOrganization;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
 import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
 import com.processpuzzle.app.usecase.FindModuleDefinition;
-import com.processpuzzle.app.usecase.FindOrganization;
+import com.processpuzzle.platformadmin.usecase.FindOrganization;
 import com.processpuzzle.app.usecase.GetAppLayout;
 import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.ProvisionOrganization;
+import com.processpuzzle.app.usecase.ProvisionTenant;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
 import com.processpuzzle.app.usecase.UpdateModuleDefinition;
-import com.processpuzzle.app.usecase.UpdateOrganization;
+import com.processpuzzle.platformadmin.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.shared.model.ImportResult;
@@ -59,7 +59,7 @@ import java.util.List;
 @LogClass
 public class AppEndpoint implements BaseAppApi {
 
-    private final ProvisionOrganization provisionOrganization;
+    private final ProvisionTenant provisionTenant;
     private final CheckOrganizationKey checkOrganizationKey;
     private final FindOrganization findOrganization;
     private final UpdateOrganization updateOrganization;
@@ -83,7 +83,7 @@ public class AppEndpoint implements BaseAppApi {
     private final AppMapper mapper;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public AppEndpoint(ProvisionOrganization provisionOrganization,
+    public AppEndpoint(ProvisionTenant provisionTenant,
                        CheckOrganizationKey checkOrganizationKey,
                        FindOrganization findOrganization,
                        UpdateOrganization updateOrganization,
@@ -105,7 +105,7 @@ public class AppEndpoint implements BaseAppApi {
                        ImportAppDefinitions importAppDefinitions,
                        ExportAppDefinition exportAppDefinition,
                        AppMapper mapper) {
-        this.provisionOrganization = provisionOrganization;
+        this.provisionTenant = provisionTenant;
         this.checkOrganizationKey = checkOrganizationKey;
         this.findOrganization = findOrganization;
         this.updateOrganization = updateOrganization;
@@ -131,9 +131,16 @@ public class AppEndpoint implements BaseAppApi {
 
     // --- organizations -------------------------------------------------------------------
 
+    /**
+     * Delegates to {@link ProvisionTenant} rather than to a single organization use case: the
+     * {@code Organization} lives in {@code platform-admin} now and the starter {@code AppDefinition}
+     * here, and {@code ProvisionTenant} is the {@code @Transactional} seam that still writes both
+     * atomically. The operation stays declared in base-app-api.yaml and served from this controller
+     * — ownership of the aggregate moved, the URL did not.
+     */
     @Override
     public ResponseEntity<ProvisioningResult> provisionOrganization(OrganizationInput input) {
-        ProvisionOrganization.Result result = provisionOrganization.execute(input);
+        ProvisionTenant.Result result = provisionTenant.execute(input);
         return new ResponseEntity<>(mapper.toModel(result.organization(), result.starterApp()),
                 HttpStatus.CREATED);
     }
@@ -150,7 +157,7 @@ public class AppEndpoint implements BaseAppApi {
 
     @Override
     public ResponseEntity<Organization> updateOrganization(String orgKey, OrganizationUpdate input) {
-        return ResponseEntity.ok(mapper.toModel(updateOrganization.execute(orgKey, input)));
+        return ResponseEntity.ok(mapper.toModel(updateOrganization.execute(orgKey, mapper.toDetails(input))));
     }
 
     @Override

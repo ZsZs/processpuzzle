@@ -1,0 +1,80 @@
+{
+  "organization": {
+    "_self": "Szervezet",
+    "key": "Kulcs",
+    "name": "Név",
+    "description": "Leírás",
+    "contactEmail": "Kapcsolattartó e-mail",
+    "defaultLocale": "Alapértelmezett nyelv",
+    "status": "Állapot",
+    "createdAt": "Létrehozva",
+    "updatedAt": "Módosítva",
+    "actions": {
+      "suspend": "Felfüggesztés",
+      "activate": "Aktiválás",
+      "assignAdmin": "Assign administrator…"
+    },
+    "messages": {
+      "suspended": "Suspended {{orgKey}}. Its members can no longer sign in; nothing was deleted.",
+      "activated": "Activated {{orgKey}}.",
+      "adminAssigned": "{{username}} is now an administrator of {{realm}}. They set their own password on first sign-in."
+    },
+    "assign_admin": {
+      "title": "Assign an administrator of {{orgKey}}",
+      "username": "Username",
+      "email": "E-mail",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "note": "The invitee sets their own password on first sign-in. No password is set here, and none is sent.",
+      "usernameRequired": "A username is required.",
+      "emailRequired": "An e-mail address is required — the password reset is sent to it.",
+      "emailInvalid": "That is not an e-mail address.",
+      "submit": "Assign",
+      "cancel": "Cancel"
+    },
+    "billing": {
+      "_self": "Billing",
+      "tab": "Billing",
+      "noSubscription": "This organization has no subscription.",
+      "withdrawnPlan": "The plan this subscription names is no longer in the catalog.",
+      "usage": "Usage this period",
+      "invoices": "Invoices"
+    }
+  },
+  "plan": {
+    "_self": "Csomag",
+    "code": "Code",
+    "name": "Név",
+    "description": "Leírás",
+    "interval": "Időszak",
+    "currency": "Pénznem",
+    "price": "Díj",
+    "amountMinor": "Price (minor units)",
+    "limits": "Limits"
+  },
+  "subscription": {
+    "_self": "Előfizetés",
+    "orgKey": "Szervezet",
+    "planCode": "Csomag",
+    "status": "Állapot",
+    "currentPeriodStart": "Period from",
+    "currentPeriodEnd": "Period to",
+    "canceledAt": "Cancelled",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "invoice": {
+    "_self": "Számla",
+    "number": "Szám",
+    "orgKey": "Szervezet",
+    "status": "Állapot",
+    "currency": "Pénznem",
+    "total": "Összesen",
+    "totalMinor": "Total (minor units)",
+    "periodStart": "Period from",
+    "periodEnd": "Period to",
+    "issuedAt": "Issued",
+    "paidAt": "Paid",
+    "lines": "Lines"
+  }
+}

@@ -9,6 +9,7 @@ import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

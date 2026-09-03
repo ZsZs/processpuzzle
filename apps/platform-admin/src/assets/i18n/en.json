@@ -1,0 +1,31 @@
+{
+  "navigation": {
+    "home": "Home",
+    "platform": {
+      "organizations": "Organizations",
+      "plans": "Plans",
+      "subscriptions": "Subscriptions",
+      "invoices": "Invoices"
+    }
+  },
+  "home": {
+    "title": "Platform administration",
+    "subtitle": "Tenants, their identity realms and what they are billed.",
+    "organizations": {
+      "title": "Organizations",
+      "text": "Create a tenant, assign its first administrator, suspend or delete it. Each tenant is backed by its own identity realm."
+    },
+    "plans": {
+      "title": "Plans",
+      "text": "The subscription plans on offer and the limits each one grants."
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "text": "Which plan each tenant is on, and since when."
+    },
+    "invoices": {
+      "title": "Invoices",
+      "text": "What has been billed, per tenant and per period."
+    }
+  }
+}

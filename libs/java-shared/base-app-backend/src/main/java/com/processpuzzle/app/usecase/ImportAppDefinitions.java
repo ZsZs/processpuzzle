@@ -8,10 +8,11 @@ import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.adapter.inbound.dto.AppYamlDocument;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.app.domain.OrganizationRepository;
+import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.app.model.AppDefinitionInput;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

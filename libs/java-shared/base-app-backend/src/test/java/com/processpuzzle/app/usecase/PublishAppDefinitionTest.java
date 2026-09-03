@@ -16,13 +16,14 @@ import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
 import com.processpuzzle.rule.domain.Severity;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
+import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -60,7 +61,7 @@ class PublishAppDefinitionTest {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
         ObjectProvider<OrganizationAccessPolicy> policyProvider = mock(ObjectProvider.class);
-        when(policyProvider.getIfUnique(any())).thenReturn(new com.processpuzzle.app.usecase.port
+        when(policyProvider.getIfUnique(any())).thenReturn(new com.processpuzzle.platformadmin.usecase.port
                 .PermitAllOrganizationAccessPolicy());
 
         // No rule module wired by default; the rule-aware tests below opt in.

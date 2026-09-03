@@ -31,11 +31,15 @@ const PROJECTS = new Map([
   ['base-state-frontend', 'libs/js-shared/base-state-frontend'],
   ['base-workflow-frontend', 'libs/js-shared/base-workflow-frontend'],
   ['design', 'libs/js-shared/design'],
+  ['org-admin-frontend', 'libs/js-shared/org-admin-frontend'],
+  ['platform-admin-frontend', 'libs/js-shared/platform-admin-frontend'],
   ['e2e-testing', 'libs/js-shared/e2e-testing'],
   ['test-util', 'libs/js-shared/test-util'],
   ['util', 'libs/js-shared/util'],
   ['base-widget-frontend', 'libs/js-shared/base-widget-frontend'],
   ['processpuzzle-testbed', 'apps/processpuzzle-testbed'],
+  ['platform-admin', 'apps/platform-admin'],
+  ['processpuzzle-ui', 'apps/processpuzzle-ui'],
 ]);
 
 const INCREMENTS = new Set(['major', 'minor', 'patch']);

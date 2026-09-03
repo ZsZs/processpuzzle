@@ -5,7 +5,6 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -14,6 +13,8 @@ import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Persisted state machine definition, identified by ({@code orgKey}, {@code entityName}) — see
@@ -30,12 +31,19 @@ import java.util.List;
  * instead of {@code @ElementCollection} because a state carries several fields and nested guard /
  * action lists, which {@code @ElementCollection} cannot express without its own join tables.
  *
- * <p>Deliberately a portable {@code @Lob} text column, not a Postgres-specific
+ * <p>Deliberately a portable long-text column, not a Postgres-specific
  * {@code columnDefinition = "jsonb"}: unlike {@code EntityObject}'s payload in base-entity, which
  * needs {@code jsonb_path_exists} for RSQL filtering, nothing here ever queries into this JSON —
  * it is always read and written whole. A genuine {@code jsonb} column would also fail schema
- * creation against H2 (used for local dev/test — see {@code application.yaml}'s
- * {@code ddl-auto: update}), which recognizes {@code JSON} but not {@code JSONB} as a type name.
+ * creation against H2 (which the unit tests use), because H2 recognizes {@code JSON} but not
+ * {@code JSONB} as a type name.
+ *
+ * <p><b>{@code @JdbcTypeCode(SqlTypes.LONG32VARCHAR)} and not {@code @Lob}</b>, which is what this was
+ * until the runtime datasource became PostgreSQL. {@code @Lob} on a {@code String} makes Hibernate's
+ * PostgreSQL dialect emit an {@code oid} column — a large-object <em>reference</em>, not text — which
+ * writes without complaint and then fails to read back. H2 mapped it to a CLOB, so no test could see
+ * the difference; {@code ddl-auto: update} meant whatever the first run created became the schema.
+ * Verified against real PostgreSQL, where these columns now resolve to {@code text}.
  */
 @Entity
 @Table(name = "state_machine_definitions")
@@ -62,12 +70,12 @@ public class StateMachineDefinition {
     @Column(name = "initial_state_key", nullable = false, length = 100)
     private String initialStateKey;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = StatesConverter.class)
     @Column(nullable = false)
     private List<State> states = new ArrayList<>();
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = TransitionsConverter.class)
     @Column(nullable = false)
     private List<Transition> transitions = new ArrayList<>();

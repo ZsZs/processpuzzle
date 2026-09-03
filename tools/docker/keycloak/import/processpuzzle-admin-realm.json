@@ -1,0 +1,62 @@
+{
+  "realm": "processpuzzle-admin",
+  "displayName": "ProcessPuzzle Admin",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "platform-admin",
+        "description": "ProcessPuzzle staff. Grants the whole /platform/** surface, which creates, suspends and deletes tenants."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "processpuzzle-admin",
+      "name": "ProcessPuzzle Admin",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:9091",
+      "baseUrl": "/",
+      "redirectUris": ["http://localhost:9091/*", "http://localhost:4201/*"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "post.logout.redirect.uris": "+",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
+    }
+  ],
+  "users": [
+    {
+      "username": "platform-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Platform",
+      "lastName": "Administrator",
+      "email": "platform-admin@processpuzzle.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform-admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-processpuzzle-admin", "platform-admin"]
+    }
+  ]
+}

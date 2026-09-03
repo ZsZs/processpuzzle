@@ -1,0 +1,17 @@
+{
+  "navigation": {
+    "home": "Start",
+    "admin": {
+      "users": "Benutzer"
+    }
+  },
+  "home": {
+    "title": "ProcessPuzzle",
+    "subtitle": "Gestalten Sie Ihre Anwendung und verwalten Sie ihre Benutzer.",
+    "noTenant": "Öffnen Sie Ihre Organisation unter /<ihr-organisationsschlüssel>/admin, um sich anzumelden und Benutzer zu verwalten.",
+    "users": {
+      "title": "Benutzer",
+      "text": "Personen in Ihre Organisation einladen, Konten aktivieren oder sperren und Rollen zuweisen."
+    }
+  }
+}

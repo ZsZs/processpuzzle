@@ -6,13 +6,11 @@ services:
   processpuzzle-testbed:
     pull_policy: build
     depends_on:
-      processpuzzle-backend:
+      testbed-backend:
         condition: service_healthy
       keycloak:
         condition: service_healthy
       json-server:
-        condition: service_healthy
-      firebase:
         condition: service_healthy
     build:
       context: ../../
@@ -35,21 +33,133 @@ services:
       timeout: 5s
       interval: 20s
 
-  processpuzzle-backend:
+  platform-admin:
     pull_policy: build
     depends_on:
+      admin-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    build:
+      context: ../../
+      dockerfile: tools/docker/platform-admin/Dockerfile
+      args:
+        CICD_STAGE: ci
+    image: zsuffazs/platform-admin:latest
+    container_name: platform-admin
+    environment:
+      # The only variable the image takes; it selects run-time-conf/config.<stage>.json. There is no
+      # FIREBASE_API_KEY here — this application talks to nothing but the backend and Keycloak.
+      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
+    ports:
+      # 9091 is the only origin admin-backend's CORS allow-list names, and the origin the
+      # processpuzzle-admin realm's processpuzzle-admin client accepts a redirect to.
+      - "9091:80"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:80/home" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+
+  # Still pointed at the TESTBED backend: it is the tenant surface today, and turning it into the
+  # public site is a later increment. Incoherent with docs/application-stacks.md on purpose.
+  processpuzzle-ui:
+    pull_policy: build
+    depends_on:
+      testbed-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    build:
+      context: ../../
+      dockerfile: tools/docker/processpuzzle-ui/Dockerfile
+      args:
+        CICD_STAGE: ci
+    image: zsuffazs/processpuzzle-ui:latest
+    container_name: processpuzzle-ui
+    environment:
+      # The only variable the image takes; it selects run-time-conf/config.<stage>.json. The tenant is
+      # not configured here — it is read from the URL's first path segment before bootstrap.
+      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
+    ports:
+      # 9092 is what the backend's KEYCLOAK_ADMIN_TENANT_REDIRECT_URI and _WEB_ORIGIN below already
+      # name, so every realm this platform provisions accepts a redirect back to exactly this origin.
+      - "9092:80"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:80/home" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+
+  # ── One backend deployment per application stack ────────────────────────────────────────────────
+  #
+  # The same image twice. Each instance owns ONE stack: its PostgreSQL database, its Keycloak realm
+  # and its MinIO bucket prefix — see docs/application-stacks.md. The application stays single-tenant
+  # and the decoupling is a property of the deployment, not of logic inside it.
+  #
+  # Both keep every feature module: the component scan is not per-stack, so the testbed database
+  # carries a few empty platform-admin tables and the two remain the same application.
+  testbed-backend:
+    pull_policy: build
+    depends_on:
+      postgres:
+        condition: service_healthy
       minio:
         condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully
     build:
       context: ../../
       dockerfile: tools/docker/backend/Dockerfile
     image: zsuffazs/processpuzzle-backend:latest
-    container_name: processpuzzle-backend
+    container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
+
+      # The testbed stack: database, realm and bucket prefix all name it. PostgreSQL is reached over
+      # the compose network, so the host is the service name and not the published port.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processpuzzle_testbed
+      SPRING_DATASOURCE_USERNAME: processpuzzle
+      SPRING_DATASOURCE_PASSWORD: processpuzzle
+      PROCESSPUZZLE_SECURITY_STACK_REALM: processpuzzle-testbed
+      MINIO_BUCKET_PREFIX: processpuzzle-testbed
+
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: springboot
       MINIO_SECRET_KEY: springboot123
+
+      # Only the origins of this stack. An origin missing here reaches the frontend as HTTP status 0
+      # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
+      # the testbed container and 4200 its dev server; 9092/4202 are processpuzzle-ui, which still
+      # calls this instance — incoherent with the target state, and deliberately left so until that
+      # application is repurposed as the public site.
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:9090,http://localhost:4200,http://localhost:9092,http://localhost:4202
+
+      # Realm and user management. The admin API is reached over the compose network, so this is the
+      # service name and not the published port. Without the secret the identity ports fall back to
+      # their no-op implementations and every other feature still works — see KeycloakAdminProperties.
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+      KEYCLOAK_ADMIN_TENANT_REDIRECT_URI: http://localhost:9092/{orgKey}/*
+      KEYCLOAK_ADMIN_TENANT_WEB_ORIGIN: http://localhost:9092
+
+      # Token validation needs BOTH URLs, and here they genuinely differ. The issuer is the origin the
+      # BROWSER was redirected to: a token minted at localhost:7070 does not validate against an
+      # http://keycloak:8080 issuer, and Keycloak advertises the browser-facing origin however its
+      # discovery document is fetched. That origin does not resolve inside this container, so the
+      # signing keys have to be read over the compose network instead.
+      #
+      # Reading them from the issuer URL is what made every authenticated request answer 500 — see
+      # TenantAuthenticationManagerResolver. A single-origin deployment sets only the first of these,
+      # which is what the /auth/ block in tools/docker/platform-admin/nginx.conf arranges for prod.
+      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: http://localhost:7070
+      PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: http://keycloak:8080
     ports:
       - "8080:8080"
     tty: true
@@ -60,7 +170,71 @@ services:
       retries: 3
       timeout: 5s
       interval: 20s
-      start_period: 30s
+      # Measured at ~145s: Spring Modulith's actuator computes the module structure with ArchUnit at
+      # startup, and both backends now do it at once on the same host. 30s here spent the retries
+      # long before either was listening, so `up` aborted with "container is unhealthy" on an
+      # application that was starting perfectly well.
+      start_period: 240s
+
+  # The staff stack. Host 8081 is the Firestore emulator and 8082 is pgweb, so this one takes 8083;
+  # the testbed keeps 8080 because the Playwright suite, the testbed runtime config and
+  # processpuzzle-ui all name it, and none of those are in scope here.
+  admin-backend:
+    pull_policy: build
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully
+    build:
+      context: ../../
+      dockerfile: tools/docker/backend/Dockerfile
+    image: zsuffazs/processpuzzle-backend:latest
+    container_name: admin-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processpuzzle_admin
+      SPRING_DATASOURCE_USERNAME: processpuzzle
+      SPRING_DATASOURCE_PASSWORD: processpuzzle
+      PROCESSPUZZLE_SECURITY_STACK_REALM: processpuzzle-admin
+      MINIO_BUCKET_PREFIX: processpuzzle-admin
+
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: springboot
+      MINIO_SECRET_KEY: springboot123
+
+      # 9091 is the admin container and 4201 its dev server. Nothing else may call this instance: it
+      # is the surface that deletes tenants.
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:9091,http://localhost:4201
+
+      # Provisioning a tenant is a staff action, so it is this instance that creates realms. The
+      # redirect URI and web origin it writes into each new realm still name processpuzzle-ui, because
+      # that is the application a tenant user logs in to.
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+      KEYCLOAK_ADMIN_TENANT_REDIRECT_URI: http://localhost:9092/{orgKey}/*
+      KEYCLOAK_ADMIN_TENANT_WEB_ORIGIN: http://localhost:9092
+
+      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: http://localhost:7070
+      PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: http://keycloak:8080
+    ports:
+      - "8083:8080"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+      # Measured at ~145s: Spring Modulith's actuator computes the module structure with ArchUnit at
+      # startup, and both backends now do it at once on the same host. 30s here spent the retries
+      # long before either was listening, so `up` aborted with "container is unhealthy" on an
+      # application that was starting perfectly well.
+      start_period: 240s
 
   json-server:
     pull_policy: build
@@ -76,40 +250,6 @@ services:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
-
-  firebase:
-    pull_policy: build
-    image: zsuffazs/testbed-firebase:latest
-    container_name: testbed-firebase
-    build:
-      context: ../../
-      dockerfile: tools/docker/firebase/Dockerfile
-      args:
-        - FIREBASE_VERSION=13.33.0
-    stop_grace_period: 1m
-    environment:
-      FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099"
-      FIRESTORE_EMULATOR_HOST: "localhost:8081"
-      PUBSUB_EMULATOR_HOST: "localhost:8085"
-      FUNCTIONS_EMULATOR_HOST: "localhost:5001"
-      FIREBASE_PROJECT: "demo-processpuzzle-testbed"
-      GCLOUD_PROJECT: "demo-processpuzzle-testbed"
-      FORCE_COLOR: 'true'
-      DATA_DIRECTORY: "tools/firebase/data"
-      CHOKIDAR_USEPOLLING: 'true'
-    ports:
-      - "4000:4000" # ui
-      - "4400:4400" # hub
-      - "4600:4600" # logging
-      - "5001:5001" # functions
-      - "8081:8081" # firestore
-      - "8085:8085" # pubsub
-      - "9099:9099" # auth
-      - "9199:9199" # storage
-    networks:
-      - processpuzzle
-    healthcheck:
-      test: [ "CMD", "curl", "http://localhost:8081" ]
 
   keycloak:
     build:
@@ -139,6 +279,9 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_PROXY: "edge"
+      # The published port, not the container's. Keycloak builds the issuer and every endpoint in its
+      # discovery document from this, and the browser is the only client that follows them.
+      KC_HOSTNAME: http://localhost:7070
     networks:
       - processpuzzle
     healthcheck:
@@ -147,6 +290,35 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      # Failures before this elapses do not count against `retries`. Keycloak needs ~40s on a fresh
+      # database and was measured at 96s against a reused one — it spends the difference trying to
+      # rejoin jgroups peers a previous container recorded. Without this the three retries are spent
+      # before it listens, the container is declared unhealthy, and every service that waits on it —
+      # now BOTH backends — refuses to start, seconds before Keycloak finishes coming up.
+      start_period: 150s
+
+  keycloak-init:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/keycloak/init/Dockerfile
+    image: zsuffazs/testbed-keycloak-init:latest
+    container_name: testbed-keycloak-init
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      # `create-realm` is a role of the master realm, and --import-realm skips a realm that already
+      # exists, so the service account the backend uses cannot come from a realm import file. This
+      # one-shot container creates it with the Admin CLI instead; it is idempotent, so it re-runs
+      # safely on every `compose up`.
+      KC_URL: http://keycloak:8080
+      KC_ADMIN: admin
+      KC_ADMIN_PASSWORD: admin_password
+      PLATFORM_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+    networks:
+      - processpuzzle
+    restart: "no"
 
   pgweb:
     build:
@@ -162,7 +334,10 @@ services:
     ports:
       - "8082:8081"
     environment:
-      PGWEB_DATABASE_URL: postgres://keycloak:password123@postgres:5432/keycloak?sslmode=disable
+      # The testbed stack, which is the database worth inspecting. Keycloak has its own (`keycloak`)
+      # and the admin stack has `processpuzzle_admin`; pgweb shows one at a time, and switching means
+      # changing this URL.
+      PGWEB_DATABASE_URL: postgres://processpuzzle:processpuzzle@postgres:5432/processpuzzle_testbed?sslmode=disable
     command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]
     networks:
       - processpuzzle
@@ -178,6 +353,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
+      # Keycloak owns this database and this role. The per-stack application databases and the
+      # `processpuzzle` role that owns them are created by tools/docker/postgresql/init-db.sql, which
+      # the entrypoint runs ONLY on an empty data directory — an existing postgres_data volume will
+      # not have them. Reset with `docker compose -f docker-compose-ci.yaml down -v`, which is also
+      # what makes a renamed Keycloak realm appear, since --import-realm skips realms that exist.
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password123 # Use a secret in production

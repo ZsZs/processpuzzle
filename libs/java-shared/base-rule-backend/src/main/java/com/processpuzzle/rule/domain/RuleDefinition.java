@@ -6,6 +6,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Persisted PPCL rule definition, identified by ({@code orgKey}, {@code id}) — see
@@ -41,7 +43,7 @@ public class RuleDefinition {
     @Column(nullable = false, length = 100)
     private String context;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Column(nullable = false)
     private String expression;
 

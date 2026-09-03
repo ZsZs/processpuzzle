@@ -55,6 +55,16 @@
       <artifactId>base-rule-backend</artifactId>
     </dependency>
 
+    <!--
+      base-app used to own the Organization aggregate; platform-admin owns it now and base-app is a
+      consumer. The edge is one-way and goes through five named interfaces — see the app module's
+      package-info for which and why. Without this, base-app is not deployable on its own.
+    -->
+    <dependency>
+      <groupId>com.processpuzzle</groupId>
+      <artifactId>platform-admin-backend</artifactId>
+    </dependency>
+
     <!-- Spring Boot dependencies -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

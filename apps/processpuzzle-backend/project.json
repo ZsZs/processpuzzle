@@ -13,7 +13,9 @@
     "base-rule-backend",
     "base-state-backend",
     "base-workflow-backend",
-    "base-widget-backend"
+    "base-widget-backend",
+    "platform-admin-backend",
+    "org-admin-backend"
   ],
   "targets": {
     "build": {

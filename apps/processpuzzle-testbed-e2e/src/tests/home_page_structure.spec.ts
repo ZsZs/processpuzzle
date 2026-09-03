@@ -25,23 +25,23 @@ test.describe('Home page navigation', { tag: '@smoke' }, () => {
     expect(page.url()).toContain('/');
 
     await applicationPage.navigateToUtilsPage();
-    await expect(page.getByRole('heading', { name: '@processpuzzle/util' })).toBeVisible();
+    await expect(page).toHaveTitle('ProcessPuzzle Testbed - Util');
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToWidgetsPage();
-    await expect(page.getByRole('heading', { name: '@processpuzzle/base-widget' })).toBeVisible();
+    await expect(page).toHaveTitle('ProcessPuzzle Testbed - Widgets');
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToAuthPage();
-    await expect(page.getByRole('heading', { name: '@processpuzzle/auth' })).toBeVisible();
+    await expect(page).toHaveTitle('ProcessPuzzle Testbed - Auth');
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToBaseEntityPage();
-    await expect(page.getByRole('heading', { name: '@processpuzzle/base-entity' })).toBeVisible();
+    await expect(page).toHaveTitle('ProcessPuzzle Testbed - Base Entity');
     await page.getByRole('button', { name: 'Go back' }).click();
 
     await applicationPage.navigateToCiCdPage();
-    await expect(page.getByRole('heading', { name: 'ProcessPuzzle Continuous Delivery' })).toBeVisible();
+    await expect(page).toHaveTitle('ProcessPuzzle Testbed - CI/CD');
     await page.getByRole('button', { name: 'Go back' }).click();
   });
 });

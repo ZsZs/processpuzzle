@@ -1,0 +1,129 @@
+{
+  "name": "ProcessPuzzle (Nx: Angular + Spring Boot)",
+
+  // The devcontainers/java images stop at JDK 21, but the root pom sets
+  // <java.version>25</java.version>, so the JDK comes from the feature below instead.
+  "image": "mcr.microsoft.com/devcontainers/base:1-bookworm",
+
+  "features": {
+    // Temurin 25 + Maven, matching .github/actions/lint-test-build (java-version 25,
+    // distribution temurin). No Gradle anywhere in the workspace.
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "25",
+      "jdkDistro": "tem",
+      "installMaven": true,
+      "mavenVersion": "3.9.14",
+      "installGradle": false
+    },
+    // package.json engines: ^24.15.0 || >=26.0.0; .nvmrc pins 24.19.0; CI uses 24.x.
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "installYarnUsingApt": false
+    },
+    // Needed for tools/docker/docker-compose-ci.yaml (Postgres, Keycloak, MinIO,
+    // json-server, the two backends and the three NgInx apps).
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // The compose stack alone runs ~10 containers; on top of that come Angular
+  // production builds and Playwright. The 2-core/8 GB default machine is not enough.
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+
+  "containerEnv": {
+    // Angular/Nx production builds of this workspace exceed Node's default heap.
+    "NODE_OPTIONS": "--max-old-space-size=8192"
+  },
+
+  // Optional; a Codespace without them still works (Nx falls back to local cache).
+  "secrets": {
+    "NX_CLOUD_ACCESS_TOKEN": {
+      "description": "Nx Cloud token for remote cache (nxCloudId is set in nx.json). Optional.",
+      "documentationUrl": "https://nx.dev/ci/recipes/security/access-tokens"
+    },
+    "SONAR_TOKEN": {
+      "description": "SonarCloud token, only needed to run Sonar analysis locally. Optional."
+    }
+  },
+
+  // Keep the Maven repository and the Playwright browser cache out of the
+  // workspace so a container rebuild does not re-download them.
+  "mounts": [
+    "source=processpuzzle-m2,target=/home/vscode/.m2,type=volume",
+    "source=processpuzzle-playwright,target=/home/vscode/.cache/ms-playwright,type=volume"
+  ],
+
+  // Re-runs whenever repository content changes, and is captured by prebuilds.
+  // --legacy-peer-deps mirrors CI; a plain npm ci fails on peer ranges.
+  "updateContentCommand": "npm ci --legacy-peer-deps",
+
+  // Runs after updateContentCommand, so node_modules exists and the browser
+  // matches the pinned @playwright/test version. Same command as the e2e action.
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.m2 /home/vscode/.cache/ms-playwright && npx playwright install chromium --with-deps",
+
+  "waitFor": "updateContentCommand",
+
+  "forwardPorts": [
+    4200, 4201, 4202,
+    3000,
+    8080, 8083,
+    9090, 9091, 9092,
+    7070,
+    5432,
+    7000, 7001,
+    8082
+  ],
+
+  "portsAttributes": {
+    "4200": { "label": "testbed (nx serve)", "onAutoForward": "notify" },
+    "4201": { "label": "platform-admin (nx serve)", "onAutoForward": "notify" },
+    "4202": { "label": "processpuzzle-ui (nx serve)", "onAutoForward": "notify" },
+    "3000": { "label": "json-server (3rd-party mock)", "onAutoForward": "silent" },
+    "8080": { "label": "testbed backend", "onAutoForward": "silent" },
+    "8083": { "label": "admin backend", "onAutoForward": "silent" },
+    "9090": { "label": "testbed (NgInx)", "onAutoForward": "silent" },
+    "9091": { "label": "platform-admin (NgInx)", "onAutoForward": "silent" },
+    "9092": { "label": "processpuzzle-ui (NgInx)", "onAutoForward": "silent" },
+    "7070": { "label": "Keycloak", "onAutoForward": "silent" },
+    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" },
+    "7000": { "label": "MinIO S3 API", "onAutoForward": "silent" },
+    "7001": { "label": "MinIO console", "onAutoForward": "silent" },
+    "8082": { "label": "pgweb", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // .vscode/extensions.json
+        "nrwl.angular-console",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-playwright.playwright",
+        // Java / Spring half of the workspace
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        // Angular + compose stack
+        "angular.ng-template",
+        "vitest.explorer",
+        "ms-azuretools.vscode-containers"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "interactive",
+        "java.import.maven.enabled": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "files.eol": "\n"
+      }
+    },
+    "codespaces": {
+      "openFiles": ["README.md", "CLAUDE.md"]
+    }
+  },
+
+  "remoteUser": "vscode"
+}

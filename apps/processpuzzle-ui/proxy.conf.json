@@ -1,0 +1,8 @@
+{
+  "/organizations/**": {
+    "secure": false,
+    "changeOrigin": true,
+    "target": "http://localhost:8080",
+    "logLevel": "debug"
+  }
+}

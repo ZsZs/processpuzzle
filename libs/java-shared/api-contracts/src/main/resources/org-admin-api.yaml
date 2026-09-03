@@ -1,0 +1,509 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Org Admin API
+  description: >-
+    User and role management **inside one organization**, for that organization's own
+    administrator. The counterpart of platform-admin-api.yaml, which administers tenants from
+    the outside; this administers one tenant from the inside and can never reach another.
+
+    ## There is no user table
+
+    Keycloak is the system of record for users. `org-admin-backend` persists nothing here — it
+    proxies the Keycloak Admin API for the realm named by `orgKey`. Two consequences the client
+    has to know about:
+
+    * **A role grant lands in the user's token on next login**, not immediately. The API
+      answers with the new role list straight away, but an already-issued token still carries
+      the old one until it is refreshed.
+    * **`id` is the identity provider's id**, not a ProcessPuzzle id, and is opaque. Do not
+      parse it and do not assume it survives a realm re-import.
+
+    ## Why the paths sit under `/admin`
+
+    Every path here is `/organizations/{orgKey}/admin/...`, not `/organizations/{orgKey}/...`. The
+    shorter form is not available: base-workflow already owns `/organizations/{orgKey}/roles` for a
+    workflow's *role definitions*, which are a different thing from a realm role — one is metadata a
+    designer authors, the other is an identity-provider grant. Mounting both at one URL is an
+    ambiguous mapping the application refuses to start with.
+
+    Namespacing the whole surface rather than renaming the one colliding path is deliberate: it
+    reserves room for the rest of a tenant's self-administration (groups, invitations, audit) without
+    another negotiation, and it mirrors where the frontend mounts — `/{orgKey}/admin/users`. `admin`
+    is in `ReservedOrganizationKeys`, so no tenant can claim the segment out from under it.
+
+    ## Tenant isolation
+
+    `orgKey` is a path segment so it appears in logs, audit trails and cache keys, exactly as in
+    every other ProcessPuzzle contract — and, exactly as in every other one, the path segment is
+    **not** an authorization decision. The server compares the realm the principal's token was
+    issued by against `orgKey` and answers 403 on mismatch; a `platform-admin` authority
+    bypasses that check. Unknown and `SUSPENDED` tenants are refused before the directory is
+    touched at all.
+
+    ## Roles
+
+    A tenant's realm declares its own roles. Two are created with the realm and are the ones
+    ProcessPuzzle itself interprets: `org-admin` (may reach this API) and `org-member`. Any
+    further roles are the tenant's own and are what `NavNode.roles` and a workflow's role
+    definitions are matched against, so this API deliberately reads the realm's live role list
+    rather than a fixed enum.
+  version: 1.0.0
+  license:
+    name: Apache License 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: ProcessPuzzle
+    url: https://processpuzzle.com
+
+servers:
+  - url: /api
+    description: Default API root
+
+tags:
+  - name: Organization Users
+    description: The tenant's user directory.
+  - name: Organization Roles
+    description: The realm roles a tenant declares, and their assignment.
+
+paths:
+  /organizations/{orgKey}/admin/users:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listOrganizationUsers
+      tags: [ Organization Users ]
+      summary: List the organization's users
+      description: >-
+        Paged. `search` is passed to the identity provider's own user search (username, first
+        name, last name, email), which is why it is a free-text parameter rather than the RSQL
+        `where` the database-backed list endpoints elsewhere take — there is no database here to
+        filter.
+      parameters:
+        - $ref: "#/components/parameters/SearchParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: >-
+            Paged list of users, each as the full `OrganizationUser` including its roles. Full
+            shape rather than a summary: base-entity's generated form reads the record out of the
+            loaded list instead of re-fetching it, so a projection would render an empty edit
+            form and its save would destroy whatever the projection dropped.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_OrganizationUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    post:
+      operationId: inviteOrganizationUser
+      tags: [ Organization Users ]
+      summary: Invite a user into the organization
+      description: >-
+        Creates the user in the tenant's realm, enabled, with no credentials and with
+        `UPDATE_PASSWORD` as a required action, so the invitee sets their own password on first
+        login and the administrator never knows it. Roles named in the payload are granted at
+        creation; an empty list means `org-member`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationUserInvite"
+      responses:
+        "201":
+          description: The invited user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+  /organizations/{orgKey}/admin/users/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/UserIdParam"
+    get:
+      operationId: getOrganizationUser
+      tags: [ Organization Users ]
+      summary: Read one user
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationUser"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    put:
+      operationId: updateOrganizationUser
+      tags: [ Organization Users ]
+      summary: Update a user's profile and enabled flag
+      description: >-
+        `enabled` is the disable switch: a disabled user keeps their account, group memberships
+        and roles but cannot obtain a token. Preferred over deletion, which is irreversible and
+        loses the audit trail of who they were.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationUserUpdate"
+      responses:
+        "200":
+          description: The updated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    delete:
+      operationId: deleteOrganizationUser
+      tags: [ Organization Users ]
+      summary: Delete a user from the organization
+      description: >-
+        Irreversible, and it removes the identity the platform's `createdBy` / `assignee` fields
+        point at — those keep the now-dangling id. Prefer `enabled: false`.
+      responses:
+        "204":
+          description: Deleted.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+  /organizations/{orgKey}/admin/users/{userId}/roles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/UserIdParam"
+    get:
+      operationId: getOrganizationUserRoles
+      tags: [ Organization Roles ]
+      summary: Read a user's realm roles
+      responses:
+        "200":
+          description: The realm roles currently granted to the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationRole"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    put:
+      operationId: replaceOrganizationUserRoles
+      tags: [ Organization Roles ]
+      summary: Replace a user's realm roles
+      description: >-
+        A full replacement rather than add/remove verbs: the role-assignment screen presents the
+        realm's roles as a checkbox set and saves the whole set, and two concurrent editors of
+        that screen must not silently merge into a union neither of them chose. The server
+        computes the grant and revoke sets from the difference.
+
+        Every name must be a role the realm declares — 400 otherwise, rather than silently
+        creating it, so a typo cannot mint a role that nothing will ever match.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleAssignment"
+      responses:
+        "200":
+          description: The roles the user holds after the replacement.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationRole"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+  /organizations/{orgKey}/admin/roles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listOrganizationRoles
+      tags: [ Organization Roles ]
+      summary: List the realm roles this organization declares
+      description: >-
+        Read live from the realm rather than from a fixed enum: beyond `org-admin` and
+        `org-member`, the roles are the tenant's own and are what `NavNode.roles` and workflow
+        role definitions are matched against.
+      responses:
+        "200":
+          description: The realm's roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationRole"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+components:
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: >-
+        Tenant discriminator; also the public URL segment of the tenant's application and the
+        name of its Keycloak realm. See shared-api.yaml OrgKeyParam for the full contract. Must
+        be verified against the realm that issued the principal's token — 403 on mismatch.
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: >-
+        The identity provider's own opaque id for the user. Not a ProcessPuzzle id and not a
+        username; usernames are mutable, this is not.
+    SearchParam:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        Free-text search over username, first name, last name and email, passed through to the
+        identity provider. Not RSQL — there is no database behind this resource to filter.
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: Zero-based page index for paged list endpoints.
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+      description: Number of elements per page for paged list endpoints.
+
+  responses:
+    BadRequest:
+      description: Validation error — the request payload or parameters are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: >-
+        The principal may not administer this organization — either the token was issued by a
+        different realm than `orgKey`, or it lacks `org-admin`.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: >-
+        No such organization, or no such user in its realm. Also returned for a `SUSPENDED`
+        organization, whose realm is disabled.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    IdentityProviderUnavailable:
+      description: >-
+        The identity provider could not be reached or refused the operation. Distinct from 500
+        because it is retryable and not the platform's own fault. Since the directory is the
+        system of record, a failure here means the operation did not happen — there is no local
+        copy that could have drifted.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    OrganizationUser:
+      type: object
+      required: [ id, username, enabled ]
+      properties:
+        id:
+          type: string
+          description: The identity provider's own opaque id.
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        enabled:
+          type: boolean
+          description: A disabled user keeps their account and roles but cannot obtain a token.
+        emailVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        roles:
+          type: array
+          description: Realm roles currently granted.
+          items:
+            type: string
+
+    OrganizationUserInvite:
+      type: object
+      description: Whom to invite. No password field on purpose — see `inviteOrganizationUser`.
+      required: [ username, email ]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        roles:
+          type: array
+          description: Realm roles to grant at creation. Empty or absent means `org-member`.
+          items:
+            type: string
+
+    OrganizationUserUpdate:
+      type: object
+      description: >-
+        Mutable profile fields plus the enabled flag. `username` is absent: it is what audit
+        records name, so it is treated as immutable even though the identity provider allows a
+        rename. Roles are absent too — they have their own endpoint.
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        enabled:
+          type: boolean
+
+    OrganizationRole:
+      type: object
+      required: [ name ]
+      properties:
+        name:
+          type: string
+          example: org-admin
+        description:
+          type: string
+        platformManaged:
+          type: boolean
+          description: >-
+            True for `org-admin` and `org-member`, which are created with the realm and are the
+            only two ProcessPuzzle itself interprets. A client should not offer to delete these.
+
+    RoleAssignment:
+      type: object
+      description: The complete set of realm roles a user should hold after the call.
+      required: [ roles ]
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+
+    PageOf_OrganizationUser:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganizationUser"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    # Shared shapes — kept as local duplicates because the openapi-generator
+    # swagger-parser cannot resolve cross-file $refs on Windows. schemaMappings
+    # in the pom.xml redirects the generated classes to com.processpuzzle.shared.model.
+    OrganizationKey:
+      type: string
+      description: >-
+        URL-safe tenant slug; canonical definition in shared-api.yaml. Also the name of the
+        tenant's Keycloak realm.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string

@@ -41,6 +41,8 @@ const PROJECTS = new Map([
   ['base-state-backend', 'libs/java-shared/base-state-backend'],
   ['base-widget-backend', 'libs/java-shared/base-widget-backend'],
   ['base-workflow-backend', 'libs/java-shared/base-workflow-backend'],
+  ['org-admin-backend', 'libs/java-shared/org-admin-backend'],
+  ['platform-admin-backend', 'libs/java-shared/platform-admin-backend'],
   ['processpuzzle-core', 'libs/java-shared/processpuzzle-core'],
   ['processpuzzle-store', 'libs/java-shared/processpuzzle-store'],
 ]);

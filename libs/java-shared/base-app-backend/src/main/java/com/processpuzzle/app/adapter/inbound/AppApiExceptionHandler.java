@@ -8,10 +8,10 @@ import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsException;
-import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
+import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
@@ -28,8 +28,19 @@ import java.util.List;
  * base-app-api.yaml declares, so the frontend can key on {@code errorId} as a Transloco key rather
  * than parse prose.
  *
- * <p>Only this feature's own exception types are declared here. {@code processpuzzle-core}'s
- * {@code ApiExceptionHandler} already claims {@code IllegalArgumentException},
+ * <p>Four of the types declared here are <em>not</em> this feature's own any more: the
+ * {@code Organization*} exceptions moved to {@code com.processpuzzle.platformadmin.usecase.exception}
+ * with the aggregate, and are declared here as well because
+ * {@code @RestControllerAdvice(basePackages = ...)} matches on the package of the <b>controller</b>,
+ * not of the exception. {@code AppEndpoint} still serves the five tenant-facing
+ * {@code /organizations*} operations and still raises them, so without these handlers those five
+ * endpoints would answer {@code 500 internal-error} instead of {@code organization.not-found} and
+ * friends. {@code PlatformAdminApiExceptionHandler} declares the same four for its own controller;
+ * two advices claiming one type on the same rung is safe precisely because their scopes are
+ * disjoint — see {@link ApiAdviceOrder} and {@code ApiAdviceScopeTest}.
+ *
+ * <p>Beyond those, only this feature's own exception types are declared here.
+ * {@code processpuzzle-core}'s {@code ApiExceptionHandler} already claims {@code IllegalArgumentException},
  * {@code IllegalStateException}, {@code JsonProcessingException},
  * {@code MethodArgumentNotValidException} and {@code InvalidDataAccessApiUsageException}; declaring
  * any of those a second time here would make which advice wins depend on bean ordering.

@@ -5,12 +5,13 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * The root of an application's metadata. Identified by ({@code orgKey}, {@code id}) — see
@@ -67,12 +68,12 @@ public class AppDefinition {
     @Column(length = 1000)
     private String description;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = AppGraphConverter.class)
     @Column(name = "draft_graph")
     private AppGraph draftGraph = AppGraph.empty();
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = AppGraphConverter.class)
     @Column(name = "published_graph")
     private AppGraph publishedGraph;
