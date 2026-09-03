@@ -66,7 +66,7 @@ class KeycloakUserDirectoryAdapterTest {
                 .thenReturn(Optional.of(user("user-1", false, null)));
         when(client.getList("/admin/realms/acme/users/user-1/role-mappings/realm")).thenReturn(List.of());
 
-        assertThat(adapter.findUser(REALM, USER_ID)).containsSatisfying(found -> {
+        assertThat(adapter.findUser(REALM, USER_ID).orElseThrow()).satisfies(found -> {
             assertThat(found.username()).isEqualTo("ada");
             assertThat(found.createdAt()).isNull();
             assertThat(found.roles()).isEmpty();
