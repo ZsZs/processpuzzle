@@ -5,6 +5,10 @@
   // <java.version>25</java.version>, so the JDK comes from the feature below instead.
   "image": "mcr.microsoft.com/devcontainers/base:1-bookworm",
 
+  "remoteEnv": {
+    "JAVA_HOME": "/usr/local/sdkman/candidates/java/25.0.4-tem"
+  },
+
   "features": {
     "ghcr.io/devcontainers/features/sshd:1": {
       "version": "latest"
@@ -68,7 +72,8 @@
   // matches the pinned @playwright/test version. Same command as the e2e action.
   "postCreateCommand": [
     "sudo chown -R vscode:vscode /home/vscode/.m2 /home/vscode/.cache/ms-playwright && npx playwright install chromium --with-deps",
-    "sudo chown -R vscode:vscode /home/vscode/.cache && mvn clean install -DskipTests"
+    "sudo chown -R vscode:vscode /home/vscode/.cache && mvn clean install -DskipTests",
+    "sudo chown -R vscode:vscode /home/vscode/.cache"
   ],
 
   "waitFor": "updateContentCommand",
@@ -115,8 +120,6 @@
     }
   },
 
-  {
-    "remoteUser": "vscode",
-    "containerUser": "vscode"
-  }
+  "remoteUser": "vscode",
+  "containerUser": "vscode"
 }
