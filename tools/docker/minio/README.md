@@ -44,9 +44,11 @@ Two things follow from that:
 - **Objects in the old unprefixed `documents` / `images` buckets are unreachable**, since nothing looks
   in them any more. Local development data only.
 
-> **Not wired up in production.** `tools/docker/docker-compose-prod.yaml` has no MinIO service at all,
-> and `minio-config.yaml` hard-codes `http://localhost:7000`. Production object storage is broken
-> independently of the prefixing above.
+> **Half wired up in production.** MinIO is now part of the one shared infrastructure definition,
+> `tools/docker/docker-compose-infrastructure.yaml`, so every environment runs it — the separate
+> prod compose file that had no MinIO service at all is gone. What remains is that
+> `minio-config.yaml` hard-codes `http://localhost:7000`, so the endpoint still needs making
+> per-environment before production object storage works.
 
 ## Usage
 

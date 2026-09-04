@@ -28,8 +28,9 @@
       "version": "24",
       "installYarnUsingApt": false
     },
-    // Needed for tools/docker/docker-compose-ci.yaml (Postgres, Keycloak, MinIO,
-    // json-server, the testbed backend and the testbed NgInx app).
+    // Needed for tools/docker/docker-compose-infrastructure.yaml (Postgres, Keycloak,
+    // MinIO, json-server, pgweb) and docker-compose-apps.yaml (the testbed backend and
+    // the testbed NgInx app).
     "ghcr.io/devcontainers/features/docker-in-docker:1": {
       "dockerDashComposeVersion": "v2"
     },

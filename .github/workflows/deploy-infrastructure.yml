@@ -1,0 +1,213 @@
+name: Deploy-Infrastructure
+
+# Builds and pushes the shared infrastructure images to GHCR, then triggers the Coolify redeploy of
+# the one Docker Compose resource that runs them — docs/build-deploy-strategy.md §4. One
+# environment-parameterized workflow rather than one per environment: `stage` and `prod` differ by a
+# committed tools/docker/env/.env.<env> file plus the GitHub Environment's secrets.
+#
+# This is also the template for the six per-app workflows still to be written (strategy §10): the
+# matrix becomes one app, the `deploy` job's composite action is reused unchanged.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [ STAGE, PROD ]
+        default: STAGE
+      image_tag:
+        description: "Promote this existing sha-<commit> tag instead of rebuilding (leave empty to build)"
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      image_tag:
+        type: string
+        required: false
+  push:
+    branches: [ develop ]
+    paths:
+      - 'tools/docker/docker-compose-infrastructure.yaml'
+      - 'tools/docker/env/**'
+      - 'tools/docker/postgresql/**'
+      - 'tools/docker/keycloak/**'
+      - 'tools/docker/minio/**'
+      - 'tools/docker/json-server/**'
+      - 'tools/mock-backend/**'
+      - '.github/workflows/deploy-infrastructure.yml'
+
+concurrency:
+  # One deployment of one environment at a time; a newer commit supersedes an in-flight one.
+  group: deploy-infrastructure-${{ inputs.environment || 'STAGE' }}
+  cancel-in-progress: false
+
+jobs:
+  # `inputs` is empty on a `push`, so the environment defaults to STAGE and the tags derived from it
+  # are computed once here rather than repeated in three `if:` expressions.
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      env_tag: ${{ steps.resolve.outputs.env_tag }}
+      promote: ${{ steps.resolve.outputs.promote }}
+    steps:
+      - id: resolve
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'STAGE' }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          echo "environment=${ENVIRONMENT}" >> "$GITHUB_OUTPUT"
+          # The moving tag the Coolify resource watches: `stage` / `prod`, lower case because a Docker
+          # tag is case-sensitive and PP_IMAGE_TAG in .env.<env> is lower case.
+          echo "env_tag=$(echo "${ENVIRONMENT}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          if [ -n "${IMAGE_TAG}" ]; then echo "promote=true" >> "$GITHUB_OUTPUT";
+          else echo "promote=false" >> "$GITHUB_OUTPUT"; fi
+
+  build-and-push:
+    needs: resolve
+    if: needs.resolve.outputs.promote == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The four images that are built bake configuration that has to travel with the image:
+          # 10-init-db.sh, keycloak/import/*-realm.json, bootstrap-platform-admin-client.sh and
+          # init-minio.sh. json-server bakes tools/mock-backend/db.json. pgweb is referenced upstream
+          # by a pinned tag and is deliberately absent.
+          #
+          # The `testbed-` prefix these images used to carry was misleading: this layer is shared by
+          # all three application stacks — see docs/application-stacks.md.
+          - name: processpuzzle-postgres
+            dockerfile: tools/docker/postgresql/Dockerfile
+          - name: processpuzzle-keycloak
+            dockerfile: tools/docker/keycloak/Dockerfile
+          - name: processpuzzle-keycloak-init
+            dockerfile: tools/docker/keycloak/init/Dockerfile
+          - name: processpuzzle-minio
+            dockerfile: tools/docker/minio/Dockerfile
+          - name: processpuzzle-json-server
+            dockerfile: tools/docker/json-server/Dockerfile
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Derive tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/zszs/${{ matrix.name }}
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=raw,value=${{ needs.resolve.outputs.env_tag }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # The repository root: every infrastructure Dockerfile COPYs with a tools/docker/… path.
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Promotion re-tags rather than rebuilds, so the exact bytes verified on stage are what reach
+  # production — docs/build-deploy-strategy.md §9. `imagetools create` copies the manifest inside the
+  # registry; nothing is pulled, built or pushed.
+  promote:
+    needs: resolve
+    if: needs.resolve.outputs.promote == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-tag the verified images
+        env:
+          SOURCE_TAG: ${{ inputs.image_tag }}
+          TARGET_TAG: ${{ needs.resolve.outputs.env_tag }}
+        run: |
+          set -euo pipefail
+          for IMAGE in processpuzzle-postgres processpuzzle-keycloak processpuzzle-keycloak-init \
+                       processpuzzle-minio processpuzzle-json-server; do
+            echo "::group::${IMAGE}: ${SOURCE_TAG} -> ${TARGET_TAG}"
+            docker buildx imagetools create \
+              --tag "ghcr.io/zszs/${IMAGE}:${TARGET_TAG}" \
+              "ghcr.io/zszs/${IMAGE}:${SOURCE_TAG}"
+            echo "::endgroup::"
+          done
+
+  deploy:
+    needs: [ resolve, build-and-push, promote ]
+    # One of build-and-push / promote is always skipped, and a skipped dependency must not block the
+    # deployment — but a failed one must.
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && needs.build-and-push.result != 'failure' && needs.promote.result != 'failure' }}
+    runs-on: ubuntu-latest
+    # Resolves the per-environment secrets and variables below.
+    environment: ${{ needs.resolve.outputs.environment }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      # A Coolify Docker Compose resource reads the compose file from git and interpolates it with the
+      # RESOURCE'S OWN environment variables — `--env-file` is not in that path. So the committed
+      # tools/docker/env/.env.<environment> file is the documented source of truth that has to be
+      # entered once into the resource, and this webhook only tells Coolify to redeploy.
+      - name: Trigger the Coolify redeploy
+        uses: ./.github/actions/coolify-deploy
+        with:
+          webhook: ${{ secrets.COOLIFY_WEBHOOK }}
+          token: ${{ secrets.COOLIFY_TOKEN }}
+
+      # Best-effort: a red workflow should mean a red stack. Skipped when the environment does not
+      # declare the URLs, since Keycloak's health endpoint is on its management port and a proxy need
+      # not expose it.
+      - name: Wait for the stack to report ready
+        if: ${{ vars.KEYCLOAK_PUBLIC_URL != '' || vars.MINIO_PUBLIC_URL != '' }}
+        env:
+          KEYCLOAK_PUBLIC_URL: ${{ vars.KEYCLOAK_PUBLIC_URL }}
+          MINIO_PUBLIC_URL: ${{ vars.MINIO_PUBLIC_URL }}
+        run: |
+          set -uo pipefail
+          DEADLINE=$(( $(date +%s) + 300 ))
+          for PROBE in "${KEYCLOAK_PUBLIC_URL:+${KEYCLOAK_PUBLIC_URL}/health/ready}" \
+                       "${MINIO_PUBLIC_URL:+${MINIO_PUBLIC_URL}/minio/health/live}"; do
+            [ -z "${PROBE}" ] && continue
+            echo "Probing ${PROBE}"
+            until curl -fsS -o /dev/null "${PROBE}"; do
+              if [ "$(date +%s)" -ge "${DEADLINE}" ]; then
+                echo "::error::${PROBE} did not answer 200 within 5 minutes."
+                exit 1
+              fi
+              sleep 10
+            done
+            echo "  ready"
+          done

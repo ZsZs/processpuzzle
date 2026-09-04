@@ -48,7 +48,7 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 | Stage | Backend | Auth provider | Notes |
 |---|---|---|---|
 | **dev** | REST `http://localhost:3000/` (common) | Keycloak `master` realm on `localhost:7070` | Firestore/Auth emulators on `8081`/`9099`, `level: debug` |
-| **ci** | REST `localhost:3000` | Keycloak `processpuzzle` realm | Same emulators; runs inside `docker-compose-ci.yaml` |
+| **ci** | REST `localhost:3000` | Keycloak `processpuzzle` realm | Same emulators; runs inside the `ci` compose stack |
 | **stage** | Firestore Cloud Functions (`...-stage.cloudfunctions.net`) | `firebase-auth` | Real Firebase project `processpuzzle-testbed-stage` |
 | **prod** | Firestore Cloud Functions | `firebase-auth` | Real Firebase prod project |
 
@@ -68,8 +68,8 @@ So the same image picks up a different stage purely from the container env vars 
 
 ### Docker compose files
 
-- **`tools/docker/docker-compose-ci.yaml`** — full integration stack used in CI: testbed (nginx), Spring Boot backend, json-server, Firebase emulators, Keycloak + Postgres, MinIO. Passes `PIPELINE_STAGE=ci` and `FIREBASE_API_KEY` to the testbed container; all services healthchecked and on the `processpuzzle` bridge network.
-- **`tools/docker/docker-compose-prod.yaml`** — minimal deployment template: only the testbed image + json-server, with `IMAGE_TAG` placeholder swapped at deploy time.
+- **`tools/docker/docker-compose-infrastructure.yaml`** — the shared infrastructure layer: Keycloak + Postgres, MinIO, json-server, pgweb. One definition for `ci`, `stage` and `prod`, parameterized by `tools/docker/env/.env.<environment>`.
+- **`tools/docker/docker-compose-apps.yaml`** — the testbed (nginx) and its Spring Boot backend, overlaid on the infrastructure file. Passes `PIPELINE_STAGE=ci` and `FIREBASE_API_KEY` to the testbed container; all services healthchecked and on the `processpuzzle` bridge network. A holding position until each app image becomes its own deployment resource — see [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §4.
 - **`tools/docker/minio/README.md`** — the MinIO sidecar's own README documents its custom image (pre-created `documents`/`images` buckets, `springboot/springboot123` service account) and credential override pattern.
 
 ### Flow summary

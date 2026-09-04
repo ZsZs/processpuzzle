@@ -1,6 +1,9 @@
 # ProcessPuzzle build & deployment strategy
 
-Status: v1 — infra location decided; tagging strategy proposed as a sensible default, open to revision.
+Status: v2 — the shared **infrastructure layer** is delivered (§§2, 4, 10, 11): one compose
+definition, one environment-parameterized workflow, GHCR + Coolify webhook. The six per-app
+workflows and their Application resources are still to come (§12). Tagging strategy proposed as a
+sensible default, open to revision.
 
 ## 1. Source layout
 
@@ -33,12 +36,27 @@ Two GitHub repositories, coupled at build time only (via git submodule), indepen
 
 ## 2. What actually gets built
 
-Only the six application images are built and pushed. PostgreSQL, Keycloak, and MinIO are off-the-shelf images (e.g. `postgres:16`, `quay.io/keycloak/keycloak`, `minio/minio`) referenced by tag wherever the shared infrastructure is declared — neither repo builds them.
+The six application images, plus **five of the six infrastructure images** — corrected from the original claim that none of the infrastructure is built. Four of them bake configuration that has to travel with the image, so referencing the upstream image by tag would mean mounting that configuration at deploy time instead:
+
+| Image | What it bakes on top of upstream |
+|---|---|
+| `processpuzzle-postgres` | `postgresql/10-init-db.sh` — the per-stack databases and the application role |
+| `processpuzzle-keycloak` | `keycloak/import/*-realm.json`, plus `kc.sh build` for an optimized start |
+| `processpuzzle-keycloak-init` | `keycloak/init/bootstrap-platform-admin-client.sh` |
+| `processpuzzle-minio` | `minio/init-minio.sh` — buckets and the Spring service account |
+| `processpuzzle-json-server` | `tools/mock-backend/db.json` |
+| pgweb | *nothing* — so it is not built. Referenced as `sosedoff/pgweb:0.17.0`, a pinned upstream tag |
+
+Application images:
 
 | Repo | Images built |
 |---|---|
 | `processpuzzle` | `processpuzzle-testbed-frontend`, `processpuzzle-testbed-backend` |
 | `processpuzzle-biz` | `processpuzzle-admin-frontend`, `processpuzzle-admin-backend`, `processpuzzle-biz-frontend`, `processpuzzle-biz-backend` |
+
+The infrastructure images dropped the misleading `testbed-` prefix and moved to GHCR
+(`ghcr.io/zszs/processpuzzle-*`) when they became one shared layer; the application images are still
+on Docker Hub until their per-app workflows land.
 
 ## 3. Flow diagram
 
@@ -84,6 +102,10 @@ Coolify's project-level shared environment variables (host names, credentials) p
 ## 8. Decisions log
 
 - **Infra definition location** — resolved: the Postgres/Keycloak/MinIO compose definition lives in the `processpuzzle` repo (as reflected in §1 and §4). The earlier note about a combined testbed+biz docker-compose living in `processpuzzle-biz` is superseded — infra and applications are no longer bundled together at all, per the independent-lifecycle model in §4.
+- **Registry: GHCR** (2026-09-04). The infrastructure images are `ghcr.io/zszs/processpuzzle-*`, pushed with the workflow's built-in `GITHUB_TOKEN` — no third-party registry credential to hold. The application images follow when their per-app workflows land.
+- **Deployment trigger: the Coolify deploy webhook** (2026-09-04). One `curl` against the URL Coolify prints on the resource's Webhook page, wrapped in the [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml) composite action so the six app workflows reuse it. The whole URL comes from a secret, which keeps the action independent of Coolify's URL shape.
+- **One compose file per layer, not per environment** (2026-09-04). `docker-compose-ci.yaml` and `docker-compose-prod.yaml` were two definitions of the same infrastructure that had already drifted — prod had no MinIO and no pgweb. They are replaced by `docker-compose-infrastructure.yaml` (the shared layer, §4's Docker Compose resource) and `docker-compose-apps.yaml` (a holding position until each app image is its own Application resource). CI and `npm run stack-*` overlay both.
+- **Committed `.env.<environment>` for non-secrets, GitHub Environment secrets for credentials** (2026-09-04). `tools/docker/env/.env.{ci,stage,prod}` are in git and hold no credentials except `ci`'s demo values, which were always in git. See §11 for how they reach Coolify, which does *not* read them.
 
 ## 9. Proposed default: image tagging & promotion
 
@@ -93,6 +115,56 @@ Not yet decided with certainty — proposed as the sensible default, open to rev
 - That same image is **promoted**, not rebuilt, from stage to production — re-tag `sha-<commit>` as `:stage` on deploy to stage, and as `:prod` once verified, rather than running a separate build per environment. This guarantees the exact bytes tested on stage are what reach production.
 - Coolify's Application resource for stage watches the `:stage` tag; production watches `:prod`.
 
-## 10. Still open
+## 10. The workflow template
 
-- Dockerfile / workflow YAML template for one app, to replicate across the other five — not yet drafted. Happy to do this next if useful.
+[`.github/workflows/deploy-infrastructure.yml`](../.github/workflows/deploy-infrastructure.yml) is
+the delivered shape, and the template for the six per-app workflows. It has four jobs:
+
+| Job | Runs when | What it does |
+|---|---|---|
+| `resolve` | always | `inputs` is empty on a `push`, so the target environment defaults to `STAGE` and the derived lower-case image tag is computed once here rather than in three `if:` expressions |
+| `build-and-push` | `image_tag` empty | Matrix over the five built images. `docker/login-action` against `ghcr.io` with the built-in `GITHUB_TOKEN` (`permissions: packages: write`) → `docker/metadata-action` producing `sha-<commit>`, the moving `stage` / `prod` tag, and `latest` on `develop` → `docker/build-push-action` with `context: .` (every Dockerfile COPYs from the repo root) and `cache-from/to: type=gha` |
+| `promote` | `image_tag` given | `docker buildx imagetools create` re-tags an existing `sha-<commit>` as `:stage` / `:prod`. Nothing is pulled, built or pushed — §9's guarantee that the exact bytes tested on stage are what reach production |
+| `deploy` | either of the two succeeded or was skipped | `environment: ${{ … }}`, so GitHub resolves the per-environment secrets, then the `coolify-deploy` action, then a best-effort readiness poll so that a red workflow means a red stack |
+
+It is reusable three ways — `workflow_dispatch` (with the environment as a choice input),
+`workflow_call` (so a caller in either repo can invoke it, as `docs/build-and-deploy-caller.yml`
+sketches), and `push` to `develop` under the infrastructure paths, which defaults to `STAGE`.
+
+**To make one of the six app workflows from it:** replace the matrix with the single app image, drop
+the `promote` job's image loop down to that one image, and point `deploy` at that Application
+resource's own `COOLIFY_WEBHOOK`. Nothing else changes.
+
+### Secrets and variables per GitHub Environment
+
+`STAGE` and `PROD`, none of which existed before this change. `tools/docker/env/.env.example`
+documents where each is consumed.
+
+| Secret | Used for |
+|---|---|
+| `COOLIFY_WEBHOOK` | full deploy webhook URL, including `?uuid=` |
+| `COOLIFY_TOKEN` | Coolify API token, `deploy` permission only |
+| `POSTGRES_PASSWORD` | Keycloak's own DB role |
+| `PROCESSPUZZLE_DB_PASSWORD` | the application role created by `10-init-db.sh` |
+| `KEYCLOAK_ADMIN_USERNAME` / `KEYCLOAK_ADMIN_PASSWORD` | bootstrap admin |
+| `MINIO_ROOT_PASSWORD` / `MINIO_SERVICE_PASSWORD` | MinIO root + the Spring service account |
+| `PLATFORM_ADMIN_CLIENT_SECRET` | master-realm service account |
+
+Two optional **variables** (`vars`, not secrets) enable the readiness gate:
+`KEYCLOAK_PUBLIC_URL` and `MINIO_PUBLIC_URL`. The step is skipped when neither is set, since
+Keycloak's health endpoint lives on its management port and a reverse proxy need not expose it.
+
+## 11. Two things to know about Coolify
+
+- **It does not read `--env-file`.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the *resource's own* environment variables. So for `stage` / `prod` the committed `tools/docker/env/.env.<environment>` file is the documented source of truth that has to be entered once into the resource (credentials marked as secret there), while `--env-file` is what `ci` and local development use. Every variable in the compose file carries a `${VAR:-<ci default>}` default, so one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
+- **`force=true` restarts without always re-pulling** ([coollabsio/coolify#5318](https://github.com/coollabsio/coolify/issues/5318)). A resource that watches a moving tag therefore needs Coolify's *"pull latest images and restart"* option enabled. That, plus watching `:stage` / `:prod`, is exactly §9's model.
+
+*Optional follow-up, deliberately not done here:* push the `.env.<environment>` values into the
+Coolify resource over its API before triggering the deploy, making the repo the true source of truth.
+It needs an endpoint shape verified against the running Coolify version, so it should land as its own
+step once the manual path is proven.
+
+## 12. Still open
+
+- The six per-app workflows, and the per-app Coolify **Application** resources they deploy to. `docker-compose-apps.yaml` is the holding position until then.
+- Creating the Coolify project, resources and environment variables — manual, one-off, and a precondition for the `deploy` job to do anything.

@@ -35,7 +35,7 @@ class CorsHeadersOnRejectedRequestTest {
      *
      * <p>The default allow-list in {@code application.yaml} is the union of all six origins, because
      * one backend started by hand has to serve whichever frontend a developer runs. Each backend
-     * deployment in docker-compose-ci.yaml narrows it to its own application stack — and this origin
+     * deployment in docker-compose-apps.yaml narrows it to its own application stack — and this origin
      * belongs to the admin stack, which is the deployment these boot tests model; see the
      * {@code stack-realm} in application-unit-test.yaml.
      */

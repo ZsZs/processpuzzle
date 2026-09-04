@@ -111,3 +111,8 @@ tools/docker/**/pubsub-debug.log
 
 # local credentials
 /.sonar-token
+
+# docker env: the per-environment files under tools/docker/env/ are committed and hold non-secret
+# values; these two are the places credentials go locally.
+/tools/docker/env/.env.local
+/tools/docker/.env
