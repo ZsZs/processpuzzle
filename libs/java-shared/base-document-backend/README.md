@@ -41,7 +41,7 @@ A reader who may not see a document gets **404, not 403** — telling them it ex
 
 ## Sample documents
 
-`SampleDocumentLoader` imports the bundled samples on `ApplicationReadyEvent` when `base-document.loadSamples` is true (it is, in `processpuzzle-backend`). The owning organization is the part of the file name before `-documents.yaml`, so `sample-documents/processpuzzle-testbed-documents.yaml` lands in `processpuzzle-testbed` — the same convention `SampleRuleLoader` and `DefaultAppLoader` use, and the reason seeding another tenant is adding a file rather than changing configuration. The scan is `classpath*:`, so a host application can contribute its own `sample-documents/` directory.
+`SampleDocumentLoader` imports the bundled samples on `ApplicationReadyEvent` when `base-document.loadSamples` is true (it is, in `processpuzzle-testbed-backend`). The owning organization is the part of the file name before `-documents.yaml`, so `sample-documents/processpuzzle-testbed-documents.yaml` lands in `processpuzzle-testbed` — the same convention `SampleRuleLoader` and `DefaultAppLoader` use, and the reason seeding another tenant is adding a file rather than changing configuration. The scan is `classpath*:`, so a host application can contribute its own `sample-documents/` directory.
 
 The file is the YAML import format unchanged, so it also feeds `POST /organizations/{orgKey}/documents:import`. It carries two documents at opposite ends of the editorial lifecycle: `platform-overview` — complete, two locales, declared ports, one standalone and one embedded widget, public — and `testbed-release-notes`, a prose-only sketch that is neither public nor published.
 

@@ -1,7 +1,7 @@
 /**
  * Domain events published via Spring's {@code ApplicationEventPublisher} as workflow instances
  * progress. Published as plain events (not Spring Modulith {@code @Externalized}) — externalizing
- * to a broker is an application-level concern for the host (processpuzzle-backend) to configure,
+ * to a broker is an application-level concern for the host (processpuzzle-testbed-backend) to configure,
  * not something this feature library should assume.
  *
  * <p><b>Known gap:</b> there is no {@code base-workflow-events.yaml} contract anywhere in the repo

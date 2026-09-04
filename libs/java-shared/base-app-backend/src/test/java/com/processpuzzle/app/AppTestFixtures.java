@@ -14,18 +14,21 @@ import com.processpuzzle.app.model.RouteTarget;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.shared.model.WidgetInstance;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
-import com.processpuzzle.rule.usecase.EvaluateObject;
 import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -53,9 +56,35 @@ public final class AppTestFixtures {
     public static AppDefinitionValidator structuralValidator() {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        ObjectProvider<EvaluateObject> evaluateObjectProvider = mock(ObjectProvider.class);
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
-        return new AppDefinitionValidator(entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
+        return new AppDefinitionValidator(entityRegistryProvider, new AppRuleValidator(noRuleEvaluator()));
+    }
+
+    /**
+     * A {@link RuleEvaluator} reporting exactly {@code violations}, wrapped as the
+     * {@link ObjectProvider} {@code AppRuleValidator} takes.
+     *
+     * <p>An anonymous class rather than a lambda: the port's method is {@code default}, so it is not
+     * a functional interface -- an unwired deployment has to get the empty answer.
+     */
+    @SuppressWarnings("unchecked")
+    public static ObjectProvider<RuleEvaluator> ruleEvaluator(RuleEvaluator.Violation... violations) {
+        List<RuleEvaluator.Violation> reported = List.of(violations);
+        ObjectProvider<RuleEvaluator> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(new RuleEvaluator() {
+            @Override
+            public List<Violation> evaluate(String orgKey, String context, java.util.Map<String, Object> candidate) {
+                return reported;
+            }
+        });
+        return provider;
+    }
+
+    /** What a deployment that wires no rule engine ends up with: the rule pass is skipped. */
+    @SuppressWarnings("unchecked")
+    public static ObjectProvider<RuleEvaluator> noRuleEvaluator() {
+        ObjectProvider<RuleEvaluator> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(null);
+        return provider;
     }
 
     /** The guard a deployment without an access policy ends up with. */
@@ -89,6 +118,56 @@ public final class AppTestFixtures {
      * A structurally valid input: one route, reached by one sidenav entry. Mutable throughout, so a
      * test can bend one part of it out of shape.
      */
+    /**
+     * A {@link TenantDirectory} that knows exactly {@code orgKeys}, wrapped as the
+     * {@link ObjectProvider} the use cases take.
+     *
+     * <p>An anonymous class rather than a lambda: the port's methods are both {@code default}, so it
+     * is not a functional interface. That is deliberate — an unwired deployment has to get the
+     * permissive answer, which an abstract method could not provide.
+     */
+    public static ObjectProvider<TenantDirectory> tenantDirectory(String... orgKeys) {
+        Set<String> known = Set.of(orgKeys);
+        return providerOf(new TenantDirectory() {
+            @Override
+            public boolean exists(String orgKey) {
+                return known.contains(orgKey);
+            }
+
+            @Override
+            public Optional<Tenant> find(String orgKey) {
+                return known.contains(orgKey) ? Optional.of(new Tenant(orgKey, null)) : Optional.empty();
+            }
+        });
+    }
+
+    /** A directory that knows {@code orgKey} and reports {@code defaultLocale} for it. */
+    public static ObjectProvider<TenantDirectory> tenantDirectoryWithLocale(String orgKey, String defaultLocale) {
+        return providerOf(new TenantDirectory() {
+            @Override
+            public boolean exists(String key) {
+                return orgKey.equals(key);
+            }
+
+            @Override
+            public Optional<Tenant> find(String key) {
+                return orgKey.equals(key) ? Optional.of(new Tenant(key, defaultLocale)) : Optional.empty();
+            }
+        });
+    }
+
+    /** What a deployment that wires no directory bean ends up with: every tenant is accepted. */
+    public static ObjectProvider<TenantDirectory> noTenantDirectory() {
+        return providerOf(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<TenantDirectory> providerOf(TenantDirectory directory) {
+        ObjectProvider<TenantDirectory> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(directory);
+        return provider;
+    }
+
     public static AppDefinitionInput validInput(String appId) {
         AppDefinitionInput input = new AppDefinitionInput(appId, "Claims Management");
         input.setRoutes(new ArrayList<>(List.of(routeDefinition(ROUTE_PATH, "Claims"))));

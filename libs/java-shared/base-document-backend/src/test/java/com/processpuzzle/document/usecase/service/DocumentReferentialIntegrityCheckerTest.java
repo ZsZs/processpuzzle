@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.document.domain.*;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

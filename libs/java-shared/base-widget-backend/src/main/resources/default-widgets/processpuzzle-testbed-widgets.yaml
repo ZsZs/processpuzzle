@@ -1,5 +1,5 @@
 # Default widget definitions of the 'processpuzzle-testbed' organization — the tenant behind
-# apps/processpuzzle-testbed.
+# apps/processpuzzle-testbed-frontend.
 #
 # DefaultWidgetLoader imports this file on startup when `base-widget.loadDefaultWidgets` is true. The
 # owning organization is the part of the file name before `-widgets.yaml`, exactly as `<orgKey>-apps.yaml`

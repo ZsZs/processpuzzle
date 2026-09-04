@@ -1,5 +1,7 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
@@ -16,14 +18,12 @@ import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
-import com.processpuzzle.rule.domain.Severity;
-import com.processpuzzle.rule.usecase.EvaluateObject;
-import com.processpuzzle.rule.usecase.EvaluationOutcome;
-import com.processpuzzle.rule.usecase.RuleViolation;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.app.usecase.Severity;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -49,8 +49,7 @@ class PublishAppDefinitionTest {
     private PublishAppDefinition publishAppDefinition;
     private UpdateAppDefinition updateAppDefinition;
     private AppMapper mapper;
-    private EvaluateObject evaluateObject;
-    private ObjectProvider<EvaluateObject> evaluateObjectProvider;
+    private ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -61,16 +60,13 @@ class PublishAppDefinitionTest {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
         ObjectProvider<OrganizationAccessPolicy> policyProvider = mock(ObjectProvider.class);
-        when(policyProvider.getIfUnique(any())).thenReturn(new com.processpuzzle.platformadmin.usecase.port
-                .PermitAllOrganizationAccessPolicy());
+        when(policyProvider.getIfUnique(any())).thenReturn(new PermitAllOrganizationAccessPolicy());
 
         // No rule module wired by default; the rule-aware tests below opt in.
-        evaluateObject = mock(EvaluateObject.class);
-        evaluateObjectProvider = mock(ObjectProvider.class);
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
+        ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();
 
         AppDefinitionValidator validator = new AppDefinitionValidator(
-                entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
+                entityRegistryProvider, new AppRuleValidator(ruleEvaluatorProvider));
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 
@@ -160,8 +156,7 @@ class PublishAppDefinitionTest {
      */
     @Test
     void aDefinitionTrippingOnlyAWarningRule_isStillSavedAndPublished() {
-        givenRuleViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
-                Severity.WARNING, "This app declares no sidenav navigation.", null));
+        givenRuleViolations(new RuleEvaluator.Violation("app-declares-a-populated-sidenav", "This app declares no sidenav navigation.", null, Severity.WARNING));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -171,8 +166,7 @@ class PublishAppDefinitionTest {
 
     @Test
     void aDefinitionTrippingAnErrorRule_isRejected() {
-        givenRuleViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
-                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.", null));
+        givenRuleViolations(new RuleEvaluator.Violation("app-id-is-route-safe", "An app id is lowercase letters, digits and single hyphens.", null, Severity.ERROR));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -202,11 +196,11 @@ class PublishAppDefinitionTest {
     }
 
     /** Wires the rule module in for this test, with the given violations on every evaluation. */
-    private void givenRuleViolations(RuleViolation... violations) {
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
-        boolean passed = Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
-        when(evaluateObject.execute(any(), any(), any()))
-                .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
+    private void givenRuleViolations(RuleEvaluator.Violation... violations) {
+        // Built before the stubbing call: AppTestFixtures.ruleEvaluator() itself mocks and stubs, and
+        // Mockito rejects that nested inside a when(...) argument as an unfinished stubbing.
+        RuleEvaluator evaluator = AppTestFixtures.ruleEvaluator(violations).getIfAvailable();
+        when(ruleEvaluatorProvider.getIfAvailable()).thenReturn(evaluator);
     }
 
     private static AppDefinition stored(AppGraph graph) {

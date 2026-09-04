@@ -47,7 +47,7 @@ To plug the library into your application you provide an entity class, a mapper,
   <img src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-design_overview.png?raw=true" width=600px alt="Design Overview">
 </a>
 
-The snippets below are taken from the [TestEntity sample in the testbed](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed/src/app/content/base-forms/test-entity).
+The snippets below are taken from the [TestEntity sample in the testbed](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed-frontend/src/app/content/base-forms/test-entity).
 
 ### 1. Define your entity
 
@@ -262,7 +262,7 @@ when they do not:
 - `COMPONENTS` points at an `isEmbedded` child (use `EMBEDDED_COMPONENTS`), or `EMBEDDED_COMPONENTS` points at
   one that is not (use `COMPONENTS`).
 
-`Test Entity` in the [testbed](../../../apps/processpuzzle-testbed) demonstrates all three side by side —
+`Test Entity` in the [testbed](../../../apps/processpuzzle-testbed-frontend) demonstrates all three side by side —
 `relatedEntities` → `Related Entity`, `components` → `Test Entity Component`, `embeddedComponents` →
 `Embedded Component`.
 

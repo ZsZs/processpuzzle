@@ -34,7 +34,7 @@ import com.processpuzzle.document.usecase.UnpublishDocumentTranslation;
 import com.processpuzzle.document.usecase.UpdateDocument;
 import com.processpuzzle.document.usecase.UpdateDocumentProperties;
 import com.processpuzzle.document.usecase.ValidateDocument;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.document.usecase.Severity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.Resource;

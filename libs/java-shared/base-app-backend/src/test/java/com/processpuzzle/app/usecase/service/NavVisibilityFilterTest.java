@@ -3,7 +3,7 @@ package com.processpuzzle.app.usecase.service;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;

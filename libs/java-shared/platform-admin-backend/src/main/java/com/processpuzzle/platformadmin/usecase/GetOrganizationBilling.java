@@ -1,5 +1,6 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.domain.Invoice;
 import com.processpuzzle.platformadmin.domain.InvoiceRepository;
 import com.processpuzzle.platformadmin.domain.Plan;

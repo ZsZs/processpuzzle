@@ -28,7 +28,7 @@ the suspend/activate/assign-admin verbs arrive as extra form actions rather than
 
 ## Host application
 
-The library is mounted by [`apps/platform-admin`](../../../apps/platform-admin), which authenticates
+The library is mounted by [`apps/processpuzzle-admin-frontend`](../../../apps/processpuzzle-admin-frontend), which authenticates
 against the fixed **platform** realm (not a tenant's). `PLATFORM_ADMIN_ROUTES` is the entry point:
 
 ```ts

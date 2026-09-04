@@ -1,5 +1,5 @@
 # Default state machine definitions for the 'processpuzzle-testbed' organization —
-# the tenant behind apps/processpuzzle-testbed.
+# the tenant behind apps/processpuzzle-testbed-frontend.
 #
 # DefaultStateImporter imports this file on startup when `base-state.loadDefaultStateMachines` is true.
 # The owning organization is the part of the file name before `-state-machines.yaml`, exactly as

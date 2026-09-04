@@ -23,15 +23,10 @@ import java.util.List;
  */
 public interface IdentityRealmPort {
 
-    /** Realm role granting the tenant's own administration API. */
-    String ORG_ADMIN_ROLE = "org-admin";
-
-    /** Realm role every member of a tenant holds. */
-    String ORG_MEMBER_ROLE = "org-member";
-
     /**
-     * Creates the tenant's realm, its public {@code processpuzzle-ui} client and the two realm roles
-     * ProcessPuzzle itself interprets ({@link #ORG_ADMIN_ROLE}, {@link #ORG_MEMBER_ROLE}).
+     * Creates the tenant's realm, its public {@code processpuzzle-biz} client and the two realm roles
+     * ProcessPuzzle itself interprets ({@link com.processpuzzle.core.tenancy.TenantRoles#ORG_ADMIN},
+     * {@link com.processpuzzle.core.tenancy.TenantRoles#ORG_MEMBER}).
      *
      * <p>Idempotent: an already-existing realm is left alone rather than reported as an error, so a
      * retry after a partial failure converges instead of getting stuck.

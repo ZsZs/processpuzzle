@@ -1,5 +1,7 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.TenantRoles;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
@@ -51,7 +53,7 @@ public class AssignOrganizationAdmin {
                     "assign an administrator before its realm exists");
         }
 
-        List<String> roles = List.of(IdentityRealmPort.ORG_ADMIN_ROLE, IdentityRealmPort.ORG_MEMBER_ROLE);
+        List<String> roles = List.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
         String userId = realms.createAdminUser(orgKey, user, roles);
 
         return new Result(userId, orgKey, user, roles);

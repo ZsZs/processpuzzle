@@ -8,7 +8,7 @@ import { OrganizationUserFacade } from './feature/organization-user.facade';
 import { ROLE_ASSIGNMENT_TAB } from './feature/role-assignment-tab';
 
 /**
- * A tenant's own administration branch, mounted by `processpuzzle-ui` under `/{orgKey}/admin`.
+ * A tenant's own administration branch, mounted by `processpuzzle-biz-frontend` under `/{orgKey}/admin`.
  *
  * The path segment is `snakeCaseName('Organization User')` — `organization-user` — because
  * `BaseFormNavigatorSingletonStore` builds the details URL from the entity name; a mismatch stops the

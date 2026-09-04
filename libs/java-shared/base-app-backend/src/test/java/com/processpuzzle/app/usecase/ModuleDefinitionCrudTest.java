@@ -1,18 +1,19 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.when;
 class ModuleDefinitionCrudTest {
 
     private ModuleDefinitionRepository repository;
-    private OrganizationRepository organizationRepository;
+    private ObjectProvider<TenantDirectory> tenantDirectory;
     private CreateModuleDefinition createModuleDefinition;
     private FindModuleDefinition findModuleDefinition;
     private FindAllModuleDefinitions findAllModuleDefinitions;
@@ -51,10 +52,9 @@ class ModuleDefinitionCrudTest {
     @BeforeEach
     void setUp() {
         repository = mock(ModuleDefinitionRepository.class);
-        organizationRepository = mock(OrganizationRepository.class);
-        when(organizationRepository.existsById(anyString())).thenReturn(true);
+        tenantDirectory = AppTestFixtures.tenantDirectory(ORG_KEY);
         when(repository.save(any(ModuleDefinition.class))).thenAnswer(call -> call.getArgument(0));
-        createModuleDefinition = new CreateModuleDefinition(repository, organizationRepository,
+        createModuleDefinition = new CreateModuleDefinition(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.permissiveGuard(), new AppMapper());
         findModuleDefinition = new FindModuleDefinition(repository, AppTestFixtures.permissiveGuard());
         findAllModuleDefinitions = new FindAllModuleDefinitions(repository, AppTestFixtures.permissiveGuard());
@@ -100,11 +100,11 @@ class ModuleDefinitionCrudTest {
 
     @Test
     void creatingAModuleInAnUnknownOrganization_is404() {
-        when(organizationRepository.existsById("nope")).thenReturn(false);
+        // 'nope' is absent from the directory wired in setUp.
 
         assertThatThrownBy(() -> createModuleDefinition.execute("nope",
                 AppTestFixtures.validModuleInput(MODULE_KEY)))
-                .isInstanceOf(OrganizationNotFoundException.class);
+                .isInstanceOf(UnknownTenantException.class);
         verify(repository, never()).save(any());
     }
 
@@ -134,7 +134,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void createRequiresDesignRights() {
         ModuleDefinitionRepository untouched = mock(ModuleDefinitionRepository.class);
-        OrganizationRepository untouchedOrgs = mock(OrganizationRepository.class);
+        ObjectProvider<TenantDirectory> untouchedOrgs = AppTestFixtures.tenantDirectory(ORG_KEY);
 
         assertThatThrownBy(() -> new CreateModuleDefinition(untouched, untouchedOrgs,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.denyingGuard(), new AppMapper())

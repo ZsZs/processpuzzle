@@ -2,7 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
-import com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent;
+import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

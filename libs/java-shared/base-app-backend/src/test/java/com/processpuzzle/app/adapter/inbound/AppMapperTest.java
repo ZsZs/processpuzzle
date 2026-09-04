@@ -18,10 +18,8 @@ import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.OrganizationStatus;
 import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
-import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.SidenavMode;
@@ -29,8 +27,7 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -156,12 +153,6 @@ class AppMapperTest {
         var importResult = mapper.toModel(new ImportOutcome(2, 1, List.of()));
         assertThat(importResult.getCreated()).isEqualTo(2);
         assertThat(importResult.getUpdated()).isEqualTo(1);
-
-        var availability = mapper.toModel(
-                KeyCheckOutcome.unavailable("api", "organization.key.reserved", List.of("api-app")));
-        assertThat(availability.getAvailable()).isFalse();
-        assertThat(availability.getErrorId()).isEqualTo("organization.key.reserved");
-        assertThat(availability.getSuggestions()).containsExactly("api-app");
     }
 
     @Test
@@ -367,37 +358,6 @@ class AppMapperTest {
     }
 
     @Test
-    void anOrganizationMapsWithItsStatusAndDescriptiveFields() {
-        com.processpuzzle.platformadmin.domain.Organization organization = new com.processpuzzle.platformadmin.domain.Organization(
-                "my-org", "My Organization Ltd.", "Insurance.", "ops@my-org.example", "en-GB",
-                com.processpuzzle.platformadmin.domain.OrganizationStatus.SUSPENDED);
-
-        com.processpuzzle.app.model.Organization model = mapper.toModel(organization);
-
-        assertThat(model.getKey()).isEqualTo("my-org");
-        assertThat(model.getName()).isEqualTo("My Organization Ltd.");
-        assertThat(model.getDescription()).isEqualTo("Insurance.");
-        assertThat(model.getContactEmail()).isEqualTo("ops@my-org.example");
-        assertThat(model.getDefaultLocale()).isEqualTo("en-GB");
-        assertThat(model.getStatus()).isEqualTo(OrganizationStatus.SUSPENDED);
-        assertThat(model.getCreatedAt()).isNull();
-    }
-
-    @Test
-    void provisioningAnswersTheTenantAndItsStarterAppTogether() {
-        com.processpuzzle.platformadmin.domain.Organization organization = new com.processpuzzle.platformadmin.domain.Organization(
-                "my-org", "My Organization Ltd.", null, null, null, null);
-        com.processpuzzle.app.domain.AppDefinition starter = new com.processpuzzle.app.domain.AppDefinition(
-                "my-org", "app", "My Organization Ltd.", null, null, AppGraph.empty());
-
-        ProvisioningResult result = mapper.toModel(organization, starter);
-
-        assertThat(result.getOrganization().getKey()).isEqualTo("my-org");
-        assertThat(result.getOrganization().getStatus()).isEqualTo(OrganizationStatus.ACTIVE);
-        assertThat(result.getAppDefinition().getId()).isEqualTo("app");
-    }
-
-    @Test
     void aPagedListCarriesTheSpringPageMetadata() {
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", "claims.app.name", "Handles claims.", AppGraph.empty());
@@ -451,8 +411,6 @@ class AppMapperTest {
         assertThat(new AppValidationProblem("/", "app.x", "Advice.", Severity.INFO).blocksPersisting())
                 .isFalse();
         assertThat(mapper.toModel(new ImportOutcome(0, 0, null)).getErrors()).isEmpty();
-        assertThat(mapper.toModel(new KeyCheckOutcome("api", false, "organization.key.reserved", null))
-                .getSuggestions()).isEmpty();
     }
 
     private static NavItem nav() {

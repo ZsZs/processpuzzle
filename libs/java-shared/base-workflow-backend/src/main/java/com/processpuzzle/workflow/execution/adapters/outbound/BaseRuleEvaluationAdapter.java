@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  *
  * <p>{@code EvaluateObject} is injected via {@link ObjectProvider}, the same graceful-degradation
  * convention base-app-backend's {@code AppRuleValidator} uses: a host application that assembles
- * processpuzzle-backend without base-rule-backend on the classpath still starts up fine, and every
+ * processpuzzle-testbed-backend without base-rule-backend on the classpath still starts up fine, and every
  * precondition/postcondition check simply always passes rather than failing the whole module.
  */
 @Component

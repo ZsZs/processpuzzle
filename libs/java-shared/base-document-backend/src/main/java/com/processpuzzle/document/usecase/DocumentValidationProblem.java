@@ -1,17 +1,13 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.rule.domain.Severity;
-
 import java.io.Serializable;
 import java.util.List;
 
 /**
- * One thing wrong with a candidate document. {@link Severity} is base-rule's own enum, reused
- * directly rather than redeclared here — same precedent {@code AppValidationProblem} sets in
- * base-app-backend, so this module adds a real dependency on base-rule-backend's {@code domain}
- * package rather than a copy. (The OpenAPI contract still locally duplicates the {@code Severity}
- * *schema* for the Windows swagger-parser reason noted there — that is a contract-generation
- * constraint, unrelated to this Java-level dependency choice.)
+ * One thing wrong with a candidate document. {@link Severity} is this module's own enum. It was
+ * base-rule's, reused directly rather than redeclared — which cost base-document a compile
+ * dependency on the whole of base-rule-backend for three constants, while the OpenAPI contract was
+ * already duplicating the {@code Severity} <em>schema</em> per feature anyway.
  *
  * @param path      JSON-pointer-like location <em>within one translation's content</em>, e.g.
  *                  {@code /blocks/3/props/childIds/0}. Relative rather than absolute because the

@@ -48,23 +48,6 @@
       <artifactId>processpuzzle-core</artifactId>
     </dependency>
 
-    <!-- An app definition is validated against the organization's own base-rule records in
-         addition to the structural checks in AppDefinitionValidator. -->
-    <dependency>
-      <groupId>com.processpuzzle</groupId>
-      <artifactId>base-rule-backend</artifactId>
-    </dependency>
-
-    <!--
-      base-app used to own the Organization aggregate; platform-admin owns it now and base-app is a
-      consumer. The edge is one-way and goes through five named interfaces — see the app module's
-      package-info for which and why. Without this, base-app is not deployable on its own.
-    -->
-    <dependency>
-      <groupId>com.processpuzzle</groupId>
-      <artifactId>platform-admin-backend</artifactId>
-    </dependency>
-
     <!-- Spring Boot dependencies -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

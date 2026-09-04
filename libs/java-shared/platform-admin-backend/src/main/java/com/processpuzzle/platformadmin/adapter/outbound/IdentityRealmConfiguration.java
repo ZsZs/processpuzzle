@@ -1,5 +1,7 @@
 package com.processpuzzle.platformadmin.adapter.outbound;
 
+import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakAdminProperties;
 import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
 import com.processpuzzle.platformadmin.usecase.port.NoOpIdentityRealmPort;
 import org.slf4j.Logger;

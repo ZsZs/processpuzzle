@@ -1,0 +1,42 @@
+{
+  "name": "processpuzzle-testbed-backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/processpuzzle-testbed-backend/src",
+  "implicitDependencies": [
+    "api-contracts",
+    "processpuzzle-core",
+    "processpuzzle-store",
+    "base-app-backend",
+    "base-document-backend",
+    "base-entity-backend",
+    "base-rule-backend",
+    "base-state-backend",
+    "base-workflow-backend",
+    "base-widget-backend",
+    "platform-admin-backend",
+    "org-admin-backend"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "mvn clean package -pl apps/processpuzzle-testbed-backend -am"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn spring-boot:run -pl apps/processpuzzle-testbed-backend -am"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn test -pl apps/processpuzzle-testbed-backend -am"
+      }
+    }
+  },
+  "tags": ["backend", "java", "springboot"]
+}

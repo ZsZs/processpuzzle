@@ -214,7 +214,7 @@ checklist demands already exists for `widgets` and gets edited rather than added
    `base-document-frontend`'s `base-document.ts` — from `@processpuzzle/base-entity` to
    `@processpuzzle/base-widget`. `base-entity-frontend` then has no widget responsibility at all,
    which is the cleanup the token's comment asked for.
-6. Theme path `src/theme/pp-colors.css` changes → update `apps/processpuzzle-testbed/project.json`
+6. Theme path `src/theme/pp-colors.css` changes → update `apps/processpuzzle-testbed-frontend/project.json`
    styles and the README theming section.
 7. Rename the Sonar project (`processpuzzle_widgets` → `processpuzzle_base_widget_frontend`) via the
    admin API; rename both GitHub workflows.
@@ -289,7 +289,7 @@ The nx `project.json` deliberately omits `-am` from **both** `build` and `test`.
 template it was copied from uses `mvn -pl … -am test`, which is the pattern that races on shared
 upstream modules like `api-contracts` under parallel `run-many`.
 
-**Verified the way the checklist demands**: `mvn test -pl apps/processpuzzle-backend
+**Verified the way the checklist demands**: `mvn test -pl apps/processpuzzle-testbed-backend
 -Dtest=ModularityTests` prints `# Base Widget` among the detected modules and passes, so the module
 is genuinely wired rather than merely compiling. Full backend suite green.
 
@@ -338,7 +338,7 @@ Port shapes reuse `base-document`'s existing `PortType` / `AttributeVisibility`,
 shared spec rather than duplicated.
 
 Modulith module `widget` under `com.processpuzzle.widget`. Verify with
-`mvn test -pl apps/processpuzzle-backend -Dtest=ModularityTests` and grep the log for a
+`mvn test -pl apps/processpuzzle-testbed-backend -Dtest=ModularityTests` and grep the log for a
 `# Base Widget` heading.
 
 **The payoff to build for:** `propsSchema` turns widget props into a *generated form* in the designer
@@ -437,7 +437,7 @@ cannot edit a nested discriminated union.
 
 **Verified:** `base-app-frontend` 16 files / **157 tests** pass (97.05% statements, 93.84% branches;
 the route builder at 100%); lint and build green for `base-app-frontend`, `processpuzzle-testbed`,
-`processpuzzle-testbed-e2e` and `processpuzzle-ui`. The mock backend's 13 rules are now field-for-field
+`processpuzzle-testbed-e2e` and `processpuzzle-biz-frontend`. The mock backend's 13 rules are now field-for-field
 identical to `sample-rules/processpuzzle-rules.yaml`, so json-server and Spring return the same verdicts
 and the same messages.
 
@@ -536,7 +536,7 @@ URL"* while asserting `endsWith('/node')`. Both fixed.
 
 **Verified:** `base-app-frontend` 23 files / **209 tests** (97.02% statements, 93.6% branches);
 `base-entity-frontend` green; lint and build green for both libraries, `processpuzzle-testbed`,
-`processpuzzle-testbed-e2e` and `processpuzzle-ui`.
+`processpuzzle-testbed-e2e` and `processpuzzle-biz-frontend`.
 
 ## Phase 5.5 — One Application section, three tabs ✅ DONE (2026-08-13)
 

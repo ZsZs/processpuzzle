@@ -20,7 +20,7 @@
  * while the {@code Severity} edge above was entirely undeclared. With it, a reach into another
  * feature's internals fails the build rather than review.
  */
-@ApplicationModule(displayName = "Base Document", allowedDependencies = {"core", "shared", "rule :: domain"})
+@ApplicationModule(displayName = "Base Document", allowedDependencies = {"core", "shared"})
 package com.processpuzzle.document;
 
 import org.springframework.modulith.ApplicationModule;

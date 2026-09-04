@@ -19,30 +19,30 @@
  *       than a 500 with unknown state behind it.
  * </ul>
  *
- * <h2>Why it depends on platform-admin</h2>
+ * <h2>It depends on no other feature</h2>
  *
- * <p>Serving a request means answering "which realm is this?" and refusing unknown or suspended
- * tenants before the directory is touched at all. That is {@code FindOrganization}'s job, so the
- * dependency runs org-admin → platform-admin and through named interfaces only:
+ * <p>Serving a request still means answering "which realm is this?" and refusing unknown or
+ * suspended tenants before the directory is touched at all. That was {@code FindOrganization}'s job,
+ * and the dependency ran org-admin → platform-admin: the only place in this platform where one
+ * feature library compiled against another's use case. It is now a second outbound port,
+ * {@link com.processpuzzle.orgadmin.usecases.outbound.TenantRealmDirectory}, and the two refusals
+ * are unchanged.
  *
- * <ul>
- *   <li>{@code platformadmin :: usecase} — {@code FindOrganization} and {@code OrganizationGuard}.
- *   <li>{@code platformadmin :: domain} — {@code OrganizationStatus}, to recognise a suspended tenant.
- *   <li>{@code platformadmin :: exception} — {@code OrganizationNotFoundException} and
- *       {@code OrganizationAccessDeniedException}, which this module's own advice must name because
- *       {@code @RestControllerAdvice(basePackages = ...)} matches on the controller's package.
- *   <li>{@code platformadmin :: keycloak} — the shared admin client. A second one would mean a second
- *       token cache and a second copy of {@code keycloak.admin.*} free to drift; see that package.
- * </ul>
+ * <p>What that buys is not tidiness. platform-admin is commercial and is moving to a private
+ * repository; org-admin is not, because administering the users of one tenant is a platform feature.
+ * The edge was the one thing making them inseparable. A deployment with a tenant registry supplies
+ * an adapter over it — for the commercial product, in the private repository's composition root —
+ * and a deployment without one gets {@code BY_CONVENTION}, which is the correct answer rather than a
+ * degraded one wherever realm name and organization key are the same string.
  *
- * <p>There is no reverse edge, and there must not be: platform-admin knows nothing about users.
+ * <p>The Keycloak admin client went the same way earlier. It was {@code platformadmin :: keycloak},
+ * so that both modules shared one token cache; it is now
+ * {@link com.processpuzzle.core.identity.KeycloakAdminClient} and reached through core, which gives
+ * the same single cache without an edge between two features.
+ *
+ * <p>There was never a reverse edge, and there must not be: platform-admin knows nothing about users.
  */
-@ApplicationModule(
-        displayName = "Org Admin",
-        allowedDependencies = {
-                "core", "shared",
-                "platformadmin :: usecase", "platformadmin :: domain",
-                "platformadmin :: exception", "platformadmin :: keycloak"})
+@ApplicationModule(displayName = "Org Admin", allowedDependencies = {"core", "shared"})
 package com.processpuzzle.orgadmin;
 
 import org.springframework.modulith.ApplicationModule;

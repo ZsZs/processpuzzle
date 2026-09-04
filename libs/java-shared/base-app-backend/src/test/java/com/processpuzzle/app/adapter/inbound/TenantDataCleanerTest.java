@@ -2,7 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
-import com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent;
+import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;

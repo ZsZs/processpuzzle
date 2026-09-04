@@ -1,5 +1,5 @@
 # Sample documents of the 'processpuzzle-testbed' organization — the tenant behind
-# apps/processpuzzle-testbed.
+# apps/processpuzzle-testbed-frontend.
 #
 # SampleDocumentLoader imports this file on startup when `base-document.loadSamples` is true. The
 # owning organization is the part of the file name before `-documents.yaml`, exactly as

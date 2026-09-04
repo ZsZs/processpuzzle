@@ -3,8 +3,8 @@ package com.processpuzzle.platformadmin.adapter.inbound;
 import com.processpuzzle.platformadmin.domain.Organization;
 import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent;
-import com.processpuzzle.platformadmin.domain.event.OrganizationProvisionedEvent;
+import com.processpuzzle.shared.event.OrganizationDeletedEvent;
+import com.processpuzzle.shared.event.OrganizationProvisionedEvent;
 import com.processpuzzle.platformadmin.usecase.port.IdentityRealmPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * from the reserved set so the bootstrap can claim it). That organization's realm is <em>not</em> a
  * tenant realm: it is created by infrastructure from
  * {@code tools/docker/keycloak/import/<stack>-realm.json}, with the stack's own public client and
- * users. Provisioning it here would add a tenant {@code processpuzzle-ui} client and the org roles to
+ * users. Provisioning it here would add a tenant {@code processpuzzle-biz} client and the org roles to
  * it, and — far worse — deleting that organization row would delete the realm every user of the stack
  * authenticates against. So realm lifecycle is skipped for the stack's own key, and only for it.
  */

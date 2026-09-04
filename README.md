@@ -4,8 +4,8 @@
 ProcessPuzzle is a Low-Code platform for content management and business workflow based applications. For more details see [the ProcessPuzzle website](https://processpuzzle.com). 
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
-- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed) – Web application to test and demonstrate the framework capabilities
-- [ProcessPuzzle UI](/apps/processpuzzle-ui) – Web application to help you to define your own business application.
+- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
+- [ProcessPuzzle UI](/apps/processpuzzle-biz-frontend) – Web application to help you to define your own business application.
 
 Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over
 shared infrastructure — see [Application stacks](/docs/application-stacks.md) for the naming rules and the target state.
@@ -38,7 +38,7 @@ The pay-off is that **extension is configuration, not code**:
   app shell reads route metadata to build navigation. Features cooperate through each other's metadata rather
   than through each other's internals.
 - **Self-describing at run-time** — the same descriptors are what a Low-Code designer such as
-  [ProcessPuzzle UI](/apps/processpuzzle-ui) edits, so the modelling tool and the runtime never drift apart.
+  [ProcessPuzzle UI](/apps/processpuzzle-biz-frontend) edits, so the modelling tool and the runtime never drift apart.
 
 ### Two layers per feature
 Every feature ships as a pair: an Angular library (`libs/js-shared/*-frontend`, published to npm as
@@ -94,7 +94,6 @@ graph TD
     workflowBE --> stateBE
     workflowBE --> core
     workflowBE --> contracts
-    appBE --> ruleBE
     appBE --> core
     appBE --> contracts
   end
@@ -108,7 +107,11 @@ graph TD
 ```
 
 The frontend dependency edges above are the real `package.json` dependencies; the backend edges are the real
-`pom.xml` dependencies. Note that the two layers mirror each other's shape but are **independently
+`pom.xml` dependencies. Note that `base-app-backend` names no other feature: what it needs from
+outside itself — does this tenant exist, what do its governance rules say — it declares as an
+outbound port in `app :: port`, and the deploying application supplies the adapter. `base-state` and
+`base-workflow` still carry a compile dependency on the features they adapt, though the calls
+themselves already go through their own ports. Note that the two layers mirror each other's shape but are **independently
 versioned and independently usable** — a `base-entity` application can run against plain REST, `json-server`
 or Firestore without any ProcessPuzzle backend at all.
 
@@ -205,7 +208,7 @@ graph LR
 
   subgraph DC["Platform 2 — Docker Compose (self-hosted)"]
     nginx["NgInx<br/>serves Angular, reverse proxy"]
-    boot["Spring Boot Modulith<br/>processpuzzle-backend"]
+    boot["Spring Boot Modulith<br/>processpuzzle-testbed-backend"]
     kc["Keycloak<br/>identity (+ PostgreSQL)"]
     minio["MinIO<br/>S3 object storage"]
     pg[("PostgreSQL")]

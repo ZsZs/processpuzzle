@@ -1,5 +1,8 @@
 package com.processpuzzle.platformadmin.adapter.inbound;
 
+import com.processpuzzle.platformadmin.model.KeyAvailability;
+import com.processpuzzle.platformadmin.model.OrganizationInput;
+import com.processpuzzle.platformadmin.usecase.KeyCheckOutcome;
 import com.processpuzzle.platformadmin.model.AdminUser;
 import com.processpuzzle.platformadmin.model.AdminUserInput;
 import com.processpuzzle.platformadmin.model.BillingInterval;
@@ -40,10 +43,12 @@ import java.util.List;
  * {@code fromValue} throws if the two ever diverge, where a switch with a default arm would quietly
  * map a newly added status onto an old one.
  *
- * <p>Note the two {@code Organization} projections in this repository are structurally identical but
- * separate types: this one and base-app's. Deliberate — base-app's is the tenant-facing view its own
- * contract declares, this one is the staff view, and mapping them onto one generated class would tie
- * the two contracts together for no gain. Each mapper builds its own.
+ * <p>There is one {@code Organization} projection again. There were two, structurally identical:
+ * this one and base-app's, because base-app's contract still declared the tenant-facing
+ * {@code /organizations*} operations long after the aggregate had moved here. Both halves of the
+ * surface -- staff at {@code /platform/organizations} and tenant at {@code /organizations} -- are
+ * served from this module now, so one generated type covers them and this mapper is the only one
+ * that builds it.
  */
 @Component
 public class PlatformAdminMapper {
@@ -77,6 +82,24 @@ public class PlatformAdminMapper {
     public OrganizationDetails toDetails(OrganizationUpdate input) {
         return new OrganizationDetails(input.getName(), input.getDescription(),
                 input.getContactEmail(), input.getDefaultLocale());
+    }
+
+    /**
+     * The same record from the sign-up payload. {@code OrganizationInput} carries {@code key} as
+     * well, which {@link OrganizationDetails} deliberately does not: the key is the aggregate's
+     * identity and is passed to {@code ProvisionOrganization} separately, so that no code path can
+     * accidentally treat it as one more editable field.
+     */
+    public OrganizationDetails toDetails(OrganizationInput input) {
+        return new OrganizationDetails(input.getName(), input.getDescription(),
+                input.getContactEmail(), input.getDefaultLocale());
+    }
+
+    public KeyAvailability toModel(KeyCheckOutcome outcome) {
+        KeyAvailability model = new KeyAvailability(outcome.key(), outcome.available());
+        model.setErrorId(outcome.errorId());
+        model.setSuggestions(outcome.suggestions());
+        return model;
     }
 
     // --- the tenant's administrator -------------------------------------------------------

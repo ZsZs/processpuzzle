@@ -3,7 +3,7 @@ networks:
     driver: bridge
 
 services:
-  processpuzzle-testbed:
+  processpuzzle-testbed-frontend:
     pull_policy: build
     depends_on:
       testbed-backend:
@@ -14,11 +14,11 @@ services:
         condition: service_healthy
     build:
       context: ../../
-      dockerfile: tools/docker/testbed/Dockerfile
+      dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
       args:
         CICD_STAGE: ci
-    image: zsuffazs/processpuzzle-testbed:latest
-    container_name: processpuzzle-testbed
+    image: zsuffazs/processpuzzle-testbed-frontend:latest
+    container_name: processpuzzle-testbed-frontend
     environment:
       PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
       FIREBASE_API_KEY: ${FIREBASE_API_KEY}
@@ -33,7 +33,7 @@ services:
       timeout: 5s
       interval: 20s
 
-  platform-admin:
+  processpuzzle-admin-frontend:
     pull_policy: build
     depends_on:
       admin-backend:
@@ -42,11 +42,11 @@ services:
         condition: service_healthy
     build:
       context: ../../
-      dockerfile: tools/docker/platform-admin/Dockerfile
+      dockerfile: tools/docker/processpuzzle-admin-frontend/Dockerfile
       args:
         CICD_STAGE: ci
-    image: zsuffazs/platform-admin:latest
-    container_name: platform-admin
+    image: zsuffazs/processpuzzle-admin-frontend:latest
+    container_name: processpuzzle-admin-frontend
     environment:
       # The only variable the image takes; it selects run-time-conf/config.<stage>.json. There is no
       # FIREBASE_API_KEY here — this application talks to nothing but the backend and Keycloak.
@@ -66,7 +66,7 @@ services:
 
   # Still pointed at the TESTBED backend: it is the tenant surface today, and turning it into the
   # public site is a later increment. Incoherent with docs/application-stacks.md on purpose.
-  processpuzzle-ui:
+  processpuzzle-biz-frontend:
     pull_policy: build
     depends_on:
       testbed-backend:
@@ -75,11 +75,11 @@ services:
         condition: service_healthy
     build:
       context: ../../
-      dockerfile: tools/docker/processpuzzle-ui/Dockerfile
+      dockerfile: tools/docker/processpuzzle-biz-frontend/Dockerfile
       args:
         CICD_STAGE: ci
-    image: zsuffazs/processpuzzle-ui:latest
-    container_name: processpuzzle-ui
+    image: zsuffazs/processpuzzle-biz-frontend:latest
+    container_name: processpuzzle-biz-frontend
     environment:
       # The only variable the image takes; it selects run-time-conf/config.<stage>.json. The tenant is
       # not configured here — it is read from the URL's first path segment before bootstrap.
@@ -116,8 +116,8 @@ services:
         condition: service_completed_successfully
     build:
       context: ../../
-      dockerfile: tools/docker/backend/Dockerfile
-    image: zsuffazs/processpuzzle-backend:latest
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    image: zsuffazs/processpuzzle-testbed-backend:latest
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
@@ -136,7 +136,7 @@ services:
 
       # Only the origins of this stack. An origin missing here reaches the frontend as HTTP status 0
       # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
-      # the testbed container and 4200 its dev server; 9092/4202 are processpuzzle-ui, which still
+      # the testbed container and 4200 its dev server; 9092/4202 are processpuzzle-biz-frontend, which still
       # calls this instance — incoherent with the target state, and deliberately left so until that
       # application is repurposed as the public site.
       APP_CORS_ALLOWED_ORIGINS: http://localhost:9090,http://localhost:4200,http://localhost:9092,http://localhost:4202
@@ -157,7 +157,7 @@ services:
       #
       # Reading them from the issuer URL is what made every authenticated request answer 500 — see
       # TenantAuthenticationManagerResolver. A single-origin deployment sets only the first of these,
-      # which is what the /auth/ block in tools/docker/platform-admin/nginx.conf arranges for prod.
+      # which is what the /auth/ block in tools/docker/processpuzzle-admin-frontend/nginx.conf arranges for prod.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: http://localhost:7070
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: http://keycloak:8080
     ports:
@@ -178,7 +178,7 @@ services:
 
   # The staff stack. Host 8081 is the Firestore emulator and 8082 is pgweb, so this one takes 8083;
   # the testbed keeps 8080 because the Playwright suite, the testbed runtime config and
-  # processpuzzle-ui all name it, and none of those are in scope here.
+  # processpuzzle-biz-frontend all name it, and none of those are in scope here.
   admin-backend:
     pull_policy: build
     depends_on:
@@ -190,8 +190,8 @@ services:
         condition: service_completed_successfully
     build:
       context: ../../
-      dockerfile: tools/docker/backend/Dockerfile
-    image: zsuffazs/processpuzzle-backend:latest
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    image: zsuffazs/processpuzzle-testbed-backend:latest
     container_name: admin-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
@@ -211,7 +211,7 @@ services:
       APP_CORS_ALLOWED_ORIGINS: http://localhost:9091,http://localhost:4201
 
       # Provisioning a tenant is a staff action, so it is this instance that creates realms. The
-      # redirect URI and web origin it writes into each new realm still name processpuzzle-ui, because
+      # redirect URI and web origin it writes into each new realm still name processpuzzle-biz-frontend, because
       # that is the application a tenant user logs in to.
       KEYCLOAK_ADMIN_URL: http://keycloak:8080
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}

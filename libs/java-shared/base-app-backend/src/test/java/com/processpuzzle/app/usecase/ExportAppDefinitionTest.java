@@ -1,5 +1,7 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
@@ -8,14 +10,13 @@ import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.Layout;
 import com.processpuzzle.app.domain.NavNode;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
 import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -87,8 +88,7 @@ class ExportAppDefinitionTest {
         AppDefinitionRepository target = mock(AppDefinitionRepository.class);
         when(target.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
         when(target.findByOrgKeyAndId(anyString(), anyString())).thenReturn(Optional.empty());
-        OrganizationRepository organizations = mock(OrganizationRepository.class);
-        when(organizations.existsById(anyString())).thenReturn(true);
+        ObjectProvider<TenantDirectory> organizations = AppTestFixtures.tenantDirectory("another-org");
         ImportAppDefinitions into = new ImportAppDefinitions(target, organizations,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.permissiveGuard(), new AppMapper());
 

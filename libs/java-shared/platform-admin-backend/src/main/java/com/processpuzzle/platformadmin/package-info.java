@@ -23,7 +23,7 @@
  *       organization; {@code app.usecase.ProvisionTenant} is the {@code @Transactional} caller that
  *       adds the app, so the invariant is preserved on base-app's side of the line.
  *   <li>{@code DeleteOrganization} cascaded into base-app's repositories. It now publishes
- *       {@link com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent}, which base-app
+ *       {@link com.processpuzzle.shared.event.OrganizationDeletedEvent}, which base-app
  *       observes with {@code BEFORE_COMMIT} so its deletes join the same transaction. This is what
  *       the old implementation's own Javadoc already recommended.
  * </ul>

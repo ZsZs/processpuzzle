@@ -3,12 +3,12 @@ networks:
     driver: bridge
 
 services:
-  processpuzzle-testbed:
+  processpuzzle-testbed-frontend:
     depends_on:
       - json-server
     image:
-      zsuffazs/processpuzzle-testbed:IMAGE_TAG
-    container_name: processpuzzle-testbed
+      zsuffazs/processpuzzle-testbed-frontend:IMAGE_TAG
+    container_name: processpuzzle-testbed-frontend
     ports:
       - "8080:80"
     networks:
@@ -22,17 +22,17 @@ services:
       - processpuzzle
 
   # The staff administration surface. It is the only service published on 80, and it reverse-proxies
-  # /api/ to admin-backend and /auth/ to keycloak — see tools/docker/platform-admin/nginx.conf. That
+  # /api/ to admin-backend and /auth/ to keycloak — see tools/docker/processpuzzle-admin-frontend/nginx.conf. That
   # single origin is what makes token validation work here without the split URLs ci needs: the issuer
   # the browser is redirected to and the address this backend reads signing keys from are one URL.
-  platform-admin:
+  processpuzzle-admin-frontend:
     depends_on:
       admin-backend:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-    image: zsuffazs/platform-admin:IMAGE_TAG
-    container_name: platform-admin
+    image: zsuffazs/processpuzzle-admin-frontend:IMAGE_TAG
+    container_name: processpuzzle-admin-frontend
     environment:
       PIPELINE_STAGE: prod
     ports:
@@ -41,23 +41,23 @@ services:
       - processpuzzle
 
   # The tenant surface: the ProcessPuzzle designer plus each organization's own administration at
-  # /<orgKey>/admin. It reverse-proxies /api/ and /auth/ exactly as platform-admin does, so a tenant
+  # /<orgKey>/admin. It reverse-proxies /api/ and /auth/ exactly as processpuzzle-admin-frontend does, so a tenant
   # user never leaves this origin either.
   #
   # PUBLIC_APP_ORIGIN must name this service's public URL. The backend interpolates it into every
   # provisioned realm's redirect URI and web origin, so a mismatch is not a misconfiguration that
   # shows up at deploy time — it shows up as a tenant unable to complete login, one realm at a time.
   #
-  # A real deployment gives this and platform-admin separate hostnames behind one ingress; in this
+  # A real deployment gives this and processpuzzle-admin-frontend separate hostnames behind one ingress; in this
   # single-host compose the published port is what distinguishes them.
-  processpuzzle-ui:
+  processpuzzle-biz-frontend:
     depends_on:
       testbed-backend:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-    image: zsuffazs/processpuzzle-ui:IMAGE_TAG
-    container_name: processpuzzle-ui
+    image: zsuffazs/processpuzzle-biz-frontend:IMAGE_TAG
+    container_name: processpuzzle-biz-frontend
     environment:
       PIPELINE_STAGE: prod
     ports:
@@ -81,7 +81,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    image: zsuffazs/processpuzzle-backend:IMAGE_TAG
+    image: zsuffazs/processpuzzle-testbed-backend:IMAGE_TAG
     container_name: admin-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -120,7 +120,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    image: zsuffazs/processpuzzle-backend:IMAGE_TAG
+    image: zsuffazs/processpuzzle-testbed-backend:IMAGE_TAG
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: prod

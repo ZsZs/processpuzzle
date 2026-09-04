@@ -16,7 +16,7 @@ fresh project needs all three before the `ARTIFACT` control works end to end. Su
 curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
   "https://firebasestorage.googleapis.com/v1beta/projects/<p>/defaultBucket"
 ```
-The bucket is named `<p>.firebasestorage.app`, which is what `apps/processpuzzle-testbed/src/run-time-conf/config.*.json`
+The bucket is named `<p>.firebasestorage.app`, which is what `apps/processpuzzle-testbed-frontend/src/run-time-conf/config.*.json`
 expects. Needs `firebasestorage.defaultBucket.create` (i.e. `roles/firebase.admin`).
 
 **2 — Signed download URIs.** `FirebaseFileStorageService.getObjectUri` signs through the IAM Credentials

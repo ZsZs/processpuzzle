@@ -2,7 +2,7 @@ name: build-image
 description: Deploys the application to AWS Elastic Beanstalk
 inputs:
   app_name:
-    description: Name of the application.
+    description: Name of the application. Only names the firebase image; the Angular image tag is literal.
     required: true
     default: "testbed"
   app_version:
@@ -54,7 +54,7 @@ runs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./tools/docker/testbed/Dockerfile
+        file: ./tools/docker/processpuzzle-testbed-frontend/Dockerfile
         build-args: CICD_STAGE=${{ inputs.cicd_stage }}
         push: true
-        tags: zsuffazs/processpuzzle-${{ inputs.app_name }}:${{ inputs.app_version }}, zsuffazs/processpuzzle-${{ inputs.app_name }}:latest
+        tags: zsuffazs/processpuzzle-testbed-frontend:${{ inputs.app_version }}, zsuffazs/processpuzzle-testbed-frontend:latest

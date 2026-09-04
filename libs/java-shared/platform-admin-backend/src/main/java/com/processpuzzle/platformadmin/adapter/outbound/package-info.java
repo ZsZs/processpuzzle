@@ -1,20 +1,17 @@
 /**
- * Outbound adapters: the authenticated conversation with Keycloak's Admin REST API
- * ({@link com.processpuzzle.platformadmin.adapter.outbound.KeycloakAdminClient}) and the
- * {@code IdentityRealmPort} implementation built on it
- * ({@link com.processpuzzle.platformadmin.adapter.outbound.KeycloakAdminAdapter}).
+ * Outbound adapters: the {@code IdentityRealmPort} implementation
+ * ({@link com.processpuzzle.platformadmin.adapter.outbound.KeycloakAdminAdapter}), built on core's
+ * {@link com.processpuzzle.core.identity.KeycloakAdminClient}.
  *
- * <p>Exposed as the {@code keycloak} named interface, which is a deliberate exception to the rule
- * that a module publishes only ports and use cases. {@code org-admin-backend} manages users in the
- * same realms and needs the same conversation; giving it its own client would mean two token caches
- * expiring on independent schedules and two copies of {@code keycloak.admin.*} free to drift apart.
- * Sharing one is the lesser evil, and naming the interface makes the coupling visible in both
- * modules' {@code @ApplicationModule} declarations rather than leaving it to be discovered.
+ * <p>Internal, and no longer a named interface. It was one — {@code keycloak} — so that org-admin
+ * could share the admin client rather than open a second token cache against the same server. That
+ * was a deliberate exception to the rule that a module publishes only ports and use cases, and it is
+ * no longer needed: the client, its {@code keycloak.admin.*} properties and the
+ * {@code IdentityProviderUnavailableException} it raises are infrastructure, not this feature's
+ * domain, and now live in {@code processpuzzle-core}. Both modules reach them through core, so
+ * there is still one token cache and one set of properties, without an edge between two features.
  *
- * <p>What is <em>not</em> shared: {@code KeycloakAdminAdapter} itself. Realm lifecycle belongs to
- * this module alone — org-admin can create and disable users, never realms.
+ * <p>What stays here is what actually belongs to this module: realm lifecycle. org-admin can create
+ * and disable users; only platform-admin creates and deletes realms.
  */
-@NamedInterface("keycloak")
 package com.processpuzzle.platformadmin.adapter.outbound;
-
-import org.springframework.modulith.NamedInterface;

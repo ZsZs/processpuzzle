@@ -1,15 +1,16 @@
 # Default app definitions of the 'processpuzzle-testbed' organization — the tenant behind
-# apps/processpuzzle-testbed.
+# apps/processpuzzle-testbed-frontend.
 #
 # DefaultAppLoader imports this file on startup when `base-app.loadDefaultApps` is true. The owning
 # organization is the part of the file name before `-apps.yaml`, exactly as `<orgKey>-rules.yaml`
 # works in base-rule, so seeding another tenant is adding another file rather than a configuration
 # change.
 #
-# The `organization` block provisions the tenant when it does not exist yet; its `key` is ignored,
-# because the file name decides where the definitions land. Everything under `appDefinitions` is
-# precisely the payload of `POST /organizations/{orgKey}/app-definitions`, so this file also feeds
-# the YAML import endpoint unchanged — the extra `organization` block is ignored there.
+# The tenant itself is seeded by platform-admin, from
+# `default-organizations/processpuzzle-testbed-organization.yaml`, whose loader runs first; this file
+# is skipped with a warning if it names a tenant that does not exist. Everything under
+# `appDefinitions` is precisely the payload of `POST /organizations/{orgKey}/app-definitions`, so this
+# file also feeds the YAML import endpoint unchanged.
 #
 # Ids are lowercase-hyphen and every entity widget names its entity, so the definition satisfies the
 # 'App Definition' rules in base-rule's sample-rules as well as the structural validator.
@@ -17,15 +18,6 @@
 # `moduleDefinitions` are seeded before `appDefinitions`, so a mount below names a module that exists
 # by then. The order is a courtesy to the startup log rather than a requirement: a mount naming an
 # unknown module is a warning, which is what keeps the two aggregates loosely coupled.
-
-organization:
-  key: processpuzzle-testbed
-  name: ProcessPuzzle Testbed
-  description: >-
-    Tenant of the ProcessPuzzle Testbed application, which exercises and demonstrates the
-    capabilities of the ProcessPuzzle framework.
-  contactEmail: testbed@processpuzzle.com
-  defaultLocale: en
 
 moduleDefinitions:
   # A back-office slice of the same order domain the 'demo' app front-ends. It exists to show what a

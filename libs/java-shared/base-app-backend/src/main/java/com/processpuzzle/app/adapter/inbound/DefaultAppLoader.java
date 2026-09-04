@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.app.adapter.inbound.dto.DefaultAppsDocument;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
-import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.ModuleDefinition;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
-import com.processpuzzle.app.model.OrganizationInput;
-import com.processpuzzle.app.model.ProvisioningResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
@@ -24,6 +22,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -68,17 +67,18 @@ public class DefaultAppLoader {
     private static final String APPS_FILE_SUFFIX = "-apps.yaml";
     private static final String DEFAULT_APPS_LOCATION = "classpath*:default-apps/*" + APPS_FILE_SUFFIX;
 
-    /** The {@code errorId} {@code checkOrganizationKey} answers with when the tenant already exists. */
-    private static final String KEY_TAKEN = "organization.key.taken";
-
     private final AppEndpoint endpoint;
+    private final ObjectProvider<TenantDirectory> tenantDirectoryProvider;
     private final ResourcePatternResolver resourceResolver;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    public DefaultAppLoader(AppEndpoint endpoint, ResourcePatternResolver resourceResolver) {
+    public DefaultAppLoader(AppEndpoint endpoint,
+                            ObjectProvider<TenantDirectory> tenantDirectoryProvider,
+                            ResourcePatternResolver resourceResolver) {
         this.endpoint = endpoint;
+        this.tenantDirectoryProvider = tenantDirectoryProvider;
         this.resourceResolver = resourceResolver;
     }
 
@@ -119,7 +119,7 @@ public class DefaultAppLoader {
             return;
         }
 
-        if (!ensureOrganization(orgKey, document.organization(), fileName)) {
+        if (!organizationExists(orgKey, fileName)) {
             return;
         }
 
@@ -142,63 +142,34 @@ public class DefaultAppLoader {
     }
 
     /**
-     * Provisions {@code orgKey} when it is still free, so a default-apps file bootstraps its whole
-     * tenant on an empty database.
+     * Whether {@code orgKey} names a tenant this file may be loaded into.
      *
-     * @return whether the organization is now available to load into
+     * <p>It used to provision the tenant when the key was still free, by calling
+     * {@code provisionOrganization} on the controller above. base-app does not create tenants any
+     * more: platform-admin's {@code DefaultOrganizationLoader} seeds them from
+     * {@code default-organizations/<orgKey>-organization.yaml} and runs first. An unknown tenant is
+     * a skipped file and a warning, which is how base-entity, base-rule and the rest have always
+     * treated one.
+     *
+     * <p>With no {@code TenantDirectory} wired the answer is yes, matching the port's own default:
+     * a library that cannot check must not refuse.
      */
-    private boolean ensureOrganization(String orgKey, OrganizationInput declared, String fileName) {
-        KeyAvailability availability;
+    private boolean organizationExists(String orgKey, String fileName) {
+        TenantDirectory directory = tenantDirectoryProvider.getIfAvailable();
+        if (directory == null) {
+            return true;
+        }
         try {
-            availability = endpoint.checkOrganizationKey(orgKey).getBody();
-        } catch (RuntimeException e) {
-            LOG.warn("Skipping {}: could not check organization key '{}'.", fileName, orgKey, e);
-            return false;
-        }
-        if (availability == null) {
-            LOG.warn("Skipping {}: no answer when checking organization key '{}'.", fileName, orgKey);
-            return false;
-        }
-
-        if (!Boolean.TRUE.equals(availability.getAvailable())) {
-            if (KEY_TAKEN.equals(availability.getErrorId())) {
-                LOG.debug("Organization '{}' already exists; loading {} into it.", orgKey, fileName);
+            if (directory.exists(orgKey)) {
                 return true;
             }
-            // Reserved or malformed: the file name is not a claimable tenant slug, so there is nowhere
-            // to put its definitions. Renaming the file is the fix.
-            LOG.warn("Skipping {}: organization key '{}' cannot be claimed ({}).",
-                    fileName, orgKey, availability.getErrorId());
-            return false;
-        }
-
-        try {
-            ProvisioningResult result = endpoint.provisionOrganization(organizationInput(orgKey, declared)).getBody();
-            String starterAppId = result == null || result.getAppDefinition() == null
-                    ? "none" : result.getAppDefinition().getId();
-            LOG.info("Provisioned organization '{}' from {}; its starter app definition is '{}'.",
-                    orgKey, fileName, starterAppId);
-            return true;
         } catch (RuntimeException e) {
-            LOG.warn("Skipping {}: could not provision organization '{}'.", fileName, orgKey, e);
+            LOG.warn("Skipping {}: could not check whether organization '{}' exists.", fileName, orgKey, e);
             return false;
         }
-    }
-
-    /**
-     * The provisioning payload for {@code orgKey}. The key comes from the file name rather than from
-     * the document, so a file copied between deployments cannot seed the tenant it was copied from.
-     * A file without an {@code organization} block still provisions, named after its key.
-     */
-    private static OrganizationInput organizationInput(String orgKey, OrganizationInput declared) {
-        OrganizationInput input = new OrganizationInput(orgKey,
-                declared == null || isBlank(declared.getName()) ? orgKey : declared.getName());
-        if (declared != null) {
-            input.setDescription(declared.getDescription());
-            input.setContactEmail(declared.getContactEmail());
-            input.setDefaultLocale(declared.getDefaultLocale());
-        }
-        return input;
+        LOG.warn("Skipping {}: organization '{}' does not exist. Seed it from "
+                + "default-organizations/{}-organization.yaml first.", fileName, orgKey, orgKey);
+        return false;
     }
 
     private Outcome create(String orgKey, AppDefinitionInput definition, String fileName) {

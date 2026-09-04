@@ -6,9 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processpuzzle.app.usecase.AppValidationProblem;
-import com.processpuzzle.rule.usecase.EvaluateObject;
-import com.processpuzzle.rule.usecase.EvaluationOutcome;
-import com.processpuzzle.rule.usecase.RuleViolation;
+import com.processpuzzle.app.usecase.Severity;
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -22,13 +21,16 @@ import java.util.Map;
  * CSS units, translatability — are PPCL expressions a tenant can add, disable or override without a
  * release.
  *
- * <p>Rules reach this feature only through Base Rule's {@code usecase} named interface: the engine and
- * the rule repository stay internal, and {@link EvaluateObject} resolves the organization's rules for
- * us. It applies {@code orgKey}'s rules alone, so one tenant's expressions never judge another's app.
+ * <p>Rules reach this feature through {@link RuleEvaluator}, base-app's own outbound port. They used
+ * to reach it through Base Rule's {@code usecase} named interface, called directly — one feature
+ * library compiled against another for a single method and an enum. The port says what base-app needs
+ * without naming who provides it; the composition root wires an adapter over base-rule, and would
+ * wire an HTTP one just as easily. It applies {@code orgKey}'s rules alone, so one tenant's
+ * expressions never judge another's app.
  *
- * <p>{@link EvaluateObject} is injected through an {@link ObjectProvider} rather than required, the
- * same way {@link AppDefinitionValidator} treats its entity registry: a host application that wires
- * Base App without Base Rule keeps the structural checks and silently skips the rule pass, instead of
+ * <p>The port is injected through an {@link ObjectProvider} rather than required, the same way
+ * {@link AppDefinitionValidator} treats its entity registry: a host application that wires Base App
+ * without a rule engine keeps the structural checks and silently skips the rule pass, instead of
  * failing to start.
  */
 @Component
@@ -56,10 +58,10 @@ public class AppRuleValidator {
 
     private static final TypeReference<Map<String, Object>> AS_MAP = new TypeReference<>() { };
 
-    private final ObjectProvider<EvaluateObject> evaluateObjectProvider;
+    private final ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
 
-    public AppRuleValidator(ObjectProvider<EvaluateObject> evaluateObjectProvider) {
-        this.evaluateObjectProvider = evaluateObjectProvider;
+    public AppRuleValidator(ObjectProvider<RuleEvaluator> ruleEvaluatorProvider) {
+        this.ruleEvaluatorProvider = ruleEvaluatorProvider;
     }
 
     /**
@@ -71,13 +73,14 @@ public class AppRuleValidator {
      *     rule engine is wired
      */
     public List<AppValidationProblem> validate(String orgKey, Object definition) {
-        EvaluateObject evaluateObject = evaluateObjectProvider.getIfAvailable();
-        if (evaluateObject == null || definition == null) {
+        RuleEvaluator evaluator = ruleEvaluatorProvider.getIfAvailable();
+        if (evaluator == null || definition == null) {
             return List.of();
         }
 
-        EvaluationOutcome outcome = evaluateObject.execute(orgKey, RULE_CONTEXT, asRuleInput(definition));
-        return outcome.violations().stream().map(AppRuleValidator::toProblem).toList();
+        return evaluator.evaluate(orgKey, RULE_CONTEXT, asRuleInput(definition)).stream()
+                .map(AppRuleValidator::toProblem)
+                .toList();
     }
 
     /**
@@ -95,16 +98,16 @@ public class AppRuleValidator {
      * reads, but the violation does not carry them and an expression is free to walk the entire graph,
      * so pointing at one node would be a guess; the designer shows these at form level.
      */
-    private static AppValidationProblem toProblem(RuleViolation violation) {
+    private static AppValidationProblem toProblem(RuleEvaluator.Violation violation) {
         return new AppValidationProblem("/", errorIdOf(violation), violation.message(),
-                violation.severity());
+                violation.severity() == null ? Severity.ERROR : violation.severity());
     }
 
     /**
      * The rule's own Transloco key when it has one — a rule author's key is more useful to the
      * designer than anything synthesized here — otherwise a stable id derived from the rule id.
      */
-    private static String errorIdOf(RuleViolation violation) {
+    private static String errorIdOf(RuleEvaluator.Violation violation) {
         if (violation.translocoId() != null && !violation.translocoId().isBlank()) {
             return violation.translocoId();
         }

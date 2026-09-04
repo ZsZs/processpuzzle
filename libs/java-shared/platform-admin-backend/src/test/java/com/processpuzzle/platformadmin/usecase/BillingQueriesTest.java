@@ -1,5 +1,6 @@
 package com.processpuzzle.platformadmin.usecase;
 
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.platformadmin.PlatformAdminTestFixtures;
 import com.processpuzzle.platformadmin.domain.BillingInterval;
 import com.processpuzzle.platformadmin.domain.Invoice;
@@ -12,7 +13,7 @@ import com.processpuzzle.platformadmin.domain.Subscription;
 import com.processpuzzle.platformadmin.domain.SubscriptionRepository;
 import com.processpuzzle.platformadmin.domain.SubscriptionStatus;
 import com.processpuzzle.platformadmin.domain.UsageRecordRepository;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

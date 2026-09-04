@@ -2,9 +2,9 @@ package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.platformadmin.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.port.PermitAllOrganizationAccessPolicy;
-import com.processpuzzle.platformadmin.usecase.OrganizationGuard;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

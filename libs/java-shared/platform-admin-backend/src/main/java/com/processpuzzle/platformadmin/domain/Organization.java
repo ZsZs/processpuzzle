@@ -19,7 +19,7 @@ import java.time.Instant;
  * <p>There is deliberately no JPA association to anything a tenant owns, and there could not be:
  * the things scoped by an organization live in other Modulith modules and, for base-entity, in other
  * databases. {@code DeleteOrganization} therefore cascades by publishing
- * {@link com.processpuzzle.platformadmin.domain.event.OrganizationDeletedEvent} and letting each
+ * {@link com.processpuzzle.shared.event.OrganizationDeletedEvent} and letting each
  * feature delete its own rows.
  *
  * <p>{@code @Table(name = "organizations")} is the same table base-app wrote to before the aggregate

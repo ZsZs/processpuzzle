@@ -1,8 +1,8 @@
 package com.processpuzzle.platformadmin.adapter.inbound;
 
 import com.processpuzzle.core.exception.ApiAdviceOrder;
-import com.processpuzzle.platformadmin.usecase.exception.IdentityProviderUnavailableException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationAccessDeniedException;
+import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationAlreadyExistsException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationKeyInvalidException;
 import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;

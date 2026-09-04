@@ -4,7 +4,7 @@ import type { TranslationSource } from '@processpuzzle/util';
  * Transloco scope of this library. The translations live in
  * `libs/js-shared/platform-admin-frontend/src/assets/i18n/platform_admin/*.json` and are published
  * with the package; a consuming application copies them to `assets/i18n/platform_admin` (see
- * `apps/platform-admin/project.json`).
+ * `apps/processpuzzle-admin-frontend/project.json`).
  *
  * The alias is spelled out wherever this is registered, and that is not a style choice: transloco
  * camel-cases the default alias, which would turn `platform_admin` into `platformAdmin` and silently

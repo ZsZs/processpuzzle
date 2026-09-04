@@ -4,7 +4,7 @@ inputs:
   distribution_source_path:
     description: "Path to the compiled source code to deploy"
     required: true
-    default: "./dist/apps/processpuzzle-testbed/browser"
+    default: "./dist/apps/processpuzzle-testbed-frontend/browser"
   aws_access_key:
     description: Key to be able to access AWS
     required: true
@@ -15,7 +15,7 @@ runs:
   using: composite
   steps:
     - name: Create ZIP deployment package
-      run: zip -r deploy_package.zip ./dist/apps/processpuzzle-testbed/browser
+      run: zip -r deploy_package.zip ./dist/apps/processpuzzle-testbed-frontend/browser
       shell: bash
 
     - name: Configure AWS Credentials
