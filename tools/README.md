@@ -16,7 +16,7 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 Two compose files at `tools/docker/`:
 
-- **`docker-compose-ci.yaml`** — full local CI stack: the three Angular applications, one Spring backend per application stack, Keycloak (+ Postgres), MinIO, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
+- **`docker-compose-ci.yaml`** — full local CI stack: the testbed Angular application and its Spring backend, Keycloak (+ Postgres), MinIO, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
 - **`docker-compose-prod.yaml`** — slim image pull definition for the registry images. Used to smoke-test a published image, not to build.
 
 Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/init-db.sql`, `firebase/serve.sh`).
@@ -26,18 +26,15 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 | Service | Container | Image | Host port → container | Purpose |
 | --- | --- | --- | --- | --- |
 | `processpuzzle-testbed-frontend` | `processpuzzle-testbed-frontend` | `zsuffazs/processpuzzle-testbed-frontend` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
-| `processpuzzle-admin-frontend` | `processpuzzle-admin-frontend` | `zsuffazs/processpuzzle-admin-frontend` | `9091 → 80` | Angular staff administration app; calls `admin-backend`. |
-| `processpuzzle-biz-frontend` | `processpuzzle-biz-frontend` | `zsuffazs/processpuzzle-biz-frontend` | `9092 → 80` | Angular tenant app; still calls `testbed-backend` (see below). |
 | `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
-| `admin-backend` | `admin-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8083 → 8080` | The same image for the **admin** stack: database `processpuzzle_admin`, realm `processpuzzle-admin`, bucket prefix `processpuzzle-admin`. |
 | `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
-| `keycloak-init` | `testbed-keycloak-init` | `zsuffazs/testbed-keycloak-init` | — | One-shot: creates the `master`-realm service account the backend uses to provision tenant realms. Idempotent. |
-| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for both stacks, one database each; volume `postgres_data`. |
+| `keycloak-init` | `testbed-keycloak-init` | `zsuffazs/testbed-keycloak-init` | — | One-shot: creates the `master`-realm service account a backend uses to manage realms and users. Idempotent. |
+| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for each stack, one database each; volume `postgres_data`. `init-db.sql` still creates the admin stack's database, because the databases are shared infrastructure. |
 | `pgweb` | `testbed-pgweb` | `zsuffazs/testbed-pgweb` | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. Points at `processpuzzle_testbed`; showing another database means editing `PGWEB_DATABASE_URL`. |
-| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by both backends; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`. |
+| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`, and `init-minio.sh` still creates every stack's prefix. |
 | `json-server` | `json-server` | `zsuffazs/json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
 
-> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). That is why the second backend is published on `8083` rather than the next free-looking number. The testbed backend keeps `8080` because the Playwright suite, the testbed runtime configuration and `processpuzzle-biz-frontend` all name it.
+> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
 
 > **First start.** `tools/docker/postgresql/init-db.sql` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `docker compose -f tools/docker/docker-compose-ci.yaml down -v`.
 
@@ -45,15 +42,12 @@ Each service has its own folder under `docker/`, containing the `Dockerfile` plu
 
 Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime.
 
-One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). `processpuzzle-biz-frontend` pointing at the testbed backend is a known inconsistency, kept until that application is repurposed as the public site.
+One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). Only the testbed stack's application is built here — the other two stacks' are the private repository's, while their realms, databases and bucket prefixes stay below as shared infrastructure.
 
 ```mermaid
 graph TD
     testbed[processpuzzle-testbed-frontend<br/>host :9090]
-    admin[processpuzzle-admin-frontend<br/>host :9091]
-    ui[processpuzzle-biz-frontend<br/>host :9092]
     tbackend[testbed-backend<br/>host :8080]
-    abackend[admin-backend<br/>host :8083]
     keycloak[keycloak<br/>host :7070]
     kcinit[keycloak-init<br/>one-shot]
     postgres[(postgres<br/>host :5432)]
@@ -64,17 +58,10 @@ graph TD
     testbed -- REST --> tbackend
     testbed -- OIDC --> keycloak
     testbed -- REST --> jsonserver
-    admin -- REST --> abackend
-    admin -- OIDC --> keycloak
-    ui -- REST --> tbackend
-    ui -- OIDC --> keycloak
 
     tbackend -- S3 --> minio
     tbackend -- JDBC --> postgres
     tbackend -- "JWKS / admin API" --> keycloak
-    abackend -- S3 --> minio
-    abackend -- JDBC --> postgres
-    abackend -- "JWKS / admin API" --> keycloak
     kcinit -- "Admin CLI" --> keycloak
     keycloak -- JDBC --> postgres
     pgweb -- read-only --> postgres

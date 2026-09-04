@@ -21,99 +21,29 @@ services:
     networks:
       - processpuzzle
 
-  # The staff administration surface. It is the only service published on 80, and it reverse-proxies
-  # /api/ to admin-backend and /auth/ to keycloak — see tools/docker/processpuzzle-admin-frontend/nginx.conf. That
-  # single origin is what makes token validation work here without the split URLs ci needs: the issuer
-  # the browser is redirected to and the address this backend reads signing keys from are one URL.
-  processpuzzle-admin-frontend:
-    depends_on:
-      admin-backend:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-    image: zsuffazs/processpuzzle-admin-frontend:IMAGE_TAG
-    container_name: processpuzzle-admin-frontend
-    environment:
-      PIPELINE_STAGE: prod
-    ports:
-      - "80:80"
-    networks:
-      - processpuzzle
-
-  # The tenant surface: the ProcessPuzzle designer plus each organization's own administration at
-  # /<orgKey>/admin. It reverse-proxies /api/ and /auth/ exactly as processpuzzle-admin-frontend does, so a tenant
-  # user never leaves this origin either.
+  # ── The testbed stack's backend ─────────────────────────────────────────────────────────────────
   #
-  # PUBLIC_APP_ORIGIN must name this service's public URL. The backend interpolates it into every
-  # provisioned realm's redirect URI and web origin, so a mismatch is not a misconfiguration that
-  # shows up at deploy time — it shows up as a tenant unable to complete login, one realm at a time.
+  # One instance owning one stack's database, realm and bucket prefix — see
+  # docs/application-stacks.md. This file used to run the same image twice, fronted by
+  # processpuzzle-admin-frontend and processpuzzle-biz-frontend; both, and the admin backend, are now
+  # the private processpuzzle-biz repository's — see docs/platform-admin-extraction.md.
   #
-  # A real deployment gives this and processpuzzle-admin-frontend separate hostnames behind one ingress; in this
-  # single-host compose the published port is what distinguishes them.
-  processpuzzle-biz-frontend:
-    depends_on:
-      testbed-backend:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-    image: zsuffazs/processpuzzle-biz-frontend:IMAGE_TAG
-    container_name: processpuzzle-biz-frontend
-    environment:
-      PIPELINE_STAGE: prod
-    ports:
-      - "8081:80"
-    networks:
-      - processpuzzle
-
-  # ── One backend deployment per application stack ────────────────────────────────────────────────
+  # TWO GAPS THAT MOVE LEFT BEHIND, both deliberate and both for the re-platform (strategy §§4-5, 9)
+  # rather than for the extraction:
   #
-  # The same image twice, each owning one stack's database, realm and bucket prefix — see
-  # docs/application-stacks.md. The service NAMES are load-bearing: the two nginx configurations
-  # resolve them when they load, so renaming one here without renaming it there keeps a frontend
-  # container from starting at all.
+  #   1. Nothing here publishes port 80 or reverse-proxies /api/ any more, so this backend has no
+  #      public origin. It is not published on purpose — being reached through a frontend's /api/
+  #      location is what puts the browser and the backend on one origin, which is what lets token
+  #      validation work with a single URL (jwks-base-url stays unset and falls back to
+  #      issuer-base-url). Publishing it directly would need PROCESSPUZZLE_SECURITY_JWKS_BASE_URL
+  #      set, as docker-compose-ci.yaml does.
+  #   2. PUBLIC_APP_ORIGIN below, and PUBLIC_ADMIN_ORIGIN in keycloak, named the two moved
+  #      frontends' public URLs. Keycloak stays public because it is shared infrastructure
+  #      (strategy §8), so PUBLIC_ADMIN_ORIGIN still means "where the shared Keycloak is served",
+  #      but no service in this file answers on it.
   #
-  # Neither is published: each is reached through the /api/ location of the frontend that fronts it,
-  # which is what puts the browser and the backend on one origin and so lets token validation work
-  # here with a single URL — jwks-base-url stays unset and falls back to issuer-base-url.
-  admin-backend:
-    depends_on:
-      keycloak:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    image: zsuffazs/processpuzzle-testbed-backend:IMAGE_TAG
-    container_name: admin-backend
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/processpuzzle_admin
-      SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
-      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:?PROCESSPUZZLE_DB_PASSWORD must be set}
-      PROCESSPUZZLE_SECURITY_STACK_REALM: processpuzzle-admin
-      MINIO_BUCKET_PREFIX: processpuzzle-admin
-
-      # Realm and user management. Reached over the compose network, so the URL carries the /auth
-      # prefix Keycloak is mounted under but not the public host.
-      KEYCLOAK_ADMIN_URL: http://keycloak:8080/auth
-      # No default: an empty secret silently disables realm creation, which in production would look
-      # like organizations that never leave PROVISIONING.
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:?PLATFORM_ADMIN_CLIENT_SECRET must be set}
-      KEYCLOAK_ADMIN_TENANT_REDIRECT_URI: ${PUBLIC_APP_ORIGIN:?PUBLIC_APP_ORIGIN must be set}/{orgKey}/*
-      KEYCLOAK_ADMIN_TENANT_WEB_ORIGIN: ${PUBLIC_APP_ORIGIN}
-
-      # Both halves of token validation agree on the public origin, because the browser reaches
-      # Keycloak through the same reverse proxy this container does.
-      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PUBLIC_ADMIN_ORIGIN:?PUBLIC_ADMIN_ORIGIN must be set}/auth
-      PROCESSPUZZLE_SECURITY_REQUIRE_AUTHENTICATION: "true"
-    networks:
-      - processpuzzle
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
-      retries: 3
-      timeout: 5s
-      interval: 20s
-      start_period: 30s
-
+  # docker-compose-ci.yaml is unaffected: it publishes this backend on 8080 directly, with both
+  # token-validation URLs set, and is the topology CI actually runs.
   testbed-backend:
     depends_on:
       keycloak:
@@ -177,8 +107,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # One-shot: creates the master-realm service account platform-admin-backend uses to manage tenant
-  # realms. Idempotent, so it re-runs safely on every deployment.
+  # One-shot: creates the master-realm service account a backend uses to manage realms and users —
+  # org-admin here, and platform-admin in the private admin backend. Idempotent, so it re-runs
+  # safely on every deployment.
   keycloak-init:
     depends_on:
       keycloak:

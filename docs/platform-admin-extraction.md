@@ -4,9 +4,22 @@
 surface that deletes tenants. It belongs in a private repository, and this document is the plan for
 getting it there without leaving the public repository unable to build, test or deploy.
 
-> **Status.** Planned 2026-09-04. **Phase 0 is complete** — 0.3, 0.2 and 0.1 are done and the gate is
-> clean, so the public repository contains no reference to platform-admin outside platform-admin
-> itself. 0.4 is postponed into Phase 2. Phases 1–3 wait on the private repository existing.
+> **Status.** Planned 2026-09-04; **Phases 0, 1 and 3 are complete** as of the same day. Phase 0's
+> three inbound edges were cut and its gate is clean. The directories then moved out, and Phase 3
+> deregistered them here: Maven modules and dependencies, the `generate-platform-admin-api`
+> execution, the Nx release/tsconfig/script/`implicitDependencies` entries, six workflows, the
+> compose services and Dockerfiles, the devcontainer ports and the orphaned `platform-admin:`
+> configuration. 0.4 (extracting `auth-backend`) is still postponed to the start of Phase 2, and
+> **Phase 2 is the remaining work** — it is the private repository's, and it is where
+> `processpuzzle-admin-backend` and `processpuzzle-biz-backend` get written.
+>
+> Two consequences deliberately left standing rather than papered over: `docker-compose-prod.yaml`
+> no longer publishes port 80 or reverse-proxies `/api/`, since the two frontends that did have
+> moved (the file names both gaps at the point they bite); and the `processpuzzle-admin` and
+> `processpuzzle-biz` realms, databases and bucket prefixes stay declared here as shared
+> infrastructure, per strategy §8, so this repository still knows stacks #2 and #3 exist without
+> building an application for either.
+>
 > Decisions taken: `processpuzzle-admin-frontend` and
 > `processpuzzle-biz-frontend` move with it; `org-admin` stays public. Prerequisite reading:
 > [Build & deployment strategy](build-deploy-strategy.md) for the two-repo layout this serves,

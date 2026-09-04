@@ -25,14 +25,14 @@
       "installYarnUsingApt": false
     },
     // Needed for tools/docker/docker-compose-ci.yaml (Postgres, Keycloak, MinIO,
-    // json-server, the two backends and the three NgInx apps).
+    // json-server, the testbed backend and the testbed NgInx app).
     "ghcr.io/devcontainers/features/docker-in-docker:1": {
       "dockerDashComposeVersion": "v2"
     },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
-  // The compose stack alone runs ~10 containers; on top of that come Angular
+  // The compose stack alone runs ~8 containers; on top of that come Angular
   // production builds and Playwright. The 2-core/8 GB default machine is not enough.
   "hostRequirements": {
     "cpus": 4,
@@ -66,22 +66,20 @@
 
   // Runs after updateContentCommand, so node_modules exists and the browser
   // matches the pinned @playwright/test version. Same command as the e2e action.
-  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.m2 /home/vscode/.cache/ms-playwright && npx playwright install chromium --with-deps",
+  "postCreateCommand": [
+    "sudo chown -R vscode:vscode /home/vscode/.m2 /home/vscode/.cache/ms-playwright && npx playwright install chromium --with-deps",
+    "sudo chown -R vscode:vscode /home/vscode/.cache && mvn clean install -DskipTests"
+  ],
 
   "waitFor": "updateContentCommand",
 
-  "forwardPorts": [4200, 4201, 4202, 3000, 8080, 8083, 9090, 9091, 9092, 7070, 5432, 7000, 7001, 8082],
+  "forwardPorts": [4200, 3000, 8080, 9090, 7070, 5432, 7000, 7001, 8082],
 
   "portsAttributes": {
     "4200": { "label": "testbed (nx serve)", "onAutoForward": "notify" },
-    "4201": { "label": "processpuzzle-admin-frontend (nx serve)", "onAutoForward": "notify" },
-    "4202": { "label": "processpuzzle-biz-frontend (nx serve)", "onAutoForward": "notify" },
     "3000": { "label": "json-server (3rd-party mock)", "onAutoForward": "silent" },
     "8080": { "label": "testbed backend", "onAutoForward": "silent" },
-    "8083": { "label": "admin backend", "onAutoForward": "silent" },
     "9090": { "label": "testbed (NgInx)", "onAutoForward": "silent" },
-    "9091": { "label": "processpuzzle-admin-frontend (NgInx)", "onAutoForward": "silent" },
-    "9092": { "label": "processpuzzle-biz-frontend (NgInx)", "onAutoForward": "silent" },
     "7070": { "label": "Keycloak", "onAutoForward": "silent" },
     "5432": { "label": "PostgreSQL", "onAutoForward": "silent" },
     "7000": { "label": "MinIO S3 API", "onAutoForward": "silent" },
@@ -117,5 +115,8 @@
     }
   },
 
-  "remoteUser": "vscode"
+  {
+    "remoteUser": "vscode",
+    "containerUser": "vscode"
+  }
 }

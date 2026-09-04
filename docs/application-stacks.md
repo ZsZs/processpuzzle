@@ -11,6 +11,15 @@ whose names drift is a stack that fails at run time in a way no test catches.
 > Per-stack PostgreSQL databases, one backend deployment per stack, the renamed realms and the MinIO
 > bucket prefix are in place, as are all three application renames. The `processpuzzle-biz-frontend` repurposing
 > and the subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
+>
+> **Two of the three stacks' applications left this repository on 2026-09-04.** Stacks #2 and #3 are
+> now built in the private `processpuzzle-biz` repository, together with the commercial
+> `platform-admin` feature — see [Extracting platform-admin](platform-admin-extraction.md). This
+> document still specifies all three, because **the identifiers are shared infrastructure**: the
+> realms, the databases and the bucket prefixes are declared in this repository's
+> `tools/docker/`, and a stack whose names drift across a repository boundary fails in exactly the
+> way this document exists to prevent. What the public repository no longer contains is the
+> *applications* for #2 and #3.
 
 ## The three stacks
 
@@ -100,15 +109,17 @@ separating the *namespaces* is the whole design:
 
 ### One backend deployment per stack
 
-`processpuzzle-testbed-backend` is deployed **once per stack that needs it** — the same image, twice, each
-instance configured with a single stack's database, realm and bucket prefix. The backend therefore
-stays a single-tenant application, and decoupling is a property of the deployment rather than logic
-inside it.
+A backend is deployed **once per stack that needs it**, each instance configured with a single stack's
+database, realm and bucket prefix. The backend therefore stays a single-tenant application, and
+decoupling is a property of the deployment rather than logic inside it.
 
-Both instances keep every feature module: the component scan is not per-stack, so the testbed database
-carries a few empty platform-admin tables and the two deployments remain the same application. What
-differs is entirely environment — `SPRING_DATASOURCE_URL`,
-`PROCESSPUZZLE_SECURITY_STACK_REALM`, `MINIO_BUCKET_PREFIX` and the CORS allow-list.
+Until 2026-09-04 this was literally the same image twice, `testbed-backend` and `admin-backend`, and
+both instances kept every feature module because the component scan is not per-stack. That is no
+longer so: the staff stack's backend is `processpuzzle-admin-backend` in the private repository,
+which composes `platform-admin` on top of these libraries, while `processpuzzle-testbed-backend` here
+composes only the public ones. What still differs purely by environment is the per-stack
+configuration — `SPRING_DATASOURCE_URL`, `PROCESSPUZZLE_SECURITY_STACK_REALM`,
+`MINIO_BUCKET_PREFIX` and the CORS allow-list.
 
 The rejected alternative was one shared instance routing to a datasource per organization key. That
 would make the backend tenant-aware at the persistence layer, and it would couple the availability of
@@ -125,7 +136,7 @@ stays visible.
 | Area | Was | Now |
 | --- | --- | --- |
 | Persistence | H2 in-memory; PostgreSQL hosted only `keycloak` | `processpuzzle_testbed` and `processpuzzle_admin`, created by `tools/docker/postgresql/init-db.sql`; H2 is test-scope only |
-| Backend deployments | One `processpuzzle-backend` container serving every frontend | `testbed-backend` (host 8080) and `admin-backend` (host 8083), same image, one stack each |
+| Backend deployments | One `processpuzzle-backend` container serving every frontend | `testbed-backend` (host 8080), one stack. `admin-backend` (host 8083) ran the same image beside it until the platform-admin extraction moved it to the private repository. |
 | Testbed realm | `processpuzzle`, registration disabled | `processpuzzle-testbed`, `registrationAllowed: true` |
 | Admin realm | `processpuzzle-platform` | `processpuzzle-admin` |
 | Admin realm client id | `processpuzzle-ui` (in the platform realm — misleading) | `processpuzzle-admin` |
@@ -144,15 +155,18 @@ stays visible.
 | Area | Today | Target |
 | --- | --- | --- |
 | Testbed self-service roles | Do not exist | A registered user may grant themselves roles |
-| `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend` | Public site + onboarding, no Keycloak, no platform backend |
-| `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend |
-| Hostnames | Ports on `localhost` (9090 / 9091 / 9092) | Subdomains of `processpuzzle.com` |
+| `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, no Keycloak, no platform backend |
+| `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend, in the private repository |
+| Hostnames | Ports on `localhost` — 9090 here, 9091 / 9092 in the private repository | Subdomains of `processpuzzle.com` |
+| Prod compose topology | `docker-compose-prod.yaml` no longer publishes port 80 or reverse-proxies `/api/`, because the two frontends that did have moved | Per-app deployment resources (strategy §§4-5, 9), not a compose file |
 | Schema management | Hibernate `ddl-auto: update` | A migration tool |
 
-**`processpuzzle-biz-frontend` changes meaning**, and that is the one item that is more than a rename. It is today
-the tenant-facing org-admin application, which decision #2 turns into the public product site; the
-org-admin surface needs a home before that change lands — see the open question below. Until then it
-stays pointed at `testbed-backend`, which contradicts the table at the top of this document on purpose.
+**`processpuzzle-biz-frontend` changes meaning**, and that is the one item that is more than a rename. It
+was the tenant-facing org-admin application, which decision #2 turns into the public product site; the
+org-admin surface needs a home before that change lands — see the open question below. That work now
+happens in the private repository, which is where the application went on 2026-09-04, and it is
+blocked there on `processpuzzle-biz-backend` existing. `@processpuzzle/org-admin` stays public, so
+whichever application ends up hosting the tenant admin surface can mount it.
 
 ### Consequences worth knowing
 

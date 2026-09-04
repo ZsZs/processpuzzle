@@ -1,6 +1,6 @@
 # Backend library dependencies
 
-The ten backend libraries in `libs/java-shared` are meant to be usable apart from one another: a host
+The backend libraries in `libs/java-shared` are meant to be usable apart from one another: a host
 application composes the subset it needs, and each library is a Spring Modulith application module whose
 `allowedDependencies` are verified at build time by its own `ModularityTests`. This document records
 **which libraries actually reach for which**, and — more usefully — **by what mechanism**, because the
@@ -14,6 +14,11 @@ edges, every `import com.processpuzzle.*` in `src/main`, every `publishEvent` ca
 > the `org-admin → platform-admin` edge is gone. It was the only compile edge between two feature
 > libraries that was not a base-* feature, and three remain — all of them among base-state,
 > base-workflow, base-entity and base-rule.
+>
+> **Updated again 2026-09-04**, after Phase 3: `platform-admin` itself is no longer in this
+> repository. Its column and row are kept below because they record *why* every edge into it was
+> removable, which is the same analysis the next extraction will want; read them as history rather
+> than as a description of the tree. Eleven libraries remain.
 
 ## The matrix
 
@@ -28,8 +33,8 @@ Rows are the **consumer**, columns the **provider**. `·` means no relationship 
 | **base-app** | **P⁰** | **P** | · | · | — | · | · | **E + P⁰** | · | · |
 | **base-document** | · | · | · | · | · | — | · | · | · | · |
 | **base-widget** | · | · | · | · | · | · | — | · | · | · |
-| **platform-admin** | · | · | · | · | · | · | · | — | · | · |
-| **org-admin** | · | · | · | · | · | · | · | **P** | — | · |
+| **platform-admin** *(moved out)* | · | · | · | · | · | · | · | — | · | · |
+| **org-admin** | · | · | · | · | · | · | · | **P** *(port only; no provider here)* | — | · |
 | **processpuzzle-store** | · | · | · | · | · | · | · | · | · | — |
 
 | Symbol | Mechanism | Cost of the edge |
@@ -125,12 +130,15 @@ Only two event flows cross a library boundary today.
 
 | Event | Publisher | Subscriber | Phase |
 | --- | --- | --- | --- |
-| `OrganizationProvisionedEvent` | platform-admin `ProvisionOrganization` | base-app `StarterAppCreator`; platform-admin's own `OrganizationRealmProvisioner` | `BEFORE_COMMIT` for tenant-scoped writes; `AFTER_COMMIT` for the realm |
-| `OrganizationDeletedEvent` | platform-admin `DeleteOrganization` | base-app `TenantDataCleaner`; `OrganizationRealmProvisioner` | as above |
+| `OrganizationProvisionedEvent` | platform-admin `ProvisionOrganization` — **no publisher in this repository** since Phase 3 | base-app `StarterAppCreator`; platform-admin's own `OrganizationRealmProvisioner` | `BEFORE_COMMIT` for tenant-scoped writes; `AFTER_COMMIT` for the realm |
+| `OrganizationDeletedEvent` | platform-admin `DeleteOrganization` — likewise | base-app `TenantDataCleaner`; `OrganizationRealmProvisioner` | as above |
 | `EntityObjectCreatedEvent` | base-entity `CreateEntityInstanceUseCase` | base-state `EntityObjectCreatedListener` | after commit, in a transaction of its own |
 
 The first two carry **no dependency cost at all**, because the event classes live in
-`api-contracts/.../shared/event` rather than with their publisher. That placement is the point: a
+`api-contracts/.../shared/event` rather than with their publisher. That is also what lets the
+subscribers stay here with the publisher gone: `StarterAppCreator` and `TenantDataCleaner` compile
+and are simply never triggered in this repository, and become live again in an application that
+composes a tenant registry. That placement is the point: a
 subscriber that has to compile against the publisher's library to read an event is coupled to the
 publisher's *implementation*, not to its contract. base-app's entire knowledge of platform-admin is
 "delete my tenant-scoped rows when this arrives" — and while the event class was platform-admin's,
