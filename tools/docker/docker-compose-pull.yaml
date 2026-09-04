@@ -2,10 +2,10 @@
 # building them locally.
 #
 # Every service in docker-compose-ci.yaml carries a `build:` section, and the
-# seven application services additionally set `pull_policy: build`. That is
-# correct for CI, whose job is to prove the images build. It is the wrong
-# default in a devcontainer or Codespace, where it means compiling three
-# Angular applications and two Spring Boot backends before the stack starts.
+# application services additionally set `pull_policy: build`. That is correct
+# for CI, whose job is to prove the images build. It is the wrong default in a
+# devcontainer or Codespace, where it means compiling an Angular application
+# and a Spring Boot backend before the stack starts.
 #
 # Overlay this file to reuse the images already published to Docker Hub:
 #   docker compose -f docker-compose-ci.yaml -f docker-compose-pull.yaml up -d
@@ -16,13 +16,7 @@
 services:
   processpuzzle-testbed-frontend:
     pull_policy: missing
-  processpuzzle-admin-frontend:
-    pull_policy: missing
-  processpuzzle-biz-frontend:
-    pull_policy: missing
   testbed-backend:
-    pull_policy: missing
-  admin-backend:
     pull_policy: missing
   json-server:
     pull_policy: missing

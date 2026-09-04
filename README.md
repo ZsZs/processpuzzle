@@ -5,7 +5,7 @@ ProcessPuzzle is a Low-Code platform for content management and business workflo
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
 - [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
-- [ProcessPuzzle UI](/apps/processpuzzle-biz-frontend) – Web application to help you to define your own business application.
+- **ProcessPuzzle UI** and **ProcessPuzzle Admin** – the Low-Code designer and the staff administration application. Both live in the private `processpuzzle-biz` repository, together with the commercial `platform-admin` feature, and consume the framework libraries above through a submodule – see [Extracting platform-admin](/docs/platform-admin-extraction.md).
 
 Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over
 shared infrastructure — see [Application stacks](/docs/application-stacks.md) for the naming rules and the target state.
@@ -38,7 +38,7 @@ The pay-off is that **extension is configuration, not code**:
   app shell reads route metadata to build navigation. Features cooperate through each other's metadata rather
   than through each other's internals.
 - **Self-describing at run-time** — the same descriptors are what a Low-Code designer such as
-  [ProcessPuzzle UI](/apps/processpuzzle-biz-frontend) edits, so the modelling tool and the runtime never drift apart.
+  ProcessPuzzle UI edits, so the modelling tool and the runtime never drift apart.
 
 ### Two layers per feature
 Every feature ships as a pair: an Angular library (`libs/js-shared/*-frontend`, published to npm as

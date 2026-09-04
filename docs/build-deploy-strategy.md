@@ -19,7 +19,7 @@ Two GitHub repositories, coupled at build time only (via git submodule), indepen
 ### `processpuzzle-biz` (private)
 - `apps/` — **processpuzzle-admin-frontend**, **processpuzzle-admin-backend**, **processpuzzle-biz-frontend**, **processpuzzle-biz-backend**
 - `libs/` — the libraries that are *commercial* rather than platform, and therefore cannot live in the public repo:
-  - `platform-admin-backend` / `platform-admin-frontend` — the org registry, plans, subscriptions, billing and the staff UI over them. **Currently in the public repo**; extracting them is a migration of its own — see [Extracting platform-admin](platform-admin-extraction.md)
+  - `platform-admin-backend` / `platform-admin-frontend` — the org registry, plans, subscriptions, billing and the staff UI over them. **Moved out of the public repo on 2026-09-04**, together with `processpuzzle-admin-frontend`, `processpuzzle-biz-frontend` and `processpuzzle-biz-e2e` — see [Extracting platform-admin](platform-admin-extraction.md)
   - `subscription-backend` / `subscription-frontend` — **do not exist yet**. The thin subscription functionality behind `processpuzzle-biz-frontend`: the public site's signup step and whatever it needs to hand to Admin over the Biz → Admin REST edge
 - Pulls in `processpuzzle` as a **git submodule** to reuse the `libs/` platform features above at build time — already configured
 

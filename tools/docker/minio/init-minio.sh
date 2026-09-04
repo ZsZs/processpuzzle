@@ -14,6 +14,9 @@ MINIO_ENDPOINT="http://localhost:9000"
 # because UploadObject asks CreateBucket for whatever bucket it needs and MinIO makes it on the
 # spot. So the list here is a convenience — a console with the expected buckets already in it — and
 # not a precondition. Adding a purpose to minio-config.yaml without adding it here is not a bug.
+# Both stacks, though only the testbed's application is built in this repository: the prefixes are
+# shared infrastructure, and the private admin backend writes under the second one. See
+# docs/platform-admin-extraction.md.
 STACK_PREFIXES="processpuzzle-testbed processpuzzle-admin"
 PURPOSES="configuration text images documents audio video archives logs"
 

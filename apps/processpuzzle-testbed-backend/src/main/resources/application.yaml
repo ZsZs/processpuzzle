@@ -111,24 +111,6 @@ base-workflow:
   loadDefaultWorkflows: yes
   loadDefaultTranslations: yes
 
-platform-admin:
-  # Seeds the tenants this deployment starts with, from default-organizations/<orgKey>-organization.yaml.
-  # Runs before every feature's own loader, which is required rather than tidy: those files are named
-  # after the tenant they seed and now skip a tenant that does not exist instead of creating one.
-  # Turning this off on an empty database leaves every other seed file with nowhere to land.
-  loadDefaultOrganizations: yes
-  # Seeds the bundled plan catalog (free / team / enterprise). Create-only: an existing plan code is
-  # never repriced, so leaving this on cannot overwrite what a deployment charges.
-  loadDefaultPlans: yes
-  # Extra organization keys this deployment refuses to hand out, on top of the built-in list.
-  # reserved-organization-keys: internal,staging
-  #
-  # The built-in list holds both stack keys, minus the one THIS deployment serves - otherwise it could
-  # not bootstrap its own organization, since DefaultAppLoader claims it through the ordinary path.
-  # Defaults to processpuzzle.security.stack-realm below and only needs setting where a deployment's
-  # organization key differs from its realm name.
-  # stack-organization-key: processpuzzle-testbed
-
 org-admin:
   # Nothing to seed — Keycloak is the system of record for users, so this module persists nothing.
   # The flag exists for symmetry with the other features and to be the place a future default lands.
@@ -165,17 +147,14 @@ keycloak:
     # The service account lives in master because create-realm is not a realm-scoped permission.
     realm: master
     client-id: platform-admin-service
-    # Empty disables realm and user management entirely: NoOpIdentityRealmPort and
-    # NoOpUserDirectoryPort stand in, so the application still starts and every non-identity feature
-    # still works. Supply it via KEYCLOAK_ADMIN_CLIENT_SECRET rather than committing it.
+    # Empty disables user management entirely: NoOpUserDirectoryPort stands in, so the application
+    # still starts and every non-identity feature still works. Supply it via
+    # KEYCLOAK_ADMIN_CLIENT_SECRET rather than committing it.
     client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
-    # The public client created in every tenant realm. One name for all tenants, because the frontend
-    # resolves the realm from the URL and would otherwise need a per-tenant client id too.
-    tenant-client-id: processpuzzle-biz
-    # {orgKey} is substituted with the realm name, so one tenant's client cannot redirect into
-    # another tenant's URL space.
-    tenant-redirect-uri: http://localhost:4202/{orgKey}/*
-    tenant-web-origin: http://localhost:4202
+    # No tenant-client-id / tenant-redirect-uri / tenant-web-origin here: creating a realm's public
+    # client is realm PROVISIONING, and that left with platform-admin. KeycloakAdminProperties keeps
+    # the three defaults for the private admin backend that does provision - see
+    # docs/platform-admin-extraction.md.
 
 minio:
   endpoint: http://localhost:7000

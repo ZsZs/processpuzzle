@@ -6,7 +6,11 @@
 --   docker compose -f tools/docker/docker-compose-ci.yaml down -v
 --
 -- The `keycloak` database is created by the entrypoint from POSTGRES_DB; everything below is the
--- ProcessPuzzle side. One database per application stack — see docs/application-stacks.md. The
+-- ProcessPuzzle side. One database per application stack — see docs/application-stacks.md. Both
+-- stacks' databases are still created here even though only the testbed's application is built in
+-- this repository: the databases, like the realms and the bucket prefixes, are shared
+-- infrastructure, and the private admin backend connects to the one below — see
+-- docs/platform-admin-extraction.md. The
 -- identifiers are unquoted, so PostgreSQL folds them to lower case: `processpuzzle_testbed` and
 -- `processpuzzle_admin` ARE the databases the design document names in upper case. Quoting them
 -- instead would force quoting at every connection site forever.
