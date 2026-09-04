@@ -53,6 +53,12 @@ jobs:
         name: Build backend jar
         run: npx nx run processpuzzle-testbed-backend:build --no-cloud
 
+      - id: build-compose-frontends
+        name: Build compose frontend bundles
+        run: |
+          npx nx run processpuzzle-admin-frontend:build --configuration=production --no-cloud
+          npx nx run processpuzzle-biz-frontend:build --configuration=production --no-cloud
+
       - id: docker-compose
         name: run-docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
