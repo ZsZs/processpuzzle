@@ -6,6 +6,10 @@
   "image": "mcr.microsoft.com/devcontainers/base:1-bookworm",
 
   "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    },
+
     // Temurin 25 + Maven, matching .github/actions/lint-test-build (java-version 25,
     // distribution temurin). No Gradle anywhere in the workspace.
     "ghcr.io/devcontainers/features/java:1": {
@@ -54,10 +58,7 @@
 
   // Keep the Maven repository and the Playwright browser cache out of the
   // workspace so a container rebuild does not re-download them.
-  "mounts": [
-    "source=processpuzzle-m2,target=/home/vscode/.m2,type=volume",
-    "source=processpuzzle-playwright,target=/home/vscode/.cache/ms-playwright,type=volume"
-  ],
+  "mounts": ["source=processpuzzle-m2,target=/home/vscode/.m2,type=volume", "source=processpuzzle-playwright,target=/home/vscode/.cache/ms-playwright,type=volume"],
 
   // Re-runs whenever repository content changes, and is captured by prebuilds.
   // --legacy-peer-deps mirrors CI; a plain npm ci fails on peer ranges.
@@ -69,16 +70,7 @@
 
   "waitFor": "updateContentCommand",
 
-  "forwardPorts": [
-    4200, 4201, 4202,
-    3000,
-    8080, 8083,
-    9090, 9091, 9092,
-    7070,
-    5432,
-    7000, 7001,
-    8082
-  ],
+  "forwardPorts": [4200, 4201, 4202, 3000, 8080, 8083, 9090, 9091, 9092, 7070, 5432, 7000, 7001, 8082],
 
   "portsAttributes": {
     "4200": { "label": "testbed (nx serve)", "onAutoForward": "notify" },
