@@ -13,7 +13,7 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
   template: ` <pp-sample-host prefix="base-states" groupName="stateSample" ariaLabel="State Machine Sample" [tabs]="tabs" /> `,
 })
 export class SamplesComponent {
-  private host = viewChild(SampleHostComponent);
+  private readonly host = viewChild(SampleHostComponent);
   readonly tabs: SampleTab[] = [{ route: 'state-machine-definition', label: 'State Machine Definition' }];
   readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');
 }

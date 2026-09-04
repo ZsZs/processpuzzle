@@ -25,7 +25,7 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
   template: ` <pp-sample-host prefix="base-workflows" groupName="workflowSample" ariaLabel="Workflow Sample" [tabs]="tabs" /> `,
 })
 export class SamplesComponent {
-  private host = viewChild(SampleHostComponent);
+  private readonly host = viewChild(SampleHostComponent);
   readonly tabs: SampleTab[] = [
     { route: WORKFLOW_DASHBOARD_PATH, label: 'My Tasks' },
     { route: 'workflow', label: 'Workflow' },

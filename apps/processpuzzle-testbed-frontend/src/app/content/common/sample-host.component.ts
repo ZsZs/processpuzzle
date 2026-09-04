@@ -35,7 +35,7 @@ export interface SampleTab {
   `,
 })
 export class SampleHostComponent implements OnInit {
-  private router = inject(Router);
+  private readonly router = inject(Router);
 
   prefix = input.required<string>();
   groupName = input.required<string>();
@@ -60,8 +60,8 @@ export class SampleHostComponent implements OnInit {
         const currentUrl: string = event.url;
         if (currentUrl) {
           const tabRoutes = this.tabs();
-          const segments = currentUrl.split(/[/?#]/);
-          const matched = tabRoutes.find((tab) => segments.includes(tab.route));
+          const segments = new Set(currentUrl.split(/[/?#]/));
+          const matched = tabRoutes.find((tab) => segments.has(tab.route));
           this.selectedButton.set(matched ? matched.route : '');
         }
       });

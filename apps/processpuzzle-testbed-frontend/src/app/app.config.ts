@@ -2,7 +2,16 @@ import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { centralHttpErrorInterceptor, LayoutService, provideCentralErrorHandler, provideLoggingService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import {
+  centralHttpErrorInterceptor,
+  LayoutService,
+  provideCentralErrorHandler,
+  provideErrorSnackbar,
+  provideLoggingService,
+  provideTranslocoService,
+  RUNTIME_CONFIGURATION,
+  TRANSLATION_SOURCE_REGISTRY,
+} from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
@@ -12,7 +21,6 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
-import { provideErrorSnackbar, provideTranslocoService } from '@processpuzzle/util';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
@@ -25,14 +33,12 @@ import {
   BASE_ENTITY_TRANSLATION_SOURCE,
   provideEntityRouteRegistry,
 } from '@processpuzzle/base-entity';
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE, CurrentUserContext } from '@processpuzzle/base-workflow';
 import { SessionUserContext } from './content/base-workflows/session-user.context';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
-import { TRANSLATION_SOURCE_REGISTRY } from '@processpuzzle/util';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';

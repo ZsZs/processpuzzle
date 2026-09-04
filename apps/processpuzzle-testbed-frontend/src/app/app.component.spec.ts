@@ -55,4 +55,12 @@ describe('AppComponent', () => {
     const appFooter = fixture.debugElement.query(By.css('app-footer')).nativeElement;
     expect(appFooter).toBeTruthy();
   });
+
+  it('toggles the sidenav state', () => {
+    expect(component.sidenavOpened()).toBe(true);
+
+    component.toggleSidenav();
+
+    expect(component.sidenavOpened()).toBe(false);
+  });
 });

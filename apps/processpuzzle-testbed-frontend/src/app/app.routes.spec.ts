@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Route } from '@angular/router';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { ENTITY_NAME_ROUTE_DATA_KEY, snakeCaseName } from '@processpuzzle/base-entity';
 import { appRoutes } from './app.routes';
+import { TestBed } from '@angular/core/testing';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth';
 
 /**
  * Guards the one thing about mounting a metadata-defined entity that fails *silently*.
@@ -47,5 +50,21 @@ describe('appRoutes — entity screen mount points', () => {
 
   it('mounts both rule samples', () => {
     expect(mountedEntities('base-rule', 'samples').map((mount) => mount.entityName)).toEqual(['Order', 'Special Order']);
+  });
+
+  it('exposes every primary feature as a titled navigation route', () => {
+    expect(appRoutes.filter((route) => route.title).map((route) => route.path)).toEqual([
+      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-workflow', 'base-app', 'ci-cd',
+    ]);
+  });
+
+  it('authenticates before rendering home', async () => {
+    const authenticate = vi.fn().mockResolvedValue(undefined);
+    TestBed.configureTestingModule({ providers: [{ provide: AUTHENTICATION_SERVICE, useValue: { authenticate } }] });
+    const home = appRoutes.find((route) => route.path === 'home');
+
+    await TestBed.runInInjectionContext(() => home?.resolve?.['auth']?.());
+
+    expect(authenticate).toHaveBeenCalledOnce();
   });
 });

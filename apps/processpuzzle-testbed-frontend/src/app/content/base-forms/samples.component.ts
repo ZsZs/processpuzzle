@@ -12,7 +12,7 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
   `,
 })
 export class SamplesComponent {
-  private host = viewChild(SampleHostComponent);
+  private readonly host = viewChild(SampleHostComponent);
   readonly tabs: SampleTab[] = [
     { route: 'test-entity', label: 'Test Entity' },
     { route: 'test-entity-component', label: 'Test Entity Komponente' },

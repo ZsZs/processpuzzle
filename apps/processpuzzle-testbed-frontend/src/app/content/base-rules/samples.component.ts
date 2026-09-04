@@ -71,9 +71,9 @@ export class SamplesComponent {
       { initialValue: this.router.url },
     );
     this.selectedSample = computed(() => {
-      const segments = this.url().split('/');
-      if (segments.includes(SPECIAL_ORDER_PATH)) return SPECIAL_ORDER_PATH;
-      if (segments.includes(ORDER_PATH)) return ORDER_PATH;
+      const segments = new Set(this.url().split('/'));
+      if (segments.has(SPECIAL_ORDER_PATH)) return SPECIAL_ORDER_PATH;
+      if (segments.has(ORDER_PATH)) return ORDER_PATH;
       return '';
     });
   }

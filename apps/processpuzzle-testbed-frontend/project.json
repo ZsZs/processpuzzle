@@ -90,6 +90,8 @@
           "apps/processpuzzle-testbed-frontend/src/custom-theme.scss",
           "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss",
           "apps/processpuzzle-testbed-frontend/src/styles.scss",
+          "node_modules/material-symbols/outlined.css",
+          "node_modules/ng-diagram/styles.css",
           "node_modules/prismjs/themes/prism-okaidia.css",
           "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
           "node_modules/prismjs/plugins/line-highlight/prism-line-highlight.css",

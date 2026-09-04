@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { By } from '@angular/platform-browser';
@@ -61,8 +61,31 @@ describe('HeaderComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it.skip('template structure contains: mat-toolbar:', () => {
+  it('template structure contains: mat-toolbar:', () => {
     const matToolbar = fixture.debugElement.query(By.css('mat-toolbar')).nativeElement;
     expect(matToolbar).toBeTruthy();
+  });
+
+  it('navigates home for a logo click or an accessible keyboard activation', async () => {
+    const navigateByUrl = vi.spyOn(component.router, 'navigateByUrl').mockResolvedValue(true);
+    const preventDefault = vi.fn();
+
+    await component.onLogoClick();
+    await component.onLogoKeyPress({ key: 'Enter', preventDefault } as unknown as KeyboardEvent);
+    await component.onLogoKeyPress({ code: 'Space', preventDefault } as unknown as KeyboardEvent);
+    await component.onLogoKeyPress({ key: 'Escape', preventDefault } as unknown as KeyboardEvent);
+
+    expect(navigateByUrl).toHaveBeenCalledTimes(3);
+    expect(navigateByUrl).toHaveBeenCalledWith('/');
+    expect(preventDefault).toHaveBeenCalledTimes(2);
+  });
+
+  it('emits a sidenav toggle request', () => {
+    const toggle = vi.fn();
+    component.toggleSideNav.subscribe(toggle);
+
+    component.sidenavToggle();
+
+    expect(toggle).toHaveBeenCalledWith(undefined);
   });
 });
