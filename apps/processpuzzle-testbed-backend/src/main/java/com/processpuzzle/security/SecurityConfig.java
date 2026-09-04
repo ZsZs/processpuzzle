@@ -1,6 +1,7 @@
 package com.processpuzzle.security;
 
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.core.tenancy.KnownRealms;
+import org.springframework.beans.factory.ObjectProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -22,8 +23,10 @@ import tools.jackson.databind.ObjectMapper;
  * <p>{@link JwtIssuerAuthenticationManagerResolver} is what makes that possible without a static
  * issuer list: it reads the token's {@code iss} claim and asks
  * {@link TenantAuthenticationManagerResolver} which realm's keys to verify against. The set of
- * trusted issuers is therefore the {@code organizations} table plus one configured realm, and it grows
- * the moment a tenant is provisioned rather than at the next restart.
+ * trusted issuers is therefore one configured realm plus whatever {@link KnownRealms} vouches for;
+ * where an adapter for that port exists the set grows the moment a tenant is provisioned rather than
+ * at the next restart. <b>This deployment wires no adapter</b> — it hosts a single realm, so
+ * configuration is the whole answer and no tenant registry sits on the authentication path.
  *
  * <h2>What is closed, and what is not</h2>
  *
@@ -82,11 +85,17 @@ public class SecurityConfig {
         this.properties = properties;
     }
 
+    /**
+     * {@code getIfUnique} rather than {@code @ConditionalOnMissingBean}, for the reason
+     * {@link com.processpuzzle.core.tenancy.OrganizationGuard} documents at length: that condition is
+     * only reliable inside auto-configuration, and this package is component-scanned.
+     */
     @Bean
     public AuthenticationManagerResolver<jakarta.servlet.http.HttpServletRequest> tenantAuthenticationManagerResolver(
-            OrganizationRepository organizations) {
+            ObjectProvider<KnownRealms> knownRealms) {
         return new JwtIssuerAuthenticationManagerResolver(
-                new TenantAuthenticationManagerResolver(properties, organizations));
+                new TenantAuthenticationManagerResolver(
+                        properties, knownRealms.getIfUnique(() -> KnownRealms.NONE)));
     }
 
     @Bean

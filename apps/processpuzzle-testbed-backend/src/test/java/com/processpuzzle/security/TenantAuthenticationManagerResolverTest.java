@@ -1,6 +1,6 @@
 package com.processpuzzle.security;
 
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.core.tenancy.KnownRealms;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,11 +27,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * not.
  *
  * <p>What they pin down is the gate ordering: an untrusted issuer must be refused by string
- * comparison, before any database lookup, because without that this class turns a flood of tokens
- * carrying invented issuers into a query per request.
+ * comparison, before {@link KnownRealms} is consulted at all, because without that this class turns
+ * a flood of tokens carrying invented issuers into one call per request against whatever a
+ * deployment's adapter is backed by.
  *
  * <p>No JWKS endpoint is running, and the trusted-realm case still resolves — see
- * {@link #theStackRealmIsTrustedWithoutBeingAnOrganization()} for why that is the assertion and not
+ * {@link #theStackRealmIsTrustedWithoutConsultingThePort()} for why that is the assertion and not
  * an accident.
  */
 class TenantAuthenticationManagerResolverTest {
@@ -46,25 +47,25 @@ class TenantAuthenticationManagerResolverTest {
                     + ".eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvcmVhbG1zL3Byb2Nlc3NwdXp6bGUtYWRtaW4ifQ"
                     + ".c2lnbmF0dXJl";
 
-    private OrganizationRepository organizations;
+    private KnownRealms knownRealms;
     private TenantAuthenticationManagerResolver resolver;
 
     @BeforeEach
     void setUp() {
-        organizations = mock(OrganizationRepository.class);
-        when(organizations.existsById(anyString())).thenReturn(false);
+        knownRealms = mock(KnownRealms.class);
+        when(knownRealms.isKnown(anyString())).thenReturn(false);
         resolver = new TenantAuthenticationManagerResolver(
-                SecurityTestTokens.properties(), organizations);
+                SecurityTestTokens.properties(), knownRealms);
     }
 
-    /** The load-bearing assertion: rejected without touching the database. */
+    /** The load-bearing assertion: rejected without consulting the port. */
     @Test
-    void anIssuerOutsideTheConfiguredKeycloakIsRejectedWithoutADatabaseLookup() {
+    void anIssuerOutsideTheConfiguredKeycloakIsRejectedWithoutConsultingTheRealmPort() {
         assertThatThrownBy(() -> resolver.resolve("https://evil.example/realms/my-org"))
                 .isInstanceOf(InvalidBearerTokenException.class)
                 .hasMessageContaining("Untrusted");
 
-        verifyNoInteractions(organizations);
+        verifyNoInteractions(knownRealms);
     }
 
     @Test
@@ -72,7 +73,7 @@ class TenantAuthenticationManagerResolverTest {
         assertThatThrownBy(() -> resolver.resolve(null))
                 .isInstanceOf(InvalidBearerTokenException.class);
 
-        verifyNoInteractions(organizations);
+        verifyNoInteractions(knownRealms);
     }
 
     /** An issuer under the right host but not naming a realm at all. */
@@ -83,7 +84,7 @@ class TenantAuthenticationManagerResolverTest {
         assertThatThrownBy(() -> resolver.resolve(SecurityTestTokens.ISSUER_BASE + "/auth/my-org"))
                 .isInstanceOf(InvalidBearerTokenException.class);
 
-        verifyNoInteractions(organizations);
+        verifyNoInteractions(knownRealms);
     }
 
     /**
@@ -96,17 +97,17 @@ class TenantAuthenticationManagerResolverTest {
                 SecurityTestTokens.ISSUER_BASE + "/realms/my-org/../" + SecurityTestTokens.STACK_REALM))
                 .isInstanceOf(InvalidBearerTokenException.class);
 
-        verifyNoInteractions(organizations);
+        verifyNoInteractions(knownRealms);
     }
 
-    /** Right prefix, but no such tenant — this is the one case that is allowed to query. */
+    /** Right prefix, but no such tenant — this is the one case that is allowed to reach the port. */
     @Test
-    void anUnknownRealmUnderTheRightPrefixIsRejectedAfterCheckingTheDatabase() {
+    void anUnknownRealmUnderTheRightPrefixIsRejectedAfterConsultingTheRealmPort() {
         assertThatThrownBy(() -> resolver.resolve(SecurityTestTokens.ISSUER_BASE + "/realms/no-such-org"))
                 .isInstanceOf(InvalidBearerTokenException.class)
                 .hasMessageContaining("Unknown realm");
 
-        verify(organizations).existsById("no-such-org");
+        verify(knownRealms).isKnown("no-such-org");
     }
 
     /**
@@ -120,15 +121,16 @@ class TenantAuthenticationManagerResolverTest {
         assertThatThrownBy(() -> resolver.resolve(SecurityTestTokens.ISSUER_BASE + "/realms/new-org"))
                 .isInstanceOf(InvalidBearerTokenException.class);
 
-        verify(organizations, org.mockito.Mockito.times(2)).existsById("new-org");
+        verify(knownRealms, org.mockito.Mockito.times(2)).isKnown("new-org");
     }
 
     /**
-     * The realm this deployment serves is trusted without being an organization — it is the one realm
-     * that is not a tenant, so it must not be looked up in a table it will never be in.
+     * The realm this deployment serves is trusted without the port being asked — it is configuration,
+     * it is the one realm that is not a tenant, and it has to stay trusted in a deployment that wires
+     * no adapter at all.
      */
     @Test
-    void theStackRealmIsTrustedWithoutBeingAnOrganization() {
+    void theStackRealmIsTrustedWithoutConsultingThePort() {
         // It also resolves, rather than throwing: the decoder is now built lazily, which is the whole
         // reason the /platform/** 500 is gone. The old JwtDecoders.fromIssuerLocation fetched the
         // discovery document right here, from an origin unreachable inside a container, and threw
@@ -139,7 +141,27 @@ class TenantAuthenticationManagerResolverTest {
                 SecurityTestTokens.ISSUER_BASE + "/realms/" + SecurityTestTokens.STACK_REALM);
 
         assertThat(manager).isNotNull();
-        verify(organizations, never()).existsById(anyString());
+        verify(knownRealms, never()).isKnown(anyString());
+    }
+
+    /**
+     * The configuration this deployment actually runs with, now that no adapter is wired.
+     * {@link KnownRealms#NONE} is not a stand-in for a missing bean — for a single-realm stack it is
+     * the complete and correct answer — so a token from any other realm must be refused even though
+     * its issuer prefix is right.
+     */
+    @Test
+    void withTheDefaultPortOnlyTheStackRealmIsTrusted() {
+        TenantAuthenticationManagerResolver singleRealm = new TenantAuthenticationManagerResolver(
+                SecurityTestTokens.properties(), KnownRealms.NONE);
+
+        assertThat(singleRealm.resolve(
+                SecurityTestTokens.ISSUER_BASE + "/realms/" + SecurityTestTokens.STACK_REALM))
+                .isNotNull();
+        assertThatThrownBy(() -> singleRealm.resolve(
+                SecurityTestTokens.ISSUER_BASE + "/realms/some-tenant"))
+                .isInstanceOf(InvalidBearerTokenException.class)
+                .hasMessageContaining("Unknown realm");
     }
 
     /** A JWKS base URL that cannot form a URI is a misconfiguration, and must not read as a 500. */
@@ -148,7 +170,7 @@ class TenantAuthenticationManagerResolverTest {
         SecurityProperties broken = SecurityTestTokens.properties();
         broken.setJwksBaseUrl("not a url");
         TenantAuthenticationManagerResolver brokenResolver =
-                new TenantAuthenticationManagerResolver(broken, organizations);
+                new TenantAuthenticationManagerResolver(broken, knownRealms);
 
         assertThatThrownBy(() -> brokenResolver.resolve(
                 SecurityTestTokens.ISSUER_BASE + "/realms/" + SecurityTestTokens.STACK_REALM))
@@ -174,7 +196,7 @@ class TenantAuthenticationManagerResolverTest {
         SecurityProperties unreachable = SecurityTestTokens.properties();
         unreachable.setJwksBaseUrl("http://127.0.0.1:1");
         AuthenticationManager manager =
-                new TenantAuthenticationManagerResolver(unreachable, organizations).resolve(
+                new TenantAuthenticationManagerResolver(unreachable, knownRealms).resolve(
                         SecurityTestTokens.ISSUER_BASE + "/realms/" + SecurityTestTokens.STACK_REALM);
 
         assertThatThrownBy(() -> manager.authenticate(

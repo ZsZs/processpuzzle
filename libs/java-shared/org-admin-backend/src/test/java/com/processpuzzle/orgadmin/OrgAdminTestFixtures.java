@@ -3,9 +3,7 @@ package com.processpuzzle.orgadmin;
 import com.processpuzzle.orgadmin.usecases.inbound.TenantRealmResolver;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
-import com.processpuzzle.platformadmin.domain.Organization;
-import com.processpuzzle.platformadmin.domain.OrganizationStatus;
-import com.processpuzzle.platformadmin.usecase.FindOrganization;
+import com.processpuzzle.orgadmin.usecases.outbound.TenantRealmDirectory;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
@@ -14,6 +12,8 @@ import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -24,9 +24,13 @@ import static org.mockito.Mockito.when;
  * Shared wiring for the org-admin unit tests.
  *
  * <p>{@link #resolverFor} builds a real {@link TenantRealmResolver} over a stubbed
- * {@code FindOrganization}, rather than mocking the resolver itself. That is the point: nearly every
- * refusal in this module — non-member, unknown tenant, suspended tenant — comes from the resolver, so
- * a test that mocked it away would prove only that a use case calls something.
+ * {@link TenantRealmDirectory}, rather than mocking the resolver itself. That is the point: nearly
+ * every refusal in this module — non-member, unknown tenant, suspended tenant — comes from the
+ * resolver, so a test that mocked it away would prove only that a use case calls something.
+ *
+ * <p>The stub is the port and no longer platform-admin's {@code FindOrganization}, so these fixtures
+ * speak in {@code administerable} rather than in an {@code OrganizationStatus}. A tenant's lifecycle
+ * state is the registry's vocabulary, and this module never sees it.
  */
 public final class OrgAdminTestFixtures {
 
@@ -36,29 +40,56 @@ public final class OrgAdminTestFixtures {
     private OrgAdminTestFixtures() {
     }
 
-    /** A resolver that lets an ACTIVE tenant through. */
+    /** A resolver that lets an administerable tenant through. */
     public static TenantRealmResolver resolver() {
-        return resolverFor(OrganizationStatus.ACTIVE, permissiveGuard());
+        return resolverFor(true, permissiveGuard());
     }
 
-    /** A resolver over a tenant in the given lifecycle state. */
-    public static TenantRealmResolver resolverFor(OrganizationStatus status) {
-        return resolverFor(status, permissiveGuard());
+    /** A resolver over a tenant that is, or is not, administerable. */
+    public static TenantRealmResolver resolverFor(boolean administerable) {
+        return resolverFor(administerable, permissiveGuard());
     }
 
-    public static TenantRealmResolver resolverFor(OrganizationStatus status, OrganizationGuard guard) {
-        FindOrganization findOrganization = mock(FindOrganization.class);
-        when(findOrganization.executeUnguarded(anyString())).thenAnswer(call ->
-                new Organization(call.getArgument(0), "My Organization Ltd.", null, null, "en-GB", status));
-        return new TenantRealmResolver(findOrganization, guard);
+    public static TenantRealmResolver resolverFor(boolean administerable, OrganizationGuard guard) {
+        return resolverOver(
+                orgKey -> Optional.of(new TenantRealmDirectory.Tenant(orgKey, administerable)), guard);
     }
 
     /** A resolver whose tenant does not exist. */
     public static TenantRealmResolver resolverForUnknownTenant() {
-        FindOrganization findOrganization = mock(FindOrganization.class);
-        when(findOrganization.executeUnguarded(anyString())).thenThrow(
-                new com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException(ORG_KEY));
-        return new TenantRealmResolver(findOrganization, permissiveGuard());
+        return resolverOver(orgKey -> Optional.empty(), permissiveGuard());
+    }
+
+    /** The seam the fixtures above go through: a real resolver over a stub directory. */
+    public static TenantRealmResolver resolverOver(TenantRealmDirectory directory, OrganizationGuard guard) {
+        return new TenantRealmResolver(providerOf(directory), guard);
+    }
+
+    /**
+     * An {@code ObjectProvider} answering with exactly {@code instance}. The resolver and the guard
+     * both resolve their collaborator through {@code getIfUnique}, so a test that wants a stub in
+     * place has to hand them a provider rather than the stub itself.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ObjectProvider<T> providerOf(T instance) {
+        ObjectProvider<T> provider = mock(ObjectProvider.class);
+        when(provider.getIfUnique(any())).thenReturn(instance);
+        return provider;
+    }
+
+    /**
+     * A provider with no bean behind it, which invokes the caller's fallback supplier — what the real
+     * {@code ObjectProvider} does, and the only way to exercise a port's default through the
+     * constructor that resolves it. Stubbing {@code getIfUnique} to return {@code null} would not do:
+     * that is a contract the real implementation never breaks, so a collaborator is entitled to
+     * assume the value is non-null.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ObjectProvider<T> emptyProvider() {
+        ObjectProvider<T> provider = mock(ObjectProvider.class);
+        when(provider.getIfUnique(any()))
+                .thenAnswer(call -> ((Supplier<T>) call.getArgument(0)).get());
+        return provider;
     }
 
     public static OrganizationGuard permissiveGuard() {

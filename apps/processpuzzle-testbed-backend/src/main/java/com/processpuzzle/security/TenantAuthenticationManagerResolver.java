@@ -1,6 +1,6 @@
 package com.processpuzzle.security;
 
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
+import com.processpuzzle.core.tenancy.KnownRealms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,9 +39,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *       database query per request — without it this class is a denial-of-service amplifier.
  *   <li><b>Cache.</b> A realm already resolved is answered from the map, so the common case touches
  *       neither the database nor the network.
- *   <li><b>Realm exists.</b> The realm must be this deployment's own stack realm or an existing
- *       organization key. Only an unrecognised realm that already passed the prefix gate reaches the
- *       database.
+ *   <li><b>Realm exists.</b> The realm must be this deployment's own stack realm or a realm
+ *       {@link KnownRealms} vouches for. Only an unrecognised realm that already passed the prefix
+ *       gate reaches that port, and in a single-realm deployment nothing does.
  * </ol>
  *
  * <h2>Two URLs for one Keycloak</h2>
@@ -65,6 +65,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * unable to log in until a restart. The cache is unbounded, which is safe for the same reason: only
  * realms that exist ever enter it, so its size is the number of tenants and not the number of
  * requests.
+ *
+ * <p><b>Where the tenant realms come from.</b> Not from here, and not from a tenant registry this
+ * application reads: {@link KnownRealms} is an outbound port, and this deployment wires no adapter
+ * for it because it hosts exactly one realm. An application that does host tenant realms supplies
+ * one — which is what keeps the tenant registry out of the authentication path of every other
+ * deployment.
  */
 public class TenantAuthenticationManagerResolver implements AuthenticationManagerResolver<String> {
 
@@ -73,13 +79,13 @@ public class TenantAuthenticationManagerResolver implements AuthenticationManage
     private static final String CERTS_PATH = "/protocol/openid-connect/certs";
 
     private final SecurityProperties properties;
-    private final OrganizationRepository organizations;
+    private final KnownRealms knownRealms;
     private final Map<String, AuthenticationManager> byRealm = new ConcurrentHashMap<>();
 
     public TenantAuthenticationManagerResolver(SecurityProperties properties,
-                                               OrganizationRepository organizations) {
+                                               KnownRealms knownRealms) {
         this.properties = properties;
-        this.organizations = organizations;
+        this.knownRealms = knownRealms;
     }
 
     @Override
@@ -116,8 +122,12 @@ public class TenantAuthenticationManagerResolver implements AuthenticationManage
         return realm.isBlank() || realm.contains("/") ? null : realm;
     }
 
+    /**
+     * The stack realm first, and without consulting the port: it is configuration, it is this
+     * deployment's own, and it must stay trusted even when no {@link KnownRealms} bean exists.
+     */
     private boolean isKnownRealm(String realm) {
-        return properties.getStackRealm().equals(realm) || organizations.existsById(realm);
+        return properties.getStackRealm().equals(realm) || knownRealms.isKnown(realm);
     }
 
     private AuthenticationManager managerFor(String issuer, String realm) {

@@ -3,11 +3,11 @@ package com.processpuzzle.orgadmin.adapters.inbound;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserNotFoundException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
-import com.processpuzzle.platformadmin.usecase.exception.OrganizationNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -25,8 +25,8 @@ class OrgAdminApiExceptionHandlerTest {
      * org-admin path would come back as {@code 500 internal-error}.
      */
     @Test
-    void anUnknownTenantIs404EvenThoughTheExceptionBelongsToAnotherModule() {
-        var response = handler.handleOrganizationNotFound(new OrganizationNotFoundException("nope"));
+    void anUnknownTenantIs404() {
+        var response = handler.handleOrganizationNotFound(new UnknownOrganizationException("nope"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
@@ -94,9 +94,12 @@ class OrgAdminApiExceptionHandlerTest {
     }
 
     /**
-     * Three advices on the FEATURE rung now claim {@code OrganizationNotFoundException} — base-app's,
-     * platform-admin's and this one. Safe only while all three scopes stay disjoint, so losing
-     * {@code basePackages} here would make which one answers depend on bean ordering.
+     * Several advices on the FEATURE rung claim {@code OrganizationAccessDeniedException}, which is
+     * {@code core}'s and therefore shared by all of them. Safe only while their scopes stay disjoint,
+     * so losing {@code basePackages} here would make which one answers depend on bean ordering.
+     *
+     * <p>The unknown-tenant type is no longer among the shared ones: it is
+     * {@link UnknownOrganizationException}, this module's own, rather than platform-admin's.
      */
     @Test
     void theAdviceIsScopedToThisModuleAndDeclaresItsRung() {

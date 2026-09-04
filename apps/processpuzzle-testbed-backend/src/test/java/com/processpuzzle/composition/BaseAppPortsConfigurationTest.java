@@ -2,10 +2,6 @@ package com.processpuzzle.composition;
 
 import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.app.usecase.port.RuleEvaluator;
-import com.processpuzzle.app.usecase.port.TenantDirectory;
-import com.processpuzzle.platformadmin.domain.Organization;
-import com.processpuzzle.platformadmin.domain.OrganizationRepository;
-import com.processpuzzle.platformadmin.domain.OrganizationStatus;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
 import com.processpuzzle.rule.usecase.RuleViolation;
@@ -13,62 +9,30 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * The adapters that introduce base-app to platform-admin and base-rule.
+ * The adapter that introduces base-app to base-rule.
  *
- * <p>They carry the only knowledge in the system that those three features are deployed together, so
- * the translation each performs is the seam that has to be right: base-app must receive its own
- * types and nothing more. A regression here would reintroduce, one field at a time, exactly the
- * coupling the ports removed.
+ * <p>It carries the only knowledge in the system that those two features are deployed together, so
+ * the translation it performs is the seam that has to be right: base-app must receive its own types
+ * and nothing more. A regression here would reintroduce, one field at a time, exactly the coupling
+ * the port removed.
+ *
+ * <p>Three tests for a second adapter stood here — {@code TenantDirectory} over platform-admin's
+ * {@code OrganizationRepository}, covering existence, the two-field projection and the absent case.
+ * They went with the adapter when platform-admin became something this application may not name.
+ * base-app's port is untouched and still has its own tests; what is no longer covered anywhere is
+ * the <em>translation</em>, and it will need covering again wherever the bean is next declared —
+ * {@code processpuzzle-admin-backend}, which unlike this application does have a tenant registry.
  */
 class BaseAppPortsConfigurationTest {
 
     private final BaseAppPortsConfiguration configuration = new BaseAppPortsConfiguration();
-
-    @Test
-    void theTenantDirectoryReportsWhetherAnOrganizationExists() {
-        OrganizationRepository organizations = mock(OrganizationRepository.class);
-        when(organizations.existsById("my-org")).thenReturn(true);
-        when(organizations.existsById("nope")).thenReturn(false);
-
-        TenantDirectory directory = configuration.tenantDirectory(organizations);
-
-        assertThat(directory.exists("my-org")).isTrue();
-        assertThat(directory.exists("nope")).isFalse();
-    }
-
-    /**
-     * The projection is two fields, not the aggregate. Handing base-app an {@code Organization} would
-     * put platform-admin's type back into its signature and undo the separation; a status, a contact
-     * address or a subscription is nothing base-app could use.
-     */
-    @Test
-    void theTenantDirectoryProjectsOnlyTheKeyAndLocale() {
-        OrganizationRepository organizations = mock(OrganizationRepository.class);
-        when(organizations.findById("my-org")).thenReturn(Optional.of(new Organization(
-                "my-org", "My Organization Ltd.", "Insurance.", "ops@my-org.example", "en-GB",
-                OrganizationStatus.ACTIVE)));
-
-        Optional<TenantDirectory.Tenant> tenant = configuration.tenantDirectory(organizations).find("my-org");
-
-        assertThat(tenant).contains(new TenantDirectory.Tenant("my-org", "en-GB"));
-    }
-
-    @Test
-    void anUnknownTenantIsAbsentRatherThanNull() {
-        OrganizationRepository organizations = mock(OrganizationRepository.class);
-        when(organizations.findById(anyString())).thenReturn(Optional.empty());
-
-        assertThat(configuration.tenantDirectory(organizations).find("nope")).isEmpty();
-    }
 
     /**
      * Severity is translated by name across two structurally identical enums, one per feature. That

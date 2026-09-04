@@ -49,15 +49,12 @@
     </dependency>
 
     <!--
-      org-admin resolves the tenant's Keycloak realm from its Organization, and refuses unknown or
-      suspended tenants before touching the directory. That is FindOrganization's job, so the edge
-      runs org-admin -> platform-admin and only through the "platformadmin :: usecase" named
-      interface. There is no reverse edge: platform-admin knows nothing about users.
+      No feature-library dependency, deliberately. org-admin still resolves the tenant's Keycloak
+      realm and refuses unknown or suspended tenants before touching the directory, but it asks its
+      own TenantRealmDirectory port rather than platform-admin's FindOrganization. That edge was the
+      only one of its kind in the platform, and removing it is what lets platform-admin move to a
+      private repository while org-admin stays public; see docs/platform-admin-extraction.md.
     -->
-    <dependency>
-      <groupId>com.processpuzzle</groupId>
-      <artifactId>platform-admin-backend</artifactId>
-    </dependency>
     <!-- Spring Boot dependencies -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
