@@ -1,0 +1,212 @@
+name: Build-ProcessPuzzle-Testbed-Apps
+
+# Builds and publishes the testbed stack's two application images to GHCR, and — on `develop` —
+# hands off to Deploy-Testbed-Apps. The counterpart of Build-ProcessPuzzle-Infrastructure for the
+# application layer: docs/build-deploy-strategy.md §10 describes this pair as the template, and §4
+# gives each image its own Coolify **Application** resource.
+#
+# WHY THE IMAGES CANNOT BE BUILT BY COOLIFY. Both Dockerfiles are *packaging* Dockerfiles — they
+# `COPY dist/…` and nothing else. `dist/` is build output, absent from a git clone, so a Coolify
+# Application resource pointed at either Dockerfile fails with `"/dist/apps/…": not found`. The
+# artifacts have to exist before `docker build` runs, which is what this workflow arranges and what
+# makes the registry the only sane hand-off point.
+#
+# ONE IMAGE PER STACK, NOT PER ENVIRONMENT. Neither Dockerfile declares an `ARG`, so the
+# `CICD_STAGE` build-arg that .github/actions/build-image/action.yml and docker-compose-apps.yaml
+# pass is dead config. The frontend's stage is chosen at *container start*: docker-entrypoint.sh
+# renders assets/runtime-env.json from `PIPELINE_STAGE` and `FIREBASE_API_KEY`, overwriting the file
+# the build baked, and every run-time-conf/config.<stage>.json is committed and therefore already in
+# the bundle. So `sha-<commit>` can be promoted from stage to prod unchanged — strategy §9.
+#
+# TRIGGERS. `develop` publishes; a pull request builds only, which is what proves both Dockerfiles
+# still assemble. There is deliberately no `feature/**` trigger: Build-ProcessPuzzle-Testbed-Frontend
+# already builds both halves on a feature branch and stands their images up for the Playwright suite,
+# so repeating a ten-minute Angular + Maven build here would buy nothing.
+
+on:
+  push:
+    branches: [ develop ]
+    paths:
+      # `libs/**` over-triggers — a change to one frontend library rebuilds the backend image too —
+      # but both applications embed the libraries, and the alternative is a path list that silently
+      # rots every time an app picks up a new dependency.
+      - 'apps/processpuzzle-testbed-frontend/**'
+      - 'apps/processpuzzle-testbed-backend/**'
+      - 'libs/**'
+      - 'tools/docker/processpuzzle-testbed-frontend/**'
+      - 'tools/docker/processpuzzle-testbed-backend/**'
+      - '.github/workflows/build-testbed-apps.yml'
+      - '.github/workflows/deploy-testbed-apps.yml'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ develop ]
+    paths:
+      - 'apps/processpuzzle-testbed-frontend/**'
+      - 'apps/processpuzzle-testbed-backend/**'
+      - 'libs/**'
+      - 'tools/docker/processpuzzle-testbed-frontend/**'
+      - 'tools/docker/processpuzzle-testbed-backend/**'
+      - '.github/workflows/build-testbed-apps.yml'
+      - '.github/workflows/deploy-testbed-apps.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-testbed-apps-${{ github.ref }}
+  cancel-in-progress: true
+
+# Publishing is gated on `github.ref == 'refs/heads/develop'` throughout, as in
+# build-infrastructure.yml. A pull request's ref is `refs/pull/<n>/merge`, so that one test already
+# excludes it — and it must, since a fork's pull request gets a read-only GITHUB_TOKEN and a login it
+# cannot use would fail the build for the wrong reason.
+
+jobs:
+  # Two jobs rather than one matrix: the halves share no toolchain. The frontend needs Node and the
+  # Angular builder, the backend needs a JDK and Maven, and running them in parallel costs nothing.
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      # Required before the build, and not only for the two values below: setEnv.ts also writes
+      # APPLICATION_VERSION into run-time-conf/config.common.json, which is a build asset. The values
+      # themselves are placeholders for a container deployment — docker-entrypoint.sh overwrites
+      # assets/runtime-env.json from the container's own env vars at startup.
+      - name: Generate the environment file
+        run: npm run config-env-processpuzzle-testbed-frontend -- --environment=stage
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_TOKEN }}
+          PIPELINE_STAGE: stage
+
+      - name: Build the Angular application
+        run: npm run build-processpuzzle-testbed-frontend
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/develop'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Derive tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/zszs/processpuzzle-testbed-frontend
+          # No `stage` / `prod` tag here. Those are moving tags a deployment watches, and
+          # Deploy-Testbed-Apps moves them by re-tagging this digest — never by building again.
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # The repository root: the Dockerfile COPYs dist/apps/… and tools/docker/… paths, both
+          # relative to it. `dist/` exists here because the build step above just wrote it, and no
+          # .dockerignore excludes it.
+          context: .
+          file: tools/docker/processpuzzle-testbed-frontend/Dockerfile
+          push: ${{ github.ref == 'refs/heads/develop' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Nx is a Node tool even for the Maven target, so the JS dependencies are needed to invoke it.
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+
+      # The `package` phase runs maven-antrun-plugin's copy-jar-to-dist execution, which is what puts
+      # the jar at the dist/apps/… path the Dockerfile COPYs.
+      - name: Build the Spring Boot jar
+        run: npx nx run processpuzzle-testbed-backend:build --no-cloud
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/develop'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Derive tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/zszs/processpuzzle-testbed-backend
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: tools/docker/processpuzzle-testbed-backend/Dockerfile
+          push: ${{ github.ref == 'refs/heads/develop' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # `develop` deploys to stage by PROMOTING the digests just built — passing image_tag makes
+  # Deploy-Testbed-Apps re-tag rather than rebuild, so the bytes that reach stage are the bytes this
+  # run produced.
+  deploy-stage:
+    needs: [ frontend, backend ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/deploy-testbed-apps.yml
+    with:
+      environment: STAGE
+      image_tag: sha-${{ github.sha }}
+    secrets: inherit

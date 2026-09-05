@@ -109,6 +109,11 @@ Both `deploy-processpuzzle-testbed-frontend.yml` (STAGE → Firebase project `pr
 ### Deploy the shared infrastructure
 `deploy-infrastructure.yml` builds/pushes the infrastructure images and then calls [`coolify-deploy`](actions/coolify-deploy/action.yml) with the target environment's `COOLIFY_WEBHOOK` and `COOLIFY_TOKEN`, followed by a best-effort readiness poll of Keycloak and MinIO (skipped unless the environment declares `KEYCLOAK_PUBLIC_URL` / `MINIO_PUBLIC_URL` as variables), so that a red workflow means a red stack.
 
+### Deploy the testbed applications
+`build-testbed-apps.yml` builds the Angular bundle and the Spring Boot jar, packages each into an image and pushes `ghcr.io/zszs/processpuzzle-testbed-{frontend,backend}` tagged `sha-<commit>` (plus `latest` on `develop`), then calls `deploy-testbed-apps.yml`, which promotes those digests to `:stage` with `docker buildx imagetools create` and fires each **Application** resource's own webhook through [`coolify-deploy`](actions/coolify-deploy/action.yml). Promoting a verified build to production is the same workflow dispatched with `environment: PROD` and that `sha-<commit>`.
+
+Both Dockerfiles only `COPY dist/…`, so **Coolify cannot build these images** — a resource pointed at either one fails on the missing `dist/`. They must be deployed from the registry, which is what this pair exists to fill.
+
 ### NPM Publish
 Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / NX_HEAD, runs `lint-test-build`, then publishes with `npx nx release publish --projects=<project> --access public --no-cloud` (with `NPM_CONFIG_PROVENANCE: true`). The testbed `Release-*` workflow does the same plus copies `package.json`/`README.md` into the dist folder and strips `environment.ts` before publishing.
 

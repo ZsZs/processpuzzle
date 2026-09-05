@@ -1,0 +1,172 @@
+name: Deploy-Testbed-Apps
+
+# Moves an environment's tag onto the testbed stack's two application images and triggers the Coolify
+# redeploy of the two **Application** resources that run them — docs/build-deploy-strategy.md §4.
+# The application-layer counterpart of Deploy-Infrastructure, built to the recipe §10 gives for the
+# per-app workflows: same `resolve` / `promote` / `deploy` shape, one image per resource, each
+# resource with its own webhook.
+#
+# TWO WAYS IN, and no `push:` trigger of its own — Build-ProcessPuzzle-Testbed-Apps owns that:
+#
+#   1. workflow_call with image_tag  — what the build workflow does on `develop`: promote the digests
+#      it just pushed to :stage, then deploy.
+#   2. workflow_dispatch with image_tag — promote a verified sha-<commit> to PROD. This is the path
+#      that makes stage→prod a re-tag rather than a rebuild (strategy §9).
+#
+# Deliberately NO build-from-source escape hatch, which is where this diverges from
+# Deploy-Infrastructure. Building these images means an Angular production build and a Maven
+# `package` before `docker build` — the whole of the build workflow's two jobs. Duplicating that here
+# would give two definitions of how the applications are built, and they would drift. To stand an
+# environment up from nothing, run Build-ProcessPuzzle-Testbed-Apps on `develop` and let it call this
+# workflow, or dispatch this one with a sha-<commit> that already exists in GHCR.
+#
+# `image_tag` is therefore required, not optional.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [ STAGE, PROD ]
+        default: STAGE
+      image_tag:
+        description: "The existing sha-<commit> tag to promote (this workflow never builds)"
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      image_tag:
+        type: string
+        required: true
+
+concurrency:
+  # One deployment of one environment at a time. Never cancel in flight: a half-applied deployment is
+  # worse than a queued one.
+  group: deploy-testbed-apps-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      env_tag: ${{ steps.resolve.outputs.env_tag }}
+    steps:
+      - id: resolve
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'STAGE' }}
+        run: |
+          set -euo pipefail
+          echo "environment=${ENVIRONMENT}" >> "$GITHUB_OUTPUT"
+          # The moving tag the Coolify resources watch: `stage` / `prod`, lower case because a Docker
+          # tag is case-sensitive.
+          echo "env_tag=$(echo "${ENVIRONMENT}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+  # Promotion re-tags rather than rebuilds, so the exact bytes verified on stage are what reach
+  # production — docs/build-deploy-strategy.md §9. `imagetools create` copies the manifest inside the
+  # registry; nothing is pulled, built or pushed.
+  promote:
+    needs: resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-tag the verified images
+        env:
+          SOURCE_TAG: ${{ inputs.image_tag }}
+          TARGET_TAG: ${{ needs.resolve.outputs.env_tag }}
+        run: |
+          set -euo pipefail
+          for IMAGE in processpuzzle-testbed-frontend processpuzzle-testbed-backend; do
+            echo "::group::${IMAGE}: ${SOURCE_TAG} -> ${TARGET_TAG}"
+            docker buildx imagetools create \
+              --tag "ghcr.io/zszs/${IMAGE}:${TARGET_TAG}" \
+              "ghcr.io/zszs/${IMAGE}:${SOURCE_TAG}"
+            echo "::endgroup::"
+          done
+
+  deploy:
+    needs: [ resolve, promote ]
+    runs-on: ubuntu-latest
+    # Resolves the per-environment secrets and variables below.
+    environment: ${{ needs.resolve.outputs.environment }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      # One webhook per Application resource, so the two applications stay independently
+      # redeployable even though one workflow drives both. A resource that has not been created yet
+      # has no webhook secret; that warns rather than fails, so the half that does exist still
+      # deploys during the roll-out.
+      - id: webhooks
+        name: Resolve the configured webhooks
+        env:
+          FRONTEND_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_FRONTEND }}
+          BACKEND_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_BACKEND }}
+        run: |
+          set -euo pipefail
+          for PAIR in "frontend:${FRONTEND_WEBHOOK}" "backend:${BACKEND_WEBHOOK}"; do
+            NAME="${PAIR%%:*}"
+            VALUE="${PAIR#*:}"
+            if [ -n "${VALUE}" ]; then
+              echo "${NAME}=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${NAME}=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::No COOLIFY_WEBHOOK_TESTBED_$(echo "${NAME}" | tr '[:lower:]' '[:upper:]') in this environment — the ${NAME} resource was not redeployed."
+            fi
+          done
+
+      # The backend first: the frontend's healthcheck calls /home, and a browser reaching it before
+      # the API answers is the first thing anyone notices.
+      - name: Redeploy the backend
+        if: steps.webhooks.outputs.backend == 'true'
+        uses: ./.github/actions/coolify-deploy
+        with:
+          webhook: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_BACKEND }}
+          token: ${{ secrets.COOLIFY_TOKEN }}
+
+      - name: Redeploy the frontend
+        if: steps.webhooks.outputs.frontend == 'true'
+        uses: ./.github/actions/coolify-deploy
+        with:
+          webhook: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_FRONTEND }}
+          token: ${{ secrets.COOLIFY_TOKEN }}
+
+      # Best-effort: a red workflow should mean a red deployment. Skipped when the environment
+      # declares neither URL, since a stack behind a proxy need not expose either publicly.
+      - name: Wait for the applications to report ready
+        if: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL != '' || vars.TESTBED_BACKEND_PUBLIC_URL != '' }}
+        env:
+          TESTBED_FRONTEND_PUBLIC_URL: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL }}
+          TESTBED_BACKEND_PUBLIC_URL: ${{ vars.TESTBED_BACKEND_PUBLIC_URL }}
+        run: |
+          set -uo pipefail
+          # The backend's own start_period is 420s on a first start against an empty database, where
+          # Spring Modulith's ArchUnit pass is joined by the metadata seeding — so this waits longer
+          # than the infrastructure gate does.
+          DEADLINE=$(( $(date +%s) + 600 ))
+          for PROBE in "${TESTBED_BACKEND_PUBLIC_URL:+${TESTBED_BACKEND_PUBLIC_URL}/actuator/health}" \
+                       "${TESTBED_FRONTEND_PUBLIC_URL:+${TESTBED_FRONTEND_PUBLIC_URL}/home}"; do
+            [ -z "${PROBE}" ] && continue
+            echo "Probing ${PROBE}"
+            until curl -fsS -o /dev/null "${PROBE}"; do
+              if [ "$(date +%s)" -ge "${DEADLINE}" ]; then
+                echo "::error::${PROBE} did not answer 200 within 10 minutes."
+                exit 1
+              fi
+              sleep 10
+            done
+            echo "  ready"
+          done

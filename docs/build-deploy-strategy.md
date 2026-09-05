@@ -164,7 +164,8 @@ documents where each is consumed.
 
 | Secret | Used for |
 |---|---|
-| `COOLIFY_WEBHOOK` | full deploy webhook URL, including `?uuid=` |
+| `COOLIFY_WEBHOOK` | full deploy webhook URL of the **infrastructure** Docker Compose resource, including `?uuid=` |
+| `COOLIFY_WEBHOOK_TESTBED_FRONTEND` / `COOLIFY_WEBHOOK_TESTBED_BACKEND` | the same, one per testbed **Application** resource. Missing one warns rather than fails, so the resources can be created one at a time |
 | `COOLIFY_TOKEN` | Coolify API token, `deploy` permission only |
 | `POSTGRES_PASSWORD` | Keycloak's own DB role |
 | `PROCESSPUZZLE_DB_PASSWORD` | the application role created by `10-init-db.sh` |
@@ -175,6 +176,30 @@ documents where each is consumed.
 Two optional **variables** (`vars`, not secrets) enable the readiness gate:
 `KEYCLOAK_PUBLIC_URL` and `MINIO_PUBLIC_URL`. The step is skipped when neither is set, since
 Keycloak's health endpoint lives on its management port and a reverse proxy need not expose it.
+`Deploy-Testbed-Apps` has the equivalent pair, `TESTBED_FRONTEND_PUBLIC_URL` and
+`TESTBED_BACKEND_PUBLIC_URL`, with a longer deadline: the backend's own `start_period` is 420 s on a
+first start against an empty database.
+
+### The testbed pair — [`build-testbed-apps.yml`](../.github/workflows/build-testbed-apps.yml) + [`deploy-testbed-apps.yml`](../.github/workflows/deploy-testbed-apps.yml)
+
+The recipe above, applied. Two differences worth knowing, both forced by the applications needing a
+compile before they can be packaged:
+
+- **The build workflow builds artifacts first.** Both Dockerfiles are packaging-only — they `COPY
+  dist/…` and nothing else — so an Angular production build and a Maven `package` run before
+  `docker build`, in two parallel jobs (the halves share no toolchain). This is also why **Coolify
+  cannot build these images**: it clones the repo, finds no `dist/`, and fails. The same lesson as
+  §11's third bullet, reached from the other direction.
+- **The deploy workflow has no build escape hatch.** `Deploy-Infrastructure` can build the five
+  images from the current ref; duplicating an Angular and a Maven build here would give two
+  definitions of how the applications are built, and they would drift. `image_tag` is therefore
+  required. To stand an environment up from nothing, run the build workflow on `develop`.
+
+One `sha-<commit>` serves every environment. Neither Dockerfile declares an `ARG`, so the
+`CICD_STAGE` build-arg passed by `build-image/action.yml` and `docker-compose-apps.yaml` is dead
+config; the frontend's stage is chosen at container start, where `docker-entrypoint.sh` re-renders
+`assets/runtime-env.json` from `PIPELINE_STAGE` and `FIREBASE_API_KEY` over whatever the build baked,
+and every `run-time-conf/config.<stage>.json` is committed and already in the bundle.
 
 ## 11. Three things to know about Coolify
 
@@ -189,5 +214,11 @@ step once the manual path is proven.
 
 ## 12. Still open
 
-- The six per-app workflows, and the per-app Coolify **Application** resources they deploy to. `docker-compose-apps.yaml` is the holding position until then.
+- The remaining per-app workflows. The testbed stack's two are done (§10); the four in
+  `processpuzzle-biz` follow the same pair. `docker-compose-apps.yaml` is the holding position until
+  every app has its own Coolify **Application** resource.
+- Retiring `.github/actions/build-image`, which still pushes the frontend to Docker Hub as
+  `zsuffazs/processpuzzle-testbed-frontend` from the Firebase deploy workflow, alongside a
+  `zsuffazs/json-server` that GHCR already supersedes. Two registries publishing the same
+  application is one more than the promotion model can reason about.
 - Creating the Coolify project, resources and environment variables — manual, one-off, and a precondition for the `deploy` job to do anything.
