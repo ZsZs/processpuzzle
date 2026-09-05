@@ -170,3 +170,15 @@ jobs:
             done
             echo "  ready"
           done
+
+      # The integration test the deleted Firebase deploy workflow used to run after a STAGE deploy.
+      # Gated the same way as the readiness poll, so it stays dormant until the environment declares
+      # a public URL — the e2e project reads the host it targets from
+      # apps/processpuzzle-testbed-e2e/env/.env.<environment>, so that file has to agree with it.
+      - name: Integration test against the deployed environment
+        if: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL != '' }}
+        uses: ./.github/actions/e2e-test
+        with:
+          base_dir: 'apps/processpuzzle-testbed-e2e'
+          target_environment: ${{ needs.resolve.outputs.env_tag }}
+          test_scope: ${{ needs.resolve.outputs.env_tag == 'prod' && 'smoke' || 'full' }}

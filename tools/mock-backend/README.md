@@ -29,5 +29,5 @@ seed files (a `db.js` generator plus an `org-scope.js` middleware that mapped
 npm run run-mock-backend          # from the workspace root, watches db.json on :3000
 ```
 
-The Docker image (`tools/docker/json-server/Dockerfile`) runs `npm start` from this directory, and the
-Firebase `jsonServer` function serves the same `db.json` under `/api` after `npm run sync-db` copies it.
+The Docker image (`tools/docker/json-server/Dockerfile`) runs `npm start` from this directory, which is how
+the `json-server` service in `tools/docker/docker-compose-infrastructure.yaml` serves the same `db.json`.

@@ -167,8 +167,7 @@ Why events rather than direct dependencies:
 - **Auditability.** The event stream doubles as the history of *why* an entity reached its current state.
 
 On the backend the events are Spring application events (in-process, transactional). On the frontend they are
-signal-based store notifications. On Firebase, Firestore triggers and Pub/Sub carry the same events between
-Cloud Functions.
+signal-based store notifications.
 
 ### Feature maturity
 The platform is being built feature by feature; the architecture above is the target, and the parts are at
@@ -185,28 +184,13 @@ different stages:
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without
 reshaping the whole.
 
-### Deployment topologies
-The same codebase deploys to **two platforms**, chosen per environment. The application code is identical; only
-the adapters bound at startup differ — `BaseEntityFirestoreService` versus `BaseEntityRestService`, OIDC against
-Firebase Auth versus Keycloak, Firebase Storage versus MinIO.
+### Deployment topology
+Every environment — `ci`, `stage` and `prod` — runs the **same self-hosted Docker Compose topology**, deployed
+by Coolify. One codebase, one target: see [Build and deployment](/docs/build-deploy-strategy.md).
 
 ```mermaid
 graph LR
-  subgraph FB["Platform 1 — Firebase (serverless)"]
-    fbHost["Hosting<br/>Angular bundle"]
-    fbAuth["Firebase Auth<br/>identity"]
-    fbFn["Cloud Functions<br/>/api/** rewrite"]
-    fbFs["Firestore<br/>entities, rules, definitions"]
-    fbSt["Storage<br/>documents"]
-    fbHost --> fbAuth
-    fbHost --> fbFn
-    fbHost --> fbFs
-    fbFn --> fbFs
-    fbFs -. "triggers / Pub-Sub" .-> fbFn
-    fbHost --> fbSt
-  end
-
-  subgraph DC["Platform 2 — Docker Compose (self-hosted)"]
+  subgraph DC["Docker Compose (self-hosted, deployed by Coolify)"]
     nginx["NgInx<br/>serves Angular, reverse proxy"]
     boot["Spring Boot Modulith<br/>processpuzzle-testbed-backend"]
     kc["Keycloak<br/>identity (+ PostgreSQL)"]
@@ -219,16 +203,14 @@ graph LR
     kc --> pg
   end
 
-  code["One codebase<br/>Angular libs + Spring Boot libs"] --> FB
-  code --> DC
+  code["One codebase<br/>Angular libs + Spring Boot libs"] --> DC
 ```
 
-**Firebase** — `firebase.json` wires Hosting (the Angular bundle from `dist/apps/*/browser`), an `/api/store/**`
-rewrite to the `objectStore` Cloud Function and an `/api/**` one to `jsonServer`, Firestore (rules + indexes),
-and Storage rules. The full emulator suite (auth, firestore, functions, storage, pubsub, hosting) runs the same
-topology locally. A real project additionally needs three manual GCP settings the deploy cannot make for itself
-— default Storage bucket, token-creator grant for signed URIs, public invoker on `objectStore`; see
-[Google Cloud Platform (per Firebase project)](/.github/README.md#google-cloud-platform-per-firebase-project).
+That the platform *can* run elsewhere is a property of its adapters rather than of a second deployment:
+`base-entity` binds `BaseEntityRestService` or `BaseEntityFirestoreService`, and `auth` binds Keycloak or
+Firebase Auth, all chosen at run time from `run-time-conf/config.<stage>.json`. The Firestore and Firebase-Auth
+adapters remain part of the framework for consumers who want them; ProcessPuzzle itself no longer deploys to
+Firebase, and nothing in this repository builds or configures a Firebase project.
 
 **Docker Compose** — `tools/docker/docker-compose-infrastructure.yaml` (the shared services, one
 definition for `ci` / `stage` / `prod`, parameterized by `tools/docker/env/.env.<environment>`,
@@ -241,8 +223,8 @@ for identity, PostgreSQL behind both, and MinIO for object storage behind `proce
 is deployed **once per application stack** — same image, its own database, realm and bucket prefix each; see
 [Application stacks](/docs/application-stacks.md).
 
-Running both topologies in CI is deliberate: it keeps platform-specific concerns confined to the adapter layer,
-so neither platform can quietly become the only one that works.
+CI runs this same topology rather than a simplified stand-in, which is what keeps deployment-specific concerns
+confined to the adapter layer instead of leaking into the applications.
 
 ## Theming
 The framework ships a small set of **named brand colors** as CSS custom properties, defined in
@@ -331,7 +313,6 @@ Because the tokens cascade at runtime, no rebuild of the framework libraries is 
 - **ESLint 10** with Angular, TypeScript, and Prettier plugins
 - **Prettier** for code formatting
 ### Backend & Development Tools
-- **Firebase Functions** for serverless backend
 - **json-server** for API mocking
 - **oauth2-mock-server** for OAuth testing
 ### Monorepo

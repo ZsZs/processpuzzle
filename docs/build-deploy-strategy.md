@@ -217,8 +217,7 @@ step once the manual path is proven.
 - The remaining per-app workflows. The testbed stack's two are done (§10); the four in
   `processpuzzle-biz` follow the same pair. `docker-compose-apps.yaml` is the holding position until
   every app has its own Coolify **Application** resource.
-- Retiring `.github/actions/build-image`, which still pushes the frontend to Docker Hub as
-  `zsuffazs/processpuzzle-testbed-frontend` from the Firebase deploy workflow, alongside a
-  `zsuffazs/json-server` that GHCR already supersedes. Two registries publishing the same
-  application is one more than the promotion model can reason about.
+- Confirming the `stage` / `prod` DNS names. `tools/docker/env/.env.<environment>` and
+  `apps/processpuzzle-testbed-frontend/src/run-time-conf/config.<stage>.json` both assume
+  `<stage>.<role>.processpuzzle.com`; nothing has verified those records exist.
 - Creating the Coolify project, resources and environment variables — manual, one-off, and a precondition for the `deploy` job to do anything.

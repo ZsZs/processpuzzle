@@ -20,7 +20,7 @@ The pipeline is **project-scoped**: every publishable library and application ow
 | `util` | `build-util.yml` | `release-util.yml` | `libs/js-shared/util/**` |
 | `widgets` | `build-widgets.yml` | `release-widgets.yml` | `libs/js-shared/widgets/**` |
 | `api-contracts` (Java) | `build-api-contracts.yml` | `release-api-contracts.yml` | `libs/java-shared/api-contracts/**` |
-| `processpuzzle-testbed-frontend` | `build-processpuzzle-testbed-frontend.yml` + `deploy-processpuzzle-testbed-frontend.yml` | `release-processpuzzle-testbed-frontend.yml` | `apps/processpuzzle-testbed-frontend/**` |
+| `processpuzzle-testbed-frontend` | `build-processpuzzle-testbed-frontend.yml` + `build-testbed-apps.yml` | `release-processpuzzle-testbed-frontend.yml` | `apps/processpuzzle-testbed-frontend/**` |
 
 Two scheduled / maintenance workflows live next to these: [`ng-update.yml`](workflows/ng-update.yml) runs Angular dependency updates every Mon/Wed/Fri at 05:30 UTC, and Dependabot is configured via [`dependabot.yml`](dependabot.yml).
 
@@ -36,17 +36,17 @@ For the testbed application the build also runs:
 - [E2E Test](#e2e-test)
 
 ### `develop`
-The `develop` branch holds the potentially shippable version. Pushes here (and PRs targeting it) run the same `Build-*` workflows as feature branches, plus — for testbed paths only — [`deploy-processpuzzle-testbed-frontend.yml`](workflows/deploy-processpuzzle-testbed-frontend.yml):
+The `develop` branch holds the potentially shippable version. Pushes here (and PRs targeting it) run the same `Build-*` workflows as feature branches, plus — for testbed paths only — [`build-testbed-apps.yml`](workflows/build-testbed-apps.yml):
 - [Lint, Unit-Test, Sonar Scan](#lint-unit-test-sonar-scan)
 - [Docker Compose, Publish](#docker-compose-publish)
-- [Deploy to Firebase (STAGE)](#deploy-to-firebase)
+- [Deploy the testbed applications (STAGE)](#deploy-the-testbed-applications)
 - [Integration Test](#integration-test)
 
 ### `release/<project>/*`
 Short-lived release branches trigger the matching `Release-*` workflow. Once the release succeeds, the branch is deleted. The workflow:
 - [Lint, Unit-Test, Sonar Scan](#lint-unit-test-sonar-scan)
 - For libraries: [NPM Publish](#npm-publish) (JS libraries) or [Maven Central Publish](#maven-central-publish) (Java libraries) + [GitHub Release](#github-release)
-- For the testbed app: [Docker Compose, Publish](#docker-compose-publish), [Deploy to Firebase (PROD)](#deploy-to-firebase) and [Smoke Test](#smoke-test), then NPM publish + GitHub Release
+- For the testbed app: [Smoke Test](#smoke-test) against the currently deployed PROD, then NPM publish + GitHub Release. Deploying PROD is a separate, deliberate [Deploy-Testbed-Apps](#deploy-the-testbed-applications) dispatch that promotes a verified image.
 
 ### `master`
 A holder of released versions only — no workflow is bound to it.
@@ -56,7 +56,8 @@ Workflows are gated by both **branch** and **path filter**, so unrelated changes
 
 - **Build workflows** trigger on `push` to `feature/**` and `develop`, and on `pull_request` to `develop`, restricted to the project's `paths:` filter.
 - **`build-processpuzzle-testbed-frontend.yml`** additionally has a `workflow_run:` trigger that fires when `Build-Auth`, `Build-Base-Entity-Frontend`, `Build-Util`, or `Build-Widgets` complete — so the testbed is re-validated whenever an upstream library build runs.
-- **`deploy-processpuzzle-testbed-frontend.yml`** triggers only on `push` to `develop` under `apps/processpuzzle-testbed-frontend/**` and runs in the **STAGE** GitHub Environment.
+- **`build-testbed-apps.yml`** triggers on `push` to `develop` and `pull_request` to `develop` under either testbed app, `libs/**`, or their Dockerfiles. PRs **build only**; `develop` publishes to GHCR and then calls the deploy workflow. There is no `feature/**` trigger — `build-processpuzzle-testbed-frontend.yml` already builds both halves there.
+- **`deploy-testbed-apps.yml`** has **no `push` trigger** — `workflow_call` from the build workflow, or `workflow_dispatch` for a **PROD** promotion. It never builds; `image_tag` is required.
 - **Release workflows** trigger on `push` to `release/<project>/*` under the project's path filter. The testbed release runs in the **PROD** GitHub Environment.
 - **`build-infrastructure.yml`** triggers on any change under `tools/docker/**` or `tools/mock-backend/**` — `push` to `feature/**` and `develop`, and `pull_request` to `develop`. Feature branches and PRs **build only**; `develop` also pushes to GHCR and then calls the deploy workflow.
 - **`deploy-infrastructure.yml`** has **no `push` trigger** — it is reached by `workflow_call` from the build workflow, or by `workflow_dispatch` for a **PROD** promotion. It runs in the **STAGE** or **PROD** GitHub Environment depending on its `environment` input.
@@ -68,11 +69,9 @@ All workflows compose the same low-level steps via reusable composite actions:
 | Action | Purpose |
 | --- | --- |
 | [`lint-test-build`](actions/lint-test-build/action.yml) | Setup Node 24 + Java 25 (Temurin), install deps with `--legacy-peer-deps --ignore-scripts`, run `lint-<project>` and `test-<project>`, sanitize lcov paths, run SonarCloud scan, generate the environment file with the target `cicd_stage`, run `build-<project>`, and upload the coverage report as the `test-coverage-report-<sha>` artifact. Used by every `Build-*`, `Deploy-*`, and `Release-*` workflow. |
-| [`build-image`](actions/build-image/action.yml) | Log in to DockerHub and build three images via `docker/build-push-action` — `zsuffazs/json-server`, `zsuffazs/<app>-firebase`, and `zsuffazs/processpuzzle-testbed-frontend` — tagging with both the supplied `app_version` (defaults to `github.sha`) and `latest`. |
 | [`e2e-test`](actions/e2e-test/action.yml) | Install Playwright browsers and run `npm run e2e-test-processpuzzle-testbed` against the requested `target_environment` (`ci`, `stage`, or `prod`). Uploads the Playwright report as the `playwright-report-<sha>` artifact. |
-| [`deploy-to-firebase`](actions/deploy-to-firebase/action.yml) | Deploys to Firebase Hosting using `FirebaseExtended/action-hosting-deploy`. Project ID and channel are inputs (e.g. `processpuzzle-testbed-stage` / `live`). |
 | [`deploy-to-aws`](actions/deploy-to-aws/action.yml) | Zips `dist/apps/processpuzzle-testbed-frontend/browser`, uploads to the `processpuzzle-testbed` S3 bucket, then creates and activates a new Elastic Beanstalk application version on `ProcessPuzzleTestbed-Dev` (eu-central-1). Currently not referenced by any workflow — kept for direct-asset EB deployments. |
-| [`coolify-deploy`](actions/coolify-deploy/action.yml) | Triggers a redeploy of one Coolify resource: a single `curl` against the deploy webhook URL the resource's Webhook page prints, with the API token as a bearer header. Taking the whole URL from a secret keeps the action independent of Coolify's URL shape, and written to be reused by the six per-app workflows. Used by `deploy-infrastructure.yml`. |
+| [`coolify-deploy`](actions/coolify-deploy/action.yml) | Triggers a redeploy of one Coolify resource: a single `curl` against the deploy webhook URL the resource's Webhook page prints, with the API token as a bearer header. Taking the whole URL from a secret keeps the action independent of Coolify's URL shape, and written to be reused by the per-app workflows. Used by `deploy-infrastructure.yml` and `deploy-testbed-apps.yml`. |
 | [`release-java`](actions/release-java/action.yml) | Configures Node, Java 25 and a GPG key, reads the project version from the POM, signs and deploys artifacts to Maven Central via `mvn deploy -Prelease`, then creates a GitHub Release tagged `<project>@<version>`. Used by `release-api-contracts.yml`. |
 
 ## Tasks
@@ -80,7 +79,7 @@ All workflows compose the same low-level steps via reusable composite actions:
 Provided by [`lint-test-build`](actions/lint-test-build/action.yml). Each project exposes npm scripts `lint-<project>`, `test-<project>`, `config-env-<project>`, and `build-<project>` that the action invokes. Coverage is normalised by `tools/scripts/sanitize-lcov.cjs` so SonarCloud can resolve source paths from the monorepo root; the per-project `sonar-project.properties` file points `sonar.projectBaseDir` at the project directory.
 
 ### Docker Compose, Publish
-For `build-processpuzzle-testbed-frontend.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-infrastructure.yaml` plus `docker-compose-build.yaml` (the infrastructure file is pull-only, so this overlay restores its `build:` sections) and `docker-compose-apps.yaml`, with `--env-file tools/docker/env/.env.ci`, so the Playwright suite can run against a real stack. For `deploy-processpuzzle-testbed-frontend.yml` and `release-processpuzzle-testbed-frontend.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
+For `build-processpuzzle-testbed-frontend.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-infrastructure.yaml` plus `docker-compose-build.yaml` (the infrastructure file is pull-only, so this overlay restores its `build:` sections) and `docker-compose-apps.yaml`, with `--env-file tools/docker/env/.env.ci`, so the Playwright suite can run against a real stack. Publishing the application images is [`build-testbed-apps.yml`](workflows/build-testbed-apps.yml)’s job, and it publishes to GHCR.
 
 The **infrastructure** images are the other half, and they are two workflows rather than one:
 
@@ -95,16 +94,13 @@ Splitting them this way is what makes a promotion a re-tag: `develop` builds onc
 Runs in the `feature/**` testbed build against the `ci` environment using the [`e2e-test`](actions/e2e-test/action.yml) action.
 
 ### Integration Test
-Runs in `deploy-processpuzzle-testbed-frontend.yml` against the deployed STAGE environment, using the same `e2e-test` action with `target_environment: stage`.
+Runs in `deploy-testbed-apps.yml` against the deployed environment, using the same `e2e-test` action with `target_environment` set to `stage` or `prod`. Skipped unless the environment declares `TESTBED_FRONTEND_PUBLIC_URL`.
 
 ### Smoke Test
 Runs in `release-processpuzzle-testbed-frontend.yml` against the deployed PROD environment, using `e2e-test` with `target_environment: prod`.
 
-### Deploy to Firebase
-Both `deploy-processpuzzle-testbed-frontend.yml` (STAGE → Firebase project `processpuzzle-testbed-stage`) and `release-processpuzzle-testbed-frontend.yml` (PROD → Firebase project `processpuzzle-testbed`) deploy to the `live` channel via [`deploy-to-firebase`](actions/deploy-to-firebase/action.yml).
-
 ### Deploy to AWS
-[`deploy-to-aws`](actions/deploy-to-aws/action.yml) is checked in but no workflow references it — testbed deployments target Firebase Hosting. It remains available for direct-asset EB deployments. Its container-based counterpart, `deploy-to-aws-eb`, was **deleted**: its only real step templated `tools/docker/docker-compose-prod.yaml`, which no longer exists, and no workflow referenced it.
+[`deploy-to-aws`](actions/deploy-to-aws/action.yml) is checked in but no workflow references it — testbed deployments target Coolify. It remains available for direct-asset EB deployments. Its container-based counterpart, `deploy-to-aws-eb`, was **deleted**: its only real step templated `tools/docker/docker-compose-prod.yaml`, which no longer exists, and no workflow referenced it.
 
 ### Deploy the shared infrastructure
 `deploy-infrastructure.yml` builds/pushes the infrastructure images and then calls [`coolify-deploy`](actions/coolify-deploy/action.yml) with the target environment's `COOLIFY_WEBHOOK` and `COOLIFY_TOKEN`, followed by a best-effort readiness poll of Keycloak and MinIO (skipped unless the environment declares `KEYCLOAK_PUBLIC_URL` / `MINIO_PUBLIC_URL` as variables), so that a red workflow means a red stack.
@@ -129,16 +125,14 @@ Every release workflow finishes by creating a tag and release via `elgohr/Github
 | --- | --- |
 | `GITHUB_TOKEN` | Automatic — checkout, releases, Sonar callback |
 | `SONAR_TOKEN` | SonarCloud scan |
-| `FIREBASE_TOKEN` | Injected as `FIREBASE_API_KEY` into the generated env file |
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase Hosting deployment |
+| `FIREBASE_TOKEN` | Injected as `FIREBASE_API_KEY` into the generated env file. Still required: the testbed container’s entrypoint fails fast on an unset one, and the Firebase-Auth / Firestore adapters read it when an application chooses them |
 | `NPM_TOKEN` | npm publish (`NODE_AUTH_TOKEN`) |
-| `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | Pushing images to DockerHub |
 | `CENTRAL_TOKEN_USERNAME`, `CENTRAL_TOKEN_PASSWORD` | Maven Central deploy |
 | `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE` | Signing Maven artifacts |
 
 ### GitHub Environments
-- **STAGE** — used by `deploy-processpuzzle-testbed-frontend.yml`; gates STAGE Firebase deploys.
-- **PROD** — used by `release-processpuzzle-testbed-frontend.yml`; gates PROD Firebase deploys and npm publish.
+- **STAGE** — used by `deploy-infrastructure.yml` and `deploy-testbed-apps.yml`; gates STAGE Coolify deploys.
+- **PROD** — used by `deploy-testbed-apps.yml` and `release-processpuzzle-testbed-frontend.yml`; gates PROD Coolify deploys and npm publish.
 
 
 ### Tool versions

@@ -5,13 +5,7 @@
     "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
-    "FIREBASE_CONFIGURATION": {
-      "projectId": "demo-processpuzzle-testbed",
-      "FIRESTORE_EMULATOR_HOST": "localhost",
-      "FIRESTORE_EMULATOR_PORT": 8081,
-      "FIREBASE_AUTH_EMULATOR_HOST": "localhost",
-      "FIREBASE_AUTH_EMULATOR_PORT": 9099
-    }
+    "FIREBASE_CONFIGURATION": {}
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",

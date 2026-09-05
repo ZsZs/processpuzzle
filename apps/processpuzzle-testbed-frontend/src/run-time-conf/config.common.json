@@ -1,19 +1,13 @@
 {
   "BASE_CONFIGURATION": {
     "BACKEND_SERVICE_PROVIDER": "rest",
-    "DEPLOYMENT_ENVIRONMENT": "firebase",
+    "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
     "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
-    "FIREBASE_CONFIGURATION": {
-      "authDomain": "processpuzzle-testbed-stage.firebaseapp.com",
-      "projectId": "processpuzzle-testbed-stage",
-      "storageBucket": "processpuzzle-testbed-stage.firebasestorage.app",
-      "messagingSenderId": "86206865743",
-      "appId": "1:86206865743:web:89f5140e6e0f63db68253a"
-    },
+    "FIREBASE_CONFIGURATION": {},
     "APPLICATION_VERSION": "1.4.0"
   },
   "LANGUAGE_CONFIGURATION": {
@@ -47,8 +41,8 @@
     ]
   },
   "AUTHENTICATION_CONFIGURATION": {
-    "AUTHENTICATION_PROVIDER": "firebase-auth",
-    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:9099/"
+    "AUTHENTICATION_PROVIDER": "keycloak",
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070"
   },
   "LOGGING_CONFIGURATION": {
     "level": "info",

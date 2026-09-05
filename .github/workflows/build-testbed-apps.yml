@@ -12,8 +12,8 @@ name: Build-ProcessPuzzle-Testbed-Apps
 # makes the registry the only sane hand-off point.
 #
 # ONE IMAGE PER STACK, NOT PER ENVIRONMENT. Neither Dockerfile declares an `ARG`, so the
-# `CICD_STAGE` build-arg that .github/actions/build-image/action.yml and docker-compose-apps.yaml
-# pass is dead config. The frontend's stage is chosen at *container start*: docker-entrypoint.sh
+# `CICD_STAGE` build-arg docker-compose-apps.yaml still passes is dead config. The frontend's stage
+# is chosen at *container start*: docker-entrypoint.sh
 # renders assets/runtime-env.json from `PIPELINE_STAGE` and `FIREBASE_API_KEY`, overwriting the file
 # the build baked, and every run-time-conf/config.<stage>.json is committed and therefore already in
 # the bundle. So `sha-<commit>` can be promoted from stage to prod unchanged — strategy §9.

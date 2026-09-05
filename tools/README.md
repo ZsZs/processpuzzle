@@ -6,8 +6,7 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 | Path | Purpose |
 | --- | --- |
-| [`docker/`](./docker) | Dockerfiles and compose stacks for the testbed, backend, and supporting services (Keycloak, MinIO, Postgres, Firebase emulators, json-server). |
-| [`firebase/`](./firebase) | Firebase emulator seed data and local Functions sources used by the Firebase container. |
+| [`docker/`](./docker) | Dockerfiles and compose stacks for the testbed, backend, and supporting services (Keycloak, MinIO, Postgres, json-server). |
 | [`httpRequests/`](./httpRequests) | IntelliJ HTTP Client environment file for ad-hoc requests against local and remote backends. |
 | [`mock-backend/`](./mock-backend) | Standalone `json-server` mock with seed `db.json` and a self-signed cert — used when the full backend stack is overkill. |
 | [`scripts/`](./scripts) | Build/release helpers: `release.ts`, `run-sonar-scanner.cjs`, `sanitize-lcov.cjs`. |
@@ -33,7 +32,7 @@ docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
   -f tools/docker/docker-compose-apps.yaml up -d --wait --build
 ```
 
-Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/10-init-db.sh`, `firebase/serve.sh`). Five infrastructure images are ProcessPuzzle's own rather than upstream, because they bake configuration that has to travel with the image; a deployment **pulls** them from GHCR, while CI and local development build them by overlaying `docker-compose-build.yaml`. pgweb is referenced by a pinned upstream tag, since the Dockerfile it used to have added nothing to `sosedoff/pgweb`.
+Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/10-init-db.sh`, `keycloak/init/bootstrap-platform-admin-client.sh`). Five infrastructure images are ProcessPuzzle's own rather than upstream, because they bake configuration that has to travel with the image; a deployment **pulls** them from GHCR, while CI and local development build them by overlaying `docker-compose-build.yaml`. pgweb is referenced by a pinned upstream tag, since the Dockerfile it used to have added nothing to `sosedoff/pgweb`.
 
 ### Services in the CI stack
 
@@ -44,8 +43,8 @@ the containers were renamed the same way.
 
 | Layer | Service | Container | Image | Host port → container | Purpose |
 | --- | --- | --- | --- | --- | --- |
-| app | `processpuzzle-testbed-frontend` | `processpuzzle-testbed-frontend` | `zsuffazs/processpuzzle-testbed-frontend` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
-| app | `testbed-backend` | `testbed-backend` | `zsuffazs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
+| app | `processpuzzle-testbed-frontend` | `processpuzzle-testbed-frontend` | `ghcr.io/zszs/processpuzzle-testbed-frontend` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
+| app | `testbed-backend` | `testbed-backend` | `ghcr.io/zszs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
 | infra | `keycloak` | `processpuzzle-keycloak` | `ghcr.io/zszs/processpuzzle-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
 | infra | `keycloak-init` | `processpuzzle-keycloak-init` | `ghcr.io/zszs/processpuzzle-keycloak-init` | — | One-shot: creates the `master`-realm service account a backend uses to manage realms and users. Idempotent. |
 | infra | `postgres` | `processpuzzle-postgres` | `ghcr.io/zszs/processpuzzle-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for each stack, one database each; volume `postgres_data`. `10-init-db.sh` still creates the admin stack's database, because the databases are shared infrastructure. |
@@ -53,7 +52,7 @@ the containers were renamed the same way.
 | infra | `minio` | `processpuzzle-minio` | `ghcr.io/zszs/processpuzzle-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`, and `init-minio.sh` still creates every stack's prefix. |
 | infra | `json-server` | `json-server` | `ghcr.io/zszs/processpuzzle-json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
 
-> **Port note.** The Firestore emulator owns host port `8081` and pgweb takes host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`). Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
+> **Port note.** pgweb takes host `8082` and still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb` — the offset dates from the Firestore emulator owning host `8081`, and is kept so existing bookmarks and the `--prefix=/pgweb` mount keep working. Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
 
 > **First start.** `tools/docker/postgresql/10-init-db.sh` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `npm run stack-clean`.
 
@@ -102,8 +101,8 @@ The platform recognizes four pipeline stages, each with a different deployment t
 | --- | --- | --- |
 | `dev` | Local `nx serve`, no Docker | Angular build assets copy `apps/processpuzzle-testbed-frontend/src/run-time-conf/*` straight into `dist/` |
 | `ci` | the compose stack on a developer machine or CI runner | Templated at container start (see below) |
-| `stage` | Firebase Hosting | Config file dropped into `<hosting-root>/run-time-conf/` by the deploy job |
-| `prod` | Firebase Hosting | Same as stage, with prod values |
+| `stage` | the same compose stack, deployed by Coolify | Templated at container start, exactly as `ci` |
+| `prod` | the same compose stack, deployed by Coolify | Same as stage, with prod values |
 
 The Angular `ConfigurationService` (`libs/js-shared/util/src/lib/runtime-configuration/configuration.service.ts`) always fetches `run-time-conf/config.common.json` plus `run-time-conf/config.<PIPELINE_STAGE>.json` from the same origin that served the app. The mechanism for *getting those files into the right place* is what differs per stage.
 
@@ -136,9 +135,9 @@ The flow:
 
 ## Stage-dependent variables (`stage` and `prod`)
 
-Firebase Hosting deploys are static-file uploads; there is no container entrypoint to template anything. The deploy job is responsible for writing the right `config.<stage>.json` next to the bundle before running `firebase deploy`. Secrets typically come from the CI provider's secret store (GitHub Actions secrets, Firebase CI config, etc.) and are injected into a `config.stage.json` / `config.prod.json` file as part of the deploy step.
+Nothing new: `stage` and `prod` run the same image through the same entrypoint as `ci`, so they differ only in the container env vars the Coolify Application resource sets — `PIPELINE_STAGE` above all, which is what selects `config.<stage>.json` from the bundle. All of `config.{dev,ci,stage,prod}.json` are committed and baked into the image, and that is precisely what lets one `sha-<commit>` be promoted from stage to prod without a rebuild — see [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §9.
 
-`config.stage.json` and `config.prod.json` are intentionally **not** committed to the repo — they exist only as deployment artifacts produced by the pipeline.
+The service hostnames in `config.stage.json` / `config.prod.json` follow the same `<stage>.<role>.processpuzzle.com` convention as `KC_HOSTNAME` in `tools/docker/env/.env.<environment>`, and carry the same caveat: **confirm them against real DNS before the first deploy.**
 
 ## Environment configuration
 

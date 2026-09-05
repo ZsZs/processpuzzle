@@ -10,10 +10,9 @@ import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/fi
 /**
  * Talks to Firestore straight from the browser, bypassing the OpenAPI contract entirely.
  *
- * @deprecated Use `BaseEntityRestService` against the contract on every platform. Firebase is
- * now served by Cloud Functions that implement the same yaml the Java backend generates from — see
- * `tools/firebase/functions/src/base-document` for the first of them — so the platform choice is a
- * deployment concern rather than an application one.
+ * @deprecated Use `BaseEntityRestService` against the contract. This adapter is kept for consumers
+ * who deploy on Firestore; ProcessPuzzle itself no longer does, so it is no longer exercised by any
+ * environment here.
  *
  * Why this path is being retired rather than kept as an option:
  * - **It is a second seam.** With an adapter chosen in the client, every feature has to be built

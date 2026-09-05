@@ -12,8 +12,10 @@
 # `prod` do not use it. `depends_on` below names services defined in the infrastructure file, so this
 # file is not usable on its own.
 #
-# The two images are still zsuffazs/* on Docker Hub. Moving the six application images to GHCR
-# belongs with the per-app resources, not with the infrastructure layer.
+# Both images are on GHCR alongside the infrastructure ones, published by
+# .github/workflows/build-testbed-apps.yml. The Docker Hub coordinates they used to carry went with
+# the `build-image` action: two registries publishing the same application is one more than the
+# promote-don't-rebuild model can reason about.
 
 networks:
   processpuzzle:
@@ -33,9 +35,7 @@ services:
     build:
       context: ../../
       dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
-      args:
-        CICD_STAGE: ci
-    image: zsuffazs/processpuzzle-testbed-frontend:latest
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG:-latest}
     container_name: processpuzzle-testbed-frontend
     environment:
       PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
@@ -75,7 +75,7 @@ services:
     build:
       context: ../../
       dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
-    image: zsuffazs/processpuzzle-testbed-backend:latest
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG:-latest}
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}

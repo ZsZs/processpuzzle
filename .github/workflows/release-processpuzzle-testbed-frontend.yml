@@ -9,7 +9,11 @@ permissions:
   pull-requests: write
   repository-projects: write
 jobs:
-  release-to-firebase-prod:
+  # Publishes the npm package and cuts the GitHub release. It no longer DEPLOYS anything: the prod
+  # container deployment is Deploy-Testbed-Apps dispatched with `environment: PROD` and a verified
+  # `sha-<commit>`, which promotes an existing image rather than building a second one here — see
+  # docs/build-deploy-strategy.md §9.
+  release-testbed-frontend:
     environment: PROD
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -52,48 +56,8 @@ jobs:
           firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'prod'
 
-      - id: build-images
-        name: Build and publish Docker images
-        uses: ./.github/actions/build-image
-        with:
-          cicd_stage: 'prod'
-          app_version: '${{ steps.package-version.outputs.current-version }}'
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Install Firebase Functions dependencies
-        working-directory: tools/firebase/functions
-        run: npm install --no-audit --no-fund
-
-      - name: Write Firebase service account key
-        id: write-sa
-        shell: bash
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          SA_PATH="${RUNNER_TEMP}/firebase-sa.json"
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$SA_PATH"
-          echo "path=$SA_PATH" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy Firebase Functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.write-sa.outputs.path }}
-        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes,storage --project processpuzzle-testbed --non-interactive --force
-
-      - id: deploy-to-firebase
-        name: Deploy to Firebase host
-        uses: ./.github/actions/deploy-to-firebase
-        with:
-          firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          project_id: processpuzzle-testbed
-          channel_id: 'live'
-          project_root: .
-
-      - name: Remove Firebase service account key
-        if: always()
-        shell: bash
-        run: rm -f "${{ steps.write-sa.outputs.path }}"
-
+      # Smoke-tests whatever is CURRENTLY deployed at prod — this workflow no longer puts it there,
+      # so a failure here means prod needs a Deploy-Testbed-Apps run, not that this release is bad.
       - id: integration-test
         name: run-integration-tests
         uses: ./.github/actions/e2e-test

@@ -4,10 +4,9 @@ import { HttpErrorResponse } from '@angular/common/http';
  * The error body every ProcessPuzzle service returns, as declared by `ErrorResponse` in
  * `shared-api.yaml` and repeated in every feature contract.
  *
- * Both backends emit it: the Spring handlers (`ApiExceptionHandler`, `DocumentApiExceptionHandler`,
- * `RuleApiExceptionHandler`, `AppApiExceptionHandler`) and the Cloud Functions
- * (`tools/firebase/functions/src/base-document`), with the same `errorId` for the same refusal — so a
- * client cannot tell which one served it.
+ * The Spring handlers emit it — `ApiExceptionHandler`, `DocumentApiExceptionHandler`,
+ * `RuleApiExceptionHandler`, `AppApiExceptionHandler` — with the same `errorId` for the same refusal,
+ * so a client cannot tell which one served it.
  *
  * This type exists because its absence was the actual defect: the body was handled as `unknown`
  * everywhere, so nothing noticed that the frontend read a `message` key no backend has ever sent, and

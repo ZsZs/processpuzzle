@@ -25,10 +25,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * {@code ApiExceptionHandler}, so nothing here duplicates those.
  *
  * <p>Bodies are the {@code ErrorResponse} of base-document-api.yaml: {@code errorId} plus
- * {@code errorText}. The ids are the same strings the Cloud Function emits for the same refusals
- * (see {@code tools/firebase/functions/src/base-document/base-document.handlers.ts}) — that is the
- * point of them. A client is served by whichever backend the deployment binds, and an id that differed
- * between the two would make the platform visible in exactly the place a client branches on it.
+ * {@code errorText}. The ids are part of the contract rather than an internal detail: a client
+ * branches on them, so they must stay stable across implementations of the same yaml.
  *
  * <p>{@link ApiAdviceOrder#FEATURE} is not decoration: without it this advice ties with core's on
  * precedence, and core's catch-all answered every refusal below with {@code 500 internal-error}.

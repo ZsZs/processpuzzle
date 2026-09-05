@@ -150,6 +150,10 @@ stays visible.
 | Tenant application | `apps/processpuzzle-ui`, container `processpuzzle-ui`, image `zsuffazs/processpuzzle-ui`, Sonar key `processpuzzle_processpuzzle_ui` | `apps/processpuzzle-biz-frontend`, container `processpuzzle-biz-frontend`, image `zsuffazs/processpuzzle-biz-frontend`, Sonar key `processpuzzle_biz_frontend`, npm package `@processpuzzle/processpuzzle-biz-frontend` (never published, so nothing to preserve), e2e project `processpuzzle-biz-e2e`. A rename only — the repurposing below is still outstanding. |
 | Tenant realm client id | `processpuzzle-ui` | `processpuzzle-biz` — `keycloak.admin.tenant-client-id` and the SPA's `AUTH_SERVICE_CONFIG.clientId` must agree, so both moved together. Realms provisioned before this hold the old client and need a `down -v` reset locally. |
 
+> The `zsuffazs/*` image coordinates above record what the rename produced at the time. Every image
+> has since moved to `ghcr.io/zszs/*` and Docker Hub is no longer published to — see
+> [`docs/build-deploy-strategy.md`](build-deploy-strategy.md) §9.
+
 ### Still to do
 
 | Area | Today | Target |

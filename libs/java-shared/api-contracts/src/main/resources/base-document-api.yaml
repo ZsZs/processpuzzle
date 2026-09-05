@@ -1354,8 +1354,7 @@ components:
         (a WidgetInstance requires id and type; a TEXT block has neither) and the flat
         form is what the Tiptap editor, DocumentContentStore and the persisted block
         records already speak. Nesting them is a deliberate follow-up, not an oversight —
-        it is a breaking payload change across the editor, the Java DocumentBlock record
-        and the Firebase functions.
+        it is a breaking payload change across the editor and the Java DocumentBlock record.
 
         Until then this is a *copy*, and copies drift: any change to the canonical
         WidgetInstance must be mirrored here by hand.

@@ -18,10 +18,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Two things matter here: the status each exception maps to, and the {@code errorId} — because the
- * Cloud Function in {@code tools/firebase/functions/src/base-document} answers the same refusals with
- * the same ids, and a client must not be able to tell which backend served it. The ids asserted below
- * are therefore a cross-implementation contract, not an internal detail.
+ * Two things matter here: the status each exception maps to, and the {@code errorId}. Clients branch
+ * on the id, and any other implementation of the same yaml has to answer the same refusals with the
+ * same ids, so the ids asserted below are a contract rather than an internal detail.
  */
 class DocumentApiExceptionHandlerTest {
 

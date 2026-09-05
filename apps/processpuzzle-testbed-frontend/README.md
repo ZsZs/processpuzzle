@@ -47,12 +47,17 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 
 | Stage | Backend | Auth provider | Notes |
 |---|---|---|---|
-| **dev** | REST `http://localhost:3000/` (common) | Keycloak `master` realm on `localhost:7070` | Firestore/Auth emulators on `8081`/`9099`, `level: debug` |
-| **ci** | REST `localhost:3000` | Keycloak `processpuzzle` realm | Same emulators; runs inside the `ci` compose stack |
-| **stage** | Firestore Cloud Functions (`...-stage.cloudfunctions.net`) | `firebase-auth` | Real Firebase project `processpuzzle-testbed-stage` |
-| **prod** | Firestore Cloud Functions | `firebase-auth` | Real Firebase prod project |
+| **dev** | REST `http://localhost:3000/` (common) | Keycloak on `localhost:7070` | `level: debug`; run `npm run stack-up-infra` for the services it talks to |
+| **ci** | REST `localhost:3000`, backend on `localhost:8080` | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
+| **stage** | REST, `stage.api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `stage.auth.processpuzzle.com` | The Coolify-deployed stack |
+| **prod** | REST, `api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
 
-`config.common.keycloak.json` is an optional override profile that can be applied via `CONFIGURATION_OVERRIDES`.
+The `stage` / `prod` hostnames follow the convention `tools/docker/env/.env.<environment>` uses for
+`KC_HOSTNAME` and carry its caveat: **confirm them against real DNS before the first deploy.**
+
+`BACKEND_SERVICE_PROVIDER` is `rest` in every stage above. `firestore` remains a supported value —
+`BaseEntityFirestoreService` and the `firebase-auth` provider are still part of the framework — but no
+ProcessPuzzle environment selects it, and nothing in this repository provisions a Firebase project.
 
 ### How the runtime layer is materialised in containers
 

@@ -117,7 +117,7 @@ across the three libs, lint (0 errors), and all three library builds.
    So it keeps a hand-maintained copy, now labelled as such in the contract with an explicit
    "copies drift, mirror changes by hand" warning. **Nesting the widget fields under a `widget`
    property is the real fix and remains open** — it is a breaking payload change across the Tiptap
-   editor, `DocumentContentStore`, the Java `DocumentBlock` record and the Firebase functions.
+   editor, `DocumentContentStore` and the Java `DocumentBlock` record.
    The frontend `Partial<WidgetInstance>` is the half of the unification that *was* achievable now.
 
 ## Phase 2 — `base-widget-frontend` (rename + split)
