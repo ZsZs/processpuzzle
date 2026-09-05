@@ -58,7 +58,8 @@ Workflows are gated by both **branch** and **path filter**, so unrelated changes
 - **`build-processpuzzle-testbed-frontend.yml`** additionally has a `workflow_run:` trigger that fires when `Build-Auth`, `Build-Base-Entity-Frontend`, `Build-Util`, or `Build-Widgets` complete — so the testbed is re-validated whenever an upstream library build runs.
 - **`deploy-processpuzzle-testbed-frontend.yml`** triggers only on `push` to `develop` under `apps/processpuzzle-testbed-frontend/**` and runs in the **STAGE** GitHub Environment.
 - **Release workflows** trigger on `push` to `release/<project>/*` under the project's path filter. The testbed release runs in the **PROD** GitHub Environment.
-- **`deploy-infrastructure.yml`** triggers on `push` to `develop` under the infrastructure paths (`tools/docker/**`, `tools/mock-backend/**`), and additionally on `workflow_dispatch` / `workflow_call` with the environment as an input. It runs in the **STAGE** or **PROD** GitHub Environment depending on that input, defaulting to **STAGE** for a `push`.
+- **`build-infrastructure.yml`** triggers on any change under `tools/docker/**` or `tools/mock-backend/**` — `push` to `feature/**` and `develop`, and `pull_request` to `develop`. Feature branches and PRs **build only**; `develop` also pushes to GHCR and then calls the deploy workflow.
+- **`deploy-infrastructure.yml`** has **no `push` trigger** — it is reached by `workflow_call` from the build workflow, or by `workflow_dispatch` for a **PROD** promotion. It runs in the **STAGE** or **PROD** GitHub Environment depending on its `environment` input.
 - **`ng-update.yml`** runs on cron `30 5 * * 1,3,5`.
 
 ## Composite Actions
@@ -81,7 +82,14 @@ Provided by [`lint-test-build`](actions/lint-test-build/action.yml). Each projec
 ### Docker Compose, Publish
 For `build-processpuzzle-testbed-frontend.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-infrastructure.yaml` plus `docker-compose-apps.yaml`, with `--env-file tools/docker/env/.env.ci`, so the Playwright suite can run against a real stack. For `deploy-processpuzzle-testbed-frontend.yml` and `release-processpuzzle-testbed-frontend.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
 
-`deploy-infrastructure.yml` is the other half: it pushes the five built **infrastructure** images to GHCR (`ghcr.io/zszs/processpuzzle-*`) with the built-in `GITHUB_TOKEN`, tagging `sha-<commit>`, the moving `stage`/`prod` tag, and `latest` on `develop` — or, given an `image_tag` input, re-tags an existing digest instead of rebuilding. See [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §10 for the per-environment secrets it needs.
+The **infrastructure** images are the other half, and they are two workflows rather than one:
+
+| Workflow | Fires on | Does |
+| --- | --- | --- |
+| `Build-ProcessPuzzle-Infrastructure` | any change under `tools/docker/**` / `tools/mock-backend/**` | Matrix-builds the five built infra images. On `develop` only, pushes them to `ghcr.io/zszs/processpuzzle-*` as `sha-<commit>` + `latest` using the built-in `GITHUB_TOKEN`, then calls the workflow below with that `sha-<commit>` |
+| `Deploy-Infrastructure` | `workflow_call` from the above, or `workflow_dispatch` | Re-tags the given digest as `:stage` / `:prod` (`docker buildx imagetools create` — no rebuild), or builds first when dispatched without an `image_tag`, then triggers the Coolify redeploy |
+
+Splitting them this way is what makes a promotion a re-tag: `develop` builds once, and both `stage` and later `prod` point at that same digest. See [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §10 for the per-environment secrets they need.
 
 ### E2E Test
 Runs in the `feature/**` testbed build against the `ci` environment using the [`e2e-test`](actions/e2e-test/action.yml) action.

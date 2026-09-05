@@ -117,23 +117,45 @@ Not yet decided with certainty — proposed as the sensible default, open to rev
 
 ## 10. The workflow template
 
-[`.github/workflows/deploy-infrastructure.yml`](../.github/workflows/deploy-infrastructure.yml) is
-the delivered shape, and the template for the six per-app workflows. It has four jobs:
+Two workflows, and the split between them is what makes §9's promotion real — the image is built
+**once**, on `develop`, and every later environment points at that same digest.
+
+### `Build-ProcessPuzzle-Infrastructure` — [`build-infrastructure.yml`](../.github/workflows/build-infrastructure.yml)
+
+Owns the trigger: **any** change under `tools/docker/**` or `tools/mock-backend/**`, on `push` to
+`feature/**` and `develop` and on `pull_request` to `develop`. Matrix-builds the five built images
+with `context: .` (every Dockerfile COPYs from the repo root) and `cache-from/to: type=gha`.
+
+- **`feature/**` and pull requests build only** — `push: false`, no registry login. Proving the
+  Dockerfiles build is the whole job; publishing a feature branch's bytes to a tag a deployment
+  watches would defeat the point of watching it. It also means a fork PR, whose `GITHUB_TOKEN` is
+  read-only, is not a special case.
+- **`develop` pushes** `sha-<commit>` and `latest`, then calls the deploy workflow with that
+  `sha-<commit>`, which reaches stage as a re-tag.
+
+The path filter is the whole directory rather than the four image folders: it over-triggers slightly,
+but GHA caching makes an unaffected image nearly free, and the alternative is a path list that
+silently rots whenever a Dockerfile gains a `COPY`.
+
+### `Deploy-Infrastructure` — [`deploy-infrastructure.yml`](../.github/workflows/deploy-infrastructure.yml)
+
+No trigger of its own; three ways in. Four jobs:
 
 | Job | Runs when | What it does |
 |---|---|---|
-| `resolve` | always | `inputs` is empty on a `push`, so the target environment defaults to `STAGE` and the derived lower-case image tag is computed once here rather than in three `if:` expressions |
-| `build-and-push` | `image_tag` empty | Matrix over the five built images. `docker/login-action` against `ghcr.io` with the built-in `GITHUB_TOKEN` (`permissions: packages: write`) → `docker/metadata-action` producing `sha-<commit>`, the moving `stage` / `prod` tag, and `latest` on `develop` → `docker/build-push-action` with `context: .` (every Dockerfile COPYs from the repo root) and `cache-from/to: type=gha` |
+| `resolve` | always | Derives the lower-case environment tag and the build-or-promote decision once, rather than repeating the expressions in three `if:` conditions |
+| `build-and-push` | `image_tag` empty | Matrix over the five images, as above. The escape hatch for standing an environment up from nothing |
 | `promote` | `image_tag` given | `docker buildx imagetools create` re-tags an existing `sha-<commit>` as `:stage` / `:prod`. Nothing is pulled, built or pushed — §9's guarantee that the exact bytes tested on stage are what reach production |
 | `deploy` | either of the two succeeded or was skipped | `environment: ${{ … }}`, so GitHub resolves the per-environment secrets, then the `coolify-deploy` action, then a best-effort readiness poll so that a red workflow means a red stack |
 
-It is reusable three ways — `workflow_dispatch` (with the environment as a choice input),
-`workflow_call` (so a caller in either repo can invoke it, as `docs/build-and-deploy-caller.yml`
-sketches), and `push` to `develop` under the infrastructure paths, which defaults to `STAGE`.
+The three ways in: `workflow_call` **with** an `image_tag` (what the build workflow does on
+`develop`); `workflow_dispatch` **with** one (promote a verified `sha-<commit>` to `PROD`); and
+`workflow_dispatch` **without** one (build from the current ref first). A caller in either repo can
+invoke it, as `docs/build-and-deploy-caller.yml` sketches.
 
-**To make one of the six app workflows from it:** replace the matrix with the single app image, drop
-the `promote` job's image loop down to that one image, and point `deploy` at that Application
-resource's own `COOLIFY_WEBHOOK`. Nothing else changes.
+**To make one of the six app workflows from this pair:** replace the matrix with the single app
+image, drop the `promote` job's image loop down to that one image, and point `deploy` at that
+Application resource's own `COOLIFY_WEBHOOK`. Nothing else changes.
 
 ### Secrets and variables per GitHub Environment
 

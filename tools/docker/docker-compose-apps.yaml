@@ -126,7 +126,11 @@ services:
       retries: 3
       timeout: 5s
       interval: 20s
-      # Measured at ~145s: Spring Modulith's actuator computes the module structure with ArchUnit at
-      # startup. 30s here spent the retries long before the application was listening, so `up`
-      # aborted with "container is unhealthy" on an application that was starting perfectly well.
-      start_period: 240s
+      # Measured at ~145s originally, and at 262s on 2026-09-05 for a FIRST start against an empty
+      # database, where Spring Modulith's ArchUnit module-structure computation is joined by the whole
+      # metadata seeding pass. 30s here spent the retries long before the application was listening,
+      # so `up` aborted with "container is unhealthy" on an application that was starting perfectly
+      # well — and 240s did the same on that first start, three seconds of probing short of the
+      # application's own 262s. Hence the headroom: a probe failing inside start_period costs nothing,
+      # while one failing outside it takes down every service that waits on this one.
+      start_period: 420s

@@ -1,9 +1,19 @@
 name: Deploy-Infrastructure
 
-# Builds and pushes the shared infrastructure images to GHCR, then triggers the Coolify redeploy of
+# Moves an environment's tag onto a set of infrastructure images and triggers the Coolify redeploy of
 # the one Docker Compose resource that runs them — docs/build-deploy-strategy.md §4. One
 # environment-parameterized workflow rather than one per environment: `stage` and `prod` differ by a
 # committed tools/docker/env/.env.<env> file plus the GitHub Environment's secrets.
+#
+# THREE WAYS IN, and no `push:` trigger of its own — Build-ProcessPuzzle-Infrastructure owns that,
+# so a change under tools/docker/ starts there and reaches this workflow via workflow_call:
+#
+#   1. workflow_call with image_tag  — what the build workflow does on `develop`: promote the digest
+#      it just pushed to :stage, then deploy.
+#   2. workflow_dispatch with image_tag — promote a verified sha-<commit> to PROD. This is the path
+#      that makes stage→prod a re-tag rather than a rebuild (strategy §9).
+#   3. workflow_dispatch without image_tag — build the five images from the current ref first. The
+#      escape hatch for standing an environment up from nothing.
 #
 # This is also the template for the six per-app workflows still to be written (strategy §10): the
 # matrix becomes one app, the `deploy` job's composite action is reused unchanged.
@@ -28,26 +38,17 @@ on:
       image_tag:
         type: string
         required: false
-  push:
-    branches: [ develop ]
-    paths:
-      - 'tools/docker/docker-compose-infrastructure.yaml'
-      - 'tools/docker/env/**'
-      - 'tools/docker/postgresql/**'
-      - 'tools/docker/keycloak/**'
-      - 'tools/docker/minio/**'
-      - 'tools/docker/json-server/**'
-      - 'tools/mock-backend/**'
-      - '.github/workflows/deploy-infrastructure.yml'
 
 concurrency:
-  # One deployment of one environment at a time; a newer commit supersedes an in-flight one.
-  group: deploy-infrastructure-${{ inputs.environment || 'STAGE' }}
+  # One deployment of one environment at a time. Never cancel in flight: a half-applied deployment is
+  # worse than a queued one.
+  group: deploy-infrastructure-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
-  # `inputs` is empty on a `push`, so the environment defaults to STAGE and the tags derived from it
-  # are computed once here rather than repeated in three `if:` expressions.
+  # Derives the lower-case image tag and the build-or-promote decision once, rather than repeating
+  # the expressions in three `if:` conditions. `STAGE` is a belt-and-braces default: workflow_dispatch
+  # defaults the choice and workflow_call requires it, so it should never be reached.
   resolve:
     runs-on: ubuntu-latest
     outputs:
