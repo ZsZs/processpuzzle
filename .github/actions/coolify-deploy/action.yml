@@ -32,10 +32,12 @@ runs:
           echo "::error::No Coolify webhook configured for this environment (COOLIFY_WEBHOOK)."
           exit 1
         fi
-        # GET, not POST: this is the shape Coolify documents for its deploy webhook
-        # (https://coolify.io/docs/applications/ci-cd/github/actions). The URL already carries
+        # POST, not GET. Coolify's CI/CD guide still shows `--request GET`
+        # (https://coolify.io/docs/applications/ci-cd/github/actions), but that example is stale:
+        # `POST /api/v1/deploy` is what the OpenAPI spec declares, and GET answers 405. Everything
+        # travels in the query string, so the request carries no body. The URL already holds
         # ?uuid=<resource-uuid>, so `force` is appended to the existing query string — a URL without
         # one is still handled, in case Coolify changes shape.
         case "${WEBHOOK}" in *\?*) SEPARATOR="&" ;; *) SEPARATOR="?" ;; esac
-        curl -fsS --request GET "${WEBHOOK}${SEPARATOR}force=${FORCE}" --header "Authorization: Bearer ${TOKEN}"
+        curl -fsS --request POST "${WEBHOOK}${SEPARATOR}force=${FORCE}" --header "Authorization: Bearer ${TOKEN}"
         echo
