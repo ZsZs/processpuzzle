@@ -1,21 +1,31 @@
-# Overlay that makes the CI topology *pull* the published images instead of
-# building them locally.
+# Overlay that makes the topology reuse the images already on disk instead of
+# building or re-pulling them.
 #
-# Every built service in docker-compose-infrastructure.yaml and
-# docker-compose-apps.yaml carries a `build:` section, and the application
-# services additionally set `pull_policy: build`. That is correct
-# for CI, whose job is to prove the images build. It is the wrong default in a
-# devcontainer or Codespace, where it means compiling an Angular application
-# and a Spring Boot backend before the stack starts.
+# It does two different jobs, because the two layers start from different places:
 #
-# Overlay this file to reuse the images already published — the infrastructure
-# images on GHCR, the application images on Docker Hub:
+# - The **application** services in docker-compose-apps.yaml carry a `build:`
+#   section and set `pull_policy: build`. That is correct for CI, whose job is to
+#   prove the images build. It is the wrong default in a devcontainer or
+#   Codespace, where it means compiling an Angular application and a Spring Boot
+#   backend before the stack starts.
+# - The **infrastructure** services in docker-compose-infrastructure.yaml do not
+#   build at all (that lives in docker-compose-build.yaml), but they set
+#   `pull_policy: always`, so that a Coolify redeploy cannot silently keep a stale
+#   `:stage` image. Locally that would hit GHCR for five images on every
+#   stop/start cycle.
+#
+# `missing` settles both: pull only when the image is absent locally.
 #   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
 #     -f docker-compose-apps.yaml -f docker-compose-pull.yaml up -d
 #
-# `missing` pulls only when the image is absent locally, so a stop/start cycle
-# reuses what is already on disk. Use `npm run stack-pull` to refresh, or
-# `npm run stack-up-build` when you deliberately want the CI build path.
+# Overlay it only *together with* docker-compose-apps.yaml — the two application
+# services below exist nowhere else, and a service with neither image nor build
+# context makes the project invalid. For the infrastructure layer on its own,
+# `up --pull missing` says the same thing in one flag; that is what
+# `npm run stack-up-infra` does.
+#
+# Use `npm run stack-pull` to refresh deliberately, or `npm run stack-up-build`
+# when you want the CI build path.
 services:
   processpuzzle-testbed-frontend:
     pull_policy: missing

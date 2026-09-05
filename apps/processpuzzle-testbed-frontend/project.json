@@ -226,7 +226,7 @@
       "executor": "nx:run-commands",
       "dependsOn": ["build", "processpuzzle-testbed-backend:build"],
       "options": {
-        "command": "docker compose --env-file tools/docker/env/.env.ci -f tools/docker/docker-compose-infrastructure.yaml -f tools/docker/docker-compose-apps.yaml build"
+        "command": "docker compose --env-file tools/docker/env/.env.ci -f tools/docker/docker-compose-infrastructure.yaml -f tools/docker/docker-compose-build.yaml -f tools/docker/docker-compose-apps.yaml build"
       }
     }
   }

@@ -14,24 +14,26 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 ## Docker stacks
 
-Three compose files at `tools/docker/`, split by **layer** rather than by environment — one shared
+Four compose files at `tools/docker/`, split by **layer** rather than by environment — one shared
 infrastructure definition serves `ci`, `stage` and `prod`, and what differs between them is an env
 file (see [Environment configuration](#environment-configuration)), not a second compose file. This
 mirrors the two Coolify resource types in [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §4:
 
-- **`docker-compose-infrastructure.yaml`** — the services every application stack shares: Keycloak (+ its one-shot `keycloak-init`), Postgres, MinIO, json-server, pgweb. Deployed as **one** Docker Compose resource, so redeploying an application never touches it.
-- **`docker-compose-apps.yaml`** — the testbed Angular application and its Spring backend, overlaid on the file above. A **holding position**: each app image becomes its own Application resource with its own deploy webhook, at which point this file goes away. `stage` and `prod` do not use it.
-- **`docker-compose-pull.yaml`** — overlay that flips the built services to `pull_policy: missing`, for a devcontainer that should not compile an Angular app and a Spring backend before the stack starts.
+- **`docker-compose-infrastructure.yaml`** — the services every application stack shares: Keycloak (+ its one-shot `keycloak-init`), Postgres, MinIO, json-server, pgweb. Deployed as **one** Docker Compose resource, so redeploying an application never touches it. **Pull-only**, on purpose: this is the file Coolify reads, and Coolify runs `docker compose build --pull` with `--project-directory` set to the repo root — a `build:` here would rebuild the promoted `:stage` image from a `build.context` that resolves against the wrong directory.
+- **`docker-compose-build.yaml`** — overlay that gives the five infrastructure services their `build:` sections back, for CI and for local development against the working tree.
+- **`docker-compose-apps.yaml`** — the testbed Angular application and its Spring backend, overlaid on the files above. A **holding position**: each app image becomes its own Application resource with its own deploy webhook, at which point this file goes away. `stage` and `prod` do not use it.
+- **`docker-compose-pull.yaml`** — overlay that flips every service to `pull_policy: missing`, for a devcontainer that should neither compile an Angular app and a Spring backend nor re-pull five infrastructure images before the stack starts.
 
-Overlay the first two to get the full CI topology — which is what every `npm run stack-*` script does:
+Overlay the first three to get the full CI topology — which is what `npm run stack-up-build` does:
 
 ```sh
 docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
   -f tools/docker/docker-compose-infrastructure.yaml \
-  -f tools/docker/docker-compose-apps.yaml up -d --wait
+  -f tools/docker/docker-compose-build.yaml \
+  -f tools/docker/docker-compose-apps.yaml up -d --wait --build
 ```
 
-Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/10-init-db.sh`, `firebase/serve.sh`). Five images are **built** rather than pulled, because they bake configuration that has to travel with the image; pgweb is referenced by a pinned upstream tag, since the Dockerfile it used to have added nothing to `sosedoff/pgweb`.
+Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/10-init-db.sh`, `firebase/serve.sh`). Five infrastructure images are ProcessPuzzle's own rather than upstream, because they bake configuration that has to travel with the image; a deployment **pulls** them from GHCR, while CI and local development build them by overlaying `docker-compose-build.yaml`. pgweb is referenced by a pinned upstream tag, since the Dockerfile it used to have added nothing to `sosedoff/pgweb`.
 
 ### Services in the CI stack
 

@@ -7,7 +7,9 @@ name: Build-ProcessPuzzle-Infrastructure
 # what proves the Dockerfiles still build; `develop` is the branch that publishes. Pushing a
 # feature branch's bytes to a tag a deployment watches would defeat the point of watching it.
 #
-# The five images are the built half of tools/docker/docker-compose-infrastructure.yaml. pgweb is
+# The five images are the ProcessPuzzle half of tools/docker/docker-compose-infrastructure.yaml —
+# the services that file names but no longer builds, since it is pull-only so that Coolify pulls what
+# this workflow published (their `build:` sections live in docker-compose-build.yaml). pgweb is
 # absent on purpose: it is referenced as a pinned upstream tag, because the Dockerfile it used to
 # have added nothing to `sosedoff/pgweb`.
 

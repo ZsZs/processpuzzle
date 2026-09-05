@@ -57,10 +57,12 @@ jobs:
         name: run-docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
-          # Newline-separated: the infrastructure layer plus the applications overlaid on it — see
-          # tools/docker/docker-compose-infrastructure.yaml.
+          # Newline-separated: the infrastructure layer, the overlay that restores its build path
+          # (the base file is pull-only so Coolify pulls rather than rebuilds — see
+          # tools/docker/docker-compose-build.yaml), plus the applications overlaid on both.
           compose-file: |
             ./tools/docker/docker-compose-infrastructure.yaml
+            ./tools/docker/docker-compose-build.yaml
             ./tools/docker/docker-compose-apps.yaml
           compose-flags: '--env-file tools/docker/env/.env.ci'
 

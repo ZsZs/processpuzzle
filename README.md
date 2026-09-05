@@ -231,7 +231,9 @@ topology locally. A real project additionally needs three manual GCP settings th
 [Google Cloud Platform (per Firebase project)](/.github/README.md#google-cloud-platform-per-firebase-project).
 
 **Docker Compose** — `tools/docker/docker-compose-infrastructure.yaml` (the shared services, one
-definition for `ci` / `stage` / `prod`, parameterized by `tools/docker/env/.env.<environment>`) and
+definition for `ci` / `stage` / `prod`, parameterized by `tools/docker/env/.env.<environment>`,
+pull-only so a deployment runs the images CI promoted — `docker-compose-build.yaml` overlays the
+`build:` sections back for CI and local development) and
 `docker-compose-apps.yaml` (the testbed halves, overlaid on it) compose NgInx serving the Angular app
 and reverse-proxying, the Spring Boot Modulith backend
 (where feature modules are Modulith modules and the events above are in-process application events), Keycloak

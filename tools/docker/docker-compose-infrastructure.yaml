@@ -15,11 +15,17 @@
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml up -d --wait
 #
-# Four of these images are built rather than pulled, because they bake configuration that has to
-# travel with the image: 10-init-db.sh, keycloak/import/*-realm.json,
-# bootstrap-platform-admin-client.sh and init-minio.sh. json-server bakes
-# tools/mock-backend/db.json. pgweb adds nothing to the upstream image, so it is referenced by a
-# pinned tag.
+# Five of these images bake configuration that has to travel with the image — 10-init-db.sh,
+# keycloak/import/*-realm.json, bootstrap-platform-admin-client.sh, init-minio.sh and
+# tools/mock-backend/db.json — so they are ProcessPuzzle images rather than upstream ones. pgweb adds
+# nothing to the upstream image, so it is referenced by a pinned tag.
+#
+# This file is nevertheless PULL-ONLY: it carries no `build:` section, and the five services set
+# `pull_policy: always`. Coolify reads this file and runs `docker compose build --pull` before `up`,
+# with `--project-directory` set to the repo root — a relative `build.context` would resolve against
+# *that*, not against this file's directory, and a local rebuild would put different bytes under the
+# promoted `:stage` / `:prod` tag anyway (docs/build-deploy-strategy.md §9, §11). CI and local
+# development get the build path back by overlaying docker-compose-build.yaml.
 
 networks:
   processpuzzle:
@@ -29,10 +35,7 @@ networks:
 
 services:
   json-server:
-    pull_policy: build
-    build:
-      context: ../../
-      dockerfile: tools/docker/json-server/Dockerfile
+    pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-json-server:${PP_IMAGE_TAG:-latest}
     container_name: json-server
     ports:
@@ -44,11 +47,7 @@ services:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
 
   keycloak:
-    build:
-      context: ../../
-      dockerfile: tools/docker/keycloak/Dockerfile
-      args:
-        CICD_STAGE: ci
+    pull_policy: always
     container_name: processpuzzle-keycloak
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak:${PP_IMAGE_TAG:-latest}
     depends_on:
@@ -101,10 +100,7 @@ services:
       start_period: 150s
 
   keycloak-init:
-    pull_policy: build
-    build:
-      context: ../../
-      dockerfile: tools/docker/keycloak/init/Dockerfile
+    pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak-init:${PP_IMAGE_TAG:-latest}
     container_name: processpuzzle-keycloak-init
     depends_on:
@@ -124,9 +120,7 @@ services:
     restart: "no"
 
   minio:
-    build:
-      context: ../../
-      dockerfile: tools/docker/minio/Dockerfile
+    pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-minio:${PP_IMAGE_TAG:-latest}
     container_name: processpuzzle-minio
     ports:
@@ -173,9 +167,7 @@ services:
       - processpuzzle
 
   postgres:
-    build:
-      context: ../../
-      dockerfile: tools/docker/postgresql/Dockerfile
+    pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG:-latest}
     container_name: processpuzzle-postgres
     ports:

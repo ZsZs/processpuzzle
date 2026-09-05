@@ -1,0 +1,46 @@
+# Overlay that restores the *build* path for the infrastructure layer.
+#
+# docker-compose-infrastructure.yaml is pull-only, so that the Coolify Docker Compose resource pulls
+# the `:stage` / `:prod` images CI promoted rather than rebuilding them on the deployment host —
+# different bytes under the same tag, and a relative `build.context` that resolves against Coolify's
+# `--project-directory` (the repo root) rather than against tools/docker. See
+# docs/build-deploy-strategy.md §9 and §11.
+#
+# CI and local development still need to prove the five images build, and to run against the version
+# in the working tree. Overlay this file for that:
+#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#     -f docker-compose-build.yaml -f docker-compose-apps.yaml up -d --wait --build
+#
+# `context: ../../` is correct here because every consumer lets compose default the project directory
+# to this file's own directory. pgweb is absent on purpose: it is a pinned upstream tag with no
+# Dockerfile.
+services:
+  json-server:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/json-server/Dockerfile
+
+  keycloak:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/keycloak/Dockerfile
+
+  keycloak-init:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/keycloak/init/Dockerfile
+
+  minio:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/minio/Dockerfile
+
+  postgres:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/postgresql/Dockerfile
