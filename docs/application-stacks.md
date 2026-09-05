@@ -65,7 +65,7 @@ response to nothing more than a row being deleted.
 [^folding]: Written upper-case here to show the derivation, but created unquoted, and PostgreSQL folds
     unquoted identifiers to lower case. The databases are therefore `processpuzzle_testbed` and
     `processpuzzle_admin`, and those are the same databases this table names. Quoting them instead
-    would force quoting at every connection site forever. See `tools/docker/postgresql/init-db.sql`.
+    would force quoting at every connection site forever. See `tools/docker/postgresql/10-init-db.sh`.
 
 ### #1 ProcessPuzzle Testbed
 
@@ -135,7 +135,7 @@ stays visible.
 
 | Area | Was | Now |
 | --- | --- | --- |
-| Persistence | H2 in-memory; PostgreSQL hosted only `keycloak` | `processpuzzle_testbed` and `processpuzzle_admin`, created by `tools/docker/postgresql/init-db.sql`; H2 is test-scope only |
+| Persistence | H2 in-memory; PostgreSQL hosted only `keycloak` | `processpuzzle_testbed` and `processpuzzle_admin`, created by `tools/docker/postgresql/10-init-db.sh`; H2 is test-scope only |
 | Backend deployments | One `processpuzzle-backend` container serving every frontend | `testbed-backend` (host 8080), one stack. `admin-backend` (host 8083) ran the same image beside it until the platform-admin extraction moved it to the private repository. |
 | Testbed realm | `processpuzzle`, registration disabled | `processpuzzle-testbed`, `registrationAllowed: true` |
 | Admin realm | `processpuzzle-platform` | `processpuzzle-admin` |
@@ -158,7 +158,7 @@ stays visible.
 | `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, no Keycloak, no platform backend |
 | `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend, in the private repository |
 | Hostnames | Ports on `localhost` — 9090 here, 9091 / 9092 in the private repository | Subdomains of `processpuzzle.com` |
-| Prod compose topology | `docker-compose-prod.yaml` no longer publishes port 80 or reverse-proxies `/api/`, because the two frontends that did have moved | Per-app deployment resources (strategy §§4-5, 9), not a compose file |
+| Prod application topology | Resolved for the shared services: `docker-compose-prod.yaml` is gone, replaced by one `docker-compose-infrastructure.yaml` plus `tools/docker/env/.env.prod`. What is still missing is a public origin for each *application* — nothing publishes port 80 or reverse-proxies `/api/` | Per-app deployment resources (strategy §§4, 10, 12), not a compose file |
 | Schema management | Hibernate `ddl-auto: update` | A migration tool |
 
 **`processpuzzle-biz-frontend` changes meaning**, and that is the one item that is more than a rename. It
@@ -174,22 +174,26 @@ whichever application ends up hosting the tenant admin surface can mount it.
   restart, so editing a seed YAML no longer reaches a stack that has already been seeded. Pre-existing
   behaviour that H2 was masking; resetting a stack means dropping its database.
 - **A renamed realm needs a volume reset.** `--import-realm` skips realms that already exist and realms
-  live in the `postgres_data` volume, so `docker compose -f tools/docker/docker-compose-ci.yaml down -v`
-  is what makes the renamed realms appear. The same reset is what creates the per-stack databases:
-  `init-db.sql` runs only on an empty data directory. The failure mode to know about is not the missing
+  live in the `postgres_data` volume, so `npm run stack-clean` is what makes the renamed realms
+  appear. The same reset is what creates the per-stack databases:
+  `10-init-db.sh` runs only on an empty data directory. The failure mode to know about is not the missing
   realm but a realm that already holds a stack's name without being the imported one — reserving the keys
   (above) stops new ones, and a volume from before that change can still carry one. See
   [`tools/docker/keycloak/README.md`](../tools/docker/keycloak/README.md#a-realm-that-already-exists-under-the-right-name-is-the-dangerous-case).
 - **Objects in the old flat buckets are unreachable.** `documents` and `images` are not prefixed, so
   nothing looks in them any more. Local development data only.
-- **Two pre-existing MinIO problems this change did not cause.** `docker-compose-prod.yaml` has no MinIO
-  service at all and `minio-config.yaml` hard-codes `http://localhost:7000`, so production object
-  storage is broken independently of any of this. And `init-minio.sh` only ever created two of the eight
-  buckets — the other six work because `UploadObject` asks `CreateBucket` for whatever it needs, which
-  is still true of the prefixed names.
-- **Only the testbed image is published by CI** (`.github/actions/build-image/action.yml`) while
-  `docker-compose-prod.yaml` pulls eight `zsuffazs/*` images. A second backend service widens a gap that
-  already existed; prod compose is kept consistent but remains unpublishable as before.
+- **One of the two MinIO problems is fixed.** `docker-compose-prod.yaml` had no MinIO service at all;
+  the split into one shared `docker-compose-infrastructure.yaml` means every environment now runs it.
+  Still open: `minio-config.yaml` hard-codes `http://localhost:7000`, so the endpoint needs making
+  per-environment before production object storage works. And `init-minio.sh` only ever created two of
+  the eight buckets — the other six work because `UploadObject` asks `CreateBucket` for whatever it
+  needs, which is still true of the prefixed names.
+- **The infrastructure images are published; the application images are not yet.**
+  [`deploy-infrastructure.yml`](../.github/workflows/deploy-infrastructure.yml) builds and pushes the
+  five built infra images to `ghcr.io/zszs/processpuzzle-*` (pgweb is referenced upstream), which is
+  what makes the shared layer deployable at all. CI still publishes only the testbed application image
+  (`.github/actions/build-image/action.yml`); the remaining application images wait on their per-app
+  workflows — see [strategy §12](build-deploy-strategy.md).
 
 ## Open question: customer tenants
 

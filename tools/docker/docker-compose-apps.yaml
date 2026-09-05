@@ -1,0 +1,136 @@
+# ── The application layer ───────────────────────────────────────────────────────────────────────
+#
+# The testbed stack's frontend and backend, overlaid on docker-compose-infrastructure.yaml:
+#
+#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#     -f tools/docker/docker-compose-infrastructure.yaml \
+#     -f tools/docker/docker-compose-apps.yaml up -d --wait
+#
+# THIS FILE IS A HOLDING POSITION. docs/build-deploy-strategy.md §4 gives each application image its
+# own Coolify Application resource, so that redeploying one app never touches another; until those
+# resources exist, this file keeps the CI topology whole after the infra/app split. `stage` and
+# `prod` do not use it. `depends_on` below names services defined in the infrastructure file, so this
+# file is not usable on its own.
+#
+# The two images are still zsuffazs/* on Docker Hub. Moving the six application images to GHCR
+# belongs with the per-app resources, not with the infrastructure layer.
+
+networks:
+  processpuzzle:
+    name: ${PP_NETWORK:-processpuzzle}
+    driver: bridge
+
+services:
+  processpuzzle-testbed-frontend:
+    pull_policy: build
+    depends_on:
+      testbed-backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      json-server:
+        condition: service_healthy
+    build:
+      context: ../../
+      dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
+      args:
+        CICD_STAGE: ci
+    image: zsuffazs/processpuzzle-testbed-frontend:latest
+    container_name: processpuzzle-testbed-frontend
+    environment:
+      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+    ports:
+      - "${PP_TESTBED_FRONTEND_PUBLISH:-9090:80}"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:80/home" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+
+  # ── One backend deployment per application stack ────────────────────────────────────────────────
+  #
+  # One instance, one stack: its PostgreSQL database, its Keycloak realm and its MinIO bucket prefix
+  # — see docs/application-stacks.md. The application stays single-tenant and the decoupling is a
+  # property of the deployment, not of logic inside it.
+  #
+  # This file used to run the same image twice, as testbed-backend and admin-backend. The staff
+  # stack's backend is now processpuzzle-admin-backend in the private processpuzzle-biz repository,
+  # which composes platform-admin on top of these same libraries — see
+  # docs/platform-admin-extraction.md. The realms both stacks use are declared in
+  # docker-compose-infrastructure.yaml, because a realm is shared infrastructure rather than
+  # something a backend provisions for itself.
+  testbed-backend:
+    pull_policy: build
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully
+    build:
+      context: ../../
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    image: zsuffazs/processpuzzle-testbed-backend:latest
+    container_name: testbed-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
+
+      # The testbed stack: database, realm and bucket prefix all name it. PostgreSQL is reached over
+      # the compose network, so the host is the service name and not the published port.
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/processpuzzle_testbed}
+      SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}
+      PROCESSPUZZLE_SECURITY_STACK_REALM: ${PROCESSPUZZLE_SECURITY_STACK_REALM:-processpuzzle-testbed}
+      MINIO_BUCKET_PREFIX: ${MINIO_BUCKET_PREFIX:-processpuzzle-testbed}
+
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_SERVICE_USER:-springboot}
+      MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD:-springboot123}
+
+      # Only the origins of this stack. An origin missing here reaches the frontend as HTTP status 0
+      # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
+      # the testbed container and 4200 its dev server.
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
+
+      # User management, which is org-admin's. This deployment does not create realms — that went
+      # with platform-admin, so KEYCLOAK_ADMIN_TENANT_* is set by the private admin backend and not
+      # here. The admin API is reached over the compose network, so this is the service name and not
+      # the published port. Without the secret the identity ports fall back to their no-op
+      # implementations and every other feature still works — see KeycloakAdminProperties.
+      KEYCLOAK_ADMIN_URL: ${KC_INTERNAL_URL:-http://keycloak:8080}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+
+      # Token validation needs BOTH URLs, and here they genuinely differ. The issuer is the origin the
+      # BROWSER was redirected to: a token minted at localhost:7070 does not validate against an
+      # http://keycloak:8080 issuer, and Keycloak advertises the browser-facing origin however its
+      # discovery document is fetched. That origin does not resolve inside this container, so the
+      # signing keys have to be read over the compose network instead.
+      #
+      # Reading them from the issuer URL is what made every authenticated request answer 500 — see
+      # TenantAuthenticationManagerResolver. A single-origin deployment sets only the first of these,
+      # which is what a single-hostname reverse proxy in front of both arranges for prod.
+      PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
+      PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}
+    ports:
+      - "${PP_TESTBED_BACKEND_PUBLISH:-8080:8080}"
+    tty: true
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      retries: 3
+      timeout: 5s
+      interval: 20s
+      # Measured at ~145s originally, and at 262s on 2026-09-05 for a FIRST start against an empty
+      # database, where Spring Modulith's ArchUnit module-structure computation is joined by the whole
+      # metadata seeding pass. 30s here spent the retries long before the application was listening,
+      # so `up` aborted with "container is unhealthy" on an application that was starting perfectly
+      # well — and 240s did the same on that first start, three seconds of probing short of the
+      # application's own 262s. Hence the headroom: a probe failing inside start_period costs nothing,
+      # while one failing outside it takes down every service that waits on this one.
+      start_period: 420s

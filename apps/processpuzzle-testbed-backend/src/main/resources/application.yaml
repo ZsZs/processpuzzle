@@ -8,7 +8,7 @@ spring:
   # Every value here is overridable through the environment by Spring Boot relaxed binding
   # (SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD). That, plus stack-realm, the MinIO bucket prefix
   # and the CORS allow-list, is the whole difference between the two backend deployments in
-  # docker-compose-ci.yaml: one image, one stack each.
+  # docker-compose-apps.yaml: one image, one stack each.
   datasource:
     url: jdbc:postgresql://localhost:5432/processpuzzle_testbed
     driver-class-name: org.postgresql.Driver
@@ -50,14 +50,14 @@ management:
 
 app:
   cors:
-    # 4200 is the Angular dev server; 9090 is where tools/docker/docker-compose-ci.yaml publishes the testbed,
+    # 4200 is the Angular dev server; 9090 is where tools/docker/docker-compose-apps.yaml publishes the testbed,
     # which calls this backend cross-origin at localhost:8080. 9091 is the processpuzzle-admin-frontend app and 9092 is
     # processpuzzle-biz-frontend in the same compose file, and 4201/4202 are their dev servers. An origin missing here
     # is rejected with a bare 403 carrying no CORS headers, so the browser reports only a blocked request
     # and the frontend sees HTTP status 0 — name every origin that reaches this backend directly.
     #
     # This DEFAULT is the union of all six, because one backend started by hand has to serve whichever
-    # frontend a developer runs. Each backend deployment in docker-compose-ci.yaml narrows it through
+    # frontend a developer runs. Each backend deployment in docker-compose-apps.yaml narrows it through
     # APP_CORS_ALLOWED_ORIGINS to the origins of its own stack; see docs/application-stacks.md.
     allowed-origins: http://localhost:4200,http://localhost:4201,http://localhost:4202,http://localhost:9090,http://localhost:9091,http://localhost:9092
     allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
@@ -131,7 +131,7 @@ processpuzzle:
     issuer-base-url: http://localhost:7070
     # Where THIS server reads signing keys from. Unset means "the same as issuer-base-url", which is
     # right whenever the browser and this process reach Keycloak through one origin. The compose
-    # topology is the case where they do not — see docker-compose-ci.yaml.
+    # topology is the case where they do not — see docker-compose-apps.yaml.
     jwks-base-url:
     # The realm this deployment serves: one backend instance per application stack, so exactly one
     # non-tenant realm is trusted. The default names the testbed stack, matching the datasource

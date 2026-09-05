@@ -57,7 +57,12 @@ jobs:
         name: run-docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
-          compose-file: './tools/docker/docker-compose-ci.yaml'
+          # Newline-separated: the infrastructure layer plus the applications overlaid on it — see
+          # tools/docker/docker-compose-infrastructure.yaml.
+          compose-file: |
+            ./tools/docker/docker-compose-infrastructure.yaml
+            ./tools/docker/docker-compose-apps.yaml
+          compose-flags: '--env-file tools/docker/env/.env.ci'
 
       - id: e2e-test
         name: run-e2e-tests

@@ -114,7 +114,7 @@
         </dependency>
 
         <!-- The runtime datasource for every deployment. One PostgreSQL database per application
-             stack, created by tools/docker/postgresql/init-db.sql - see docs/application-stacks.md. -->
+             stack, created by tools/docker/postgresql/10-init-db.sh - see docs/application-stacks.md. -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

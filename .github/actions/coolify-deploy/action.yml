@@ -1,0 +1,41 @@
+name: coolify-deploy
+description: Triggers a redeploy of one Coolify resource through its deploy webhook
+inputs:
+  webhook:
+    description: >
+      The full deploy webhook URL Coolify prints on the resource's Webhook page, `?uuid=<resource-uuid>`
+      and all. Taking the whole URL from a secret rather than assembling it from a host and a uuid is
+      what keeps this action independent of Coolify's URL shape.
+    required: true
+  token:
+    description: Coolify API token; `deploy` permission is enough.
+    required: true
+  force:
+    description: >
+      Rebuild without the layer cache. Note that `force=true` restarts the resource without always
+      re-pulling its images (coollabsio/coolify#5318), so a resource that watches a moving tag such as
+      `:stage` needs Coolify's "pull latest images and restart" option enabled regardless of this.
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Trigger Coolify deploy
+      shell: bash
+      env:
+        WEBHOOK: ${{ inputs.webhook }}
+        TOKEN: ${{ inputs.token }}
+        FORCE: ${{ inputs.force }}
+      run: |
+        set -euo pipefail
+        if [ -z "${WEBHOOK}" ]; then
+          echo "::error::No Coolify webhook configured for this environment (COOLIFY_WEBHOOK)."
+          exit 1
+        fi
+        # GET, not POST: this is the shape Coolify documents for its deploy webhook
+        # (https://coolify.io/docs/applications/ci-cd/github/actions). The URL already carries
+        # ?uuid=<resource-uuid>, so `force` is appended to the existing query string — a URL without
+        # one is still handled, in case Coolify changes shape.
+        case "${WEBHOOK}" in *\?*) SEPARATOR="&" ;; *) SEPARATOR="?" ;; esac
+        curl -fsS --request GET "${WEBHOOK}${SEPARATOR}force=${FORCE}" --header "Authorization: Bearer ${TOKEN}"
+        echo

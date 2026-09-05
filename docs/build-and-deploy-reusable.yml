@@ -1,0 +1,77 @@
+name: Build & deploy affected apps (reusable)
+
+# Lives in processpuzzle: .github/workflows/build-and-deploy-reusable.yml
+# Called by a tiny workflow in each repo — see build-and-deploy-caller.yml
+
+on:
+  workflow_call:
+    secrets:
+      COOLIFY_WEBHOOKS:
+        required: true
+      COOLIFY_API_TOKEN:
+        required: true
+
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.list.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      # Figures out the correct base/head SHAs for `nx affected` on a push to main
+      - uses: nrwl/nx-set-shas@v4
+
+      - id: list
+        run: |
+          APPS=$(npx nx show projects --affected --type=app --json)
+          echo "apps=$APPS" >> "$GITHUB_OUTPUT"
+
+  build-and-deploy:
+    needs: affected
+    if: needs.affected.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.affected.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/zszs/${{ matrix.app }}:sha-${{ github.sha }}
+            ghcr.io/zszs/${{ matrix.app }}:stage
+
+      - name: Trigger Coolify deploy
+        run: |
+          URL=$(echo '${{ secrets.COOLIFY_WEBHOOKS }}' | jq -r --arg app "${{ matrix.app }}" '.[$app]')
+          if [ "$URL" = "null" ] || [ -z "$URL" ]; then
+            echo "No Coolify webhook configured for ${{ matrix.app }} — skipping deploy trigger"
+            exit 0
+          fi
+          curl -fsSL -X POST "$URL" -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"

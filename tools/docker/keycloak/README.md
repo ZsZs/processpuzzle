@@ -1,6 +1,6 @@
 # Keycloak (CI / local Docker)
 
-This image is built from `quay.io/keycloak/keycloak:26.4.7` and is wired up by `tools/docker/docker-compose-ci.yaml` to talk to the `postgres` service.
+This image is built from `quay.io/keycloak/keycloak:26.4.7` and is wired up by `tools/docker/docker-compose-infrastructure.yaml` to talk to the `postgres` service.
 
 ## Realm config as code
 
@@ -29,9 +29,9 @@ The `master` realm's service account is *not* here: see `init/bootstrap-platform
 2. Export the realm:
 
    ```
-   docker exec testbed-keycloak /opt/keycloak/bin/kc.sh export \
+   docker exec processpuzzle-keycloak /opt/keycloak/bin/kc.sh export \
      --dir /tmp/export --realm processpuzzle-testbed --users realm_file
-   docker cp testbed-keycloak:/tmp/export/processpuzzle-testbed-realm.json \
+   docker cp processpuzzle-keycloak:/tmp/export/processpuzzle-testbed-realm.json \
      tools/docker/keycloak/import/
    ```
 
@@ -43,9 +43,9 @@ The `master` realm's service account is *not* here: see `init/bootstrap-platform
 `--import-realm` skips realms that already exist, and realms live in the `postgres_data` volume — so a **renamed** realm does not appear until the old one is gone. Either:
 
 - drop the realm in the admin UI first, then restart, **or**
-- wipe the Postgres volume (`docker compose -f tools/docker/docker-compose-ci.yaml down -v`) and bring the stack back up.
+- wipe the Postgres volume (`npm run stack-clean`) and bring the stack back up.
 
-The volume wipe also drops the two application databases, which `tools/docker/postgresql/init-db.sql` then recreates — it likewise runs only on an empty data directory. Since the backends now persist to PostgreSQL rather than H2, that reset is what resets a stack's data.
+The volume wipe also drops the two application databases, which `tools/docker/postgresql/10-init-db.sh` then recreates — it likewise runs only on an empty data directory. Since the backends now persist to PostgreSQL rather than H2, that reset is what resets a stack's data.
 
 ### A realm that already exists under the right name is the dangerous case
 
@@ -75,7 +75,7 @@ authenticates against.
 
 Volumes predating this change still hold a squatting realm, and the fix is per volume. On the local CI
 stack, 3 September 2026: the squatting realm held no users, one auto-generated client and two
-auto-generated roles, so it was deleted through the admin API and `testbed-keycloak` restarted — the log
+auto-generated roles, so it was deleted through the admin API and `processpuzzle-keycloak` restarted — the log
 then read `Realm 'processpuzzle-testbed' imported` instead of `already exists. Import skipped`, and the
 realm came back with the `processpuzzle-testbed` client (redirects to 9090 and 4200), `test-user` and
 `registrationAllowed=true`. Deleting a realm also drops the `<realm>-realm` client in `master` that carried

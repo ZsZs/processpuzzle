@@ -58,6 +58,8 @@ Workflows are gated by both **branch** and **path filter**, so unrelated changes
 - **`build-processpuzzle-testbed-frontend.yml`** additionally has a `workflow_run:` trigger that fires when `Build-Auth`, `Build-Base-Entity-Frontend`, `Build-Util`, or `Build-Widgets` complete — so the testbed is re-validated whenever an upstream library build runs.
 - **`deploy-processpuzzle-testbed-frontend.yml`** triggers only on `push` to `develop` under `apps/processpuzzle-testbed-frontend/**` and runs in the **STAGE** GitHub Environment.
 - **Release workflows** trigger on `push` to `release/<project>/*` under the project's path filter. The testbed release runs in the **PROD** GitHub Environment.
+- **`build-infrastructure.yml`** triggers on any change under `tools/docker/**` or `tools/mock-backend/**` — `push` to `feature/**` and `develop`, and `pull_request` to `develop`. Feature branches and PRs **build only**; `develop` also pushes to GHCR and then calls the deploy workflow.
+- **`deploy-infrastructure.yml`** has **no `push` trigger** — it is reached by `workflow_call` from the build workflow, or by `workflow_dispatch` for a **PROD** promotion. It runs in the **STAGE** or **PROD** GitHub Environment depending on its `environment` input.
 - **`ng-update.yml`** runs on cron `30 5 * * 1,3,5`.
 
 ## Composite Actions
@@ -70,7 +72,7 @@ All workflows compose the same low-level steps via reusable composite actions:
 | [`e2e-test`](actions/e2e-test/action.yml) | Install Playwright browsers and run `npm run e2e-test-processpuzzle-testbed` against the requested `target_environment` (`ci`, `stage`, or `prod`). Uploads the Playwright report as the `playwright-report-<sha>` artifact. |
 | [`deploy-to-firebase`](actions/deploy-to-firebase/action.yml) | Deploys to Firebase Hosting using `FirebaseExtended/action-hosting-deploy`. Project ID and channel are inputs (e.g. `processpuzzle-testbed-stage` / `live`). |
 | [`deploy-to-aws`](actions/deploy-to-aws/action.yml) | Zips `dist/apps/processpuzzle-testbed-frontend/browser`, uploads to the `processpuzzle-testbed` S3 bucket, then creates and activates a new Elastic Beanstalk application version on `ProcessPuzzleTestbed-Dev` (eu-central-1). Currently not referenced by any workflow — kept for direct-asset EB deployments. |
-| [`deploy-to-aws-eb`](actions/deploy-to-aws-eb/action.yml) | Container-based EB deployment: substitutes AWS account/region/sha/project into `tools/docker/docker-compose-prod.yaml`, zips it, uploads to S3, and uses `einaregilsson/beanstalk-deploy` to roll it out (waits for completion). Currently not referenced by any workflow — kept for future Docker-on-EB releases. |
+| [`coolify-deploy`](actions/coolify-deploy/action.yml) | Triggers a redeploy of one Coolify resource: a single `curl` against the deploy webhook URL the resource's Webhook page prints, with the API token as a bearer header. Taking the whole URL from a secret keeps the action independent of Coolify's URL shape, and written to be reused by the six per-app workflows. Used by `deploy-infrastructure.yml`. |
 | [`release-java`](actions/release-java/action.yml) | Configures Node, Java 25 and a GPG key, reads the project version from the POM, signs and deploys artifacts to Maven Central via `mvn deploy -Prelease`, then creates a GitHub Release tagged `<project>@<version>`. Used by `release-api-contracts.yml`. |
 
 ## Tasks
@@ -78,7 +80,16 @@ All workflows compose the same low-level steps via reusable composite actions:
 Provided by [`lint-test-build`](actions/lint-test-build/action.yml). Each project exposes npm scripts `lint-<project>`, `test-<project>`, `config-env-<project>`, and `build-<project>` that the action invokes. Coverage is normalised by `tools/scripts/sanitize-lcov.cjs` so SonarCloud can resolve source paths from the monorepo root; the per-project `sonar-project.properties` file points `sonar.projectBaseDir` at the project directory.
 
 ### Docker Compose, Publish
-For `build-processpuzzle-testbed-frontend.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-ci.yaml` so the Playwright suite can run against a real stack. For `deploy-processpuzzle-testbed-frontend.yml` and `release-processpuzzle-testbed-frontend.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
+For `build-processpuzzle-testbed-frontend.yml`, after the build the Spring Boot backend jar is built (`npx nx run processpuzzle-testbed-backend:build --no-cloud`) and `hoverkraft-tech/compose-action` brings up `tools/docker/docker-compose-infrastructure.yaml` plus `docker-compose-apps.yaml`, with `--env-file tools/docker/env/.env.ci`, so the Playwright suite can run against a real stack. For `deploy-processpuzzle-testbed-frontend.yml` and `release-processpuzzle-testbed-frontend.yml` the [`build-image`](actions/build-image/action.yml) action publishes the three application images to DockerHub.
+
+The **infrastructure** images are the other half, and they are two workflows rather than one:
+
+| Workflow | Fires on | Does |
+| --- | --- | --- |
+| `Build-ProcessPuzzle-Infrastructure` | any change under `tools/docker/**` / `tools/mock-backend/**` | Matrix-builds the five built infra images. On `develop` only, pushes them to `ghcr.io/zszs/processpuzzle-*` as `sha-<commit>` + `latest` using the built-in `GITHUB_TOKEN`, then calls the workflow below with that `sha-<commit>` |
+| `Deploy-Infrastructure` | `workflow_call` from the above, or `workflow_dispatch` | Re-tags the given digest as `:stage` / `:prod` (`docker buildx imagetools create` — no rebuild), or builds first when dispatched without an `image_tag`, then triggers the Coolify redeploy |
+
+Splitting them this way is what makes a promotion a re-tag: `develop` builds once, and both `stage` and later `prod` point at that same digest. See [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §10 for the per-environment secrets they need.
 
 ### E2E Test
 Runs in the `feature/**` testbed build against the `ci` environment using the [`e2e-test`](actions/e2e-test/action.yml) action.
@@ -93,7 +104,10 @@ Runs in `release-processpuzzle-testbed-frontend.yml` against the deployed PROD e
 Both `deploy-processpuzzle-testbed-frontend.yml` (STAGE → Firebase project `processpuzzle-testbed-stage`) and `release-processpuzzle-testbed-frontend.yml` (PROD → Firebase project `processpuzzle-testbed`) deploy to the `live` channel via [`deploy-to-firebase`](actions/deploy-to-firebase/action.yml).
 
 ### Deploy to AWS
-Both AWS composite actions ([`deploy-to-aws`](actions/deploy-to-aws/action.yml) and [`deploy-to-aws-eb`](actions/deploy-to-aws-eb/action.yml)) are checked in but no workflow currently references them — testbed deployments target Firebase Hosting. They remain available for re-enabling EB-based deployment.
+[`deploy-to-aws`](actions/deploy-to-aws/action.yml) is checked in but no workflow references it — testbed deployments target Firebase Hosting. It remains available for direct-asset EB deployments. Its container-based counterpart, `deploy-to-aws-eb`, was **deleted**: its only real step templated `tools/docker/docker-compose-prod.yaml`, which no longer exists, and no workflow referenced it.
+
+### Deploy the shared infrastructure
+`deploy-infrastructure.yml` builds/pushes the infrastructure images and then calls [`coolify-deploy`](actions/coolify-deploy/action.yml) with the target environment's `COOLIFY_WEBHOOK` and `COOLIFY_TOKEN`, followed by a best-effort readiness poll of Keycloak and MinIO (skipped unless the environment declares `KEYCLOAK_PUBLIC_URL` / `MINIO_PUBLIC_URL` as variables), so that a red workflow means a red stack.
 
 ### NPM Publish
 Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / NX_HEAD, runs `lint-test-build`, then publishes with `npx nx release publish --projects=<project> --access public --no-cloud` (with `NPM_CONFIG_PROVENANCE: true`). The testbed `Release-*` workflow does the same plus copies `package.json`/`README.md` into the dist folder and strips `environment.ts` before publishing.

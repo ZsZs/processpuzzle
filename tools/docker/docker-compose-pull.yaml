@@ -1,14 +1,17 @@
 # Overlay that makes the CI topology *pull* the published images instead of
 # building them locally.
 #
-# Every service in docker-compose-ci.yaml carries a `build:` section, and the
-# application services additionally set `pull_policy: build`. That is correct
+# Every built service in docker-compose-infrastructure.yaml and
+# docker-compose-apps.yaml carries a `build:` section, and the application
+# services additionally set `pull_policy: build`. That is correct
 # for CI, whose job is to prove the images build. It is the wrong default in a
 # devcontainer or Codespace, where it means compiling an Angular application
 # and a Spring Boot backend before the stack starts.
 #
-# Overlay this file to reuse the images already published to Docker Hub:
-#   docker compose -f docker-compose-ci.yaml -f docker-compose-pull.yaml up -d
+# Overlay this file to reuse the images already published — the infrastructure
+# images on GHCR, the application images on Docker Hub:
+#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#     -f docker-compose-apps.yaml -f docker-compose-pull.yaml up -d
 #
 # `missing` pulls only when the image is absent locally, so a stop/start cycle
 # reuses what is already on disk. Use `npm run stack-pull` to refresh, or
@@ -23,8 +26,6 @@ services:
   keycloak:
     pull_policy: missing
   keycloak-init:
-    pull_policy: missing
-  pgweb:
     pull_policy: missing
   postgres:
     pull_policy: missing

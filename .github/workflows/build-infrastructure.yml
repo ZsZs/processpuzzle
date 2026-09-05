@@ -1,0 +1,110 @@
+name: Build-ProcessPuzzle-Infrastructure
+
+# Builds the shared infrastructure images on any change under tools/docker/, and — on `develop` —
+# pushes them to GHCR and hands off to Deploy-Infrastructure.
+#
+# Same shape as the other Build-* workflows: `feature/**` and pull requests **build only**, which is
+# what proves the Dockerfiles still build; `develop` is the branch that publishes. Pushing a
+# feature branch's bytes to a tag a deployment watches would defeat the point of watching it.
+#
+# The five images are the built half of tools/docker/docker-compose-infrastructure.yaml. pgweb is
+# absent on purpose: it is referenced as a pinned upstream tag, because the Dockerfile it used to
+# have added nothing to `sosedoff/pgweb`.
+
+on:
+  push:
+    branches: [ "feature/**", develop ]
+    paths:
+      # Deliberately the whole directory rather than the four image folders. It over-triggers a
+      # little — an app Dockerfile or a compose comment rebuilds all five — but `type=gha` caching
+      # makes an unaffected image nearly free, and the alternative is a path list that silently rots
+      # every time a Dockerfile gains a COPY.
+      - 'tools/docker/**'
+      - 'tools/mock-backend/**'
+      - '.github/workflows/build-infrastructure.yml'
+      - '.github/workflows/deploy-infrastructure.yml'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ develop ]
+    paths:
+      - 'tools/docker/**'
+      - 'tools/mock-backend/**'
+      - '.github/workflows/build-infrastructure.yml'
+      - '.github/workflows/deploy-infrastructure.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-infrastructure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: processpuzzle-postgres
+            dockerfile: tools/docker/postgresql/Dockerfile
+          - name: processpuzzle-keycloak
+            dockerfile: tools/docker/keycloak/Dockerfile
+          - name: processpuzzle-keycloak-init
+            dockerfile: tools/docker/keycloak/init/Dockerfile
+          - name: processpuzzle-minio
+            dockerfile: tools/docker/minio/Dockerfile
+          - name: processpuzzle-json-server
+            dockerfile: tools/docker/json-server/Dockerfile
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Only when something will actually be pushed: a pull request from a fork gets a read-only
+      # GITHUB_TOKEN, and a login it cannot use would fail the build for the wrong reason.
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/develop'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Derive tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/zszs/${{ matrix.name }}
+          # No `stage` / `prod` tag here. Those are moving tags a deployment watches, and
+          # Deploy-Infrastructure moves them by re-tagging this digest — never by building again.
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # The repository root: every infrastructure Dockerfile COPYs with a tools/docker/… path.
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.ref == 'refs/heads/develop' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # `develop` deploys to stage by PROMOTING the digest just built — passing image_tag makes
+  # Deploy-Infrastructure re-tag rather than rebuild, so the bytes that reach stage are the bytes
+  # this run produced.
+  deploy-stage:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/deploy-infrastructure.yml
+    with:
+      environment: STAGE
+      image_tag: sha-${{ github.sha }}
+    secrets: inherit
