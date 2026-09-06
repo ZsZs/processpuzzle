@@ -90,6 +90,10 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
       if (!this.endpoint) {
         throw new Error(`${this.constructor.name}: Firestore facade requires endpoint (collection name)`);
       }
+      // Needs `FIRESTORE` bound in this injector, which `provideFirestoreToken()` does next to the
+      // application's own `provideFirestore(...)` call. Unbound, this line fails with NG0201 naming the
+      // token — the deliberate replacement for injecting `@angular/fire`'s class, whose identity a build
+      // or a test runner can split in two. See firestore.token.ts.
       return new BaseEntityFirestoreService<Entity>(mapper, this.endpoint);
     });
   }

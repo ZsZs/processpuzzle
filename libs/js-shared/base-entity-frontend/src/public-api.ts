@@ -63,6 +63,10 @@ export { NavigatorCommand, type NavigationPayload } from './lib/base-form-naviga
 export { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY, EMBEDDED_ENTITY_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-route-registry.providers';
 export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
+export { FIRESTORE } from './lib/base-entity-service/firestore.token';
+export { FIRESTORE_API } from './lib/base-entity-service/firestore-api';
+export type { FirestoreApi } from './lib/base-entity-service/firestore-api';
+export { provideFirestoreToken } from './lib/base-entity-service/provide-firestore-token';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES, baseEntityRoutes, type EmbeddedChildRoute } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem
