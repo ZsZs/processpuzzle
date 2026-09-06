@@ -1,45 +1,32 @@
 import { TestBed } from '@angular/core/testing';
 import { TestEntityMapper } from '../test-entity.mapper';
 import { TestEntityFirestoreService } from './test-entity-firestore.service';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  DocumentReference,
-  DocumentSnapshot,
-  Firestore,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  QuerySnapshot,
-  setDoc,
-  updateDoc,
-  where,
-} from '@angular/fire/firestore';
+import type { DocumentReference, DocumentSnapshot, QuerySnapshot } from '@angular/fire/firestore';
+import { FIRESTORE_API, FirestoreApi } from './firestore-api';
+import { FIRESTORE } from './firestore.token';
 import { TestEntity, TestEnum } from '../test-entity';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderBy } from './base-entity-load-response';
 
-vi.mock('@angular/fire/firestore', () => {
-  return {
-    addDoc: vi.fn(),
-    collection: vi.fn(),
-    deleteDoc: vi.fn(),
-    doc: vi.fn(),
-    Firestore: vi.fn(),
-    getDoc: vi.fn(),
-    getDocs: vi.fn(),
-    limit: vi.fn(),
-    orderBy: vi.fn(),
-    query: vi.fn(),
-    setDoc: vi.fn(),
-    updateDoc: vi.fn(),
-    where: vi.fn(),
-  };
-});
+// Both of the adapter's Firestore dependencies are substituted through TestBed, and neither through
+// `vi.mock`. The suite used to mock `@angular/fire/firestore`, which reached the service on some runs and
+// not others — see the note in firestore-api.ts — so it passed or failed at roughly even odds on an
+// unchanged commit, and CI failed on the coin flip. Hiding the barrel behind a relative re-export and
+// mocking that is not an option either: the Angular unit-test system rejects `vi.mock` for relative
+// imports and tells you to use TestBed. These providers are that.
+const collection = vi.fn();
+const deleteDoc = vi.fn();
+const doc = vi.fn();
+const getDoc = vi.fn();
+const getDocs = vi.fn();
+const limit = vi.fn();
+const orderBy = vi.fn();
+const query = vi.fn();
+const setDoc = vi.fn();
+const updateDoc = vi.fn();
+const where = vi.fn();
+const firestoreApi = { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } as unknown as FirestoreApi;
 
 describe('BaseEntityFirestoreService', () => {
   const collectionName = 'test-entity';
@@ -62,7 +49,7 @@ describe('BaseEntityFirestoreService', () => {
 
     TestBed.configureTestingModule({
       imports: [],
-      providers: [{ provide: Firestore, useValue: {} }, TestEntityMapper, TestEntityFirestoreService],
+      providers: [{ provide: FIRESTORE, useValue: {} }, { provide: FIRESTORE_API, useValue: firestoreApi }, TestEntityMapper, TestEntityFirestoreService],
     });
     baseEntityService = TestBed.inject(TestEntityFirestoreService);
   });

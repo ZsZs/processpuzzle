@@ -3,9 +3,13 @@ import { BaseEntityService } from './base-entity.service';
 import { from, map, Observable, of } from 'rxjs';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, OrderByDirection } from './base-entity-load-response';
 import { Inject, inject } from '@angular/core';
-import { collection, deleteDoc, doc, DocumentData, Firestore, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from '@angular/fire/firestore';
+import type { DocumentData } from '@angular/fire/firestore';
 import { BaseEntityMapper } from '../base-entity.mapper';
 import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/firestore';
+import { FIRESTORE } from './firestore.token';
+// Firestore's free functions come through DI rather than a module import, so a test can substitute them
+// with TestBed. See firestore-api.ts for why importing them here cannot be tested reliably.
+import { FIRESTORE_API } from './firestore-api';
 
 /**
  * Talks to Firestore straight from the browser, bypassing the OpenAPI contract entirely.
@@ -26,21 +30,26 @@ import { QueryFieldFilterConstraint, QueryOrderByConstraint } from '@firebase/fi
  * - **Authorization ends up in two dialects** — `firestore.rules` here, server-side policy there —
  *   so tenant isolation has to be got right twice.
  *
- * Nothing about it is broken today and no removal date is set: `ApplicationPropertyService` in
- * `widgets` still extends it, and `BaseEntityFacade.createService` still returns it when
- * `BACKEND_SERVICE_PROVIDER` is not `rest`. Those are the call sites to migrate before it can go — the
- * testbed's own Firestore sample is gone, its entities now being served through the contract like every
- * other deployment's.
+ * Nothing about it is broken today and no removal date is set, but only one call site is left to
+ * migrate before it can go: `BaseEntityFacade.createService` still returns it when
+ * `BACKEND_SERVICE_PROVIDER` is not `rest`. `ApplicationPropertyService` in `base-widget` no longer
+ * extends it, and the testbed's own Firestore sample is gone — its entities are served through the
+ * contract like every other deployment's.
+ *
+ * Both of its dependencies on `@angular/fire` are injected rather than imported: the instance as
+ * {@link FIRESTORE} rather than the `Firestore` class, and the module functions as {@link FIRESTORE_API}.
+ * Each token's own file says which testability problem it solves.
  */
 export class BaseEntityFirestoreService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   protected collection;
-  protected readonly firestore = inject(Firestore);
+  protected readonly firestore = inject(FIRESTORE);
+  protected readonly firestoreApi = inject(FIRESTORE_API);
 
   constructor(
     @Inject('entityMapper') protected entityMapper: BaseEntityMapper<Entity>,
     protected collectionName: string,
   ) {
-    this.collection = collection(this.firestore, collectionName);
+    this.collection = this.firestoreApi.collection(this.firestore, collectionName);
   }
 
   // region public accessors and mutators
@@ -50,8 +59,8 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
   }
 
   delete(id: string): Observable<unknown> {
-    const docRef = doc(this.firestore, this.collectionName, id);
-    return from(deleteDoc(docRef));
+    const docRef = this.firestoreApi.doc(this.firestore, this.collectionName, id);
+    return from(this.firestoreApi.deleteDoc(docRef));
   }
 
   deleteAll(): Observable<unknown> {
@@ -63,9 +72,9 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
   }
 
   findById(id: string): Observable<PersistedEntity<Entity> | void> {
-    const docRef = doc(this.firestore, this.collectionName, id);
+    const docRef = this.firestoreApi.doc(this.firestore, this.collectionName, id);
     return from(
-      getDoc(docRef)
+      this.firestoreApi.getDoc(docRef)
         .then((document) => {
           return document.exists() ? this.mapDocument({ id: document.id, ...document.data() }) : undefined;
         })
@@ -87,8 +96,8 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
 
   // protected, private helper methods
   protected async addAsync(entity: Entity): Promise<PersistedEntity<Entity>> {
-    const newDoc = entity.id ? doc(this.collection, entity.id) : doc(this.collection);
-    await setDoc(newDoc, this.mapEntity(entity));
+    const newDoc = entity.id ? this.firestoreApi.doc(this.collection, entity.id) : this.firestoreApi.doc(this.collection);
+    await this.firestoreApi.setDoc(newDoc, this.mapEntity(entity));
     return this.mapDocument({ ...entity, id: newDoc.id });
   }
 
@@ -98,21 +107,21 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
       orderBys = queryCondition.orderBys.map((orderByCondition) => {
         const name = Object.keys(OrderByDirection).find((key) => key === orderByCondition.direction);
         const direction = Object.values(OrderByDirection).find((value) => value === name);
-        return orderBy(orderByCondition.property, direction);
+        return this.firestoreApi.orderBy(orderByCondition.property, direction);
       });
     }
 
     let wheres: QueryFieldFilterConstraint[] = [];
     if (queryCondition.filters?.length) {
-      wheres = queryCondition.filters.map((filter) => where(filter.property, filter.operator, filter.value));
+      wheres = queryCondition.filters.map((filter) => this.firestoreApi.where(filter.property, filter.operator, filter.value));
     }
 
-    return query(this.collection, ...wheres, ...orderBys, limit(queryCondition.pageSize ?? 99));
+    return this.firestoreApi.query(this.collection, ...wheres, ...orderBys, this.firestoreApi.limit(queryCondition.pageSize ?? 99));
   }
 
   protected async findByQueryAsync(queryCondition: BaseEntityQueryCondition): Promise<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[]> {
     const builtQuery = this.createQuery(queryCondition);
-    const results = await getDocs(builtQuery);
+    const results = await this.firestoreApi.getDocs(builtQuery);
     const content = results.docs.map((docSnapshot) => this.mapDocument({ id: docSnapshot.id, ...docSnapshot.data() }));
 
     return {
@@ -147,8 +156,8 @@ export class BaseEntityFirestoreService<Entity extends BaseEntity> implements Ba
   private async updateAsync(entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity>> {
     if (!entity) throw new Error('Entity cant be undefined');
 
-    const docRef = doc(this.firestore, this.collectionName, entity.id);
-    await updateDoc(docRef, this.mapEntity(entity));
+    const docRef = this.firestoreApi.doc(this.firestore, this.collectionName, entity.id);
+    await this.firestoreApi.updateDoc(docRef, this.mapEntity(entity));
 
     return entity;
   }

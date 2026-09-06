@@ -15,10 +15,6 @@ import {
 import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
-import { initializeApp } from 'firebase/app';
-import { provideFirebaseApp } from '@angular/fire/app';
-import { FIREBASE_OPTIONS } from '@angular/fire/compat';
-import { connectFirestoreEmulator, Firestore, getFirestore, provideFirestore } from '@angular/fire/firestore';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
@@ -49,21 +45,17 @@ import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.faca
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
-      provideFirestore(() => {
-        const fireConf = runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION;
-        const firestore = getFirestore();
-        if (fireConf.FIRESTORE_EMULATOR_HOST && fireConf.FIRESTORE_EMULATOR_PORT) {
-          connectFirestoreEmulator(firestore, fireConf.FIRESTORE_EMULATOR_HOST, fireConf.FIRESTORE_EMULATOR_PORT);
-        }
-        return firestore;
-      }),
+      // No `provideFirebaseApp` / `provideFirestore` here. The testbed binds `BaseEntityRestService`
+      // (`BACKEND_SERVICE_PROVIDER: 'rest'`) and Keycloak, so nothing in it reaches Firestore — and
+      // `FIREBASE_CONFIGURATION` is now empty, which makes `initializeApp` throw
+      // `"projectId" not provided` the moment anything constructs the app. The Firestore adapters stay in
+      // the framework for consumers who deploy on them; a consumer that does adds these providers itself.
       provideAuthenticationService(runtimeConfiguration),
       provideZonelessChangeDetection(),
-      provideFirebaseApp(() => initializeApp(runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION), [FIREBASE_OPTIONS]),
       provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
       provideCentralErrorHandler(),
-      provideAppPropertyStore(Firestore),
+      provideAppPropertyStore(),
       TestEntityFacade,
       TestEntityComponentFacade,
       RelatedEntityFacade,
@@ -114,7 +106,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // whose `context` is its descriptor's `entityName` and evaluates them on every change. Nothing else
       // turns rules on: with the token unbound, `loadRules()` returns on its first line and the form is
       // simply unvalidated — silently, because an application with no rule backend is a legitimate
-      // deployment (this app runs against Firestore and json-server too).
+      // deployment (this app runs against json-server too).
       //
       // Which is why this belongs here and not on a route. It used to sit on the `base-rule` route alone,
       // which made rules a property of *which section of the testbed you were in* rather than of the entity
@@ -163,7 +155,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: OVERLAY_DEFAULT_CONFIG, useValue: { usePopover: false } },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfiguration },
       { provide: AUTHENTICATION_CONFIGURATION, useValue: runtimeConfiguration.AUTHENTICATION_CONFIGURATION },
-      { provide: FIREBASE_OPTIONS, useValue: runtimeConfiguration.BASE_CONFIGURATION.FIREBASE_CONFIGURATION },
       provideErrorSnackbar(),
       provideRouter(appRoutes, withComponentInputBinding()),
       provideEntityRouteRegistry(),
