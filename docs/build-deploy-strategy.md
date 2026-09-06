@@ -1,9 +1,10 @@
 # ProcessPuzzle build & deployment strategy
 
-Status: v2 — the shared **infrastructure layer** is delivered (§§2, 4, 10, 11): one compose
-definition, one environment-parameterized workflow, GHCR + Coolify webhook. The six per-app
-workflows and their Application resources are still to come (§12). Tagging strategy proposed as a
-sensible default, open to revision.
+Status: v3 — the shared **infrastructure layer** and the **testbed application stack** are both
+delivered (§§2, 4, 10, 11): one compose definition per layer, one environment-parameterized workflow
+per layer, GHCR + Coolify webhook. §4's per-image Application resource is superseded by one Docker
+Compose resource per application *stack* — see the table there. The four `processpuzzle-biz` stacks
+are still to come (§12). Tagging strategy proposed as a sensible default, open to revision.
 
 ## 1. Source layout
 
@@ -66,12 +67,29 @@ The platform libraries and the testbed app both live in `processpuzzle`; `proces
 
 ## 4. Coolify resource model
 
-Coolify supports two resource types — using the right one per layer is what preserves independent app lifecycles (the property lost with a single docker-compose file):
+Coolify supports two resource types:
 
-- **Docker Compose resource** — manages a whole compose file as one unit. Appropriate for the **infrastructure layer** (Postgres, Keycloak, MinIO) since it's conceptually one thing and doesn't need independent redeploys.
-- **Application resource** — one Dockerfile/image per resource, each with its own build trigger, environment variables, deploy webhook, and redeploy control. Used for **each of the 6 application images**, so redeploying one app never touches another — the same independence OpenShift's per-app Deployments gave.
+- **Docker Compose resource** — manages a whole compose file as one unit.
+- **Application resource** — one Dockerfile/image per resource, each with its own build trigger, environment variables, deploy webhook, and redeploy control.
 
-All resources sit in the same Coolify project/environment so the application resources have network access to the shared infrastructure resource.
+**Resolved (2026-09-06): one Docker Compose resource per *layer*, and one per application *stack*.**
+Not one Application resource per image, which is what this section originally proposed.
+
+| Resource | Compose file | Webhook secret | Holds |
+|---|---|---|---|
+| Infrastructure | `docker-compose-infrastructure.yaml` | `COOLIFY_WEBHOOK` | Postgres, Keycloak (+ `keycloak-init`), MinIO, json-server, pgweb — shared by every stack |
+| Testbed stack | `docker-compose-apps.yaml` | `COOLIFY_WEBHOOK_TESTBED` | `processpuzzle-testbed-frontend` + `testbed-backend` |
+| *(biz repo)* | its own apps file per stack | its own | the Admin and Biz stacks |
+
+Why the per-image Application resource lost:
+
+- **A Coolify resource reads exactly one compose file**, and the webhook that redeploys it redeploys the whole file. Two Application resources would each need their own file — or their own Dockerfile, which neither application has: both Dockerfiles are packaging-only (`COPY dist/…`), so Coolify cannot build them at all (§10, §11).
+- **`depends_on` then does the ordering for free.** With both halves in one file, compose starts the backend first and waits for its healthcheck; the frontend's `/home` probe cannot answer before the API does. The alternative was ordering two webhook calls from the deploy workflow, which is ordering by hope — the webhook returns as soon as Coolify accepts it.
+- The cost is real and accepted: **both halves restart together.** A frontend-only change restarts the backend, whose first start against an empty database takes ~262 s. Per-app independence is worth revisiting if that becomes a problem; today one stack is one deployable unit.
+
+Independence between *stacks* is preserved, which is the property that actually matters — see [Application stacks](application-stacks.md). Nothing shared depends on an application.
+
+All resources sit in the same Coolify project/environment, and the application resources join the infrastructure resource's network as `external` (`PP_NETWORK`). That join is not optional: the frontend's nginx resolves `proxy_pass http://json-server:3000/` at startup, so it will not boot without it.
 
 ## 5. GitHub Actions setup
 
@@ -79,7 +97,7 @@ Per app, a workflow that:
 1. Triggers on push to `main` / a release tag, scoped with `paths:` filters (or driven by `nx affected`) so only the changed app rebuilds
 2. Builds the app's Docker image
 3. Pushes to GHCR, e.g. `ghcr.io/zszs/processpuzzle-testbed-backend:stage`
-4. Calls that app's Coolify deploy webhook (Coolify generates one webhook URL + token per Application resource) to trigger the redeploy
+4. Calls that stack's Coolify deploy webhook (Coolify generates one webhook URL + token per resource) to trigger the redeploy
 
 Six small, independent workflows (or one matrix workflow per repo) rather than one monolithic pipeline.
 
@@ -89,7 +107,7 @@ No syncing or merging needed between `processpuzzle` and `processpuzzle-biz`. Th
 
 ## 7. Shared infrastructure configuration discipline
 
-Each Application resource gets its own environment variables pointing at the *same* shared instances but with per-app identity, per the platform topology:
+Each stack's resource gets its own environment variables pointing at the *same* shared instances but with per-stack identity, per the platform topology:
 
 | App | Database | Keycloak realm | MinIO bucket prefix |
 |---|---|---|---|
@@ -104,7 +122,8 @@ Coolify's project-level shared environment variables (host names, credentials) p
 - **Infra definition location** — resolved: the Postgres/Keycloak/MinIO compose definition lives in the `processpuzzle` repo (as reflected in §1 and §4). The earlier note about a combined testbed+biz docker-compose living in `processpuzzle-biz` is superseded — infra and applications are no longer bundled together at all, per the independent-lifecycle model in §4.
 - **Registry: GHCR** (2026-09-04). The infrastructure images are `ghcr.io/zszs/processpuzzle-*`, pushed with the workflow's built-in `GITHUB_TOKEN` — no third-party registry credential to hold. The application images follow when their per-app workflows land.
 - **Deployment trigger: the Coolify deploy webhook** (2026-09-04). One `curl` against the URL Coolify prints on the resource's Webhook page, wrapped in the [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml) composite action so the six app workflows reuse it. The whole URL comes from a secret, which keeps the action independent of Coolify's URL shape.
-- **One compose file per layer, not per environment** (2026-09-04). `docker-compose-ci.yaml` and `docker-compose-prod.yaml` were two definitions of the same infrastructure that had already drifted — prod had no MinIO and no pgweb. They are replaced by `docker-compose-infrastructure.yaml` (the shared layer, §4's Docker Compose resource) and `docker-compose-apps.yaml` (a holding position until each app image is its own Application resource). CI and `npm run stack-*` overlay both.
+- **One compose file per layer, not per environment** (2026-09-04). `docker-compose-ci.yaml` and `docker-compose-prod.yaml` were two definitions of the same infrastructure that had already drifted — prod had no MinIO and no pgweb. They are replaced by `docker-compose-infrastructure.yaml` (the shared layer) and `docker-compose-apps.yaml` (the testbed stack). CI and `npm run stack-*` overlay both.
+- **One Docker Compose resource per stack, not one Application resource per image** (2026-09-06). See §4 for the reasoning. `docker-compose-apps.yaml` stopped being a holding position and became the file a Coolify resource reads: pull-only, `external` network, and no `depends_on` naming a service it does not define. The pieces it gave up are restored for CI and local development by `docker-compose-build.yaml` (the `build:` sections) and the new `docker-compose-apps-local.yaml` (a non-external network and the cross-layer `depends_on`), overlaid **after** it so their values win.
 - **Committed `.env.<environment>` for non-secrets, GitHub Environment secrets for credentials** (2026-09-04). `tools/docker/env/.env.{ci,stage,prod}` are in git and hold no credentials except `ci`'s demo values, which were always in git. See §11 for how they reach Coolify, which does *not* read them.
 
 ## 9. Proposed default: image tagging & promotion
@@ -113,7 +132,7 @@ Not yet decided with certainty — proposed as the sensible default, open to rev
 
 - Every push to `main` builds and pushes one image tagged with the commit SHA, e.g. `ghcr.io/zszs/processpuzzle-testbed-backend:sha-<commit>`.
 - That same image is **promoted**, not rebuilt, from stage to production — re-tag `sha-<commit>` as `:stage` on deploy to stage, and as `:prod` once verified, rather than running a separate build per environment. This guarantees the exact bytes tested on stage are what reach production.
-- Coolify's Application resource for stage watches the `:stage` tag; production watches `:prod`.
+- Coolify's resource for stage watches the `:stage` tag; production watches `:prod`.
 
 ## 10. The workflow template
 
@@ -153,9 +172,9 @@ The three ways in: `workflow_call` **with** an `image_tag` (what the build workf
 `workflow_dispatch` **without** one (build from the current ref first). A caller in either repo can
 invoke it, as `docs/build-and-deploy-caller.yml` sketches.
 
-**To make one of the six app workflows from this pair:** replace the matrix with the single app
-image, drop the `promote` job's image loop down to that one image, and point `deploy` at that
-Application resource's own `COOLIFY_WEBHOOK`. Nothing else changes.
+**To make another stack's pair from this one:** replace the matrix with that stack's images, narrow
+the `promote` job's image loop to them, and point `deploy` at that stack's own webhook secret.
+Nothing else changes — the testbed pair in this repository is the worked example.
 
 ### Secrets and variables per GitHub Environment
 
@@ -164,8 +183,8 @@ documents where each is consumed.
 
 | Secret | Used for |
 |---|---|
-| `COOLIFY_WEBHOOK` | full deploy webhook URL of the **infrastructure** Docker Compose resource, including `?uuid=` |
-| `COOLIFY_WEBHOOK_TESTBED_FRONTEND` / `COOLIFY_WEBHOOK_TESTBED_BACKEND` | the same, one per testbed **Application** resource. Missing one warns rather than fails, so the resources can be created one at a time |
+| `COOLIFY_WEBHOOK` | full deploy webhook URL of the **infrastructure** Docker Compose resource, including `?uuid=`. Store it **without** a trailing `&force=false` — [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml) appends its own `force`, and a duplicate parameter is ambiguous |
+| `COOLIFY_WEBHOOK_TESTBED` | the same, for the testbed stack's **Docker Compose** resource — one resource holding both halves, so one webhook redeploys both. Missing it fails the deploy |
 | `COOLIFY_TOKEN` | Coolify API token, `deploy` permission only |
 | `POSTGRES_PASSWORD` | Keycloak's own DB role |
 | `PROCESSPUZZLE_DB_PASSWORD` | the application role created by `10-init-db.sh` |
@@ -178,7 +197,11 @@ Two optional **variables** (`vars`, not secrets) enable the readiness gate:
 Keycloak's health endpoint lives on its management port and a reverse proxy need not expose it.
 `Deploy-Testbed-Apps` has the equivalent pair, `TESTBED_FRONTEND_PUBLIC_URL` and
 `TESTBED_BACKEND_PUBLIC_URL`, with a longer deadline: the backend's own `start_period` is 420 s on a
-first start against an empty database.
+first start against an empty database. Setting them also turns on the post-deploy Playwright run,
+which reads the host it targets from `apps/processpuzzle-testbed-e2e/env/.env.<environment>` — so
+`TESTBED_FRONTEND_PUBLIC_URL` and that file have to name the same origin. On `STAGE` both are
+`https://testbed.stage.processpuzzle.de`, and `TESTBED_BACKEND_PUBLIC_URL` is
+`https://api.stage.processpuzzle.de`.
 
 ### The testbed pair — [`build-testbed-apps.yml`](../.github/workflows/build-testbed-apps.yml) + [`deploy-testbed-apps.yml`](../.github/workflows/deploy-testbed-apps.yml)
 
@@ -194,12 +217,20 @@ compile before they can be packaged:
   images from the current ref; duplicating an Angular and a Maven build here would give two
   definitions of how the applications are built, and they would drift. `image_tag` is therefore
   required. To stand an environment up from nothing, run the build workflow on `develop`.
+- **One webhook, not two.** The testbed stack is one Docker Compose resource holding both halves
+  (§4), so `deploy` fires `COOLIFY_WEBHOOK_TESTBED` once and compose orders the halves. A missing
+  secret **fails** the job: the earlier warn-and-continue branch existed so two Application
+  resources could be created one at a time, and with one resource its only remaining effect was a
+  green run that deployed nothing —
+  [run 34049062656](https://github.com/ZsZs/processpuzzle/actions/runs/34049062656) did exactly that.
 
-One `sha-<commit>` serves every environment. Neither Dockerfile declares an `ARG`, so the
-`CICD_STAGE` build-arg passed by `build-image/action.yml` and `docker-compose-apps.yaml` is dead
-config; the frontend's stage is chosen at container start, where `docker-entrypoint.sh` re-renders
-`assets/runtime-env.json` from `PIPELINE_STAGE` and `FIREBASE_API_KEY` over whatever the build baked,
-and every `run-time-conf/config.<stage>.json` is committed and already in the bundle.
+One `sha-<commit>` serves every environment. Neither Dockerfile declares an `ARG`, and the
+`CICD_STAGE` build-arg that `build-image/action.yml` and `docker-compose-apps.yaml` used to pass is
+gone with them. The frontend's stage is chosen at container start, where `docker-entrypoint.sh`
+re-renders `assets/runtime-env.json` from `PIPELINE_STAGE` over whatever the build baked, and every
+`run-time-conf/config.<stage>.json` is committed and already in the bundle. So `PIPELINE_STAGE` in
+the Coolify resource's environment is the whole of what makes a promoted image behave as stage or as
+prod.
 
 ## 11. Three things to know about Coolify
 
@@ -214,10 +245,16 @@ step once the manual path is proven.
 
 ## 12. Still open
 
-- The remaining per-app workflows. The testbed stack's two are done (§10); the four in
-  `processpuzzle-biz` follow the same pair. `docker-compose-apps.yaml` is the holding position until
-  every app has its own Coolify **Application** resource.
-- Confirming the `stage` / `prod` DNS names. `tools/docker/env/.env.<environment>` and
-  `apps/processpuzzle-testbed-frontend/src/run-time-conf/config.<stage>.json` both assume
-  `<stage>.<role>.processpuzzle.com`; nothing has verified those records exist.
-- Creating the Coolify project, resources and environment variables — manual, one-off, and a precondition for the `deploy` job to do anything.
+- The remaining workflows. The testbed stack's pair is done (§10); `processpuzzle-biz`'s stacks
+  follow the same shape, each with its own apps compose file and its own Coolify Docker Compose
+  resource.
+- **The registrable domain for prod.** `stage` is settled on `.de`, matching the Coolify control
+  plane: `testbed.stage.processpuzzle.de`, `api.stage.processpuzzle.de`,
+  `auth.stage.processpuzzle.de`. `prod` still names `.com` in `.env.prod` and `config.prod.json`,
+  while [Application stacks](application-stacks.md) names `testbed.processpuzzle.com` and the e2e
+  project's `.env.prod` already names `testbed.processpuzzle.de`. Deliberately not guessed from
+  stage; resolve it against real DNS and change all four places at once.
+- `prod`'s Coolify resources, and the DNS records for them.
+- `stage`'s remaining out-of-repo configuration — DNS, the `STAGE` environment's webhook secret, the
+  two Coolify resources and the Keycloak client. Written up as a checklist in
+  [Deploying the testbed stack to stage](stage-deployment-runbook.md).

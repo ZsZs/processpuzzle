@@ -49,11 +49,19 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 |---|---|---|---|
 | **dev** | REST `http://localhost:3000/` (common) | Keycloak on `localhost:7070` | `level: debug`; run `npm run stack-up-infra` for the services it talks to |
 | **ci** | REST `localhost:3000`, backend on `localhost:8080` | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
-| **stage** | REST, `stage.api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `stage.auth.processpuzzle.com` | The Coolify-deployed stack |
+| **stage** | REST, `api.stage.processpuzzle.de` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
 | **prod** | REST, `api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
 
-The `stage` / `prod` hostnames follow the convention `tools/docker/env/.env.<environment>` uses for
-`KC_HOSTNAME` and carry its caveat: **confirm them against real DNS before the first deploy.**
+`stage` is on **`.de`**, matching the Coolify control plane, and each name has to agree with
+`tools/docker/env/.env.stage` — `AUTHENTICATION_SERVICE_ROOT` with `KC_HOSTNAME` *and*
+`PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL`, and the frontend's own origin with
+`APP_CORS_ALLOWED_ORIGINS`, since nginx does not proxy to the backend and the browser therefore calls
+`APP_SERVICE_ROOT` cross-origin. `prod` still names `.com` and is **unverified** — see
+[`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §12; confirm it against real
+DNS before the first prod deploy.
+
+These files are **build assets**, so a hostname change here takes effect on the next image build
+rather than on the next deploy. That is the trade for one `sha-<commit>` serving every environment.
 
 `BACKEND_SERVICE_PROVIDER` is `rest` in every stage above. `firestore` remains a supported value —
 `BaseEntityFirestoreService` and the `firebase-auth` provider are still part of the framework — but no
@@ -69,12 +77,16 @@ envsubst '${PIPELINE_STAGE} ${FIREBASE_API_KEY}' \
   > /usr/share/nginx/html/assets/runtime-env.json
 ```
 
-So the same image picks up a different stage purely from the container env vars `PIPELINE_STAGE` and `FIREBASE_API_KEY`. The Firebase API key is injected here (not committed in JSON) and merged into `BASE_CONFIGURATION.FIREBASE_CONFIGURATION` by `main.ts`.
+So the same image picks up a different stage purely from the container env var `PIPELINE_STAGE`.
+`FIREBASE_API_KEY` is still templated alongside it but defaults to empty everywhere: the Firebase
+adapters were removed in 1465575b / 7076cae2, `main.ts` reads it as `?? ''`, and nothing has to
+supply it.
 
 ### Docker compose files
 
 - **`tools/docker/docker-compose-infrastructure.yaml`** — the shared infrastructure layer: Keycloak + Postgres, MinIO, json-server, pgweb. One definition for `ci`, `stage` and `prod`, parameterized by `tools/docker/env/.env.<environment>`.
-- **`tools/docker/docker-compose-apps.yaml`** — the testbed (nginx) and its Spring Boot backend, overlaid on the infrastructure file. Passes `PIPELINE_STAGE=ci` and `FIREBASE_API_KEY` to the testbed container; all services healthchecked and on the `processpuzzle` bridge network. A holding position until each app image becomes its own deployment resource — see [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §4.
+- **`tools/docker/docker-compose-apps.yaml`** — the testbed (nginx) and its Spring Boot backend: the testbed *stack's* own Coolify Docker Compose resource. Passes `PIPELINE_STAGE` and `FIREBASE_API_KEY` to the testbed container; both services healthchecked, and both on the network the infrastructure resource owns, which this file joins as `external`. Pull-only and standalone, because Coolify reads it alone — see [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §4.
+- **`tools/docker/docker-compose-apps-local.yaml`** / **`docker-compose-build.yaml`** / **`docker-compose-pull.yaml`** — the overlays CI and local development add on top, respectively: one compose project instead of two resources, `build:` from the working tree, and reuse of the images already on disk. Overlay them **after** the two base files; see [`tools/README.md`](../../tools/README.md).
 - **`tools/docker/minio/README.md`** — the MinIO sidecar's own README documents its custom image (pre-created `documents`/`images` buckets, `springboot/springboot123` service account) and credential override pattern.
 
 ### Flow summary

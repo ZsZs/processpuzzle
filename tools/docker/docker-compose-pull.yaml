@@ -1,28 +1,25 @@
 # Overlay that makes the topology reuse the images already on disk instead of
-# building or re-pulling them.
+# re-pulling them.
 #
-# It does two different jobs, because the two layers start from different places:
+# Every service in both layers sets `pull_policy: always`, so that a Coolify
+# redeploy cannot silently keep a stale `:stage` image. Locally that means hitting
+# GHCR for seven images on every stop/start cycle. `missing` settles it: pull only
+# when the image is absent locally.
 #
-# - The **application** services in docker-compose-apps.yaml carry a `build:`
-#   section and set `pull_policy: build`. That is correct for CI, whose job is to
-#   prove the images build. It is the wrong default in a devcontainer or
-#   Codespace, where it means compiling an Angular application and a Spring Boot
-#   backend before the stack starts.
-# - The **infrastructure** services in docker-compose-infrastructure.yaml do not
-#   build at all (that lives in docker-compose-build.yaml), but they set
-#   `pull_policy: always`, so that a Coolify redeploy cannot silently keep a stale
-#   `:stage` image. Locally that would hit GHCR for five images on every
-#   stop/start cycle.
-#
-# `missing` settles both: pull only when the image is absent locally.
 #   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
-#     -f docker-compose-apps.yaml -f docker-compose-pull.yaml up -d
+#     -f docker-compose-apps.yaml -f docker-compose-apps-local.yaml
+#     -f docker-compose-pull.yaml up -d
 #
 # Overlay it only *together with* docker-compose-apps.yaml — the two application
 # services below exist nowhere else, and a service with neither image nor build
 # context makes the project invalid. For the infrastructure layer on its own,
 # `up --pull missing` says the same thing in one flag; that is what
 # `npm run stack-up-infra` does.
+#
+# It is also what keeps a devcontainer or Codespace from compiling an Angular
+# application and a Spring Boot backend before the stack starts: the build path
+# now lives entirely in docker-compose-build.yaml, and this file is what you use
+# instead of it.
 #
 # Use `npm run stack-pull` to refresh deliberately, or `npm run stack-up-build`
 # when you want the CI build path.

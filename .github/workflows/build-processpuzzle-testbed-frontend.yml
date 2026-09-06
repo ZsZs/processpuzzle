@@ -57,13 +57,17 @@ jobs:
         name: run-docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
-          # Newline-separated: the infrastructure layer, the overlay that restores its build path
-          # (the base file is pull-only so Coolify pulls rather than rebuilds — see
-          # tools/docker/docker-compose-build.yaml), plus the applications overlaid on both.
+          # Newline-separated, and the ORDER is load-bearing: the two base files (both pull-only, so
+          # Coolify pulls the promoted images rather than rebuilding them), then the overlay that
+          # restores their `build:` sections, then the one that puts the applications back into a
+          # single compose project with the infrastructure. The last file to name a key wins, so the
+          # overlays have to come after the bases — otherwise `pull_policy: always` beats `build`,
+          # and the apps file's `external: true` network beats the one compose should create here.
           compose-file: |
             ./tools/docker/docker-compose-infrastructure.yaml
-            ./tools/docker/docker-compose-build.yaml
             ./tools/docker/docker-compose-apps.yaml
+            ./tools/docker/docker-compose-build.yaml
+            ./tools/docker/docker-compose-apps-local.yaml
           compose-flags: '--env-file tools/docker/env/.env.ci'
 
       - id: e2e-test

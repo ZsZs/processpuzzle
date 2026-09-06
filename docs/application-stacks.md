@@ -40,6 +40,17 @@ the bucket prefix are the same string**, and the database is that string upper-c
 replaced by underscores. Anything that needs to name a stack derives the name rather than inventing
 one, so a new stack is one decision and not five.
 
+> **The Hostname row is the one thing that is not settled.** `stage` is deployed on **`.de`**, matching
+> the Coolify control plane: `testbed.stage.processpuzzle.de`, with `api.stage.processpuzzle.de` for
+> the backend and `auth.stage.processpuzzle.de` for Keycloak — see `tools/docker/env/.env.stage`. The
+> `.com` names in the table above are the *intended* production names and nothing has verified those
+> records exist; `apps/processpuzzle-testbed-e2e/env/.env.prod` already disagrees with them by naming
+> `testbed.processpuzzle.de`. Resolving the split is tracked in
+> [Build and deployment](build-deploy-strategy.md) §12, and it changes this table when it lands. Note
+> that a stack's hostname is the *only* name that varies by environment — the realm, the organization
+> key, the database and the bucket prefix are the same in `ci`, `stage` and `prod`, because they name
+> the stack rather than the deployment.
+
 Both stack keys are in `ReservedOrganizationKeys.DEFAULTS`, so no customer can claim one — which for
 these stacks would mean claiming a realm and a bucket namespace, not just a URL segment.
 
@@ -146,7 +157,7 @@ stays visible.
 | Trusted realm property | `processpuzzle.security.platform-realm` | `…stack-realm` — "the realm this instance serves", which is what it always meant |
 | Admin application | `apps/platform-admin`, container `platform-admin` | `apps/processpuzzle-admin-frontend`, container `processpuzzle-admin-frontend`; image `zsuffazs/processpuzzle-admin-frontend`, Sonar key `processpuzzle_processpuzzle_admin_frontend`. The `platform-admin-frontend` / `platform-admin-backend` **libraries** keep their names. |
 | Backend application | `apps/processpuzzle-backend`, artifact `processpuzzle-backend`, image `zsuffazs/processpuzzle-backend` | `apps/processpuzzle-testbed-backend`, artifact `processpuzzle-testbed-backend`, image `zsuffazs/processpuzzle-testbed-backend`, main class `ProcessPuzzleTestbedBackendApplication`. Still one image for both deployments, so the `admin-backend` service runs the testbed-named image until a separate admin backend exists. |
-| Testbed application | `apps/processpuzzle-testbed`, container `processpuzzle-testbed`, image `zsuffazs/processpuzzle-testbed` | `apps/processpuzzle-testbed-frontend`, container `processpuzzle-testbed-frontend`, image `zsuffazs/processpuzzle-testbed-frontend`, Sonar key `processpuzzle_testbed_frontend`. The npm package stays `@processpuzzle/testbed` so its version history and release tags survive. |
+| Testbed application | `apps/processpuzzle-testbed`, container `processpuzzle-testbed`, image `zsuffazs/processpuzzle-testbed` | `apps/processpuzzle-testbed-frontend`, container `testbed-frontend` (shortened afterwards to match `testbed-backend`; the compose *service* is still `processpuzzle-testbed-frontend`), image `zsuffazs/processpuzzle-testbed-frontend`, Sonar key `processpuzzle_testbed_frontend`. The npm package stays `@processpuzzle/testbed` so its version history and release tags survive. |
 | Tenant application | `apps/processpuzzle-ui`, container `processpuzzle-ui`, image `zsuffazs/processpuzzle-ui`, Sonar key `processpuzzle_processpuzzle_ui` | `apps/processpuzzle-biz-frontend`, container `processpuzzle-biz-frontend`, image `zsuffazs/processpuzzle-biz-frontend`, Sonar key `processpuzzle_biz_frontend`, npm package `@processpuzzle/processpuzzle-biz-frontend` (never published, so nothing to preserve), e2e project `processpuzzle-biz-e2e`. A rename only — the repurposing below is still outstanding. |
 | Tenant realm client id | `processpuzzle-ui` | `processpuzzle-biz` — `keycloak.admin.tenant-client-id` and the SPA's `AUTH_SERVICE_CONFIG.clientId` must agree, so both moved together. Realms provisioned before this hold the old client and need a `down -v` reset locally. |
 
