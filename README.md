@@ -212,12 +212,14 @@ Firebase Auth, all chosen at run time from `run-time-conf/config.<stage>.json`. 
 adapters remain part of the framework for consumers who want them; ProcessPuzzle itself no longer deploys to
 Firebase, and nothing in this repository builds or configures a Firebase project.
 
-**Docker Compose** — `tools/docker/docker-compose-infrastructure.yaml` (the shared services, one
-definition for `ci` / `stage` / `prod`, parameterized by `tools/docker/env/.env.<environment>`,
-pull-only so a deployment runs the images CI promoted — `docker-compose-build.yaml` overlays the
-`build:` sections back for CI and local development) and
-`docker-compose-apps.yaml` (the testbed halves, overlaid on it) compose NgInx serving the Angular app
-and reverse-proxying, the Spring Boot Modulith backend
+**Docker Compose** — two files, one per layer, and each is one Coolify Docker Compose resource:
+`tools/docker/docker-compose-infrastructure.yaml` (the shared services) and
+`docker-compose-apps.yaml` (the testbed stack's two halves, joining the infrastructure resource's
+network as `external`). One definition each for `ci` / `stage` / `prod`, parameterized by
+`tools/docker/env/.env.<environment>`, and both pull-only so a deployment runs the images CI
+promoted; `docker-compose-build.yaml` and `docker-compose-apps-local.yaml` overlay the `build:`
+sections and the single-project topology back for CI and local development. Together they compose
+NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend
 (where feature modules are Modulith modules and the events above are in-process application events), Keycloak
 for identity, PostgreSQL behind both, and MinIO for object storage behind `processpuzzle-store`. The backend
 is deployed **once per application stack** — same image, its own database, realm and bucket prefix each; see

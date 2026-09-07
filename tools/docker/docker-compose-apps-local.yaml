@@ -1,0 +1,53 @@
+# Overlay that puts the application layer back into ONE compose project with the infrastructure.
+#
+# docker-compose-apps.yaml is the file a Coolify Docker Compose resource reads, and a resource reads
+# exactly one file, so it has to stand alone: it joins the infrastructure resource's network as
+# `external` and it names no service it does not define. Neither is true of the CI and local
+# topology, where both layers live in the single `processpuzzle` project and compose creates the
+# network itself. This file restores the difference:
+#
+# - `networks.processpuzzle.external: false` + `driver: bridge`, so compose creates the network
+#   instead of demanding one that already exists. (Compose merge semantics allow this: a later
+#   overlay can set `external` back to false and can restore a `depends_on` a base file omits —
+#   verified with `docker compose config`, v5.5.0.)
+# - The five cross-file `depends_on` entries. Without them the backend starts before PostgreSQL,
+#   MinIO and keycloak-init are ready, and the frontend before Keycloak and json-server are.
+#
+# Overlay it AFTER docker-compose-apps.yaml — order decides which value of `external` wins:
+#
+#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#     -f tools/docker/docker-compose-infrastructure.yaml \
+#     -f tools/docker/docker-compose-apps.yaml \
+#     -f tools/docker/docker-compose-apps-local.yaml up -d --wait
+#
+# It only makes sense *together with* both of those files: the two services below exist nowhere else,
+# and the infrastructure services they wait on are declared in the infrastructure file. That is what
+# `npm run stack-up*`, `nx run processpuzzle-testbed-frontend:docker-build` and
+# .github/workflows/build-processpuzzle-testbed-frontend.yml all do.
+#
+# The application `build:` sections are NOT here — they live in docker-compose-build.yaml alongside
+# the infrastructure ones, which is the file that already means "build from the working tree".
+networks:
+  processpuzzle:
+    external: false
+    driver: bridge
+
+services:
+  processpuzzle-testbed-frontend:
+    depends_on:
+      # frontend → backend is already in docker-compose-apps.yaml; compose merges the maps, so
+      # repeating it here would be noise. nginx resolves `proxy_pass http://json-server:3000/` at
+      # startup, which is why json-server is a startup dependency and not just a runtime one.
+      keycloak:
+        condition: service_healthy
+      json-server:
+        condition: service_healthy
+
+  testbed-backend:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully

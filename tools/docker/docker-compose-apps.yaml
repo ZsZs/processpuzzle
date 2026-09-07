@@ -1,16 +1,43 @@
 # ── The application layer ───────────────────────────────────────────────────────────────────────
 #
-# The testbed stack's frontend and backend, overlaid on docker-compose-infrastructure.yaml:
+# The testbed stack's frontend and backend: the "Docker Compose resource" of
+# docs/build-deploy-strategy.md §4 for the application layer, one resource per application *stack*.
+# §4 originally gave each image its own Application resource; the deployed topology is one compose
+# resource holding both halves, because a Coolify resource reads exactly ONE compose file and the
+# webhook that redeploys it redeploys the whole file. The price is that both halves restart together;
+# what it buys is compose ordering the backend ahead of the frontend with no workflow step to do it.
+#
+# So this file is the DEPLOYABLE one, not the CI one — the same inversion
+# docker-compose-infrastructure.yaml already went through. It is therefore:
+#
+# - PULL-ONLY. No `build:` section, `pull_policy: always`. Coolify runs `docker compose build --pull`
+#   before `up`, with `--project-directory` set to the repo root: a relative `build.context` would
+#   resolve against *that* rather than against this file's directory, and both Dockerfiles are
+#   packaging-only (`COPY dist/…`), so a clone with no `dist/` fails with `"/dist/apps/…": not
+#   found`. A local rebuild would also put different bytes under the promoted `:stage` / `:prod` tag
+#   (strategy §9, §11).
+# - JOINED to the infrastructure resource's network as `external`, rather than declaring it. The
+#   frontend's nginx resolves `proxy_pass http://json-server:3000/` at startup, so without the join
+#   nginx does not even boot.
+# - FREE of `depends_on` entries naming infrastructure services. Coolify runs this file alone, where
+#   `keycloak`, `postgres`, `minio`, `json-server` and `keycloak-init` do not exist. The one
+#   `depends_on` that survives — frontend → backend — names a service defined right here.
+#
+# Every `${VAR:-…}` default below is the current CI value, so the file is correct for local
+# development. .env.stage / .env.prod carry the two that cannot take a CI default
+# (APP_CORS_ALLOWED_ORIGINS and PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL — a wrong value there is a
+# CORS failure and a 401, not a fallback).
+#
+# CI and local development overlay the pieces this file gives up:
 #
 #   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
-#     -f tools/docker/docker-compose-apps.yaml up -d --wait
+#     -f tools/docker/docker-compose-apps.yaml \
+#     -f tools/docker/docker-compose-build.yaml \
+#     -f tools/docker/docker-compose-apps-local.yaml up -d --wait --build
 #
-# THIS FILE IS A HOLDING POSITION. docs/build-deploy-strategy.md §4 gives each application image its
-# own Coolify Application resource, so that redeploying one app never touches another; until those
-# resources exist, this file keeps the CI topology whole after the infra/app split. `stage` and
-# `prod` do not use it. `depends_on` below names services defined in the infrastructure file, so this
-# file is not usable on its own.
+# ORDER MATTERS: the overlays must come *after* this file, or its `external: true` and its missing
+# `depends_on` win over theirs.
 #
 # Both images are on GHCR alongside the infrastructure ones, published by
 # .github/workflows/build-testbed-apps.yml. The Docker Hub coordinates they used to carry went with
@@ -19,27 +46,36 @@
 
 networks:
   processpuzzle:
+    # The infrastructure resource owns this network; this resource joins it. `name` is what makes the
+    # join possible — see docker-compose-infrastructure.yaml:32. docker-compose-apps-local.yaml flips
+    # `external` back to false for the single-project CI and local topology, where the two layers
+    # share one compose project and compose creates the network itself.
+    external: true
     name: ${PP_NETWORK:-processpuzzle}
-    driver: bridge
 
 services:
   processpuzzle-testbed-frontend:
-    pull_policy: build
+    pull_policy: always
     depends_on:
+      # The only surviving `depends_on`: both services are defined in this file, so compose orders
+      # them under Coolify with no overlay. The frontend's healthcheck calls /home, and a browser
+      # reaching it before the API answers is the first thing anyone notices.
       testbed-backend:
         condition: service_healthy
-      keycloak:
-        condition: service_healthy
-      json-server:
-        condition: service_healthy
-    build:
-      context: ../../
-      dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG:-latest}
-    container_name: processpuzzle-testbed-frontend
+    # Shortened to match `testbed-backend`: the two halves of one stack, named the same way. The
+    # SERVICE keeps the long name, because that is the Nx project and the image, and the overlays and
+    # the `npm run stack-up` service arguments all name it.
+    container_name: testbed-frontend
     environment:
+      # What selects run-time-conf/config.<stage>.json out of the bundle, and therefore the one
+      # variable that makes a promoted `sha-<commit>` behave like a stage or a prod deployment.
       PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
-      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+      # Empty by default and empty everywhere: Firebase was removed in 1465575b / 7076cae2 and
+      # main.ts reads it as `env.FIREBASE_API_KEY ?? ''`. Kept only because the entrypoint still
+      # templates assets/runtime-env.json from it; a `${FIREBASE_API_KEY}` with no default would
+      # interpolate to nothing in Coolify, which is the same value, only reached by an error.
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
     ports:
       - "${PP_TESTBED_FRONTEND_PUBLISH:-9090:80}"
     tty: true
@@ -64,17 +100,7 @@ services:
   # docker-compose-infrastructure.yaml, because a realm is shared infrastructure rather than
   # something a backend provisions for itself.
   testbed-backend:
-    pull_policy: build
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      keycloak-init:
-        condition: service_completed_successfully
-    build:
-      context: ../../
-      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+    pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG:-latest}
     container_name: testbed-backend
     environment:
@@ -95,6 +121,10 @@ services:
       # Only the origins of this stack. An origin missing here reaches the frontend as HTTP status 0
       # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
       # the testbed container and 4200 its dev server.
+      #
+      # Load-bearing on stage and prod, where the CI default is simply wrong: nginx does NOT proxy to
+      # the backend, so the browser calls APP_SERVICE_ROOT cross-origin and this list is the only
+      # thing that lets it. .env.stage sets it to the frontend's own https origin.
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
 
       # User management, which is org-admin's. This deployment does not create realms — that went
@@ -114,6 +144,10 @@ services:
       # Reading them from the issuer URL is what made every authenticated request answer 500 — see
       # TenantAuthenticationManagerResolver. A single-origin deployment sets only the first of these,
       # which is what a single-hostname reverse proxy in front of both arranges for prod.
+      #
+      # The issuer must equal KC_HOSTNAME of the infrastructure resource, to the character. Left at
+      # the CI default on stage it rejects every token minted by the real Keycloak, so .env.stage
+      # sets it explicitly.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}
     ports:

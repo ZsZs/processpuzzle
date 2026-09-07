@@ -3,19 +3,19 @@
     "PIPELINE_STAGE": "stage",
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_PROVIDER": "rest",
-    "APP_SERVICE_ROOT": "https://stage.api.processpuzzle.com/organizations/processpuzzle-testbed",
-    "DOCUMENT_SERVICE_ROOT": "https://stage.api.processpuzzle.com/organizations/processpuzzle-testbed",
-    "RULE_SERVICE_ROOT": "https://stage.api.processpuzzle.com/organizations/processpuzzle-testbed",
-    "OBJECT_STORE_SERVICE_ROOT": "https://stage.api.processpuzzle.com",
+    "APP_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "RULE_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "OBJECT_STORE_SERVICE_ROOT": "https://api.stage.processpuzzle.de",
     "FIREBASE_CONFIGURATION": {}
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",
-    "AUTHENTICATION_SERVICE_ROOT": "https://stage.auth.processpuzzle.com",
+    "AUTHENTICATION_SERVICE_ROOT": "https://auth.stage.processpuzzle.de",
     "AUTH_SERVICE_CONFIG": {
       "realm": "processpuzzle-testbed",
       "clientId": "processpuzzle-testbed",
-      "authServerUrl": "https://stage.auth.processpuzzle.com"
+      "authServerUrl": "https://auth.stage.processpuzzle.de"
     }
   }
 }

@@ -30,7 +30,10 @@
     },
     // Needed for tools/docker/docker-compose-infrastructure.yaml (Postgres, Keycloak,
     // MinIO, json-server, pgweb) and docker-compose-apps.yaml (the testbed backend and
-    // the testbed NgInx app).
+    // the testbed NgInx app), plus the overlays the `npm run stack-*` scripts layer on
+    // top of them: docker-compose-apps-local.yaml (one compose project instead of two
+    // Coolify resources), docker-compose-build.yaml (build from the working tree) and
+    // docker-compose-pull.yaml (reuse the images already on disk).
     "ghcr.io/devcontainers/features/docker-in-docker:1": {
       "dockerDashComposeVersion": "v2"
     },

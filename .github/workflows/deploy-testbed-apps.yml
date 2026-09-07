@@ -1,10 +1,14 @@
 name: Deploy-Testbed-Apps
 
 # Moves an environment's tag onto the testbed stack's two application images and triggers the Coolify
-# redeploy of the two **Application** resources that run them — docs/build-deploy-strategy.md §4.
-# The application-layer counterpart of Deploy-Infrastructure, built to the recipe §10 gives for the
-# per-app workflows: same `resolve` / `promote` / `deploy` shape, one image per resource, each
-# resource with its own webhook.
+# redeploy of the **Docker Compose resource** that runs them — docs/build-deploy-strategy.md §4. The
+# application-layer counterpart of Deploy-Infrastructure: same `resolve` / `promote` / `deploy` shape,
+# and like the infrastructure layer, one resource and one webhook for the whole stack.
+#
+# §4 originally gave each application image its own Application resource, so that redeploying one app
+# never touched another. The deployed topology is one compose resource per *stack* instead — see the
+# `deploy` job. Both halves therefore restart together, which is the price of letting compose order
+# them.
 #
 # TWO WAYS IN, and no `push:` trigger of its own — Build-ProcessPuzzle-Testbed-Apps owns that:
 #
@@ -106,42 +110,20 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v5
 
-      # One webhook per Application resource, so the two applications stay independently
-      # redeployable even though one workflow drives both. A resource that has not been created yet
-      # has no webhook secret; that warns rather than fails, so the half that does exist still
-      # deploys during the roll-out.
-      - id: webhooks
-        name: Resolve the configured webhooks
-        env:
-          FRONTEND_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_FRONTEND }}
-          BACKEND_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_BACKEND }}
-        run: |
-          set -euo pipefail
-          for PAIR in "frontend:${FRONTEND_WEBHOOK}" "backend:${BACKEND_WEBHOOK}"; do
-            NAME="${PAIR%%:*}"
-            VALUE="${PAIR#*:}"
-            if [ -n "${VALUE}" ]; then
-              echo "${NAME}=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "${NAME}=false" >> "$GITHUB_OUTPUT"
-              echo "::warning::No COOLIFY_WEBHOOK_TESTBED_$(echo "${NAME}" | tr '[:lower:]' '[:upper:]') in this environment — the ${NAME} resource was not redeployed."
-            fi
-          done
-
-      # The backend first: the frontend's healthcheck calls /home, and a browser reaching it before
-      # the API answers is the first thing anyone notices.
-      - name: Redeploy the backend
-        if: steps.webhooks.outputs.backend == 'true'
+      # ONE webhook, because the testbed stack is ONE Coolify Docker Compose resource holding both
+      # halves — not the two Application resources docs/build-deploy-strategy.md §4 assumed. Two
+      # consequences: ordering the backend ahead of the frontend is compose's job (`depends_on` in
+      # docker-compose-apps.yaml), not this workflow's; and firing the one webhook twice would deploy
+      # the whole stack twice.
+      #
+      # A missing secret now FAILS — the composite action exits 1 on an empty webhook. The earlier
+      # warn-and-continue existed so the two resources could be created one at a time; with a single
+      # resource there is no half-configured state worth tolerating, and a green run that deployed
+      # nothing is the failure mode this replaces.
+      - name: Redeploy the testbed stack
         uses: ./.github/actions/coolify-deploy
         with:
-          webhook: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_BACKEND }}
-          token: ${{ secrets.COOLIFY_TOKEN }}
-
-      - name: Redeploy the frontend
-        if: steps.webhooks.outputs.frontend == 'true'
-        uses: ./.github/actions/coolify-deploy
-        with:
-          webhook: ${{ secrets.COOLIFY_WEBHOOK_TESTBED_FRONTEND }}
+          webhook: ${{ secrets.COOLIFY_WEBHOOK_TESTBED }}
           token: ${{ secrets.COOLIFY_TOKEN }}
 
       # Best-effort: a red workflow should mean a red deployment. Skipped when the environment

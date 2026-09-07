@@ -46,7 +46,8 @@
       "baseUrl": "/",
       "redirectUris": [
         "http://localhost:9090/*",
-        "http://localhost:4200/*"
+        "http://localhost:4200/*",
+        "https://testbed.stage.processpuzzle.de/*"
       ],
       "webOrigins": [
         "+"
