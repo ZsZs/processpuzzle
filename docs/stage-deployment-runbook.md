@@ -132,6 +132,10 @@ a *"connect to a predefined network"* toggle on the resource, it does not replac
 `name:` is what the applications join. **⚠ verify in the UI** that no per-resource network renaming
 is in play.
 
+If the resource previously deployed under the default name, this first redeploy has to *rename* the
+network and will fail on `network processpuzzle has active endpoints` — see
+[§7.1](#71-the-network-rename-deadlock) for the one-time cleanup.
+
 ### Full variable list for this resource
 
 Non-secret, copied from [`.env.stage`](../tools/docker/env/.env.stage) — which stays the source of
@@ -307,6 +311,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | Symptom | Cause |
 |---|---|
 | `network processpuzzle-stage declared as external, but could not be found` | infrastructure resource not deployed, or its `PP_NETWORK` differs |
+| `network processpuzzle has active endpoints (name:"coolify-proxy")` | the resource is renaming its network and `coolify-proxy` still holds the old one — see [§7.1](#71-the-network-rename-deadlock) |
 | nginx exits, `host not found in upstream "json-server"` | the frontend is not on the infrastructure network — nginx resolves its upstream at startup |
 | Browser shows HTTP status **0** on API calls | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS` |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
@@ -320,6 +325,55 @@ The general rule behind half of that table: **every variable in both compose fil
 `${VAR:-<ci default>}`**, so a variable missed in Coolify degrades to the CI value rather than to an
 empty string. On the first deploy, read the resource's rendered `docker compose config` rather than
 trusting the form.
+
+### 7.1 The network-rename deadlock
+
+Happens **once per environment**, on the first deploy after `PP_NETWORK` is set on the resource —
+`processpuzzle` → `processpuzzle-stage`, and later `processpuzzle` → `processpuzzle-prod`. The deploy
+log ends like this, after every image has pulled successfully:
+
+```
+Network processpuzzle Removing
+Network processpuzzle-stage Creating
+network:processpuzzle Error response from daemon: error while removing network:
+  network processpuzzle has active endpoints (name:"coolify-proxy" id:"e11a0c20655d")
+```
+
+The compose *network key* is `processpuzzle` in both cases; only the `name:` it resolves to changed
+(`docker-compose-infrastructure.yaml:32`). Compose therefore has to drop the old network and create
+the new one — but `coolify-proxy` is attached to the old one for reverse proxying and stays attached
+across deployments, so the removal fails and takes the create down with it. Nothing is wrong with the
+images or the compose file, and no amount of redeploying clears it: the old network has to go by hand.
+
+**Run these on the Docker host** — Coolify's sidebar **Terminal**, with the *server* (`localhost`)
+selected as the target, not a container; a container has no Docker CLI or socket. Requires Terminal
+Access enabled under Servers → *server* → Security.
+
+```bash
+# who still holds the OLD network — note: no -stage/-prod suffix here
+docker network inspect processpuzzle
+
+# detach every container the "Containers" block above listed
+docker network disconnect -f processpuzzle coolify-proxy
+
+docker network rm processpuzzle
+```
+
+Then **redeploy the infrastructure resource**, and afterwards the **applications resource as well**:
+its containers are still attached to the network that just went away, and nginx resolves its
+`json-server` and backend upstreams once at startup, so it will not recover on its own.
+
+Two things to check before testing the public URL:
+
+```bash
+docker network ls | grep processpuzzle          # only the -stage name should remain
+docker network inspect processpuzzle-stage | grep coolify-proxy
+```
+
+Coolify re-attaches the proxy on its next reconcile; if it has not,
+`docker network connect processpuzzle-stage coolify-proxy`. And if `docker network rm` still refuses
+after everything is disconnected, the endpoint is stale — `docker network prune`, or restart the
+Docker daemon.
 
 ---
 
