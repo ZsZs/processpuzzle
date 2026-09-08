@@ -118,6 +118,14 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_SERVICE_USER:-springboot}
       MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD:-springboot123}
 
+      # TWO endpoints, and they differ for the same reason the Keycloak pair does. MINIO_ENDPOINT
+      # above is what this container calls; this one is baked into every PRESIGNED URL, which only
+      # the BROWSER ever follows — MinioConfig builds a second client from it for exactly that. Left
+      # at its `minio-config.yaml` default (http://localhost:7000) a stage deployment hands the
+      # browser presigned URLs naming localhost, so uploads and downloads fail while every other
+      # store call succeeds. It therefore needs MinIO published under a hostname of its own.
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:7000}
+
       # Only the origins of this stack. An origin missing here reaches the frontend as HTTP status 0
       # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
       # the testbed container and 4200 its dev server.
