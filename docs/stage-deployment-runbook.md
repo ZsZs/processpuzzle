@@ -115,7 +115,7 @@ Three changes, then redeploy.
 | Field | Change to | Why |
 |---|---|---|
 | `KC_HOSTNAME` (env var) | `https://auth.stage.processpuzzle.de` | was `https://stage.auth.processpuzzle.com`. Keycloak builds the **issuer of every token** from this |
-| Domain, `keycloak` service | `auth.stage.processpuzzle.de` → container port **8080** | ⚠ verify in the UI |
+| Domains, `keycloak` **and** `minio` services | see [Domains](#domains) below | Traefik routers are generated from this field alone |
 | — | redeploy | `KC_HOSTNAME` is baked into the running container's env |
 
 `KC_HOSTNAME` has to match, character for character:
@@ -127,6 +127,28 @@ Three changes, then redeploy.
 - the domain above
 
 A mismatch is a 401 on every authenticated request with nothing in the browser to explain it.
+
+### Domains
+
+| Service | Domain | Container port |
+|---|---|---|
+| `keycloak` | `https://auth.stage.processpuzzle.de` | **8080** |
+| `minio` | `https://minio.stage.processpuzzle.de` | **9000** |
+
+Same rule as [§4](#domains-1): the port field takes the **container** port, because Traefik joins
+`processpuzzle-stage` and dials the container directly — the host publishes (`7070`, `7000`, `7001`)
+exist only for loopback inspection and naming one gives a 502.
+
+MinIO exposes **two** ports, and the choice is not free: `9000` is the S3 API and `9001` is the web
+console. This domain must be `9000`, because it is also `MINIO_PUBLIC_ENDPOINT` (§4) — the hostname
+baked into every presigned URL the *browser* follows, and those are S3 API calls. Pointed at `9001`
+the domain renders the MinIO UI while every upload and download fails. If the console is wanted
+publicly, give it a hostname of its own (`minio-console.stage.processpuzzle.de` → `9001`) and add it
+to the §1 DNS table; otherwise reach it through the loopback publish over SSH.
+
+Neither `pgweb` nor `json-server` gets a domain. `pgweb` is an unauthenticated database browser
+and must never be routed publicly; `json-server` is only reached in-network by the frontend's
+nginx. Both stay on their loopback publishes (`8082`, `3000`).
 
 ### Confirm the network before moving on
 
