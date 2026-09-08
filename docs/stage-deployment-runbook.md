@@ -356,9 +356,10 @@ skipped.** Skipped means the webhook secret is still missing.
 | `network processpuzzle has active endpoints (name:"coolify-proxy")` | the resource is renaming its network and `coolify-proxy` still holds the old one — see [§7.1](#71-the-network-rename-deadlock) |
 | `Bind for :::8080 failed: port is already allocated` | `PP_TESTBED_BACKEND_PUBLISH` is unset on the resource, so it fell back to the CI default `8080:8080` — which `coolify-proxy` owns; see [§7.2](#72-port-is-already-allocated-on-8080) |
 | nginx exits, `host not found in upstream "json-server"` | the frontend is not on the infrastructure network — nginx resolves its upstream at startup |
-| **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 9090 / 8180) instead of the container port (8080 / 9000 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
+| **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 7001 / 9090 / 8180) instead of the container port (8080 / 9000 / 9001 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
+| 502 persists after correcting the port | Coolify writes the Traefik labels at **container creation**, so saving the Domain field does not reach a running container — redeploy, then confirm with the `docker inspect` label check in [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
-| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy-stale-jgroups-peers) |
+| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy--stale-jgroups-peers) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows HTTP status **0** on API calls | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS` |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
@@ -367,11 +368,16 @@ skipped.** Skipped means the webhook secret is still missing.
 | Deploy is green but nothing changed | *"pull latest images and restart"* is off, so the stale `:stage` image was restarted |
 | Frontend serves the CI configuration | `PIPELINE_STAGE` is unset on the resource and fell back to its CI default |
 | Backend answers but with demo credentials | a secret was omitted and fell back to the CI value — the non-`:?`-guarded ones do this silently |
+| A credential's **value is the guard message**, e.g. Keycloak logs `Created temporary admin user with username KEYCLOAK_ADMIN_USERNAME must be set` | the `${VAR:?message}` guards do **not** fail under Coolify — see [§7.5](#75-the--guards-become-values-not-errors) |
+| MinIO logs `Detected default credentials 'minioadmin:minioadmin'` | `MINIO_ROOT_PASSWORD` unset on the resource, fell back to the compose CI default |
+| Keycloak logs `Non-secure context detected; cookies are not secured` and login fails on cross-origin POST | `KC_PROXY_HEADERS` missing, so `X-Forwarded-Proto` is ignored and cookies lose the `Secure` flag |
 
 The general rule behind half of that table: **every variable in both compose files carries a
 `${VAR:-<ci default>}`**, so a variable missed in Coolify degrades to the CI value rather than to an
 empty string. On the first deploy, read the resource's rendered `docker compose config` rather than
 trusting the form.
+
+The six `${VAR:?message}`-guarded ones are **not** the exception they look like — see §7.5.
 
 ### 7.1 The network-rename deadlock
 
@@ -531,6 +537,41 @@ One thing to check afterwards, whichever route you take: `keycloak-init` has
 `platform-admin` service-account client may be missing. Without it the backend's identity ports
 fall back to their no-op implementations and user management silently does nothing, while every
 other feature works. Re-running the deployment runs it; it is idempotent.
+
+### 7.5 The `:?` guards become values, not errors
+
+Six variables are written as `${VAR:?VAR must be set}` in
+[`docker-compose-infrastructure.yaml`](../tools/docker/docker-compose-infrastructure.yaml):
+`POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` and `KEYCLOAK_ADMIN_PASSWORD` (the last two twice, for
+`keycloak` and `keycloak-init`). Under `docker compose` that form aborts the command when the variable
+is unset, which is the point.
+
+**Coolify does not honour it.** It parses the compose file to populate the resource's variable list and
+takes everything after `:?` as the *default value*, so an unset variable is substituted with its own
+error message. The deployment goes green and the service starts with a credential literally spelled
+`POSTGRES_PASSWORD must be set`. Observed on 2026-09-08:
+
+```
+KC-SERVICES0077: Created temporary admin user with username KEYCLOAK_ADMIN_USERNAME must be set
+```
+
+Nothing downstream objects, because it is a perfectly valid string. What it breaks is anything that has
+to *agree* on the value: `keycloak-init` authenticates with the same pair and works, so the
+`platform-admin` client is created and the stack looks healthy — but the password in your notes is not
+the password in the database, and `10-init-db.sh` has already burned the wrong one into
+`postgres_data`, where only a volume wipe can change it.
+
+So treat the guarded six as **required manual entries**, not as guarded. After the first deploy of a
+resource, check them against what you intended:
+
+```bash
+docker exec <keycloak container> printenv | grep -E 'KC_BOOTSTRAP|KC_DB_PASSWORD'
+docker exec <minio container>    printenv | grep MINIO_ROOT
+```
+
+Either should echo your value; if it echoes a sentence, the variable is missing from the resource. The
+same reading also catches the `${VAR:-<ci default>}` cases, which fail even more quietly — MinIO
+announcing `Detected default credentials 'minioadmin:minioadmin'` is the only warning any of them give.
 
 ---
 

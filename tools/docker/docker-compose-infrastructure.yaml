@@ -69,7 +69,19 @@ services:
       # Production settings
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "${KC_HOSTNAME_STRICT:-false}"
-      KC_PROXY: "edge"
+      # Supersedes the deprecated KC_PROXY=edge, which Keycloak 26.4 logs as "Hostname v1 options
+      # [proxy] are still in use" followed by "Likely misconfiguration detected. When using an edge
+      # proxy, you must use `proxy-headers`". It is not cosmetic: without it Keycloak never reads
+      # X-Forwarded-Proto, so every request behind Traefik looks like plain HTTP. It then logs
+      # "Non-secure context detected; cookies are not secured, and will not be available in
+      # cross-origin POST requests" and issues its session cookies without the Secure flag — which
+      # breaks login on a stack whose frontend and Keycloak sit on different hostnames, while
+      # leaving every unauthenticated page working. `xforwarded` rather than `forwarded` because
+      # Traefik sends the X-Forwarded-* family, not RFC 7239 `Forwarded`.
+      #
+      # Trusting these headers is only safe because nothing but coolify-proxy can reach this
+      # container: its published port is bound to 127.0.0.1 (see PP_KEYCLOAK_PUBLISH).
+      KC_PROXY_HEADERS: "xforwarded"
       # NO KC_HTTP_RELATIVE_PATH HERE. `kc.sh start --optimized` refuses a build-time option supplied
       # at run time: Keycloak logs "build time options have values that differ from what is persisted"
       # and exits 2, taking every service that waits on it down with it. The deleted
