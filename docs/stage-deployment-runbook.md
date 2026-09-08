@@ -370,6 +370,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | Backend answers but with demo credentials | a secret was omitted and fell back to the CI value — the non-`:?`-guarded ones do this silently |
 | A credential's **value is the guard message**, e.g. Keycloak logs `Created temporary admin user with username KEYCLOAK_ADMIN_USERNAME must be set` | the `${VAR:?message}` guards do **not** fail under Coolify — see [§7.5](#75-the--guards-become-values-not-errors) |
 | MinIO logs `Detected default credentials 'minioadmin:minioadmin'` | `MINIO_ROOT_PASSWORD` unset on the resource, fell back to the compose CI default |
+| Coolify shows the resource **running, with no healthcheck** | `keycloak-init` is a one-shot that exits 0 and has no health state by design; Coolify aggregates over every container. Confirm with `docker ps -a --filter name=<resource uuid>` — anything other than `keycloak-init` lacking `(healthy)` is a real gap |
 | Keycloak logs `Non-secure context detected; cookies are not secured` and login fails on cross-origin POST | `KC_PROXY_HEADERS` missing, so `X-Forwarded-Proto` is ignored and cookies lose the `Secure` flag |
 
 The general rule behind half of that table: **every variable in both compose files carries a
