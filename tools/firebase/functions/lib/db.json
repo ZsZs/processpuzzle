@@ -1,0 +1,293 @@
+{
+    "application-properties": [
+        {
+            "id": "e98e29a3-5c20-410a-b31c-b2584102283c",
+            "name": "likes",
+            "value": "42"
+        },
+        {
+            "id": "custom-id-123",
+            "name": "theme",
+            "value": "dark"
+        }
+    ],
+    "test-entity": [
+        {
+            "id": "1",
+            "name": "entity_1",
+            "description": "test entity one",
+            "boolean": true,
+            "number": 100,
+            "date": "2024-01-18T20:02:27",
+            "lookup": "schlüssel_4",
+            "enumValue": 3,
+            "artifact": {
+                "bucket": "archives",
+                "objectId": "a25a4ad1-af25-471a-8e7a-6021226f17d9",
+                "name": "ef-generic-message",
+                "mimeType": "application/zip"
+            },
+            "tags": [
+                "tag1",
+                "tag2"
+            ],
+            "additionalProperties": {
+                "priority": "high",
+                "owner": "alice",
+                "region": "eu-west-1"
+            },
+            "components": [
+                "1",
+                "2",
+                "3"
+            ],
+            "embeddedComponents": [
+                {
+                    "id": "embedded_1_1",
+                    "name": "embedded_one",
+                    "description": "embedded component carried inside entity_1",
+                    "embeddedDetails": [
+                        {
+                            "id": "detail_1_1_a",
+                            "name": "detail_one",
+                            "note": "nested two levels inside entity_1"
+                        },
+                        {
+                            "id": "detail_1_1_b",
+                            "name": "detail_two",
+                            "note": "second detail of embedded_one"
+                        }
+                    ]
+                },
+                {
+                    "id": "embedded_1_2",
+                    "name": "embedded_two",
+                    "description": "second embedded component of entity_1",
+                    "embeddedDetails": [
+                        {
+                            "id": "detail_1_2_a",
+                            "name": "detail_three",
+                            "note": "detail of embedded_two"
+                        }
+                    ]
+                }
+            ],
+            "relatedEntities": [
+                {
+                    "id": "1",
+                    "name": "related_1",
+                    "description": "related entity one"
+                },
+                {
+                    "id": "3",
+                    "name": "related_3",
+                    "description": "related entity three"
+                }
+            ]
+        },
+        {
+            "id": "2",
+            "name": "entity_2",
+            "description": "test entity changed",
+            "boolean": true,
+            "number": 200,
+            "date": "2024-02-18T20:02:27",
+            "lookup": "schlüssel_2",
+            "enumValue": 0,
+            "tags": [
+                "tag3"
+            ],
+            "additionalProperties": {
+                "priority": "low"
+            },
+            "artifact": {
+                "bucket": "documents",
+                "objectId": "a0dfb8a9-bbf0-4664-b705-cf4ecb450d66",
+                "name": "HUK24_Versicherungsschein",
+                "mimeType": "application/pdf"
+            },
+            "components": [
+                "4",
+                "5"
+            ],
+            "embeddedComponents": [
+                {
+                    "id": "embedded_2_1",
+                    "name": "embedded_three",
+                    "description": "embedded component carried inside entity_2",
+                    "embeddedDetails": []
+                }
+            ],
+            "relatedEntities": [
+                {
+                    "id": "2",
+                    "name": "related_2",
+                    "description": "related entity two"
+                }
+            ]
+        },
+        {
+            "id": "3",
+            "name": "entity_3",
+            "description": "test entity three",
+            "boolean": true,
+            "number": 300,
+            "date": "2024-03-21T23:00:00.000Z",
+            "lookup": "schlüssel_3",
+            "enumValue": 0,
+            "additionalProperties": {},
+            "artifact": {
+                "bucket": "documents",
+                "objectId": "dafda75e-73f7-41ab-a351-14a0a7c851af",
+                "name": "Befund",
+                "mimeType": "application/pdf"
+            }
+        },
+        {
+            "id": "4",
+            "name": "entity_4",
+            "description": "test entity four",
+            "boolean": false,
+            "number": 400,
+            "date": "2024-04-18T20:02:27",
+            "enumValue": 0,
+            "tags": [
+                "tag1",
+                "tag2"
+            ]
+        },
+        {
+            "id": "5",
+            "name": "entity_5",
+            "description": "test entity five",
+            "boolean": true,
+            "number": 500,
+            "date": "2024-05-18T20:02:27",
+            "enumValue": 4,
+            "additionalProperties": {
+                "owner": "carol",
+                "reviewed": "true"
+            }
+        }
+    ],
+    "test-entity-component": [
+        {
+            "id": "1",
+            "name": "component_1",
+            "description": "component one",
+            "testEntityId": "1"
+        },
+        {
+            "id": "2",
+            "name": "component_2",
+            "description": "component two",
+            "testEntityId": "1"
+        },
+        {
+            "id": "3",
+            "name": "component_3",
+            "description": "component three",
+            "testEntityId": "1"
+        },
+        {
+            "id": "4",
+            "name": "component_4",
+            "description": "component four",
+            "testEntityId": "2"
+        },
+        {
+            "id": "5",
+            "name": "component_5",
+            "description": "component five",
+            "testEntityId": "2"
+        }
+    ],
+    "related-entity": [
+        {
+            "id": "1",
+            "name": "related_1",
+            "description": "related entity one"
+        },
+        {
+            "id": "2",
+            "name": "related_2",
+            "description": "related entity two"
+        },
+        {
+            "id": "3",
+            "name": "related_3",
+            "description": "related entity three"
+        },
+        {
+            "id": "4",
+            "name": "related_4",
+            "description": "related entity four"
+        },
+        {
+            "id": "5",
+            "name": "related_5",
+            "description": "related entity five"
+        },
+        {
+            "id": "6",
+            "name": "related_6",
+            "description": "related entity six"
+        },
+        {
+            "id": "7",
+            "name": "related_7",
+            "description": "related entity seven"
+        },
+        {
+            "id": "8",
+            "name": "related_8",
+            "description": "related entity eight"
+        },
+        {
+            "id": "9",
+            "name": "related_9",
+            "description": "related entity nine"
+        },
+        {
+            "id": "10",
+            "name": "related_10",
+            "description": "related entity ten"
+        },
+        {
+            "id": "11",
+            "name": "related_11",
+            "description": "related entity eleven"
+        },
+        {
+            "id": "12",
+            "name": "related_12",
+            "description": "related entity twelve"
+        }
+    ],
+    "trunk-data": [
+        {
+            "id": "1",
+            "key": "schlüssel_1",
+            "description": "einfache Benutzer Rolle",
+            "value": "Wert 1"
+        },
+        {
+            "id": "2",
+            "key": "schlüssel_2",
+            "description": "Trainer Rolle",
+            "value": "Wert 2"
+        },
+        {
+            "id": "3",
+            "key": "schlüssel_3",
+            "description": "Administrator Rolle",
+            "value": "Wert 3"
+        },
+        {
+            "key": "schlüssel_4",
+            "id": "4",
+            "description": "Supervisor Rolle",
+            "value": "Wert 4"
+        }
+    ]
+}
