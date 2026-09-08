@@ -92,8 +92,11 @@ services:
       timeout: 10s
       retries: 3
       # Failures before this elapses do not count against `retries`. Keycloak needs ~40s on a fresh
-      # database and was measured at 96s against a reused one — it spends the difference trying to
-      # rejoin jgroups peers a previous container recorded. Without this the three retries are spent
+      # database and was measured at 96s against a reused one — it spent the difference trying to
+      # rejoin jgroups peers a previous container had recorded, a cost that grew with every redeploy
+      # until a 2026-09-08 deployment spent 14 minutes on it and failed. The keycloak image now
+      # builds with KC_CACHE=local, which removes that phase entirely; the headroom below stays,
+      # because the first start against an empty database is still slow. Without this the retries are spent
       # before it listens, the container is declared unhealthy, and every service that waits on it —
       # every application stack's backend — refuses to start, seconds before Keycloak finishes
       # coming up.

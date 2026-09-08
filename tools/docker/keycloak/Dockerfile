@@ -5,6 +5,21 @@ FROM quay.io/keycloak/keycloak:26.4.7 AS builder
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
 
+# ONE Keycloak container per environment, so there is no cluster to form — and the default
+# distributed cache makes every start pay for that anyway. With JDBC_PING, each container records
+# itself in the JGROUPS_PING table and never removes the row, so a redeploy leaves a dead peer
+# behind: the next start spends its JOIN attempts on addresses that answer "Connection refused",
+# ten tries at two seconds each, before logging "too many JOIN attempts (10): becoming singleton"
+# and carrying on. The cost grows with every deployment, and once it exceeds the healthcheck's
+# start_period compose declares the container unhealthy and takes down everything that waits on it
+# — an infrastructure deployment that fails while Keycloak is, in fact, coming up fine.
+#
+# `cache` is a BUILD-TIME option, hence here and not in the compose file: `kc.sh start --optimized`
+# exits 2 when a build-time option is supplied at run time (see docker-compose-infrastructure.yaml).
+# The trade is HA, which a single-container deployment does not have to begin with. Restoring it
+# means removing this line, rebuilding, and running more than one replica.
+ENV KC_CACHE=local
+
 # Configure the database vendor (e.g., postgres, mysql, oracle, mssql)
 ENV KC_DB=postgres
 
