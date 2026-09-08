@@ -336,6 +336,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | nginx exits, `host not found in upstream "json-server"` | the frontend is not on the infrastructure network — nginx resolves its upstream at startup |
 | **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 9090 / 8180) instead of the container port (8080 / 9000 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
 | Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
+| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy-stale-jgroups-peers) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows HTTP status **0** on API calls | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS` |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
@@ -463,6 +464,51 @@ docker network inspect ${PP_NETWORK:-processpuzzle-stage}   --format '{{range .C
 
 Coolify addresses **services**, so the fields belong to `processpuzzle-testbed-frontend` and
 `testbed-backend` — the container names it generated are not selectable and not what you configure.
+
+### 7.4 Keycloak unhealthy on redeploy — stale jgroups peers
+
+The deploy waits on Keycloak and eventually gives up:
+
+```
+Container keycloak-… Waiting
+Container keycloak-… Error dependency keycloak failed to start
+dependency failed to start: container keycloak-… is unhealthy
+```
+
+Nothing is wrong with Keycloak. Its log shows JOIN attempts against an address that answers
+`Connection refused`, then:
+
+```
+too many JOIN attempts (10): becoming singleton
+```
+
+`JDBC_PING` records every container in the `JGROUPS_PING` table of the `keycloak` database and
+never removes the row, so each redeploy leaves a dead peer behind and each subsequent start pays
+to discover that. **The cost grows with every deployment**, which is what makes this look
+intermittent: it fit inside `start_period: 150s` for months and then took 14 minutes.
+
+Fixed at the image level as of 2026-09-08 — `tools/docker/keycloak/Dockerfile` builds with
+`KC_CACHE=local`, so there is no cluster to join. `cache` is a build-time option, so it has to be
+baked in; supplying it at run time makes an `--optimized` start exit 2.
+
+Two consequences worth knowing. Deploying the fix needs the **image rebuilt and re-promoted**
+(`tools/docker/**` triggers Build-Infrastructure, which calls Deploy-Infrastructure), not just a
+redeploy of the existing `:stage` image. And to unblock a deployment *before* that lands, clear the
+table by hand:
+
+```bash
+PG=<postgres container>
+docker exec $PG psql -U keycloak -d keycloak -c '\dt'          # confirm the table's exact name
+docker exec $PG psql -U keycloak -d keycloak -c 'DELETE FROM "JGROUPS_PING";'
+```
+
+Safe with Keycloak running — the rows are discovery hints, and a live node re-registers itself.
+
+One thing to check afterwards, whichever route you take: `keycloak-init` has
+`depends_on: keycloak: condition: service_healthy`, so an aborted deploy never ran it and the
+`platform-admin` service-account client may be missing. Without it the backend's identity ports
+fall back to their no-op implementations and user management silently does nothing, while every
+other feature works. Re-running the deployment runs it; it is idempotent.
 
 ---
 
