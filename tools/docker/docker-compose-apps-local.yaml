@@ -33,7 +33,7 @@ networks:
     driver: bridge
 
 services:
-  processpuzzle-testbed-frontend:
+  testbed-frontend:
     depends_on:
       # frontend → backend is already in docker-compose-apps.yaml; compose merges the maps, so
       # repeating it here would be noise. nginx resolves `proxy_pass http://json-server:3000/` at

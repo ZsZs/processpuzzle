@@ -24,7 +24,7 @@
 # Use `npm run stack-pull` to refresh deliberately, or `npm run stack-up-build`
 # when you want the CI build path.
 services:
-  processpuzzle-testbed-frontend:
+  testbed-frontend:
     pull_policy: missing
   testbed-backend:
     pull_policy: missing

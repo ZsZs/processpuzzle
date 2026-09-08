@@ -78,7 +78,7 @@ Not one Application resource per image, which is what this section originally pr
 | Resource | Compose file | Webhook secret | Holds |
 |---|---|---|---|
 | Infrastructure | `docker-compose-infrastructure.yaml` | `COOLIFY_WEBHOOK` | Postgres, Keycloak (+ `keycloak-init`), MinIO, json-server, pgweb — shared by every stack |
-| Testbed stack | `docker-compose-apps.yaml` | `COOLIFY_WEBHOOK_TESTBED` | `processpuzzle-testbed-frontend` + `testbed-backend` |
+| Testbed stack | `docker-compose-apps.yaml` | `COOLIFY_WEBHOOK_TESTBED` | `testbed-frontend` + `testbed-backend` |
 | *(biz repo)* | its own apps file per stack | its own | the Admin and Biz stacks |
 
 Why the per-image Application resource lost:

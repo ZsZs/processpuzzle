@@ -227,7 +227,7 @@ Without the option the webhook cheerfully restarts the stale image and the deplo
 
 | Service | Domain | Container port |
 |---|---|---|
-| `processpuzzle-testbed-frontend` | `https://testbed.stage.processpuzzle.de` | **80** |
+| `testbed-frontend` | `https://testbed.stage.processpuzzle.de` | **80** |
 | `testbed-backend` | `https://api.stage.processpuzzle.de` | **8080** |
 
 **⚠ Both domains have to be entered, with the `https://` scheme.** Coolify generates the Traefik
@@ -235,10 +235,13 @@ router labels from this field alone — DNS pointing at the server does nothing 
 missing domain surfaces as *"no available server"* rather than as any deployment error. See
 [§7.3](#73-no-available-server-with-both-containers-healthy).
 
-Note the service name is `processpuzzle-testbed-frontend` while the *container* is `testbed-frontend`
-— Coolify addresses services. The **container** port in that table is what the proxy talks to over the
-compose network, and it is 8080 for the backend regardless of the host port below. **⚠ verify in the
-UI** how it wants the port expressed.
+Service and container now carry the same name on both halves of the stack (they did not always:
+the frontend's *service* was `processpuzzle-testbed-frontend` until this change, so **a deployment
+that predates it has its domain attached to that old name** — Coolify addresses services, the entry
+does not follow a rename, and the symptom is *"no available server"* on the frontend alone. Re-enter
+the domain on `testbed-frontend` and redeploy). The **container** port in that table is what the
+proxy talks to over the compose network, and it is 8080 for the backend regardless of the host port
+below. **⚠ verify in the UI** how it wants the port expressed.
 
 The published (host) ports are bound to `127.0.0.1`, deliberately: the proxy needs none of them, and
 loopback still leaves the containers reachable through an SSH tunnel for inspection. The backend's is
@@ -374,6 +377,29 @@ Allow up to **~7 minutes** for the backend's first start against an empty databa
 ArchUnit module-structure pass plus the metadata seeding was measured at 262 s, and the healthcheck's
 `start_period` is 420 s. A transient `unhealthy` inside that window is not a failure.
 
+**Then check the CORS allow-list**, which none of the three commands above touches — they send no
+`Origin`, so a backend that rejects the frontend's origin still answers all of them with 200:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X OPTIONS \
+  https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed/state-machines \
+  -H 'Origin: https://testbed.stage.processpuzzle.de' \
+  -H 'Access-Control-Request-Method: GET'
+```
+
+`200` is correct. `403` (body `Invalid CORS request`) means `APP_CORS_ALLOWED_ORIGINS` never reached
+the Coolify **application** resource, so `docker-compose-apps.yaml` applied its CI default,
+`http://localhost:9090,http://localhost:4200`. Confirm by re-running the command with
+`Origin: http://localhost:9090` — if *that* answers 200, the default is what is in force. In the
+browser this surfaces only as `net::ERR_FAILED` and Angular `HTTP 0`, with no mention of CORS,
+because a rejected **preflight** never reaches the CORS-error path a rejected main request would take.
+
+This is the failure mode `.env.stage`'s header warns about: every variable in the compose file carries
+a `${VAR:-<ci default>}`, so a variable missed in Coolify degrades to a plausible-looking CI value
+rather than to an empty string. `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` sits in the same block of
+`.env.stage` for the same reason and fails the same silent way — as 401 on every authenticated request
+— so if CORS was missing, check that one before anything else.
+
 Then log in through the UI — that is the only check that exercises the issuer, the redirect URI and
 CORS together.
 
@@ -397,7 +423,8 @@ skipped.** Skipped means the webhook secret is still missing.
 | Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
 | Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy--stale-jgroups-peers) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
-| Browser shows HTTP status **0** on API calls | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS` |
+| Browser shows `net::ERR_FAILED` and HTTP status **0** on API calls, with no CORS message | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS`, so the *preflight* is rejected with 403 `Invalid CORS request` — confirm with the `OPTIONS` check in [§6](#after-4-applications) |
+| `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the realm's CSP does not name the frontend's origin, so `Keycloak.init()` rejects and authentication never initialises — see [§5.2](#52-security-defenses) |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
 | **500** on every authenticated request | `PROCESSPUZZLE_SECURITY_JWKS_BASE_URL` was set to the public URL; it must stay `http://keycloak:8080` |
 | Login redirects to an "Invalid redirect URI" page | §5 not done |
@@ -527,8 +554,10 @@ docker network inspect ${PP_NETWORK:-processpuzzle-stage}   --format '{{range .C
 | `coolify-proxy` missing from the app network | the proxy was never attached, or is still on the pre-rename network | `docker network connect <network> coolify-proxy`, then check [§7.1](#71-the-network-rename-deadlock) |
 | labels and networks both fine | the domain names a port the container does not listen on | container port is **80** for the frontend and **8080** for the backend — the host publishes (9090 / 8180) are irrelevant to the proxy |
 
-Coolify addresses **services**, so the fields belong to `processpuzzle-testbed-frontend` and
-`testbed-backend` — the container names it generated are not selectable and not what you configure.
+Coolify addresses **services**, so the fields belong to `testbed-frontend` and `testbed-backend` —
+the container names it generated are not selectable and not what you configure. If the frontend alone
+has no router, check whether its domain is still attached to the old `processpuzzle-testbed-frontend`
+service key; see the note under [§4's Domains table](#domains).
 
 ### 7.4 Keycloak unhealthy on redeploy — stale jgroups peers
 

@@ -27,7 +27,7 @@
 # docker-compose-pull.yaml also requires: on its own it would add the two application services to an
 # infrastructure-only project, tagged `:latest` with no `image:` of their own.
 services:
-  processpuzzle-testbed-frontend:
+  testbed-frontend:
     pull_policy: build
     build:
       context: ../../

@@ -54,7 +54,7 @@ networks:
     name: ${PP_NETWORK:-processpuzzle}
 
 services:
-  processpuzzle-testbed-frontend:
+  testbed-frontend:
     pull_policy: always
     depends_on:
       # The only surviving `depends_on`: both services are defined in this file, so compose orders
@@ -63,9 +63,12 @@ services:
       testbed-backend:
         condition: service_healthy
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG:-latest}
-    # Shortened to match `testbed-backend`: the two halves of one stack, named the same way. The
-    # SERVICE keeps the long name, because that is the Nx project and the image, and the overlays and
-    # the `npm run stack-up` service arguments all name it.
+    # Both halves of one stack are named the same way, service and container alike: `testbed-frontend`
+    # and `testbed-backend`. Neither matches its Nx project or its image — those keep the
+    # `processpuzzle-` prefix that makes them unambiguous in a registry and in the Nx graph, which a
+    # service key inside a file that already means "the testbed stack" does not need. The service key
+    # is what Coolify attaches a domain to, so renaming it again means re-entering that domain; see
+    # docs/stage-deployment-runbook.md §4.
     container_name: testbed-frontend
     environment:
       # What selects run-time-conf/config.<stage>.json out of the bundle, and therefore the one
