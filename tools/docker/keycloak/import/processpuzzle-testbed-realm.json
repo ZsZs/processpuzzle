@@ -9,8 +9,8 @@
   "editUsernameAllowed": false,
   "bruteForceProtected": false,
   "browserSecurityHeaders": {
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9090; object-src 'none';",
-    "xFrameOptions": "ALLOW-FROM http://localhost:9090"
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9090 http://localhost:4200 https://testbed.stage.processpuzzle.de https://testbed.processpuzzle.com; object-src 'none';",
+    "xFrameOptions": ""
   },
   "users": [
     {

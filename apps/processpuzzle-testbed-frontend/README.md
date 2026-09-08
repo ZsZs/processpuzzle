@@ -52,6 +52,17 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 | **stage** | REST, `api.stage.processpuzzle.de` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
 | **prod** | REST, `api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
 
+**`BACKEND_SERVICE_ROOT` has to be overridden per stage, and is easy to miss.** It names the
+[`json-server` mock](../../tools/mock-backend/README.md) standing in for third-party REST sources —
+`application-properties`, read by the `like-button` demo widget, is the one thing that uses it — and
+`config.common.json` sets it to `http://localhost:3000`, which is right for `dev` and `ci` and a dead
+address in the browser of anyone using a deployment. A deployment cannot reach json-server directly
+either: it is deliberately given no domain, so `stage` and `prod` point at **their own origin's
+`/backend` prefix**, which `tools/docker/processpuzzle-testbed-frontend/nginx.conf` reverse-proxies to
+`json-server:3000`. Being same-origin, it needs no CORS entry. Every *other* root in
+`config.common.json` is already overridden in each stage file, so this is the single value where
+inheriting the common default is a bug rather than a default.
+
 `stage` is on **`.de`**, matching the Coolify control plane, and each name has to agree with
 `tools/docker/env/.env.stage` — `AUTHENTICATION_SERVICE_ROOT` with `KC_HOSTNAME` *and*
 `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL`, and the frontend's own origin with

@@ -3,6 +3,7 @@
     "PIPELINE_STAGE": "stage",
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_PROVIDER": "rest",
+    "BACKEND_SERVICE_ROOT": "https://testbed.stage.processpuzzle.de/backend",
     "APP_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
     "DOCUMENT_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
     "RULE_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",

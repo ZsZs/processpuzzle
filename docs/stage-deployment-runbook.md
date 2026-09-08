@@ -297,20 +297,56 @@ Two you can **omit**, because their compose defaults are already right:
 
 ## 5. Keycloak admin console on stage
 
-Add to the `processpuzzle-testbed` realm → client `processpuzzle-testbed` → **Valid redirect URIs**:
+Two edits, both in the `processpuzzle-testbed` realm.
+
+### 5.1 Valid redirect URIs
+
+Realm → client `processpuzzle-testbed` → **Valid redirect URIs**, add:
 
 ```
 https://testbed.stage.processpuzzle.de/*
 ```
 
-**This has to be done by hand even though the change is committed.** The URI is in
+`webOrigins` is `"+"`, which derives CORS origins from the redirect URIs, so it needs no separate
+edit.
+
+### 5.2 Security defenses
+
+Realm → **Realm settings → Security defenses**:
+
+| Field | Value |
+|---|---|
+| Content-Security-Policy | `frame-src 'self'; frame-ancestors 'self' http://localhost:9090 http://localhost:4200 https://testbed.stage.processpuzzle.de https://testbed.processpuzzle.com; object-src 'none';` |
+| X-Frame-Options | *empty* |
+
+`frame-ancestors` decides who may put Keycloak in an `<iframe>`, and keycloak-js needs exactly that
+three times: the third-party-cookie probe (`3p-cookies/step1.html`), the session-status iframe
+(`login-status-iframe.html`) and silent check-SSO. The committed value named `http://localhost:9090`
+alone — the CI frontend — so on stage the browser refused the first of the three and reported
+
+```
+Framing 'https://auth.stage.processpuzzle.de/' violates the following Content Security Policy
+directive: "frame-ancestors 'self' http://localhost:9090"
+```
+
+followed by `Timeout when waiting for 3rd party check iframe message`. That timeout **rejects
+`Keycloak.init()`**, so authentication never initialises and the app cannot even offer a login —
+`keycloak-js` degrades gracefully when the probe answers `unsupported`, but a blocked iframe answers
+nothing at all.
+
+X-Frame-Options is emptied rather than corrected: the previous `ALLOW-FROM http://localhost:9090`
+names a single origin in a directive no current browser implements (Firefox dropped it in 70, Chrome
+never had it). Every browser that supports `frame-ancestors` ignores X-Frame-Options when both are
+present, so the header only added noise — and left a header no browser can honour standing where a
+reader would expect the real control to be.
+
+### Both edits have to be done by hand even though the change is committed
+
+Both values are in
 [`processpuzzle-testbed-realm.json`](../tools/docker/keycloak/import/processpuzzle-testbed-realm.json),
 but `--import-realm` **skips a realm that already exists** — so the committed file only reaches a
 realm created after this change. The import file matters for a fresh environment; the console matters
 for the one already running.
-
-`webOrigins` is `"+"`, which derives CORS origins from the redirect URIs, so it needs no separate
-edit.
 
 ---
 
