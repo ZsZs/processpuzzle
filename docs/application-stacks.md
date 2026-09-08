@@ -33,7 +33,12 @@ whose names drift is a stack that fails at run time in a way no test catches.
 | **Organization key** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
 | **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] |
 | **MinIO bucket prefix** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
-| **Backend** | `testbed-backend` (host 8080) | `processpuzzle-biz-backend` (new, onboarding only) | `admin-backend` (host 8083) |
+| **Backend** | `testbed-backend` (container 8080; host 8180 on Coolify)&nbsp;[^proxyport] | `processpuzzle-biz-backend` (new, onboarding only) | `admin-backend` (host 8083) |
+
+[^proxyport]: Container 8080 is what the reverse proxy and the healthcheck use, and it never varies.
+    The *host* publish is for SSH-tunnel inspection only and is `127.0.0.1:8180:8080` on `stage` and
+    `prod`, because `coolify-proxy` owns `0.0.0.0:8080` for the Traefik dashboard. CI keeps `8080:8080`.
+    See §7.2 of [the stage runbook](stage-deployment-runbook.md#72-port-is-already-allocated-on-8080).
 
 The pattern is deliberately mechanical: **for stacks #1 and #3 the realm name, the organization key and
 the bucket prefix are the same string**, and the database is that string upper-cased with dashes
@@ -147,7 +152,7 @@ stays visible.
 | Area | Was | Now |
 | --- | --- | --- |
 | Persistence | H2 in-memory; PostgreSQL hosted only `keycloak` | `processpuzzle_testbed` and `processpuzzle_admin`, created by `tools/docker/postgresql/10-init-db.sh`; H2 is test-scope only |
-| Backend deployments | One `processpuzzle-backend` container serving every frontend | `testbed-backend` (host 8080), one stack. `admin-backend` (host 8083) ran the same image beside it until the platform-admin extraction moved it to the private repository. |
+| Backend deployments | One `processpuzzle-backend` container serving every frontend | `testbed-backend`, one stack. `admin-backend` (host 8083) ran the same image beside it until the platform-admin extraction moved it to the private repository. |
 | Testbed realm | `processpuzzle`, registration disabled | `processpuzzle-testbed`, `registrationAllowed: true` |
 | Admin realm | `processpuzzle-platform` | `processpuzzle-admin` |
 | Admin realm client id | `processpuzzle-ui` (in the platform realm — misleading) | `processpuzzle-admin` |

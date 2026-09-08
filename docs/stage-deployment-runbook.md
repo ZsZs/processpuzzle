@@ -41,6 +41,14 @@ Three `A` records pointing at the Coolify host:
 | `testbed.stage.processpuzzle.de` | the Angular frontend (nginx) |
 | `api.stage.processpuzzle.de` | the Spring Boot backend |
 | `auth.stage.processpuzzle.de` | Keycloak |
+| `minio.stage.processpuzzle.de` | MinIO's **S3 API** (port 9000), for presigned URLs |
+
+MinIO needs one because `MinioConfig` builds a second, *presigning* client from
+`minio.public-endpoint` (`MINIO_PUBLIC_ENDPOINT`), and the URLs it signs are followed by the
+**browser**. Left at the `minio-config.yaml` default they name `http://localhost:7000` and every
+upload and download fails while the rest of the store works. Point the domain at container port
+**9000** — the S3 API, not the 9001 console; publishing the console is a separate decision and
+would want a hostname of its own, since its credentials are MinIO's root user.
 
 The backend needs a name of its own because **nginx does not proxy to it**. The browser calls
 `APP_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing rather
@@ -197,13 +205,24 @@ Without the option the webhook cheerfully restarts the stale image and the deplo
 
 | Service | Domain | Container port |
 |---|---|---|
-| `processpuzzle-testbed-frontend` | `testbed.stage.processpuzzle.de` | **80** |
-| `testbed-backend` | `api.stage.processpuzzle.de` | **8080** |
+| `processpuzzle-testbed-frontend` | `https://testbed.stage.processpuzzle.de` | **80** |
+| `testbed-backend` | `https://api.stage.processpuzzle.de` | **8080** |
+
+**⚠ Both domains have to be entered, with the `https://` scheme.** Coolify generates the Traefik
+router labels from this field alone — DNS pointing at the server does nothing by itself, and a
+missing domain surfaces as *"no available server"* rather than as any deployment error. See
+[§7.3](#73-no-available-server-with-both-containers-healthy).
 
 Note the service name is `processpuzzle-testbed-frontend` while the *container* is `testbed-frontend`
-— Coolify addresses services. The published ports are bound to `127.0.0.1`, deliberately: Coolify's
-proxy reaches the containers over the compose network, and loopback still leaves them reachable
-through an SSH tunnel for inspection. **⚠ verify in the UI** how it wants the port expressed.
+— Coolify addresses services. The **container** port in that table is what the proxy talks to over the
+compose network, and it is 8080 for the backend regardless of the host port below. **⚠ verify in the
+UI** how it wants the port expressed.
+
+The published (host) ports are bound to `127.0.0.1`, deliberately: the proxy needs none of them, and
+loopback still leaves the containers reachable through an SSH tunnel for inspection. The backend's is
+**8180**, not 8080: `coolify-proxy` publishes `0.0.0.0:8080` for the Traefik dashboard on every
+Coolify host, and binding `127.0.0.1:8080` on top of a wildcard bind fails just the same — see
+[§7.2](#72-port-is-already-allocated-on-8080).
 
 ### Environment variables
 
@@ -212,7 +231,7 @@ PP_IMAGE_REGISTRY=ghcr.io/zszs
 PP_IMAGE_TAG=stage
 PP_NETWORK=processpuzzle-stage
 PP_TESTBED_FRONTEND_PUBLISH=127.0.0.1:9090:80
-PP_TESTBED_BACKEND_PUBLISH=127.0.0.1:8080:8080
+PP_TESTBED_BACKEND_PUBLISH=127.0.0.1:8180:8080
 PIPELINE_STAGE=stage
 SPRING_PROFILES_ACTIVE=stage
 SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/processpuzzle_testbed
@@ -220,6 +239,7 @@ PROCESSPUZZLE_DB_USERNAME=processpuzzle
 PROCESSPUZZLE_SECURITY_STACK_REALM=processpuzzle-testbed
 MINIO_BUCKET_PREFIX=processpuzzle-testbed
 MINIO_ENDPOINT=http://minio:9000
+MINIO_PUBLIC_ENDPOINT=https://minio.stage.processpuzzle.de
 MINIO_SERVICE_USER=springboot
 KC_INTERNAL_URL=http://keycloak:8080
 APP_CORS_ALLOWED_ORIGINS=https://testbed.stage.processpuzzle.de
@@ -312,7 +332,11 @@ skipped.** Skipped means the webhook secret is still missing.
 |---|---|
 | `network processpuzzle-stage declared as external, but could not be found` | infrastructure resource not deployed, or its `PP_NETWORK` differs |
 | `network processpuzzle has active endpoints (name:"coolify-proxy")` | the resource is renaming its network and `coolify-proxy` still holds the old one — see [§7.1](#71-the-network-rename-deadlock) |
+| `Bind for :::8080 failed: port is already allocated` | `PP_TESTBED_BACKEND_PUBLISH` is unset on the resource, so it fell back to the CI default `8080:8080` — which `coolify-proxy` owns; see [§7.2](#72-port-is-already-allocated-on-8080) |
 | nginx exits, `host not found in upstream "json-server"` | the frontend is not on the infrastructure network — nginx resolves its upstream at startup |
+| **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 9090 / 8180) instead of the container port (8080 / 9000 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
+| Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
+| Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows HTTP status **0** on API calls | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS` |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
 | **500** on every authenticated request | `PROCESSPUZZLE_SECURITY_JWKS_BASE_URL` was set to the public URL; it must stay `http://keycloak:8080` |
@@ -374,6 +398,71 @@ Coolify re-attaches the proxy on its next reconcile; if it has not,
 `docker network connect processpuzzle-stage coolify-proxy`. And if `docker network rm` still refuses
 after everything is disconnected, the endpoint is stale — `docker network prune`, or restart the
 Docker daemon.
+
+### 7.2 "port is already allocated" on 8080
+
+```
+Container testbed-backend-… Starting
+Error response from daemon: failed to set up container networking: driver failed programming
+external connectivity … Bind for :::8080 failed: port is already allocated
+```
+
+Two facts are packed into that one line.
+
+**The `:::8080` is the diagnosis.** A wildcard bind means the resource did *not* have
+`PP_TESTBED_BACKEND_PUBLISH` set, so compose used the `${…:-8080:8080}` CI default. Had the §4 value
+been applied the message would have named `127.0.0.1:8080`. This is the "degrades to the CI value"
+rule of §7 showing up as a hard failure rather than as a silent misconfiguration — for once.
+
+**8080 is not available on a Coolify host at all.** `coolify-proxy` publishes it for the Traefik
+dashboard:
+
+```bash
+ss -ltnp | grep ':8080'                                  # docker-proxy on 0.0.0.0 and [::]
+docker ps --format '{{.Names}}	{{.Ports}}' | grep 8080  # coolify-proxy 0.0.0.0:8080->8080/tcp
+```
+
+So setting the port to `127.0.0.1:8080:8080` does not fix it either: a specific-address bind fails
+while the wildcard holds the port. Hence **8180** in §4 and in `.env.stage` / `.env.prod`.
+
+Nothing about the application changes. The proxy routes `api.stage.processpuzzle.de` to
+`testbed-backend:8080` over the compose network, `APP_SERVICE_ROOT` in `config.stage.json` names that
+public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the SSH-tunnel
+port moves. CI keeps `8080:8080` in `.env.ci` — a GitHub runner has no Coolify proxy, and the local
+`config.ci.json` expects the backend on `localhost:8080`.
+
+### 7.3 `no available server`, with both containers healthy
+
+Traefik's page, not the application's. A **404** means no router matched the hostname; **502** means a
+router matched and the address refused the connection; *"no available server"* means the matched
+service has no address at all — which is also what Coolify's catch-all answers for a hostname it has
+never heard of. So it is the symptom of a *routing* gap, and a green deployment tells you nothing
+about it: both containers can be `Up (healthy)` throughout.
+
+Run these on the host. Note that **Coolify overrides `container_name:`** with
+`<service>-<resourceUuid>-<id>`, so `docker inspect testbed-frontend` fails with "no such object" and
+a piped `grep` swallows the error — read the name out of `docker ps` first:
+
+```bash
+docker ps --format '{{.Names}}	{{.Status}}' | grep testbed
+FE=<the frontend container name from above>
+docker inspect $FE --format '{{range $k,$v := .Config.Labels}}{{$k}}={{$v}}
+{{end}}' | grep -i traefik
+docker inspect $FE --format '{{json .NetworkSettings.Networks}}' | tr ',' '
+' | grep -o '"[a-z-]*":{'
+docker network inspect ${PP_NETWORK:-processpuzzle-stage}   --format '{{range .Containers}}{{.Name}} {{end}}' | tr ' ' '
+' | grep coolify-proxy
+```
+
+| Reading | Cause | Fix |
+|---|---|---|
+| **no `traefik.*` labels** | no domain on the *service* in the resource UI — Coolify generates every label from that field | enter both domains of §4, with the `https://` scheme, and redeploy |
+| labels present, `traefik.docker.network` names a network the container is not on | our `networks:` key replaces Coolify's default, so the container never joins `coolify` | Settings → **"Connect To Predefined Network"**, redeploy |
+| `coolify-proxy` missing from the app network | the proxy was never attached, or is still on the pre-rename network | `docker network connect <network> coolify-proxy`, then check [§7.1](#71-the-network-rename-deadlock) |
+| labels and networks both fine | the domain names a port the container does not listen on | container port is **80** for the frontend and **8080** for the backend — the host publishes (9090 / 8180) are irrelevant to the proxy |
+
+Coolify addresses **services**, so the fields belong to `processpuzzle-testbed-frontend` and
+`testbed-backend` — the container names it generated are not selectable and not what you configure.
 
 ---
 
