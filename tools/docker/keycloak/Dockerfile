@@ -45,7 +45,9 @@ WORKDIR /opt/keycloak
 # Environment variables for runtime (can be overridden at runtime)
 ENV KC_DB=postgres
 ENV KC_HTTP_ENABLED=true
-ENV KC_PROXY=edge
+# Deprecated KC_PROXY=edge replaced — see docker-compose-infrastructure.yaml for why this matters
+# beyond the warning. A run-time option, so it is an overridable default here rather than baked.
+ENV KC_PROXY_HEADERS=xforwarded
 ENV KC_HOSTNAME_STRICT=false
 
 # Expose ports: 8080 (HTTP), 8443 (HTTPS), 9000 (Management/Health)
