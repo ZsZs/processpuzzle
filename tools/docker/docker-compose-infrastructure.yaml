@@ -180,6 +180,21 @@ services:
     command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]
     networks:
       - processpuzzle
+    # The only long-running service here that had none, which is why Coolify reported the resource as
+    # running with no healthcheck: a container without one has no Docker health state, and Coolify
+    # aggregates over all of them. `keycloak-init` is the other, and correctly so — it is a one-shot
+    # that exits 0.
+    #
+    # Probes the --prefix above, not `/`: pgweb serves nothing at the root when mounted under a
+    # prefix, so a healthcheck on `/` would report a working pgweb as unhealthy. `wget` is busybox's,
+    # from the alpine base of sosedoff/pgweb; --spider makes it a HEAD-like check that discards the
+    # body. No dependent waits on this service, so a false negative costs a red dot, not a deployment.
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider -q http://127.0.0.1:8081/pgweb || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   postgres:
     pull_policy: always
