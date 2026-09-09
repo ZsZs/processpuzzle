@@ -1,0 +1,22 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-rule.
+#
+# RuleTranslationLoader imports this file on startup when `base-rule.loadDefaultTranslations` is true.
+# The `<feature>/` directory is what keeps each loader to its own file — see base-app's copy for why.
+# See base-app's file of the same name for the rest of the conventions.
+#
+# NOTE: base-rule owns no frontend transloco scope today, so nothing requests this bundle yet — the
+# base-rule-frontend screens translate under `base_entity`. It is seeded because the rule violation
+# messages in sample-rules/processpuzzle-testbed-rules.yaml already carry `translocoId`s under a
+# `rule.*` root, and this is where their text belongs once something registers the scope. Keys below
+# match those translocoIds with the scope prefix stripped, as transloco expects.
+
+translations:
+  - scope: rule
+    locale: en
+    messages:
+      order:
+        positiveQuantities: Every order line must have a quantity greater than zero.
+        totalMatchesLineItems: The order total must equal the sum of its line item subtotals.
+        shippedRequiresAddress: A shipped order must have a shipping address.
+      specialOrder:
+        allowsZeroQuantity: A special order may carry a line with zero quantity.

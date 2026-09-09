@@ -1,25 +1,25 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.Layout;
+import com.processpuzzle.app.domain.ModuleMount;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
+import com.processpuzzle.app.domain.WidgetPlacement;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.AppDefinitionSummary;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.ColorScheme;
-import com.processpuzzle.app.model.KeyAvailability;
 import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
-import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.Severity;
@@ -27,10 +27,9 @@ import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.app.model.ValidationProblem;
 import com.processpuzzle.app.model.ValidationResult;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.KeyCheckOutcome;
 import com.processpuzzle.shared.model.ImportResult;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -63,7 +62,8 @@ public class AppMapper {
                 toDomainTheme(input.getTheme()),
                 toDomainLayout(input.getLayout()),
                 toDomainRegions(input.getRegions()),
-                toDomainPages(input.getPages()));
+                toDomainRoutes(input.getRoutes()),
+                toDomainMounts(input.getModules()));
     }
 
     private Theme toDomainTheme(ThemeDefinition theme) {
@@ -112,13 +112,13 @@ public class AppMapper {
                         item.getLabel(),
                         item.getTranslocoId(),
                         item.getIcon(),
-                        item.getPageId(),
+                        item.getRoutePath(),
                         item.getRoles(),
                         toDomainNavItems(item.getChildren())))
                 .toList();
     }
 
-    private List<Widget> toDomainWidgets(List<WidgetRef> widgets) {
+    private List<Widget> toDomainWidgets(List<WidgetInstance> widgets) {
         if (widgets == null) {
             return List.of();
         }
@@ -127,20 +127,53 @@ public class AppMapper {
                         widget.getId(),
                         widget.getType(),
                         widget.getProps(),
-                        toDomainWidgets(widget.getChildren())))
+                        toDomainPlacement(widget.getPlacement())))
                 .toList();
     }
 
-    private List<AppPage> toDomainPages(List<PageDefinition> pages) {
-        if (pages == null) {
+    private WidgetPlacement toDomainPlacement(WidgetInstance.PlacementEnum placement) {
+        return placement == null ? WidgetPlacement.STANDALONE : WidgetPlacement.valueOf(placement.name());
+    }
+
+    public List<AppRoute> toDomainRoutes(List<RouteDefinition> routes) {
+        if (routes == null) {
             return List.of();
         }
-        return pages.stream().filter(Objects::nonNull)
-                .map(page -> new AppPage(
-                        page.getId(),
-                        page.getTitle(),
-                        page.getTranslocoId(),
-                        toDomainWidgets(page.getWidgets())))
+        return routes.stream().filter(Objects::nonNull)
+                .map(route -> new AppRoute(
+                        route.getPath(),
+                        route.getTitle(),
+                        route.getTranslocoId(),
+                        route.getIcon(),
+                        route.getRoles(),
+                        toDomainTarget(route.getTarget())))
+                .toList();
+    }
+
+    /**
+     * A route with no target at all becomes an empty WIDGETS target rather than null, so the graph
+     * never holds a route the renderer cannot ask a question of. Which fields a kind requires is
+     * AppDefinitionValidator's business, not this mapper's.
+     */
+    private RouteTarget toDomainTarget(com.processpuzzle.app.model.RouteTarget target) {
+        if (target == null) {
+            return RouteTarget.ofWidgets(List.of());
+        }
+        return new RouteTarget(
+                target.getKind() == null ? RouteTarget.Kind.WIDGETS : RouteTarget.Kind.valueOf(target.getKind().name()),
+                toDomainWidgets(target.getWidgets()),
+                target.getDocumentSlug(),
+                target.getEntityName(),
+                target.getEntityMode() == null ? null : RouteTarget.EntityMode.valueOf(target.getEntityMode().name()),
+                target.getRsqlFilter());
+    }
+
+    private List<ModuleMount> toDomainMounts(List<com.processpuzzle.app.model.ModuleMount> mounts) {
+        if (mounts == null) {
+            return List.of();
+        }
+        return mounts.stream().filter(Objects::nonNull)
+                .map(mount -> new ModuleMount(mount.getModuleKey(), mount.getBasePath()))
                 .toList();
     }
 
@@ -163,26 +196,23 @@ public class AppMapper {
             model.setTheme(toModelTheme(graph.theme()));
             model.setLayout(toModelLayout(graph.layout()));
             model.setRegions(toModelRegions(graph.regions()));
-            model.setPages(toModelPages(graph.pages()));
+            model.setRoutes(toModelRoutes(graph.routes()));
+            model.setModules(toModelMounts(graph.modules()));
         }
         return model;
     }
 
-    public AppDefinitionSummary toSummary(com.processpuzzle.app.domain.AppDefinition definition) {
-        AppDefinitionSummary summary = new AppDefinitionSummary(definition.getId(), definition.getName());
-        summary.setOrgKey(definition.getOrgKey());
-        summary.setTranslocoId(definition.getTranslocoId());
-        summary.setDescription(definition.getDescription());
-        summary.setStatus(toModelStatus(definition));
-        summary.setVersion(definition.getRevision());
-        summary.setPublishedVersion(definition.getPublishedRevision());
-        summary.setUpdatedAt(toOffsetDateTime(definition.getUpdatedAt()));
-        return summary;
-    }
-
-    public PageOfAppDefinitionSummary toModel(Page<com.processpuzzle.app.domain.AppDefinition> page) {
-        List<AppDefinitionSummary> content = page.getContent().stream().map(this::toSummary).toList();
-        return new PageOfAppDefinitionSummary()
+    /**
+     * Maps a page of definitions with {@link #toModel(com.processpuzzle.app.domain.AppDefinition)},
+     * so a list entry is the same complete graph the single-GET returns. The designer edits an
+     * entity straight out of the list rather than re-fetching it by id, so a lighter projection
+     * here would hand it a truncated object and the next full-replacement PUT would persist the
+     * truncation.
+     */
+    public PageOfAppDefinition toModel(Page<com.processpuzzle.app.domain.AppDefinition> page) {
+        List<com.processpuzzle.app.model.AppDefinition> content =
+                page.getContent().stream().map(this::toModel).toList();
+        return new PageOfAppDefinition()
                 .content(content)
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
@@ -271,65 +301,96 @@ public class AppMapper {
             NavItem model = new NavItem(node.id(), node.label());
             model.setTranslocoId(node.translocoId());
             model.setIcon(node.icon());
-            model.setPageId(node.pageId());
+            model.setRoutePath(node.routePath());
             model.setRoles(node.roles());
             model.setChildren(toModelNavItems(node.children()));
             return model;
         }).toList();
     }
 
-    private List<WidgetRef> toModelWidgets(List<Widget> widgets) {
+    private List<WidgetInstance> toModelWidgets(List<Widget> widgets) {
         if (widgets == null) {
             return List.of();
         }
         return widgets.stream().map(widget -> {
-            WidgetRef model = new WidgetRef(widget.id(), widget.type());
+            WidgetInstance model = new WidgetInstance(widget.id(), widget.type());
             model.setProps(widget.props());
-            model.setChildren(toModelWidgets(widget.children()));
+            model.setPlacement(WidgetInstance.PlacementEnum.fromValue(widget.placement().name()));
             return model;
         }).toList();
     }
 
-    private List<PageDefinition> toModelPages(List<AppPage> pages) {
-        if (pages == null) {
+    private List<RouteDefinition> toModelRoutes(List<AppRoute> routes) {
+        if (routes == null) {
             return List.of();
         }
-        return pages.stream().map(this::toModel).toList();
+        return routes.stream().map(this::toModel).toList();
     }
 
-    public PageDefinition toModel(AppPage page) {
-        PageDefinition model = new PageDefinition(page.id(), page.title(), toModelWidgets(page.widgets()));
-        model.setTranslocoId(page.translocoId());
+    public RouteDefinition toModel(AppRoute route) {
+        RouteDefinition model = new RouteDefinition(route.path(), route.title(), toModelTarget(route.target()));
+        model.setTranslocoId(route.translocoId());
+        model.setIcon(route.icon());
+        model.setRoles(route.roles());
         return model;
+    }
+
+    private com.processpuzzle.app.model.RouteTarget toModelTarget(RouteTarget target) {
+        if (target == null) {
+            return null;
+        }
+        com.processpuzzle.app.model.RouteTarget model = new com.processpuzzle.app.model.RouteTarget(
+                com.processpuzzle.app.model.RouteTarget.KindEnum.fromValue(target.kind().name()));
+        model.setWidgets(toModelWidgets(target.widgets()));
+        model.setDocumentSlug(target.documentSlug());
+        model.setEntityName(target.entityName());
+        if (target.entityMode() != null) {
+            model.setEntityMode(com.processpuzzle.app.model.RouteTarget.EntityModeEnum.fromValue(target.entityMode().name()));
+        }
+        model.setRsqlFilter(target.rsqlFilter());
+        return model;
+    }
+
+    private List<com.processpuzzle.app.model.ModuleMount> toModelMounts(List<ModuleMount> mounts) {
+        if (mounts == null) {
+            return List.of();
+        }
+        return mounts.stream()
+                .map(mount -> new com.processpuzzle.app.model.ModuleMount(mount.moduleKey(), mount.basePath()))
+                .toList();
+    }
+
+    // --- modules -------------------------------------------------------------------------
+
+    public com.processpuzzle.app.model.ModuleDefinition toModel(
+            com.processpuzzle.app.domain.ModuleDefinition module) {
+        com.processpuzzle.app.model.ModuleDefinition model =
+                new com.processpuzzle.app.model.ModuleDefinition(
+                        module.getKey(), module.getName(), module.getOrgKey(), module.getVersion());
+        model.setTranslocoId(module.getTranslocoId());
+        model.setDescription(module.getDescription());
+        model.setTranslocoScope(module.getTranslocoScope());
+        model.setRoutes(toModelRoutes(module.getRoutes()));
+        model.setCreatedAt(toOffsetDateTime(module.getCreatedAt()));
+        model.setUpdatedAt(toOffsetDateTime(module.getUpdatedAt()));
+        return model;
+    }
+
+    /**
+     * Copies the editable fields of a module input onto an entity. {@code key} and {@code orgKey} are
+     * deliberately absent: the contract calls the key immutable, because it is what an
+     * {@code AppDefinition.modules} entry references.
+     */
+    public void applyToModule(com.processpuzzle.app.domain.ModuleDefinition module,
+                              com.processpuzzle.app.model.ModuleDefinitionInput input) {
+        module.setName(input.getName());
+        module.setTranslocoId(input.getTranslocoId());
+        module.setDescription(input.getDescription());
+        module.setTranslocoScope(input.getTranslocoScope());
+        module.setRoutes(toDomainRoutes(input.getRoutes()));
     }
 
     // --- organizations -------------------------------------------------------------------
-
-    public com.processpuzzle.app.model.Organization toModel(
-            com.processpuzzle.app.domain.Organization organization) {
-        com.processpuzzle.app.model.Organization model = new com.processpuzzle.app.model.Organization(
-                organization.getKey(),
-                organization.getName(),
-                com.processpuzzle.app.model.OrganizationStatus.fromValue(organization.getStatus().name()));
-        model.setDescription(organization.getDescription());
-        model.setContactEmail(organization.getContactEmail());
-        model.setDefaultLocale(organization.getDefaultLocale());
-        model.setCreatedAt(toOffsetDateTime(organization.getCreatedAt()));
-        model.setUpdatedAt(toOffsetDateTime(organization.getUpdatedAt()));
-        return model;
-    }
-
-    public ProvisioningResult toModel(com.processpuzzle.app.domain.Organization organization,
-                                      com.processpuzzle.app.domain.AppDefinition starterApp) {
-        return new ProvisioningResult(toModel(organization), toModel(starterApp));
-    }
-
-    public KeyAvailability toModel(KeyCheckOutcome outcome) {
-        KeyAvailability model = new KeyAvailability(outcome.key(), outcome.available());
-        model.setErrorId(outcome.errorId());
-        model.setSuggestions(outcome.suggestions());
-        return model;
-    }
 
     // --- outcomes ------------------------------------------------------------------------
 

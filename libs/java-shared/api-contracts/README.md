@@ -1,5 +1,9 @@
 # ProcessPuzzle :: API Contracts
 
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-api-contracts.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_api_contracts&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_api_contracts)
+[![Maven Central](https://img.shields.io/maven-central/v/com.processpuzzle/processpuzzle-api?style=flat)](https://central.sonatype.com/artifact/com.processpuzzle/processpuzzle-api)
+
 This library contains the API contracts and generated Java types for the ProcessPuzzle project. It serves as the single source of truth for API definitions, ensuring consistency and compatibility between client and server components.
 
 ## Overview

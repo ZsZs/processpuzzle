@@ -1,0 +1,232 @@
+{
+  "workflow": {
+    "_self": "Workflow",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "extends": "Extends",
+    "activeInstances": "Active Instances",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "startType": "Start Type",
+    "eventType": "Event Type",
+    "milestoneRef": "Milestone",
+    "preconditionExpression": "Precondition",
+    "authorizedRoles": "Authorized Roles",
+    "payloadMapping": "Payload Mapping",
+    "requiredArtifacts": "Required Artifacts",
+    "roles": "Roles",
+    "artifacts": "Artifacts",
+    "tools": "Tools",
+    "tasks": "Tasks",
+    "tabs": {
+      "modeler": "Workflow Modeler"
+    },
+    "modeler": {
+      "empty": "This workflow has no tasks yet.",
+      "lanes": "Lanes",
+      "data": "Work products",
+      "tools": "Tools",
+      "unassigned": "Unassigned",
+      "join_any": "any",
+      "save": "Save layout",
+      "properties": {
+        "none": "Select an element to see its properties.",
+        "lane": "Lane",
+        "name": "Name",
+        "description": "Description",
+        "id": "Identifier",
+        "unresolved": "This reference does not resolve to a catalog entry.",
+        "relation_heading": "Relation",
+        "relation": "Kind",
+        "label": "Label",
+        "relations": {
+          "sequence": "Depends on",
+          "implicit": "Runs after (declaration order)",
+          "input": "Reads",
+          "output": "Writes",
+          "tool": "Calls",
+          "start": "Required at start",
+          "unknown": "Related to"
+        }
+      }
+    }
+  },
+  "workflow_task_assignment": {
+    "_self": "Task Assignment",
+    "taskDefinitionId": "Task",
+    "performedBy": "Performed By",
+    "dependsOn": "Depends On",
+    "joinType": "Join Type",
+    "parallel": "Parallel",
+    "override": "Override"
+  },
+  "workflow_role_use": {
+    "_self": "Role Use",
+    "roleDefinitionId": "Role"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artifact Use",
+    "artifactDefinitionId": "Artifact"
+  },
+  "workflow_tool_use": {
+    "_self": "Tool Use",
+    "toolDefinitionId": "Tool"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Required Artifact",
+    "artifactDefinitionId": "Artifact",
+    "state": "State"
+  },
+  "workflow_role_definition": {
+    "_self": "Role",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "responsibleFor": "Responsible For",
+    "entityRoleId": "Entity Role",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "tabs": {
+      "modeler": "Role Modeler"
+    },
+    "modeler": {
+      "empty": "No roles have been defined yet."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artifact",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "artifactType": "Artifact Type",
+    "artifactTypeId": "Type Id",
+    "stateMachineId": "State Machine",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "task_definition": {
+    "_self": "Task",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "performedByRoles": "Performed By Roles",
+    "preconditionRuleId": "Precondition Rule",
+    "postconditionRuleId": "Postcondition Rule",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "inputs": "Inputs",
+    "outputs": "Outputs",
+    "steps": "Steps"
+  },
+  "task_step_definition": {
+    "_self": "Step",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "stepType": "Step Type",
+    "toolDefinitionId": "Tool",
+    "toolOperation": "Operation",
+    "inputMapping": "Input Mapping",
+    "outputMapping": "Output Mapping"
+  },
+  "tool_definition": {
+    "_self": "Tool",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "baseUrl": "Base URL",
+    "type": "Auth Type",
+    "secretRef": "Secret Reference",
+    "version": "Version",
+    "createdAt": "Created At",
+    "operations": "Operations"
+  },
+  "tool_operation": {
+    "_self": "Operation",
+    "id": "Id",
+    "method": "Method",
+    "path": "Path",
+    "description": "Description",
+    "payloadTemplate": "Payload Template",
+    "expectedStatusCodes": "Expected Status Codes"
+  },
+  "workflow_instance": {
+    "_self": "Workflow Instance",
+    "id": "Id",
+    "workflowId": "Workflow",
+    "workflowName": "Workflow Name",
+    "status": "Status",
+    "entityId": "Entity",
+    "startedAt": "Started At",
+    "completedAt": "Completed At",
+    "context": "Context",
+    "tasks": "Tasks",
+    "artifacts": "Artifacts"
+  },
+  "task_instance": {
+    "_self": "Task Instance",
+    "id": "Id",
+    "taskDefinitionId": "Task",
+    "name": "Name",
+    "status": "Status",
+    "assignedTo": "Assigned To",
+    "blockedReason": "Blocked Reason",
+    "activatedAt": "Activated At",
+    "completedAt": "Completed At",
+    "skippedAt": "Skipped At",
+    "stepResults": "Step Results",
+    "dashboard": {
+      "title": "My tasks",
+      "scopes": {
+        "mine": "My tasks",
+        "team": "Team",
+        "process": "Process"
+      },
+      "run": "Run",
+      "run_none": "Pick a run to see its board.",
+      "empty": {
+        "mine": "Nothing assigned to you.",
+        "team": "Nothing to claim right now.",
+        "process": "This run has no tasks."
+      },
+      "error": "The runs could not be loaded.",
+      "select_prompt": "Select a task from the list.",
+      "claim": "Claim task",
+      "locked": "Open to anyone holding the required role. Claim it to start working — the steps and the completion form unlock once it is yours.",
+      "steps": "Steps",
+      "steps_none": "This task declares no steps.",
+      "step_user": "user step",
+      "step_service": "service step",
+      "artifacts_in": "Reads",
+      "artifacts_out": "Writes",
+      "artifacts_none": "This task declares no artifacts.",
+      "not_created": "not created yet",
+      "note": "Notes (added to the workflow context)",
+      "complete": "Complete task",
+      "skip": "Skip",
+      "skip_reason": "Reason for skipping",
+      "unstated_refusal": "Not accepted yet, and the server gave no detail.",
+      "unassigned": "unassigned",
+      "assigned_to": "Assigned to"
+    }
+  },
+  "artifact_instance": {
+    "_self": "Artifact Instance",
+    "id": "Id",
+    "artifactDefinitionId": "Artifact",
+    "name": "Name",
+    "type": "Type",
+    "entityId": "Entity",
+    "stateMachineInstanceId": "State Machine Instance",
+    "currentState": "Current State",
+    "updatedAt": "Updated At"
+  },
+  "task_step_result": {
+    "_self": "Step Result",
+    "stepId": "Step",
+    "completedAt": "Completed At",
+    "toolResponse": "Tool Response",
+    "error": "Error"
+  }
+}

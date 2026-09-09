@@ -1,34 +1,33 @@
 package com.processpuzzle.app.adapter.inbound;
 
+import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.Layout;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.Theme;
 import com.processpuzzle.app.domain.Widget;
+import com.processpuzzle.app.domain.WidgetPlacement;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.AppDefinitionSummary;
 import com.processpuzzle.app.model.AppLayout;
 import com.processpuzzle.app.model.ColorScheme;
 import com.processpuzzle.app.model.LayoutDefinition;
 import com.processpuzzle.app.model.LayoutPreset;
 import com.processpuzzle.app.model.MaterialTheme;
 import com.processpuzzle.app.model.NavItem;
-import com.processpuzzle.app.model.OrganizationStatus;
-import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
-import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
-import com.processpuzzle.app.model.WidgetRef;
+import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.KeyCheckOutcome;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -54,12 +53,15 @@ class AppMapperTest {
         assertThat(graph.layout().sidenavMode()).isEqualTo("over");
 
         NavNode group = graph.regions().getFirst().navItems().getFirst();
-        assertThat(group.pageId()).isNull();
+        assertThat(group.routePath()).isNull();
         assertThat(group.children()).extracting(NavNode::id).containsExactly("nav-child");
         assertThat(group.children().getFirst().roles()).containsExactly("CLAIMS_ADJUSTER");
 
-        Widget container = graph.pages().getFirst().widgets().getFirst();
-        assertThat(container.children().getFirst().props()).containsEntry("entityName", "Claim");
+        List<Widget> widgets = graph.routes().getFirst().target().widgets();
+        assertThat(widgets).extracting(Widget::id).containsExactly("widget-tabs", "widget-grid");
+        assertThat(widgets.getFirst().props()).containsEntry("childIds", List.of("widget-grid"));
+        assertThat(widgets.getLast().props()).containsEntry("entityName", "Claim");
+        assertThat(widgets.getLast().placement()).isEqualTo(WidgetPlacement.REFERENCED);
 
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", "claims.app.name", "desc", graph);
@@ -73,7 +75,9 @@ class AppMapperTest {
                 .containsExactly(RegionType.SIDENAV);
         assertThat(model.getRegions().getFirst().getNavItems().getFirst().getChildren())
                 .extracting(NavItem::getId).containsExactly("nav-child");
-        assertThat(model.getPages()).extracting(PageDefinition::getId).containsExactly("page-claims-list");
+        assertThat(model.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("claims-list");
+        assertThat(model.getRoutes().getFirst().getTarget().getWidgets()).extracting(WidgetInstance::getPlacement)
+                .containsExactly(WidgetInstance.PlacementEnum.STANDALONE, WidgetInstance.PlacementEnum.REFERENCED);
         assertThat(model.getOrgKey()).isEqualTo("my-org");
     }
 
@@ -92,8 +96,8 @@ class AppMapperTest {
 
         entity.replaceDraft("Claims", null, null, AppGraph.empty());
         assertThat(mapper.toModelStatus(entity)).isEqualTo(AppDefinitionStatus.DRAFT);
-        assertThat(mapper.toSummary(entity).getVersion()).isEqualTo(2L);
-        assertThat(mapper.toSummary(entity).getPublishedVersion()).isEqualTo(1L);
+        assertThat(mapper.toModel(entity).getVersion()).isEqualTo(2L);
+        assertThat(mapper.toModel(entity).getPublishedVersion()).isEqualTo(1L);
     }
 
     @Test
@@ -102,7 +106,7 @@ class AppMapperTest {
                 new Theme("theme-that-no-longer-exists", "light", Map.of(), null, null),
                 new Layout("preset-gone", "side", null, null, null),
                 List.of(new Region("region-type-gone", List.of(), List.of())),
-                List.of());
+                List.of(), List.of());
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", null, null, graph);
 
@@ -136,10 +140,10 @@ class AppMapperTest {
     void validationResultIsValidOnlyWhenThereAreNoProblems() {
         assertThat(mapper.toModel(List.<AppValidationProblem>of()).getValid()).isTrue();
 
-        var result = mapper.toModel(List.of(new AppValidationProblem("/pages/0", "app.x", "Broken")));
+        var result = mapper.toModel(List.of(new AppValidationProblem("/routes/0", "app.x", "Broken")));
         assertThat(result.getValid()).isFalse();
         assertThat(result.getProblems()).singleElement().satisfies(problem -> {
-            assertThat(problem.getPath()).isEqualTo("/pages/0");
+            assertThat(problem.getPath()).isEqualTo("/routes/0");
             assertThat(problem.getErrorId()).isEqualTo("app.x");
         });
     }
@@ -149,12 +153,6 @@ class AppMapperTest {
         var importResult = mapper.toModel(new ImportOutcome(2, 1, List.of()));
         assertThat(importResult.getCreated()).isEqualTo(2);
         assertThat(importResult.getUpdated()).isEqualTo(1);
-
-        var availability = mapper.toModel(
-                KeyCheckOutcome.unavailable("api", "organization.key.reserved", List.of("api-app")));
-        assertThat(availability.getAvailable()).isFalse();
-        assertThat(availability.getErrorId()).isEqualTo("organization.key.reserved");
-        assertThat(availability.getSuggestions()).containsExactly("api-app");
     }
 
     @Test
@@ -165,21 +163,20 @@ class AppMapperTest {
         com.processpuzzle.app.model.AppDefinition model = mapper.toModel(entity);
 
         assertThat(model.getRegions()).isEmpty();
-        assertThat(model.getPages()).isEmpty();
+        assertThat(model.getRoutes()).isEmpty();
         assertThat(model.getTheme()).isNull();
         assertThat(model.getLayout()).isNull();
     }
 
     @Test
-    void pageMapsWithItsNestedWidgets() {
-        AppPage page = new AppPage("page-1", "Page One", "page.one",
-                List.of(new Widget("w-1", "entity-grid", Map.of("entityName", "Claim"), List.of())));
+    void pageMapsWithItsWidgets() {
+        AppRoute route = new AppRoute("route-1", "Page One", "route.one", null, List.of(), RouteTarget.ofWidgets(List.of(new Widget("w-1", "entity-grid", Map.of("entityName", "Claim"), WidgetPlacement.STANDALONE))));
 
-        PageDefinition model = mapper.toModel(page);
+        RouteDefinition model = mapper.toModel(route);
 
-        assertThat(model.getId()).isEqualTo("page-1");
-        assertThat(model.getTranslocoId()).isEqualTo("page.one");
-        assertThat(model.getWidgets()).singleElement()
+        assertThat(model.getPath()).isEqualTo("route-1");
+        assertThat(model.getTranslocoId()).isEqualTo("route.one");
+        assertThat(model.getTarget().getWidgets()).singleElement()
                 .satisfies(widget -> assertThat(widget.getProps()).containsEntry("entityName", "Claim"));
     }
 
@@ -191,28 +188,28 @@ class AppMapperTest {
     void explicitlyNullCollectionsMapToEmptyOnes() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         NavItem nav = new NavItem("nav-claims", "Claims");
-        nav.setPageId("page-claims-list");
+        nav.setRoutePath("claims-list");
         nav.setChildren(null);
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         sidenav.setNavItems(null);
         sidenav.setWidgets(null);
         input.setRegions(null);
-        input.setPages(null);
+        input.setRoutes(null);
 
         AppGraph graph = mapper.toDomainGraph(input);
 
         assertThat(graph.regions()).isEmpty();
-        assertThat(graph.pages()).isEmpty();
+        assertThat(graph.routes()).isEmpty();
 
         sidenav.setNavItems(List.of(nav));
         input.setRegions(List.of(sidenav));
-        input.setPages(List.of(new PageDefinition("page-claims-list", "Claims", null)));
+        input.setRoutes(List.of(new RouteDefinition("claims-list", "Claims", null)));
 
         AppGraph populated = mapper.toDomainGraph(input);
 
         assertThat(populated.regions().getFirst().navItems().getFirst().children()).isEmpty();
         assertThat(populated.regions().getFirst().widgets()).isEmpty();
-        assertThat(populated.pages().getFirst().widgets()).isEmpty();
+        assertThat(populated.routes().getFirst().target().widgets()).isEmpty();
     }
 
     /** The designer saves early and often, so most of the graph is absent most of the time. */
@@ -225,7 +222,7 @@ class AppMapperTest {
         assertThat(graph.theme()).isNull();
         assertThat(graph.layout()).isNull();
         assertThat(graph.regions()).isEmpty();
-        assertThat(graph.pages()).isEmpty();
+        assertThat(graph.routes()).isEmpty();
     }
 
     /**
@@ -278,7 +275,7 @@ class AppMapperTest {
     void unsetEnumValuedFieldsSurviveTheReadBack() {
         AppGraph graph = new AppGraph(new Theme(null, null, Map.of(), null, null),
                 new Layout(null, null, null, null, null),
-                List.of(new Region(null, List.of(), List.of())), List.of());
+                List.of(new Region(null, List.of(), List.of())), List.of(), List.of());
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", null, null, graph);
 
@@ -301,7 +298,7 @@ class AppMapperTest {
     void everyStaleEnumValueIsDroppedIndividually() {
         AppGraph graph = new AppGraph(new Theme("rose-red", "scheme-gone", Map.of(), null, null),
                 new Layout("sidenav-left", "mode-gone", null, null, null),
-                List.of(new Region("sidenav", List.of(), List.of())), List.of());
+                List.of(new Region("sidenav", List.of(), List.of())), List.of(), List.of());
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", null, null, graph);
 
@@ -322,16 +319,14 @@ class AppMapperTest {
     void nullEntriesAndUntypedRegionsAreDroppedRatherThanCarriedIntoTheGraph() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
         NavItem nav = new NavItem("nav-claims", "Claims");
-        nav.setPageId("page-claims-list");
+        nav.setRoutePath("claims-list");
         nav.setChildren(Arrays.asList(nav(), null));
         RegionDefinition sidenav = new RegionDefinition(RegionType.SIDENAV);
         sidenav.setNavItems(Arrays.asList(nav, null));
-        WidgetRef container = new WidgetRef("widget-tabs", "tab-group");
-        container.setChildren(Arrays.asList(new WidgetRef("widget-grid", "entity-grid"), null));
         RegionDefinition header = new RegionDefinition(RegionType.HEADER);
-        header.setWidgets(Arrays.asList(container, null));
+        header.setWidgets(Arrays.asList(new WidgetInstance("widget-tabs", "tab-group"), null));
         input.setRegions(Arrays.asList(sidenav, header, new RegionDefinition(), null));
-        input.setPages(Arrays.asList(new PageDefinition("page-claims-list", "Claims", null), null));
+        input.setRoutes(Arrays.asList(new RouteDefinition("claims-list", "Claims", null), null));
 
         AppGraph graph = mapper.toDomainGraph(input);
 
@@ -339,9 +334,8 @@ class AppMapperTest {
         assertThat(graph.regions().getFirst().navItems()).hasSize(1);
         assertThat(graph.regions().getFirst().navItems().getFirst().children()).hasSize(1);
         assertThat(graph.regions().getLast().widgets()).hasSize(1);
-        assertThat(graph.regions().getLast().widgets().getFirst().children()).hasSize(1);
-        assertThat(graph.pages()).extracting(AppPage::id).containsExactly("page-claims-list");
-        assertThat(graph.pages().getFirst().widgets()).isEmpty();
+        assertThat(graph.routes()).extracting(AppRoute::path).containsExactly("claims-list");
+        assertThat(graph.routes().getFirst().target().widgets()).isEmpty();
     }
 
     /**
@@ -364,52 +358,50 @@ class AppMapperTest {
     }
 
     @Test
-    void anOrganizationMapsWithItsStatusAndDescriptiveFields() {
-        com.processpuzzle.app.domain.Organization organization = new com.processpuzzle.app.domain.Organization(
-                "my-org", "My Organization Ltd.", "Insurance.", "ops@my-org.example", "en-GB",
-                com.processpuzzle.app.domain.OrganizationStatus.SUSPENDED);
-
-        com.processpuzzle.app.model.Organization model = mapper.toModel(organization);
-
-        assertThat(model.getKey()).isEqualTo("my-org");
-        assertThat(model.getName()).isEqualTo("My Organization Ltd.");
-        assertThat(model.getDescription()).isEqualTo("Insurance.");
-        assertThat(model.getContactEmail()).isEqualTo("ops@my-org.example");
-        assertThat(model.getDefaultLocale()).isEqualTo("en-GB");
-        assertThat(model.getStatus()).isEqualTo(OrganizationStatus.SUSPENDED);
-        assertThat(model.getCreatedAt()).isNull();
-    }
-
-    @Test
-    void provisioningAnswersTheTenantAndItsStarterAppTogether() {
-        com.processpuzzle.app.domain.Organization organization = new com.processpuzzle.app.domain.Organization(
-                "my-org", "My Organization Ltd.", null, null, null, null);
-        com.processpuzzle.app.domain.AppDefinition starter = new com.processpuzzle.app.domain.AppDefinition(
-                "my-org", "app", "My Organization Ltd.", null, null, AppGraph.empty());
-
-        ProvisioningResult result = mapper.toModel(organization, starter);
-
-        assertThat(result.getOrganization().getKey()).isEqualTo("my-org");
-        assertThat(result.getOrganization().getStatus()).isEqualTo(OrganizationStatus.ACTIVE);
-        assertThat(result.getAppDefinition().getId()).isEqualTo("app");
-    }
-
-    @Test
-    void aPagedSummaryCarriesTheSpringPageMetadata() {
+    void aPagedListCarriesTheSpringPageMetadata() {
         com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
                 "my-org", "claims-app", "Claims", "claims.app.name", "Handles claims.", AppGraph.empty());
 
-        PageOfAppDefinitionSummary page = mapper.toModel(
+        PageOfAppDefinition route = mapper.toModel(
                 new PageImpl<>(List.of(entity), PageRequest.of(1, 5), 8L));
 
-        assertThat(page.getContent()).extracting(AppDefinitionSummary::getId).containsExactly("claims-app");
-        assertThat(page.getContent().getFirst().getDescription()).isEqualTo("Handles claims.");
-        // PageImpl caps the total at offset + content size, so the second page of five holding one
+        assertThat(route.getContent())
+                .extracting(com.processpuzzle.app.model.AppDefinition::getId)
+                .containsExactly("claims-app");
+        assertThat(route.getContent().getFirst().getDescription()).isEqualTo("Handles claims.");
+        // PageImpl caps the total at offset + content size, so the second route of five holding one
         // element reports six rather than the eight the query claimed.
-        assertThat(page.getTotalElements()).isEqualTo(6L);
-        assertThat(page.getTotalPages()).isEqualTo(2);
-        assertThat(page.getNumber()).isEqualTo(1);
-        assertThat(page.getSize()).isEqualTo(5);
+        assertThat(route.getTotalElements()).isEqualTo(6L);
+        assertThat(route.getTotalPages()).isEqualTo(2);
+        assertThat(route.getNumber()).isEqualTo(1);
+        assertThat(route.getSize()).isEqualTo(5);
+    }
+
+    /**
+     * A route entry is mapped by the same {@code toModel} the single-GET uses, so it carries the
+     * whole graph. The designer edits out of the list rather than re-fetching by id; a projection
+     * that dropped theme, layout, regions or routes would be written back as empty by the next
+     * full-replacement PUT.
+     */
+    @Test
+    void aPagedEntryCarriesTheWholeGraphRatherThanHeaderFieldsOnly() {
+        AppGraph graph = new AppGraph(
+                new Theme("rose-red", "dark", Map.of(), null, null),
+                new Layout("top-nav", "over", null, null, "1280px"),
+                List.of(new Region("sidenav", List.of(), List.of())),
+                List.of(new AppRoute("order-list", "Orders", null, null, List.of(), RouteTarget.ofWidgets(List.of()))), List.of());
+        com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
+                "my-org", "claims-app", "Claims", null, null, graph);
+
+        PageOfAppDefinition route = mapper.toModel(new PageImpl<>(List.of(entity)));
+
+        assertThat(route.getContent()).singleElement().satisfies(definition -> {
+            assertThat(definition.getTheme().getMaterialTheme()).isEqualTo(MaterialTheme.ROSE_RED);
+            assertThat(definition.getLayout().getContentMaxWidth()).isEqualTo("1280px");
+            assertThat(definition.getRegions()).extracting(RegionDefinition::getType)
+                    .containsExactly(RegionType.SIDENAV);
+            assertThat(definition.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("order-list");
+        });
     }
 
     /** Blocking is what {@code valid} means, so a rejected write with no problems still maps. */
@@ -419,13 +411,11 @@ class AppMapperTest {
         assertThat(new AppValidationProblem("/", "app.x", "Advice.", Severity.INFO).blocksPersisting())
                 .isFalse();
         assertThat(mapper.toModel(new ImportOutcome(0, 0, null)).getErrors()).isEmpty();
-        assertThat(mapper.toModel(new KeyCheckOutcome("api", false, "organization.key.reserved", null))
-                .getSuggestions()).isEmpty();
     }
 
     private static NavItem nav() {
         NavItem child = new NavItem("nav-child", "Child");
-        child.setPageId("page-claims-list");
+        child.setRoutePath("claims-list");
         return child;
     }
 
@@ -445,14 +435,15 @@ class AppMapperTest {
         layout.setContentMaxWidth("1280px");
         input.setLayout(layout);
 
-        WidgetRef grid = new WidgetRef("widget-grid", "entity-grid");
+        WidgetInstance grid = new WidgetInstance("widget-grid", "entity-grid");
         grid.setProps(Map.of("entityName", "Claim"));
-        WidgetRef container = new WidgetRef("widget-tabs", "tab-group");
-        container.setChildren(List.of(grid));
-        input.setPages(List.of(new PageDefinition("page-claims-list", "Claims", List.of(container))));
+        grid.setPlacement(WidgetInstance.PlacementEnum.REFERENCED);
+        WidgetInstance container = new WidgetInstance("widget-tabs", "tab-group");
+        container.setProps(Map.of("childIds", List.of("widget-grid")));
+        input.setRoutes(List.of(AppTestFixtures.routeDefinition("claims-list", "Claims", container, grid)));
 
         NavItem child = new NavItem("nav-child", "Child");
-        child.setPageId("page-claims-list");
+        child.setRoutePath("claims-list");
         child.setRoles(List.of("CLAIMS_ADJUSTER"));
         NavItem group = new NavItem("nav-group", "Claims");
         group.setChildren(List.of(child));

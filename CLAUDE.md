@@ -24,4 +24,11 @@ Keep your replies concise and focus on conveying the key information. No unneces
 - DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
+# About this project
+Processpuzzle is a metadata driven application framework. It's core goal to facilitate the user to define:
+- entities what he/she needs. Once the entities are defined, the user has lists and forms to manage them
+- validation rules for the defined entities. Ones the rules are defined, will be applied in the entity forms.
+- state machines for the defined entities. Once the state machine defined, handles the state transitions of every object
+- documents build from text, images, data values and widgets
+- workflows for the users. Workflows handles roles and their activities. Activities can have input/output entities or documents.
 <!-- nx configuration end-->

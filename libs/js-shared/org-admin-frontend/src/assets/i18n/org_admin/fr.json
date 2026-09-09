@@ -1,0 +1,46 @@
+{
+  "organization_user": {
+    "_self": "Utilisateur",
+    "username": "Nom d'utilisateur",
+    "email": "E-mail",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "enabled": "Actif",
+    "emailVerified": "E-mail vérifié",
+    "roleNames": "Rôles",
+    "createdAt": "Créé",
+    "actions": {
+      "invite": "Invite user…"
+    },
+    "messages": {
+      "invited": "Invited {{username}}. They set their own password on first sign-in.",
+      "disabledIsReversible": "Clearing Enabled keeps the account and its roles but makes signing in impossible. Prefer it to deleting, which cannot be undone."
+    },
+    "invite": {
+      "title": "Invite a user into {{orgKey}}",
+      "roles": "Roles",
+      "note": "Every member also holds org-member; it is granted automatically.",
+      "usernameRequired": "A username is required.",
+      "emailRequired": "An e-mail address is required — the invitation is sent to it.",
+      "emailInvalid": "That is not an e-mail address.",
+      "submit": "Invite",
+      "cancel": "Cancel"
+    },
+    "roles": {
+      "_self": "Rôles",
+      "tab": "Rôles",
+      "empty": "This organization's realm declares no roles.",
+      "platformManaged": "(ProcessPuzzle)",
+      "note": "A change takes effect in the user's token at their next sign-in.",
+      "save": "Save roles",
+      "revert": "Revert",
+      "saved": "Roles saved. They reach the user's token at their next sign-in."
+    }
+  },
+  "organization_role": {
+    "_self": "Rôle",
+    "name": "Nom",
+    "description": "Description",
+    "platformManaged": "Managed by ProcessPuzzle"
+  }
+}

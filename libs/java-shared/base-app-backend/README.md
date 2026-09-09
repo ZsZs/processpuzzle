@@ -1,5 +1,9 @@
 # ProcessPuzzle :: Base App Backend
 
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-app-backend.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_app_backend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_app_backend)
+[![Maven Central](https://img.shields.io/maven-central/v/com.processpuzzle/base-app-backend?style=flat)](https://central.sonatype.com/artifact/com.processpuzzle/base-app-backend)
+
 ProcessPuzzle Base App Backend is the server-side companion of [`@processpuzzle/base-app-frontend`](../../js-shared/base-app-frontend/README.md). It exposes application-level services (user workspace, preferences, panel layout) consumed by the Angular application shell.
 
 ## Technologies

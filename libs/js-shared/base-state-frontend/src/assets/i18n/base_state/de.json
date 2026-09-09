@@ -1,0 +1,73 @@
+{
+  "state_machine_definition": {
+    "_self": "Zustandsmaschine",
+    "entityName": "Entität",
+    "name": "Name",
+    "description": "Beschreibung",
+    "stateAttributeKey": "Zustandsattribut",
+    "initialStateKey": "Startzustand",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "states": "Zustände",
+    "transitions": "Übergänge",
+    "tabs": {
+      "modeler": "Zustandsmodellierer"
+    },
+    "modeler": {
+      "save": "Speichern",
+      "palette": {
+        "title": "Elemente",
+        "start": "Start",
+        "end": "Ende",
+        "state": "Zustand"
+      },
+      "routing": {
+        "title": "Linienführung",
+        "orthogonal": "Rechtwinklig",
+        "polyline": "Gerade",
+        "bezier": "Gebogen"
+      }
+    }
+  },
+  "state_machine_state": {
+    "_self": "Zustand",
+    "key": "Schlüssel",
+    "name": "Name",
+    "description": "Beschreibung",
+    "initial": "Startzustand",
+    "isFinal": "Endzustand",
+    "isLocked": "Gesperrt",
+    "metadata": "Metadaten"
+  },
+  "state_machine_transition": {
+    "_self": "Übergang",
+    "key": "Schlüssel",
+    "name": "Name",
+    "sourceStateKey": "Quellzustand",
+    "targetStateKey": "Zielzustand",
+    "triggerKey": "Auslöser",
+    "guards": "Wächter",
+    "actions": "Aktionen"
+  },
+  "state_transition_guard": {
+    "_self": "Wächter",
+    "beanName": "Bean-Name",
+    "params": "Parameter"
+  },
+  "state_transition_action": {
+    "_self": "Aktion",
+    "beanName": "Bean-Name",
+    "params": "Parameter"
+  },
+  "entity_state_machine": {
+    "tab": "Zustandsautomat",
+    "currentState": "Aktueller Zustand",
+    "final": "Endzustand",
+    "governedBy": "Gesteuert von",
+    "noMachine": "Für diesen Entitätstyp gibt es keinen Zustandsautomaten.",
+    "unknownState": "'{{state}}' ist kein Zustand, den dieser Automat deklariert.",
+    "readOnly": "Nur-Lese-Ansicht — der Automat wird unter Base State bearbeitet.",
+    "loading": "Zustandsautomat wird geladen…",
+    "noState": "Dieser Datensatz hat noch keinen Zustand."
+  }
+}

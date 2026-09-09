@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorHandler, Injectable, inject } from '@angular/core';
 import { NGXLogger } from 'ngx-logging-kit';
 import { ERROR_MESSAGE_REPORTER } from './error-message-reporter';
+import { formatHttpError, httpErrorBodyMessage, httpErrorMessage } from './error-response';
 
 type ErrorRecord = Record<string, unknown>;
 
@@ -28,7 +29,10 @@ export class CentralErrorHandler implements ErrorHandler {
     }
 
     if (error instanceof HttpErrorResponse) {
-      this.logger.error(this.formatHttpError(error), error);
+      // The server's own errorText goes in the log line, not just the status: a log saying only
+      // `HTTP 409 /api/...` leaves whoever reads it to guess which of the endpoint's conflicts it was.
+      const detail = httpErrorBodyMessage(error);
+      this.logger.error(detail ? `${formatHttpError(error)} ${detail}` : formatHttpError(error), error);
       return;
     }
 
@@ -65,39 +69,9 @@ export class CentralErrorHandler implements ErrorHandler {
     return String(error);
   }
 
+  /** Delegates to {@link httpErrorMessage} so the stores and this handler cannot disagree. */
   private getDisplayMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      return this.getHttpErrorMessage(error);
-    }
-
-    if (error instanceof Error) {
-      return error.message || 'Unhandled exception.';
-    }
-
-    if (this.isRecord(error) && typeof error['message'] === 'string') {
-      return error['message'];
-    }
-
-    return 'Unhandled exception.';
-  }
-
-  private getHttpErrorMessage(error: HttpErrorResponse): string {
-    const responseError = error.error;
-
-    if (this.isRecord(responseError) && typeof responseError['message'] === 'string') {
-      return responseError['message'];
-    }
-
-    if (typeof responseError === 'string' && responseError.length > 0) {
-      return responseError;
-    }
-
-    return error.message || this.formatHttpError(error);
-  }
-
-  private formatHttpError(error: HttpErrorResponse): string {
-    const url = error.url ? ` ${error.url}` : '';
-    return `HTTP ${error.status}${url}`;
+    return httpErrorMessage(error);
   }
 
   private isRecord(value: unknown): value is ErrorRecord {

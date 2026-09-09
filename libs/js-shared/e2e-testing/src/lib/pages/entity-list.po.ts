@@ -2,17 +2,14 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { buttonTestId, listCancelButtonTestId, listSelectButtonTestId, toTestId } from '../selectors/selector.builder';
 import { identificationAttr } from '../data/test-data-factory';
-import { RouteResolver } from '../routing/route.resolver';
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+import { entityIdFromDetailUrl, RouteResolver } from '../routing/route.resolver';
+import { exactText } from '../selectors/text-match';
 
 export class EntityListPO {
   constructor(
-    private page: Page,
-    private descriptor: BaseEntityDescriptor,
-    private routes: RouteResolver,
+    private readonly page: Page,
+    private readonly descriptor: BaseEntityDescriptor,
+    private readonly routes: RouteResolver,
   ) {}
 
   // ── Navigation ──────────────────────────────────────────────────
@@ -43,7 +40,7 @@ export class EntityListPO {
 
   /** Anchor in the identification column (the only `<a>` Material renders per row). */
   private identificationLink(identificationValue: string): Locator {
-    return this.page.locator('mat-row a').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) });
+    return this.page.locator('mat-row a').filter({ hasText: exactText(identificationValue) });
   }
 
   findRowByIdentification(identificationValue: string): Locator {
@@ -62,8 +59,7 @@ export class EntityListPO {
     await this.filter(identificationValue);
     await this.identificationLink(identificationValue).first().click();
     await this.page.waitForURL(/\/details$/);
-    const segments = new URL(this.page.url()).pathname.split('/');
-    return segments[segments.length - 2];
+    return entityIdFromDetailUrl(this.page.url());
   }
 
   /**
@@ -74,7 +70,7 @@ export class EntityListPO {
   async selectRowByIdentification(identificationValue: string) {
     await this.filter(identificationValue);
     const row = this.rows()
-      .filter({ has: this.page.locator('mat-cell').filter({ hasText: new RegExp(`^${escapeRegExp(identificationValue)}$`) }) })
+      .filter({ has: this.page.locator('mat-cell').filter({ hasText: exactText(identificationValue) }) })
       .first();
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
   }

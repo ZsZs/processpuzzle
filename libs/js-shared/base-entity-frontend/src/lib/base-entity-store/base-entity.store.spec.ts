@@ -8,7 +8,13 @@ import { MatTableDataSource } from '@angular/material/table';
 import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 import { describe, expect, it } from 'vitest';
+import { signalStore } from '@ngrx/signals';
+import { of } from 'rxjs';
+import { mock } from 'vitest-mock-extended';
 import { entityNameFromType } from '../base-entity/base-entity-utility';
+import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
+import { BaseEntityService } from '../base-entity-service/base-entity.service';
+import { BaseEntityStore } from './base-entity.store';
 
 describe('BaseEntityStore', () => {
   function setup({ isApiFailed = false, payload = MOCK_API_RESPONSE }: { isApiFailed?: boolean; payload?: TestEntity[] | BaseEntityLoadResponse<TestEntity> } = {}) {
@@ -185,5 +191,80 @@ describe('BaseEntityStore', () => {
       expect(store.matTableDataSource()).toBeInstanceOf(MatTableDataSource);
       expect(store.matTableDataSource().data).toEqual(store.entities());
     });
+  });
+});
+
+/**
+ * A row that carries no `id` at all, the way `App Region` does not: the contract identifies it by the
+ * slot it fills. Keyed by `id` alone every lookup below would miss it, and `update` would match the
+ * first row of the list, `undefined === undefined`.
+ */
+class SlotRow implements BaseEntity {
+  /** Declared, never assigned — see the same note on `RegionDefinition`. */
+  declare readonly id?: string;
+
+  slot: string;
+  label: string;
+
+  constructor(slot = '', label = '') {
+    this.slot = slot;
+    this.label = label;
+  }
+}
+
+describe('BaseEntityStore, keyed by something other than `id`', () => {
+  function setup() {
+    const rows = [new SlotRow('header', 'Header'), new SlotRow('sidenav', 'Sidenav'), new SlotRow('footer', 'Footer')];
+    const repository = mock<BaseEntityService<SlotRow>>();
+    repository.findByQuery.mockReturnValue(of(rows as PersistedEntity<SlotRow>[]));
+    repository.delete.mockReturnValue(of(undefined));
+    repository.update.mockImplementation((entity) => of(entity));
+
+    const SlotRowStore = signalStore({ providedIn: 'root' }, BaseEntityStore<SlotRow>(SlotRow, () => repository, (row) => row.slot || undefined));
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter([])] });
+
+    return { store: TestBed.inject(SlotRowStore), repository, rows };
+  }
+
+  it('finds the row the details form is opened on', () => {
+    const { store } = setup();
+
+    expect(store.loadById('sidenav')?.label).toEqual('Sidenav');
+    expect(store.loadById('nothing')).toBeUndefined();
+  });
+
+  it('makes the row current under the key the URL names it by', () => {
+    const { store } = setup();
+
+    store.setCurrentEntity('footer');
+
+    expect(store.currentEntity()?.label).toEqual('Footer');
+    expect(store.currentId()).toEqual('footer');
+  });
+
+  it('replaces the row that was edited rather than the first unkeyed one', async () => {
+    const { store } = setup();
+
+    await store.update(new SlotRow('footer', 'changed') as PersistedEntity<SlotRow>);
+
+    expect(store.entities().map((row) => row.label)).toEqual(['Header', 'Sidenav', 'changed']);
+  });
+
+  it('removes only the deleted row', async () => {
+    const { store } = setup();
+
+    await store.delete('header');
+
+    expect(store.entities().map((row) => row.slot)).toEqual(['sidenav', 'footer']);
+  });
+
+  it('selects and deselects by the same key', () => {
+    const { store } = setup();
+
+    store.selectEntity('sidenav');
+    expect(store.selectedEntities().map((row) => row.slot)).toEqual(['sidenav']);
+
+    store.deselectEntity('sidenav');
+    expect(store.selectedEntities()).toEqual([]);
   });
 });

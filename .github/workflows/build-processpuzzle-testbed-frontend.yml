@@ -1,0 +1,78 @@
+name: Build-ProcessPuzzle-Testbed-Frontend
+on:
+  push:
+    branches:
+      - "feature/**"
+    paths:
+      # This workflow is the only one that runs the Playwright suite, so what the suite is made of has to
+      # trigger it too — the e2e project and the library its tests are generated from.
+      - 'apps/processpuzzle-testbed-frontend/**'
+      - 'apps/processpuzzle-testbed-e2e/**'
+      - 'libs/js-shared/e2e-testing/**'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ "develop" ]
+    paths:
+      - 'apps/processpuzzle-testbed-frontend/**'
+      - 'apps/processpuzzle-testbed-e2e/**'
+      - 'libs/js-shared/e2e-testing/**'
+  workflow_run:
+    workflows: [ "Build-Auth", "Build-Base-Entity-Frontend", "Build-Util", "Build-Widgets" ]
+    types:
+      - completed
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_TOKEN }}
+      PIPELINE_STAGE: "ci"
+    outputs:
+      RUNNER: ${{ runner.name }}
+    strategy:
+      matrix:
+        node-version: [ 24.x ]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: lint-test-build
+        name: Lint test and build the application
+        uses: ./.github/actions/lint-test-build
+        with:
+          base_dir: 'apps/processpuzzle-testbed-frontend'
+          nx_project: processpuzzle-testbed-frontend
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          sonar_token: ${{secrets.SONAR_TOKEN}}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+
+      - id: build-backend
+        name: Build backend jar
+        run: npx nx run processpuzzle-testbed-backend:build --no-cloud
+
+      - id: docker-compose
+        name: run-docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          # Newline-separated, and the ORDER is load-bearing: the two base files (both pull-only, so
+          # Coolify pulls the promoted images rather than rebuilding them), then the overlay that
+          # restores their `build:` sections, then the one that puts the applications back into a
+          # single compose project with the infrastructure. The last file to name a key wins, so the
+          # overlays have to come after the bases — otherwise `pull_policy: always` beats `build`,
+          # and the apps file's `external: true` network beats the one compose should create here.
+          compose-file: |
+            ./tools/docker/docker-compose-infrastructure.yaml
+            ./tools/docker/docker-compose-apps.yaml
+            ./tools/docker/docker-compose-build.yaml
+            ./tools/docker/docker-compose-apps-local.yaml
+          compose-flags: '--env-file tools/docker/env/.env.ci'
+
+      - id: e2e-test
+        name: run-e2e-tests
+        uses: ./.github/actions/e2e-test
+        with:
+          base_dir: 'apps/processpuzzle-testbed-e2e'
+          target_environment: 'ci'

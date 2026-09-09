@@ -1,9 +1,48 @@
 {
+  "entity_attribute": {
+    "_self": "Attribútum",
+    "code": "Kód",
+    "name": "Név",
+    "valueKind": "Értéktípus",
+    "formControlType": "Vezérlő típusa",
+    "displayOrder": "Megjelenítési sorrend",
+    "required": "Kötelező",
+    "isMultiValued": "Többértékű",
+    "indexed": "Indexelt",
+    "isLinkToDetails": "A rekord címe",
+    "linkedEntityType": "Kapcsolt entitás",
+    "defaultValue": "Alapértelmezett érték",
+    "enumValues": "Felsorolás értékei"
+  },
+  "entity_definition": {
+    "_self": "Entitásdefiníció",
+    "code": "Kód",
+    "name": "Név",
+    "description": "Leírás",
+    "status": "Állapot",
+    "isEmbedded": "Beágyazott",
+    "componentParents": "Szülő komponensek",
+    "attributes": "Attribútumok",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
+  "artifact": {
+    "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Elem törlése?",
     "content": "Ez véglegesen törli a(z) „{{ artifactName }}\" elemet az objektumtárból.",
     "cancel_button": "Mégse",
     "delete_button": "Törlés"
+  },
+  "delete_component_confirmation_dialog": {
+    "title": "Komponens törlése?",
+    "content": "Ez véglegesen törli a(z) „{{ componentName }}\" komponenst – a komponens kizárólag ehhez a rekordhoz tartozik.",
+    "cancel_button": "Mégse",
+    "delete_button": "Törlés"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Rekordok hierarchiája"
   },
   "tabs": {
     "list": "{{ entity }} - lista",
@@ -37,5 +76,8 @@
     "title": "Speciális lekérdezés-szerkesztő",
     "cancel_button": "Mégse",
     "apply_button": "Alkalmaz"
+  },
+  "embedded_components": {
+    "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik."
   }
 }

@@ -1,0 +1,10 @@
+description: "PPCL rules governing the Order entity throughout its lifecycle."
+rules:
+  - key: order-total-positive
+    appliesTo: order
+    expression: "total > 0"
+    message: "Order total must be greater than zero."
+  - key: order-requires-signed-document
+    appliesTo: order
+    expression: "status != 'APPROVED' || orderDocument.signed == true"
+    message: "Order cannot be approved without a signed document."

@@ -1,0 +1,232 @@
+{
+  "workflow": {
+    "_self": "Munkafolyamat",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "extends": "Kiterjeszti",
+    "activeInstances": "Aktív példányok",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "startType": "Indítás típusa",
+    "eventType": "Esemény típusa",
+    "milestoneRef": "Mérföldkő",
+    "preconditionExpression": "Előfeltétel",
+    "authorizedRoles": "Jogosult szerepkörök",
+    "payloadMapping": "Adattartalom-hozzárendelés",
+    "requiredArtifacts": "Szükséges artefaktumok",
+    "roles": "Szerepkörök",
+    "artifacts": "Artefaktumok",
+    "tools": "Eszközök",
+    "tasks": "Tevékenységek",
+    "tabs": {
+      "modeler": "Munkafolyamat-modellező"
+    },
+    "modeler": {
+      "empty": "Ennek a munkafolyamatnak még nincsenek tevékenységei.",
+      "lanes": "Sávok",
+      "data": "Munkatermékek",
+      "tools": "Eszközök",
+      "unassigned": "Nincs hozzárendelve",
+      "join_any": "bármelyik",
+      "save": "Elrendezés mentése",
+      "properties": {
+        "none": "Válasszon egy elemet a tulajdonságai megtekintéséhez.",
+        "lane": "Sáv",
+        "name": "Név",
+        "description": "Leírás",
+        "id": "Azonosító",
+        "unresolved": "Ez a hivatkozás nem mutat katalógusbejegyzésre.",
+        "relation_heading": "Kapcsolat",
+        "relation": "Fajta",
+        "label": "Címke",
+        "relations": {
+          "sequence": "Ettől függ",
+          "implicit": "Ezután fut (deklarációs sorrend)",
+          "input": "Olvassa",
+          "output": "Írja",
+          "tool": "Meghívja",
+          "start": "Induláshoz szükséges",
+          "unknown": "Kapcsolódik ehhez"
+        }
+      }
+    }
+  },
+  "workflow_task_assignment": {
+    "_self": "Tevékenység-hozzárendelés",
+    "taskDefinitionId": "Tevékenység",
+    "performedBy": "Végzi",
+    "dependsOn": "Előfeltételei",
+    "joinType": "Egyesítés típusa",
+    "parallel": "Párhuzamos",
+    "override": "Felülírás"
+  },
+  "workflow_role_use": {
+    "_self": "Szerepkör használat",
+    "roleDefinitionId": "Szerepkör"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artefaktum használat",
+    "artifactDefinitionId": "Artefaktum"
+  },
+  "workflow_tool_use": {
+    "_self": "Eszköz használat",
+    "toolDefinitionId": "Eszköz"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Szükséges artefaktum",
+    "artifactDefinitionId": "Artefaktum",
+    "state": "Állapot"
+  },
+  "workflow_role_definition": {
+    "_self": "Szerepkör",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "responsibleFor": "Felelős érte",
+    "entityRoleId": "Entitás szerepkör",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "tabs": {
+      "modeler": "Szerepkörmodellező"
+    },
+    "modeler": {
+      "empty": "Még nincs szerepkör definiálva."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artefaktum",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "artifactType": "Artefaktum típusa",
+    "artifactTypeId": "Típus azonosító",
+    "stateMachineId": "Állapotgép",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
+  "task_definition": {
+    "_self": "Tevékenység",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "performedByRoles": "Végrehajtó szerepkörök",
+    "preconditionRuleId": "Előfeltétel szabály",
+    "postconditionRuleId": "Utófeltétel szabály",
+    "version": "Verzió",
+    "updatedAt": "Módosítva",
+    "inputs": "Bemenetek",
+    "outputs": "Kimenetek",
+    "steps": "Lépések"
+  },
+  "task_step_definition": {
+    "_self": "Lépés",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "stepType": "Lépés típusa",
+    "toolDefinitionId": "Eszköz",
+    "toolOperation": "Művelet",
+    "inputMapping": "Bemenet leképezés",
+    "outputMapping": "Kimenet leképezés"
+  },
+  "tool_definition": {
+    "_self": "Eszköz",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "baseUrl": "Alap URL",
+    "type": "Hitelesítés típusa",
+    "secretRef": "Titok hivatkozás",
+    "version": "Verzió",
+    "createdAt": "Létrehozva",
+    "operations": "Műveletek"
+  },
+  "tool_operation": {
+    "_self": "Művelet",
+    "id": "Azonosító",
+    "method": "Metódus",
+    "path": "Útvonal",
+    "description": "Leírás",
+    "payloadTemplate": "Kérés sablon",
+    "expectedStatusCodes": "Elvárt státuszkódok"
+  },
+  "workflow_instance": {
+    "_self": "Munkafolyamat-példány",
+    "id": "Azonosító",
+    "workflowId": "Munkafolyamat",
+    "workflowName": "Munkafolyamat neve",
+    "status": "Állapot",
+    "entityId": "Entitás",
+    "startedAt": "Indítva",
+    "completedAt": "Befejezve",
+    "context": "Kontextus",
+    "tasks": "Tevékenységek",
+    "artifacts": "Artefaktumok"
+  },
+  "task_instance": {
+    "_self": "Tevékenységpéldány",
+    "id": "Azonosító",
+    "taskDefinitionId": "Tevékenység",
+    "name": "Név",
+    "status": "Állapot",
+    "assignedTo": "Felelős",
+    "blockedReason": "Blokkolás oka",
+    "activatedAt": "Aktiválva",
+    "completedAt": "Befejezve",
+    "skippedAt": "Kihagyva",
+    "stepResults": "Lépés eredmények",
+    "dashboard": {
+      "title": "Feladataim",
+      "scopes": {
+        "mine": "Feladataim",
+        "team": "Csapat",
+        "process": "Folyamat"
+      },
+      "run": "Futás",
+      "run_none": "Válasszon egy futást a tábla megtekintéséhez.",
+      "empty": {
+        "mine": "Nincs Önhöz rendelt feladat.",
+        "team": "Jelenleg nincs átvehető feladat.",
+        "process": "Ennek a futásnak nincsenek feladatai."
+      },
+      "error": "A futásokat nem sikerült betölteni.",
+      "select_prompt": "Válasszon egy feladatot a listából.",
+      "claim": "Feladat átvétele",
+      "locked": "Bárki számára nyitott, aki rendelkezik a szükséges szereppel. Vegye át a munka megkezdéséhez — a lépések és a befejező űrlap akkor nyílnak meg, ha már az Öné.",
+      "steps": "Lépések",
+      "steps_none": "Ez a feladat nem határoz meg lépéseket.",
+      "step_user": "felhasználói lépés",
+      "step_service": "szolgáltatáslépés",
+      "artifacts_in": "Olvassa",
+      "artifacts_out": "Írja",
+      "artifacts_none": "Ez a feladat nem határoz meg terméket.",
+      "not_created": "még nem jött létre",
+      "note": "Megjegyzések (a munkafolyamat kontextusához adva)",
+      "complete": "Feladat befejezése",
+      "skip": "Kihagyás",
+      "skip_reason": "A kihagyás oka",
+      "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
+      "unassigned": "nincs hozzárendelve",
+      "assigned_to": "Hozzárendelve"
+    }
+  },
+  "artifact_instance": {
+    "_self": "Artefaktum példány",
+    "id": "Azonosító",
+    "artifactDefinitionId": "Artefaktum",
+    "name": "Név",
+    "type": "Típus",
+    "entityId": "Entitás",
+    "stateMachineInstanceId": "Állapotgép példány",
+    "currentState": "Jelenlegi állapot",
+    "updatedAt": "Módosítva"
+  },
+  "task_step_result": {
+    "_self": "Lépés eredmény",
+    "stepId": "Lépés",
+    "completedAt": "Befejezve",
+    "toolResponse": "Eszköz válasz",
+    "error": "Hiba"
+  }
+}

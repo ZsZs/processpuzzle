@@ -1,0 +1,40 @@
+{
+  "widget_definition": {
+    "_self": "Widget",
+    "id": "Kulcs",
+    "name": "Név",
+    "translocoId": "Transloco azonosító",
+    "description": "Leírás",
+    "category": "Kategória",
+    "icon": "Ikon",
+    "status": "Állapot",
+    "version": "Verzió",
+    "publishedVersion": "Közzétett verzió",
+    "updatedAt": "Módosítva",
+    "inputPorts": "Bemeneti portok",
+    "outputPorts": "Kimeneti portok"
+  },
+  "widget_input_port": {
+    "_self": "Bemeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "required": "Kötelező",
+    "description": "Leírás",
+    "entityType": "Entitás típusa",
+    "attributeVisibility": "Attribútumok láthatósága",
+    "defaultValue": "Alapértelmezett érték",
+    "defaultRsqlFilter": "Alapértelmezett RSQL szűrő"
+  },
+  "widget_output_port": {
+    "_self": "Kimeneti port",
+    "name": "Név",
+    "type": "Típus",
+    "description": "Leírás",
+    "entityType": "Entitás típusa",
+    "attributeVisibility": "Attribútumok láthatósága"
+  },
+  "publish": {
+    "button": "Közzététel",
+    "tooltip": "Verzió közzététele, hogy a példányok építhessenek a props sémájára"
+  }
+}

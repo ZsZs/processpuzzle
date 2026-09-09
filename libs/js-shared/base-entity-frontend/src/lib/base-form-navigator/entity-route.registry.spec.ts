@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, RouteConfigLoadEnd, Routes } from '@angular/router';
 import { Component } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY } from './entity-route.registry';
+import { EMBEDDED_ENTITY_ROUTE_DATA_KEY, EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY } from './entity-route.registry';
 
 @Component({ standalone: true, template: '' })
 class DummyComponent {}
@@ -33,6 +33,34 @@ describe('EntityRouteRegistry', () => {
     expect(registry.basePath('Invoice')).toBe('/invoices');
     expect(registry.basePath('Missing')).toBeUndefined();
     expect([...registry.registeredEntities()].sort()).toEqual(['Invoice', 'Order']);
+  });
+
+  /**
+   * An embedded child hangs under every owner that carries it, at whatever depth, so it has no single base
+   * path. Registering one would mean the last branch the router happened to expand wins.
+   */
+  it('gives an embedded entity no base path', () => {
+    const { registry } = createRegistry([
+      {
+        path: 'test-entity',
+        component: DummyComponent,
+        data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'Test Entity' },
+        children: [
+          {
+            path: ':entityId/details',
+            component: DummyComponent,
+            children: [{ path: 'embedded-component', component: DummyComponent, data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'Embedded Component', [EMBEDDED_ENTITY_ROUTE_DATA_KEY]: true } }],
+          },
+        ],
+      },
+    ]);
+
+    registry.scan();
+
+    expect(registry.basePath('Test Entity')).toBe('/test-entity');
+    expect(registry.basePath('Embedded Component')).toBeUndefined();
+    expect(registry.detailsPath('Embedded Component', 'embedded_1_1')).toBeUndefined();
+    expect([...registry.registeredEntities()]).toEqual(['Test Entity']);
   });
 
   it('follows child routes and preserves the parent segment in the base path', () => {

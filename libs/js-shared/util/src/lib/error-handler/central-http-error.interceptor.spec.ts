@@ -38,9 +38,9 @@ describe('centralHttpErrorInterceptor', () => {
   it('forwards HTTP errors to the configured ErrorHandler and rethrows them', () => {
     const errorSpy = vi.fn();
 
-    httpClient.get('/api/processes').subscribe({ error: errorSpy });
+    httpClient.get('/api/workflows').subscribe({ error: errorSpy });
 
-    const request = httpTestingController.expectOne('/api/processes');
+    const request = httpTestingController.expectOne('/api/workflows');
     request.flush({ message: 'Service unavailable' }, { status: 503, statusText: 'Service Unavailable' });
 
     expect(handledErrors).toHaveLength(1);

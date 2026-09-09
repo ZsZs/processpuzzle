@@ -1,0 +1,40 @@
+{
+  "widget_definition": {
+    "_self": "Widget",
+    "id": "Key",
+    "name": "Name",
+    "translocoId": "Transloco Id",
+    "description": "Description",
+    "category": "Category",
+    "icon": "Icon",
+    "status": "Status",
+    "version": "Version",
+    "publishedVersion": "Published Version",
+    "updatedAt": "Updated At",
+    "inputPorts": "Input ports",
+    "outputPorts": "Output ports"
+  },
+  "widget_input_port": {
+    "_self": "Input port",
+    "name": "Name",
+    "type": "Type",
+    "required": "Required",
+    "description": "Description",
+    "entityType": "Entity type",
+    "attributeVisibility": "Attribute visibility",
+    "defaultValue": "Default value",
+    "defaultRsqlFilter": "Default RSQL filter"
+  },
+  "widget_output_port": {
+    "_self": "Output port",
+    "name": "Name",
+    "type": "Type",
+    "description": "Description",
+    "entityType": "Entity type",
+    "attributeVisibility": "Attribute visibility"
+  },
+  "publish": {
+    "button": "Publish",
+    "tooltip": "Promote this version, so instances may rely on its props schema"
+  }
+}

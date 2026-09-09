@@ -61,6 +61,14 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
   isNewEnabled = computed(() => !this.entityDescriptor().isAbstract);
   isPdfExportEnabled = computed(() => (this.store?.entities().length ?? 0) > 0);
+  /**
+   * The toolbar acts on the *list* — filter, new, edit, delete, export — so it belongs to the list screen, and
+   * only to the list screen of **this** entity. The second half is what `activeRouteSegment` alone cannot say:
+   * being a singleton it names the innermost screen in the URL, so a previewed application's list inside the
+   * designer's Preview tab put a second, `App Definition`-flavoured list toolbar above it. See
+   * `showsScreenOf`.
+   */
+  isVisible = computed(() => this.formNavigator.activeRouteSegment() === RouteSegments.LIST_ROUTE && this.formNavigator.showsScreenOf(this.entityDescriptor().entityName));
   isExporting = this.pdfExportService.exporting;
 
   // region Angular lifecycle hooks
@@ -92,7 +100,7 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
     if (!dialogResult) return; // user cancelled
 
     const columns = entityDescriptorToPdfColumns(this.entityDescriptor().attrDescriptors);
-    const entities = this.store.entities() as unknown as Record<string, unknown>[];
+    const entities = this.store.entities() as Record<string, unknown>[];
     const result = await this.pdfExportService.export(entities, columns, {
       ...dialogResult,
       title: this.resolveTitle(),

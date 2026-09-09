@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EntityLabelPipe } from './entity-label.pipe';
 
 @Component({
@@ -53,5 +53,17 @@ describe('EntityLabelPipe', () => {
     fixture.detectChanges();
 
     expect(text()).toBe('Fallback');
+  });
+
+  it('leaves an absent key to the fallback without asking transloco to translate it', async () => {
+    // `translate()` would report the key to the missing-key handler, which logs a warning on every
+    // render preceding a lazy scope's load — noise, since falling back is this pipe's contract.
+    const { fixture, component, text } = await renderHost();
+    const translate = vi.spyOn(TestBed.inject(TranslocoService), 'translate');
+    component.key.set('orders.Order.unknown');
+    fixture.detectChanges();
+
+    expect(text()).toBe('Fallback');
+    expect(translate).not.toHaveBeenCalled();
   });
 });

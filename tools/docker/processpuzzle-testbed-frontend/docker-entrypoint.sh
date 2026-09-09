@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+: "${PIPELINE_STAGE:=ci}"
+# Empty by default rather than `:?`-guarded. The guard was correct while the application could talk
+# to Firebase; Firebase was removed in 1465575b / 7076cae2 and main.ts now reads the value as
+# `env.FIREBASE_API_KEY ?? ''`. Keeping the guard means every deployment has to invent a placeholder
+# for a feature that no longer exists, and a `stage` container that forgets to exits before nginx
+# starts.
+: "${FIREBASE_API_KEY:=}"
+
+mkdir -p /usr/share/nginx/html/assets
+
+envsubst '${PIPELINE_STAGE} ${FIREBASE_API_KEY}' \
+  < /etc/templates/runtime-env.json.template \
+  > /usr/share/nginx/html/assets/runtime-env.json
+
+exec nginx -g 'daemon off;'

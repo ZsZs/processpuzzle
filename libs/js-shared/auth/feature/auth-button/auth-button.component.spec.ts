@@ -7,8 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Signal, signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, Signal, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
@@ -38,8 +37,9 @@ describe('AuthButtonComponent', () => {
     const mockAuthService = createMockAuthService(isAuthenticated, user);
 
     return await setUpTranslocoTestBed(AuthButtonComponent, testConfig, {
-      imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink, BrowserAnimationsModule],
+      imports: [MatIconModule, MatButtonModule, MatMenu, MatMenuItem, MatMenuTrigger, RouterLink],
       providers: [
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
         TranslocoService,

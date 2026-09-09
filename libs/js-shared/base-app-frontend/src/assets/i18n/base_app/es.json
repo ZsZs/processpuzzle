@@ -1,0 +1,86 @@
+{
+  "app_definition": {
+    "_self": "Aplicación",
+    "id": "Id",
+    "name": "Nombre",
+    "translocoId": "Id de Transloco",
+    "description": "Descripción",
+    "status": "Estado",
+    "version": "Versión",
+    "publishedVersion": "Versión publicada",
+    "updatedAt": "Actualizado el",
+    "materialTheme": "Tema de Material",
+    "colorScheme": "Esquema de color",
+    "logoUrl": "URL del logotipo",
+    "faviconUrl": "URL del favicon",
+    "tokenOverrides": "Sobrescrituras de tokens",
+    "preset": "Plantilla de diseño",
+    "sidenavMode": "Modo del menú lateral",
+    "contentMaxWidth": "Ancho máximo del contenido",
+    "sidenavCollapsible": "Menú lateral plegable",
+    "sidenavOpenByDefault": "Menú lateral abierto por defecto",
+    "regions": "Regiones",
+    "routes": "Rutas",
+    "modules": "Módulos",
+    "tabs": {
+      "preview": "{{ entity }} - vista previa"
+    }
+  },
+  "app_region": {
+    "_self": "Región",
+    "type": "Tipo",
+    "navItems": "Elementos de navegación",
+    "widgets": "Widgets"
+  },
+  "app_route": {
+    "_self": "Ruta",
+    "path": "Ruta de acceso",
+    "title": "Título",
+    "translocoId": "Id de Transloco",
+    "icon": "Icono",
+    "roles": "Roles",
+    "kind": "Muestra",
+    "widgets": "Widgets",
+    "documentSlug": "Slug del documento",
+    "entityName": "Nombre de la entidad",
+    "entityMode": "Modo de la entidad",
+    "rsqlFilter": "Filtro RSQL"
+  },
+  "app_module_mount": {
+    "_self": "Montaje de módulo",
+    "moduleKey": "Clave del módulo",
+    "basePath": "Ruta base"
+  },
+  "app_nav_item": {
+    "_self": "Elemento de navegación",
+    "id": "Id",
+    "label": "Etiqueta",
+    "translocoId": "Id de Transloco",
+    "icon": "Icono",
+    "routePath": "Ruta",
+    "roles": "Roles",
+    "children": "Elementos hijos"
+  },
+  "app_widget": {
+    "_self": "Widget",
+    "id": "Id",
+    "type": "Tipo",
+    "props": "Propiedades",
+    "placement": "Ubicación"
+  },
+  "module_definition": {
+    "_self": "Módulo",
+    "id": "Clave",
+    "name": "Nombre",
+    "translocoId": "Id de Transloco",
+    "description": "Descripción",
+    "translocoScope": "Ámbito de Transloco",
+    "version": "Versión",
+    "updatedAt": "Actualizado el",
+    "routes": "Rutas"
+  },
+  "publish": {
+    "button": "Publicar",
+    "tooltip": "Publica la definición guardada: su versión pasa a ser la versión publicada"
+  }
+}

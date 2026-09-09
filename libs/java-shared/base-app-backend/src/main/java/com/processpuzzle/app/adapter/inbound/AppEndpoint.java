@@ -4,30 +4,27 @@ import com.processpuzzle.app.api.BaseAppApi;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppLayout;
-import com.processpuzzle.app.model.KeyAvailability;
-import com.processpuzzle.app.model.Organization;
-import com.processpuzzle.app.model.OrganizationInput;
-import com.processpuzzle.app.model.OrganizationUpdate;
-import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
-import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.ModuleDefinition;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
+import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.ValidationResult;
-import com.processpuzzle.app.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
+import com.processpuzzle.app.usecase.CreateModuleDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
-import com.processpuzzle.app.usecase.DeleteOrganization;
+import com.processpuzzle.app.usecase.DeleteModuleDefinition;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
+import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
-import com.processpuzzle.app.usecase.FindOrganization;
+import com.processpuzzle.app.usecase.FindModuleDefinition;
 import com.processpuzzle.app.usecase.GetAppLayout;
-import com.processpuzzle.app.usecase.GetPageDefinition;
+import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.ProvisionOrganization;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
-import com.processpuzzle.app.usecase.UpdateOrganization;
+import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.shared.model.ImportResult;
@@ -42,98 +39,75 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 
 /**
  * REST adapter for the base-app feature, implementing the generated {@link BaseAppApi}. Holds no
  * logic of its own: it delegates to a use case and maps the result.
+ *
+ * <p>It used to serve {@code /organizations*} as well -- five operations left behind in
+ * base-app-api.yaml when the {@code Organization} aggregate moved to platform-admin, and delegated
+ * from here into that module's use cases. They are platform-admin's own
+ * {@code OrganizationEndpoint} now. Every resource this controller serves is scoped by an
+ * {@code orgKey} it does not own and never reads.
  */
 @RestController
 @LogClass
 public class AppEndpoint implements BaseAppApi {
 
-    private final ProvisionOrganization provisionOrganization;
-    private final CheckOrganizationKey checkOrganizationKey;
-    private final FindOrganization findOrganization;
-    private final UpdateOrganization updateOrganization;
-    private final DeleteOrganization deleteOrganization;
     private final CreateAppDefinition createAppDefinition;
     private final FindAppDefinition findAppDefinition;
     private final FindAllAppDefinitions findAllAppDefinitions;
     private final UpdateAppDefinition updateAppDefinition;
     private final DeleteAppDefinition deleteAppDefinition;
     private final PublishAppDefinition publishAppDefinition;
+    private final CreateModuleDefinition createModuleDefinition;
+    private final FindModuleDefinition findModuleDefinition;
+    private final FindAllModuleDefinitions findAllModuleDefinitions;
+    private final UpdateModuleDefinition updateModuleDefinition;
+    private final DeleteModuleDefinition deleteModuleDefinition;
     private final GetAppLayout getAppLayout;
-    private final GetPageDefinition getPageDefinition;
+    private final GetRouteDefinition getRouteDefinition;
     private final ValidateAppDefinition validateAppDefinition;
     private final ImportAppDefinitions importAppDefinitions;
     private final ExportAppDefinition exportAppDefinition;
     private final AppMapper mapper;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public AppEndpoint(ProvisionOrganization provisionOrganization,
-                       CheckOrganizationKey checkOrganizationKey,
-                       FindOrganization findOrganization,
-                       UpdateOrganization updateOrganization,
-                       DeleteOrganization deleteOrganization,
-                       CreateAppDefinition createAppDefinition,
+    public AppEndpoint(CreateAppDefinition createAppDefinition,
                        FindAppDefinition findAppDefinition,
                        FindAllAppDefinitions findAllAppDefinitions,
                        UpdateAppDefinition updateAppDefinition,
                        DeleteAppDefinition deleteAppDefinition,
                        PublishAppDefinition publishAppDefinition,
+                       CreateModuleDefinition createModuleDefinition,
+                       FindModuleDefinition findModuleDefinition,
+                       FindAllModuleDefinitions findAllModuleDefinitions,
+                       UpdateModuleDefinition updateModuleDefinition,
+                       DeleteModuleDefinition deleteModuleDefinition,
                        GetAppLayout getAppLayout,
-                       GetPageDefinition getPageDefinition,
+                       GetRouteDefinition getRouteDefinition,
                        ValidateAppDefinition validateAppDefinition,
                        ImportAppDefinitions importAppDefinitions,
                        ExportAppDefinition exportAppDefinition,
                        AppMapper mapper) {
-        this.provisionOrganization = provisionOrganization;
-        this.checkOrganizationKey = checkOrganizationKey;
-        this.findOrganization = findOrganization;
-        this.updateOrganization = updateOrganization;
-        this.deleteOrganization = deleteOrganization;
         this.createAppDefinition = createAppDefinition;
         this.findAppDefinition = findAppDefinition;
         this.findAllAppDefinitions = findAllAppDefinitions;
         this.updateAppDefinition = updateAppDefinition;
         this.deleteAppDefinition = deleteAppDefinition;
         this.publishAppDefinition = publishAppDefinition;
+        this.createModuleDefinition = createModuleDefinition;
+        this.findModuleDefinition = findModuleDefinition;
+        this.findAllModuleDefinitions = findAllModuleDefinitions;
+        this.updateModuleDefinition = updateModuleDefinition;
+        this.deleteModuleDefinition = deleteModuleDefinition;
         this.getAppLayout = getAppLayout;
-        this.getPageDefinition = getPageDefinition;
+        this.getRouteDefinition = getRouteDefinition;
         this.validateAppDefinition = validateAppDefinition;
         this.importAppDefinitions = importAppDefinitions;
         this.exportAppDefinition = exportAppDefinition;
         this.mapper = mapper;
-    }
-
-    // --- organizations -------------------------------------------------------------------
-
-    @Override
-    public ResponseEntity<ProvisioningResult> provisionOrganization(OrganizationInput input) {
-        ProvisionOrganization.Result result = provisionOrganization.execute(input);
-        return new ResponseEntity<>(mapper.toModel(result.organization(), result.starterApp()),
-                HttpStatus.CREATED);
-    }
-
-    @Override
-    public ResponseEntity<KeyAvailability> checkOrganizationKey(String key) {
-        return ResponseEntity.ok(mapper.toModel(checkOrganizationKey.execute(key)));
-    }
-
-    @Override
-    public ResponseEntity<Organization> getOrganization(String orgKey) {
-        return ResponseEntity.ok(mapper.toModel(findOrganization.execute(orgKey)));
-    }
-
-    @Override
-    public ResponseEntity<Organization> updateOrganization(String orgKey, OrganizationUpdate input) {
-        return ResponseEntity.ok(mapper.toModel(updateOrganization.execute(orgKey, input)));
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteOrganization(String orgKey) {
-        deleteOrganization.execute(orgKey);
-        return ResponseEntity.noContent().build();
     }
 
     // --- app definitions -----------------------------------------------------------------
@@ -150,9 +124,9 @@ public class AppEndpoint implements BaseAppApi {
     }
 
     @Override
-    public ResponseEntity<PageOfAppDefinitionSummary> listAppDefinitions(String orgKey, String where,
-                                                                         String order, Integer page,
-                                                                         Integer size) {
+    public ResponseEntity<PageOfAppDefinition> listAppDefinitions(String orgKey, String where,
+                                                                  String order, Integer page,
+                                                                  Integer size) {
         return ResponseEntity.ok(mapper.toModel(
                 findAllAppDefinitions.execute(orgKey, where, order, page, size)));
     }
@@ -174,6 +148,38 @@ public class AppEndpoint implements BaseAppApi {
         return ResponseEntity.ok(mapper.toModel(publishAppDefinition.execute(orgKey, appId)));
     }
 
+    // --- modules -------------------------------------------------------------------------
+
+    @Override
+    public ResponseEntity<List<ModuleDefinition>> listModuleDefinitions(String orgKey) {
+        return ResponseEntity.ok(findAllModuleDefinitions.execute(orgKey).stream()
+                .map(mapper::toModel)
+                .toList());
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> createModuleDefinition(String orgKey, ModuleDefinitionInput input) {
+        return new ResponseEntity<>(mapper.toModel(createModuleDefinition.execute(orgKey, input)),
+                HttpStatus.CREATED);
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> getModuleDefinition(String orgKey, String moduleKey) {
+        return ResponseEntity.ok(mapper.toModel(findModuleDefinition.execute(orgKey, moduleKey)));
+    }
+
+    @Override
+    public ResponseEntity<ModuleDefinition> updateModuleDefinition(String orgKey, String moduleKey,
+                                                                   ModuleDefinitionInput input) {
+        return ResponseEntity.ok(mapper.toModel(updateModuleDefinition.execute(orgKey, moduleKey, input)));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteModuleDefinition(String orgKey, String moduleKey) {
+        deleteModuleDefinition.execute(orgKey, moduleKey);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- runtime -------------------------------------------------------------------------
 
     @Override
@@ -183,10 +189,10 @@ public class AppEndpoint implements BaseAppApi {
     }
 
     @Override
-    public ResponseEntity<PageDefinition> getPageDefinition(String orgKey, String appId, String pageId,
+    public ResponseEntity<RouteDefinition> getRouteDefinition(String orgKey, String appId, String routePath,
                                                             Boolean draft) {
         return ResponseEntity.ok(mapper.toModel(
-                getPageDefinition.execute(orgKey, appId, pageId, Boolean.TRUE.equals(draft))));
+                getRouteDefinition.execute(orgKey, appId, routePath, Boolean.TRUE.equals(draft))));
     }
 
     // --- validation and transfer ---------------------------------------------------------

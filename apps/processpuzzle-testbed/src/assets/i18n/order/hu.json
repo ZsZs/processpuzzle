@@ -1,9 +1,0 @@
-{
-  "_self": "Megrendelés",
-  "orderNumber": "Megrendelésszám",
-  "customerName": "Vevő",
-  "status": "Állapot",
-  "total": "Végösszeg",
-  "shippingAddress": "Szállítási cím",
-  "lineItems": "Tételek"
-}

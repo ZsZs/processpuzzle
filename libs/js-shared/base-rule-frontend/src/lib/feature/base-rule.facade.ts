@@ -1,10 +1,11 @@
 import { inject, Injectable, Type } from '@angular/core';
-import { BASE_ENTITY_FACADE_REGISTRY, BaseEntityDescriptor, BaseEntityFacade } from '@processpuzzle/base-entity';
+import { BaseEntityDescriptor, BaseEntityFacade } from '@processpuzzle/base-entity';
 import { BaseRule } from '../domain/base-rule';
 import { BaseRuleMapper } from '../domain/base-rule.mapper';
 import { BaseRuleService } from '../domain/base-rule.service';
 import { BaseRuleStore } from '../domain/base-rule.store';
 import { createBaseRuleDescriptor } from '../domain/base-rule.descriptors';
+import { RuleContextOptions } from '../domain/rule-context-options.service';
 
 @Injectable()
 export class BaseRuleFacade extends BaseEntityFacade<BaseRule> {
@@ -12,7 +13,7 @@ export class BaseRuleFacade extends BaseEntityFacade<BaseRule> {
 
   private readonly mapperRef = inject(BaseRuleMapper);
   private readonly serviceRef = inject(BaseRuleService);
-  private readonly entityRegistry = inject(BASE_ENTITY_FACADE_REGISTRY);
+  private readonly contextOptions = inject(RuleContextOptions);
 
   protected override createMapper() {
     return this.mapperRef;
@@ -27,6 +28,6 @@ export class BaseRuleFacade extends BaseEntityFacade<BaseRule> {
   }
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createBaseRuleDescriptor(() => Object.keys(this.entityRegistry).map((name) => ({ key: name, value: name })));
+    return createBaseRuleDescriptor(() => this.contextOptions.options());
   }
 }

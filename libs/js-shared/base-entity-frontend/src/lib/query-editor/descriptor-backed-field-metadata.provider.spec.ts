@@ -36,6 +36,7 @@ describe('DescriptorBackedFieldMetadataProvider', () => {
   it('skips descriptors whose control types cannot be filtered on', () => {
     const descriptors = [
       new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT),
+      new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES),
       new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS),
       new BaseEntityAttrDescriptor('label', FormControlType.LABEL),
       new BaseEntityAttrDescriptor('title', FormControlType.TITLE),

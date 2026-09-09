@@ -3,6 +3,11 @@ minio:
   public-endpoint: http://localhost:7000
   access-key: minioadmin
   secret-key: minioadmin
+  # Prepended to every bucket name below as <prefix>-<purpose>, so one MinIO can hold every
+  # application stack without them sharing a bucket. Empty here on purpose: these are the library
+  # defaults, and an existing deployment already has objects in the flat names. Each backend
+  # deployment sets its own through MINIO_BUCKET_PREFIX — see docs/application-stacks.md.
+  bucket-prefix: ""
   http-timeouts:
     connect: 5s
     read: 30s

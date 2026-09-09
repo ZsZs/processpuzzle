@@ -1,0 +1,19 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-state.
+#
+# StateTranslationLoader imports this file on startup when `base-state.loadDefaultTranslations` is true.
+# The `<feature>/` directory is what keeps each loader to its own file — see base-app's copy for why.
+# See base-app's file of the same name for the rest of the conventions.
+#
+# NOTE: base-state owns no frontend transloco scope today — the library is still a scaffold and its
+# testbed tab says so. Nothing requests this bundle yet. It is seeded so the resource is exercised on
+# every startup and so the scope name is settled before there are screens arguing about it.
+
+translations:
+  - scope: base_state
+    locale: en
+    messages:
+      state_machine:
+        _self: State machine
+        entityName: Entity
+        states: States
+        transitions: Transitions

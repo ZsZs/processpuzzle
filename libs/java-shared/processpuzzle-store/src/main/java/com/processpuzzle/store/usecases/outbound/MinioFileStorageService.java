@@ -7,6 +7,7 @@ import io.minio.messages.Bucket;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -68,11 +69,13 @@ public class MinioFileStorageService implements FileStorageService {
     @Override
     public void uploadObject(String bucketName, String objectName, InputStream inputStream, String contentType, Map<String, String> metadata) {
         try {
+            // `available()` is not the stream length; buffer once so MinIO gets the real payload size.
+            byte[] payload = inputStream.readAllBytes();
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(objectName)
-                            .stream(inputStream, inputStream.available(), -1)
+                            .stream(new ByteArrayInputStream(payload), payload.length, -1)
                             .contentType(contentType)
                             .userMetadata(metadata)
                             .build());

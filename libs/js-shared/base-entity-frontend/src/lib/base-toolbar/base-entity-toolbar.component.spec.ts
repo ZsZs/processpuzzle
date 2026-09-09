@@ -1,5 +1,5 @@
 import { BaseEntityToolbarComponent } from './base-entity-toolbar.component';
-import { setupContainerComponentTest } from '../../test-setup';
+import { HOSTED_SCREENS_SEGMENT, setupContainerComponentTest, TEST_ENTITY_TAB_SEGMENT } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { TestEntity } from '../test-entity';
@@ -48,6 +48,29 @@ describe('BaseEntityToolbarComponent', () => {
       fixture.detectChanges();
       const matToolbar = fixture.debugElement.query(By.css('mat-toolbar'));
       expect(matToolbar).toBeFalsy();
+    });
+
+    /**
+     * The toolbar acts on the list it sits above, so hosting another entity's list inside one of this entity's
+     * container tabs — base-app's Preview tab — must not raise a second toolbar over it. `activeRouteSegment`
+     * alone says `LIST_ROUTE` there, because it is a singleton naming the innermost screen in the URL.
+     */
+    it('is not displayed over another entity’s list hosted inside this entity', async () => {
+      const { fixture, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+
+      await formNavigator.navigateToUrl(`/test-entity/1/${TEST_ENTITY_TAB_SEGMENT}/${HOSTED_SCREENS_SEGMENT}/hosted-entity/list`);
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('mat-toolbar'))).toBeFalsy();
+    });
+
+    it('is displayed over this entity’s own list', async () => {
+      const { fixture, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+
+      await formNavigator.navigateToList('TestEntity');
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('mat-toolbar'))).toBeTruthy();
     });
   });
 

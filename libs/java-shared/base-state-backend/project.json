@@ -4,7 +4,7 @@
   "projectType": "library",
   "tags": ["backend", "java", "springboot", "library"],
   "sourceRoot": "libs/java-shared/base-state-backend/src",
-  "implicitDependencies": ["api-contracts", "processpuzzle-core"],
+  "implicitDependencies": ["api-contracts", "processpuzzle-core", "base-entity-backend"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",

@@ -1,0 +1,13 @@
+{
+  "name": "@processpuzzle/testbed",
+  "version": "1.4.0",
+  "description": "Test application for @processpuzzle libraries",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZsZs/processpuzzle.git",
+    "directory": "apps/processpuzzle-testbed-frontend"
+  },
+  "homepage": "https://github.com/ZsZs/processpuzzle#readme",
+  "dependencies": {}
+}

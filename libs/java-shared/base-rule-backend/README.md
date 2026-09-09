@@ -1,5 +1,9 @@
 # ProcessPuzzle :: Base Rule Backend
 
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-rule-backend.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_rule_backend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_rule_backend)
+[![Maven Central](https://img.shields.io/maven-central/v/com.processpuzzle/base-rule-backend?style=flat)](https://central.sonatype.com/artifact/com.processpuzzle/base-rule-backend)
+
 ProcessPuzzle Base Rule Backend is the server-side companion of [`@processpuzzle/base-rule-frontend`](../../js-shared/base-rule-frontend/README.md). It provides the building blocks for authoring and evaluating business rules in a Spring Boot application, following the Hexagonal architecture used across the platform.
 
 ## Technologies

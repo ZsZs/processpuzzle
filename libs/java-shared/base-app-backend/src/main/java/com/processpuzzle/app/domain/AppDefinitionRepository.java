@@ -21,5 +21,6 @@ public interface AppDefinitionRepository
 
     List<AppDefinition> findByOrgKey(String orgKey);
 
+    /** Called by {@code TenantDataCleaner} when the tenant is deleted. */
     void deleteByOrgKey(String orgKey);
 }

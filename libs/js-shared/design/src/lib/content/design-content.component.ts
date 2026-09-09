@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
+import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/base-widget';
 
 @Component({
   selector: 'pp-design-content',
@@ -23,6 +23,15 @@ export class DesignContentComponent {
       subtitle: 'base-entity_card_subtitle',
       content: ['base-entity_card_content', 'base-entity_card_content_1', 'base-entity_card_content_2', 'base-entity_card_content_3'],
       actions: [{ link: '/design/entities', caption: 'base-entity_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
+      icon: 'article',
+      title: 'base-document_card_title',
+      subtitle: 'base-document_card_subtitle',
+      content: ['base-document_card_content', 'base-document_card_content_1', 'base-document_card_content_2', 'base-document_card_content_3'],
+      // Singular, matching the snake-cased entity name BASE_DOCUMENT_ROUTES mounts at — see the comment there.
+      actions: [{ link: '/design/document', caption: 'base-document_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
     {
@@ -50,11 +59,12 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
-      icon: 'desktop_windows',
-      title: 'base-desktop_card_title',
-      subtitle: 'base-desktop_card_subtitle',
-      content: ['base-desktop_card_content', 'base-desktop_card_content_1', 'base-desktop_card_content_2', 'base-desktop_card_content_3'],
-      actions: [{ link: '/design/desktop', caption: 'base-desktop_card_button', colour: 'primary' }],
+      icon: 'web',
+      title: 'base-app_card_title',
+      subtitle: 'base-app_card_subtitle',
+      content: ['base-app_card_content', 'base-app_card_content_1', 'base-app_card_content_2', 'base-app_card_content_3'],
+      // The section, not one of its tabs: `application` redirects to the App Definition tab on its own.
+      actions: [{ link: '/design/application', caption: 'base-app_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
   ];

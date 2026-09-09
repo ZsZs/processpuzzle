@@ -2,38 +2,33 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinition;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationStatus;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.KeyAvailability;
-import com.processpuzzle.app.model.OrganizationInput;
-import com.processpuzzle.app.model.OrganizationUpdate;
-import com.processpuzzle.app.model.PageDefinition;
-import com.processpuzzle.app.model.PageOfAppDefinitionSummary;
-import com.processpuzzle.app.model.ProvisioningResult;
+import com.processpuzzle.app.model.ModuleDefinitionInput;
+import com.processpuzzle.app.model.RouteDefinition;
+import com.processpuzzle.app.model.PageOfAppDefinition;
+import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ValidationResult;
 import com.processpuzzle.app.usecase.AppValidationProblem;
-import com.processpuzzle.app.usecase.CheckOrganizationKey;
 import com.processpuzzle.app.usecase.CreateAppDefinition;
 import com.processpuzzle.app.usecase.DeleteAppDefinition;
-import com.processpuzzle.app.usecase.DeleteOrganization;
 import com.processpuzzle.app.usecase.ExportAppDefinition;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
 import com.processpuzzle.app.usecase.FindAppDefinition;
-import com.processpuzzle.app.usecase.FindOrganization;
 import com.processpuzzle.app.usecase.GetAppLayout;
-import com.processpuzzle.app.usecase.GetPageDefinition;
+import com.processpuzzle.app.usecase.GetRouteDefinition;
 import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
-import com.processpuzzle.app.usecase.KeyCheckOutcome;
-import com.processpuzzle.app.usecase.ProvisionOrganization;
+import com.processpuzzle.app.usecase.CreateModuleDefinition;
+import com.processpuzzle.app.usecase.DeleteModuleDefinition;
+import com.processpuzzle.app.usecase.FindAllModuleDefinitions;
+import com.processpuzzle.app.usecase.FindModuleDefinition;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
+import com.processpuzzle.app.usecase.UpdateModuleDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
-import com.processpuzzle.app.usecase.UpdateOrganization;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import com.processpuzzle.shared.model.ImportResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,8 +47,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
+import static com.processpuzzle.app.AppTestFixtures.MODULE_KEY;
+import static com.processpuzzle.app.AppTestFixtures.MODULE_ROUTE_PATH;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,19 +70,19 @@ import static org.mockito.Mockito.when;
  */
 class AppEndpointTest {
 
-    private ProvisionOrganization provisionOrganization;
-    private CheckOrganizationKey checkOrganizationKey;
-    private FindOrganization findOrganization;
-    private UpdateOrganization updateOrganization;
-    private DeleteOrganization deleteOrganization;
     private CreateAppDefinition createAppDefinition;
     private FindAppDefinition findAppDefinition;
     private FindAllAppDefinitions findAllAppDefinitions;
     private UpdateAppDefinition updateAppDefinition;
     private DeleteAppDefinition deleteAppDefinition;
     private PublishAppDefinition publishAppDefinition;
+    private CreateModuleDefinition createModuleDefinition;
+    private FindModuleDefinition findModuleDefinition;
+    private FindAllModuleDefinitions findAllModuleDefinitions;
+    private UpdateModuleDefinition updateModuleDefinition;
+    private DeleteModuleDefinition deleteModuleDefinition;
     private GetAppLayout getAppLayout;
-    private GetPageDefinition getPageDefinition;
+    private GetRouteDefinition getRouteDefinition;
     private ValidateAppDefinition validateAppDefinition;
     private ImportAppDefinitions importAppDefinitions;
     private ExportAppDefinition exportAppDefinition;
@@ -93,84 +90,28 @@ class AppEndpointTest {
 
     @BeforeEach
     void setUp() {
-        provisionOrganization = mock(ProvisionOrganization.class);
-        checkOrganizationKey = mock(CheckOrganizationKey.class);
-        findOrganization = mock(FindOrganization.class);
-        updateOrganization = mock(UpdateOrganization.class);
-        deleteOrganization = mock(DeleteOrganization.class);
         createAppDefinition = mock(CreateAppDefinition.class);
         findAppDefinition = mock(FindAppDefinition.class);
         findAllAppDefinitions = mock(FindAllAppDefinitions.class);
         updateAppDefinition = mock(UpdateAppDefinition.class);
         deleteAppDefinition = mock(DeleteAppDefinition.class);
         publishAppDefinition = mock(PublishAppDefinition.class);
+        createModuleDefinition = mock(CreateModuleDefinition.class);
+        findModuleDefinition = mock(FindModuleDefinition.class);
+        findAllModuleDefinitions = mock(FindAllModuleDefinitions.class);
+        updateModuleDefinition = mock(UpdateModuleDefinition.class);
+        deleteModuleDefinition = mock(DeleteModuleDefinition.class);
         getAppLayout = mock(GetAppLayout.class);
-        getPageDefinition = mock(GetPageDefinition.class);
+        getRouteDefinition = mock(GetRouteDefinition.class);
         validateAppDefinition = mock(ValidateAppDefinition.class);
         importAppDefinitions = mock(ImportAppDefinitions.class);
         exportAppDefinition = mock(ExportAppDefinition.class);
 
-        endpoint = new AppEndpoint(provisionOrganization, checkOrganizationKey, findOrganization,
-                updateOrganization, deleteOrganization, createAppDefinition, findAppDefinition,
+        endpoint = new AppEndpoint(createAppDefinition, findAppDefinition,
                 findAllAppDefinitions, updateAppDefinition, deleteAppDefinition, publishAppDefinition,
-                getAppLayout, getPageDefinition, validateAppDefinition, importAppDefinitions,
+                createModuleDefinition, findModuleDefinition, findAllModuleDefinitions,
+                updateModuleDefinition, deleteModuleDefinition, getAppLayout, getRouteDefinition, validateAppDefinition, importAppDefinitions,
                 exportAppDefinition, new AppMapper());
-    }
-
-    // --- organizations -------------------------------------------------------------------
-
-    @Test
-    void provisioningAnOrganizationAnswers201WithTheTenantAndItsStarterApp() {
-        when(provisionOrganization.execute(any())).thenReturn(
-                new ProvisionOrganization.Result(organization(), AppTestFixtures.storedDefinition()));
-
-        ResponseEntity<ProvisioningResult> response =
-                endpoint.provisionOrganization(new OrganizationInput(ORG_KEY, "My Organization Ltd."));
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getOrganization().getKey()).isEqualTo(ORG_KEY);
-        assertThat(response.getBody().getAppDefinition().getId()).isEqualTo(APP_ID);
-    }
-
-    @Test
-    void checkingAKeyAnswersTheOutcomeIncludingItsSuggestions() {
-        when(checkOrganizationKey.execute("my-org")).thenReturn(
-                KeyCheckOutcome.unavailable("my-org", "organization.key.taken", List.of("my-org-1")));
-
-        ResponseEntity<KeyAvailability> response = endpoint.checkOrganizationKey("my-org");
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getAvailable()).isFalse();
-        assertThat(response.getBody().getErrorId()).isEqualTo("organization.key.taken");
-        assertThat(response.getBody().getSuggestions()).containsExactly("my-org-1");
-    }
-
-    @Test
-    void readingAnOrganizationAnswersItsModel() {
-        when(findOrganization.execute(ORG_KEY)).thenReturn(organization());
-
-        assertThat(endpoint.getOrganization(ORG_KEY).getBody()).isNotNull()
-                .satisfies(model -> assertThat(model.getContactEmail()).isEqualTo("ops@my-org.example"));
-    }
-
-    @Test
-    void updatingAnOrganizationForwardsThePayloadAndAnswersTheUpdatedModel() {
-        OrganizationUpdate input = new OrganizationUpdate("My Organization GmbH");
-        when(updateOrganization.execute(ORG_KEY, input)).thenReturn(organization());
-
-        assertThat(endpoint.updateOrganization(ORG_KEY, input).getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(updateOrganization).execute(ORG_KEY, input);
-    }
-
-    @Test
-    void deletingAnOrganizationAnswers204WithNoBody() {
-        ResponseEntity<Void> response = endpoint.deleteOrganization(ORG_KEY);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(response.getBody()).isNull();
-        verify(deleteOrganization).execute(ORG_KEY);
     }
 
     // --- app definitions -----------------------------------------------------------------
@@ -195,24 +136,45 @@ class AppEndpointTest {
         com.processpuzzle.app.model.AppDefinition body = endpoint.getAppDefinition(ORG_KEY, APP_ID).getBody();
 
         assertThat(body).isNotNull();
-        assertThat(body.getPages()).extracting(PageDefinition::getId).containsExactly(PAGE_ID);
+        assertThat(body.getRoutes()).extracting(RouteDefinition::getPath).containsExactly(ROUTE_PATH);
         assertThat(body.getRegions()).extracting(region -> region.getType())
                 .containsExactly(RegionType.SIDENAV);
     }
 
     @Test
-    void listingDefinitionsForwardsEveryQueryParameterAndAnswersAPagedSummary() {
+    void listingDefinitionsForwardsEveryQueryParameterAndAnswersAPagedDefinition() {
         when(findAllAppDefinitions.execute(ORG_KEY, "id==claims-app", "name,asc", 2, 10))
                 .thenReturn(new PageImpl<>(List.of(AppTestFixtures.storedDefinition())));
 
-        ResponseEntity<PageOfAppDefinitionSummary> response =
+        ResponseEntity<PageOfAppDefinition> response =
                 endpoint.listAppDefinitions(ORG_KEY, "id==claims-app", "name,asc", 2, 10);
 
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getContent()).singleElement()
-                .satisfies(summary -> assertThat(summary.getId()).isEqualTo(APP_ID));
+                .satisfies(definition -> assertThat(definition.getId()).isEqualTo(APP_ID));
         assertThat(response.getBody().getTotalElements()).isEqualTo(1L);
         verify(findAllAppDefinitions).execute(ORG_KEY, "id==claims-app", "name,asc", 2, 10);
+    }
+
+    /**
+     * The designer edits a definition straight out of the list instead of re-fetching it by id, so
+     * a list entry that dropped the graph would be silently written back as an empty one by the
+     * next full-replacement PUT.
+     */
+    @Test
+    void aListedDefinitionCarriesTheWholeGraphRatherThanHeaderFieldsOnly() {
+        when(findAllAppDefinitions.execute(ORG_KEY, null, null, null, null))
+                .thenReturn(new PageImpl<>(List.of(AppTestFixtures.storedDefinition())));
+
+        ResponseEntity<PageOfAppDefinition> response =
+                endpoint.listAppDefinitions(ORG_KEY, null, null, null, null);
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getContent()).singleElement().satisfies(definition -> {
+            assertThat(definition.getRegions()).extracting(RegionDefinition::getType)
+                    .containsExactly(RegionType.SIDENAV);
+            assertThat(definition.getRoutes()).extracting(RouteDefinition::getPath).containsExactly(ROUTE_PATH);
+        });
     }
 
     @Test
@@ -242,6 +204,54 @@ class AppEndpointTest {
                 .satisfies(body -> assertThat(body.getStatus()).isEqualTo(AppDefinitionStatus.PUBLISHED));
     }
 
+    // --- modules -------------------------------------------------------------------------
+
+    @Test
+    void creatingAModuleAnswers201() {
+        ModuleDefinitionInput input = AppTestFixtures.validModuleInput(MODULE_KEY);
+        when(createModuleDefinition.execute(ORG_KEY, input)).thenReturn(AppTestFixtures.storedModule());
+
+        assertThat(endpoint.createModuleDefinition(ORG_KEY, input).getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+    }
+
+    /** The lazy-load response: its routes are what the shell registers, so an empty body is a dead mount. */
+    @Test
+    void readingAModuleAnswersItsRoutes() {
+        when(findModuleDefinition.execute(ORG_KEY, MODULE_KEY)).thenReturn(AppTestFixtures.storedModule());
+
+        assertThat(endpoint.getModuleDefinition(ORG_KEY, MODULE_KEY).getBody()).isNotNull()
+                .satisfies(body -> assertThat(body.getRoutes()).extracting(RouteDefinition::getPath)
+                        .containsExactly(MODULE_ROUTE_PATH));
+    }
+
+    @Test
+    void listingModulesAnswersEveryOneOfThem() {
+        when(findAllModuleDefinitions.execute(ORG_KEY)).thenReturn(List.of(AppTestFixtures.storedModule()));
+
+        assertThat(endpoint.listModuleDefinitions(ORG_KEY).getBody())
+                .extracting(com.processpuzzle.app.model.ModuleDefinition::getKey)
+                .containsExactly(MODULE_KEY);
+    }
+
+    @Test
+    void updatingAModuleForwardsThePathKeyAlongsideTheBody() {
+        ModuleDefinitionInput input = AppTestFixtures.validModuleInput(MODULE_KEY);
+        when(updateModuleDefinition.execute(ORG_KEY, MODULE_KEY, input))
+                .thenReturn(AppTestFixtures.storedModule());
+
+        assertThat(endpoint.updateModuleDefinition(ORG_KEY, MODULE_KEY, input).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        verify(updateModuleDefinition).execute(ORG_KEY, MODULE_KEY, input);
+    }
+
+    @Test
+    void deletingAModuleAnswers204() {
+        assertThat(endpoint.deleteModuleDefinition(ORG_KEY, MODULE_KEY).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        verify(deleteModuleDefinition).execute(ORG_KEY, MODULE_KEY);
+    }
+
     // --- runtime -------------------------------------------------------------------------
 
     @Test
@@ -267,28 +277,28 @@ class AppEndpointTest {
         AppDefinition definition = AppTestFixtures.storedDefinition();
         when(getAppLayout.execute(anyString(), anyString(), anyBoolean())).thenReturn(
                 new GetAppLayout.Result(definition, definition.getDraftGraph(), null));
-        when(getPageDefinition.execute(anyString(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(definition.getDraftGraph().pages().getFirst());
+        when(getRouteDefinition.execute(anyString(), anyString(), anyString(), anyBoolean()))
+                .thenReturn(definition.getDraftGraph().routes().getFirst());
 
         endpoint.getAppLayout(ORG_KEY, APP_ID, null);
-        endpoint.getPageDefinition(ORG_KEY, APP_ID, PAGE_ID, null);
+        endpoint.getRouteDefinition(ORG_KEY, APP_ID, ROUTE_PATH, null);
         endpoint.getAppLayout(ORG_KEY, APP_ID, true);
-        endpoint.getPageDefinition(ORG_KEY, APP_ID, PAGE_ID, true);
+        endpoint.getRouteDefinition(ORG_KEY, APP_ID, ROUTE_PATH, true);
 
         verify(getAppLayout).execute(ORG_KEY, APP_ID, false);
-        verify(getPageDefinition).execute(ORG_KEY, APP_ID, PAGE_ID, false);
+        verify(getRouteDefinition).execute(ORG_KEY, APP_ID, ROUTE_PATH, false);
         verify(getAppLayout).execute(ORG_KEY, APP_ID, true);
-        verify(getPageDefinition).execute(ORG_KEY, APP_ID, PAGE_ID, true);
+        verify(getRouteDefinition).execute(ORG_KEY, APP_ID, ROUTE_PATH, true);
     }
 
     @Test
     void readingAPageAnswersItsWidgets() {
         AppDefinition definition = AppTestFixtures.storedDefinition();
-        when(getPageDefinition.execute(ORG_KEY, APP_ID, PAGE_ID, false))
-                .thenReturn(definition.getDraftGraph().pages().getFirst());
+        when(getRouteDefinition.execute(ORG_KEY, APP_ID, ROUTE_PATH, false))
+                .thenReturn(definition.getDraftGraph().routes().getFirst());
 
-        assertThat(endpoint.getPageDefinition(ORG_KEY, APP_ID, PAGE_ID, false).getBody()).isNotNull()
-                .satisfies(page -> assertThat(page.getId()).isEqualTo(PAGE_ID));
+        assertThat(endpoint.getRouteDefinition(ORG_KEY, APP_ID, ROUTE_PATH, false).getBody()).isNotNull()
+                .satisfies(route -> assertThat(route.getPath()).isEqualTo(ROUTE_PATH));
     }
 
     // --- validation and transfer ---------------------------------------------------------
@@ -379,8 +389,4 @@ class AppEndpointTest {
         return file;
     }
 
-    private static Organization organization() {
-        return new Organization(ORG_KEY, "My Organization Ltd.", "Insurance.", "ops@my-org.example",
-                "en-GB", OrganizationStatus.ACTIVE);
-    }
 }

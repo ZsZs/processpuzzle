@@ -1,9 +1,48 @@
 {
+  "entity_attribute": {
+    "_self": "Attribut",
+    "code": "Code",
+    "name": "Name",
+    "valueKind": "Wertart",
+    "formControlType": "Steuerelementtyp",
+    "displayOrder": "Anzeigereihenfolge",
+    "required": "Erforderlich",
+    "isMultiValued": "Mehrwertig",
+    "indexed": "Indiziert",
+    "isLinkToDetails": "Benennt den Datensatz",
+    "linkedEntityType": "Verknüpfte Entität",
+    "defaultValue": "Standardwert",
+    "enumValues": "Aufzählungswerte"
+  },
+  "entity_definition": {
+    "_self": "Entitätsdefinition",
+    "code": "Code",
+    "name": "Name",
+    "description": "Beschreibung",
+    "status": "Status",
+    "isEmbedded": "Eingebettet",
+    "componentParents": "Übergeordnete Komponenten",
+    "attributes": "Attribute",
+    "version": "Version",
+    "updatedAt": "Aktualisiert am"
+  },
+  "artifact": {
+    "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Artefakt löschen?",
     "content": "Dadurch wird „{{ artifactName }}\" dauerhaft aus dem Objektspeicher gelöscht.",
     "cancel_button": "Abbrechen",
     "delete_button": "Löschen"
+  },
+  "delete_component_confirmation_dialog": {
+    "title": "Komponente löschen?",
+    "content": "Dadurch wird „{{ componentName }}\" dauerhaft gelöscht – eine Komponente gehört ausschließlich zu diesem Datensatz.",
+    "cancel_button": "Abbrechen",
+    "delete_button": "Löschen"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Datensatz-Hierarchie"
   },
   "tabs": {
     "list": "{{ entity }} - Liste",
@@ -37,5 +76,8 @@
     "title": "Erweiterter Abfrage-Editor",
     "cancel_button": "Abbrechen",
     "apply_button": "Übernehmen"
+  },
+  "embedded_components": {
+    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert."
   }
 }

@@ -1,0 +1,59 @@
+===================================================================
+GitHub Codespaces + JetBrains Gateway Setup Guide for IntelliJ IDEA
+===================================================================
+
+1. UPDATE DEVCONTAINER CONFIGURATION (.devcontainer/devcontainer.json)
+-------------------------------------------------------------------
+Ensure SSH daemon feature and permission fix are present:
+
+{
+  "name": "Dev Container",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": [
+    "sudo chown -R vscode:vscode /home/vscode/.cache"
+  ]
+}
+
+Commit and push these changes, then rebuild/re-create the Codespace.
+
+
+2. VERIFY ACTIVE CODESPACES (Local Terminal / PowerShell)
+-------------------------------------------------------------------
+List all active Codespaces to verify your target instance is running:
+
+  gh codespace list
+
+
+3. REFRESH LOCAL SSH CONFIGURATION
+-------------------------------------------------------------------
+Clean stale entries from C:\Users\<User>\.ssh\config (or ~/.ssh/config),
+then regenerate fresh host entries:
+
+  # PowerShell:
+  gh codespace ssh --config | Out-File -Encoding ascii -FilePath $env:USERPROFILE\.ssh\config -Append
+
+  # Bash / zsh:
+  gh codespace ssh --config >> ~/.ssh/config
+
+
+4. VERIFY SSH CONNECTIVITY
+-------------------------------------------------------------------
+Test the native SSH connection using the generated host name (e.g., codespace-...):
+
+  ssh <codespace-host-name>
+
+Verify you can log in as 'vscode' without password prompts, then type 'exit'.
+
+
+5. CONNECT VIA JETBRAINS GATEWAY
+-------------------------------------------------------------------
+1. Open JetBrains Gateway -> SSH -> New Connection.
+2. Host: Select or enter '<codespace-host-name>'.
+3. User: vscode
+4. Authentication: 'OpenSSH config and authentication agent'.
+5. Project Directory: /workspaces/<repository-name>
+6. Click 'Start IDE and Connect'.

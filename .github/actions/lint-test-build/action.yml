@@ -28,7 +28,7 @@ runs:
   using: composite
   steps:
     - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -39,15 +39,20 @@ runs:
       run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash
     - name: Setup Java ${{ inputs.java-version }}
-      uses: actions/setup-java@v4.8.0
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: ${{ inputs.java-version }}
         cache: 'maven'
-    - name: Setup Maven 3.9.14
-      uses: stCarolas/setup-maven@v5.1
-      with:
-        maven-version: '3.9.14'
+    - name: Report Maven version
+      # Uses the Maven preinstalled on the runner image (3.9.x) rather than
+      # downloading a pinned tarball. stCarolas/setup-maven fetched Maven from
+      # repo.maven.apache.org on every run with no cache and no retry, and
+      # Central's rate limiting made that a recurring HTTP 429 build failure.
+      # Nothing here needs a specific Maven version: no requireMavenVersion
+      # enforcer, and every call site is plain `mvn` on PATH.
+      run: mvn -v
+      shell: bash
     - name: Lint libs and apps
       run: npm run lint-${{inputs.nx_project}}
       shell: bash
@@ -75,7 +80,7 @@ runs:
       shell: bash
 
     - name: Upload Test Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: test-coverage-report-${{ github.sha }}
         path: ${{inputs.base_dir}}/reports/coverage/lcov-report

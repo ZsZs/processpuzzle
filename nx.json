@@ -108,20 +108,21 @@
     "projects": [
       "auth",
       "base-app-frontend",
+      "base-document-frontend",
       "base-entity-frontend",
       "base-workflow-frontend",
       "base-rule-frontend",
       "base-state-frontend",
       "design",
-      "processpuzzle-testbed",
+      "org-admin-frontend",
+      "processpuzzle-testbed-frontend",
       "test-util",
       "util",
-      "widgets",
+      "base-widget-frontend",
       "e2e-testing"
     ],
     "projectsRelationship": "independent",
     "version": {
-      "preVersionCommand": "npm run build-all-ci",
       "conventionalCommits": true
     },
     "conventionalCommits": {

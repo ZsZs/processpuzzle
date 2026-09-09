@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { APP_REGION_ENTITY_NAME } from './app-entity-names';
+import { APP_NAV_ITEM_ENTITY_NAME, createNavItemDescriptor } from './nav-item.descriptors';
+import { APP_ROUTE_ENTITY_NAME, APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
+
+function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
+  return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
+}
+
+describe('createNavItemDescriptor', () => {
+  const descriptor = createNavItemDescriptor();
+  const attrs = flatten(descriptor.attrDescriptors);
+  const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
+
+  it('names the entity so that the route segment follows from it', () => {
+    expect(descriptor.entityName).toBe(APP_NAV_ITEM_ENTITY_NAME);
+  });
+
+  it('is an embedded component of a region or of another nav item', () => {
+    expect(descriptor.componentParents).toEqual([APP_REGION_ENTITY_NAME, APP_NAV_ITEM_ENTITY_NAME]);
+    expect(descriptor.isEmbedded).toBe(true);
+    expect(descriptor.isComponentOf(APP_NAV_ITEM_ENTITY_NAME)).toBe(true);
+  });
+
+  it('roots the labels under the library scope', () => {
+    expect(descriptor.scopeRoot()).toBe('base_app.app_nav_item');
+    expect(descriptor.i18nKey()).toBe('base_app.app_nav_item._self');
+    expect(byName('routePath')?.i18nKey()).toBe('base_app.app_nav_item.routePath');
+  });
+
+  it('describes the label, the target and the visibility of a navigation entry', () => {
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'label', 'translocoId', 'icon', 'routePath', 'roles', 'children']);
+  });
+
+  it('links to the details form from the label', () => {
+    expect(byName('id')?.required).toBe(true);
+    expect(byName('label')?.required).toBe(true);
+    expect(byName('label')?.isLinkToDetails).toBe(true);
+    expect(descriptor.componentIdentification()).toBe('label');
+  });
+
+  it('leaves the route optional, a group node having children instead of a target', () => {
+    expect(byName('routePath')?.formControlType).toBe(FormControlType.FOREIGN_KEY);
+    expect(byName('routePath')?.linkedEntityType).toBe(APP_ROUTE_ENTITY_NAME);
+    expect(byName('routePath')?.required).toBeFalsy();
+  });
+
+  // A route has no id, so the reference is the path itself; leaving the default 'id' in place would
+  // resolve every nav item to nothing.
+  it('resolves the referenced route by its path', () => {
+    expect(byName('routePath')?.referenceIdField).toBe(APP_ROUTE_ID_FIELD);
+  });
+
+  it('contains navigation entries of its own, nested in itself', () => {
+    expect(byName('children')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(byName('children')?.linkedEntityType).toBe(APP_NAV_ITEM_ENTITY_NAME);
+    expect(descriptor.embeddedAttrFor(APP_NAV_ITEM_ENTITY_NAME)?.attrName).toBe('children');
+  });
+
+  it('collects the authorizing roles as tags', () => {
+    expect(byName('roles')?.formControlType).toBe(FormControlType.TAGS);
+  });
+
+  it('keeps the list to the identifying fields and the target', () => {
+    const tableColumns = attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName);
+
+    expect(tableColumns).toEqual(['id', 'label', 'routePath']);
+  });
+});

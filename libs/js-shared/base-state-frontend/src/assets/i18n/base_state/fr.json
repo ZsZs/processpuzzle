@@ -1,0 +1,73 @@
+{
+  "state_machine_definition": {
+    "_self": "Machine à états",
+    "entityName": "Entité",
+    "name": "Nom",
+    "description": "Description",
+    "stateAttributeKey": "Attribut d'état",
+    "initialStateKey": "État initial",
+    "version": "Version",
+    "updatedAt": "Modifié le",
+    "states": "États",
+    "transitions": "Transitions",
+    "tabs": {
+      "modeler": "Modeleur d'états"
+    },
+    "modeler": {
+      "save": "Enregistrer",
+      "palette": {
+        "title": "Éléments",
+        "start": "Début",
+        "end": "Fin",
+        "state": "État"
+      },
+      "routing": {
+        "title": "Tracé",
+        "orthogonal": "Angles droits",
+        "polyline": "Droite",
+        "bezier": "Courbe"
+      }
+    }
+  },
+  "state_machine_state": {
+    "_self": "État",
+    "key": "Clé",
+    "name": "Nom",
+    "description": "Description",
+    "initial": "État initial",
+    "isFinal": "Terminal",
+    "isLocked": "Verrouillé",
+    "metadata": "Métadonnées"
+  },
+  "state_machine_transition": {
+    "_self": "Transition",
+    "key": "Clé",
+    "name": "Nom",
+    "sourceStateKey": "État source",
+    "targetStateKey": "État cible",
+    "triggerKey": "Déclencheur",
+    "guards": "Gardes",
+    "actions": "Actions"
+  },
+  "state_transition_guard": {
+    "_self": "Garde",
+    "beanName": "Nom du bean",
+    "params": "Paramètres"
+  },
+  "state_transition_action": {
+    "_self": "Action",
+    "beanName": "Nom du bean",
+    "params": "Paramètres"
+  },
+  "entity_state_machine": {
+    "tab": "Machine à états",
+    "currentState": "État actuel",
+    "final": "final",
+    "governedBy": "Régi par",
+    "noMachine": "Aucune machine à états ne régit ce type d'entité.",
+    "unknownState": "'{{state}}' n'est pas un état déclaré par cette machine.",
+    "readOnly": "Vue en lecture seule — la machine se modifie sous Base State.",
+    "loading": "Chargement de la machine à états…",
+    "noState": "Cet enregistrement n'a pas encore d'état."
+  }
+}

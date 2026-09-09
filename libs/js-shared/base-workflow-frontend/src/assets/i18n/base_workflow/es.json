@@ -1,0 +1,232 @@
+{
+  "workflow": {
+    "_self": "Flujo de trabajo",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "extends": "Extiende",
+    "activeInstances": "Instancias activas",
+    "version": "Versión",
+    "updatedAt": "Actualizado el",
+    "startType": "Tipo de inicio",
+    "eventType": "Tipo de evento",
+    "milestoneRef": "Hito",
+    "preconditionExpression": "Precondición",
+    "authorizedRoles": "Roles autorizados",
+    "payloadMapping": "Mapeo de carga",
+    "requiredArtifacts": "Artefactos requeridos",
+    "roles": "Roles",
+    "artifacts": "Artefactos",
+    "tools": "Herramientas",
+    "tasks": "Tareas",
+    "tabs": {
+      "modeler": "Modelador de flujo de trabajo"
+    },
+    "modeler": {
+      "empty": "Este flujo de trabajo aún no tiene tareas.",
+      "lanes": "Carriles",
+      "data": "Productos de trabajo",
+      "tools": "Herramientas",
+      "unassigned": "Sin asignar",
+      "join_any": "cualquiera",
+      "save": "Guardar diseño",
+      "properties": {
+        "none": "Seleccione un elemento para ver sus propiedades.",
+        "lane": "Carril",
+        "name": "Nombre",
+        "description": "Descripción",
+        "id": "Identificador",
+        "unresolved": "Esta referencia no corresponde a ninguna entrada del catálogo.",
+        "relation_heading": "Relación",
+        "relation": "Tipo",
+        "label": "Etiqueta",
+        "relations": {
+          "sequence": "Depende de",
+          "implicit": "Se ejecuta después (orden de declaración)",
+          "input": "Lee",
+          "output": "Escribe",
+          "tool": "Llama a",
+          "start": "Requerido al inicio",
+          "unknown": "Relacionado con"
+        }
+      }
+    }
+  },
+  "workflow_task_assignment": {
+    "_self": "Asignación de tarea",
+    "taskDefinitionId": "Tarea",
+    "performedBy": "Realizada por",
+    "dependsOn": "Depende de",
+    "joinType": "Tipo de unión",
+    "parallel": "Paralela",
+    "override": "Sobrescribir"
+  },
+  "workflow_role_use": {
+    "_self": "Uso de rol",
+    "roleDefinitionId": "Rol"
+  },
+  "workflow_artifact_use": {
+    "_self": "Uso de artefacto",
+    "artifactDefinitionId": "Artefacto"
+  },
+  "workflow_tool_use": {
+    "_self": "Uso de herramienta",
+    "toolDefinitionId": "Herramienta"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Artefacto requerido",
+    "artifactDefinitionId": "Artefacto",
+    "state": "Estado"
+  },
+  "workflow_role_definition": {
+    "_self": "Rol",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "responsibleFor": "Responsable de",
+    "entityRoleId": "Rol de entidad",
+    "version": "Versión",
+    "updatedAt": "Actualizado el",
+    "tabs": {
+      "modeler": "Modelador de roles"
+    },
+    "modeler": {
+      "empty": "Todavía no se ha definido ningún rol."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artefacto",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "artifactType": "Tipo de artefacto",
+    "artifactTypeId": "Id de tipo",
+    "stateMachineId": "Máquina de estados",
+    "version": "Versión",
+    "updatedAt": "Actualizado el"
+  },
+  "task_definition": {
+    "_self": "Tarea",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "performedByRoles": "Roles ejecutores",
+    "preconditionRuleId": "Regla de precondición",
+    "postconditionRuleId": "Regla de postcondición",
+    "version": "Versión",
+    "updatedAt": "Actualizado el",
+    "inputs": "Entradas",
+    "outputs": "Salidas",
+    "steps": "Pasos"
+  },
+  "task_step_definition": {
+    "_self": "Paso",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "stepType": "Tipo de paso",
+    "toolDefinitionId": "Herramienta",
+    "toolOperation": "Operación",
+    "inputMapping": "Mapeo de entrada",
+    "outputMapping": "Mapeo de salida"
+  },
+  "tool_definition": {
+    "_self": "Herramienta",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "baseUrl": "URL base",
+    "type": "Tipo de autenticación",
+    "secretRef": "Referencia del secreto",
+    "version": "Versión",
+    "createdAt": "Creado el",
+    "operations": "Operaciones"
+  },
+  "tool_operation": {
+    "_self": "Operación",
+    "id": "Id",
+    "method": "Método",
+    "path": "Ruta",
+    "description": "Descripción",
+    "payloadTemplate": "Plantilla de payload",
+    "expectedStatusCodes": "Códigos de estado esperados"
+  },
+  "workflow_instance": {
+    "_self": "Instancia de flujo de trabajo",
+    "id": "Id",
+    "workflowId": "Flujo de trabajo",
+    "workflowName": "Nombre del flujo de trabajo",
+    "status": "Estado",
+    "entityId": "Entidad",
+    "startedAt": "Iniciado el",
+    "completedAt": "Completado el",
+    "context": "Contexto",
+    "tasks": "Tareas",
+    "artifacts": "Artefactos"
+  },
+  "task_instance": {
+    "_self": "Instancia de tarea",
+    "id": "Id",
+    "taskDefinitionId": "Tarea",
+    "name": "Nombre",
+    "status": "Estado",
+    "assignedTo": "Asignada a",
+    "blockedReason": "Motivo del bloqueo",
+    "activatedAt": "Activada el",
+    "completedAt": "Completada el",
+    "skippedAt": "Omitida el",
+    "stepResults": "Resultados de pasos",
+    "dashboard": {
+      "title": "Mis tareas",
+      "scopes": {
+        "mine": "Mis tareas",
+        "team": "Equipo",
+        "process": "Proceso"
+      },
+      "run": "Ejecución",
+      "run_none": "Elija una ejecución para ver su tablero.",
+      "empty": {
+        "mine": "No tiene nada asignado.",
+        "team": "No hay nada que reclamar ahora mismo.",
+        "process": "Esta ejecución no tiene tareas."
+      },
+      "error": "No se pudieron cargar las ejecuciones.",
+      "select_prompt": "Seleccione una tarea de la lista.",
+      "claim": "Reclamar tarea",
+      "locked": "Abierta a cualquiera que tenga el rol requerido. Recláme la para empezar a trabajar: los pasos y el formulario de finalización se desbloquean cuando es suya.",
+      "steps": "Pasos",
+      "steps_none": "Esta tarea no declara pasos.",
+      "step_user": "paso de usuario",
+      "step_service": "paso de servicio",
+      "artifacts_in": "Lee",
+      "artifacts_out": "Escribe",
+      "artifacts_none": "Esta tarea no declara artefactos.",
+      "not_created": "aún no creado",
+      "note": "Notas (se añaden al contexto del flujo de trabajo)",
+      "complete": "Completar tarea",
+      "skip": "Omitir",
+      "skip_reason": "Motivo de la omisión",
+      "unstated_refusal": "Todavía no aceptada, y el servidor no dio detalles.",
+      "unassigned": "sin asignar",
+      "assigned_to": "Asignada a"
+    }
+  },
+  "artifact_instance": {
+    "_self": "Instancia de artefacto",
+    "id": "Id",
+    "artifactDefinitionId": "Artefacto",
+    "name": "Nombre",
+    "type": "Tipo",
+    "entityId": "Entidad",
+    "stateMachineInstanceId": "Instancia de máquina de estados",
+    "currentState": "Estado actual",
+    "updatedAt": "Actualizado el"
+  },
+  "task_step_result": {
+    "_self": "Resultado del paso",
+    "stepId": "Paso",
+    "completedAt": "Completado el",
+    "toolResponse": "Respuesta de la herramienta",
+    "error": "Error"
+  }
+}

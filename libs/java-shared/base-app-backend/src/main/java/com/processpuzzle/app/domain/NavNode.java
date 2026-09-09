@@ -7,13 +7,13 @@ import java.util.List;
  * {@code NavNode} rather than {@code NavItem} to avoid a clash with the generated
  * {@code com.processpuzzle.app.model.NavItem}.
  *
- * <p>A node with {@link #children()} and no {@link #pageId()} is a non-navigable group.
+ * <p>A node with {@link #children()} and no {@link #routePath()} is a non-navigable group.
  *
  * @param id unique within the app
  * @param label default label, in the organization's default language
  * @param translocoId translation key preferred over {@code label} by the frontend
  * @param icon Material or FontAwesome icon name
- * @param pageId {@link AppPage#id()} this entry navigates to; {@code null} for group nodes
+ * @param routePath {@link AppRoute#id()} this entry navigates to; {@code null} for group nodes
  * @param roles roles allowed to see this entry; empty means any authenticated member
  * @param children nested entries forming a nav group
  */
@@ -22,7 +22,7 @@ public record NavNode(
         String label,
         String translocoId,
         String icon,
-        String pageId,
+        String routePath,
         List<String> roles,
         List<NavNode> children) {
 
@@ -33,6 +33,6 @@ public record NavNode(
 
     /** Returns a copy of this node with {@code children} replaced — used by role filtering. */
     public NavNode withChildren(List<NavNode> replacement) {
-        return new NavNode(id, label, translocoId, icon, pageId, roles, replacement);
+        return new NavNode(id, label, translocoId, icon, routePath, roles, replacement);
     }
 }

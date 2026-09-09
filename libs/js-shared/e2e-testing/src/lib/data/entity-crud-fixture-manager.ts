@@ -97,6 +97,32 @@ export class EntityCrudFixtureManager {
     return fixture;
   }
 
+  /**
+   * Registers an entity the test created through **another** entity's form, so teardown removes it even when
+   * the test fails before reaching its own delete step.
+   *
+   * What needs it: a component is reachable only through its parent, so {@link createEntity} — which starts
+   * from the entity's own list — cannot produce one. It is still persisted through an endpoint of its own, and
+   * would outlive the test without being tracked here.
+   */
+  trackFixture(descriptor: BaseEntityDescriptor, data: Record<string, string>, id = ''): EntityFixture {
+    const idAttr = identificationAttr(descriptor);
+    if (!idAttr) {
+      throw new Error(`[${descriptor.entityName}] no identification attr; a fixture created elsewhere cannot be addressed for cleanup`);
+    }
+
+    const fixture: EntityFixture = {
+      entityName: descriptor.entityName,
+      descriptor,
+      id,
+      data,
+      displayValue: data[idAttr.attrName],
+      deleted: false,
+    };
+    this.registerFixture(fixture);
+    return fixture;
+  }
+
   buildUpdateData(descriptor: BaseEntityDescriptor, original: Record<string, string>): Record<string, string> {
     return buildUpdateDataForContext(this.context(descriptor), original);
   }

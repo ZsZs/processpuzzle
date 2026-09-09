@@ -1,0 +1,73 @@
+{
+  "state_machine_definition": {
+    "_self": "Máquina de estados",
+    "entityName": "Entidad",
+    "name": "Nombre",
+    "description": "Descripción",
+    "stateAttributeKey": "Atributo de estado",
+    "initialStateKey": "Estado inicial",
+    "version": "Versión",
+    "updatedAt": "Actualizado",
+    "states": "Estados",
+    "transitions": "Transiciones",
+    "tabs": {
+      "modeler": "Modelador de estados"
+    },
+    "modeler": {
+      "save": "Guardar",
+      "palette": {
+        "title": "Elementos",
+        "start": "Inicio",
+        "end": "Fin",
+        "state": "Estado"
+      },
+      "routing": {
+        "title": "Trazado",
+        "orthogonal": "Ángulos rectos",
+        "polyline": "Recta",
+        "bezier": "Curva"
+      }
+    }
+  },
+  "state_machine_state": {
+    "_self": "Estado",
+    "key": "Clave",
+    "name": "Nombre",
+    "description": "Descripción",
+    "initial": "Estado inicial",
+    "isFinal": "Terminal",
+    "isLocked": "Bloqueado",
+    "metadata": "Metadatos"
+  },
+  "state_machine_transition": {
+    "_self": "Transición",
+    "key": "Clave",
+    "name": "Nombre",
+    "sourceStateKey": "Estado origen",
+    "targetStateKey": "Estado destino",
+    "triggerKey": "Disparador",
+    "guards": "Guardias",
+    "actions": "Acciones"
+  },
+  "state_transition_guard": {
+    "_self": "Guardia",
+    "beanName": "Nombre del bean",
+    "params": "Parámetros"
+  },
+  "state_transition_action": {
+    "_self": "Acción",
+    "beanName": "Nombre del bean",
+    "params": "Parámetros"
+  },
+  "entity_state_machine": {
+    "tab": "Máquina de estados",
+    "currentState": "Estado actual",
+    "final": "final",
+    "governedBy": "Gobernado por",
+    "noMachine": "Ninguna máquina de estados gobierna este tipo de entidad.",
+    "unknownState": "'{{state}}' no es un estado declarado por esta máquina.",
+    "readOnly": "Vista de solo lectura: la máquina se edita en Base State.",
+    "loading": "Cargando la máquina de estados…",
+    "noState": "Este registro aún no tiene estado."
+  }
+}

@@ -1,5 +1,5 @@
 import { patchState } from '@ngrx/signals';
-import { HttpErrorResponse } from '@angular/common/http';
+import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
@@ -13,7 +13,7 @@ export const addEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<En
       patchState(store, { entities: store.entities().concat([savedEntity]), isLoading: false });
       return savedEntity;
     } catch (error) {
-      patchState(store, { error: (error as HttpErrorResponse).message, isLoading: false });
+      patchState(store, { error: httpErrorMessage(error), isLoading: false });
       return undefined;
     }
   };

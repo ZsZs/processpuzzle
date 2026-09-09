@@ -1,0 +1,38 @@
+<!-- @formatter:off -->
+<markdown clipboard mermaid ngPreserveWhitespaces>
+### Three kinds of relationship, side by side
+
+| Attribute | Control type | Target | What the rows mean |
+| --- | --- | --- | --- |
+| `relatedEntities` | `RELATED_ENTITIES` | `Related Entity` | **Association.** The target lives on its own; **Add** picks an existing one and **Delete** only detaches the reference. |
+| `components` | `COMPONENTS` | `Test Entity Component` | **Containment, child table.** The component is persisted through its own endpoint and points back here through `testEntityId`; this attribute holds ids, and **Delete** destroys the component. |
+| `embeddedComponents` | `EMBEDDED_COMPONENTS` | `Embedded Component` | **Containment, same payload.** The child has no endpoint of its own — it travels inside this entity's document. The rows are listed here and a row opens the child's own form, on a route nested below this one. |
+
+All three list their rows the same way; what differs is what a row *is*, and so what **Add** and **Delete** do.
+
+An embedded child is addressed by its position in the containing document rather than by an id of its own, which is why its route nests:
+`test-entity/1/details/embedded-component/embedded_1_1/details`. The nesting carries that position, so a refresh or a
+deep link resolves to the same row — and it is also what makes the child unreachable except through the entity that contains it.
+The nesting is in the URL only: each level's form **replaces** the one above it rather than appearing inside it, and the breadcrumb in
+the status bar is where the hierarchy is shown and how you walk back up it.
+`Embedded Component` in turn carries `Embedded Detail` rows, so the same mechanism works one level further down; saving at any
+level rewrites the one `Test Entity` document that carries them all.
+
+```typescript
+  const componentsAttr = new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS, 'Components');
+  componentsAttr.linkedEntityType = 'Test Entity Component';
+
+  const embeddedComponentsAttr = new BaseEntityAttrDescriptor('embeddedComponents', FormControlType.EMBEDDED_COMPONENTS, 'Embedded Components');
+  embeddedComponentsAttr.linkedEntityType = 'Embedded Component';
+
+  const relatedEntitiesAttr = new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES, 'Related Entities');
+  relatedEntitiesAttr.linkedEntityType = 'Related Entity';
+
+  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, additionalPropertiesAttr], FlexDirection.COLUMN);
+  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr, embeddedComponentsAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
+  flexBoxContainer.style = &#123; 'column-gap': '20px' &#125;;
+```
+</markdown>
+<!-- @formatter:on -->
+<base-entity-container [entityDescriptor]="baseEntityDescriptor"></base-entity-container>

@@ -1,0 +1,232 @@
+{
+  "workflow": {
+    "_self": "Workflow",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "extends": "Erweitert",
+    "activeInstances": "Aktive Instanzen",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "startType": "Starttyp",
+    "eventType": "Ereignistyp",
+    "milestoneRef": "Meilenstein",
+    "preconditionExpression": "Vorbedingung",
+    "authorizedRoles": "Berechtigte Rollen",
+    "payloadMapping": "Nutzdatenzuordnung",
+    "requiredArtifacts": "Erforderliche Artefakte",
+    "roles": "Rollen",
+    "artifacts": "Artefakte",
+    "tools": "Werkzeuge",
+    "tasks": "Aufgaben",
+    "tabs": {
+      "modeler": "Workflow-Modellierer"
+    },
+    "modeler": {
+      "empty": "Dieser Workflow hat noch keine Aufgaben.",
+      "lanes": "Bahnen",
+      "data": "Arbeitsergebnisse",
+      "tools": "Werkzeuge",
+      "unassigned": "Nicht zugewiesen",
+      "join_any": "beliebig",
+      "save": "Layout speichern",
+      "properties": {
+        "none": "Wählen Sie ein Element, um seine Eigenschaften zu sehen.",
+        "lane": "Bahn",
+        "name": "Name",
+        "description": "Beschreibung",
+        "id": "Kennung",
+        "unresolved": "Diese Referenz verweist auf keinen Katalogeintrag.",
+        "relation_heading": "Beziehung",
+        "relation": "Art",
+        "label": "Bezeichnung",
+        "relations": {
+          "sequence": "Hängt ab von",
+          "implicit": "Läuft danach (Deklarationsreihenfolge)",
+          "input": "Liest",
+          "output": "Schreibt",
+          "tool": "Ruft auf",
+          "start": "Zu Beginn erforderlich",
+          "unknown": "Bezogen auf"
+        }
+      }
+    }
+  },
+  "workflow_task_assignment": {
+    "_self": "Aufgabenzuordnung",
+    "taskDefinitionId": "Aufgabe",
+    "performedBy": "Ausgeführt von",
+    "dependsOn": "Abhängig von",
+    "joinType": "Verknüpfungstyp",
+    "parallel": "Parallel",
+    "override": "Überschreiben"
+  },
+  "workflow_role_use": {
+    "_self": "Rollenverwendung",
+    "roleDefinitionId": "Rolle"
+  },
+  "workflow_artifact_use": {
+    "_self": "Artefaktverwendung",
+    "artifactDefinitionId": "Artefakt"
+  },
+  "workflow_tool_use": {
+    "_self": "Werkzeugverwendung",
+    "toolDefinitionId": "Werkzeug"
+  },
+  "workflow_required_start_artifact": {
+    "_self": "Erforderliches Artefakt",
+    "artifactDefinitionId": "Artefakt",
+    "state": "Zustand"
+  },
+  "workflow_role_definition": {
+    "_self": "Rolle",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "responsibleFor": "Verantwortlich für",
+    "entityRoleId": "Entitätsrolle",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "tabs": {
+      "modeler": "Rollenmodellierer"
+    },
+    "modeler": {
+      "empty": "Es wurden noch keine Rollen definiert."
+    }
+  },
+  "artifact_definition": {
+    "_self": "Artefakt",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "artifactType": "Artefakttyp",
+    "artifactTypeId": "Typ-Id",
+    "stateMachineId": "Zustandsmaschine",
+    "version": "Version",
+    "updatedAt": "Geändert am"
+  },
+  "task_definition": {
+    "_self": "Aufgabe",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "performedByRoles": "Ausführende Rollen",
+    "preconditionRuleId": "Vorbedingungsregel",
+    "postconditionRuleId": "Nachbedingungsregel",
+    "version": "Version",
+    "updatedAt": "Geändert am",
+    "inputs": "Eingaben",
+    "outputs": "Ausgaben",
+    "steps": "Schritte"
+  },
+  "task_step_definition": {
+    "_self": "Schritt",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "stepType": "Schritttyp",
+    "toolDefinitionId": "Werkzeug",
+    "toolOperation": "Operation",
+    "inputMapping": "Eingabezuordnung",
+    "outputMapping": "Ausgabezuordnung"
+  },
+  "tool_definition": {
+    "_self": "Werkzeug",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "baseUrl": "Basis-URL",
+    "type": "Authentifizierungsart",
+    "secretRef": "Secret-Referenz",
+    "version": "Version",
+    "createdAt": "Erstellt am",
+    "operations": "Operationen"
+  },
+  "tool_operation": {
+    "_self": "Operation",
+    "id": "Id",
+    "method": "Methode",
+    "path": "Pfad",
+    "description": "Beschreibung",
+    "payloadTemplate": "Payload-Vorlage",
+    "expectedStatusCodes": "Erwartete Statuscodes"
+  },
+  "workflow_instance": {
+    "_self": "Workflow-Instanz",
+    "id": "Id",
+    "workflowId": "Workflow",
+    "workflowName": "Workflow-Name",
+    "status": "Status",
+    "entityId": "Entität",
+    "startedAt": "Gestartet am",
+    "completedAt": "Abgeschlossen am",
+    "context": "Kontext",
+    "tasks": "Aufgaben",
+    "artifacts": "Artefakte"
+  },
+  "task_instance": {
+    "_self": "Aufgabeninstanz",
+    "id": "Id",
+    "taskDefinitionId": "Aufgabe",
+    "name": "Name",
+    "status": "Status",
+    "assignedTo": "Zugewiesen an",
+    "blockedReason": "Blockierungsgrund",
+    "activatedAt": "Aktiviert am",
+    "completedAt": "Abgeschlossen am",
+    "skippedAt": "Übersprungen am",
+    "stepResults": "Schrittergebnisse",
+    "dashboard": {
+      "title": "Meine Aufgaben",
+      "scopes": {
+        "mine": "Meine Aufgaben",
+        "team": "Team",
+        "process": "Prozess"
+      },
+      "run": "Ausführung",
+      "run_none": "Wählen Sie eine Ausführung, um ihre Tafel zu sehen.",
+      "empty": {
+        "mine": "Ihnen ist nichts zugewiesen.",
+        "team": "Derzeit gibt es nichts zu übernehmen.",
+        "process": "Diese Ausführung hat keine Aufgaben."
+      },
+      "error": "Die Ausführungen konnten nicht geladen werden.",
+      "select_prompt": "Wählen Sie eine Aufgabe aus der Liste.",
+      "claim": "Aufgabe übernehmen",
+      "locked": "Offen für alle mit der erforderlichen Rolle. Übernehmen Sie sie, um zu beginnen — die Schritte und das Abschlussformular werden freigegeben, sobald sie Ihnen gehört.",
+      "steps": "Schritte",
+      "steps_none": "Diese Aufgabe deklariert keine Schritte.",
+      "step_user": "Benutzerschritt",
+      "step_service": "Dienstschritt",
+      "artifacts_in": "Liest",
+      "artifacts_out": "Schreibt",
+      "artifacts_none": "Diese Aufgabe deklariert keine Artefakte.",
+      "not_created": "noch nicht erstellt",
+      "note": "Notizen (werden dem Workflow-Kontext hinzugefügt)",
+      "complete": "Aufgabe abschließen",
+      "skip": "Überspringen",
+      "skip_reason": "Grund für das Überspringen",
+      "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
+      "unassigned": "nicht zugewiesen",
+      "assigned_to": "Zugewiesen an"
+    }
+  },
+  "artifact_instance": {
+    "_self": "Artefaktinstanz",
+    "id": "Id",
+    "artifactDefinitionId": "Artefakt",
+    "name": "Name",
+    "type": "Typ",
+    "entityId": "Entität",
+    "stateMachineInstanceId": "Zustandsmaschineninstanz",
+    "currentState": "Aktueller Zustand",
+    "updatedAt": "Geändert am"
+  },
+  "task_step_result": {
+    "_self": "Schrittergebnis",
+    "stepId": "Schritt",
+    "completedAt": "Abgeschlossen am",
+    "toolResponse": "Werkzeugantwort",
+    "error": "Fehler"
+  }
+}

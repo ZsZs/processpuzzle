@@ -1,0 +1,70 @@
+# Overlay that restores the *build* path for both layers.
+#
+# docker-compose-infrastructure.yaml and docker-compose-apps.yaml are both pull-only, so that the
+# Coolify Docker Compose resources pull the `:stage` / `:prod` images CI promoted rather than
+# rebuilding them on the deployment host — different bytes under the same tag, and a relative
+# `build.context` that resolves against Coolify's `--project-directory` (the repo root) rather than
+# against tools/docker. For the two application images it is worse than wasteful: their Dockerfiles
+# are packaging-only (`COPY dist/…`), so a clone with no build output fails outright. See
+# docs/build-deploy-strategy.md §9 and §11.
+#
+# CI and local development still need to prove the seven images build, and to run against the version
+# in the working tree. Overlay this file for that:
+#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#     -f docker-compose-apps.yaml -f docker-compose-build.yaml
+#     -f docker-compose-apps-local.yaml up -d --wait --build
+#
+# AFTER docker-compose-apps.yaml, which sets `pull_policy: always` on the two application services:
+# the last file to name a key wins, and here that has to be `build`.
+#
+# `context: ../../` is correct here because every consumer lets compose default the project directory
+# to this file's own directory. pgweb is absent on purpose: it is a pinned upstream tag with no
+# Dockerfile.
+#
+# The two application builds need `dist/` to be populated first — `nx run
+# processpuzzle-testbed-frontend:docker-build` declares that as `dependsOn`, and CI does it in
+# explicit steps. Overlay this file only together with docker-compose-apps.yaml, as
+# docker-compose-pull.yaml also requires: on its own it would add the two application services to an
+# infrastructure-only project, tagged `:latest` with no `image:` of their own.
+services:
+  testbed-frontend:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/processpuzzle-testbed-frontend/Dockerfile
+
+  testbed-backend:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/processpuzzle-testbed-backend/Dockerfile
+
+  json-server:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/json-server/Dockerfile
+
+  keycloak:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/keycloak/Dockerfile
+
+  keycloak-init:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/keycloak/init/Dockerfile
+
+  minio:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/minio/Dockerfile
+
+  postgres:
+    pull_policy: build
+    build:
+      context: ../../
+      dockerfile: tools/docker/postgresql/Dockerfile

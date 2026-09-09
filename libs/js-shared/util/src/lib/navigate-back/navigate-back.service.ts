@@ -1,0 +1,52 @@
+import { inject, Injectable } from '@angular/core';
+import { Stack } from '../stack';
+import { NavigationEnd, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class NavigateBackService {
+  public noRouteAvailable = new BehaviorSubject<string>('');
+  private readonly routeHistory = new Stack<string>();
+  private readonly router = inject<Router>(Router);
+
+  constructor() {
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.addRouteToStack(event.urlAfterRedirects); // Add the current route to the stack
+      }
+    });
+  }
+
+  // region public accessor methods
+  public goBack(): void {
+    if (this.routeHistory.size() > 1) {
+      this.routeHistory.pop(); // Remove current route
+      const previousRoute = this.routeHistory.pop(); // Get the previous route
+      if (previousRoute) {
+        this.router.navigateByUrl(previousRoute); // Navigate to the previous route
+      }
+    } else {
+      console.log('No previous routes to navigate back to.');
+      this.noRouteAvailable.next('No previous routes to navigate back to.');
+    }
+  }
+
+  public getRouteStack(): Stack<string> {
+    return this.routeHistory;
+  }
+
+  public clearHistory(): void {
+    this.routeHistory.clear();
+  }
+
+  // endregion
+
+  // protected, private helper methods
+  private addRouteToStack(route: string): void {
+    if (this.routeHistory.size() === 0 || this.routeHistory.peek() !== route) {
+      this.routeHistory.push(route);
+    }
+  }
+
+  // endregion
+}

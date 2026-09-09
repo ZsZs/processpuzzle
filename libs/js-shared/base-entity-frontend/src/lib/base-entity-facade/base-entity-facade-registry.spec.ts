@@ -28,6 +28,7 @@ class FacadeWithStringTitle {
     nameAttr.placeholder = 'enter name';
     nameAttr.lines = 1;
     nameAttr.required = true;
+    nameAttr.pattern = '^[a-z0-9-]+$';
     nameAttr.linkedEntityType = 'OtherEntity';
 
     const groupedAttr = new BaseEntityAttrDescriptor('group', FormControlType.TEXT_BOX);
@@ -40,6 +41,7 @@ class FacadeWithStringTitle {
       entityTitle: 'Entity A Title',
       isAbstract: false,
       parentEntity: 'ParentEntity',
+      componentParent: ['AggregatorEntity', 'OtherAggregator'],
     });
   }
 }
@@ -59,7 +61,24 @@ class FacadeWithFunctionTitle {
   }
 }
 
-async function setupComponent(minified?: string) {
+/** Registered through a facade like any other entity — an embedded one simply has no endpoint behind it. */
+@Injectable()
+class EmbeddedFacade {
+  readonly descriptor: BaseEntityDescriptor;
+
+  constructor() {
+    this.descriptor = new BaseEntityDescriptor({
+      store: {},
+      attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name')],
+      entityName: 'EmbeddedEntity',
+      entityTitle: 'Embedded Entity',
+      componentParent: 'EntityA',
+      isEmbedded: true,
+    });
+  }
+}
+
+async function setupComponent(minified?: string, embedded = false) {
   const queryParamMap = of(convertToParamMap(minified === undefined ? {} : { minified }));
   const entityRouteRegistryStub: Partial<EntityRouteRegistry> = {
     basePath: (entityName: string) => (entityName === 'EntityA' ? '/base/entity-a' : undefined),
@@ -70,11 +89,12 @@ async function setupComponent(minified?: string) {
     providers: [
       FacadeWithStringTitle,
       FacadeWithFunctionTitle,
+      EmbeddedFacade,
       { provide: ActivatedRoute, useValue: { queryParamMap } },
       { provide: EntityRouteRegistry, useValue: entityRouteRegistryStub },
       {
         provide: BASE_ENTITY_FACADE_REGISTRY,
-        useValue: { entityA: FacadeWithStringTitle, entityB: FacadeWithFunctionTitle },
+        useValue: { entityA: FacadeWithStringTitle, entityB: FacadeWithFunctionTitle, ...(embedded ? { EmbeddedEntity: EmbeddedFacade } : {}) },
       },
     ],
   }).compileComponents();
@@ -109,11 +129,15 @@ describe('EntityRegistryComponent', () => {
       entityTitle: 'Entity A Title',
       isAbstract: false,
       parentEntityName: 'ParentEntity',
+      componentParents: ['AggregatorEntity', 'OtherAggregator'],
+      isEmbedded: false,
     });
     expect(parsed[1]).toMatchObject({
       entityName: 'EntityB',
       entityTitle: 'Entity B Computed Title',
       isAbstract: true,
+      componentParents: [],
+      isEmbedded: false,
     });
   });
 
@@ -147,6 +171,7 @@ describe('EntityRegistryComponent', () => {
       placeholder: 'enter name',
       lines: 1,
       required: true,
+      pattern: '^[a-z0-9-]+$',
       linkedEntityType: 'OtherEntity',
     });
   });
@@ -157,6 +182,20 @@ describe('EntityRegistryComponent', () => {
 
     expect(parsed[0].route).toBe('/base/entity-a');
     expect(parsed[1].route).toBeUndefined();
+  });
+
+  it('serializes embedded entities alongside the routable ones, with no route of their own', async () => {
+    const { text } = await setupComponent(undefined, true);
+    const parsed = JSON.parse(text);
+
+    expect(parsed).toHaveLength(3);
+    expect(parsed[2]).toMatchObject({
+      entityName: 'EmbeddedEntity',
+      entityTitle: 'Embedded Entity',
+      componentParents: ['EntityA'],
+      isEmbedded: true,
+    });
+    expect(parsed[2].route).toBeUndefined();
   });
 
   it('renders minified JSON when minified=yes query param is present', async () => {

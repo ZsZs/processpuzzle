@@ -1,0 +1,86 @@
+{
+  "app_definition": {
+    "_self": "Application",
+    "id": "Id",
+    "name": "Name",
+    "translocoId": "Transloco Id",
+    "description": "Description",
+    "status": "Status",
+    "version": "Version",
+    "publishedVersion": "Published Version",
+    "updatedAt": "Updated At",
+    "materialTheme": "Material Theme",
+    "colorScheme": "Color Scheme",
+    "logoUrl": "Logo Url",
+    "faviconUrl": "Favicon Url",
+    "tokenOverrides": "Token Overrides",
+    "preset": "Layout Preset",
+    "sidenavMode": "Sidenav Mode",
+    "contentMaxWidth": "Content Max Width",
+    "sidenavCollapsible": "Sidenav Collapsible",
+    "sidenavOpenByDefault": "Sidenav Open By Default",
+    "regions": "Regions",
+    "routes": "Routes",
+    "modules": "Modules",
+    "tabs": {
+      "preview": "{{ entity }} - preview"
+    }
+  },
+  "app_region": {
+    "_self": "Region",
+    "type": "Type",
+    "navItems": "Nav Items",
+    "widgets": "Widgets"
+  },
+  "app_route": {
+    "_self": "Route",
+    "path": "Path",
+    "title": "Title",
+    "translocoId": "Transloco Id",
+    "icon": "Icon",
+    "roles": "Roles",
+    "kind": "Renders",
+    "widgets": "Widgets",
+    "documentSlug": "Document Slug",
+    "entityName": "Entity Name",
+    "entityMode": "Entity Mode",
+    "rsqlFilter": "Rsql Filter"
+  },
+  "app_module_mount": {
+    "_self": "Module Mount",
+    "moduleKey": "Module Key",
+    "basePath": "Base Path"
+  },
+  "app_nav_item": {
+    "_self": "Nav Item",
+    "id": "Id",
+    "label": "Label",
+    "translocoId": "Transloco Id",
+    "icon": "Icon",
+    "routePath": "Route",
+    "roles": "Roles",
+    "children": "Children"
+  },
+  "app_widget": {
+    "_self": "Widget",
+    "id": "Id",
+    "type": "Type",
+    "props": "Props",
+    "placement": "Placement"
+  },
+  "module_definition": {
+    "_self": "Module",
+    "id": "Key",
+    "name": "Name",
+    "translocoId": "Transloco Id",
+    "description": "Description",
+    "translocoScope": "Transloco Scope",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "routes": "Routes"
+  },
+  "publish": {
+    "button": "Publish",
+    "tooltip": "Publish the saved definition: its version becomes the published version"
+  }
+}

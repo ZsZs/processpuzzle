@@ -1,0 +1,16 @@
+<!-- @formatter:off -->
+<markdown clipboard mermaid ngPreserveWhitespaces>
+An **association**: `Test Entity` points at `Related Entity` records that live on their own. Adding one picks
+an existing record, removing one only detaches the reference — the record stays in this list.
+
+```typescript
+  // on Test Entity
+  const relatedEntitiesAttr = new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES, 'Related Entities');
+  relatedEntitiesAttr.linkedEntityType = 'Related Entity';
+
+  // Related Entity is a stand-alone aggregate root: no componentParent, so nothing owns or deletes it
+  new BaseEntityDescriptor(&#123; entityName: 'Related Entity', attrDescriptors &#125;);
+```
+</markdown>
+<!-- @formatter:on -->
+<base-entity-container [entityDescriptor]="entityDescriptor"></base-entity-container>

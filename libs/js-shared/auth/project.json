@@ -9,7 +9,7 @@
     "build": {
       "executor": "@nx/angular:package",
       "dependsOn": ["^build"],
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/dist/libs/auth"],
       "defaultConfiguration": "production",
       "options": {
         "project": "libs/js-shared/auth/ng-package.json"
@@ -55,7 +55,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "{workspaceRoot}/dist/libs/js-shared/auth"
+        "packageRoot": "{workspaceRoot}/dist/libs/auth"
       }
     },
     "release": {

@@ -1,27 +1,29 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.AppDefinitionStatus;
-import com.processpuzzle.app.model.PageDefinition;
+import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
-import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.AppRuleValidator;
-import com.processpuzzle.rule.domain.Severity;
-import com.processpuzzle.rule.usecase.EvaluateObject;
-import com.processpuzzle.rule.usecase.EvaluationOutcome;
-import com.processpuzzle.rule.usecase.RuleViolation;
+import com.processpuzzle.app.usecase.Severity;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -47,8 +49,7 @@ class PublishAppDefinitionTest {
     private PublishAppDefinition publishAppDefinition;
     private UpdateAppDefinition updateAppDefinition;
     private AppMapper mapper;
-    private EvaluateObject evaluateObject;
-    private ObjectProvider<EvaluateObject> evaluateObjectProvider;
+    private ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -59,16 +60,13 @@ class PublishAppDefinitionTest {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
         ObjectProvider<OrganizationAccessPolicy> policyProvider = mock(ObjectProvider.class);
-        when(policyProvider.getIfUnique(any())).thenReturn(new com.processpuzzle.app.usecase.port
-                .PermitAllOrganizationAccessPolicy());
+        when(policyProvider.getIfUnique(any())).thenReturn(new PermitAllOrganizationAccessPolicy());
 
         // No rule module wired by default; the rule-aware tests below opt in.
-        evaluateObject = mock(EvaluateObject.class);
-        evaluateObjectProvider = mock(ObjectProvider.class);
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(null);
+        ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();
 
         AppDefinitionValidator validator = new AppDefinitionValidator(
-                entityRegistryProvider, new AppRuleValidator(evaluateObjectProvider));
+                entityRegistryProvider, new AppRuleValidator(ruleEvaluatorProvider));
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 
@@ -102,8 +100,8 @@ class PublishAppDefinitionTest {
         assertThat(edited.isPublished()).isFalse();
         assertThat(mapper.toModelStatus(edited)).isEqualTo(AppDefinitionStatus.DRAFT);
 
-        assertThat(edited.graphFor(true).pages()).isEmpty();
-        assertThat(edited.graphFor(false).pages()).hasSize(1);
+        assertThat(edited.graphFor(true).routes()).isEmpty();
+        assertThat(edited.graphFor(false).routes()).hasSize(1);
     }
 
     @Test
@@ -118,7 +116,7 @@ class PublishAppDefinitionTest {
         assertThat(republished.getRevision()).isEqualTo(2L);
         assertThat(republished.getPublishedRevision()).isEqualTo(2L);
         assertThat(republished.isPublished()).isTrue();
-        assertThat(republished.graphFor(false).pages()).isEmpty();
+        assertThat(republished.graphFor(false).routes()).isEmpty();
     }
 
     @Test
@@ -135,11 +133,13 @@ class PublishAppDefinitionTest {
 
     @Test
     void publishingAnInvalidDefinition_isRejectedSoItCannotGoLive() {
+        AppRoute duplicate = new AppRoute("claims-list", "Claims", null, null, List.of(),
+                RouteTarget.ofWidgets(List.of()));
         AppGraph brokenGraph = new AppGraph(null, null,
                 List.of(new Region("sidenav",
-                        List.of(new NavNode("nav-1", "Broken", null, null, "page-missing", List.of(), List.of())),
+                        List.of(new NavNode("nav-1", "Broken", null, null, "claims-list", List.of(), List.of())),
                         List.of())),
-                List.of());
+                List.of(duplicate, duplicate), List.of());
         AppDefinition definition = stored(brokenGraph);
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -156,8 +156,7 @@ class PublishAppDefinitionTest {
      */
     @Test
     void aDefinitionTrippingOnlyAWarningRule_isStillSavedAndPublished() {
-        givenRuleViolations(new RuleViolation("app-declares-a-populated-sidenav", "App has navigation",
-                Severity.WARNING, "This app declares no sidenav navigation.", null));
+        givenRuleViolations(new RuleEvaluator.Violation("app-declares-a-populated-sidenav", "This app declares no sidenav navigation.", null, Severity.WARNING));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -167,8 +166,7 @@ class PublishAppDefinitionTest {
 
     @Test
     void aDefinitionTrippingAnErrorRule_isRejected() {
-        givenRuleViolations(new RuleViolation("app-id-is-route-safe", "App id is route-safe",
-                Severity.ERROR, "An app id is lowercase letters, digits and single hyphens.", null));
+        givenRuleViolations(new RuleEvaluator.Violation("app-id-is-route-safe", "An app id is lowercase letters, digits and single hyphens.", null, Severity.ERROR));
         AppDefinition definition = stored(validGraph());
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
 
@@ -198,11 +196,11 @@ class PublishAppDefinitionTest {
     }
 
     /** Wires the rule module in for this test, with the given violations on every evaluation. */
-    private void givenRuleViolations(RuleViolation... violations) {
-        when(evaluateObjectProvider.getIfAvailable()).thenReturn(evaluateObject);
-        boolean passed = Arrays.stream(violations).noneMatch(v -> v.severity() == Severity.ERROR);
-        when(evaluateObject.execute(any(), any(), any()))
-                .thenReturn(new EvaluationOutcome(passed, List.of(violations)));
+    private void givenRuleViolations(RuleEvaluator.Violation... violations) {
+        // Built before the stubbing call: AppTestFixtures.ruleEvaluator() itself mocks and stubs, and
+        // Mockito rejects that nested inside a when(...) argument as an unfinished stubbing.
+        RuleEvaluator evaluator = AppTestFixtures.ruleEvaluator(violations).getIfAvailable();
+        when(ruleEvaluatorProvider.getIfAvailable()).thenReturn(evaluator);
     }
 
     private static AppDefinition stored(AppGraph graph) {
@@ -210,16 +208,16 @@ class PublishAppDefinitionTest {
     }
 
     private static AppGraph validGraph() {
-        AppPage page = new AppPage("page-claims-list", "Claims", null, List.of());
-        NavNode nav = new NavNode("nav-claims", "Claims", null, null, "page-claims-list", List.of(), List.of());
-        return new AppGraph(null, null, List.of(new Region("sidenav", List.of(nav), List.of())), List.of(page));
+        AppRoute route = new AppRoute("claims-list", "Claims", null, null, List.of(), RouteTarget.ofWidgets(List.of()));
+        NavNode nav = new NavNode("nav-claims", "Claims", null, null, "claims-list", List.of(), List.of());
+        return new AppGraph(null, null, List.of(new Region("sidenav", List.of(nav), List.of())), List.of(route), List.of());
     }
 
-    /** A valid but page-less revision, so draft and published snapshots are distinguishable. */
+    /** A valid but route-less revision, so draft and published snapshots are distinguishable. */
     private static AppDefinitionInput emptyishInput() {
         AppDefinitionInput input = new AppDefinitionInput("claims-app", "Claims Management");
-        input.setRegions(List.of(new RegionDefinition(RegionType.CONTENT)));
-        input.setPages(List.<PageDefinition>of());
+        input.setRegions(List.of(new RegionDefinition(RegionType.HEADER)));
+        input.setRoutes(List.<RouteDefinition>of());
         input.setTheme(null);
         return input;
     }

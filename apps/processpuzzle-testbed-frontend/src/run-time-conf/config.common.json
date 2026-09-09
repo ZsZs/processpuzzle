@@ -1,0 +1,51 @@
+{
+  "BASE_CONFIGURATION": {
+    "BACKEND_SERVICE_PROVIDER": "rest",
+    "DEPLOYMENT_ENVIRONMENT": "docker",
+    "BACKEND_SERVICE_ROOT": "http://localhost:3000",
+    "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
+    "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "FIREBASE_CONFIGURATION": {},
+    "APPLICATION_VERSION": "1.4.0"
+  },
+  "LANGUAGE_CONFIGURATION": {
+    "DEFAULT_LANGUAGE": "en",
+    "AVAILABLE_LANGUAGES": [
+      {
+        "code": "en",
+        "label": "english",
+        "flag": "fi fi-gb"
+      },
+      {
+        "code": "de",
+        "label": "german",
+        "flag": "fi fi-de"
+      },
+      {
+        "code": "fr",
+        "label": "french",
+        "flag": "fi fi-fr"
+      },
+      {
+        "code": "hu",
+        "label": "hungarian",
+        "flag": "fi fi-hu"
+      },
+      {
+        "code": "es",
+        "label": "spanish",
+        "flag": "fi fi-es"
+      }
+    ]
+  },
+  "AUTHENTICATION_CONFIGURATION": {
+    "AUTHENTICATION_PROVIDER": "keycloak",
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070"
+  },
+  "LOGGING_CONFIGURATION": {
+    "level": "info",
+    "serverLogLevel": "none"
+  }
+}

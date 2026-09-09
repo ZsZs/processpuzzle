@@ -1,17 +1,18 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.app.domain.OrganizationRepository;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +22,7 @@ import java.util.List;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.when;
 class CreateAppDefinitionTest {
 
     private AppDefinitionRepository repository;
-    private OrganizationRepository organizationRepository;
+    private ObjectProvider<TenantDirectory> tenantDirectory;
     private CreateAppDefinition createAppDefinition;
 
     @BeforeEach
@@ -51,10 +52,9 @@ class CreateAppDefinitionTest {
         when(repository.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
         when(repository.existsByOrgKeyAndId(anyString(), anyString())).thenReturn(false);
 
-        organizationRepository = mock(OrganizationRepository.class);
-        when(organizationRepository.existsById(anyString())).thenReturn(true);
+        tenantDirectory = AppTestFixtures.tenantDirectory(ORG_KEY);
 
-        createAppDefinition = new CreateAppDefinition(repository, organizationRepository,
+        createAppDefinition = new CreateAppDefinition(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.permissiveGuard(), new AppMapper());
     }
 
@@ -81,8 +81,8 @@ class CreateAppDefinitionTest {
     void theInputGraphIsMappedIntoTheDraft() {
         AppDefinition created = createAppDefinition.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID));
 
-        assertThat(created.getDraftGraph().pages()).singleElement()
-                .satisfies(page -> assertThat(page.id()).isEqualTo(PAGE_ID));
+        assertThat(created.getDraftGraph().routes()).singleElement()
+                .satisfies(route -> assertThat(route.path()).isEqualTo(ROUTE_PATH));
         assertThat(created.getDraftGraph().regions()).singleElement()
                 .satisfies(region -> assertThat(region.navItems()).hasSize(1));
         assertThat(created.getPublishedGraph()).isNull();
@@ -90,10 +90,12 @@ class CreateAppDefinitionTest {
 
     @Test
     void unknownOrganization_is404AndNothingIsWritten() {
-        when(organizationRepository.existsById(ORG_KEY)).thenReturn(false);
+        CreateAppDefinition withoutTheTenant = new CreateAppDefinition(repository,
+                AppTestFixtures.tenantDirectory(), AppTestFixtures.structuralValidator(),
+                AppTestFixtures.permissiveGuard(), new AppMapper());
 
-        assertThatThrownBy(() -> createAppDefinition.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID)))
-                .isInstanceOf(OrganizationNotFoundException.class)
+        assertThatThrownBy(() -> withoutTheTenant.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID)))
+                .isInstanceOf(UnknownTenantException.class)
                 .hasMessageContaining(ORG_KEY);
 
         verifyNoInteractions(repository);
@@ -113,13 +115,13 @@ class CreateAppDefinitionTest {
     @Test
     void aStructurallyInvalidDefinition_is400CarryingTheProblems() {
         AppDefinitionInput input = AppTestFixtures.validInput(APP_ID);
-        input.getRegions().getFirst().getNavItems().getFirst().setPageId("page-missing");
+        input.getRoutes().add(AppTestFixtures.routeDefinition(AppTestFixtures.ROUTE_PATH, "Duplicate"));
 
         assertThatThrownBy(() -> createAppDefinition.execute(ORG_KEY, input))
                 .isInstanceOf(AppDefinitionInvalidException.class)
                 .satisfies(thrown -> assertThat(((AppDefinitionInvalidException) thrown).getProblems())
                         .extracting(AppValidationProblem::errorId)
-                        .contains("app.validation.unknown-page-reference"));
+                        .contains("app.validation.duplicate-route-path"));
 
         verify(repository, never()).save(any());
     }
@@ -134,7 +136,7 @@ class CreateAppDefinitionTest {
         when(lenient.validate(anyString(), any())).thenReturn(List.of(
                 new AppValidationProblem("/", "rule.appDefinition.hasNavigation",
                         "This app declares no sidenav navigation.", Severity.WARNING)));
-        CreateAppDefinition withWarnings = new CreateAppDefinition(repository, organizationRepository,
+        CreateAppDefinition withWarnings = new CreateAppDefinition(repository, tenantDirectory,
                 lenient, AppTestFixtures.permissiveGuard(), new AppMapper());
 
         assertThat(withWarnings.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID))).isNotNull();
@@ -143,13 +145,13 @@ class CreateAppDefinitionTest {
 
     @Test
     void aPrincipalWithoutDesignRights_isRejectedBeforeAnythingIsRead() {
-        CreateAppDefinition guarded = new CreateAppDefinition(repository, organizationRepository,
+        CreateAppDefinition guarded = new CreateAppDefinition(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.denyingGuard(), new AppMapper());
 
         assertThatThrownBy(() -> guarded.execute(ORG_KEY, AppTestFixtures.validInput(APP_ID)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
 
-        verifyNoInteractions(repository, organizationRepository);
+        verifyNoInteractions(repository);
     }
 
     @Nested

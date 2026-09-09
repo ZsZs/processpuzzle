@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Organization Admin API
+  version: 0.1.0
+  description: >
+    Organization-scoped administration: org user management and role
+    assignments. All operations are scoped to a single organization's
+    Keycloak realm via the org-admin service account; callers must hold the
+    org-admin role within that organization.
+
+servers:
+  - url: /organizations/{orgKey}/admin
+    variables:
+      orgKey:
+        default: acme
+
+security:
+  - orgAdminAuth: []
+
+tags:
+  - name: OrgUsers
+  - name: RoleAssignments
+
+paths:
+  /users:
+    parameters:
+      - name: orgKey
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [OrgUsers]
+      summary: List users in this organization
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/OrgUserStatus' }
+      responses:
+        '200':
+          description: Page of org users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/OrgUser' }
+    post:
+      tags: [OrgUsers]
+      summary: Invite a user to this organization
+      description: Creates (or links) the user in the org's Keycloak realm and sends an invitation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InviteOrgUserRequest' }
+      responses:
+        '201':
+          description: User invited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrgUser' }
+        '409':
+          description: User already a member of this organization
+
+  /users/{userId}:
+    parameters:
+      - name: orgKey
+        in: path
+        required: true
+        schema: { type: string }
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [OrgUsers]
+      summary: Get an org user
+      responses:
+        '200':
+          description: Org user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrgUser' }
+    patch:
+      tags: [OrgUsers]
+      summary: Activate, disable, or update an org user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateOrgUserRequest' }
+      responses:
+        '200':
+          description: Updated org user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrgUser' }
+    delete:
+      tags: [OrgUsers]
+      summary: Remove a user from this organization (does not delete the platform account)
+      responses:
+        '204': { description: Removed }
+
+  /role-assignments:
+    parameters:
+      - name: orgKey
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [RoleAssignments]
+      summary: List role assignments, optionally filtered by user or role
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: roleDefinitionKey
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Page of role assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RoleAssignment' }
+    post:
+      tags: [RoleAssignments]
+      summary: Assign a RoleDefinition to a user (synced to Keycloak)
+      description: >
+        roleDefinitionKey references a RoleDefinition owned by
+        base-workflow-backend's catalog (see base-workflow-api.yaml). The
+        adapter resolves it to a Keycloak realm role or group in this org's
+        realm and applies the mapping.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRoleAssignmentRequest' }
+      responses:
+        '201':
+          description: Role assignment created and synced to Keycloak
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleAssignment' }
+        '404':
+          description: Unknown userId or roleDefinitionKey
+        '502':
+          description: Keycloak sync failed; assignment not persisted
+
+  /role-assignments/{assignmentId}:
+    parameters:
+      - name: orgKey
+        in: path
+        required: true
+        schema: { type: string }
+      - name: assignmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [RoleAssignments]
+      summary: Revoke a role assignment (removed from Keycloak in the same operation)
+      responses:
+        '204': { description: Revoked }
+        '502':
+          description: Keycloak sync failed; assignment not removed
+
+components:
+  securitySchemes:
+    orgAdminAuth:
+      type: openIdConnect
+      openIdConnectUrl: https://auth.processpuzzle.io/realms/{orgKey}/.well-known/openid-configuration
+      description: Token must carry the org-admin realm role within the organization's own realm.
+
+  schemas:
+    OrgUserStatus:
+      type: string
+      enum: [INVITED, ACTIVE, DISABLED]
+
+    OrgUser:
+      type: object
+      required: [id, email, status]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/OrgUserStatus' }
+        invitedAt: { type: string, format: date-time }
+        activatedAt: { type: string, format: date-time, nullable: true }
+
+    InviteOrgUserRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        initialRoleDefinitionKeys:
+          type: array
+          items: { type: string }
+          description: Optional RoleDefinitions to assign immediately on activation.
+
+    UpdateOrgUserRequest:
+      type: object
+      properties:
+        status: { $ref: '#/components/schemas/OrgUserStatus' }
+        name: { type: string }
+
+    RoleAssignment:
+      type: object
+      required: [id, userId, roleDefinitionKey, assignedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        roleDefinitionKey:
+          type: string
+          description: Foreign reference to RoleDefinition.key in base-workflow-backend
+        assignedAt: { type: string, format: date-time }
+        assignedBy: { type: string, format: uuid }
+
+    CreateRoleAssignmentRequest:
+      type: object
+      required: [userId, roleDefinitionKey]
+      properties:
+        userId: { type: string, format: uuid }
+        roleDefinitionKey: { type: string }

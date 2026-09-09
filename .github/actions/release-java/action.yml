@@ -41,9 +41,9 @@ runs:
   using: composite
   steps:
     - name: Setup Node.js ${{ inputs.node-version }}
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v5
       with:
-        node-version: 24
+        node-version: ${{ inputs.node-version }}
         registry-url: https://registry.npmjs.org
         cache: 'npm'
         cache-dependency-path: |
@@ -51,16 +51,18 @@ runs:
           package-lock.json
 
     - name: Setup Java
-      uses: actions/setup-java@v4.8.0
+      uses: actions/setup-java@v5
       with:
         java-version: ${{ inputs.java-version }}
         distribution: 'temurin'
         cache: 'maven'
 
-    - name: Setup Maven 3.9.14
-      uses: stCarolas/setup-maven@v5.1
-      with:
-        maven-version: '3.9.14'
+    - name: Report Maven version
+      # See the note in .github/actions/lint-test-build/action.yml: the runner's
+      # preinstalled Maven replaces stCarolas/setup-maven, whose uncached tarball
+      # download from Maven Central intermittently failed with HTTP 429.
+      run: mvn -v
+      shell: bash
 
     - name: Config Git
       shell: bash

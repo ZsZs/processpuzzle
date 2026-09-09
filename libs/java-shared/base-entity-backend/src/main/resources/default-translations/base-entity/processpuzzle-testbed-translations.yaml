@@ -1,0 +1,35 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-entity.
+#
+# EntityTranslationLoader imports this file on startup when `base-entity.loadDefaultTranslations` is
+# true. See base-app's file of the same name for the conventions — in short: the organization is the
+# part of the file name before the suffix, `messages` keys are relative to the scope, and an existing
+# bundle is merged into rather than skipped.
+
+translations:
+  # ── base_entity ──
+  # The framework's generic screen labels — the tabs, the toolbar, the confirmation dialogs. Normally a
+  # static asset (`base-entity-frontend/src/assets/i18n/base_entity`, copied into the application's
+  # `assets/i18n/base_entity` at build time), so the loader only reaches here for a host that ships
+  # without that copy step. A small subset on purpose: duplicating the asset file here would give two
+  # sources of truth that drift.
+  - scope: base_entity
+    locale: en
+    messages:
+      tabs:
+        list: '{{ entity }} - list'
+        details: '{{ entity }} - details'
+      toolbar:
+        new_tooltip: Create a new record
+        edit_tooltip: Edit the selected record
+        delete_tooltip: Delete the selected records
+
+  - scope: base_entity
+    locale: de
+    messages:
+      tabs:
+        list: '{{ entity }} - Liste'
+        details: '{{ entity }} - Details'
+      toolbar:
+        new_tooltip: Neuen Datensatz anlegen
+        edit_tooltip: Ausgewählten Datensatz bearbeiten
+        delete_tooltip: Ausgewählte Datensätze löschen

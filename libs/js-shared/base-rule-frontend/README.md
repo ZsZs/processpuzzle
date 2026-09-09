@@ -36,7 +36,7 @@ There are two independent capabilities to enable:
 1. **Author rules** – mount the built-in CRUD UI at a route in your application.
 2. **Evaluate rules against entities** – provide the rule engine so that any base-entity form runs its rules on submit.
 
-The snippets below are taken from the [Base Rule sample in the testbed](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed/src/app/content/base-rules).
+The snippets below are taken from the [Base Rule sample in the testbed](https://github.com/ZsZs/processpuzzle/tree/develop/apps/processpuzzle-testbed-frontend/src/app/content/base-rules).
 
 ### 1. Enable the rule engine for a route subtree
 

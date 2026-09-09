@@ -1,5 +1,5 @@
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -25,8 +25,9 @@ describe('BaseRuleDryRunDialog', () => {
     const data: BaseRuleDryRunDialogData = { rule: testRule, ...opts.data };
 
     TestBed.configureTestingModule({
-      imports: [BaseRuleDryRunDialog, NoopAnimationsModule],
+      imports: [BaseRuleDryRunDialog],
       providers: [
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: BaseRuleEvaluatorService, useValue: evaluator },

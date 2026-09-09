@@ -1,5 +1,6 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.usecase.FindAllAppDefinitions;
@@ -23,9 +24,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Proves the mapping actually binds before anything is built on top of it: the composite
- * {@code @IdClass}, the {@code @Convert} + {@code @Lob} JSON column, and Specification queries.
- * {@code @Lob} composed with an {@code AttributeConverter} has a history of breaking across
- * Hibernate releases, so this is deliberately the first test in the feature.
+ * {@code @IdClass}, the {@code @Convert} + long-text JSON column, and Specification queries.
+ * A converter composed with an explicit JDBC type has a history of breaking across Hibernate
+ * releases, so this is deliberately the first test in the feature.
+ *
+ * <p>Note what this test cannot tell you, and did not: it runs on H2, and the column was
+ * {@code @Lob} until the runtime datasource became PostgreSQL — where {@code @Lob} on a
+ * {@code String} means an {@code oid} large-object reference rather than {@code text}, writes fine
+ * and fails on read. H2 mapped the same annotation to a CLOB, so the round-trip below passed either
+ * way. The columns are now {@code @JdbcTypeCode(SqlTypes.LONG32VARCHAR)}, checked against real
+ * PostgreSQL; only a test against PostgreSQL could keep them that way.
+ */
+/*
+ * Both scans used to name platformadmin.domain as well, because base-app read Organization directly:
+ * GetAppLayout resolved a tenant's default locale from its repository and AppMapper rendered an
+ * organization projection. It reads neither now — the locale arrives through the TenantDirectory
+ * port and the projection is platform-admin's own — so this module's schema is its own again, which
+ * is the point. An Organization round-trip belongs in platform-admin's OrganizationTest.
  */
 @DataJpaTest(showSql = false)
 @EntityScan("com.processpuzzle.app.domain")
@@ -41,13 +56,9 @@ class AppDefinitionPersistenceTest {
     @Autowired
     private AppDefinitionRepository repository;
 
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
     @BeforeEach
     void seed() {
         repository.deleteAll();
-        organizationRepository.deleteAll();
     }
 
     @Test
@@ -66,16 +77,17 @@ class AppDefinitionPersistenceTest {
         Region sidenav = reloaded.regions().getFirst();
         assertThat(sidenav.type()).isEqualTo("sidenav");
         NavNode group = sidenav.navItems().getFirst();
-        assertThat(group.pageId()).isNull();
+        assertThat(group.routePath()).isNull();
         assertThat(group.children()).hasSize(1);
         assertThat(group.children().getFirst().roles()).containsExactly("CLAIMS_ADJUSTER");
 
-        AppPage page = reloaded.findPage("page-claims-list");
-        assertThat(page).isNotNull();
-        Widget container = page.widgets().getFirst();
-        assertThat(container.children()).hasSize(1);
-        Widget grid = container.children().getFirst();
+        AppRoute route = reloaded.findRoute("claims-list");
+        assertThat(route).isNotNull();
+        Widget container = route.target().widgets().getFirst();
+        assertThat(container.props()).containsEntry("childIds", List.of("widget-claims-grid"));
+        Widget grid = route.target().widgets().getLast();
         assertThat(grid.type()).isEqualTo("entity-grid");
+        assertThat(grid.placement()).isEqualTo(WidgetPlacement.REFERENCED);
         assertThat(grid.props()).containsEntry("entityName", "Claim");
         assertThat(grid.props().get("columns")).isEqualTo(List.of("claimNumber", "claimant"));
     }
@@ -134,7 +146,7 @@ class AppDefinitionPersistenceTest {
         assertThat(reloaded.isPublished()).isFalse();
         assertThat(reloaded.getDraftGraph().regions()).isEmpty();
         assertThat(reloaded.getPublishedGraph().regions()).hasSize(2);
-        assertThat(reloaded.getPublishedGraph().findPage("page-claims-list")).isNotNull();
+        assertThat(reloaded.getPublishedGraph().findRoute("claims-list")).isNotNull();
     }
 
     @Test
@@ -148,20 +160,6 @@ class AppDefinitionPersistenceTest {
 
         assertThat(repository.findByOrgKey("org-a")).isEmpty();
         assertThat(repository.findByOrgKey("org-b")).hasSize(1);
-    }
-
-    @Test
-    void organization_roundTripsWithTimestamps() {
-        organizationRepository.saveAndFlush(new Organization("my-org", "My Org Ltd.", "desc",
-                "ops@my-org.example", "en-GB", OrganizationStatus.ACTIVE));
-
-        Optional<Organization> reloaded = organizationRepository.findById("my-org");
-
-        assertThat(reloaded).isPresent();
-        assertThat(reloaded.get().getStatus()).isEqualTo(OrganizationStatus.ACTIVE);
-        assertThat(reloaded.get().getDefaultLocale()).isEqualTo("en-GB");
-        assertThat(reloaded.get().getCreatedAt()).isNotNull();
-        assertThat(reloaded.get().getUpdatedAt()).isNotNull();
     }
 
     /**
@@ -187,7 +185,6 @@ class AppDefinitionPersistenceTest {
     @Test
     void persistedTimestampsMapOntoTheContractAsUtcOffsets() {
         repository.saveAndFlush(new AppDefinition("my-org", "claims-app", "Claims", null, null, fullGraph()));
-        organizationRepository.saveAndFlush(new Organization("my-org", "My Org Ltd.", null, null, null, null));
         AppMapper mapper = new AppMapper();
 
         AppDefinition definition = repository.findByOrgKeyAndId("my-org", "claims-app").orElseThrow();
@@ -197,19 +194,18 @@ class AppDefinitionPersistenceTest {
                 .satisfies(stamp -> assertThat(stamp.getOffset()).isEqualTo(ZoneOffset.UTC));
         assertThat(model.getCreatedAt().toInstant()).isEqualTo(definition.getCreatedAt());
         assertThat(model.getUpdatedAt()).isNotNull();
-        assertThat(mapper.toSummary(definition).getUpdatedAt()).isNotNull();
-        assertThat(mapper.toModel(organizationRepository.findById("my-org").orElseThrow()).getCreatedAt())
-                .isNotNull();
     }
 
     private static AppGraph fullGraph() {
         Widget grid = new Widget("widget-claims-grid", "entity-grid",
-                Map.of("entityName", "Claim", "columns", List.of("claimNumber", "claimant")), List.of());
-        Widget tabs = new Widget("widget-tabs", "tab-group", Map.of(), List.of(grid));
-        AppPage page = new AppPage("page-claims-list", "Claims", "claims.page.list.title", List.of(tabs));
+                Map.of("entityName", "Claim", "columns", List.of("claimNumber", "claimant")),
+                WidgetPlacement.REFERENCED);
+        Widget tabs = new Widget("widget-tabs", "tab-group",
+                Map.of("childIds", List.of("widget-claims-grid")), WidgetPlacement.STANDALONE);
+        AppRoute route = new AppRoute("claims-list", "Claims", "claims.route.list.title", null, List.of(), RouteTarget.ofWidgets(List.of(tabs, grid)));
 
         NavNode leaf = new NavNode("nav-claims-new", "New Claim", null, "add_circle",
-                "page-claims-list", List.of("CLAIMS_ADJUSTER"), List.of());
+                "claims-list", List.of("CLAIMS_ADJUSTER"), List.of());
         NavNode group = new NavNode("nav-group", "Claims", null, "description", null, List.of(), List.of(leaf));
         Region sidenav = new Region("sidenav", List.of(group), List.of());
         Region content = new Region("content", List.of(), List.of());
@@ -218,6 +214,6 @@ class AppDefinitionPersistenceTest {
                 Map.of("--pp-surface-sidenav", "#0d1b2a"), "/logo.png", null);
         Layout layout = new Layout("sidenav-left", "side", Boolean.TRUE, Boolean.TRUE, "1280px");
 
-        return new AppGraph(theme, layout, List.of(sidenav, content), List.of(page));
+        return new AppGraph(theme, layout, List.of(sidenav, content), List.of(route), List.of());
     }
 }

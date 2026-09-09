@@ -12,8 +12,9 @@ It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `
 
 ## Features
 
-- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/widgets`, that links to each design building block.
-- **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; automatically pulls in the child routes exposed by sibling design libraries (currently `BASE_RULE_ROUTES`).
+- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/base-widget`, that links to each design building block.
+- **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; pulls in the child routes exposed by sibling design libraries (`BASE_DOCUMENT_ROUTES`, `BASE_RULE_ROUTES`, `BASE_APP_ROUTES`, `BASE_WIDGET_ROUTES`).
+- **Application section** (`ApplicationDesignerComponent`) — one page at `/design/application` whose tabs switch between the entities that describe an application: its definition, the modules it mounts and the widget types those place. The tabs are child routes, so each one deep-links and the tab bar stays put while the user drills into a form. Their order, icons and labels are `APPLICATION_DESIGNER_TABS`.
 - **Route awareness** (`DesignRouteService`) — a root-provided Angular service exposing an `isDesignRoute` signal so surrounding UI (menus, breadcrumbs, toolbars) can adapt when the user is inside `/design`.
 - **i18n scoped translations** — the landing page registers a Transloco scope (`design`), so card titles, subtitles, content, and action captions are fully localizable.
 
@@ -24,6 +25,8 @@ It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `
 | `DESIGN_LIBRARY`       | `const string`        | Library identifier (`'@processpuzzle/design'`) — useful for logging and diagnostics.        |
 | `DESIGN_ROUTES`        | `Routes`              | Angular route array to mount under `/design`; includes the landing page and child routes. |
 | `DesignContentComponent` | `Component`         | Standalone card-grid landing page shown at `/design`.                                     |
+| `ApplicationDesignerComponent` | `Component`   | Tabbed page at `/design/application` hosting the application entities' routes.             |
+| `APPLICATION_DESIGNER_TABS` | `const`          | The Application section's tabs — path, icon and `design`-scope label, in display order.    |
 | `DesignRouteService`   | `@Injectable` (root)  | Exposes the `isDesignRoute: Signal<boolean>` for route-aware UI.                          |
 
 ## Setup and Usage
@@ -78,15 +81,15 @@ Then in a template:
 
 Runtime peer dependencies (see `package.json`):
 
-- `@angular/common`, `@angular/core`, `@angular/router` — `~22.0.5`
+- `@angular/common`, `@angular/core`, `@angular/router` — `~22.0.5`; `@angular/material` — `^22.0.5`
 - `@jsverse/transloco` — `8.4.0`
-- `@processpuzzle/widgets` — `^0.8.0`
+- `@processpuzzle/base-widget` — `^0.8.0`
 - `rxjs` — `~7.8.2`
 
 ### Architecture Notes
 
 - **Standalone components** — no `NgModule`; everything is `standalone: true` and consumed via imports.
-- **Signals over observables** — `DesignRouteService` exposes state as a `Signal<boolean>` rather than an `Observable`, aligning with Angular 21's signal-first direction. The router subscription uses `takeUntilDestroyed()` for automatic cleanup.
+- **Signals over observables** — `DesignRouteService` exposes state as a `Signal<boolean>` rather than an `Observable`, aligning with Angular's signal-first direction. The router subscription uses `takeUntilDestroyed()` for automatic cleanup.
 - **Composable routes** — `DESIGN_ROUTES` spreads child libraries' route arrays, so adding a new design building block only requires extending the array.
 - **Scoped i18n** — the `design` Transloco scope is provided at the component level, keeping translation keys isolated from the host application.
 

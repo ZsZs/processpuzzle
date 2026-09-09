@@ -1,7 +1,6 @@
 import { BaseEntityLoadResponse } from './lib/base-entity-service/base-entity-load-response';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BaseEntityListComponent } from './lib/base-list/base-entity-list.component';
 import { BaseUrlSegments } from './lib/base-form-navigator/base-url-segments';
 import { BaseEntityStatusbarComponent } from './lib/base-statusbar/base-entity-statusbar.component';
@@ -9,18 +8,20 @@ import { BaseEntityToolbarComponent } from './lib/base-toolbar/base-entity-toolb
 import { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
-import { Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
+import { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
+import { ANIMATION_MODULE_TYPE, Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
 import { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 import { TestBed } from '@angular/core/testing';
-import { BaseEntityDescriptor } from './lib/base-entity/base-entity.descriptor';
+import { BaseEntityDescriptor, EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ROUTER_OUTLET_DATA } from '@angular/router';
+import { provideRouter, ROUTER_OUTLET_DATA, RouterOutlet, Routes } from '@angular/router';
+import { ENTITY_NAME_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 import { TestEntityService } from './lib/base-entity-service/test-entity.service';
 import { CONFIGURATION_OPTIONS, ConfigurationService, LayoutService, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { TestConfiguration } from './lib/test-configuration';
@@ -58,6 +59,7 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   entity: Signal<TestEntity> = input.required<TestEntity>();
   protected baseEntityForm!: FormGroup;
   protected formBuilder = inject(FormBuilder);
+  protected entityFormBuilder = inject(BaseEntityFormBuilder);
 
   // region Angular lifacycle hooks
   ngOnInit(): void {
@@ -84,8 +86,18 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
     this.componentRef.instance.entity = this.entity as unknown as InputSignal<TestEntity>;
     this.componentRef.instance.entityName = signal('TestEntity') as unknown as InputSignal<string>;
     this.componentRef.instance.value = signal(currentAttrValue) as unknown as InputSignal<unknown>;
-    const formControl = new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, this.config().required ? Validators.required : null);
-    this.baseEntityForm.addControl(this.config().attrName, formControl);
+    // Mirrors what BaseEntityFormBuilder hands to every control it creates.
+    this.componentRef.instance.formBuilder = this.entityFormBuilder as unknown as BaseEntityFormBuilder<TestEntity>;
+    this.baseEntityForm.addControl(this.config().attrName, this.createControl(currentAttrValue));
+  }
+
+  /** Mirrors `BaseEntityFormBuilder`: every attribute, embedded children included, is a plain control. */
+  private createControl(currentAttrValue: unknown) {
+    const validators = [];
+    if (this.config().required) validators.push(Validators.required);
+    if (this.config().pattern) validators.push(Validators.pattern(this.config().pattern as string));
+
+    return new FormControl({ value: currentAttrValue, disabled: this.config().disabled }, validators);
   }
 
   // endregion
@@ -97,6 +109,64 @@ export class MockControlContainerComponent<C extends BaseFormControlComponent<Te
   standalone: true,
 })
 export class DummyComponent {}
+
+/** Stands in for a route that hosts nested screens, as an entity's details route hosts an embedded child's. */
+@Component({
+  selector: 'dummy-outlet-component',
+  template: ` <router-outlet /> `,
+  standalone: true,
+  imports: [RouterOutlet],
+})
+export class DummyOutletComponent {}
+
+/**
+ * The shape the framework's own routes have: the entity is named on the branch (`ENTITY_NAME_ROUTE_DATA_KEY`)
+ * and the row on its `:entityId/details` child, and an embedded child hangs below that details route. Both are
+ * what `readEmbeddedBreadcrumb` reads, so a spec that navigates these routes gets a real breadcrumb.
+ */
+/** URL segment of the extra tab the test entity offers. */
+export const TEST_ENTITY_TAB_SEGMENT = 'preview';
+
+/** An entity whose screens are hosted *inside* `TestEntity`'s extra tab — see TEST_ENTITY_ROUTES. */
+export const HOSTED_ENTITY_NAME = 'Hosted Entity';
+export const HOSTED_SCREENS_SEGMENT = 'hosted-screens';
+
+export const TEST_ENTITY_ROUTES: Routes = [
+  {
+    path: 'test-entity',
+    data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'TestEntity' },
+    children: [
+      { path: BaseUrlSegments.ListForm, component: DummyComponent },
+      // Stands in for an entity's extra tab (see EntityTabDescriptor) — a sibling of the details route,
+      // sharing its `<entity>/<id>` prefix, which is the shape the navigator counts back over.
+      //
+      // A *container* tab, like base-app's Preview: it hosts another entity's screens below it, which is the
+      // one arrangement where the innermost screen in the URL is not this entity's. The nested shape mirrors
+      // what `entityScreenRoute` emits — a host segment, then the hosted entity's own snake-case segment.
+      {
+        path: ':' + BaseUrlSegments.EntityID + '/' + TEST_ENTITY_TAB_SEGMENT,
+        component: DummyOutletComponent,
+        children: [
+          {
+            path: HOSTED_SCREENS_SEGMENT,
+            children: [{ path: 'hosted-entity', data: { [ENTITY_NAME_ROUTE_DATA_KEY]: HOSTED_ENTITY_NAME }, children: [{ path: BaseUrlSegments.ListForm, component: DummyComponent }] }],
+          },
+        ],
+      },
+      {
+        path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
+        component: DummyOutletComponent,
+        children: [
+          {
+            path: 'embedded-component',
+            data: { [ENTITY_NAME_ROUTE_DATA_KEY]: 'Embedded Component' },
+            children: [{ path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm, component: DummyComponent }],
+          },
+        ],
+      },
+    ],
+  },
+];
 
 function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
   const entityDescriptor = new BaseEntityDescriptor({
@@ -150,8 +220,9 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   mockService.findByQuery.mockReturnValue(of(entities));
 
   await TestBed.configureTestingModule({
-    imports: [BaseEntityListComponent, NoopAnimationsModule],
+    imports: [BaseEntityListComponent],
     providers: [
+      { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
       provideLogger(LOGGING_CONFIGURATION),
       provideHttpClient(),
       provideHttpClientTesting(),
@@ -266,6 +337,8 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
 export async function setupContainerComponentTest(
   componentType: Type<BaseEntityContainerComponent | BaseEntityTabsComponent | BaseEntityToolbarComponent<TestEntity> | BaseEntityStatusbarComponent>,
   translations: TranslationsMap = {},
+  extraProviders: Provider[] = [],
+  extraTabs: EntityTabDescriptor[] = [],
 ) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -274,27 +347,29 @@ export async function setupContainerComponentTest(
     attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
+    // Declared before the first change detection below, because BaseEntityTabsComponent registers the
+    // segments in ngOnInit — a tab added afterwards would render but never be recognized in a URL.
+    extraTabs,
   });
   const runtimeConfigMock = { TEST_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1', LOGGING_CONFIGURATION };
 
   const mockService = setupMockService();
 
   await TestBed.configureTestingModule({
-    imports: [componentType, NoopAnimationsModule],
+    imports: [componentType],
     providers: [
+      { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
       provideHttpClient(),
       provideHttpClientTesting(),
       provideLogger(LOGGING_CONFIGURATION),
-      provideRouter([
-        { path: 'test-entity/:id/details', component: DummyComponent },
-        { path: 'test-entity/list', component: DummyComponent },
-      ]),
+      provideRouter(TEST_ENTITY_ROUTES),
       provideTranslocoTesting({ translations }),
       LayoutService,
       { provide: TestEntityStore, useClass: TestEntityStore, deps: [TestEntityService] },
       { provide: BreakpointObserver, useClass: MockBreakpointObserver },
       { provide: TestEntityService, useValue: mockService },
       { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfigMock },
+      ...extraProviders,
     ],
   }).compileComponents();
 

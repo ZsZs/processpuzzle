@@ -18,6 +18,16 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   lines?: number;
   options: { inputType: 'text' };
   required = false;
+  /**
+   * Regular-expression source the value has to match, applied as `Validators.pattern` and anchored by
+   * Angular at both ends.
+   *
+   * For a field the backend constrains beyond "not empty" — a URL slug, a locale tag, an identifier — so the
+   * form rejects it where the user typed it rather than letting the save come back a 400 with a message from
+   * the server's validation locale. Write the source without delimiters, exactly as the contract's `pattern`
+   * gives it: `'^[a-z0-9]+(-[a-z0-9]+)*$'`.
+   */
+  pattern?: string;
   referenceIdField?: string = 'id';
   private _label?: string;
   private _linkedEntityType?: string;

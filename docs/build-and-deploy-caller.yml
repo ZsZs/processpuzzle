@@ -1,0 +1,13 @@
+# Copy this file, unchanged, into every repo's .github/workflows/
+# (processpuzzle, processpuzzle-biz, and any future app repo).
+
+name: Build & deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: ZsZs/processpuzzle/.github/workflows/build-and-deploy-reusable.yml@main
+    secrets: inherit

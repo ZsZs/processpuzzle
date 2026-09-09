@@ -9,6 +9,7 @@ import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +52,8 @@ public class ExportAppDefinition {
         entry.setTheme(model.getTheme());
         entry.setLayout(model.getLayout());
         entry.setRegions(model.getRegions());
-        entry.setPages(model.getPages());
+        entry.setRoutes(model.getRoutes());
+        entry.setModules(model.getModules());
 
         return yamlMapper.writeValueAsBytes(new AppYamlDocument(List.of(entry)));
     }

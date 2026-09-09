@@ -1,5 +1,6 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.app.domain.RouteTarget;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -56,8 +57,8 @@ class AppDefinitionTest {
 
         assertThat(definition.isPublished()).isFalse();
         assertThat(definition.hasPublishedRevision()).isTrue();
-        assertThat(definition.graphFor(false).pages()).hasSize(1);
-        assertThat(definition.graphFor(true).pages()).isEmpty();
+        assertThat(definition.graphFor(false).routes()).hasSize(1);
+        assertThat(definition.graphFor(true).routes()).isEmpty();
     }
 
     @Test
@@ -90,6 +91,6 @@ class AppDefinitionTest {
 
     private static AppGraph graphWithOnePage() {
         return new AppGraph(null, null, List.of(),
-                List.of(new AppPage("page-claims-list", "Claims", null, List.of())));
+                List.of(new AppRoute("claims-list", "Claims", null, null, List.of(), RouteTarget.ofWidgets(List.of()))), List.of());
     }
 }

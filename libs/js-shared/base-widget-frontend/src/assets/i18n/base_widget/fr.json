@@ -1,0 +1,40 @@
+{
+  "widget_definition": {
+    "_self": "Widget",
+    "id": "Clé",
+    "name": "Nom",
+    "translocoId": "Id Transloco",
+    "description": "Description",
+    "category": "Catégorie",
+    "icon": "Icône",
+    "status": "Statut",
+    "version": "Version",
+    "publishedVersion": "Version publiée",
+    "updatedAt": "Mis à jour le",
+    "inputPorts": "Ports d'entrée",
+    "outputPorts": "Ports de sortie"
+  },
+  "widget_input_port": {
+    "_self": "Port d'entrée",
+    "name": "Nom",
+    "type": "Type",
+    "required": "Obligatoire",
+    "description": "Description",
+    "entityType": "Type d'entité",
+    "attributeVisibility": "Visibilité des attributs",
+    "defaultValue": "Valeur par défaut",
+    "defaultRsqlFilter": "Filtre RSQL par défaut"
+  },
+  "widget_output_port": {
+    "_self": "Port de sortie",
+    "name": "Nom",
+    "type": "Type",
+    "description": "Description",
+    "entityType": "Type d'entité",
+    "attributeVisibility": "Visibilité des attributs"
+  },
+  "publish": {
+    "button": "Publier",
+    "tooltip": "Promouvoir cette version, afin que les instances puissent se fier à son schéma de props"
+  }
+}

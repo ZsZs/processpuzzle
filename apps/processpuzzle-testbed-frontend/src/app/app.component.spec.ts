@@ -1,0 +1,66 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AppComponent } from './app.component';
+import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { LayoutService } from '@processpuzzle/util';
+import { ANIMATION_MODULE_TYPE, Component } from '@angular/core';
+import { HeaderComponent } from './navigation/header/header.component';
+import { SidenavComponent } from './navigation/sidenav/sidenav.component';
+import { FooterComponent } from './navigation/footer/footer.component';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DesignSidenavComponent } from '@processpuzzle/design';
+
+@Component({ selector: 'app-header', template: '' })
+class MockHeaderComponent {}
+
+@Component({ selector: 'app-sidenav', template: '' })
+class MockSidenavComponent {}
+
+@Component({ selector: 'pp-design-sidenav', template: '' })
+class MockDesignSidenavComponent {}
+
+@Component({ selector: 'app-footer', template: '' })
+class MockFooterComponent {}
+
+describe('AppComponent', () => {
+  let fixture: ComponentFixture<AppComponent>;
+  let component: AppComponent;
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [LayoutService, provideRouter([]), { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }],
+    })
+      .overrideComponent(AppComponent, {
+        remove: { imports: [HeaderComponent, SidenavComponent, DesignSidenavComponent, FooterComponent] },
+        add: { imports: [MockHeaderComponent, MockSidenavComponent, MockDesignSidenavComponent, MockFooterComponent] },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('Should create component', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('app-header, app-footer, mat-sidenav-container:', () => {
+    const appHeader = fixture.debugElement.query(By.css('app-header')).nativeElement;
+    expect(appHeader).toBeTruthy();
+
+    const sideNavContainer = fixture.debugElement.query(By.css('mat-sidenav-container')).nativeElement;
+    expect(sideNavContainer).toBeTruthy();
+
+    const appFooter = fixture.debugElement.query(By.css('app-footer')).nativeElement;
+    expect(appFooter).toBeTruthy();
+  });
+
+  it('toggles the sidenav state', () => {
+    expect(component.sidenavOpened()).toBe(true);
+
+    component.toggleSidenav();
+
+    expect(component.sidenavOpened()).toBe(false);
+  });
+});

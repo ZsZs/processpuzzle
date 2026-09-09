@@ -1,0 +1,16 @@
+{
+  "_self": "Entité de test",
+  "name": "Nom",
+  "description": "Description",
+  "boolean": "Booléen",
+  "number": "Nombre",
+  "date": "Date",
+  "lookup": "Recherche",
+  "enumValue": "Énumération",
+  "artifact": "Artefact",
+  "tags": "Étiquettes",
+  "components": "Composants",
+  "embeddedComponents": "Composants intégrés",
+  "relatedEntities": "Entités liées",
+  "additionalProperties": "Propriétés supplémentaires"
+}

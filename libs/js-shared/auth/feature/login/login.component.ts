@@ -8,7 +8,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
-import { NavigateBackService } from '@processpuzzle/widgets';
+import { NavigateBackService } from '@processpuzzle/util';
 
 @Component({
   selector: 'pp-login',

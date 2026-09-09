@@ -3,20 +3,22 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationRepository;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Builds the run-time bootstrap payload for the application shell: theme, layout, and the regions
- * with nav entries already filtered against the caller's roles — but no pages, which are fetched
+ * with nav entries already filtered against the caller's roles — but no routes, which are fetched
  * lazily per route.
  *
  * <p>Filtering happens here, server side, so a nav entry the user may not see never reaches the
- * browser. The corresponding page fetch is authorized independently by {@link GetPageDefinition};
+ * browser. The corresponding route fetch is authorized independently by {@link GetRouteDefinition};
  * hiding the entry is not by itself access control.
  *
  * <p>{@code draft = true} serves the unpublished working copy for the designer's preview and
@@ -28,15 +30,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetAppLayout {
 
     private final AppDefinitionRepository repository;
-    private final OrganizationRepository organizationRepository;
+    private final ObjectProvider<TenantDirectory> tenantDirectoryProvider;
     private final OrganizationGuard guard;
+    private final NavVisibilityFilter navVisibility;
 
     public GetAppLayout(AppDefinitionRepository repository,
-                        OrganizationRepository organizationRepository,
-                        OrganizationGuard guard) {
+                        ObjectProvider<TenantDirectory> tenantDirectoryProvider,
+                        OrganizationGuard guard,
+                        NavVisibilityFilter navVisibility) {
         this.repository = repository;
-        this.organizationRepository = organizationRepository;
+        this.tenantDirectoryProvider = tenantDirectoryProvider;
         this.guard = guard;
+        this.navVisibility = navVisibility;
     }
 
     public Result execute(String orgKey, String appId, boolean draft) {
@@ -55,10 +60,11 @@ public class GetAppLayout {
             throw new AppNotPublishedException(orgKey, appId);
         }
 
-        AppGraph filtered = graph.withRegions(guard.filterRegions(graph.regions()));
-        String defaultLocale = organizationRepository.findById(orgKey)
-                .map(Organization::getDefaultLocale)
-                .orElse(null);
+        AppGraph filtered = graph.withRegions(navVisibility.filterRegions(graph.regions()));
+        TenantDirectory directory = tenantDirectoryProvider.getIfAvailable();
+        String defaultLocale = directory == null
+                ? null
+                : directory.find(orgKey).map(TenantDirectory.Tenant::defaultLocale).orElse(null);
 
         return new Result(definition, filtered, defaultLocale);
     }

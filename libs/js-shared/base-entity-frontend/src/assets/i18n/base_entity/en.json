@@ -1,9 +1,48 @@
 {
+  "entity_attribute": {
+    "_self": "Attribute",
+    "code": "Code",
+    "name": "Name",
+    "valueKind": "Value Kind",
+    "formControlType": "Control Type",
+    "displayOrder": "Display Order",
+    "required": "Required",
+    "isMultiValued": "Multi-valued",
+    "indexed": "Indexed",
+    "isLinkToDetails": "Titles the record",
+    "linkedEntityType": "Linked Entity",
+    "defaultValue": "Default Value",
+    "enumValues": "Enum Values"
+  },
+  "entity_definition": {
+    "_self": "Entity Definition",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "isEmbedded": "Embedded",
+    "componentParents": "Component Parents",
+    "attributes": "Attributes",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "artifact": {
+    "upload_failure": "Artifact upload failed. Please try again."
+  },
   "delete_artifact_confirmation_dialog": {
     "title": "Delete artifact?",
     "content": "This will permanently delete \"{{ artifactName }}\" from the object store.",
     "cancel_button": "Cancel",
     "delete_button": "Delete"
+  },
+  "delete_component_confirmation_dialog": {
+    "title": "Delete component?",
+    "content": "This will permanently delete \"{{ componentName }}\" — a component belongs to this record only.",
+    "cancel_button": "Cancel",
+    "delete_button": "Delete"
+  },
+  "statusbar": {
+    "breadcrumb_label": "Record hierarchy"
   },
   "tabs": {
     "list": "{{ entity }} - list",
@@ -37,5 +76,8 @@
     "title": "Advanced query editor",
     "cancel_button": "Cancel",
     "apply_button": "Apply"
+  },
+  "embedded_components": {
+    "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it."
   }
 }

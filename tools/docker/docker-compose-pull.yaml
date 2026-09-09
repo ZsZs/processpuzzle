@@ -1,0 +1,40 @@
+# Overlay that makes the topology reuse the images already on disk instead of
+# re-pulling them.
+#
+# Every service in both layers sets `pull_policy: always`, so that a Coolify
+# redeploy cannot silently keep a stale `:stage` image. Locally that means hitting
+# GHCR for seven images on every stop/start cycle. `missing` settles it: pull only
+# when the image is absent locally.
+#
+#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#     -f docker-compose-apps.yaml -f docker-compose-apps-local.yaml
+#     -f docker-compose-pull.yaml up -d
+#
+# Overlay it only *together with* docker-compose-apps.yaml — the two application
+# services below exist nowhere else, and a service with neither image nor build
+# context makes the project invalid. For the infrastructure layer on its own,
+# `up --pull missing` says the same thing in one flag; that is what
+# `npm run stack-up-infra` does.
+#
+# It is also what keeps a devcontainer or Codespace from compiling an Angular
+# application and a Spring Boot backend before the stack starts: the build path
+# now lives entirely in docker-compose-build.yaml, and this file is what you use
+# instead of it.
+#
+# Use `npm run stack-pull` to refresh deliberately, or `npm run stack-up-build`
+# when you want the CI build path.
+services:
+  testbed-frontend:
+    pull_policy: missing
+  testbed-backend:
+    pull_policy: missing
+  json-server:
+    pull_policy: missing
+  keycloak:
+    pull_policy: missing
+  keycloak-init:
+    pull_policy: missing
+  postgres:
+    pull_policy: missing
+  minio:
+    pull_policy: missing

@@ -4,7 +4,7 @@ import { TranslocoTestComponent } from './transloco-test.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { screen } from '@testing-library/angular';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 describe('transloco-testing.provider', () => {
   const config: TranslocoTestConfig = {
@@ -33,10 +33,10 @@ describe('transloco-testing.provider', () => {
     });
 
     it('should use the given translations', async () => {
-      await transloco.load('en').toPromise?.();
+      await firstValueFrom(transloco.load('en'));
       expect(transloco.translate('OK', {}, 'widgets/en')).toBe('Ok');
 
-      await transloco.load('de').toPromise?.();
+      await firstValueFrom(transloco.load('de'));
       expect(transloco.translate('OK', {}, 'widgets/de')).toBe('In Ordnung');
     });
   });
@@ -67,10 +67,10 @@ describe('transloco-testing.provider', () => {
     });
 
     it('should use the given translations', async () => {
-      await transloco.load('en').toPromise?.();
+      await firstValueFrom(transloco.load('en'));
       expect(transloco.translate('TEST')).toBe('Test');
 
-      await transloco.load('de').toPromise?.();
+      await firstValueFrom(transloco.load('de'));
       expect(transloco.translate('TEST', {}, 'de')).toBe('Test');
     });
   });
@@ -135,7 +135,7 @@ describe('transloco-testing.provider', () => {
       });
 
       const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
-      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+      const translation = await firstValueFrom(loader.getTranslation('en'));
 
       expect(translation).toEqual({ TEST: 'Scoped Test' });
     });
@@ -155,7 +155,7 @@ describe('transloco-testing.provider', () => {
       });
 
       const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
-      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+      const translation = await firstValueFrom(loader.getTranslation('en'));
 
       expect(translation).toEqual({ TEST: 'Test' });
     });
@@ -172,7 +172,7 @@ describe('transloco-testing.provider', () => {
       });
 
       const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
-      const translation = await (loader.getTranslation('en') as Observable<any>).toPromise();
+      const translation = await firstValueFrom(loader.getTranslation('en'));
 
       expect(translation).toEqual({ TEST: 'Test' });
     });
@@ -189,7 +189,7 @@ describe('transloco-testing.provider', () => {
       });
 
       const loader = TestBed.inject(TRANSLOCO_LOADER) as TestTranslocoLoader;
-      const translation = await (loader.getTranslation('fr') as Observable<any>).toPromise();
+      const translation = await firstValueFrom(loader.getTranslation('fr'));
 
       expect(translation).toEqual({});
     });

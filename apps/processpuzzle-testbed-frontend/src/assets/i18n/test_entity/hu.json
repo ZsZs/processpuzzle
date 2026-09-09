@@ -1,0 +1,16 @@
+{
+  "_self": "Teszt entitás",
+  "name": "Név",
+  "description": "Leírás",
+  "boolean": "Logikai érték",
+  "number": "Szám",
+  "date": "Dátum",
+  "lookup": "Keresés",
+  "enumValue": "Felsorolás",
+  "artifact": "Artefaktum",
+  "tags": "Címkék",
+  "components": "Komponensek",
+  "embeddedComponents": "Beágyazott komponensek",
+  "relatedEntities": "Kapcsolódó entitások",
+  "additionalProperties": "További tulajdonságok"
+}

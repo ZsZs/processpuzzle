@@ -1,79 +1,41 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { User } from './user';
 
 describe('User', () => {
-  beforeEach(() => {
-    // Test setup
+  it('has no roles by default', () => {
+    expect(new User('ada@example.com').roles).toEqual([]);
   });
 
-  describe('constructor', () => {
-    it('should create a user with required email only', () => {
-      const user = new User('test@example.com');
+  it('carries the realm roles it was constructed with', () => {
+    const user = new User('ada@example.com', 'kc-1', 'Ada', 'Lovelace', null, ['org-admin', 'org-member']);
 
-      expect(user.email).toBe('test@example.com');
-      expect(user.id).toBeTruthy(); // UUID is generated
-      expect(user.firstName).toBe('');
-      expect(user.lastName).toBe('');
-      expect(user.photoUrl).toBe('');
-    });
-
-    it('should create a user with all properties', () => {
-      const user = new User('test@example.com', 'custom-id', 'John', 'Doe', 'https://example.com/photo.jpg');
-
-      expect(user.email).toBe('test@example.com');
-      expect(user.id).toBe('custom-id');
-      expect(user.firstName).toBe('John');
-      expect(user.lastName).toBe('Doe');
-      expect(user.photoUrl).toBe('https://example.com/photo.jpg');
-    });
-
-    it('should use provided id instead of generating one', () => {
-      const user = new User('test@example.com', 'custom-id');
-
-      expect(user.id).toBe('custom-id');
-    });
-
-    it('should generate id if not provided', () => {
-      const user = new User('test@example.com');
-
-      expect(user.id).toBeTruthy();
-      expect(user.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    });
+    expect(user.roles).toEqual(['org-admin', 'org-member']);
+    expect(user.hasRole('org-admin')).toBe(true);
+    expect(user.hasRole('platform-admin')).toBe(false);
   });
 
-  describe('getters and setters', () => {
-    let user: User;
+  // A caller that mutated this list would be editing what the identity provider said, and an
+  // authorization check reading it afterwards would be checking the caller's own answer.
+  it('copies the roles on the way in and returns them frozen', () => {
+    const source = ['org-member'];
+    const user = new User('ada@example.com', 'kc-1', null, null, null, source);
 
-    beforeEach(() => {
-      user = new User('test@example.com');
-    });
+    source.push('org-admin');
 
-    it('should get and set email', () => {
-      expect(user.email).toBe('test@example.com');
+    expect(user.roles).toEqual(['org-member']);
+    expect(() => (user.roles as string[]).push('sneaky')).toThrow();
+  });
 
-      user.email = 'new@example.com';
-      expect(user.email).toBe('new@example.com');
-    });
+  it('treats an empty required-role list as "any authenticated user"', () => {
+    const user = new User('ada@example.com', 'kc-1', null, null, null, []);
 
-    it('should get and set firstName', () => {
-      expect(user.firstName).toBe('');
+    expect(user.hasAnyRole([])).toBe(true);
+    expect(user.hasAnyRole(['org-admin'])).toBe(false);
+  });
 
-      user.firstName = 'John';
-      expect(user.firstName).toBe('John');
-    });
+  it('matches when any one of the required roles is held', () => {
+    const user = new User('ada@example.com', 'kc-1', null, null, null, ['claims-auditor']);
 
-    it('should get and set lastName', () => {
-      expect(user.lastName).toBe('');
-
-      user.lastName = 'Doe';
-      expect(user.lastName).toBe('Doe');
-    });
-
-    it('should get and set photoUrl', () => {
-      expect(user.photoUrl).toBe('');
-
-      user.photoUrl = 'https://example.com/photo.jpg';
-      expect(user.photoUrl).toBe('https://example.com/photo.jpg');
-    });
+    expect(user.hasAnyRole(['claims-approver', 'claims-auditor'])).toBe(true);
   });
 });

@@ -1,0 +1,18 @@
+{
+  "name": "processpuzzle-e2e-living-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sketch: metadata-as-spec E2E scenario for ProcessPuzzle with generated living documentation",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "docs:generate": "tsx scripts/generate-living-docs.ts",
+    "docs:build": "npm run test:e2e && npm run docs:generate"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "yaml": "^2.5.0"
+  }
+}

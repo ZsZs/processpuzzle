@@ -1,0 +1,10 @@
+key: orderDocument
+displayName: "Order Confirmation Document"
+description: "The signed artifact attached to an order before it can be fulfilled."
+attributes:
+  - key: orderId
+    type: STRING
+    required: true
+  - key: signed
+    type: BOOLEAN
+    default: false

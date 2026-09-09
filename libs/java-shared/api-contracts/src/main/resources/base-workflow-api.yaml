@@ -2,15 +2,26 @@ openapi: 3.0.3
 info:
   title: ProcessPuzzle Workflow Engine API (base-workflow)
   description: >-
-    SPEM-inspired workflow definition and execution API. Orchestrates activities, roles,
-    work products and tools across a ProcessPuzzle process instance.
+    SPEM-inspired workflow definition and execution API. Orchestrates tasks, roles,
+    artifacts and tools across a ProcessPuzzle workflow instance.
+
+    The model follows SPEM's split of Method Content from Process. Roles, artifacts, tasks and
+    tools are tenant-level *definitions* — catalog resources of their own, each authored once and
+    each with full CRUD. A *workflow* composes them: its `roles`, `artifacts`, `tools` and `tasks`
+    hold `...Use` objects, which name a definition by id and carry whatever is true of it only in
+    that workflow — which role performs a task there, what it waits for. Uses are embedded in the
+    workflow and have no resource of their own; definitions are never nested inside it.
 
     base-workflow is a pure orchestrator: rule evaluation is delegated to base-rule, state
     machine transitions to base-state, and entity data shape to base-entity. References to
     those libraries are by ID only — base-workflow never owns or duplicates their models.
     Coordination between libraries happens exclusively through the shared event schema
     defined in base-workflow-events.yaml.
-  version: 0.1.0
+
+    All resources are scoped per organization via the {orgKey} path variable, consistent
+    with the multi-tenancy convention used across the ProcessPuzzle platform (see
+    processpuzzle-core's OrganizationGuard / orgKey scoping).
+  version: 0.2.0
 
 servers:
   - url: /api/workflow
@@ -20,12 +31,15 @@ servers:
 # ─────────────────────────────────────────────────────────────
 paths:
 
-  # ── Process Definitions ───────────────────────────────────
+  # ── Workflows ───────────────────────────────────
 
-  /processes:
+  /organizations/{orgKey}/workflows:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
-      operationId: listProcessDefinitions
-      summary: List all process definitions
+      operationId: listWorkflows
+      tags: [ Workflows ]
+      summary: List all workflows
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
@@ -33,68 +47,76 @@ paths:
         - $ref: "#/components/parameters/SizeParam"
       responses:
         "200":
-          description: Paged list of process definitions (summary view, no activities/steps)
+          description: >-
+            Paged list of workflows, each with its role, artifact and task references. Full
+            shape rather than a summary on purpose: base-entity's generated form reads the record out
+            of the loaded list rather than re-fetching it by id, so a projection here would render an
+            empty form and its save — a full replacement — would destroy what the projection dropped.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageOf_ProcessDefinitionSummary"
+                $ref: "#/components/schemas/PageOf_Workflow"
 
     post:
-      operationId: createProcessDefinition
-      summary: Create a new process definition
+      operationId: createWorkflow
+      tags: [ Workflows ]
+      summary: Create a new workflow
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProcessDefinitionInput"
+              $ref: "#/components/schemas/WorkflowInput"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessDefinition"
+                $ref: "#/components/schemas/Workflow"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /processes/{processId}:
+  /organizations/{orgKey}/workflows/{workflowId}:
     parameters:
-      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
     get:
-      operationId: getProcessDefinition
-      summary: Get a process definition with all activities, roles, work products and tools
+      operationId: getWorkflow
+      tags: [ Workflows ]
+      summary: Get a workflow with its task uses and its role, artifact and tool references
       responses:
         "200":
-          description: Full process definition
+          description: Full workflow
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessDefinition"
+                $ref: "#/components/schemas/Workflow"
         "404":
           $ref: "#/components/responses/NotFound"
 
     put:
-      operationId: updateProcessDefinition
-      summary: Replace a process definition
+      operationId: updateWorkflow
+      tags: [ Workflows ]
+      summary: Replace a workflow
       description: >-
-        Only allowed if there are no ACTIVE process instances for this definition.
-        Use version to prevent lost updates (optimistic locking).
+        Only allowed if there are no ACTIVE instances of this workflow. Supply the `version` you last
+        read to be refused with 409 rather than silently overwriting a concurrent edit.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProcessDefinitionInput"
+              $ref: "#/components/schemas/WorkflowInput"
       responses:
         "200":
           description: Updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessDefinition"
+                $ref: "#/components/schemas/Workflow"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -103,9 +125,10 @@ paths:
           $ref: "#/components/responses/Conflict"
 
     delete:
-      operationId: deleteProcessDefinition
-      summary: Delete a process definition
-      description: Only allowed if there are no process instances (active or historic).
+      operationId: deleteWorkflow
+      tags: [ Workflows ]
+      summary: Delete a workflow
+      description: Only allowed if there are no workflow instances (active or historic).
       responses:
         "204":
           description: Deleted
@@ -114,14 +137,23 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /processes/import:
+  /organizations/{orgKey}/workflows/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     post:
-      operationId: importProcessDefinitions
-      summary: Bulk-import process definitions from a SPEM YAML file
+      operationId: importWorkflows
+      tags: [ Workflows ]
+      summary: Bulk-import a workflow catalog and its workflows from a SPEM YAML file
       description: >-
-        All-or-nothing import: if any entry fails structural validation, nothing in the file
-        is persisted. References to base-rule rule IDs and base-state state machine IDs are
-        recorded as-is and validated lazily at instance start time, not at import time.
+        The file carries `role-definitions`, `artifact-definitions`, `tool-definitions`,
+        `task-definitions` and `workflows` as sibling top-level sections; the four definition
+        sections are applied before the workflows that reference them, so one file can introduce a
+        workflow and everything it needs. Existing entries are replaced rather than rejected, which
+        is what lets a seed file be edited after it has already been loaded.
+
+        All-or-nothing: if any entry fails structural validation, nothing in the file is
+        persisted. References to base-rule rule IDs and base-state state machine IDs are recorded
+        as-is and validated lazily at instance start time, not at import time.
       requestBody:
         required: true
         content:
@@ -141,12 +173,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportResult"
 
-  /processes/{processId}/export:
+  /organizations/{orgKey}/workflows/{workflowId}/export:
     parameters:
-      - $ref: "#/components/parameters/ProcessIdParam"
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
     get:
-      operationId: exportProcessDefinition
-      summary: Export a single process definition as SPEM YAML
+      operationId: exportWorkflow
+      tags: [ Workflows ]
+      summary: Export a single workflow as SPEM YAML
+      description: >-
+        Self-contained: the document carries the role, artifact, task and tool definitions the
+        workflow references alongside the workflow itself, so the result can be fed straight back
+        to /workflows/import — including into another organization.
       responses:
         "200":
           description: YAML file
@@ -158,11 +196,337 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Role Definitions ──────────────────────────────────────
+  # A tenant-level catalog entity rather than a child of one workflow: the same role takes part in
+  # many workflows, each of which references it through a RoleUse. `id` is the author-chosen
+  # business key, unique per organization — the convention `/tools` already follows.
+
+  /organizations/{orgKey}/roles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listRoleDefinitions
+      tags: [ Role Definitions ]
+      summary: List all role definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+      responses:
+        "200":
+          description: Role definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleDefinition"
+
+    post:
+      operationId: createRoleDefinition
+      tags: [ Role Definitions ]
+      summary: Create a new role definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/roles/{roleId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/RoleIdParam"
+    get:
+      operationId: getRoleDefinition
+      tags: [ Role Definitions ]
+      summary: Get a single role definition
+      responses:
+        "200":
+          description: Role definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateRoleDefinition
+      tags: [ Role Definitions ]
+      summary: Replace a role definition
+      description: >-
+        Supply the `version` you last read to be refused with 409 rather than silently overwriting a
+        concurrent edit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteRoleDefinition
+      tags: [ Role Definitions ]
+      summary: Delete a role definition
+      description: >-
+        Refused while anything still names this role: a workflow listing it in roles or naming it
+        in tasks[].performedBy, or a task definition offering it in performedByRoles. Deleting it
+        regardless would leave those references dangling, and a workflow's referential integrity is
+        checked when the workflow is saved, not when it is started.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Artifact Definitions ──────────────────────────────────
+  # SPEM's work product, under the name the platform uses for it. A catalog entity like a role: the
+  # same artifact is produced or consumed by tasks of several workflows, so it is defined once and
+  # referenced by id. Everything a task reads or writes is one of these, because an artifact is
+  # also where the lifecycle lives — `artifactType` says what kind of thing it is and
+  # `stateMachineId` which base-state machine governs it.
+
+  /organizations/{orgKey}/artifacts:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listArtifactDefinitions
+      tags: [ Artifact Definitions ]
+      summary: List all artifact definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+      responses:
+        "200":
+          description: Artifact definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArtifactDefinition"
+
+    post:
+      operationId: createArtifactDefinition
+      tags: [ Artifact Definitions ]
+      summary: Create a new artifact definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/artifacts/{artifactId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ArtifactIdParam"
+    get:
+      operationId: getArtifactDefinition
+      tags: [ Artifact Definitions ]
+      summary: Get a single artifact definition
+      responses:
+        "200":
+          description: Artifact definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateArtifactDefinition
+      tags: [ Artifact Definitions ]
+      summary: Replace an artifact definition
+      description: >-
+        Supply the `version` you last read to be refused with 409 rather than silently overwriting a
+        concurrent edit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteArtifactDefinition
+      tags: [ Artifact Definitions ]
+      summary: Delete an artifact definition
+      description: >-
+        Refused while a workflow lists it in artifacts, a task definition names it in inputs or
+        outputs, or a role definition claims it in responsibleFor.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Task Definitions ──────────────────────────────────────
+  # The reusable half of a task. Its per-workflow half is a TaskUse inside the referencing
+  # workflow — see the TaskDefinitionInput schema for why the split falls where it does.
+
+  /organizations/{orgKey}/tasks:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listTaskDefinitions
+      tags: [ Task Definitions ]
+      summary: List all task definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+      responses:
+        "200":
+          description: Task definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskDefinition"
+
+    post:
+      operationId: createTaskDefinition
+      tags: [ Task Definitions ]
+      summary: Create a new task definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/tasks/{taskId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/TaskIdParam"
+    get:
+      operationId: getTaskDefinition
+      tags: [ Task Definitions ]
+      summary: Get a single task definition
+      responses:
+        "200":
+          description: Task definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateTaskDefinition
+      tags: [ Task Definitions ]
+      summary: Replace a task definition
+      description: >-
+        Supply the `version` you last read to be refused with 409 rather than silently overwriting a
+        concurrent edit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteTaskDefinition
+      tags: [ Task Definitions ]
+      summary: Delete a task definition
+      description: Refused while any workflow still names this task in a TaskUse.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+
   # ── Tool Definitions ──────────────────────────────────────
 
-  /tools:
+  /organizations/{orgKey}/tools:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
       operationId: listToolDefinitions
+      tags: [ Tool Definitions ]
       summary: List all tool definitions
       parameters:
         - $ref: "#/components/parameters/WhereParam"
@@ -179,6 +543,7 @@ paths:
 
     post:
       operationId: createToolDefinition
+      tags: [ Tool Definitions ]
       summary: Create a new tool definition (external REST service)
       requestBody:
         required: true
@@ -198,15 +563,13 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /tools/{toolId}:
+  /organizations/{orgKey}/tools/{toolId}:
     parameters:
-      - name: toolId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ToolIdParam"
     get:
       operationId: getToolDefinition
+      tags: [ Tool Definitions ]
       summary: Get a tool definition
       responses:
         "200":
@@ -220,7 +583,11 @@ paths:
 
     put:
       operationId: updateToolDefinition
+      tags: [ Tool Definitions ]
       summary: Update a tool definition
+      description: >-
+        Supply the `version` you last read to be refused with 409 rather than silently overwriting a
+        concurrent edit.
       requestBody:
         required: true
         content:
@@ -234,12 +601,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ToolDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
     delete:
       operationId: deleteToolDefinition
+      tags: [ Tool Definitions ]
       summary: Delete a tool definition
+      description: >-
+        Refused while a workflow lists it in tools, or a task definition's SERVICE_STEP names it in
+        toolDefinitionId.
       responses:
         "204":
           description: Deleted
@@ -248,31 +623,156 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  # ── Workflow Diagrams ─────────────────────────────────────
+  # Where one workflow's tasks, lanes, work products and tools sit on the graphical modeler's
+  # canvas. Purely presentational, and a resource of its own rather than fields on Workflow, for
+  # the two reasons base-state-api.yaml's diagram layer gives: dragging a task must never risk a
+  # whole-document replace of the workflow's composition, and the two are written by different
+  # gestures at very different rates, so one `version` would make an arrangement and an edit
+  # collide for no reason.
+  #
+  # 1:1 with the workflow it lays out, and addressed by the same workflowId. Unlike base-state's
+  # layout, a row is keyed by an opaque nodeId/edgeId rather than by a domain key: a modeler node
+  # stands for a task, a lane, an artifact or a tool, so its id is composite (`task:<id>`,
+  # `lane:<roleId>`) and an edge's is derived from the two ends it joins.
+
+  /organizations/{orgKey}/workflow-diagrams:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listWorkflowDiagrams
+      tags: [ Workflow Diagrams ]
+      summary: List the organization's workflow diagram layouts
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of diagram layouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_WorkflowDiagram"
+
+  /organizations/{orgKey}/workflow-diagrams/{workflowId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/WorkflowIdParam"
+    get:
+      operationId: getWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Get the diagram layout of one workflow
+      description: >-
+        404 when the workflow has never been arranged. That is not an error condition for the
+        modeler — it is how it learns to keep the automatic swimlane layout — and it is
+        deliberately distinguishable from a layout that exists but is empty.
+      responses:
+        "200":
+          description: The diagram layout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: saveWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Create or replace the diagram layout of one workflow
+      description: >-
+        Whole-document replace, and an **upsert** — `201` the first time a workflow is arranged,
+        `200` every time after. Deliberately not the POST-create / PUT-replace pair /workflows
+        uses: there, a second workflow with the same id is a genuine user error worth a 409,
+        whereas saving a layout twice is the normal case. The client always knows workflowId, so
+        nothing is server-assigned and an upsert costs neither a GET-then-decide round trip nor a
+        race on first save.
+
+        Requires the workflow to exist — 404 otherwise, since a layout for a workflow that does
+        not exist has nothing to lay out. Individual `nodeId` and `edgeId` values are **not**
+        validated against it: updateWorkflow is free to drop a task, a layout row naming a node
+        nothing renders any more is harmless (the modeler ignores what it cannot place, and the
+        next save prunes it), and rejecting it would make two independent, individually-valid
+        saves fail depending only on the order they arrive in.
+
+        Optimistic-locked the same way updateWorkflow is, and by the same mechanism: supply the
+        `version` you last read and the write is refused with 409 unless it still matches. Two
+        modelers who both opened version 3 therefore cannot both save over it. Omitting `version`
+        overwrites unconditionally, which is what the first save of a workflow necessarily does.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDiagramInput"
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDiagram"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: workflowId names no workflow in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteWorkflowDiagram
+      tags: [ Workflow Diagrams ]
+      summary: Discard the diagram layout of one workflow
+      description: >-
+        Resets the modeler to its automatic swimlane layout; the workflow itself is untouched.
+        Deleting the workflow discards its layout too, so this endpoint exists for the
+        "re-arrange from scratch" gesture rather than for cleanup.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ─────────────────────────────────────────────────────────────
   # EXECUTION API  (runtime)
   # ─────────────────────────────────────────────────────────────
 
-  # ── Process Instances ─────────────────────────────────────
+  # ── Workflow Instances ─────────────────────────────────────
 
-  /instances:
+  /organizations/{orgKey}/instances:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
     get:
-      operationId: listProcessInstances
-      summary: List process instances
+      operationId: listWorkflowInstances
+      tags: [ Workflow Instances ]
+      summary: List workflow instances
       parameters:
-        - name: processId
+        - name: workflowId
           in: query
-          description: Filter by process definition id
+          description: Filter by workflow id
           schema:
             type: string
         - name: status
           in: query
           schema:
-            $ref: "#/components/schemas/ProcessInstanceStatus"
+            $ref: "#/components/schemas/WorkflowInstanceStatus"
         - name: entityId
           in: query
           description: >-
-            Filter by the base-entity entity instance this process is running against.
-            Useful when a process is tied to a specific entity (e.g. "delivery process for
+            Filter by the base-entity entity instance this workflow is running against.
+            Useful when a workflow is tied to a specific entity (e.g. "delivery workflow for
             Order #1234").
           schema:
             type: string
@@ -282,56 +782,62 @@ paths:
         - $ref: "#/components/parameters/SizeParam"
       responses:
         "200":
-          description: Paged list of process instances
+          description: >-
+            Paged list of workflow instances, each with its task and artifact instances. Full
+            shape rather than a summary, for the reason given on `listWorkflows`.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageOf_ProcessInstanceSummary"
+                $ref: "#/components/schemas/PageOf_WorkflowInstance"
 
     post:
-      operationId: startProcessInstance
-      summary: Start a new process instance
+      operationId: startWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Start a new workflow instance
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StartProcessRequest"
+              $ref: "#/components/schemas/StartWorkflowRequest"
       responses:
         "201":
-          description: Instance created and first activities activated
+          description: Instance created and first tasks activated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstance"
+                $ref: "#/components/schemas/WorkflowInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
-          description: Process definition not found
+          description: Workflow not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}:
+  /organizations/{orgKey}/instances/{instanceId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
-      operationId: getProcessInstance
-      summary: Get a process instance with its activity and work product instances
+      operationId: getWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Get a workflow instance with its task and artifact instances
       responses:
         "200":
-          description: Full process instance
+          description: Full workflow instance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstance"
+                $ref: "#/components/schemas/WorkflowInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
     delete:
-      operationId: cancelProcessInstance
-      summary: Cancel a running process instance
+      operationId: cancelWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Cancel a running workflow instance
       requestBody:
         content:
           application/json:
@@ -352,65 +858,63 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Activity Instances ────────────────────────────────────
+  # ── Task Instances ─────────────────────────────────────────
 
-  /instances/{instanceId}/activities:
+  /organizations/{orgKey}/instances/{instanceId}/tasks:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
-      operationId: listActivityInstances
-      summary: List all activity instances for a process instance
+      operationId: listTaskInstances
+      tags: [ Task Instances ]
+      summary: List all task instances for a workflow instance
       parameters:
         - name: status
           in: query
           schema:
-            $ref: "#/components/schemas/ActivityInstanceStatus"
+            $ref: "#/components/schemas/TaskInstanceStatus"
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
       responses:
         "200":
-          description: Activity instances
+          description: Task instances
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ActivityInstance"
+                  $ref: "#/components/schemas/TaskInstance"
 
-  /instances/{instanceId}/activities/{activityId}:
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     get:
-      operationId: getActivityInstance
-      summary: Get a single activity instance
+      operationId: getTaskInstance
+      tags: [ Task Instances ]
+      summary: Get a single task instance
       responses:
         "200":
-          description: Activity instance
+          description: Task instance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /instances/{instanceId}/activities/{activityId}/assign:
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/assign:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: assignActivity
-      summary: Assign an active activity to a user
+      operationId: assignTask
+      tags: [ Task Instances ]
+      summary: Assign an active task to a user
       description: >-
-        The assignee must hold a role that matches the activity's performedBy role
+        The assignee must hold a role that matches the task's performedBy role
         definition. Role membership is managed by base-entity; base-workflow validates by
         calling base-entity's role membership query.
       requestBody:
@@ -418,75 +922,71 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignActivityRequest"
+              $ref: "#/components/schemas/AssignTaskRequest"
       responses:
         "200":
           description: Assigned
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Activity is not in ACTIVE status
+          description: Task is not in ACTIVE status
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}/activities/{activityId}/complete:
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/complete:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: completeActivity
-      summary: Mark an activity as completed
+      operationId: completeTask
+      tags: [ Task Instances ]
+      summary: Mark a task as completed
       description: >-
-        Triggers evaluation of the activity's postcondition (via base-rule) and, if it
-        passes, publishes ActivityCompletedEvent. base-state will react to that event and
-        fire the corresponding state machine transition on any linked work products.
-        base-workflow will then re-evaluate which activities become ACTIVE next.
-        If the postcondition fails, the activity stays ACTIVE and the response includes
+        Triggers evaluation of the task's postcondition (via base-rule) and, if it
+        passes, publishes TaskCompletedEvent. base-state will react to that event and
+        fire the corresponding state machine transition on any linked artifacts.
+        base-workflow will then re-evaluate which tasks become ACTIVE next.
+        If the postcondition fails, the task stays ACTIVE and the response includes
         the evaluation detail.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompleteActivityRequest"
+              $ref: "#/components/schemas/CompleteTaskRequest"
       responses:
         "200":
           description: Completion accepted (postcondition passed) or rejected (postcondition failed)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CompleteActivityResponse"
+                $ref: "#/components/schemas/CompleteTaskResponse"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Activity is not in ACTIVE status
+          description: Task is not in ACTIVE status
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /instances/{instanceId}/activities/{activityId}/skip:
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/skip:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: activityId
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/TaskIdParam"
     post:
-      operationId: skipActivity
-      summary: Skip an activity (manager override)
+      operationId: skipTask
+      tags: [ Task Instances ]
+      summary: Skip a task (manager override)
       requestBody:
         content:
           application/json:
@@ -501,19 +1001,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActivityInstance"
+                $ref: "#/components/schemas/TaskInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
-  # ── Work Product Instances ────────────────────────────────
+  # ── Artifact Instances ────────────────────────────────────
+  # Embedded in their workflow instance, unlike the ArtifactDefinition they are made from: an
+  # instance has no life apart from the run that produced it.
 
-  /instances/{instanceId}/work-products:
+  /organizations/{orgKey}/instances/{instanceId}/artifacts:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
     get:
-      operationId: listWorkProductInstances
+      operationId: listArtifactInstances
+      tags: [ Artifact Instances ]
       summary: >-
-        List work product instances in a process instance. Each entry carries the
+        List artifact instances in a workflow instance. Each entry carries the
         current state from base-state (read-only from base-workflow's perspective)
         and the entityId linking to the actual data in base-entity.
       parameters:
@@ -521,49 +1025,157 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
       responses:
         "200":
-          description: Work product instances
+          description: Artifact instances
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/WorkProductInstance"
+                  $ref: "#/components/schemas/ArtifactInstance"
 
-  /instances/{instanceId}/work-products/{workProductId}:
+  /organizations/{orgKey}/instances/{instanceId}/artifacts/{artifactInstanceId}:
     parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
       - $ref: "#/components/parameters/InstanceIdParam"
-      - name: workProductId
+      - name: artifactInstanceId
         in: path
         required: true
         schema:
           type: string
     get:
-      operationId: getWorkProductInstance
-      summary: Get a single work product instance
+      operationId: getArtifactInstance
+      tags: [ Artifact Instances ]
+      summary: Get a single artifact instance
       responses:
         "200":
-          description: Work product instance
+          description: Artifact instance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkProductInstance"
+                $ref: "#/components/schemas/ArtifactInstance"
         "404":
           $ref: "#/components/responses/NotFound"
 
-# ─────────────────────────────────────────────────────────────
-# COMPONENTS
-# ─────────────────────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────
+  # COMPONENTS
+  # ─────────────────────────────────────────────────────────────
+  # ── Translations ──
+  # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
+  # templates rather than one with an optional segment: 4 vs 5 segments is what makes them
+  # unambiguous, and it mirrors `assets/i18n/<lang>.json` and `assets/i18n/<scope>/<lang>.json`.
+  #
+  # `workflow` is the feature's own service root. Every feature serves its own translations from its
+  # own store, so that a later split into services with separate databases moves this segment into the
+  # host rather than rewriting the resource. In the monolith it is also what keeps seven identical
+  # `/translations` paths from colliding into an ambiguous mapping at startup.
+  /organizations/{orgKey}/workflow/translations/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Workflow Translations
+      summary: Root translation bundle of this feature for one language
+      operationId: getWorkflowTranslations
+      description: >-
+        The bundle that has no transloco scope — the equivalent of `assets/i18n/<lang>.json`.
+        Answers 200 with an empty object when nothing has been seeded, rather than 404: the
+        frontend loader reaches here only after an asset miss, and an error status would make an
+        unseeded locale indistinguishable from a broken backend.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+  /organizations/{orgKey}/workflow/translations/{scope}/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationScopeParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Workflow Translations
+      summary: One scoped translation bundle of this feature
+      operationId: getWorkflowScopedTranslations
+      description: >-
+        The equivalent of `assets/i18n/<scope>/<lang>.json`. Keys are relative to the scope, as in
+        the asset files: transloco prefixes them with the scope alias itself.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this scope and locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+
 components:
 
   parameters:
-    ProcessIdParam:
-      name: processId
+    TranslationLocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/Locale'
+
+    TranslationScopeParam:
+      name: scope
+      in: path
+      required: true
+      description: Transloco scope of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/TranslationScope'
+
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+      description: >-
+        Organisation key used to scope all base-workflow resources for multi-tenancy.
+        Matches the orgKey convention used across processpuzzle-core (OrganizationGuard).
+    WorkflowIdParam:
+      name: workflowId
       in: path
       required: true
       schema:
         type: string
     InstanceIdParam:
       name: instanceId
+      in: path
+      required: true
+      schema:
+        type: string
+    RoleIdParam:
+      name: roleId
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      description: >-
+        The task's `taskDefinitionId`, **not** `TaskInstance.id`. A task appears at most once per
+        workflow, so its definition id addresses it unambiguously within a run — which is what every
+        task-scoped operation below resolves it by. Passing the UUID in `TaskInstance.id` answers 404.
+      schema:
+        type: string
+    ArtifactIdParam:
+      name: artifactId
+      in: path
+      required: true
+      schema:
+        type: string
+    ToolIdParam:
+      name: toolId
       in: path
       required: true
       schema:
@@ -622,18 +1234,39 @@ components:
   schemas:
 
     # ── Enums ──────────────────────────────────────────────
-
-    ProcessInstanceStatus:
+    WorkflowInstanceStatus:
       type: string
       enum: [ ACTIVE, COMPLETED, CANCELLED, SUSPENDED ]
 
-    ActivityInstanceStatus:
+    TaskInstanceStatus:
       type: string
       enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED ]
 
-    WorkProductType:
+    TaskStepType:
       type: string
-      enum: [ ARTIFACT, DELIVERABLE, OUTCOME, ENTITY ]
+      enum: [ USER_STEP, SERVICE_STEP ]
+      default: USER_STEP
+      description: >-
+        Whether completing the step is a human act or a call the engine makes. SERVICE_STEP is the
+        one that reads `toolDefinitionId` / `toolOperation`; on a USER_STEP those fields are ignored.
+
+    JoinType:
+      type: string
+      enum: [ ALL, ANY ]
+      default: ALL
+      description: >-
+        How a task's `dependsOn` set is satisfied. ALL (the default) waits for every named task to
+        reach a terminal status; ANY waits for the first of them. Immaterial when `dependsOn` is
+        empty — such a task is eligible from workflow start either way.
+
+    ArtifactType:
+      type: string
+      enum: [ DOCUMENT, ENTITY, WIDGET ]
+      description: >-
+        SPEM's kinds of work product, plus ENTITY for one whose data is a base-entity instance.
+        Names the kind, not the schema: every value here describes an ArtifactDefinition, and this
+        field says which kind of one it is. `artifactTypeId` then names the concrete document,
+        entity or widget.
 
     AuthType:
       type: string
@@ -643,75 +1276,60 @@ components:
       type: string
       enum: [ GET, POST, PUT, PATCH, DELETE ]
 
-    # ── Process Definition ─────────────────────────────────
+    # ─────────────────────────────────────────────────────────
+    # DEFINITION LAYER — SPEM's Method Content
+    # ─────────────────────────────────────────────────────────
+    # Reusable, context-free catalog entities, each org-scoped with its own CRUD resource and its own
+    # (orgKey, id) key. They reference each other by plain id — a role is responsibleFor artifact
+    # ids, a task names role ids and artifact ids — which is what lets the authoring UI render each
+    # reference as a RELATED_ENTITIES control over the referenced entity's own list.
+    #
+    # Every definition follows the platform's write/read twin convention (base-entity, base-rule,
+    # base-state): `<X>Input` is what a POST/PUT carries, `<X>` adds the server-owned version and
+    # audit stamps on top.
 
-    ProcessDefinitionSummary:
+    # ── Role Definition ─────────────────────────────────────
+    RoleDefinitionInput:
       type: object
+      required: [ id, name ]
       properties:
         id:
           type: string
+          description: Role code, chosen by the author and unique per organization.
+          example: clerk
         name:
           type: string
         description:
           type: string
-        version:
-          type: integer
-          format: int64
-        activeInstances:
-          type: integer
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    ProcessDefinitionInput:
-      type: object
-      required: [ id, name, activities ]
-      properties:
-        id:
-          type: string
-          example: software-delivery
-        name:
-          type: string
-        description:
-          type: string
-        extends:
+        responsibleFor:
+          type: array
+          description: >-
+            Ids of the ArtifactDefinitions this role owns the outcome of. Ownership, not access:
+            what a task reads or writes is stated on the task.
+          items:
+            type: string
+          example: [ fulfillment-invoice ]
+        entityRoleId:
           type: string
           nullable: true
           description: >-
-            ID of a parent ProcessDefinition to inherit roles, work products and activities
-            from. Follows the same extends/override convention as base-rule.
-        roles:
-          type: array
-          items:
-            $ref: "#/components/schemas/RoleDefinitionInput"
-        workProducts:
-          type: array
-          items:
-            $ref: "#/components/schemas/WorkProductDefinitionInput"
-        activities:
-          type: array
-          items:
-            $ref: "#/components/schemas/ActivityDefinitionInput"
-        tools:
-          type: array
+            Id of the corresponding role in base-entity. When set, base-workflow checks that a user
+            holds this entity role before allowing them to be assigned a task this role performs.
+        version:
+          type: integer
+          format: int64
+          nullable: true
           description: >-
-            References to ToolDefinitions used by activities in this process. Defined
-            separately via /tools so they can be shared across process definitions.
-          items:
-            type: string
-            description: Tool definition id
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one — which is what makes a full-replacement PUT safe against a
+            lost update: two editors who both loaded version 3 cannot both save over it. Omit it to
+            overwrite unconditionally.
 
-    ProcessDefinition:
+    RoleDefinition:
       allOf:
-        - $ref: "#/components/schemas/ProcessDefinitionInput"
+        - $ref: "#/components/schemas/RoleDefinitionInput"
         - type: object
           properties:
-            version:
-              type: integer
-              format: int64
             createdAt:
               type: string
               format: date-time
@@ -719,168 +1337,67 @@ components:
               type: string
               format: date-time
 
-    # ── Role Definition ────────────────────────────────────
-
-    RoleDefinitionInput:
+    # ── Artifact Definition ─────────────────────────────────
+    ArtifactDefinitionInput:
       type: object
-      required: [ id, name ]
+      required: [ id, name, artifactType ]
       properties:
         id:
           type: string
-          example: developer
+          description: Artifact code, chosen by the author and unique per organization.
+          example: fulfillment-invoice
         name:
           type: string
         description:
           type: string
-        entityRoleId:
+        artifactType:
+          $ref: "#/components/schemas/ArtifactType"
+        artifactTypeId:
           type: string
           nullable: true
           description: >-
-            ID of the corresponding role definition in base-entity. When set,
-            base-workflow validates that a user holds this entity role before
-            allowing them to be assigned to activities that require this role.
-
-    # ── Work Product Definition ────────────────────────────
-
-    WorkProductDefinitionInput:
-      type: object
-      required: [ id, name, type ]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        type:
-          $ref: "#/components/schemas/WorkProductType"
-        entityTypeId:
-          type: string
-          nullable: true
-          description: >-
-            ID of the entity type in base-entity that backs this work product's data.
-            base-workflow uses this to link a WorkProductInstance to its entity instance.
+            Id of the concrete thing this artifact is: a base-entity entity name when artifactType
+            is ENTITY, a base-document document name when DOCUMENT, or a widget name when WIDGET.
+          example: order
         stateMachineId:
           type: string
           nullable: true
           description: >-
-            ID of the state machine definition in base-state that governs this work
-            product's lifecycle. base-workflow passes this ID when publishing
-            WorkProductInstanceCreatedEvent so base-state can initialize the right machine.
-
-    # ── Activity Definition ────────────────────────────────
-
-    ActivityDefinitionInput:
-      type: object
-      required: [ id, name, performedBy ]
-      properties:
-        id:
-          type: string
-          example: write-spec
-        name:
-          type: string
-        description:
-          type: string
-        performedBy:
-          type: string
-          description: Role definition id
-        inputs:
-          type: array
-          description: Work product definition ids this activity reads
-          items:
-            type: string
-        outputs:
-          type: array
-          description: Work product definition ids this activity produces or modifies
-          items:
-            type: string
-        preconditionRuleId:
-          type: string
+            Id of the state machine definition in base-state that governs this artifact's
+            lifecycle. base-workflow passes it when publishing ArtifactInstanceCreatedEvent so
+            base-state can initialize the right machine.
+        version:
+          type: integer
+          format: int64
           nullable: true
           description: >-
-            ID of a rule in base-rule. Evaluated when this activity is a candidate to
-            become ACTIVE. If it returns false, the activity stays PENDING.
-        postconditionRuleId:
-          type: string
-          nullable: true
-          description: >-
-            ID of a rule in base-rule. Evaluated when a user calls /complete. If it
-            returns false, completion is rejected and the activity stays ACTIVE.
-        steps:
-          type: array
-          items:
-            $ref: "#/components/schemas/StepDefinitionInput"
-        dependsOn:
-          type: array
-          description: >-
-            Activity definition ids that must be COMPLETED before this activity can
-            become ACTIVE. Empty means the activity is eligible from process start.
-          items:
-            type: string
-        parallel:
-          type: boolean
-          default: false
-          description: >-
-            When true, this activity can run concurrently with its siblings that share
-            the same dependsOn. When false (default), activities within the same
-            dependency level run sequentially in definition order.
-        override:
-          type: boolean
-          default: false
-          description: >-
-            When this ProcessDefinition extends another, marks this activity as replacing
-            an identically-named activity from the parent rather than adding to it.
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one — which is what makes a full-replacement PUT safe against a
+            lost update: two editors who both loaded version 3 cannot both save over it. Omit it to
+            overwrite unconditionally.
 
-    # ── Step Definition ────────────────────────────────────
+    ArtifactDefinition:
+      allOf:
+        - $ref: "#/components/schemas/ArtifactDefinitionInput"
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
 
-    StepDefinitionInput:
-      type: object
-      required: [ id, name ]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        toolId:
-          type: string
-          nullable: true
-          description: >-
-            Tool definition id. When set, completing this step triggers a REST call
-            to the tool's specified operation. The call is made by base-workflow;
-            the result is made available to subsequent steps via the process context.
-        toolOperation:
-          type: string
-          nullable: true
-          description: Operation id within the referenced tool definition.
-        inputMapping:
-          type: object
-          nullable: true
-          description: >-
-            Maps fields from the process context / work product instances to tool
-            operation input parameters. Keys are tool parameter names, values are
-            PPCL expressions evaluated against the process context.
-          additionalProperties:
-            type: string
-        outputMapping:
-          type: object
-          nullable: true
-          description: >-
-            Maps tool response fields back into the process context. Keys are context
-            variable names, values are JSONPath expressions into the tool response.
-          additionalProperties:
-            type: string
-
-    # ── Tool Definition ────────────────────────────────────
-
+    # ── Tool Definition ─────────────────────────────────────
+    # Both the capability and how to reach it. Credentials are the one thing kept out: `auth` names
+    # a secret rather than carrying it.
     ToolDefinitionInput:
       type: object
       required: [ id, name, baseUrl ]
       properties:
         id:
           type: string
-          example: jira
+          example: automated-check-tool
         name:
           type: string
         description:
@@ -888,22 +1405,32 @@ components:
         baseUrl:
           type: string
           format: uri
+          example: https://checks.example.com
         auth:
           $ref: "#/components/schemas/ToolAuthConfig"
         operations:
           type: array
           items:
-            $ref: "#/components/schemas/ToolOperationInput"
+            $ref: "#/components/schemas/ToolOperationDefinition"
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one — which is what makes a full-replacement PUT safe against a
+            lost update: two editors who both loaded version 3 cannot both save over it. Omit it to
+            overwrite unconditionally.
 
     ToolDefinition:
       allOf:
         - $ref: "#/components/schemas/ToolDefinitionInput"
         - type: object
           properties:
-            version:
-              type: integer
-              format: int64
             createdAt:
+              type: string
+              format: date-time
+            updatedAt:
               type: string
               format: date-time
 
@@ -917,69 +1444,436 @@ components:
           type: string
           nullable: true
           description: >-
-            Key name of the secret in the application's secret store (environment
-            variable name or Vault path). base-workflow never stores credential values
-            directly — only the reference.
+            Key name of the secret in the application's secret store (environment variable name or
+            Vault path). base-workflow never stores credential values directly — only the reference.
 
-    ToolOperationInput:
+    ToolOperationDefinition:
       type: object
       required: [ id, method, path ]
+      description: >-
+        One callable operation of a tool. Has no resource of its own: an operation is only ever
+        addressed through the tool that owns it.
       properties:
         id:
           type: string
-          example: create-issue
+          example: inventory-check
         method:
           $ref: "#/components/schemas/HttpMethod"
         path:
           type: string
-          example: /rest/api/3/issue
+          description: Appended to the tool's baseUrl.
+          example: /v1/inventory/check
         description:
           type: string
         payloadTemplate:
           type: string
           nullable: true
           description: >-
-            JSON template for the request body. Supports ${expression} placeholders
-            evaluated as PPCL expressions against the current process context.
+            JSON template for the request body. Supports ${expression} placeholders evaluated as
+            PPCL expressions against the current workflow context.
         expectedStatusCodes:
           type: array
           items:
             type: integer
           description: HTTP status codes treated as successful. Defaults to [200, 201, 204].
 
-    # ── Process Instance (runtime) ─────────────────────────
-
-    StartProcessRequest:
+    # ── Task Definition ─────────────────────────────────────
+    # The reusable half of a task: what it is, which artifacts it reads and writes, which rules
+    # guard it, and which roles are *able* to perform it. The per-workflow half — which single role
+    # does perform it there, what it waits for, whether it may run in parallel — lives in the
+    # referencing workflow's `tasks` as a TaskUse, because each of those answers is a property of
+    # the workflow and not of the task: `dependsOn` names siblings of one workflow, and `override`
+    # belongs to that workflow's `extends` chain.
+    TaskDefinitionInput:
       type: object
-      required: [ processDefinitionId ]
+      required: [ id, name, performedByRoles ]
       properties:
-        processDefinitionId:
+        id:
+          type: string
+          example: review-order
+        name:
+          type: string
+        description:
+          type: string
+        performedByRoles:
+          type: array
+          minItems: 1
+          description: >-
+            Role definition ids able to perform this task. A list because the task is shared: each
+            workflow referencing it picks exactly one of these as that workflow's TaskUse
+            performedBy. Naming a role here does not put the task in any workflow.
+          items:
+            type: string
+        inputs:
+          type: array
+          description: >-
+            Ids of the ArtifactDefinitions this task reads. Ids rather than typed references:
+            an artifact's own `artifactType` already says whether it is an entity, a document or a
+            widget, so anything a task touches is declared as an artifact of the organization.
+          items:
+            type: string
+        outputs:
+          type: array
+          description: Ids of the ArtifactDefinitions this task produces or modifies.
+          items:
+            type: string
+        preconditionRuleId:
+          type: string
+          nullable: true
+          description: >-
+            Id of a rule in base-rule. Evaluated when this task is a candidate to become ACTIVE.
+            If it returns false, the task stays PENDING.
+        postconditionRuleId:
+          type: string
+          nullable: true
+          description: >-
+            Id of a rule in base-rule. Evaluated when a user calls /complete. If it returns false,
+            completion is rejected and the task stays ACTIVE.
+        steps:
+          type: array
+          description: >-
+            Ordered guidance for completing this task. A USER_STEP is informal and not enforced by
+            the engine; a SERVICE_STEP names a tool operation the engine calls.
+          items:
+            $ref: "#/components/schemas/TaskStepDefinition"
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one — which is what makes a full-replacement PUT safe against a
+            lost update: two editors who both loaded version 3 cannot both save over it. Omit it to
+            overwrite unconditionally.
+
+    TaskDefinition:
+      allOf:
+        - $ref: "#/components/schemas/TaskDefinitionInput"
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    # ── Task Step Definition ────────────────────────────────
+    # One flat schema with a `stepType` discriminant field rather than a polymorphic subtype tree:
+    # this is how every ProcessPuzzle contract models a variant, and it keeps the value a plain
+    # Jackson round-trip in the JSONB column the steps are stored in.
+    TaskStepDefinition:
+      type: object
+      required: [ id, name ]
+      properties:
+        id:
+          type: string
+          example: check-items
+        name:
+          type: string
+        description:
+          type: string
+        stepType:
+          $ref: "#/components/schemas/TaskStepType"
+        toolDefinitionId:
+          type: string
+          nullable: true
+          description: >-
+            Tool definition id. On a SERVICE_STEP, completing the step triggers a REST call to that
+            tool's operation; the result is made available to later steps via the workflow context.
+        toolOperation:
+          type: string
+          nullable: true
+          description: Operation id within the referenced tool definition.
+        inputMapping:
+          type: object
+          nullable: true
+          description: >-
+            Maps the workflow context and artifact instances onto tool operation inputs. Keys are
+            tool parameter names, values are PPCL expressions evaluated against the workflow context.
+          additionalProperties:
+            type: string
+        outputMapping:
+          type: object
+          nullable: true
+          description: >-
+            Maps tool response fields back into the workflow context. Keys are context variable
+            names, values are JSONPath expressions into the tool response.
+          additionalProperties:
+            type: string
+
+    # ─────────────────────────────────────────────────────────
+    # WORKFLOW LAYER — SPEM's Process
+    # ─────────────────────────────────────────────────────────
+    # A Workflow composes the catalog. Its four reference lists hold `...Use` objects rather than
+    # bare ids: a Use is where configuration that is true of a definition *only in this workflow*
+    # belongs, so adding such a field later is not a breaking change to the reference list's shape.
+    #
+    # There is no `WorkflowUse` and no `WorkflowDefinition` — a workflow is not itself reused inside
+    # another, it is *extended* (see `extends`), which is a different relation.
+
+    #-----------------------------------------------------------------------------------+
+    #                            WORKFLOW START MECHANISMS                              |
+    #------------------------------------+----------------------------------------------+
+    #       START MECHANISM              |               SPEM METAMODEL EQUIVALENT      |
+    #------------------------------------+----------------------------------------------+
+    # 1. Artifact Driven (Data-Flow)     | Artifact / Precondition                      |
+    # 2. Event / Signal Driven           | Triggering Event / External Task Execution   |
+    # 3. On-Demand / Manual Role Launch  | Role Definition + Task Use                   |
+    # 4. Scheduled / Temporal Start      | Time-based Precondition / Milestone Guard    |
+    #------------------------------------+----------------------------------------------+
+    WorkflowStartConditionType:
+      type: string
+      enum: [ INPUT_ARTIFACT, TRIGGERING_EVENT, ROLE_DEFINITION, TIME_BASED_PRECONDITION ]
+
+    WorkflowStartCondition:
+      type: object
+      required: [ startType ]
+      description: >-
+        How an instance of this workflow comes into being. `startType` selects the mechanism and
+        decides which of the remaining fields carry meaning; the others are ignored. A workflow
+        without a start condition can only be started explicitly through /instances.
+      properties:
+        startType:
+          $ref: "#/components/schemas/WorkflowStartConditionType"
+        requiredArtifacts:
+          type: array
+          description: INPUT_ARTIFACT — the artifacts, and optionally the states, that must be present.
+          items:
+            $ref: "#/components/schemas/RequiredStartArtifact"
+        eventType:
+          type: string
+          nullable: true
+          description: TRIGGERING_EVENT — the event that starts the workflow.
+          example: order.submitted
+        payloadMapping:
+          type: object
+          nullable: true
+          description: >-
+            TRIGGERING_EVENT — maps the event payload into the new instance's context. Keys are
+            context variable names, values are JSONPath expressions into the event.
+          additionalProperties:
+            type: string
+        authorizedRoles:
+          type: array
+          nullable: true
+          description: >-
+            ROLE_DEFINITION — role definition ids allowed to start the workflow by hand. Empty or
+            absent means any user may.
+          items:
+            type: string
+        milestoneRef:
+          type: string
+          nullable: true
+          description: TIME_BASED_PRECONDITION — the milestone whose arrival is the trigger.
+          example: MILESTONE_REACHED
+        preconditionExpression:
+          type: string
+          nullable: true
+          description: TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives.
+          example: milestone.status == 'PASSED'
+
+    RequiredStartArtifact:
+      type: object
+      required: [ artifactDefinitionId ]
+      properties:
+        artifactDefinitionId:
+          type: string
+          example: order-entity
+        state:
+          type: string
+          nullable: true
+          description: >-
+            State the artifact has to be in, as named by its base-state machine. Absent means any
+            state will do.
+          example: DRAFT
+
+    # ── Workflow ────────────────────────────────────────────
+    WorkflowInput:
+      type: object
+      required: [ id, name, tasks ]
+      properties:
+        id:
+          type: string
+          example: order-fulfillment-workflow
+        name:
+          type: string
+        description:
+          type: string
+        extends:
+          type: string
+          nullable: true
+          description: >-
+            Id of a parent workflow to inherit roles, artifacts, tools and task uses from. Follows
+            the same extends/override convention as base-rule.
+        startCondition:
+          $ref: "#/components/schemas/WorkflowStartCondition"
+        roles:
+          type: array
+          description: The RoleDefinitions taking part in this workflow.
+          items:
+            $ref: "#/components/schemas/RoleUse"
+        artifacts:
+          type: array
+          description: >-
+            The ArtifactDefinitions this workflow produces or consumes. A task of the workflow may
+            only name artifacts declared here.
+          items:
+            $ref: "#/components/schemas/ArtifactUse"
+        tools:
+          type: array
+          description: The ToolDefinitions this workflow's task steps may invoke.
+          items:
+            $ref: "#/components/schemas/ToolUse"
+        tasks:
+          type: array
+          minItems: 1
+          description: The tasks of this workflow, each pinned to the role performing it here.
+          items:
+            $ref: "#/components/schemas/TaskUse"
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one — which is what makes a full-replacement PUT safe against a
+            lost update: two editors who both loaded version 3 cannot both save over it. Omit it to
+            overwrite unconditionally.
+
+    Workflow:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowInput"
+        - type: object
+          properties:
+            activeInstances:
+              type: integer
+              readOnly: true
+              description: >-
+                Number of ACTIVE instances of this workflow. Server-computed; ignored on write.
+                Present so the list screen can show it without a second request — the list returns
+                the same full schema the single GET does, because base-entity's generated form reads
+                the record out of the loaded list rather than re-fetching it.
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    # ── Role Use ────────────────────────────────────────────
+    RoleUse:
+      type: object
+      required: [ roleDefinitionId ]
+      properties:
+        roleDefinitionId:
+          type: string
+          description: Id of a RoleDefinition of this organization.
+          example: clerk
+
+    # ── Artifact Use ────────────────────────────────────────
+    ArtifactUse:
+      type: object
+      required: [ artifactDefinitionId ]
+      properties:
+        artifactDefinitionId:
+          type: string
+          description: Id of an ArtifactDefinition of this organization.
+          example: order-entity
+
+    # ── Tool Use ────────────────────────────────────────────
+    ToolUse:
+      type: object
+      required: [ toolDefinitionId ]
+      properties:
+        toolDefinitionId:
+          type: string
+          description: Id of a ToolDefinition of this organization.
+          example: automated-check-tool
+
+    # ── Task Use ────────────────────────────────────────────
+    TaskUse:
+      type: object
+      required: [ taskDefinitionId, performedBy ]
+      description: >-
+        One task's place in one workflow. A TaskDefinition is shared, so everything true of it only
+        *here* lives on this row instead: which of the task's performedByRoles performs it, what has
+        to finish first, and whether it may run beside its siblings.
+
+        A task appears at most once per workflow. That is what lets dependsOn keep naming a plain
+        task definition id, and it makes the role-performs-task pair unique within the workflow by
+        construction rather than by a check.
+      properties:
+        taskDefinitionId:
+          type: string
+          description: Id of a TaskDefinition of this organization.
+          example: review-order
+        performedBy:
+          type: string
+          description: >-
+            Role definition id. Has to be one of the workflow's roles *and* one of the referenced
+            task's performedByRoles — the task says who is able to perform it, the workflow says
+            who does.
+          example: clerk
+        dependsOn:
+          type: array
+          description: >-
+            Task definition ids, of task uses of this same workflow, that must reach a terminal
+            status before this task can become ACTIVE. Empty means the task is eligible from
+            workflow start.
+          items:
+            type: string
+        joinType:
+          $ref: "#/components/schemas/JoinType"
+        parallel:
+          type: boolean
+          default: false
+          description: >-
+            When true, this task can run concurrently with its siblings that share the same
+            dependsOn. When false (default), tasks within the same dependency level run
+            sequentially in declaration order.
+        override:
+          type: boolean
+          default: false
+          description: >-
+            When this workflow extends another, marks this task use as replacing the parent's use of
+            the same task rather than adding to it.
+
+    # ── Workflow Instance (runtime) ─────────────────────────
+    StartWorkflowRequest:
+      type: object
+      required: [ workflowId ]
+      properties:
+        workflowId:
           type: string
         entityId:
           type: string
           nullable: true
           description: >-
-            Optional base-entity entity instance this process runs against. When set,
+            Optional base-entity entity instance this workflow runs against. When set,
             it is passed as context to rule evaluation and state machine triggers.
         context:
           type: object
           nullable: true
           description: >-
             Initial key/value context variables available to rule guards, postcondition
-            expressions, and tool payload templates throughout the process instance.
+            expressions, and tool payload templates throughout the workflow instance.
           additionalProperties: true
 
-    ProcessInstanceSummary:
+    # One flat schema rather than a `WorkflowInstanceSummary` base plus an `allOf` extension: the list
+    # endpoint returns the same full shape the single GET returns, so there is no second, lighter
+    # projection left to name. See `listWorkflowInstances` for why.
+    WorkflowInstance:
       type: object
       properties:
         id:
           type: string
-        processDefinitionId:
+        workflowId:
           type: string
-        processDefinitionName:
+        workflowName:
           type: string
         status:
-          $ref: "#/components/schemas/ProcessInstanceStatus"
+          $ref: "#/components/schemas/WorkflowInstanceStatus"
         entityId:
           type: string
           nullable: true
@@ -990,38 +1884,36 @@ components:
           type: string
           format: date-time
           nullable: true
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskInstance"
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactInstance"
+        context:
+          type: object
+          readOnly: true
+          description: >-
+            The instance's current context: the values it was started with, with every completed
+            task's `contextContribution` folded in, in completion order. Assembled per response
+            rather than stored as one accumulated field — see TaskInstance.contextContribution for
+            why. Server-computed; ignored on write.
+          additionalProperties: true
 
-    ProcessInstance:
-      allOf:
-        - $ref: "#/components/schemas/ProcessInstanceSummary"
-        - type: object
-          properties:
-            activities:
-              type: array
-              items:
-                $ref: "#/components/schemas/ActivityInstance"
-            workProducts:
-              type: array
-              items:
-                $ref: "#/components/schemas/WorkProductInstance"
-            context:
-              type: object
-              description: Current process context, updated by tool output mappings
-              additionalProperties: true
-
-    # ── Activity Instance (runtime) ────────────────────────
-
-    ActivityInstance:
+    # ── Task Instance (runtime) ────────────────────────────
+    TaskInstance:
       type: object
       properties:
         id:
           type: string
-        activityDefinitionId:
+        taskDefinitionId:
           type: string
         name:
           type: string
         status:
-          $ref: "#/components/schemas/ActivityInstanceStatus"
+          $ref: "#/components/schemas/TaskInstanceStatus"
         assignedTo:
           type: string
           nullable: true
@@ -1048,6 +1940,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StepResult"
+        contextContribution:
+          type: object
+          readOnly: true
+          description: >-
+            What completing this task added to the workflow context: the context the caller supplied
+            with the completion, merged with whatever this task's SERVICE_STEPs mapped back out of
+            their tool responses.
+
+            Recorded per task rather than accumulated on the workflow instance, so that completing a
+            task writes only its own row — otherwise every completion would contend on the
+            instance's optimistic lock and two `parallel` tasks could not be completed
+            concurrently. `WorkflowInstance.context` is the fold of these.
+          additionalProperties: true
 
     StepResult:
       type: object
@@ -1066,32 +1971,32 @@ components:
           type: string
           nullable: true
 
-    AssignActivityRequest:
+    AssignTaskRequest:
       type: object
       required: [ userId ]
       properties:
         userId:
           type: string
 
-    CompleteActivityRequest:
+    CompleteTaskRequest:
       type: object
       properties:
         context:
           type: object
           description: >-
-            Additional context variables to merge into the process context before
+            Additional context variables to merge into the workflow context before
             evaluating the postcondition. Useful for passing output values from
             the user's actions (e.g. reviewScore, approval decision).
           additionalProperties: true
 
-    CompleteActivityResponse:
+    CompleteTaskResponse:
       type: object
       properties:
         accepted:
           type: boolean
-          description: True if postcondition passed and the activity moved to COMPLETED.
-        activity:
-          $ref: "#/components/schemas/ActivityInstance"
+          description: True if postcondition passed and the task moved to COMPLETED.
+        task:
+          $ref: "#/components/schemas/TaskInstance"
         postconditionDetail:
           type: string
           nullable: true
@@ -1099,19 +2004,23 @@ components:
             Human-readable detail from the postcondition evaluation. Present when
             accepted is false — tells the user what condition wasn't met yet.
 
-    # ── Work Product Instance (runtime) ───────────────────
+    # ── Artifact Instance (runtime) ───────────────────────
+    # Embedded in its WorkflowInstance, unlike the ArtifactDefinition it is made from: an instance
+    # has no life apart from the run that produced it, which is why it is reached through
+    # /instances/{instanceId}/artifacts rather than a resource of its own.
 
-    WorkProductInstance:
+    # ── Artifact Instance (runtime) ────────────────────────────
+    ArtifactInstance:
       type: object
       properties:
         id:
           type: string
-        workProductDefinitionId:
+        artifactDefinitionId:
           type: string
         name:
           type: string
         type:
-          $ref: "#/components/schemas/WorkProductType"
+          $ref: "#/components/schemas/ArtifactType"
         entityId:
           type: string
           nullable: true
@@ -1129,20 +2038,19 @@ components:
           description: >-
             Cached current state name from base-state, refreshed when
             EntityStateChangedEvent is received. Provided here as a convenience so
-            clients don't need to query base-state just to render a process overview.
+            clients don't need to query base-state just to render a workflow overview.
         updatedAt:
           type: string
           format: date-time
 
     # ── Paging ─────────────────────────────────────────────
-
-    PageOf_ProcessDefinitionSummary:
+    PageOf_Workflow:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/ProcessDefinitionSummary"
+            $ref: "#/components/schemas/Workflow"
         totalElements:
           type: integer
           format: int64
@@ -1153,13 +2061,13 @@ components:
         size:
           type: integer
 
-    PageOf_ProcessInstanceSummary:
+    PageOf_WorkflowInstance:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/ProcessInstanceSummary"
+            $ref: "#/components/schemas/WorkflowInstance"
         totalElements:
           type: integer
           format: int64
@@ -1193,3 +2101,226 @@ components:
           type: array
           items:
             type: string
+
+    Locale:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical Locale — see the note on WidgetInstance there for why
+        this workspace repeats rather than $refs across files. A bare string schema generates no Java
+        class, so the repetition needs no schemaMappings entry.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    TranslationScope:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationScope. Transloco scope a bundle loads under,
+        and the directory segment its asset equivalent would have had.
+      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+      minLength: 1
+      maxLength: 64
+      example: base_app
+
+    TranslationBundle:
+      type: object
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationBundle, mapped onto the shared generated type.
+        One transloco bundle: the whole message map of an (organization, scope, locale) triple, in the
+        exact shape the frontend's asset file has. Keys are relative to the scope — transloco prefixes
+        them with the scope alias itself.
+      additionalProperties: true
+      nullable: true
+      example:
+        module:
+          name: Order administration
+        route:
+          orders: All orders
+
+    # ── Diagram layer ──────────────────────────────────────────
+
+    Point:
+      type: object
+      required: [ x, y ]
+      description: A point in diagram coordinates, matching ng-diagram's own `Point`.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+
+    NodeSize:
+      type: object
+      required: [ width, height ]
+      description: >-
+        Node dimensions in diagram coordinates, matching ng-diagram's own `Size`. Named NodeSize
+        rather than Size because the generated models share a package with the Jakarta validation
+        annotations the generator itself emits: a schema called `Size` shadows
+        `jakarta.validation.constraints.Size` and breaks every `@Size`-annotated field in the
+        package.
+      properties:
+        width:
+          type: number
+          format: double
+        height:
+          type: number
+          format: double
+
+    DiagramNodeLayout:
+      type: object
+      required: [ nodeId, position ]
+      description: >-
+        Where one modeler node sits on the canvas. An array of keyed rows rather than a map keyed
+        by nodeId, for the same reason the workflow's own collections are arrays: the key stays
+        visible inside the row, which is what makes an exported layout readable.
+
+        Keyed by the *diagram* node id rather than by a domain key, which is the one place this
+        layer departs from base-state's: a node stands for a task, a lane, an artifact or a tool,
+        and those ids are only unique within their own catalog — so the modeler prefixes them
+        (`task:<id>`, `lane:<roleId>`, `artifact:<id>`, `tool:<id>`) and the prefixed form is what
+        identifies a row. Opaque to base-workflow-backend, which stores and returns it without
+        interpretation.
+      properties:
+        nodeId:
+          type: string
+          description: >-
+            The modeler node this row positions. Not validated against the workflow — see
+            saveWorkflowDiagram's description for why a stale row is tolerated.
+          example: task:approve-order
+        position:
+          $ref: "#/components/schemas/Point"
+        size:
+          # A bare $ref, not an allOf wrapper carrying `nullable`/`description`: a single-element
+          # allOf is what degrades a generated type to Object, and OpenAPI 3.0 ignores siblings of
+          # a $ref anyway. Absent means the node keeps whatever size the layout computed — which
+          # for a lane is the band that holds its tasks.
+          $ref: "#/components/schemas/NodeSize"
+
+    DiagramEdgeLayout:
+      type: object
+      required: [ edgeId ]
+      description: >-
+        How one relation is drawn. The port anchors matter as much as the waypoints do: an edge
+        whose ports are not persisted is re-anchored on the next load, so the diagram reopens with
+        visibly different geometry from the one the user arranged.
+      properties:
+        edgeId:
+          type: string
+          description: >-
+            The modeler edge this row routes, which the modeler derives from the two node ids it
+            joins. Not validated — see saveWorkflowDiagram.
+          example: task:approve-order->task:ship-order
+        points:
+          type: array
+          description: >-
+            Intermediate waypoints, in order, in diagram coordinates — ng-diagram's `Edge.points`.
+            Empty or absent means the edge is routed automatically between its two ports.
+          items:
+            $ref: "#/components/schemas/Point"
+        sourcePort:
+          type: string
+          nullable: true
+          description: The port on the source node the edge leaves from, e.g. `port-right`.
+          example: port-right
+        targetPort:
+          type: string
+          nullable: true
+          description: The port on the target node the edge arrives at, e.g. `port-left`.
+          example: port-left
+        routing:
+          type: string
+          nullable: true
+          description: >-
+            The edge's routing mode as the user chose it — ng-diagram's `Edge.routing`. Opaque to
+            base-workflow-backend, which stores and returns it without interpretation.
+          example: orthogonal
+
+    DiagramViewport:
+      type: object
+      required: [ x, y, scale ]
+      description: >-
+        Pan offset and zoom of the canvas. Persisted so that reopening a large workflow returns to
+        the part of it the user was working on, rather than to whatever an automatic fit chooses.
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        scale:
+          type: number
+          format: double
+          example: 1.0
+
+    WorkflowDiagramInput:
+      type: object
+      required: [ workflowId ]
+      description: >-
+        The graphical layout of one workflow — purely presentational, and a resource of its own
+        rather than fields on Workflow. Two reasons: dragging a task must never risk a
+        whole-document replace of the workflow's composition, and the two are written by different
+        gestures at very different rates.
+
+        `nodes` and `edges` are both optional, because a workflow that has been opened but never
+        arranged legitimately has neither.
+      properties:
+        workflowId:
+          type: string
+          description: >-
+            The workflow this lays out — 1:1 with it. The path segment is the source of truth;
+            this field is informational, mirroring WorkflowInput's own id.
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagramNodeLayout"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagramEdgeLayout"
+        viewport:
+          # Bare $ref for the same reason DiagramNodeLayout.size is one.
+          $ref: "#/components/schemas/DiagramViewport"
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read, exactly as WorkflowInput.version — when supplied, the
+            write is refused with 409 unless it still matches the stored one. Omit it to overwrite
+            unconditionally, which is what the *first* save of a workflow does: nothing has been
+            stored yet, so there is no version to have read.
+
+    WorkflowDiagram:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowDiagramInput"
+        - type: object
+          properties:
+            orgKey:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_WorkflowDiagram:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowDiagram"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer

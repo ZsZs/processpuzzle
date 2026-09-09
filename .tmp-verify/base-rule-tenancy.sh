@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live verification of the orgKey scoping in base-rule. Expects processpuzzle-backend on :8080.
+# Live verification of the orgKey scoping in base-rule. Expects processpuzzle-testbed-backend on :8080.
 set -u
 B=http://localhost:8080
 pass=0; fail=0

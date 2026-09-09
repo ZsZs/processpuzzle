@@ -8,6 +8,7 @@ import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-for
 import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-descriptor.registry';
 import { createTestId } from '../base-entity/base-entity-utility';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+import type { BaseEntityFormBuilder } from './base-entity-form.builder';
 
 @Component({
   standalone: true,
@@ -20,6 +21,12 @@ export abstract class BaseFormControlComponent<Entity extends BaseEntity> {
   entityName: InputSignal<string> = input.required<string>();
   formGroup!: FormGroup;
   store!: BaseEntityStoreApi<Entity>;
+  /**
+   * Set by {@link BaseEntityFormBuilder} on every control it creates, for the controls that build sub-forms of
+   * their own. Handed over rather than injected because the builder maps control types to these very component
+   * classes — injecting it here would close a runtime import cycle (NG0919). The import above is type-only.
+   */
+  formBuilder!: BaseEntityFormBuilder<Entity>;
   style = computed<{ [p: string]: unknown } | null | undefined>(() => this.config().style);
   linkedEntityName = computed<string>(() => {
     const linkedEntityName = this.config().linkedEntityType;

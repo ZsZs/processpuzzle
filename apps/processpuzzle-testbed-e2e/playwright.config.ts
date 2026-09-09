@@ -6,9 +6,7 @@ import path from 'path';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const environment = process.env['ENVIRONMENT'] || 'dev';
-if (process.env['ENVIRONMENT']) {
-  dotenv.config({ path: `./env/.env.${process.env['ENVIRONMENT']}` });
-}
+dotenv.config({ path: path.join(__dirname, 'env', `.env.${environment}`) });
 const baseURL = process.env['PROCESSPUZZLE_TESTBED_BASE_URL'] || 'http://localhost:4200';
 export const testConfig = { routePrefix: '/base-entity/samples' };
 
@@ -24,6 +22,8 @@ const grep =
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
   globalSetup: './src/support/global-setup.ts',
+  // Was built but never handed to Playwright, which left E2E_ENTITY / E2E_SUITE with no effect at all.
+  grep,
   // Opt out of parallel tests on CI.
   workers: process.env['ENVIRONMENT'] === 'ci' ? 1 : 1,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -36,7 +36,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run serve-processpuzzle-testbed',
+    command: 'npm run serve-processpuzzle-testbed-frontend',
     url: baseURL,
     reuseExistingServer: true,
     cwd: workspaceRoot,

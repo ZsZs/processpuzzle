@@ -1,5 +1,9 @@
 # ProcessPuzzle :: Base State Backend
 
+![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-state-backend.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_state_backend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_state_backend)
+[![Maven Central](https://img.shields.io/maven-central/v/com.processpuzzle/base-state-backend?style=flat)](https://central.sonatype.com/artifact/com.processpuzzle/base-state-backend)
+
 ProcessPuzzle Base State Backend is the server-side companion of [`@processpuzzle/base-state-frontend`](../../js-shared/base-state-frontend/README.md). It provides the building blocks for declaring, persisting, and executing state machines in a Spring Boot application following the platform's Hexagonal architecture.
 
 ## Technologies

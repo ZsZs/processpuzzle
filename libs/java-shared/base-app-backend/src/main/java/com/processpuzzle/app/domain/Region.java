@@ -6,7 +6,7 @@ import java.util.List;
  * A shell region, as persisted inside {@link AppGraph}. Per-type configuration is modelled as
  * sibling fields rather than a type hierarchy, mirroring the contract: {@code navItems} applies
  * to {@code sidenav}, {@code widgets} to {@code header} and {@code footer}, and {@code content}
- * uses neither — it is populated per route from an {@link AppPage}.
+ * uses neither — it is populated per route from an {@link AppRoute}.
  *
  * <p>{@code type} is a plain string for the same reason as in {@link Theme} — see that class.
  *

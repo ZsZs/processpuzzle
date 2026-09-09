@@ -26,7 +26,7 @@ describe('KeycloakAuthService', () => {
 
   beforeEach(() => {
     // Use happy-dom-compatible location mocking
-    (globalThis as any).location = new URL('http://localhost:4200');
+    (globalThis as unknown as { location: unknown }).location = new URL('http://localhost:4200');
 
     // Create a mock Keycloak instance
     mockKeycloakInstance = {
@@ -46,12 +46,12 @@ describe('KeycloakAuthService', () => {
 
     service = new KeycloakAuthService(config);
     // Replace the keycloak instance with our mock
-    (service as any).keycloak = mockKeycloakInstance;
+    (service as unknown as { keycloak: MockedKeycloak }).keycloak = mockKeycloakInstance;
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-    (globalThis as any).location = originalLocation;
+    (globalThis as unknown as { location: unknown }).location = originalLocation;
   });
 
   it('should be created', () => {

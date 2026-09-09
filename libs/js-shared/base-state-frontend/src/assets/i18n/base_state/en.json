@@ -1,0 +1,73 @@
+{
+  "state_machine_definition": {
+    "_self": "State Machine",
+    "entityName": "Entity",
+    "name": "Name",
+    "description": "Description",
+    "stateAttributeKey": "State Attribute",
+    "initialStateKey": "Initial State",
+    "version": "Version",
+    "updatedAt": "Updated At",
+    "states": "States",
+    "transitions": "Transitions",
+    "tabs": {
+      "modeler": "State Modeler"
+    },
+    "modeler": {
+      "save": "Save",
+      "palette": {
+        "title": "Elements",
+        "start": "Start",
+        "end": "End",
+        "state": "State"
+      },
+      "routing": {
+        "title": "Routing",
+        "orthogonal": "Right angles",
+        "polyline": "Straight",
+        "bezier": "Curved"
+      }
+    }
+  },
+  "state_machine_state": {
+    "_self": "State",
+    "key": "Key",
+    "name": "Name",
+    "description": "Description",
+    "initial": "Initial",
+    "isFinal": "Terminal",
+    "isLocked": "Locked",
+    "metadata": "Metadata"
+  },
+  "state_machine_transition": {
+    "_self": "Transition",
+    "key": "Key",
+    "name": "Name",
+    "sourceStateKey": "Source State",
+    "targetStateKey": "Target State",
+    "triggerKey": "Trigger",
+    "guards": "Guards",
+    "actions": "Actions"
+  },
+  "state_transition_guard": {
+    "_self": "Guard",
+    "beanName": "Bean Name",
+    "params": "Params"
+  },
+  "state_transition_action": {
+    "_self": "Action",
+    "beanName": "Bean Name",
+    "params": "Params"
+  },
+  "entity_state_machine": {
+    "tab": "State Machine",
+    "currentState": "Current state",
+    "final": "final",
+    "governedBy": "Governed by",
+    "noMachine": "No state machine governs this entity type.",
+    "unknownState": "'{{state}}' is not a state this machine declares.",
+    "readOnly": "Read-only view — the machine is authored under Base State.",
+    "loading": "Loading the state machine…",
+    "noState": "This record has no state yet."
+  }
+}

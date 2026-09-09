@@ -6,57 +6,105 @@ Utilities and infrastructure that support local development, CI, and deployment 
 
 | Path | Purpose |
 | --- | --- |
-| [`docker/`](./docker) | Dockerfiles and compose stacks for the testbed, backend, and supporting services (Keycloak, MinIO, Postgres, Firebase emulators, json-server). |
-| [`firebase/`](./firebase) | Firebase emulator seed data and local Functions sources used by the Firebase container. |
+| [`docker/`](./docker) | Dockerfiles and compose stacks for the testbed, backend, and supporting services (Keycloak, MinIO, Postgres, json-server). |
 | [`httpRequests/`](./httpRequests) | IntelliJ HTTP Client environment file for ad-hoc requests against local and remote backends. |
 | [`mock-backend/`](./mock-backend) | Standalone `json-server` mock with seed `db.json` and a self-signed cert — used when the full backend stack is overkill. |
-| [`scripts/`](./scripts) | Build/release helpers: `release.ts`, `run-sonar-scanner.cjs`, `sanitize-lcov.cjs`. |
+| [`scripts/`](./scripts) | Build/release helpers: `release-java-lib.mjs`, `release-js-lib.mjs`, `run-sonar-scanner.cjs`, `sanitize-lcov.cjs`. |
 
 ## Docker stacks
 
-Two compose files at `tools/docker/`:
+Five compose files at `tools/docker/`, split by **layer** rather than by environment — one definition
+per layer serves `ci`, `stage` and `prod`, and what differs between them is an env file (see
+[Environment configuration](#environment-configuration)), not a second compose file. The first two
+are the **two Coolify Docker Compose resources** of
+[`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §4; the other three are overlays
+that exist only because CI and local development need what a deployment must not have.
 
-- **`docker-compose-ci.yaml`** — full local CI stack: testbed, Spring backend, Keycloak (+ Postgres), MinIO, Firebase emulators, json-server, pgweb. Used by the `docker-build` Nx target and by CI to run e2e tests against a production-like topology.
-- **`docker-compose-prod.yaml`** — slim image pull definition for the registry images. Used to smoke-test a published image, not to build.
+- **`docker-compose-infrastructure.yaml`** — the services every application stack shares: Keycloak (+ its one-shot `keycloak-init`), Postgres, MinIO, json-server, pgweb. One resource, so redeploying an application never touches it. **Pull-only**, on purpose: this is a file Coolify reads, and Coolify runs `docker compose build --pull` with `--project-directory` set to the repo root — a `build:` here would rebuild the promoted `:stage` image from a `build.context` that resolves against the wrong directory.
+- **`docker-compose-apps.yaml`** — the testbed Angular application and its Spring backend: the testbed *stack's* resource. Also pull-only, and additionally **standalone** — it joins the infrastructure resource's network as `external` and declares no `depends_on` naming a service it does not define, because Coolify reads it alone. The one `depends_on` it keeps, frontend → backend, is what orders the halves under Coolify with no workflow step to do it.
+- **`docker-compose-build.yaml`** — overlay that gives all seven built services their `build:` sections back, for CI and for local development against the working tree.
+- **`docker-compose-apps-local.yaml`** — overlay that puts the two layers back into **one** compose project: `networks.processpuzzle.external: false`, and the five `depends_on` entries that cross from an application to an infrastructure service (backend → postgres / minio / keycloak-init, frontend → keycloak / json-server).
+- **`docker-compose-pull.yaml`** — overlay that flips every service to `pull_policy: missing`, so a devcontainer or Codespace does not re-pull seven images on every stop/start cycle.
 
-Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/init-db.sql`, `firebase/serve.sh`).
+**Overlay order is load-bearing.** The last file to name a key wins, so the overlays must come
+*after* both base files — otherwise `pull_policy: always` beats `build`, and the apps file's
+`external: true` network beats the one compose should create locally. The full CI topology, which is
+what `npm run stack-up-build` does:
+
+```sh
+docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+  -f tools/docker/docker-compose-infrastructure.yaml \
+  -f tools/docker/docker-compose-apps.yaml \
+  -f tools/docker/docker-compose-build.yaml \
+  -f tools/docker/docker-compose-apps-local.yaml up -d --wait --build
+```
+
+Each service has its own folder under `docker/`, containing the `Dockerfile` plus any init scripts the image needs (e.g. `minio/init-minio.sh`, `postgresql/10-init-db.sh`, `keycloak/init/bootstrap-platform-admin-client.sh`). Five infrastructure images are ProcessPuzzle's own rather than upstream, because they bake configuration that has to travel with the image; a deployment **pulls** them from GHCR, while CI and local development build them by overlaying `docker-compose-build.yaml`. pgweb is referenced by a pinned upstream tag, since the Dockerfile it used to have added nothing to `sosedoff/pgweb`.
+
+The two application Dockerfiles are different in kind: they are **packaging-only**, `COPY dist/…` and
+nothing else. So `dist/` has to be populated before `docker compose build` reaches them — `nx run
+processpuzzle-testbed-frontend:docker-build` declares that as `dependsOn`, and it is also why Coolify
+cannot build them from a git clone at all.
 
 ### Services in the CI stack
 
-| Service | Container | Image | Host port → container | Purpose |
-| --- | --- | --- | --- | --- |
-| `processpuzzle-testbed` | `processpuzzle-testbed` | `zsuffazs/processpuzzle-testbed` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
-| `processpuzzle-backend` | `processpuzzle-backend` | `zsuffazs/processpuzzle-backend` | `8080 → 8080` | Spring Boot backend; talks to MinIO for object storage. |
-| `keycloak` | `testbed-keycloak` | `zsuffazs/testbed-keycloak` | `7070 → 8080` | OIDC provider for the testbed. Stores realm data in Postgres. |
-| `postgres` | `testbed-postgres` | `zsuffazs/testbed-postgres` | `5432 → 5432` | Postgres for Keycloak; volume `postgres_data`. |
-| `pgweb` | `testbed-pgweb` | `zsuffazs/testbed-pgweb` | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. |
-| `minio` | `testbed-minio` | `zsuffazs/testbed-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store used by the backend; volume `minio-data`. |
-| `firebase` | `testbed-firebase` | `zsuffazs/testbed-firebase` | `4000` UI, `4400` hub, `4600` logging, `5001` functions, `8081` firestore, `8085` pubsub, `9099` auth, `9199` storage | Firebase emulator suite + local Functions; seeded from `tools/firebase/data`. |
-| `json-server` | `json-server` | `zsuffazs/json-server` | `3000 → 3000` | REST mock for entities not yet implemented in the backend; seeded from `tools/mock-backend/db.json`. |
+Host ports are the `ci` values; each is one `PP_*_PUBLISH` variable, which is how `prod` binds the
+same services to loopback without a second compose file. The infrastructure images dropped their
+`testbed-` prefix and moved to GHCR when this layer became shared by all three application stacks —
+the containers were renamed the same way.
 
-> **Port note.** Firestore emulator owns host port `8081`. pgweb is published on host `8082` to avoid the bind collision (it still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb`).
+**Service and Container are different columns on purpose**, and they diverge on the app layer: the
+two halves of the testbed stack are the containers `testbed-frontend` and `testbed-backend`, named
+alike, while the frontend's *service* stays `processpuzzle-testbed-frontend` because that is its Nx
+project and its image, and it is the name the compose overlays and the `npm run stack-up` service
+arguments use. Use the **Container** name with `docker logs` / `docker exec`, and the **Service**
+name with `docker compose`.
+
+| Layer | Service | Container | Image | Host port → container | Purpose |
+| --- | --- | --- | --- | --- | --- |
+| app | `processpuzzle-testbed-frontend` | `testbed-frontend` | `ghcr.io/zszs/processpuzzle-testbed-frontend` | `9090 → 80` | Angular testbed app served by nginx; entry point for e2e tests. |
+| app | `testbed-backend` | `testbed-backend` | `ghcr.io/zszs/processpuzzle-testbed-backend` | `8080 → 8080` | Spring Boot backend for the **testbed** stack: database `processpuzzle_testbed`, realm `processpuzzle-testbed`, bucket prefix `processpuzzle-testbed`. |
+| infra | `keycloak` | `processpuzzle-keycloak` | `ghcr.io/zszs/processpuzzle-keycloak` | `7070 → 8080` | OIDC provider. One realm per stack, imported from `tools/docker/keycloak/import/`; realm data lives in Postgres. |
+| infra | `keycloak-init` | `processpuzzle-keycloak-init` | `ghcr.io/zszs/processpuzzle-keycloak-init` | — | One-shot: creates the `master`-realm service account a backend uses to manage realms and users. Idempotent. |
+| infra | `postgres` | `processpuzzle-postgres` | `ghcr.io/zszs/processpuzzle-postgres` | `5432 → 5432` | Postgres for Keycloak **and** for each stack, one database each; volume `postgres_data`. `10-init-db.sh` still creates the admin stack's database, because the databases are shared infrastructure. |
+| infra | `pgweb` | `processpuzzle-pgweb` | `sosedoff/pgweb:0.17.0` (upstream, not built) | `8082 → 8081` | Web UI for Postgres inspection, mounted at `/pgweb`. Points at `processpuzzle_testbed`; showing another database means changing `PGWEB_DATABASE`. |
+| infra | `minio` | `processpuzzle-minio` | `ghcr.io/zszs/processpuzzle-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`, and `init-minio.sh` still creates every stack's prefix. |
+| infra | `json-server` | `json-server` | `ghcr.io/zszs/processpuzzle-json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
+
+> **Port note.** pgweb takes host `8082` and still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb` — the offset dates from the Firestore emulator owning host `8081`, and is kept so existing bookmarks and the `--prefix=/pgweb` mount keep working. Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
+
+> **First start.** `tools/docker/postgresql/10-init-db.sh` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `npm run stack-clean`.
 
 ### Service dependency diagram
 
-Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime.
+Arrows show `depends_on` with `condition: service_healthy` — compose blocks each service's startup until every target it points at reports healthy. Edge labels show how the caller reaches the target at runtime. Every arrow that crosses the two boxes is declared in `docker-compose-apps-local.yaml` rather than in the apps file, because those two boxes are two separate Coolify resources in a deployment and compose cannot order across them; there, the frontend → backend arrow inside the app box is the only ordering there is, and Coolify starts the infrastructure resource first.
+
+One backend per application stack; see [`docs/application-stacks.md`](../docs/application-stacks.md). Only the testbed stack's application is built here — the other two stacks' are the private repository's, while their realms, databases and bucket prefixes stay below as shared infrastructure. Every edge that crosses the two boxes points *into* the infrastructure layer, which is what makes the split safe: nothing shared depends on an application.
 
 ```mermaid
 graph TD
-    testbed[processpuzzle-testbed<br/>host :9090]
-    backend[processpuzzle-backend<br/>host :8080]
-    keycloak[keycloak<br/>host :7070]
-    postgres[(postgres<br/>host :5432)]
-    pgweb[pgweb<br/>host :8082]
-    minio[(minio<br/>host :7000 / :7001)]
-    firebase[firebase emulators<br/>host :4000/:5001/:8081/:9099/...]
-    jsonserver[json-server<br/>host :3000]
+    subgraph APP["docker-compose-apps.yaml"]
+      testbed[processpuzzle-testbed-frontend<br/>host :9090]
+      tbackend[testbed-backend<br/>host :8080]
+    end
 
-    testbed -- REST --> backend
+    subgraph INFRA["docker-compose-infrastructure.yaml"]
+      keycloak[keycloak<br/>host :7070]
+      kcinit[keycloak-init<br/>one-shot]
+      postgres[(postgres<br/>host :5432)]
+      pgweb[pgweb<br/>host :8082]
+      minio[(minio<br/>host :7000 / :7001)]
+      jsonserver[json-server<br/>host :3000]
+    end
+
+    testbed -- REST --> tbackend
     testbed -- OIDC --> keycloak
     testbed -- REST --> jsonserver
-    testbed -- SDK --> firebase
 
-    backend -- S3 --> minio
+    tbackend -- S3 --> minio
+    tbackend -- JDBC --> postgres
+    tbackend -- "JWKS / admin API" --> keycloak
+    kcinit -- "Admin CLI" --> keycloak
     keycloak -- JDBC --> postgres
     pgweb -- read-only --> postgres
 
@@ -70,10 +118,10 @@ The platform recognizes four pipeline stages, each with a different deployment t
 
 | Stage | Where it runs | How configs reach the browser |
 | --- | --- | --- |
-| `dev` | Local `nx serve`, no Docker | Angular build assets copy `apps/processpuzzle-testbed/src/run-time-conf/*` straight into `dist/` |
-| `ci` | `docker-compose-ci.yaml` on a developer machine or CI runner | Templated at container start (see below) |
-| `stage` | Firebase Hosting | Config file dropped into `<hosting-root>/run-time-conf/` by the deploy job |
-| `prod` | Firebase Hosting | Same as stage, with prod values |
+| `dev` | Local `nx serve`, no Docker | Angular build assets copy `apps/processpuzzle-testbed-frontend/src/run-time-conf/*` straight into `dist/` |
+| `ci` | the compose stack on a developer machine or CI runner | Templated at container start (see below) |
+| `stage` | the same compose stack, deployed by Coolify | Templated at container start, exactly as `ci` |
+| `prod` | the same compose stack, deployed by Coolify | Same as stage, with prod values |
 
 The Angular `ConfigurationService` (`libs/js-shared/util/src/lib/runtime-configuration/configuration.service.ts`) always fetches `run-time-conf/config.common.json` plus `run-time-conf/config.<PIPELINE_STAGE>.json` from the same origin that served the app. The mechanism for *getting those files into the right place* is what differs per stage.
 
@@ -83,22 +131,31 @@ The browser cannot read container env vars — the JS bundle runs on the user's 
 
 The flow:
 
-1. **Shell / CI runner** exports values:
+1. **Shell, `--env-file` or CI runner** supplies the value — `.env.ci` already carries
+   `PIPELINE_STAGE=ci`, and an exported one wins over it:
    ```sh
    export PIPELINE_STAGE=ci
-   export FIREBASE_API_KEY=AIza...
    ```
-2. **Compose** propagates them into the container via the `environment:` block in `docker-compose-ci.yaml`:
+2. **Compose** propagates it into the container via the `environment:` block in `docker-compose-apps.yaml`:
    ```yaml
    environment:
      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
-     FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+     FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
    ```
    The `${VAR}` on the right side is compose's substitution, expanded from the shell or a `.env` file next to the compose file.
-3. **`docker-entrypoint.sh`** (baked into the image) runs `envsubst` against `config.ci.json.template` and writes the rendered file to `/usr/share/nginx/html/run-time-conf/config.ci.json`, then `exec`s nginx.
-4. **Browser** fetches `http://<host>/run-time-conf/config.ci.json` and gets the templated values.
+3. **`docker-entrypoint.sh`** (baked into the image) runs `envsubst` against
+   `runtime-env.json.template` and writes the rendered file to
+   `/usr/share/nginx/html/assets/runtime-env.json`, then `exec`s nginx.
+4. **Browser** fetches `assets/runtime-env.json`, reads `PIPELINE_STAGE` from it, and then fetches
+   `run-time-conf/config.common.json` plus `run-time-conf/config.<stage>.json` — both of which the
+   Angular build already baked into the image.
 
 `envsubst`'s whitelist argument (`'${PIPELINE_STAGE} ${FIREBASE_API_KEY}'`) limits which placeholders get expanded — any other `$` in the template survives literally.
+
+`FIREBASE_API_KEY` is the vestige of the removed Firebase adapters (1465575b / 7076cae2). It defaults
+to empty everywhere and `main.ts` reads it as `?? ''`; nothing has to supply it. It used to be
+`:?`-guarded in the entrypoint, which made every deployment invent a placeholder for a feature that
+no longer exists.
 
 **Build-time vs. runtime — don't mix them up:**
 - `ARG` in a Dockerfile and `build.args:` in compose → build time only. Use for things that decide what goes *into* the image (which stage's template to copy).
@@ -106,17 +163,88 @@ The flow:
 
 ## Stage-dependent variables (`stage` and `prod`)
 
-Firebase Hosting deploys are static-file uploads; there is no container entrypoint to template anything. The deploy job is responsible for writing the right `config.<stage>.json` next to the bundle before running `firebase deploy`. Secrets typically come from the CI provider's secret store (GitHub Actions secrets, Firebase CI config, etc.) and are injected into a `config.stage.json` / `config.prod.json` file as part of the deploy step.
+Nothing new: `stage` and `prod` run the same image through the same entrypoint as `ci`, so they differ only in the container env vars the Coolify resource sets — `PIPELINE_STAGE` above all, which is what selects `config.<stage>.json` from the bundle. All of `config.{dev,ci,stage,prod}.json` are committed and baked into the image, and that is precisely what lets one `sha-<commit>` be promoted from stage to prod without a rebuild — see [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §9.
 
-`config.stage.json` and `config.prod.json` are intentionally **not** committed to the repo — they exist only as deployment artifacts produced by the pipeline.
+Because they are **build assets**, a change to `config.stage.json` takes effect on the next image
+build rather than on the next deploy. That is the trade for one tag serving every environment.
+
+### The `stage` hostnames
+
+Three names, on `.de` to match the Coolify control plane, and each has to agree with something else:
+
+| Name | Set in | Must equal |
+| --- | --- | --- |
+| `testbed.stage.processpuzzle.de` | Coolify: the frontend service's domain | `APP_CORS_ALLOWED_ORIGINS` in `.env.stage`, the client's `redirectUris` in the testbed realm, and `PROCESSPUZZLE_TESTBED_BASE_URL` in `apps/processpuzzle-testbed-e2e/env/.env.stage` |
+| `api.stage.processpuzzle.de` | Coolify: the backend service's domain | `APP_SERVICE_ROOT` and friends in `config.stage.json` |
+| `auth.stage.processpuzzle.de` | Coolify: the Keycloak service's domain | `KC_HOSTNAME` **and** `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` in `.env.stage`, and `AUTHENTICATION_SERVICE_ROOT` / `authServerUrl` in `config.stage.json` |
+
+The backend needs a hostname of its own because **nginx does not proxy to it**: the browser calls
+`APP_SERVICE_ROOT` cross-origin from the frontend's origin, which is what makes
+`APP_CORS_ALLOWED_ORIGINS` load-bearing rather than decorative. An origin missing from it arrives as
+HTTP status 0 with nothing to explain it, and an issuer that differs from `KC_HOSTNAME` by one
+character rejects every token.
+
+`prod` still names `.com`, and that split is unresolved — see
+[`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §12. **Confirm the prod names
+against real DNS before the first prod deploy.**
+
+## Environment configuration
+
+`tools/docker/env/` holds one file per environment, mirroring the
+`apps/processpuzzle-testbed-e2e/env/.env.<environment>` convention. They are what make one compose
+definition serve three environments:
+
+| File | Committed | Holds |
+| --- | --- | --- |
+| `.env.ci` | yes | Everything, **including the demo credentials that were always in git**, so `npm run stack-up` needs no setup |
+| `.env.stage` / `.env.prod` | yes | Non-secret values only, for **both** resources: image tag, the `PP_*_PUBLISH` port mappings, network name, Keycloak hostname, role and database names, plus an application section — `PIPELINE_STAGE`, `SPRING_PROFILES_ACTIVE`, the stack's datasource / realm / bucket prefix, and the two that cannot take a CI default (`APP_CORS_ALLOWED_ORIGINS`, `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL`) |
+| `.env.example` | yes | Documents each secret variable and where it is consumed |
+| `.env.local` | **no** (gitignored) | Copy of `.env.example` with real values, for running the stage/prod topology locally |
+
+Two rules worth knowing:
+
+- **Credentials are not in the committed stage/prod files.** They come from the GitHub Environments `STAGE` and `PROD` (see [`.github/README.md`](../.github/README.md)). `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` and `KEYCLOAK_ADMIN_PASSWORD` carry a `${VAR:?…}` guard in the compose file, so a missing one fails at `up` rather than silently at the first request — which is why `docker compose --env-file env/.env.stage … config` is *expected* to fail until they are exported.
+- **Coolify does not read these files.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the resource's *own* environment variables; `--env-file` is not in that path. So `.env.stage` / `.env.prod` are the documented source of truth that has to be entered once into the resource, and `--env-file` is what `ci` and local development use. Because every variable carries a `${VAR:-<ci default>}` default, one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
+
+Which variables go into which of the two resources, and the rest of the out-of-repo setup, is a
+checklist in [Deploying the testbed stack to stage](../docs/stage-deployment-runbook.md).
+
+The infrastructure images live on GHCR. Either the packages are public or `docker login ghcr.io`
+first; `npm run stack-up-build` needs neither, since it builds them locally under the same tags.
 
 ## Running the CI stack locally
 
 ```sh
-# from repo root
-pnpm nx run processpuzzle-testbed:docker-build   # builds testbed + backend images
-cd tools/docker
-docker compose -f docker-compose-ci.yaml up
+# from repo root — this workspace is npm, not pnpm; `pnpm nx` quarantines packages and breaks the build
+npx nx run processpuzzle-testbed-frontend:docker-build   # builds testbed + backend images
+npm run stack-up-build     # infra + apps, building both halves
+npm run stack-up-infra     # just the shared services, no applications
+npm run stack-ps           # what is up, and how healthy
+npm run stack-clean        # down, including volumes — the only way to re-run first-start scripts
 ```
 
-A `.env` file in `tools/docker/` is the typical place for `PIPELINE_STAGE` and `FIREBASE_API_KEY`. Keep it gitignored.
+`.env.ci` supplies `PIPELINE_STAGE`, so it needs no exporting; an exported value still wins, because
+the shell takes precedence over `--env-file`. `FIREBASE_API_KEY` needs nothing at all — it defaults
+to empty and the entrypoint no longer guards it.
+
+**Verify the deployable file separately.** `docker-compose-apps.yaml` has to render *on its own*,
+because that is how Coolify reads it — no overlay, no infrastructure file:
+
+```sh
+docker compose --env-file tools/docker/env/.env.stage \
+  -f tools/docker/docker-compose-apps.yaml config
+```
+
+Expect no `build:` section, `external: true` on the network, and `depends_on` naming only
+`testbed-backend`. Anything else means the file has picked up a dependency on an overlay and will
+fail at deploy time rather than here.
+
+**Budget four minutes for a cold `up`, and do not read a transient `unhealthy` as a failure.** Measured
+locally: Keycloak 40 s on a fresh database but 96 s against a reused one (it spends the difference trying to
+reach cluster peers a previous container recorded), and each backend ~145 s, because Spring Modulith computes
+the module structure with ArchUnit at startup and both backends now do it at once. The healthchecks carry
+`start_period` values that cover this (150 s / 240 s); a probe that fails inside `start_period` does not count
+against `retries`. Without them, `depends_on: condition: service_healthy` aborts the whole `up` with
+`dependency failed to start` while the services in question are merely still booting.
+
+

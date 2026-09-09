@@ -5,14 +5,14 @@
     <parent>
         <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-parent</artifactId>
-        <version>1.0.5-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>processpuzzle-core</artifactId>
     <version>${processpuzzle-core.version}</version>
     <name>ProcessPuzzle :: Core</name>
-    <description>ProcessPuzzle Core Library — cross-cutting exception handling and logging support</description>
+    <description>ProcessPuzzle Core Library — cross-cutting exception handling, logging and translation-bundle support</description>
     <url>https://github.com/ZsZs/processpuzzle/libs/java-shared/processpuzzle-core</url>
 
     <licenses>
@@ -70,12 +70,18 @@
         <dependency>
             <groupId>cz.jirutka.rsql</groupId>
             <artifactId>rsql-parser</artifactId>
-            <version>2.1.0</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- YAML parsing for TranslationBundleImporter, which reads the default-translations/ files every
+             feature library ships. Jackson 2, as the seven existing Default*Loaders are. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
         <!-- Needed by ApiExceptionHandler to translate DAO-wrapped RSQL errors -->
@@ -161,6 +167,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Flatten POM for Central deployment — configuration (flattenMode=ossrh)
+                 inherited from the parent's <pluginManagement>. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
             </plugin>
 
             <!-- Central Publishing Plugin — replaces legacy OSSRH -->

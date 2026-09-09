@@ -5,12 +5,13 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * The root of an application's metadata. Identified by ({@code orgKey}, {@code id}) — see
@@ -41,9 +42,9 @@ import java.time.Instant;
  * <h2>Header fields are not versioned</h2>
  *
  * <p>{@code name}, {@code translocoId} and {@code description} are real columns rather than part
- * of the graph, because the summary list filters and sorts on them via RSQL. They are
+ * of the graph, because {@code listAppDefinitions} filters and sorts on them via RSQL. They are
  * consequently <em>not</em> snapshotted on publish: renaming an app is visible to end users
- * immediately. Only theme, layout, regions and pages are versioned.
+ * immediately. Only theme, layout, regions and routes are versioned.
  */
 @Entity
 @Table(name = "app_definitions")
@@ -67,12 +68,12 @@ public class AppDefinition {
     @Column(length = 1000)
     private String description;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = AppGraphConverter.class)
     @Column(name = "draft_graph")
     private AppGraph draftGraph = AppGraph.empty();
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = AppGraphConverter.class)
     @Column(name = "published_graph")
     private AppGraph publishedGraph;

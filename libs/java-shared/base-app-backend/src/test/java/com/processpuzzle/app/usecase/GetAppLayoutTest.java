@@ -1,20 +1,22 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
-import com.processpuzzle.app.domain.AppPage;
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
-import com.processpuzzle.app.domain.Organization;
-import com.processpuzzle.app.domain.OrganizationRepository;
-import com.processpuzzle.app.domain.OrganizationStatus;
 import com.processpuzzle.app.domain.Region;
+import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
-import com.processpuzzle.app.usecase.port.OrganizationAccessPolicy;
-import com.processpuzzle.app.usecase.port.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
+import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
+import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -32,12 +34,13 @@ import static org.mockito.Mockito.when;
 class GetAppLayoutTest {
 
     private final AppDefinitionRepository repository = mock(AppDefinitionRepository.class);
-    private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+    private final ObjectProvider<TenantDirectory> tenantDirectory =
+            AppTestFixtures.tenantDirectoryWithLocale("my-org", "en-GB");
 
     @Test
     void publishedRequestBeforeAnyPublish_is404() {
-        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
         stored(graphWithRoles());
+        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
 
         assertThatThrownBy(() -> getAppLayout.execute("my-org", "claims-app", false))
                 .isInstanceOf(AppNotPublishedException.class);
@@ -115,21 +118,21 @@ class GetAppLayoutTest {
 
     @Test
     void pageNotReachableByTheCallersRoles_is404NotForbidden() {
-        GetPageDefinition getPageDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
+        GetRouteDefinition getRouteDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
         stored(graphWithRoles());
 
-        assertThatThrownBy(() -> getPageDefinition.execute("my-org", "claims-app", "page-restricted", true))
-                .isInstanceOf(PageDefinitionNotFoundException.class);
+        assertThatThrownBy(() -> getRouteDefinition.execute("my-org", "claims-app", "route-restricted", true))
+                .isInstanceOf(RouteDefinitionNotFoundException.class);
     }
 
     @Test
     void reachablePage_isServed() {
-        GetPageDefinition getPageDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
+        GetRouteDefinition getRouteDefinition = pageUseCase(rolePolicy(Set.of("VIEWER")));
         stored(graphWithRoles());
 
-        AppPage page = getPageDefinition.execute("my-org", "claims-app", "page-open", true);
+        AppRoute route = getRouteDefinition.execute("my-org", "claims-app", "route-open", true);
 
-        assertThat(page.id()).isEqualTo("page-open");
+        assertThat(route.path()).isEqualTo("route-open");
     }
 
     // --- fixtures ------------------------------------------------------------------------
@@ -137,16 +140,16 @@ class GetAppLayoutTest {
     private void stored(AppGraph graph) {
         AppDefinition definition = new AppDefinition("my-org", "claims-app", "Claims", null, null, graph);
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
-        when(organizationRepository.findById("my-org")).thenReturn(Optional.of(new Organization(
-                "my-org", "My Org", null, null, "en-GB", OrganizationStatus.ACTIVE)));
     }
 
     private GetAppLayout layoutUseCase(OrganizationAccessPolicy policy) {
-        return new GetAppLayout(repository, organizationRepository, guard(policy));
+        OrganizationGuard guard = guard(policy);
+        return new GetAppLayout(repository, tenantDirectory, guard, new NavVisibilityFilter(guard));
     }
 
-    private GetPageDefinition pageUseCase(OrganizationAccessPolicy policy) {
-        return new GetPageDefinition(repository, guard(policy));
+    private GetRouteDefinition pageUseCase(OrganizationAccessPolicy policy) {
+        OrganizationGuard guard = guard(policy);
+        return new GetRouteDefinition(repository, guard, new NavVisibilityFilter(guard));
     }
 
     @SuppressWarnings("unchecked")
@@ -170,16 +173,16 @@ class GetAppLayoutTest {
      * different role — so the three filtering behaviours are distinguishable.
      */
     private static AppGraph graphWithRoles() {
-        NavNode open = new NavNode("nav-open", "Open", null, null, "page-open", List.of(), List.of());
-        NavNode restricted = new NavNode("nav-restricted", "Restricted", null, null, "page-restricted",
+        NavNode open = new NavNode("nav-open", "Open", null, null, "route-open", List.of(), List.of());
+        NavNode restricted = new NavNode("nav-restricted", "Restricted", null, null, "route-restricted",
                 List.of("CLAIMS_ADJUSTER"), List.of());
-        NavNode groupChild = new NavNode("nav-group-child", "Child", null, null, "page-open",
+        NavNode groupChild = new NavNode("nav-group-child", "Child", null, null, "route-open",
                 List.of("AUDITOR"), List.of());
         NavNode group = new NavNode("nav-group", "Group", null, null, null, List.of(), List.of(groupChild));
 
         return new AppGraph(null, null,
                 List.of(new Region("sidenav", List.of(open, restricted, group), List.of())),
-                List.of(new AppPage("page-open", "Open", null, List.of()),
-                        new AppPage("page-restricted", "Restricted", null, List.of())));
+                List.of(new AppRoute("route-open", "Open", null, null, List.of(), RouteTarget.ofWidgets(List.of())),
+                        new AppRoute("route-restricted", "Restricted", null, null, List.of(), RouteTarget.ofWidgets(List.of()))), List.of());
     }
 }

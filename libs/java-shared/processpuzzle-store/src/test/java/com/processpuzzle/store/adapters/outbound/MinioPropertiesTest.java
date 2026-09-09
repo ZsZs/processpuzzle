@@ -27,6 +27,15 @@ class MinioPropertiesTest {
         assertEquals("image/png", properties.getMimeTypes().get("png"));
     }
 
+    /**
+     * Empty, not null. A deployment that has never heard of application stacks keeps the flat bucket
+     * names its objects already live under, and every existing store test stays true.
+     */
+    @Test
+    void shouldDefaultToNoBucketPrefix() {
+        assertEquals("", new MinioProperties().getBucketPrefix());
+    }
+
     @Test
     void shouldProvideThumbnailAndTimeoutDefaults() {
         MinioProperties properties = new MinioProperties();

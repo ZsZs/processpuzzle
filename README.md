@@ -4,8 +4,11 @@
 ProcessPuzzle is a Low-Code platform for content management and business workflow based applications. For more details see [the ProcessPuzzle website](https://processpuzzle.com). 
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
-- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed) – Web application to test and demonstrate the framework capabilities
-- [ProcessPuzzle UI](/apps/processpuzzle-ui) – Web application to help you to define your own business application.
+- [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
+- **ProcessPuzzle UI** and **ProcessPuzzle Admin** – the Low-Code designer and the staff administration application. Both live in the private `processpuzzle-biz` repository, together with the commercial `platform-admin` feature, and consume the framework libraries above through a submodule – see [Extracting platform-admin](/docs/platform-admin-extraction.md).
+
+Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over
+shared infrastructure — see [Application stacks](/docs/application-stacks.md) for the naming rules and the target state.
 ## Architecture
 ProcessPuzzle is organized around five **features** — `base-entity`, `base-rule`, `base-state`, `base-workflow`
 and `base-app`. Three principles hold them together: every feature is **metadata-driven**, every feature has
@@ -19,7 +22,7 @@ No feature hard-codes what your application is *about*. Each one interprets a de
 | `base-entity` | `BaseEntityDescriptor` + `BaseEntityAttributeDescriptor`s | Reactive form, Material table, RSQL search, PDF export |
 | `base-rule` | `BaseRule` records (expression + context + severity) | Validation feedback on any generated form |
 | `base-state` | State/transition definitions | Allowed transitions and current-state projections |
-| `base-workflow` | Workflow (process) definitions | Long-running process execution and monitoring |
+| `base-workflow` | Workflow definitions | Long-running workflow execution and monitoring |
 | `base-app` | Workspace / navigation / panel layout definitions | The shell that hosts everything else |
 
 The pay-off is that **extension is configuration, not code**:
@@ -35,7 +38,7 @@ The pay-off is that **extension is configuration, not code**:
   app shell reads route metadata to build navigation. Features cooperate through each other's metadata rather
   than through each other's internals.
 - **Self-describing at run-time** — the same descriptors are what a Low-Code designer such as
-  [ProcessPuzzle UI](/apps/processpuzzle-ui) edits, so the modelling tool and the runtime never drift apart.
+  ProcessPuzzle UI edits, so the modelling tool and the runtime never drift apart.
 
 ### Two layers per feature
 Every feature ships as a pair: an Angular library (`libs/js-shared/*-frontend`, published to npm as
@@ -74,6 +77,7 @@ graph TD
     core[processpuzzle-core]
     contracts[api-contracts]
     store[processpuzzle-store]
+    entityBE[base-entity-backend]
     ruleBE[base-rule-backend]
     stateBE[base-state-backend]
     workflowBE[base-workflow-backend]
@@ -81,6 +85,8 @@ graph TD
 
     store --> core
     store --> contracts
+    entityBE --> core
+    entityBE --> contracts
     ruleBE --> core
     ruleBE --> contracts
     stateBE --> core
@@ -88,12 +94,12 @@ graph TD
     workflowBE --> stateBE
     workflowBE --> core
     workflowBE --> contracts
-    appBE --> ruleBE
     appBE --> core
     appBE --> contracts
   end
 
   entityFE -. "REST / Firestore" .-> store
+  entityFE -. REST .-> entityBE
   ruleFE -. "REST: /rules" .-> ruleBE
   stateFE -. REST .-> stateBE
   workflowFE -. REST .-> workflowBE
@@ -101,7 +107,11 @@ graph TD
 ```
 
 The frontend dependency edges above are the real `package.json` dependencies; the backend edges are the real
-`pom.xml` dependencies. Note that the two layers mirror each other's shape but are **independently
+`pom.xml` dependencies. Note that `base-app-backend` names no other feature: what it needs from
+outside itself — does this tenant exist, what do its governance rules say — it declares as an
+outbound port in `app :: port`, and the deploying application supplies the adapter. `base-state` and
+`base-workflow` still carry a compile dependency on the features they adapt, though the calls
+themselves already go through their own ports. Note that the two layers mirror each other's shape but are **independently
 versioned and independently usable** — a `base-entity` application can run against plain REST, `json-server`
 or Firestore without any ProcessPuzzle backend at all.
 
@@ -140,7 +150,7 @@ sequenceDiagram
     E-)S: EntityChanged
     S->>S: resolve allowed transition
     S-)W: StateChanged
-    W->>W: advance process instance
+    W->>W: advance workflow instance
     W-)E: WorkflowAction (create / update entities)
     W-)D: TaskAssigned
     D--)User: task appears in the workspace
@@ -157,8 +167,7 @@ Why events rather than direct dependencies:
 - **Auditability.** The event stream doubles as the history of *why* an entity reached its current state.
 
 On the backend the events are Spring application events (in-process, transactional). On the frontend they are
-signal-based store notifications. On Firebase, Firestore triggers and Pub/Sub carry the same events between
-Cloud Functions.
+signal-based store notifications.
 
 ### Feature maturity
 The platform is being built feature by feature; the architecture above is the target, and the parts are at
@@ -166,39 +175,24 @@ different stages:
 
 | Feature | Frontend | Backend |
 | --- | --- | --- |
-| `base-entity` | production-ready | served by `processpuzzle-store` / REST / Firestore |
+| `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
-| `base-state` | scaffold | scaffold |
-| `base-workflow` | scaffold | scaffold |
+| `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
+| `base-workflow` | authoring UI for workflows and tools; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented |
 | `base-app` | scaffold | scaffold |
 
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without
 reshaping the whole.
 
-### Deployment topologies
-The same codebase deploys to **two platforms**, chosen per environment. The application code is identical; only
-the adapters bound at startup differ — `BaseEntityFirestoreService` versus `BaseEntityRestService`, OIDC against
-Firebase Auth versus Keycloak, Firebase Storage versus MinIO.
+### Deployment topology
+Every environment — `ci`, `stage` and `prod` — runs the **same self-hosted Docker Compose topology**, deployed
+by Coolify. One codebase, one target: see [Build and deployment](/docs/build-deploy-strategy.md).
 
 ```mermaid
 graph LR
-  subgraph FB["Platform 1 — Firebase (serverless)"]
-    fbHost["Hosting<br/>Angular bundle"]
-    fbAuth["Firebase Auth<br/>identity"]
-    fbFn["Cloud Functions<br/>/api/** rewrite"]
-    fbFs["Firestore<br/>entities, rules, definitions"]
-    fbSt["Storage<br/>documents"]
-    fbHost --> fbAuth
-    fbHost --> fbFn
-    fbHost --> fbFs
-    fbFn --> fbFs
-    fbFs -. "triggers / Pub-Sub" .-> fbFn
-    fbHost --> fbSt
-  end
-
-  subgraph DC["Platform 2 — Docker Compose (self-hosted)"]
+  subgraph DC["Docker Compose (self-hosted, deployed by Coolify)"]
     nginx["NgInx<br/>serves Angular, reverse proxy"]
-    boot["Spring Boot Modulith<br/>processpuzzle-backend"]
+    boot["Spring Boot Modulith<br/>processpuzzle-testbed-backend"]
     kc["Keycloak<br/>identity (+ PostgreSQL)"]
     minio["MinIO<br/>S3 object storage"]
     pg[("PostgreSQL")]
@@ -209,25 +203,34 @@ graph LR
     kc --> pg
   end
 
-  code["One codebase<br/>Angular libs + Spring Boot libs"] --> FB
-  code --> DC
+  code["One codebase<br/>Angular libs + Spring Boot libs"] --> DC
 ```
 
-**Firebase** — `firebase.json` wires Hosting (the Angular bundle from `dist/apps/*/browser`), a `/api/**`
-rewrite to the `jsonServer` Cloud Function, Firestore (rules + indexes), and Storage rules. The full emulator
-suite (auth, firestore, functions, storage, pubsub, hosting) runs the same topology locally.
+That the platform *can* run elsewhere is a property of its adapters rather than of a second deployment:
+`base-entity` binds `BaseEntityRestService` or `BaseEntityFirestoreService`, and `auth` binds Keycloak or
+Firebase Auth, all chosen at run time from `run-time-conf/config.<stage>.json`. The Firestore and Firebase-Auth
+adapters remain part of the framework for consumers who want them; ProcessPuzzle itself no longer deploys to
+Firebase, and nothing in this repository builds or configures a Firebase project.
 
-**Docker Compose** — `tools/docker/docker-compose-ci.yaml` (CI / local) and `docker-compose-prod.yaml`
-(production) compose NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend
+**Docker Compose** — two files, one per layer, and each is one Coolify Docker Compose resource:
+`tools/docker/docker-compose-infrastructure.yaml` (the shared services) and
+`docker-compose-apps.yaml` (the testbed stack's two halves, joining the infrastructure resource's
+network as `external`). One definition each for `ci` / `stage` / `prod`, parameterized by
+`tools/docker/env/.env.<environment>`, and both pull-only so a deployment runs the images CI
+promoted; `docker-compose-build.yaml` and `docker-compose-apps-local.yaml` overlay the `build:`
+sections and the single-project topology back for CI and local development. Together they compose
+NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend
 (where feature modules are Modulith modules and the events above are in-process application events), Keycloak
-backed by PostgreSQL for identity, and MinIO for object storage behind `processpuzzle-store`.
+for identity, PostgreSQL behind both, and MinIO for object storage behind `processpuzzle-store`. The backend
+is deployed **once per application stack** — same image, its own database, realm and bucket prefix each; see
+[Application stacks](/docs/application-stacks.md).
 
-Running both topologies in CI is deliberate: it keeps platform-specific concerns confined to the adapter layer,
-so neither platform can quietly become the only one that works.
+CI runs this same topology rather than a simplified stand-in, which is what keeps deployment-specific concerns
+confined to the adapter layer instead of leaking into the applications.
 
 ## Theming
 The framework ships a small set of **named brand colors** as CSS custom properties, defined in
-`libs/js-shared/widgets/src/theme/pp-colors.css`. Framework components (header, sidenav, cards, form &
+`libs/js-shared/base-widget-frontend/src/theme/pp-colors.css`. Framework components (header, sidenav, cards, form &
 card buttons) reference these tokens instead of hard-coded values, so a single stylesheet controls the
 platform's look.
 
@@ -247,13 +250,29 @@ platform's look.
 
 ### Consuming the theme
 Add the token file to your app's `styles` array (Angular `project.json` / `angular.json`), **before** your
-own global styles:
+own global styles. An application that hosts `base-app` — the designer's Preview tab, or a run-time
+`AppShellComponent` — adds the Material theme sheet too:
 ```jsonc
 "styles": [
-  "libs/js-shared/widgets/src/theme/pp-colors.css", // or the published package path
+  "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",        // or the published package path
+  "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss", // only if you host base-app
   "src/styles.scss"
 ]
 ```
+
+### Per-application Material themes
+`AppDefinition.theme.materialTheme` names one of four Material themes and `colorScheme` picks light, dark
+or auto. `pp-material-themes.scss` emits each theme under a **class** rather than under `html`, which is
+what lets one *subtree* wear a theme: `AppShellComponent` puts `pp-theme-<name> pp-scheme-<scheme>` on its
+own host, so a previewed application is themed independently of the designer around it. This is possible
+because `mat.theme()` emits nothing but `--mat-sys-*` custom properties, and those cascade — Angular's
+prebuilt theme files cannot be used the same way, since their `html` selector is baked in.
+
+Two things to know. If the sheet is not registered the shell still sets the classes and simply inherits
+the host application's theme — you lose theming, not correctness. And CDK overlays (dialogs, menus,
+tooltips, `mat-select` panels) render into `.cdk-overlay-container` under `<body>`, outside the themed
+subtree, so they keep the host's theme; in a standalone deployment this does not arise, because there the
+application's theme *is* the document's.
 
 ### Overriding colors
 Redefine any token in a `:root` block in your **own** global stylesheet (loaded after `pp-colors.css`);
@@ -296,7 +315,6 @@ Because the tokens cascade at runtime, no rebuild of the framework libraries is 
 - **ESLint 10** with Angular, TypeScript, and Prettier plugins
 - **Prettier** for code formatting
 ### Backend & Development Tools
-- **Firebase Functions** for serverless backend
 - **json-server** for API mocking
 - **oauth2-mock-server** for OAuth testing
 ### Monorepo

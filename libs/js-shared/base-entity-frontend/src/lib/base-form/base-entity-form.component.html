@@ -1,4 +1,9 @@
-<mat-card appearance="outlined" class="dense-3">
+<!--
+  Hidden rather than removed while an embedded child is open: the card holds `baseFormHost`, and destroying
+  it would take the built controls and the user's unsaved edits with it. Keeping it alive behind the child is
+  what makes the drill-down a detour rather than a restart.
+-->
+<mat-card appearance="outlined" class="dense-3" [class.base-entity-form-superseded]="hasActiveEmbeddedChild()">
   <mat-card-content>
     <form [formGroup]="baseEntityForm" (ngSubmit)="onSubmit()" (focusout)="onFieldBlur()">
       <ng-template baseFormHost></ng-template>
@@ -23,3 +28,6 @@
     <button id="submit" [attr.data-testid]="entityDescriptor().createTestId('save')" mat-raised-button color="primary" type="submit" [disabled]="saveDisabled()" (click)="onSubmit()">Save</button>
   </mat-card-actions>
 </mat-card>
+
+<!-- Hosts an embedded child's screens, whose routes hang below this form's. -->
+<router-outlet (activate)="hasActiveEmbeddedChild.set(true)" (deactivate)="hasActiveEmbeddedChild.set(false)" />

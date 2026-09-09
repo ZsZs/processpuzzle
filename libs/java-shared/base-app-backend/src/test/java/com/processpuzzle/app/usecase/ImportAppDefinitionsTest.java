@@ -1,14 +1,15 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.app.usecase.port.TenantDirectory;
+import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
-import com.processpuzzle.app.domain.OrganizationRepository;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
-import com.processpuzzle.rule.domain.Severity;
+import com.processpuzzle.app.usecase.Severity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,14 +50,14 @@ class ImportAppDefinitionsTest {
                     navItems:
                       - id: nav-claims
                         label: Claims
-                        pageId: page-claims-list
-                pages:
-                  - id: page-claims-list
+                        routePath: claims-list
+                routes:
+                  - path: claims-list
                     title: Claims
             """;
 
     private AppDefinitionRepository repository;
-    private OrganizationRepository organizationRepository;
+    private ObjectProvider<TenantDirectory> tenantDirectory;
     private ImportAppDefinitions importAppDefinitions;
 
     @BeforeEach
@@ -65,10 +66,9 @@ class ImportAppDefinitionsTest {
         when(repository.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
         when(repository.findByOrgKeyAndId(anyString(), anyString())).thenReturn(Optional.empty());
 
-        organizationRepository = mock(OrganizationRepository.class);
-        when(organizationRepository.existsById(anyString())).thenReturn(true);
+        tenantDirectory = AppTestFixtures.tenantDirectory(ORG_KEY);
 
-        importAppDefinitions = new ImportAppDefinitions(repository, organizationRepository,
+        importAppDefinitions = new ImportAppDefinitions(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.permissiveGuard(), new AppMapper());
     }
 
@@ -84,7 +84,7 @@ class ImportAppDefinitionsTest {
         assertThat(saved.getOrgKey()).isEqualTo(ORG_KEY);
         assertThat(saved.getId()).isEqualTo(APP_ID);
         assertThat(saved.getTranslocoId()).isEqualTo("claims.app.name");
-        assertThat(saved.getDraftGraph().pages()).hasSize(1);
+        assertThat(saved.getDraftGraph().routes()).hasSize(1);
         assertThat(saved.getRevision()).isEqualTo(1L);
     }
 
@@ -153,21 +153,20 @@ class ImportAppDefinitionsTest {
 
     @Test
     void oneStructurallyInvalidEntry_rejectsTheWholeFile() throws IOException {
-        String withOrphanPage = VALID_FILE + """
+        String withTitlelessRoute = VALID_FILE + """
                   - id: second-app
                     name: Second
-                    pages:
-                      - id: unreachable
-                        title: Unreachable
+                    routes:
+                      - path: titleless
                 """;
 
-        ImportOutcome outcome = importAppDefinitions.execute(ORG_KEY, yaml(withOrphanPage));
+        ImportOutcome outcome = importAppDefinitions.execute(ORG_KEY, yaml(withTitlelessRoute));
 
         assertThat(outcome.created()).isZero();
         assertThat(outcome.updated()).isZero();
         // The message names the entry and the offending node, so a file with several entries says which.
         assertThat(outcome.errors()).singleElement().asString()
-                .contains("'second-app'", "/pages/0", "not reachable");
+                .contains("'second-app'", "/routes/0/title", "needs a title");
         verify(repository, never()).save(any());
     }
 
@@ -177,8 +176,8 @@ class ImportAppDefinitionsTest {
         AppDefinitionValidator lenient = mock(AppDefinitionValidator.class);
         when(lenient.validate(anyString(), any())).thenReturn(List.of(
                 new AppValidationProblem("/", "rule.appDefinition.titlesAreTranslatable",
-                        "Give every page title a Transloco id.", Severity.INFO)));
-        ImportAppDefinitions withAdvice = new ImportAppDefinitions(repository, organizationRepository,
+                        "Give every route title a Transloco id.", Severity.INFO)));
+        ImportAppDefinitions withAdvice = new ImportAppDefinitions(repository, tenantDirectory,
                 lenient, AppTestFixtures.permissiveGuard(), new AppMapper());
 
         ImportOutcome outcome = withAdvice.execute(ORG_KEY, yaml(VALID_FILE));
@@ -199,10 +198,12 @@ class ImportAppDefinitionsTest {
 
     @Test
     void unknownOrganization_is404BeforeTheFileIsEvenRead() {
-        when(organizationRepository.existsById(ORG_KEY)).thenReturn(false);
+        ImportAppDefinitions withoutTheTenant = new ImportAppDefinitions(repository,
+                AppTestFixtures.tenantDirectory(), AppTestFixtures.structuralValidator(),
+                AppTestFixtures.permissiveGuard(), new AppMapper());
 
-        assertThatThrownBy(() -> importAppDefinitions.execute(ORG_KEY, yaml(VALID_FILE)))
-                .isInstanceOf(OrganizationNotFoundException.class);
+        assertThatThrownBy(() -> withoutTheTenant.execute(ORG_KEY, yaml(VALID_FILE)))
+                .isInstanceOf(UnknownTenantException.class);
 
         verifyNoInteractions(repository);
     }
@@ -215,13 +216,13 @@ class ImportAppDefinitionsTest {
 
     @Test
     void aPrincipalWithoutDesignRights_isRejectedBeforeAnythingIsRead() {
-        ImportAppDefinitions guarded = new ImportAppDefinitions(repository, organizationRepository,
+        ImportAppDefinitions guarded = new ImportAppDefinitions(repository, tenantDirectory,
                 AppTestFixtures.structuralValidator(), AppTestFixtures.denyingGuard(), new AppMapper());
 
         assertThatThrownBy(() -> guarded.execute(ORG_KEY, yaml(VALID_FILE)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
 
-        verifyNoInteractions(repository, organizationRepository);
+        verifyNoInteractions(repository);
     }
 
     @Test

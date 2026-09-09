@@ -12,3 +12,6 @@ logging:
   level:
     root: warn
     com.processpuzzle: info
+
+base-workflow:
+  loadDefaultWorkflows: no

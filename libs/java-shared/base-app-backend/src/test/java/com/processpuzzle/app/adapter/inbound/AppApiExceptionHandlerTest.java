@@ -5,11 +5,9 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionAlreadyExistsExcepti
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAccessDeniedException;
-import com.processpuzzle.app.usecase.exception.OrganizationAlreadyExistsException;
-import com.processpuzzle.app.usecase.exception.OrganizationKeyInvalidException;
-import com.processpuzzle.app.usecase.exception.OrganizationNotFoundException;
-import com.processpuzzle.app.usecase.exception.PageDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.UnknownTenantException;
+import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -19,7 +17,7 @@ import java.util.List;
 
 import static com.processpuzzle.app.AppTestFixtures.APP_ID;
 import static com.processpuzzle.app.AppTestFixtures.ORG_KEY;
-import static com.processpuzzle.app.AppTestFixtures.PAGE_ID;
+import static com.processpuzzle.app.AppTestFixtures.ROUTE_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -31,9 +29,14 @@ class AppApiExceptionHandlerTest {
 
     private final AppApiExceptionHandler handler = new AppApiExceptionHandler();
 
+    /**
+     * Unchanged errorId and status. Only the exception type changed: base-app raises its own
+     * {@link UnknownTenantException} rather than platform-admin's {@code OrganizationNotFoundException},
+     * and this is what pins that a client cannot tell.
+     */
     @Test
     void anUnknownOrganizationIs404() {
-        assertThatResponse(handler.handleOrganizationNotFound(new OrganizationNotFoundException(ORG_KEY)))
+        assertThatResponse(handler.handleUnknownTenant(new UnknownTenantException(ORG_KEY)))
                 .isEqualTo(HttpStatus.NOT_FOUND, "organization.not-found", ORG_KEY);
     }
 
@@ -46,11 +49,11 @@ class AppApiExceptionHandlerTest {
     @Test
     void anUnknownPageIs404() {
         assertThatResponse(handler.handlePageNotFound(
-                new PageDefinitionNotFoundException(ORG_KEY, APP_ID, PAGE_ID)))
-                .isEqualTo(HttpStatus.NOT_FOUND, "app.page.not-found", PAGE_ID);
+                new RouteDefinitionNotFoundException(ORG_KEY, APP_ID, ROUTE_PATH)))
+                .isEqualTo(HttpStatus.NOT_FOUND, "app.route.not-found", ROUTE_PATH);
     }
 
-    /** 404 rather than 409: the contract declares only 404 for the layout and page endpoints. */
+    /** 404 rather than 409: the contract declares only 404 for the layout and route endpoints. */
     @Test
     void requestingAnUnpublishedRevisionIs404NotAConflict() {
         assertThatResponse(handler.handleNotPublished(new AppNotPublishedException(ORG_KEY, APP_ID)))
@@ -58,23 +61,9 @@ class AppApiExceptionHandlerTest {
     }
 
     @Test
-    void aTakenOrganizationKeyIs409() {
-        assertThatResponse(handler.handleOrganizationExists(new OrganizationAlreadyExistsException(ORG_KEY)))
-                .isEqualTo(HttpStatus.CONFLICT, "organization.key.taken", ORG_KEY);
-    }
-
-    @Test
     void aTakenAppDefinitionIdIs409() {
         assertThatResponse(handler.handleAppExists(new AppDefinitionAlreadyExistsException(ORG_KEY, APP_ID)))
                 .isEqualTo(HttpStatus.CONFLICT, "app.already-exists", APP_ID);
-    }
-
-    /** The key check's own identifier is carried through, so the sign-up form can say why. */
-    @Test
-    void aMalformedOrganizationKeyIs400WithTheCheckSpecificIdentifier() {
-        assertThatResponse(handler.handleKeyInvalid(new OrganizationKeyInvalidException(
-                "organization.key.reserved", "Organization key cannot be claimed: 'api'.")))
-                .isEqualTo(HttpStatus.BAD_REQUEST, "organization.key.reserved", "'api'");
     }
 
     @Test

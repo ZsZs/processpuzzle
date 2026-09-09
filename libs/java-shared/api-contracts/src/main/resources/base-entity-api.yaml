@@ -1,9 +1,971 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  title: ProcessPuzzle Base Entity API
-  description: ProcessPuzzle Base Entity API
-  version: 1.0.0
+  title: Base Entity API
+  description: >
+    Runtime metadata-driven entity platform for ProcessPuzzle.
+
+    Two layers:
+      1. Knowledge layer — BaseEntityDefinition + BaseEntityAttribute. Defines what an
+         entity type looks like. Authored and edited at runtime; replaces the previous
+         static TypeScript entity definitions.
+      2. Operation layer — EntityObject. Stores actual instances. The full attribute
+         payload (including embedded components) is persisted as-is, as JSON
+         (PostgreSQL JSONB), rather than normalized into per-attribute-value rows.
+         Validation is enforced by base-rule (@Validate / ConstraintRule) against the
+         JSON payload before persistence, so normalization buys no extra safety —
+         only extra joins. The one cost this defers to the RsqlToEavSpecificationBuilder
+         is comparison-operator type coercion, since JSONB has no native typed columns
+         (see "RSQL Filtering" section below).
+
+    ## Multi-tenancy
+
+    Every resource is scoped by `{orgKey}`, exactly as in base-app-api.yaml:
+    an entity definition code or entity object is unique only *within* its organization.
+    The key is carried as a path segment so that it appears in logs, audit trails and cache keys.
+
+    Tenant isolation is a server-side responsibility: `orgKey` must be verified against the
+    authenticated principal's `organization` claim and answered with 403 on mismatch. The
+    path segment alone is not an authorization decision.
+  version: 0.1.0
+
 servers:
-  - url: 'https'
+  - url: /api/base-entity
+
+tags:
+  - name: Base Entity Definitions
+    description: Knowledge layer — entity type metadata
+  - name: Base Entities
+    description: Operation layer — entity instances
+
+# ---------------------------------------------------------------------------
+# RSQL Filtering
+# ---------------------------------------------------------------------------
+# GET /organizations/{orgKey}/entities/{entityDefinitionCode} accepts an `rsql` query param, e.g.:
+#   rsql=status==ACTIVE;age=gt=30
+#   rsql=address.city==Munich                      (embedded component path)
+#   rsql=owner.code==acme-corp                      (non-embedded component, own EntityObject)
+#
+# RsqlToEavSpecificationBuilder resolves each attribute path against
+# BaseEntityAttribute.valueKind (walking into componentDefinitionCode for nested
+# paths) BEFORE building the predicate, so it knows whether to cast
+# payload->>'path' to numeric/date/boolean or leave it text. Only attributes with
+# BaseEntityAttribute.indexed=true are guaranteed an expression index; unindexed
+# attributes still work, just without one.
+# ---------------------------------------------------------------------------
+
 paths:
-  
+  # ==========================================================================
+  # Knowledge layer
+  # ==========================================================================
+  /organizations/{orgKey}/entity-definitions:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+    get:
+      operationId: listEntityDefinitions
+      tags: [ Base Entity Definitions ]
+      summary: List entity definitions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EntityDefinitionStatus'
+        - name: isEmbedded
+          in: query
+          schema:
+            type: boolean
+          description: Filter to embedded-only or standalone/non-embedded-only definitions.
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityDefinitionPage'
+    post:
+      operationId: createEntityDefinition
+      tags: [ Base Entity Definitions ]
+      summary: Create a new entity definition (with its attributes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseEntityDefinitionInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityDefinition'
+          headers:
+            Location:
+              schema:
+                type: string
+        '409':
+          description: code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entity-definitions/{code}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/EntityDefinitionCode'
+    get:
+      operationId: getEntityDefinition
+      tags: [ Base Entity Definitions ]
+      summary: Get an entity definition by code
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityDefinition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: replaceEntityDefinition
+      tags: [ Base Entity Definitions ]
+      summary: Replace an entity definition (attributes included, full replace)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseEntityDefinitionInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityDefinition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict (optimistic locking) or code is immutable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteEntityDefinition
+      tags: [ Base Entity Definitions ]
+      summary: Delete an entity definition
+      description: >
+        Rejected (409) if EntityObject rows still reference this definition, or if
+        another definition still lists this one in componentParents.
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: definition is still in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /organizations/{orgKey}/entity-definitions/{code}/attributes:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/EntityDefinitionCode'
+    post:
+      operationId: addAttribute
+      tags: [ Base Entity Definitions ]
+      summary: Add a single attribute to an existing definition
+      description: Convenience endpoint for incremental authoring; PUT the whole definition for bulk changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseEntityAttributeInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityAttribute'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: attribute code already exists on this definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /organizations/{orgKey}/entity-definitions/{code}/attributes/{attributeCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/EntityDefinitionCode'
+      - name: attributeCode
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: replaceAttribute
+      tags: [ Base Entity Definitions ]
+      summary: Replace a single attribute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseEntityAttributeInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseEntityAttribute'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteAttribute
+      tags: [ Base Entity Definitions ]
+      summary: Remove an attribute
+      description: Rejected (409) if existing EntityObject payloads for this definition still populate this attribute.
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: attribute still populated on existing objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  # ==========================================================================
+  # Operation layer
+  # ==========================================================================
+  /organizations/{orgKey}/entities/{entityDefinitionCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listEntities
+      tags: [ Base Entities ]
+      summary: List / filter entity instances
+      parameters:
+        - name: rsql
+          in: query
+          schema:
+            type: string
+          description: RSQL filter over payload attributes, including embedded-component paths (a.b.c).
+        - name: sort
+          in: query
+          schema:
+            type: string
+          example: 'createdAt,desc'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObjectPage'
+        '400':
+          description: malformed RSQL, or filter references an unresolvable attribute path
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    post:
+      operationId: createEntity
+      tags: [ Base Entities ]
+      summary: Create an entity instance
+      description: >
+        `entityDefinitionCode` in the path must reference a definition with isEmbedded=false
+        (embedded component definitions exist for validation/UI metadata only and
+        never get their own EntityObject rows — they travel inside a parent's payload).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityObjectInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObject'
+          headers:
+            Location:
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getEntity
+      tags: [ Base Entities ]
+      summary: Get an entity instance by id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updateEntity
+      tags: [ Base Entities ]
+      summary: Replace an entity instance's payload
+      description: Full-payload replace. `version` must match the current stored version (optimistic locking).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityObjectUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteEntity
+      tags: [ Base Entities ]
+      summary: Delete an entity instance
+      description: >
+        Deleting an object that other objects reference via a FOREIGN_KEY attribute
+        value is rejected (409) unless `cascade=true` is passed.
+      parameters:
+        - name: cascade
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: referenced by other entities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  # ── Translations ──
+  # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
+  # templates rather than one with an optional segment: 4 vs 5 segments is what makes them
+  # unambiguous, and it mirrors `assets/i18n/<lang>.json` and `assets/i18n/<scope>/<lang>.json`.
+  #
+  # `entity` is the feature's own service root. Every feature serves its own translations from its
+  # own store, so that a later split into services with separate databases moves this segment into the
+  # host rather than rewriting the resource. In the monolith it is also what keeps seven identical
+  # `/translations` paths from colliding into an ambiguous mapping at startup.
+  /organizations/{orgKey}/entity/translations/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Entity Translations
+      summary: Root translation bundle of this feature for one language
+      operationId: getEntityTranslations
+      description: >-
+        The bundle that has no transloco scope — the equivalent of `assets/i18n/<lang>.json`.
+        Answers 200 with an empty object when nothing has been seeded, rather than 404: the
+        frontend loader reaches here only after an asset miss, and an error status would make an
+        unseeded locale indistinguishable from a broken backend.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+  /organizations/{orgKey}/entity/translations/{scope}/{locale}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/TranslationScopeParam'
+      - $ref: '#/components/parameters/TranslationLocaleParam'
+    get:
+      tags:
+        - Base Entity Translations
+      summary: One scoped translation bundle of this feature
+      operationId: getEntityScopedTranslations
+      description: >-
+        The equivalent of `assets/i18n/<scope>/<lang>.json`. Keys are relative to the scope, as in
+        the asset files: transloco prefixes them with the scope alias itself.
+      responses:
+        '200':
+          description: The bundle, empty when nothing has been seeded for this scope and locale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationBundle'
+
+
+components:
+  parameters:
+    TranslationLocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/Locale'
+
+    TranslationScopeParam:
+      name: scope
+      in: path
+      required: true
+      description: Transloco scope of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/TranslationScope'
+
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/OrganizationKey'
+      description: >-
+        URL-safe tenant slug identifying the owning organization. See
+        shared-api.yaml OrgKeyParam for the full contract. Must be verified against the
+        authenticated principal's organization claim.
+    EntityDefinitionCode:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ValidationError:
+      description: Payload failed base-rule / attribute validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblemDetail'
+
+  schemas:
+    # ------------------------------------------------------------------
+    # Knowledge layer
+    # ------------------------------------------------------------------
+    EntityDefinitionStatus:
+      type: string
+      enum: [ DRAFT, ACTIVE, DEPRECATED ]
+
+    ValueKind:
+      type: string
+      description: >
+        Data type of the attribute's value. Drives JSON payload validation and
+        RSQL comparison-operator casting. (TEXT_LIST intentionally omitted —
+        repetition is expressed via isMultiValued instead.)
+      enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE ]
+
+    FormControlType:
+      type: string
+      description: >
+        UI rendering hint for the attribute, consumed by the frontend form
+        generator. Mirrors libs/js-shared/base-entity-frontend
+        abstact-attr.descriptor.ts FormControlType.
+      enum:
+        - TEXT
+        - TEXTAREA
+        - TEXT_BOX
+        - NUMBER
+        - DATE
+        - DATE_TIME
+        - BOOLEAN
+        - CHECKBOX
+        - RADIO
+        - DROPDOWN
+        - ENUM_SELECT
+        - FOREIGN_KEY
+        - LOOKUP
+        - EMBEDDED_COMPONENTS
+        - COMPONENTS
+        - RELATED_ENTITIES
+        - ARTIFACT
+        - TAGS
+        - TITLE
+        - LABEL
+        - ADDITIONAL_PROPERTIES
+        - FLEX_BOX
+
+    FlexDirection:
+      type: string
+      description: >-
+        Flexbox layout direction for entity form descriptors (mirrors
+        libs/js-shared/base-entity-frontend FlexDirection).
+      enum: [ CONTAINER, COLUMN, ROW ]
+
+    Selectable:
+      type: object
+      description: Key-value option for selectable controls (dropdown, radio, etc.).
+      required: [ key ]
+      properties:
+        key:
+          type: string
+        value: { }
+
+    AbstractAttrDescriptor:
+      type: object
+      description: >-
+        Base abstract descriptor for entity form attributes and layout items.
+        Mirrors libs/js-shared/base-entity-frontend AbstractAttrDescriptor.
+      required: [ attrName, formControlType ]
+      properties:
+        attrName:
+          type: string
+        formControlType:
+          $ref: '#/components/schemas/FormControlType'
+        disabled:
+          type: boolean
+          default: false
+        style:
+          type: object
+          description:
+            CSS style key-value pairs (e.g. column-gap: 20px).
+          additionalProperties: true
+        labelKey:
+          type: string
+          description: Optional override for the transloco key segment of this attribute.
+
+    AttributeDescriptor:
+      allOf:
+        - $ref: '#/components/schemas/AbstractAttrDescriptor'
+        - type: object
+          description: >-
+            Descriptor for a single entity attribute in form and table rendering.
+            Mirrors libs/js-shared/base-entity-frontend BaseEntityAttrDescriptor.
+          properties:
+            label:
+              type: string
+            description:
+              type: string
+            styleClass:
+              type: string
+            labelClass:
+              type: string
+            format:
+              type: string
+            isLinkToDetails:
+              type: boolean
+              default: false
+            selectables:
+              type: array
+              items:
+                $ref: '#/components/schemas/Selectable'
+            visible:
+              type: boolean
+              default: true
+            showThumbnail:
+              type: boolean
+              default: true
+            hideInTable:
+              type: boolean
+              default: false
+            isHeading:
+              type: boolean
+            placeholder:
+              type: string
+            lines:
+              type: integer
+            options:
+              type: object
+              additionalProperties: true
+            required:
+              type: boolean
+              default: false
+            pattern:
+              type: string
+            referenceIdField:
+              type: string
+              default: id
+            linkedEntityType:
+              type: string
+
+    BaseEntityAttrDescriptor:
+      $ref: '#/components/schemas/AttributeDescriptor'
+
+    FlexBoxDescriptor:
+      allOf:
+        - $ref: '#/components/schemas/AbstractAttrDescriptor'
+        - type: object
+          description: >-
+            Layout descriptor for organizing attribute descriptors and nested flexbox
+            descriptors in containers, rows, or columns with optional CSS styles.
+            Mirrors libs/js-shared/base-entity-frontend FlexboxDescriptor.
+          required: [ direction ]
+          properties:
+            direction:
+              $ref: '#/components/schemas/FlexDirection'
+            attrDescriptors:
+              type: array
+              description: Array of AttributeDescriptors and/or nested FlexBoxDescriptors.
+              items:
+                $ref: '#/components/schemas/AbstractAttrDescriptor'
+
+    FlexboxDescriptor:
+      $ref: '#/components/schemas/FlexBoxDescriptor'
+
+    BaseEntityDescriptor:
+      type: object
+      description: >-
+        Descriptor bundling an entity's name and its layout of attribute / flexbox descriptors.
+        Mirrors libs/js-shared/base-entity-frontend BaseEntityDescriptor.
+      required: [ entityName, attrDescriptors ]
+      properties:
+        entityName:
+          type: string
+        attrDescriptors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbstractAttrDescriptor'
+
+    BaseEntityAttributeInput:
+      type: object
+      required: [ code, name, valueKind, formControlType ]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        displayOrder:
+          type: integer
+        valueKind:
+          $ref: '#/components/schemas/ValueKind'
+        formControlType:
+          $ref: '#/components/schemas/FormControlType'
+        isMultiValued:
+          type: boolean
+          default: false
+        required:
+          type: boolean
+          default: false
+        indexed:
+          type: boolean
+          default: false
+          description: When true, an expression index is generated over payload->>code for RSQL range queries.
+        defaultValue: { }
+        enumValues:
+          type: array
+          items:
+            type: string
+          description: Only meaningful when valueKind=ENUM.
+        linkedEntityType:
+          type: string
+          description: >
+            Entity definition code this attribute points at. Required when
+            formControlType is FOREIGN_KEY (parent reference for a non-embedded
+            component) or EMBEDDED_COMPONENTS (child definition carried inline).
+        isLinkToDetails:
+          type: boolean
+          default: false
+          description: Marks the attribute used as this entity's display title (componentIdentification).
+        validationRules: { }
+
+    BaseEntityAttribute:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntityAttributeInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+
+    BaseEntityDefinitionInput:
+      type: object
+      required: [ code, name, attributes ]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/EntityDefinitionStatus'
+        componentParents:
+          type: array
+          items:
+            type: string
+          default: [ ]
+          description: Entity definition code(s) this may be nested under. Empty for a standalone entity.
+        isEmbedded:
+          type: boolean
+          default: false
+          description: >
+            True: this definition's payload is carried inside its parent's payload
+            (no EntityObject rows of its own). False: persisted independently,
+            linked back to its parent via a FOREIGN_KEY attribute value. Rejected
+            (422) when true and componentParents is empty.
+        organizationId:
+          type: string
+          format: uuid
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseEntityAttributeInput'
+
+    BaseEntityDefinition:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntityDefinitionInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            version:
+              type: integer
+              readOnly: true
+            attributes:
+              type: array
+              items:
+                $ref: '#/components/schemas/BaseEntityAttribute'
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+            createdBy:
+              type: string
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              readOnly: true
+            updatedBy:
+              type: string
+              readOnly: true
+
+    BaseEntityDefinitionPage:
+      $ref: '#/components/schemas/Page'
+
+    # ------------------------------------------------------------------
+    # Operation layer
+    # ------------------------------------------------------------------
+    EntityObjectInput:
+      type: object
+      required: [ payload ]
+      properties:
+        entityDefinitionCode:
+          type: string
+        payload:
+          type: object
+          description: >
+            Full attribute map, keyed by attribute code. May contain nested objects
+            or arrays for embedded components (keyed by the parent's
+            EMBEDDED_COMPONENTS attribute code). Validated against the
+            definition's attributes (recursively, for embedded components) and
+            against base-rule constraints before persistence.
+          additionalProperties: true
+
+    EntityObjectUpdate:
+      type: object
+      required: [ version, payload ]
+      properties:
+        version:
+          type: integer
+          description: Must match the currently stored version (optimistic locking).
+        payload:
+          type: object
+          additionalProperties: true
+
+    EntityObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        entityDefinitionCode:
+          type: string
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        payload:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        createdBy:
+          type: string
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
+
+    EntityObjectPage:
+      $ref: '#/components/schemas/Page'
+
+    # ------------------------------------------------------------------
+    # Shared
+    # ------------------------------------------------------------------
+    OrganizationKey:
+      type: string
+      description: >-
+        URL-safe tenant slug; canonical definition in shared-api.yaml. Reserved platform
+        segments (api, assets, design, ...) are rejected at provisioning time.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    Page:
+      type: object
+      properties:
+        content:
+          type: array
+          items: { }
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    ProblemDetail:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    ValidationProblemDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetail'
+        - type: object
+          properties:
+            violations:
+              type: array
+              items:
+                type: object
+                properties:
+                  attributeCode:
+                    type: string
+                  message:
+                    type: string
+
+    Locale:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical Locale — see the note on WidgetInstance there for why
+        this workspace repeats rather than $refs across files. A bare string schema generates no Java
+        class, so the repetition needs no schemaMappings entry.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    TranslationScope:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationScope. Transloco scope a bundle loads under,
+        and the directory segment its asset equivalent would have had.
+      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+      minLength: 1
+      maxLength: 64
+      example: base_app
+
+    TranslationBundle:
+      type: object
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationBundle, mapped onto the shared generated type.
+        One transloco bundle: the whole message map of an (organization, scope, locale) triple, in the
+        exact shape the frontend's asset file has. Keys are relative to the scope — transloco prefixes
+        them with the scope alias itself.
+      additionalProperties: true
+      nullable: true
+      example:
+        module:
+          name: Order administration
+        route:
+          orders: All orders

@@ -1,9 +1,0 @@
-{
-  "_self": "Pedido",
-  "orderNumber": "N.º de pedido",
-  "customerName": "Cliente",
-  "status": "Estado",
-  "total": "Total",
-  "shippingAddress": "Dirección de envío",
-  "lineItems": "Líneas de pedido"
-}

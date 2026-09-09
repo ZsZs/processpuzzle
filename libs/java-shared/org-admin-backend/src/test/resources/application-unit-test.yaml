@@ -1,0 +1,19 @@
+# Spring profile activated by Maven Surefire for unit tests
+# (spring.profiles.active=unit-test set in the parent pom).
+spring:
+  main:
+    banner-mode: off
+    lazy-initialization: true
+  jmx:
+    enabled: false
+
+logging:
+  level:
+    root: warn
+    com.processpuzzle: info
+
+# No Keycloak in a unit test. With the secret unset, UserDirectoryConfiguration registers
+# NoOpUserDirectoryPort: reads answer empty and writes are refused with 503.
+keycloak:
+  admin:
+    client-secret: ""

@@ -21,7 +21,9 @@ import jakarta.persistence.Converter;
  *       resolves a converter's attribute type from the generic superinterface, and a converter
  *       class that is itself generic cannot be resolved at all.
  *       <li><b>Unknown properties are ignored on read.</b> Removing a field from one of the graph
- *       records must not make every previously persisted blob unreadable.
+ *       records must not make every previously persisted blob unreadable. An unknown enum
+ *       constant is tolerated the same way, falling back to the type's
+ *       {@code @JsonEnumDefaultValue} — see {@link WidgetPlacement}.
  * </ul>
  *
  * <p>The mapper is a static field rather than an injected bean because JPA instantiates
@@ -33,7 +35,8 @@ public class AppGraphConverter implements AttributeConverter<AppGraph, String> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE);
 
     @Override
     public String convertToDatabaseColumn(AppGraph graph) {
