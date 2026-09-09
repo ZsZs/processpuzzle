@@ -1,0 +1,86 @@
+name: Release-Processpuzzle-Parent
+on:
+  push:
+    branches:
+      - "release/processpuzzle-parent/*"
+
+env:
+  NX_PROJECT: "processpuzzle-parent"
+
+# Deliberately does NOT use ./.github/actions/lint-test-build or ./.github/actions/release-java:
+# both are per-Nx-project (they run `npm run lint-<nx_project>` / `test-<nx_project>` and read a
+# module's base_dir), and the parent is a pom-only aggregator with no Nx project, no sources to
+# lint and no tests to run. The reactor install below is its equivalent safety net.
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25.x'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Report Maven version
+        # See the note in .github/actions/lint-test-build/action.yml: the runner's preinstalled
+        # Maven replaces stCarolas/setup-maven, whose uncached tarball download from Maven
+        # Central intermittently failed with HTTP 429.
+        run: mvn -v
+        shell: bash
+
+      - name: Config Git
+        shell: bash
+        run: |
+          git config --global user.email "zsolt.zsuffa@gmail.com"
+          git config --global user.name "Zsolt Zsuffa"
+
+      - name: Import GPG key
+        shell: bash
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          gpg --list-secret-keys
+
+      - name: Read POM version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(mvn -N help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Reactor sanity check
+        # The whole reactor, to prove every child still resolves the bumped parent through its
+        # <relativePath> before the parent is published irreversibly.
+        run: mvn --batch-mode -DskipTests -Dgpg.skip install
+        shell: bash
+
+      - name: Publish the parent pom to Maven Central
+        # -N is essential: without it the whole reactor deploys and re-publishing an
+        # already-released lib version fails. -Prelease supplies gpg.passphrase from
+        # $GPG_PASSPHRASE (see settings.xml).
+        run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml -N deploy -Prelease
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        shell: bash
+
+      - name: Create GitHub Release
+        uses: elgohr/Github-Release-Action@v5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: "@processpuzzle/${{env.NX_PROJECT}}/${{steps.version.outputs.VERSION}}"
+          tag: "${{env.NX_PROJECT}}@${{steps.version.outputs.VERSION}}"
+
+      - name: Merge release branch to develop and master
+        uses: ./.github/actions/release-merge
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

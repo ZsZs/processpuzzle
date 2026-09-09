@@ -14,7 +14,7 @@
 
   <groupId>com.processpuzzle</groupId>
   <artifactId>processpuzzle-parent</artifactId>
-  <version>1.0.5-SNAPSHOT</version>
+  <version>${revision}</version>
   <packaging>pom</packaging>
   <name>ProcessPuzzle :: Backend :: Parent</name>
   <description>ProcessPuzzle platform libraries</description>
@@ -57,7 +57,15 @@
   </modules>
 
   <properties>
-    <revision>1.0.0</revision>
+    <!-- The parent's own version. Maven only honours `revision`, `sha1` and `changelist` as
+         version placeholders, so this property (not <processpuzzle-parent.version>) is what
+         <version>${revision}</version> above and all 12 child <parent> refs resolve. Same
+         convention as the per-lib properties below: it holds the CURRENT PUBLISHED version,
+         no SNAPSHOT between releases, so the next `patch` release publishes 1.0.5.
+         tools/scripts/release-java-lib.mjs bumps it; flatten-maven-plugin
+         (flattenMode=resolveCiFriendliesOnly, declared root-only) resolves the reference at
+         publish time so the deployed pom carries a literal version. -->
+    <revision>1.0.4</revision>
     <java.version>25</java.version>
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
@@ -72,6 +80,13 @@
          this property with the -javaagent argument in modules that do. Without this default,
          @{argLine} is passed literally and the forked JVM fails with "could not open {argLine}". -->
     <argLine/>
+    <!-- Locations of the shared tool configurations. Indirected through properties because
+         ${maven.multiModuleProjectDirectory} resolves against the REACTOR root: a downstream
+         repository that inherits this parent (e.g. processpuzzle-biz) would look for the files
+         under its own root and fail. Such a repository overrides these two properties, one
+         line each, instead of re-declaring checkstyle and spotless. -->
+    <pp.checkstyle.config>${maven.multiModuleProjectDirectory}/tools/checkstyle.xml</pp.checkstyle.config>
+    <pp.formatter.config>${maven.multiModuleProjectDirectory}/tools/eclipse-formatter.xml</pp.formatter.config>
     <!-- Per-lib versions. Single source of truth: each child pom references the matching
          property via <version>${<lib>.version}</version>, and root <dependencyManagement>
          pins sibling deps to the same property. Property therefore always reflects the
@@ -103,63 +118,67 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- Module dependencies -->
+      <!-- Module dependencies. groupId is the LITERAL com.processpuzzle, not
+           ${project.groupId}: flattenMode=resolveCiFriendliesOnly resolves only ${revision}
+           in <version> and leaves every other expression in place, so a ${project.groupId}
+           here would re-resolve to the groupId of whichever downstream project inherits
+           this parent and none of these pins would apply. -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-core</artifactId>
         <version>${processpuzzle-core.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>processpuzzle-store</artifactId>
         <version>${processpuzzle-store.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-document-backend</artifactId>
         <version>${base-document-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-entity-backend</artifactId>
         <version>${base-entity-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-rule-backend</artifactId>
         <version>${base-rule-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-state-backend</artifactId>
         <version>${base-state-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-workflow-backend</artifactId>
         <version>${base-workflow-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-app-backend</artifactId>
         <version>${base-app-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>base-widget-backend</artifactId>
         <version>${base-widget-backend.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>com.processpuzzle</groupId>
         <artifactId>org-admin-backend</artifactId>
         <version>${org-admin-backend.version}</version>
       </dependency>
@@ -213,7 +232,7 @@
           <version>3.6.0</version>
           <configuration>
             <!-- checkstyle rules -->
-            <configLocation>${maven.multiModuleProjectDirectory}/tools/checkstyle.xml</configLocation>
+            <configLocation>${pp.checkstyle.config}</configLocation>
             <!-- Silence per-violation console noise; errors still fail the build
                  (failsOnError=true) and full details are written to the XML report. -->
             <consoleOutput>false</consoleOutput>
@@ -353,7 +372,8 @@
           <version>0.8.0</version>
           <extensions>true</extensions>
           <configuration>
-            <publishingServerId>maven-central</publishingServerId>
+            <!-- Must match <server><id>central</id> in settings.xml. -->
+            <publishingServerId>central</publishingServerId>
             <autoPublish>true</autoPublish>
             <waitUntil>published</waitUntil>
           </configuration>
@@ -382,7 +402,7 @@
                 <include>src/test/java/**/*.java</include>
               </includes>
               <eclipse>
-                <file>${maven.multiModuleProjectDirectory}/tools/eclipse-formatter.xml</file>
+                <file>${pp.formatter.config}</file>
               </eclipse>
             </java>
           </configuration>
@@ -400,6 +420,40 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>3.2.0</version>
+        </plugin>
+
+        <!-- Flatten POM for Central deployment. Managed here rather than declared in
+             <build><plugins>, because plugin CONFIGURATION is inherited and the root needs a
+             different flattenMode than its children: the children publish a minimal
+             consumer-facing pom (ossrh), whereas the root IS a parent pom and must keep its
+             <properties>, <dependencyManagement> and <pluginManagement>. The root therefore
+             re-declares this plugin below with <inherited>false</inherited> and
+             flattenMode=resolveCiFriendliesOnly; every publishable child declares a bare
+             entry in its own <build><plugins> and inherits the ossrh config from here. -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.6.0</version>
+          <configuration>
+            <updatePomFile>true</updatePomFile>
+            <flattenMode>ossrh</flattenMode>
+          </configuration>
+          <executions>
+            <execution>
+              <id>flatten</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>flatten-clean</id>
+              <phase>clean</phase>
+              <goals>
+                <goal>clean</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -442,31 +496,44 @@
         </configuration>
       </plugin>
 
-      <!-- Flatten POM for OSSRH deployment -->
+      <!-- Flatten this pom for Central deployment. Root-only (<inherited>false</inherited>):
+           children get the managed ossrh configuration instead, by declaring a bare
+           flatten-maven-plugin entry of their own.
+           resolveCiFriendliesOnly resolves ${revision} in <version> and KEEPS everything a
+           parent pom has to publish — properties, dependencyManagement, pluginManagement,
+           build. `ossrh` would strip all of it and deploy an empty shell that inherits
+           nothing. The published pom keeps <modules>, which is harmless: <modules> is not an
+           inherited element, so an inheriting repository declares its own and never builds
+           this repository's. -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.6.0</version>
+        <inherited>false</inherited>
         <configuration>
           <updatePomFile>true</updatePomFile>
-          <flattenMode>ossrh</flattenMode>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
         </configuration>
-        <executions>
-          <execution>
-            <id>flatten</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>flatten-clean</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>clean</goal>
-            </goals>
-          </execution>
-        </executions>
+      </plugin>
+
+      <!-- GPG signing — required by Maven Central. Root-only: the app module must not
+           become publishable by inheriting it. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <inherited>false</inherited>
+      </plugin>
+
+      <!-- Central Publishing Plugin — lets `mvn -N deploy` publish this parent pom itself.
+           Root-only, for the same reason as the GPG plugin above. Sources/javadoc jars are
+           not required for `pom` packaging, so those plugins stay unbound here. -->
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <inherited>false</inherited>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
       </plugin>
     </plugins>
   </build>

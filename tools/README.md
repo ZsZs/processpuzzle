@@ -9,7 +9,7 @@ Utilities and infrastructure that support local development, CI, and deployment 
 | [`docker/`](./docker) | Dockerfiles and compose stacks for the testbed, backend, and supporting services (Keycloak, MinIO, Postgres, json-server). |
 | [`httpRequests/`](./httpRequests) | IntelliJ HTTP Client environment file for ad-hoc requests against local and remote backends. |
 | [`mock-backend/`](./mock-backend) | Standalone `json-server` mock with seed `db.json` and a self-signed cert — used when the full backend stack is overkill. |
-| [`scripts/`](./scripts) | Build/release helpers: `release.ts`, `run-sonar-scanner.cjs`, `sanitize-lcov.cjs`. |
+| [`scripts/`](./scripts) | Build/release helpers: `release-java-lib.mjs`, `release-js-lib.mjs`, `run-sonar-scanner.cjs`, `sanitize-lcov.cjs`. |
 
 ## Docker stacks
 

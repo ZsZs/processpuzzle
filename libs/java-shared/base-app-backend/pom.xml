@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.processpuzzle</groupId>
     <artifactId>processpuzzle-parent</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>${revision}</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
 
@@ -153,6 +153,13 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- Flatten POM for Central deployment — configuration (flattenMode=ossrh)
+           inherited from the parent's <pluginManagement>. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
       </plugin>
 
       <plugin>

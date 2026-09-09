@@ -107,8 +107,6 @@
     "e2e-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud",
     "e2e-test-processpuzzle-testbed-with-stack": "npm run stack-up && nx e2e processpuzzle-testbed-e2e --no-cloud",
     "e2e-smoke-test-processpuzzle-testbed": "nx e2e processpuzzle-testbed-e2e --no-cloud -- --grep @smoke",
-    "release": "ts-node tools/scripts/release.ts",
-    "release:dry": "DRY_RUN=true ts-node tools/scripts/release.ts",
     "test-all": "nx run-many -t test --exclude=processpuzzle-testbed-frontend --configuration=ci --no-cloud",
     "test-api-contracts": "nx run api-contracts:test --configuration=ci --no-cloud",
     "test-auth": "nx run auth:test --configuration=ci --coverage --no-cloud --skip-nx-cache",
