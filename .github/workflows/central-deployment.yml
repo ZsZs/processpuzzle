@@ -1,0 +1,89 @@
+name: Central-Deployment
+
+# Inspects — and, when Central allows it, drops — a single Maven Central Portal deployment.
+#
+# WHY THIS EXISTS. A cancelled release job kills only the local Maven process; the bundle it
+# already uploaded keeps its own life-cycle on the Portal and holds a lock on its coordinate.
+# Every retry of that version then fails validation with "Component with coordinate '...' is
+# currently being published in another deployment (<id>)". The Portal's browse UI shows only
+# *published* components, so a deployment wedged before publication is invisible there — the
+# state lives in the Publisher API. This workflow is that API, driven by the same
+# CENTRAL_TOKEN_* secrets the release workflows already use, so nobody has to hold a token
+# locally to see what Central thinks.
+#
+# The same blind spot exists on the happy path: the release workflows wait for `validated`,
+# not `published` (see the note on central-publishing-maven-plugin in the root pom), so a
+# green release only proves Central accepted the bundle. processpuzzle-core 1.1.1 released
+# green and was still absent from Central 80 minutes later, which stayed invisible until the
+# next tier's release refused to start. When a lib is missing from repo1 long after a green
+# release, its deployment id — printed as "deploymentId: <uuid>" by the publish step — is
+# what to pass here.
+#
+# STATES the API reports, and what each means for a blocked release:
+#   PENDING / VALIDATING  — still being examined; wait.
+#   VALIDATED             — validated but not published (autoPublish off, or in flight); droppable.
+#   PUBLISHING            — publication started. NOT droppable; it either completes or needs a
+#                           Sonatype support ticket (central-support) to be cleared.
+#   PUBLISHED             — the version is out; repo1.maven.org may lag by up to a few hours.
+#                           Do not re-deploy — finish the release's tail instead (tag, GitHub
+#                           release, merge back).
+#   FAILED                — droppable; drop it, then re-run the release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Deployment id printed by the release job ("deploymentId: <uuid>")'
+        type: string
+        required: true
+      operation:
+        description: STATUS reads the state; DROP deletes the deployment (VALIDATED / FAILED only)
+        type: choice
+        options: [ STATUS, DROP ]
+        default: STATUS
+
+jobs:
+  central-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: ${{ inputs.operation }} deployment ${{ inputs.deployment_id }}
+        env:
+          # The Portal takes the user token as HTTP Basic credentials carried in a Bearer header:
+          # base64("<username>:<password>"). Same token pair as `mvn deploy` uses via settings.xml.
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          OPERATION: ${{ inputs.operation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH=$(printf '%s:%s' "$CENTRAL_TOKEN_USERNAME" "$CENTRAL_TOKEN_PASSWORD" | base64 -w0)
+
+          if [[ "$OPERATION" == "DROP" ]]; then
+            STATUS=$(curl -sS -o /tmp/central-body -w '%{http_code}' -X DELETE \
+              -H "Authorization: Bearer $AUTH" \
+              "https://central.sonatype.com/api/v1/publisher/deployment/$DEPLOYMENT_ID")
+          else
+            STATUS=$(curl -sS -o /tmp/central-body -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $AUTH" \
+              "https://central.sonatype.com/api/v1/publisher/status?id=$DEPLOYMENT_ID")
+          fi
+
+          echo "HTTP $STATUS"
+          jq . /tmp/central-body 2>/dev/null || cat /tmp/central-body
+          echo
+
+          {
+            echo "## Central deployment \`$DEPLOYMENT_ID\`"
+            echo
+            echo "\`$OPERATION\` → HTTP \`$STATUS\`"
+            echo
+            echo '```json'
+            jq . /tmp/central-body 2>/dev/null || cat /tmp/central-body
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # 401/403 means the token pair is wrong, 404 that the id is unknown — both are worth
+          # failing on so the run does not read as "nothing to see here".
+          [[ "$STATUS" == 2* ]]
