@@ -375,7 +375,14 @@
             <!-- Must match <server><id>central</id> in settings.xml. -->
             <publishingServerId>central</publishingServerId>
             <autoPublish>true</autoPublish>
-            <waitUntil>published</waitUntil>
+            <!-- `validated`, not `published`: the goal returns once Central has accepted and
+                 validated the bundle, and autoPublish then publishes it. `published` blocks
+                 until the artifact has fully propagated, which routinely takes longer than a
+                 job's timeout — it hung the first parent release for 28 minutes until the
+                 30-minute limit killed it, long after the upload had succeeded. Every lib
+                 already states `validated` explicitly, so this only changes the default the
+                 root itself inherits. -->
+            <waitUntil>validated</waitUntil>
           </configuration>
         </plugin>
 
