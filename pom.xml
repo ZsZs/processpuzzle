@@ -65,7 +65,7 @@
          tools/scripts/release-java-lib.mjs bumps it; flatten-maven-plugin
          (flattenMode=resolveCiFriendliesOnly, declared root-only) resolves the reference at
          publish time so the deployed pom carries a literal version. -->
-    <revision>1.0.5</revision>
+    <revision>1.0.6</revision>
     <java.version>25</java.version>
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
