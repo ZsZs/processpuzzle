@@ -174,7 +174,7 @@ stays visible.
 
 | Area | Today | Target |
 | --- | --- | --- |
-| Testbed self-service roles | Do not exist | A registered user may grant themselves roles |
+| Testbed self-service roles | The catalog side exists: every `RoleDefinition` written in `base-workflow` is projected into a realm role of the same name in that organization's realm, so there is now something authoritative for a token to carry, and `RealmRoleMembershipPolicy` already reads realm roles out of the caller's token. Missing is the granting half — nothing grants a registering user any of those roles — and the membership check still reads `RoleDefinition.entityRoleId` rather than the role id that is now a realm role in its own right | A registered user may grant themselves roles |
 | `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, no Keycloak, no platform backend |
 | `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend, in the private repository |
 | Hostnames | Ports on `localhost` — 9090 here, 9091 / 9092 in the private repository | Subdomains of `processpuzzle.com` |

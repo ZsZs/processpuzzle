@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
+import com.processpuzzle.workflow.common.ValidationException;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowExtendsValidator;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
@@ -29,6 +30,8 @@ import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
+import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
+import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionDeletedEvent;
 import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,6 +42,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -53,6 +57,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class WorkflowUseCasesTest {
@@ -68,6 +73,7 @@ class WorkflowUseCasesTest {
     private TaskDefinitionRepository taskRepo;
     private ToolDefinitionRepository toolRepo;
     private CatalogReferenceScanner scanner;
+    private ApplicationEventPublisher events;
 
     @BeforeEach
     void setUp() {
@@ -80,6 +86,7 @@ class WorkflowUseCasesTest {
         taskRepo = mock(TaskDefinitionRepository.class);
         toolRepo = mock(ToolDefinitionRepository.class);
         scanner = mock(CatalogReferenceScanner.class);
+        events = mock(ApplicationEventPublisher.class);
     }
 
     @Test
@@ -203,11 +210,11 @@ class WorkflowUseCasesTest {
 
     @Test
     void roleDefinitionUseCases_crud() {
-        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo);
+        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo, events);
         FindRoleDefinitionUseCase findUseCase = new FindRoleDefinitionUseCase(roleRepo);
         FindAllRoleDefinitionsUseCase findAllUseCase = new FindAllRoleDefinitionsUseCase(roleRepo);
-        ReplaceRoleDefinitionUseCase replaceUseCase = new ReplaceRoleDefinitionUseCase(roleRepo);
-        DeleteRoleDefinitionUseCase deleteUseCase = new DeleteRoleDefinitionUseCase(roleRepo, scanner);
+        ReplaceRoleDefinitionUseCase replaceUseCase = new ReplaceRoleDefinitionUseCase(roleRepo, events);
+        DeleteRoleDefinitionUseCase deleteUseCase = new DeleteRoleDefinitionUseCase(roleRepo, scanner, events);
 
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("dev").name("Dev")
                 .responsibleFor(new ArrayList<>(List.of("spec"))).build();
@@ -258,6 +265,56 @@ class WorkflowUseCasesTest {
         verify(roleRepo).delete(role);
 
         assertThatThrownBy(() -> deleteUseCase.delete(ORG, "unknown")).isInstanceOf(NotFoundException.class);
+    }
+
+    /**
+     * Whether the realm role ever appears rests entirely on these three publications: nothing else
+     * tells {@code RoleDirectorySyncListener} that the catalog moved. A refactor that dropped one
+     * would leave a role authored in the catalog and absent from every token, with no failure
+     * anywhere.
+     */
+    @Test
+    void roleDefinitionWrites_publishTheEventsTheRealmProjectionIsBuiltFrom() {
+        RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("reviewer").name("Reviewer")
+                .description("Reviews submissions").build();
+        when(roleRepo.existsByOrgKeyAndId(ORG, "reviewer")).thenReturn(false);
+        when(roleRepo.save(any(RoleDefinition.class))).thenAnswer(call -> call.getArgument(0));
+        when(roleRepo.findByOrgKeyAndId(ORG, "reviewer")).thenReturn(Optional.of(role));
+        when(scanner.workflowsUsingRole(ORG, "reviewer")).thenReturn(List.of());
+        when(scanner.tasksOfferingRole(ORG, "reviewer")).thenReturn(List.of());
+
+        new CreateRoleDefinitionUseCase(roleRepo, events).create(ORG, role);
+        verify(events).publishEvent(new RoleDefinitionChangedEvent(
+                ORG, "reviewer", "Reviewer", "Reviews submissions"));
+
+        new ReplaceRoleDefinitionUseCase(roleRepo, events).replace(ORG, "reviewer",
+                RoleDefinition.builder().orgKey(ORG).id("reviewer").name("Senior Reviewer")
+                        .description("Reviews everything").build());
+        verify(events).publishEvent(new RoleDefinitionChangedEvent(
+                ORG, "reviewer", "Senior Reviewer", "Reviews everything"));
+
+        new DeleteRoleDefinitionUseCase(roleRepo, scanner, events).delete(ORG, "reviewer");
+        verify(events).publishEvent(new RoleDefinitionDeletedEvent(ORG, "reviewer"));
+    }
+
+    /**
+     * A reserved id is refused rather than accepted-and-not-projected: the definition's id becomes
+     * the realm role's name verbatim, and {@code org-admin} is the role that carries a tenant's own
+     * administration API.
+     */
+    @Test
+    void createRoleDefinition_refusesIdsReservedByThePlatformOrKeycloak() {
+        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo, events);
+
+        for (String reserved : List.of("org-admin", "org-member", "offline_access", "uma_authorization",
+                "default-roles-" + ORG)) {
+            RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id(reserved).name("Nope").build();
+            assertThatThrownBy(() -> createUseCase.create(ORG, role))
+                    .isInstanceOf(ValidationException.class)
+                    .hasMessageContaining("reserved");
+        }
+        verify(roleRepo, never()).save(any(RoleDefinition.class));
+        verifyNoInteractions(events);
     }
 
     @Test
@@ -441,7 +498,7 @@ class WorkflowUseCasesTest {
         ExportWorkflowUseCase exportUseCase = new ExportWorkflowUseCase(
                 workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, yamlMapper);
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, yamlMapper);
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, yamlMapper, events);
 
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("dev").name("Developer")
                 .responsibleFor(List.of("code")).build();
@@ -528,7 +585,7 @@ class WorkflowUseCasesTest {
     @Test
     void importWorkflows_rejectsStructurallyBrokenFiles() throws IOException {
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper());
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper(), events);
         when(workflowRepo.findByOrgKey(ORG)).thenReturn(List.of());
 
         assertThat(importOf(importUseCase, """
@@ -623,7 +680,7 @@ class WorkflowUseCasesTest {
     @Test
     void importWorkflows_toleratesAnEmptyDocument() throws IOException {
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper());
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper(), events);
 
         ImportOutcome outcome = importUseCase.execute(ORG,
                 new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8)));

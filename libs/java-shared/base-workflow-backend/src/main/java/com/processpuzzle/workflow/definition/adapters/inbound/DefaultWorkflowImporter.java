@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,14 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "base-workflow", name = "loadDefaultWorkflows", havingValue = "true")
 public class DefaultWorkflowImporter {
 
+    /**
+     * Ordering of {@link #loadDefaults()} among this application's {@code ApplicationReadyEvent}
+     * handlers. Stated only because {@link RoleDirectoryReconciler} has to run <em>after</em> it, and
+     * Spring's default for an unannotated {@code @EventListener} is {@code LOWEST_PRECEDENCE} — which
+     * would tie the two rather than order them.
+     */
+    public static final int SEED_ORDER = 100;
+
     private static final Logger LOG = LoggerFactory.getLogger(DefaultWorkflowImporter.class);
     private static final String WORKFLOWS_FILE_SUFFIX = "-workflows.yaml";
     private static final String DEFAULT_WORKFLOWS_LOCATION = "classpath*:default-workflows/*" + WORKFLOWS_FILE_SUFFIX;
@@ -42,6 +51,7 @@ public class DefaultWorkflowImporter {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(SEED_ORDER)
     public void loadDefaults() {
         Resource[] resources;
         try {

@@ -31,6 +31,7 @@ import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskStepType;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
+import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +76,7 @@ public class ImportWorkflowsUseCase {
     private final TaskDefinitionRepository taskRepository;
     private final WorkflowValidator validator;
     private final WorkflowYamlMapper mapper;
+    private final ApplicationEventPublisher events;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
@@ -83,7 +86,8 @@ public class ImportWorkflowsUseCase {
                                             ToolDefinitionRepository toolRepository,
                                             TaskDefinitionRepository taskRepository,
                                             WorkflowValidator validator,
-                                            WorkflowYamlMapper mapper) {
+                                            WorkflowYamlMapper mapper,
+                                            ApplicationEventPublisher events) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.artifactRepository = artifactRepository;
@@ -91,6 +95,7 @@ public class ImportWorkflowsUseCase {
         this.taskRepository = taskRepository;
         this.validator = validator;
         this.mapper = mapper;
+        this.events = events;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -292,6 +297,13 @@ public class ImportWorkflowsUseCase {
 
     // ---------------------------------------------------------------- persistence
 
+    /**
+     * Writes through the repository rather than through {@link CreateRoleDefinitionUseCase} /
+     * {@link ReplaceRoleDefinitionUseCase}, because an import is an upsert and neither of those is —
+     * so the event those two publish has to be published here too. Without it, a seeded role would
+     * never reach the organization's realm, which is exactly the case that matters on a fresh
+     * deployment: the bundled catalog is the only role catalog it has.
+     */
     private void upsertRoles(String orgKey, Iterable<RoleYamlEntry> entries, Tally tally) {
         for (RoleYamlEntry entry : entries) {
             Optional<RoleDefinition> existing = roleRepository.findByOrgKeyAndId(orgKey, entry.id());
@@ -299,6 +311,8 @@ public class ImportWorkflowsUseCase {
             existing.ifPresent(present -> mapper.applyRole(present, entry));
             tally.count(existing.isPresent());
             roleRepository.save(role);
+            events.publishEvent(new RoleDefinitionChangedEvent(
+                    orgKey, role.getId(), role.getName(), role.getDescription()));
         }
     }
 
