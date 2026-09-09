@@ -103,7 +103,7 @@
     <base-widget-backend.version>0.1.0</base-widget-backend.version>
     <org-admin-backend.version>0.1.0</org-admin-backend.version>
     <processpuzzle-core.version>1.1.1</processpuzzle-core.version>
-    <processpuzzle-store.version>1.1.1</processpuzzle-store.version>
+    <processpuzzle-store.version>1.1.2</processpuzzle-store.version>
   </properties>
 
   <dependencyManagement>
