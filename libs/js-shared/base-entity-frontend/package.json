@@ -35,7 +35,7 @@
     "@lezer/highlight": "^1.2.3",
     "@ngrx/operators": "^21.1.1",
     "@ngrx/signals": "^21.1.1",
-    "@processpuzzle/util": "^0.8.0",
+    "@processpuzzle/util": "^1.0.1",
     "build-url-ts": "^6.3.0",
     "ngx-logging-kit": "^21.0.1",
     "rxjs": "~7.8.2",
