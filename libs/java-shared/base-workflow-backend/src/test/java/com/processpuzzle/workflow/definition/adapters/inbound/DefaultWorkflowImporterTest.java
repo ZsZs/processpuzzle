@@ -15,6 +15,7 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
+import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -91,9 +93,10 @@ class DefaultWorkflowImporterTest {
         TaskDefinitionRepository taskRepository = mock(TaskDefinitionRepository.class);
         WorkflowValidator validator = new WorkflowValidator(
                 roleRepository, artifactRepository, toolRepository, taskRepository);
+        ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
         ImportWorkflowsUseCase realImportUseCase = new ImportWorkflowsUseCase(
                 repository, roleRepository, artifactRepository, toolRepository, taskRepository,
-                validator, new WorkflowYamlMapper());
+                validator, new WorkflowYamlMapper(), events);
 
         when(repository.findByOrgKey(ORG)).thenReturn(List.of());
         when(repository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
@@ -132,6 +135,12 @@ class DefaultWorkflowImporterTest {
             assertThat(outcome.updated()).isZero();
 
             assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager");
+            // Seeded roles reach the realm only through these: the importer writes through the
+            // repository, bypassing CreateRoleDefinitionUseCase, so it has to publish for itself.
+            verify(events).publishEvent(new RoleDefinitionChangedEvent(ORG, "clerk", "Order Clerk",
+                    "Responsible for initial order entry, verification, and delivery confirmation."));
+            verify(events).publishEvent(new RoleDefinitionChangedEvent(ORG, "manager", "Order Manager",
+                    "Approves orders for shipment."));
             assertThat(savedRoles).extracting(RoleDefinition::getResponsibleFor)
                     .containsExactly(List.of("order-entity"), List.of("fulfillment-invoice"));
             assertThat(savedArtifacts).extracting(ArtifactDefinition::getId)
