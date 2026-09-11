@@ -56,7 +56,7 @@ ensure_public_client() {
       -s 'enabled=true' \
       -s 'publicClient=true' \
       -s 'standardFlowEnabled=true' \
-      -s 'directAccessGrantsEnabled=true' \
+      -s 'directAccessGrantsEnabled=false' \
       -s 'implicitFlowEnabled=false' \
       -s 'serviceAccountsEnabled=false' \
       -s "rootUrl=${root_url}" \
@@ -73,7 +73,7 @@ ensure_public_client() {
       -s 'enabled=true' \
       -s 'publicClient=true' \
       -s 'standardFlowEnabled=true' \
-      -s 'directAccessGrantsEnabled=true' \
+      -s 'directAccessGrantsEnabled=false' \
       -s 'implicitFlowEnabled=false' \
       -s 'serviceAccountsEnabled=false' \
       -s "rootUrl=${root_url}" \

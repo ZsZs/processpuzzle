@@ -63,7 +63,7 @@ Realm 'processpuzzle-testbed' already exists. Import skipped
 Everything then looks fine while the realm's settings are whatever created it. Observed on a reused volume in
 September 2026: `processpuzzle-testbed` existed as a **tenant** realm provisioned earlier through the
 platform-admin flow, so it had `registrationAllowed=False` against the file's `true`, client
-`processpuzzle-ui` instead of `processpuzzle-testbed`, direct-access grants off, and no users at all — no
+`processpuzzle-ui` instead of `processpuzzle-testbed`, and no users at all — no
 testbed login was obtainable, and nothing in the startup log said why. Either drop the realm and restart, or
 patch the live realm through the admin API (`PUT /admin/realms/<realm>`) when a wipe is too expensive.
 
