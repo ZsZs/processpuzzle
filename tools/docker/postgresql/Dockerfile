@@ -9,10 +9,9 @@ LABEL maintainer="Admin"
 LABEL version="1.0"
 LABEL description="PostgreSQL image optimized for Keycloak"
 
-# Copy initialization scripts
-# Any .sql or .sh scripts in this folder run automatically on first container start, in file-name
-# order. A shell script rather than .sql because only a script can read the application password from
-# an environment variable — see 10-init-db.sh.
+# Copy the application database bootstrap. PostgreSQL runs it automatically on first initialization;
+# the `postgres-init` one-shot service invokes the same idempotent script after every later startup,
+# so newly added databases reach existing volumes too.
 COPY ./tools/docker/postgresql/10-init-db.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /docker-entrypoint-initdb.d/10-init-db.sh
 
