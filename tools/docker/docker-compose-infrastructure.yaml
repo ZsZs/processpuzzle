@@ -205,11 +205,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      # Keycloak owns this database and this role. The per-stack application databases and the
-      # `processpuzzle` role that owns them are created by tools/docker/postgresql/10-init-db.sh,
-      # which the entrypoint runs ONLY on an empty data directory — an existing postgres_data volume
-      # will not have them. Reset with `npm run stack-clean`, which is also what makes a renamed
-      # Keycloak realm appear, since --import-realm skips realms that exist.
+      # Keycloak owns this database and this role. tools/docker/postgresql/10-init-db.sh creates the
+      # per-stack application databases and their `processpuzzle` owner on an empty data directory;
+      # the postgres-init one-shot repeats that idempotently for existing postgres_data volumes.
+      # A renamed Keycloak realm still requires a reset because --import-realm skips existing realms.
       POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
       POSTGRES_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
@@ -226,6 +225,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Applies newly introduced application databases to an existing postgres_data volume. The same
+  # script also runs during PostgreSQL's first initialization; its idempotence makes this repeat
+  # safe and avoids resetting Keycloak merely to add a stack.
+  postgres-init:
+    pull_policy: always
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG:-latest}
+    container_name: processpuzzle-postgres-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      PROCESSPUZZLE_DB_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      PROCESSPUZZLE_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}
+    command: [ "/bin/bash", "/docker-entrypoint-initdb.d/10-init-db.sh" ]
+    networks:
+      - processpuzzle
+    restart: "no"
 
 volumes:
   minio-data:

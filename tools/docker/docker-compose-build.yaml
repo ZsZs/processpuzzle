@@ -68,3 +68,8 @@ services:
     build:
       context: ../../
       dockerfile: tools/docker/postgresql/Dockerfile
+
+  # Reuse the PostgreSQL image built above. Without this override, the pull-only
+  # base service's `always` policy pulls the GHCR tag before this one-shot runs.
+  postgres-init:
+    pull_policy: never

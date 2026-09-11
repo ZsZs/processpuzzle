@@ -1,6 +1,6 @@
 # Application stacks
 
-Three applications share one set of infrastructure services — PostgreSQL, Keycloak and MinIO — while
+Four application types share one set of infrastructure services — PostgreSQL, Keycloak and MinIO — while
 staying otherwise independent of one another. This document is the single source of truth for **which
 identifiers belong to which stack**: realm, organization key, database, bucket prefix and hostname. It
 exists because those five names are decided once per stack and then repeated across a dozen files
@@ -8,42 +8,40 @@ exists because those five names are decided once per stack and then repeated acr
 whose names drift is a stack that fails at run time in a way no test catches.
 
 > **Status.** Decided 2026-09-02; the infrastructure and backend half was implemented the same day.
-> Per-stack PostgreSQL databases, one backend deployment per stack, the renamed realms and the MinIO
+> Per-stack PostgreSQL databases, the renamed realms and the MinIO
 > bucket prefix are in place, as are all three application renames. The `processpuzzle-biz-frontend` repurposing
 > and the subdomains are not — see [Deltas from the current implementation](#deltas-from-the-current-implementation).
 >
-> **Two of the three stacks' applications left this repository on 2026-09-04.** Stacks #2 and #3 are
-> now built in the private `processpuzzle-biz` repository, together with the commercial
-> `platform-admin` feature — see [Extracting platform-admin](platform-admin-extraction.md). This
-> document still specifies all three, because **the identifiers are shared infrastructure**: the
+> **Biz, Admin, and Custom application sources are outside this repository.** This document still
+> specifies all four application types, because **the identifiers are shared infrastructure**: the
 > realms, the databases and the bucket prefixes are declared in this repository's
 > `tools/docker/`, and a stack whose names drift across a repository boundary fails in exactly the
 > way this document exists to prevent. What the public repository no longer contains is the
-> *applications* for #2 and #3.
+> *applications* for Biz, Admin, and Custom.
 
-## The three stacks
+## The four application types
 
-| | #1 Testbed | #2 ProcessPuzzle UI | #3 ProcessPuzzle Admin |
-| --- | --- | --- | --- |
-| **Purpose** | Try out framework features | Public product site + customer onboarding | Internal staff administration |
-| **Audience** | Anyone, self-registered | Anyone, anonymous | ProcessPuzzle employees only |
-| **Hostname** | `testbed.processpuzzle.com` | `processpuzzle.com` | `admin.processpuzzle.com` |
-| **Nx application** | `processpuzzle-testbed-frontend` | `processpuzzle-biz-frontend` | `processpuzzle-admin-frontend` |
-| **Keycloak realm** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
-| **Organization key** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
-| **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] |
-| **MinIO bucket prefix** | `processpuzzle-testbed` | — none | `processpuzzle-admin` |
-| **Backend** | `testbed-backend` (container 8080; host 8180 on Coolify)&nbsp;[^proxyport] | `processpuzzle-biz-backend` (new, onboarding only) | `admin-backend` (host 8083) |
+| | #1 Testbed | #2 ProcessPuzzle UI | #3 ProcessPuzzle Admin | #4 Customer application |
+| --- | --- | --- | --- | --- |
+| **Purpose** | Try out framework features | Public product site + customer onboarding | Internal staff administration | Customer's ProcessPuzzle application |
+| **Audience** | Anyone, self-registered | Anyone, anonymous | ProcessPuzzle employees only | Customer organization's authenticated users |
+| **Hostname** | `testbed.processpuzzle.com` | `processpuzzle.com` | `admin.processpuzzle.com` | Per-customer hostname |
+| **Nx application** | `processpuzzle-testbed-frontend` | `processpuzzle-biz-frontend` | `processpuzzle-admin-frontend` | `custom-shell` |
+| **Keycloak realm** | `processpuzzle-testbed` | `processpuzzle-biz` | `processpuzzle-admin` | `processpuzzle-custom` |
+| **Organization key** | `processpuzzle-testbed` | `processpuzzle-biz` | `processpuzzle-admin` | Customer-specific |
+| **PostgreSQL database** | `PROCESSPUZZLE_TESTBED`&nbsp;[^folding] | — none | `PROCESSPUZZLE_ADMIN`&nbsp;[^folding] | `PROCESSPUZZLE_CUSTOM`&nbsp;[^folding] |
+| **MinIO bucket prefix** | `processpuzzle-testbed` | — none | `processpuzzle-admin` | `processpuzzle-custom` |
+| **Backend** | `testbed-backend` (container 8080; host 8180 on Coolify)&nbsp;[^proxyport] | `processpuzzle-biz-backend` (new, onboarding only) | `admin-backend` (host 8083) | `processpuzzle-custom-backend` (one deployment per customer) |
 
 [^proxyport]: Container 8080 is what the reverse proxy and the healthcheck use, and it never varies.
     The *host* publish is for SSH-tunnel inspection only and is `127.0.0.1:8180:8080` on `stage` and
     `prod`, because `coolify-proxy` owns `0.0.0.0:8080` for the Traefik dashboard. CI keeps `8080:8080`.
     See §7.2 of [the stage runbook](stage-deployment-runbook.md#72-port-is-already-allocated-on-8080).
 
-The pattern is deliberately mechanical: **for stacks #1 and #3 the realm name, the organization key and
-the bucket prefix are the same string**, and the database is that string upper-cased with dashes
-replaced by underscores. Anything that needs to name a stack derives the name rather than inventing
-one, so a new stack is one decision and not five.
+The fixed stacks follow a mechanical naming pattern: the realm, organization key, and bucket prefix
+are the same string, and the database is that string upper-cased with dashes replaced by underscores.
+Custom differs only where it must: its shared realm, database, and bucket prefix are fixed, while its
+organization key and backend deployment belong to the individual customer.
 
 > **The Hostname row is the one thing that is not settled.** `stage` is deployed on **`.de`**, matching
 > the Coolify control plane: `testbed.stage.processpuzzle.de`, with `api.stage.processpuzzle.de` for
@@ -93,9 +91,10 @@ the reason the testbed must never share a database, a realm or a bucket with ano
 ### #2 ProcessPuzzle UI
 
 The public face of the product at `processpuzzle.com`: marketing content and the onboarding funnel for
-prospective customers. Anonymous throughout, so it has **no realm, no organization key, no PostgreSQL
-database and no bucket prefix**, and it does not call `processpuzzle-testbed-backend`. Onboarding needs a
-little server-side work (capture a prospect, provision a trial), and that is a separate, small
+prospective customers. Its Biz applications authenticate with the `processpuzzle-biz` realm and public
+`processpuzzle-biz` client; local Docker uses `http://localhost:9092`. It has no PostgreSQL database or
+bucket prefix of its own, and it does not call `processpuzzle-testbed-backend`. Onboarding needs a little
+server-side work (capture a prospect, provision a trial), and that is a separate, small
 `processpuzzle-biz-backend` rather than an exception carved into the platform backend.
 
 Keeping this stack free of Keycloak is what lets it be cached, mirrored and taken to a CDN without a
@@ -113,21 +112,23 @@ reach.
 
 ## Shared infrastructure
 
-One PostgreSQL, one Keycloak and one MinIO serve all three stacks. Sharing the *servers* while
+One PostgreSQL, one Keycloak and one MinIO serve all four application types. Sharing the *servers* while
 separating the *namespaces* is the whole design:
 
-- **PostgreSQL** — one database per stack, plus `keycloak` for Keycloak's own storage. No stack has a
-  grant on another's database.
-- **Keycloak** — one realm per stack. Realms are Keycloak's isolation boundary: a token from
-  `processpuzzle-testbed` is not merely under-privileged in `processpuzzle-admin`, it is unverifiable
-  there, because the realms do not share signing keys.
+- **PostgreSQL** — one database per fixed application type, plus `keycloak` for Keycloak's own storage.
+  `PROCESSPUZZLE_CUSTOM` is a pooled customer database, protected by organization scoping and row-level
+  security.
+- **Keycloak** — one realm per application type. The Custom realm is shared by customer organizations,
+  using Keycloak Organizations; the other realms are isolation boundaries.
 - **MinIO** — bucket names are `<stack-prefix>-<purpose>`, e.g. `processpuzzle-admin-documents`.
 
-### One backend deployment per stack
+### One backend deployment per application type
 
-A backend is deployed **once per stack that needs it**, each instance configured with a single stack's
-database, realm and bucket prefix. The backend therefore stays a single-tenant application, and
-decoupling is a property of the deployment rather than logic inside it.
+A backend is deployed once for each fixed application type that needs it. Customer applications are
+the exception: every customer gets a dedicated `processpuzzle-custom-backend` deployment, configured
+for the shared Custom realm, database, and bucket prefix and restricted to that customer's organization
+key. The database remains pooled; backend deployment and access control are the customer isolation
+boundaries.
 
 Until 2026-09-04 this was literally the same image twice, `testbed-backend` and `admin-backend`, and
 both instances kept every feature module because the component scan is not per-stack. That is no
@@ -137,10 +138,9 @@ composes only the public ones. What still differs purely by environment is the p
 configuration — `SPRING_DATASOURCE_URL`, `PROCESSPUZZLE_SECURITY_STACK_REALM`,
 `MINIO_BUCKET_PREFIX` and the CORS allow-list.
 
-The rejected alternative was one shared instance routing to a datasource per organization key. That
-would make the backend tenant-aware at the persistence layer, and it would couple the availability of
-the staff surface to that of a public demonstration site — the two stacks whose failure domains most
-need to stay apart.
+The rejected alternative was one shared Custom backend serving every customer. Dedicated deployments
+prevent one customer's workload or failure from affecting another while retaining the operational
+simplicity of the pooled Custom database.
 
 ## Deltas from the current implementation
 
@@ -175,7 +175,7 @@ stays visible.
 | Area | Today | Target |
 | --- | --- | --- |
 | Testbed self-service roles | The catalog side exists: every `RoleDefinition` written in `base-workflow` is projected into a realm role of the same name in that organization's realm, so there is now something authoritative for a token to carry, and `RealmRoleMembershipPolicy` already reads realm roles out of the caller's token. Missing is the granting half — nothing grants a registering user any of those roles — and the membership check still reads `RoleDefinition.entityRoleId` rather than the role id that is now a realm role in its own right | A registered user may grant themselves roles |
-| `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, no Keycloak, no platform backend |
+| `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, using the `processpuzzle-biz` Keycloak realm/client; no platform backend |
 | `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend, in the private repository |
 | Hostnames | Ports on `localhost` — 9090 here, 9091 / 9092 in the private repository | Subdomains of `processpuzzle.com` |
 | Prod application topology | Resolved for the shared services: `docker-compose-prod.yaml` is gone, replaced by one `docker-compose-infrastructure.yaml` plus `tools/docker/env/.env.prod`. What is still missing is a public origin for each *application* — nothing publishes port 80 or reverse-proxies `/api/` | Per-app deployment resources (strategy §§4, 10, 12), not a compose file |
@@ -215,15 +215,10 @@ whichever application ends up hosting the tenant admin surface can mount it.
   (`.github/actions/build-image/action.yml`); the remaining application images wait on their per-app
   workflows — see [strategy §12](build-deploy-strategy.md).
 
-## Open question: customer tenants
+## Customer deployment model
 
-Provisioning a customer creates a realm per organization (`KEYCLOAK_ADMIN_TENANT_REDIRECT_URI`,
-`TenantAuthenticationManagerResolver`), so a customer already looks like a fourth stack — but whether
-each customer gets its own database, bucket prefix and subdomain, or whether customers share one
-multi-tenant deployment, is **deliberately not decided here**. The three stacks above are internal and
-fixed; customer tenants are created at run time, and applying the one-deployment-per-stack rule to
-them has consequences (provisioning becomes infrastructure work, not an API call) that deserve their
-own decision.
-
-Until that decision is made, treat the existing tenant provisioning as unchanged, and do not extend
-the table above to cover it.
+Customer organizations share the `processpuzzle-custom` realm, `PROCESSPUZZLE_CUSTOM` database, and
+`processpuzzle-custom` bucket prefix. Keycloak Organizations supplies the organization claim, while
+each customer receives a dedicated `processpuzzle-custom-backend` deployment. Provisioning therefore
+creates the Keycloak organization and customer backend before Admin calls that backend's internal seed
+endpoint; customers no longer receive individual realms, databases, or bucket prefixes.

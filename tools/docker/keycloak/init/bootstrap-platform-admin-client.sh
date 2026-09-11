@@ -69,7 +69,7 @@ echo "Granting create-realm to ${service_account_user} ..."
 # --- realm-management on every realm this account will administer -------------------------------
 # `create-realm` lets it make a realm; administering the realm afterwards — clients, roles, users —
 # needs the management roles for that realm. Keycloak grants the creating account full admin on a
-# realm it created, so nothing more is needed for tenant realms. The two realms baked into the image
+# realm it created, so nothing more is needed for tenant realms. The four realms baked into the image
 # were not created by this account, so they are granted explicitly here.
 #
 # The roles live on the `<realm>-realm` client IN MASTER, and that client carries only the
@@ -81,7 +81,7 @@ echo "Granting create-realm to ${service_account_user} ..."
 # These are the application stacks realms — see docs/application-stacks.md. The names have to match
 # tools/docker/keycloak/import/*-realm.json exactly: a realm named here that does not exist is merely
 # skipped below, so a stale name is a silent loss of admin rights rather than an error.
-for realm in processpuzzle-testbed processpuzzle-admin; do
+for realm in processpuzzle-testbed processpuzzle-biz processpuzzle-admin processpuzzle-custom; do
   login
   if ! "$KCADM" get "realms/${realm}" >/dev/null 2>&1; then
     echo "Realm '${realm}' is not present; skipping its realm-management grant."
