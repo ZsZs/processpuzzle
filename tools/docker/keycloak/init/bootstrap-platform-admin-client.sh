@@ -37,6 +37,64 @@ until login; do
 done
 echo "Authenticated against ${KC_URL} as ${KC_ADMIN}."
 
+ensure_public_client() {
+  local realm="$1"
+  local client_id="$2"
+  local client_name="$3"
+  local root_url="$4"
+  local redirect_uris="$5"
+  local client_uuid
+
+  login
+  client_uuid="$("$KCADM" get clients -r "${realm}" --query "clientId=${client_id}" --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+
+  if [ -z "${client_uuid}" ]; then
+    echo "Creating public client '${client_id}' in '${realm}' ..."
+    "$KCADM" create clients -r "${realm}" \
+      -s "clientId=${client_id}" \
+      -s "name=${client_name}" \
+      -s 'enabled=true' \
+      -s 'publicClient=true' \
+      -s 'standardFlowEnabled=true' \
+      -s 'directAccessGrantsEnabled=true' \
+      -s 'implicitFlowEnabled=false' \
+      -s 'serviceAccountsEnabled=false' \
+      -s "rootUrl=${root_url}" \
+      -s 'baseUrl=/' \
+      -s "redirectUris=${redirect_uris}" \
+      -s 'webOrigins=["+"]' \
+      -s 'attributes={"post.logout.redirect.uris":"+","pkce.code.challenge.method":"S256"}' \
+      -s 'protocol=openid-connect' \
+      -s 'fullScopeAllowed=true'
+  else
+    echo "Reconciling public client '${client_id}' in '${realm}' ..."
+    "$KCADM" update "clients/${client_uuid}" -r "${realm}" \
+      -s "name=${client_name}" \
+      -s 'enabled=true' \
+      -s 'publicClient=true' \
+      -s 'standardFlowEnabled=true' \
+      -s 'directAccessGrantsEnabled=true' \
+      -s 'implicitFlowEnabled=false' \
+      -s 'serviceAccountsEnabled=false' \
+      -s "rootUrl=${root_url}" \
+      -s 'baseUrl=/' \
+      -s "redirectUris=${redirect_uris}" \
+      -s 'webOrigins=["+"]' \
+      -s 'attributes={"post.logout.redirect.uris":"+","pkce.code.challenge.method":"S256"}' \
+      -s 'protocol=openid-connect' \
+      -s 'fullScopeAllowed=true'
+  fi
+}
+
+# Realm imports do not merge into existing realms. Reconcile this fallback client separately so
+# the Biz frontend can initialize on its local root URL before a tenant is selected.
+ensure_public_client \
+  processpuzzle-admin \
+  processpuzzle-biz \
+  'ProcessPuzzle Biz' \
+  http://localhost:9092 \
+  '["http://localhost:9092/*","http://localhost:4202/*"]'
+
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"
 
