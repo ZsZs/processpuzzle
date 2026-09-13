@@ -13,6 +13,11 @@ function getCliArg(name: string): string | undefined {
 }
 
 const environmentVar = getCliArg('environment');
+const pipelineStage = environmentVar ?? process.env['PIPELINE_STAGE'] ?? 'dev';
+
+if (!['dev', 'ci', 'stage', 'prod'].includes(pipelineStage)) {
+  throw new Error(`Unsupported PIPELINE_STAGE: ${pipelineStage}`);
+}
 
 function writeFileUsingFS(targetPath: string, environmentFileContent: string) {
   writeF(targetPath, environmentFileContent, function (err: NodeJS.ErrnoException | null) {
@@ -69,7 +74,7 @@ const fileContent = `
 
   export const environment: EnvironmentVariables = {
     FIREBASE_API_KEY: '${process.env['FIREBASE_API_KEY']}',
-    PIPELINE_STAGE: '${process.env['PIPELINE_STAGE']}'
+    PIPELINE_STAGE: '${pipelineStage}'
   };
 
 `;
@@ -84,7 +89,7 @@ const assetsDir = 'apps/processpuzzle-testbed-frontend/src/assets';
 const runtimeEnvContent =
   JSON.stringify(
     {
-      PIPELINE_STAGE: `${process.env['PIPELINE_STAGE']}`,
+      PIPELINE_STAGE: pipelineStage,
       FIREBASE_API_KEY: `${process.env['FIREBASE_API_KEY']}`,
     },
     null,

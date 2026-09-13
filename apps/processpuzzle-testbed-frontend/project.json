@@ -144,6 +144,7 @@
     "serve": {
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
+      "dependsOn": ["config-env"],
       "options": {
         "proxyConfig": "apps/processpuzzle-testbed-frontend/proxy.conf.json"
       },
@@ -153,6 +154,22 @@
         },
         "development": {
           "buildTarget": "processpuzzle-testbed-frontend:build:development"
+        }
+      }
+    },
+    "config-env": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "defaultConfiguration": "development",
+      "options": {
+        "command": "npm run config-env-processpuzzle-testbed-frontend -- --environment=dev"
+      },
+      "configurations": {
+        "production": {
+          "command": "npm run config-env-processpuzzle-testbed-frontend -- --environment=prod"
+        },
+        "development": {
+          "command": "npm run config-env-processpuzzle-testbed-frontend -- --environment=dev"
         }
       }
     },
