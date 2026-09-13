@@ -38,7 +38,7 @@ export const TRANSLATION_SOURCE_REGISTRY = new InjectionToken<TranslationSource[
  * modules are base-app's aggregate. This is also the only case that *has* to reach a backend at all —
  * every static scope has an asset and never gets this far.
  */
-export const DEFAULT_TRANSLATION_SOURCE: TranslationSource = { scopes: [], serviceRootKey: 'APP_SERVICE_ROOT', segment: 'app' };
+export const DEFAULT_TRANSLATION_SOURCE: TranslationSource = { scopes: [], serviceRootKey: 'BACKEND_SERVICE_ROOT', segment: 'app' };
 
 /** The source that owns `scope`, or {@link DEFAULT_TRANSLATION_SOURCE} when none claims it. */
 export function translationSourceOf(registry: readonly TranslationSource[] | null, scope: string | undefined): TranslationSource {

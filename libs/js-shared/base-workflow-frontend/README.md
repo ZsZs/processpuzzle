@@ -147,4 +147,4 @@ The two references that *are* pickers, `performedBy` and `toolId`, point at enti
 
 | `BaseConfiguration` key | Meaning                                                                                                        |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `WORKFLOW_SERVICE_ROOT` | `<host>/organizations/<orgKey>` the workflow endpoints hang off. Optional — falls back to `APP_SERVICE_ROOT`.   |
+| `WORKFLOW_SERVICE_ROOT` | `<host>/organizations/<orgKey>` the workflow endpoints hang off. Optional — falls back to `BACKEND_SERVICE_ROOT`.   |

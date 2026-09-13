@@ -3,7 +3,7 @@ name: Deploy-Infrastructure
 # Moves an environment's tag onto a set of infrastructure images and triggers the Coolify redeploy of
 # the one Docker Compose resource that runs them — docs/build-deploy-strategy.md §4. One
 # environment-parameterized workflow rather than one per environment: `stage` and `prod` differ by a
-# committed tools/docker/env/.env.<env> file plus the GitHub Environment's secrets.
+# committed tools/docker/env/infrastructure/.env.<env> file plus the GitHub Environment's secrets.
 #
 # THREE WAYS IN, and no `push:` trigger of its own — Build-ProcessPuzzle-Infrastructure owns that,
 # so a change under tools/docker/ starts there and reaches this workflow via workflow_call:
@@ -180,7 +180,7 @@ jobs:
 
       # A Coolify Docker Compose resource reads the compose file from git and interpolates it with the
       # RESOURCE'S OWN environment variables — `--env-file` is not in that path. So the committed
-      # tools/docker/env/.env.<environment> file is the documented source of truth that has to be
+      # tools/docker/env/infrastructure/.env.<environment> file is the documented source of truth that has to be
       # entered once into the resource, and this webhook only tells Coolify to redeploy.
       - name: Trigger the Coolify redeploy
         uses: ./.github/actions/coolify-deploy

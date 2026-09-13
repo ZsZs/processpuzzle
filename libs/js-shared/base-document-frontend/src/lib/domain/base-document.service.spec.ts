@@ -19,7 +19,7 @@ describe('BaseDocumentService', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { DOCUMENT_SERVICE_ROOT: serviceRoot } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: serviceRoot } } },
         BaseDocumentMapper,
         BaseDocumentService,
       ],

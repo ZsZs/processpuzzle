@@ -5,7 +5,8 @@ import { ModuleDefinitionMapper } from './module-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/modules`. As for `AppDefinitionService`, the organization is
- * part of the configured service root (`APP_SERVICE_ROOT`), so the tenant is a deployment concern rather
+ * part of the configured service root (`APP_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT`), so
+ * the tenant is a deployment concern rather
  * than something every call has to carry.
  *
  * The URL variable is the module key — `ModuleDefinitionMapper` maps it onto `id`, which is what the

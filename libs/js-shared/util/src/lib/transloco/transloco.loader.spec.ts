@@ -15,7 +15,7 @@ describe('TranslocoHttpLoader', () => {
   let http: HttpTestingController;
 
   function configure(options: { runtimeConfiguration?: object | null; sources?: TranslationSource[] } = {}) {
-    const { runtimeConfiguration = { BASE_CONFIGURATION: { APP_SERVICE_ROOT: APP_ROOT, WIDGET_SERVICE_ROOT: WIDGET_ROOT } }, sources } = options;
+    const { runtimeConfiguration = { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: APP_ROOT, WIDGET_SERVICE_ROOT: WIDGET_ROOT } }, sources } = options;
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -151,9 +151,9 @@ describe('TranslocoHttpLoader', () => {
     });
 
     // The per-feature roots are optional; one host serves every feature today.
-    it('uses APP_SERVICE_ROOT when the feature declares no root of its own', () => {
+    it('uses BACKEND_SERVICE_ROOT when the feature declares no root of its own', () => {
       configure({
-        runtimeConfiguration: { BASE_CONFIGURATION: { APP_SERVICE_ROOT: APP_ROOT } },
+        runtimeConfiguration: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: APP_ROOT } },
         sources: [{ scopes: ['base_state'], serviceRootKey: 'STATE_SERVICE_ROOT', segment: 'state' }],
       });
 

@@ -24,13 +24,14 @@
 #   `depends_on` that survives — frontend → backend — names a service defined right here.
 #
 # Every `${VAR:-…}` default below is the current CI value, so the file is correct for local
-# development. .env.stage / .env.prod carry the two that cannot take a CI default
+# development. testbed/.env.stage / testbed/.env.prod carry the two that cannot take a CI default
 # (APP_CORS_ALLOWED_ORIGINS and PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL — a wrong value there is a
 # CORS failure and a 401, not a fallback).
 #
 # CI and local development overlay the pieces this file gives up:
 #
-#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#   docker compose -p processpuzzle --env-file tools/docker/env/infrastructure/.env.ci \
+#     --env-file tools/docker/env/testbed/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml \
 #     -f tools/docker/docker-compose-build.yaml \
@@ -134,8 +135,8 @@ services:
       # the testbed container and 4200 its dev server.
       #
       # Load-bearing on stage and prod, where the CI default is simply wrong: nginx does NOT proxy to
-      # the backend, so the browser calls APP_SERVICE_ROOT cross-origin and this list is the only
-      # thing that lets it. .env.stage sets it to the frontend's own https origin.
+      # the backend, so the browser calls BACKEND_SERVICE_ROOT cross-origin and this list is the only
+      # thing that lets it. testbed/.env.stage sets it to the frontend's own https origin.
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
 
       # User management, which is org-admin's. This deployment does not create realms — that went
@@ -157,7 +158,7 @@ services:
       # which is what a single-hostname reverse proxy in front of both arranges for prod.
       #
       # The issuer must equal KC_HOSTNAME of the infrastructure resource, to the character. Left at
-      # the CI default on stage it rejects every token minted by the real Keycloak, so .env.stage
+      # the CI default on stage it rejects every token minted by the real Keycloak, so testbed/.env.stage
       # sets it explicitly.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}

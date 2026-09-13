@@ -102,13 +102,18 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
 
 ### 3. Extend the data service
 
-Pick `BaseEntityRestService` for an HTTP backend or `BaseEntityFirestoreService` for Firestore. Pass the mapper, a configuration key that resolves to the backend root URL, and the resource path.
+Pick `BaseEntityRestService` for an HTTP backend or `BaseEntityFirestoreService` for Firestore. Pass the mapper, a configuration key that resolves to the root URL, and the resource path.
+
+The key is a `BaseConfiguration` property name, resolved through `serviceRootOf`. Use
+`BACKEND_SERVICE_ROOT` for a resource served by the platform's own backend — or the optional
+per-feature root of the owning feature, which falls back to it. Use `THIRD_PARTY_ROOT` for a
+third-party source, as the example below does: `test-entity` is one of the json-server resources.
 
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class TestEntityService extends BaseEntityRestService<TestEntity> {
   constructor(protected override entityMapper: TestEntityMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'test-entity');
+    super(entityMapper, 'THIRD_PARTY_ROOT', 'test-entity');
   }
 }
 ```

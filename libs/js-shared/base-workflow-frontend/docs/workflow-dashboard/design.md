@@ -40,7 +40,7 @@ cache with the generated Workflow Instance screens instead of keeping a second. 
 screens against a running backend. This one is a genuine trap and is written up as open-questions #6.
 
 **No `orgKey` anywhere.** In this workspace the tenant is part of the configured service root
-(`WORKFLOW_SERVICE_ROOT`, falling back to `APP_SERVICE_ROOT`), so no screen threads an organization through
+(`WORKFLOW_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT`), so no screen threads an organization through
 its calls and `CurrentUserContext` does not carry one.
 
 **The completion form takes named key/value pairs, not a free-text note.** A rule reads named variables, so

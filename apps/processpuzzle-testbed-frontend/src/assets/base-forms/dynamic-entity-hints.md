@@ -9,7 +9,7 @@ in step 3.
 
 `libs/java-shared/base-entity-backend/src/main/resources/default-entities/processpuzzle-testbed-entities.yaml`,
 under `code: dynamic-entity`, `name: Dynamic Entity`, imported on startup by `DefaultEntityLoader`. The
-frontend reads it over the contract, from `ENTITY_SERVICE_ROOT` (which falls back to `APP_SERVICE_ROOT`):
+frontend reads it over the contract, from `ENTITY_SERVICE_ROOT` (which falls back to `BACKEND_SERVICE_ROOT`):
 
 ```
 GET /organizations/{orgKey}/entity-definitions       the types
@@ -91,11 +91,12 @@ hand-tuned layout. That is why neither `Dynamic Entity` nor the demo application
 
 The Java backend, which imports the seed file because `apps/processpuzzle-testbed-backend`'s `application.yaml` sets
 `base-entity.loadDefaultEntities: yes`, and a run-time configuration pointing at it: every stage's
-`APP_SERVICE_ROOT` does — `http://localhost:8080/organizations/processpuzzle-testbed` in `config.dev.json`
-and `config.ci.json`. Nothing here is served by the json-server mock on `:3000`; that stands in for
-third-party sources only (see `tools/mock-backend/README.md`).
+`BACKEND_SERVICE_ROOT` does — `http://localhost:8080/organizations/processpuzzle-testbed` in
+`config.common.json`, which `dev` and `ci` inherit unchanged. Nothing here is served by the json-server
+mock on `:3000`; that is `THIRD_PARTY_ROOT`, which stands in for third-party sources only (see
+`tools/mock-backend/README.md`).
 
-Point `APP_SERVICE_ROOT` at a host that serves no `entity-definitions` and `EntityDefinitionService`
+Point `BACKEND_SERVICE_ROOT` at a host that serves no `entity-definitions` and `EntityDefinitionService`
 answers an empty list, so this page reads *"No entity type registered for 'Dynamic Entity' yet."* That is
 the designed degradation, not a defect: whatever names an entity — an `AppDefinition` route, a
 hand-written route like this one — is allowed to be ahead of what is deployed, and the link that leads

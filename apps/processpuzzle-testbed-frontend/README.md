@@ -45,29 +45,38 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 
 ### Per-stage settings
 
-| Stage | Backend | Auth provider | Notes |
-|---|---|---|---|
-| **dev** | REST `http://localhost:3000/` (common) | Keycloak on `localhost:7070` | `level: debug`; run `npm run stack-up-infra` for the services it talks to |
-| **ci** | REST `localhost:3000`, backend on `localhost:8080` | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
-| **stage** | REST, `api.stage.processpuzzle.de` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
-| **prod** | REST, `api.processpuzzle.com` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
+| Stage | `BACKEND_SERVICE_ROOT` | `THIRD_PARTY_ROOT` | Auth provider | Notes |
+|---|---|---|---|---|
+| **dev** | `localhost:8080/organizations/processpuzzle-testbed` (common) | `localhost:3000` (common) | Keycloak on `localhost:7070` | `level: debug`; run `npm run stack-up-infra` for the services it talks to |
+| **ci** | same — inherited from common | same — inherited from common | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
+| **stage** | `api.stage.processpuzzle.de/organizations/processpuzzle-testbed` | `testbed.stage.processpuzzle.de/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
+| **prod** | `api.processpuzzle.com/organizations/processpuzzle-testbed` | `testbed.processpuzzle.com/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
 
-**`BACKEND_SERVICE_ROOT` has to be overridden per stage, and is easy to miss.** It names the
+`config.ci.json` and `config.dev.json` name **no roots at all** — they carry only `PIPELINE_STAGE`,
+`DEPLOYMENT_ENVIRONMENT` and `FIREBASE_CONFIGURATION`, because both run against the local compose
+stack that `config.common.json` already describes.
+
+**Three roots, and they resolve to three different places.** `BACKEND_SERVICE_ROOT` is the
+org-scoped root of this stack's Spring Boot backend (`<host>/organizations/processpuzzle-testbed`) and
+is *the* fallback for every optional per-feature root — `APP_`, `DOCUMENT_`, `RULE_`, `ENTITY_`,
+`WIDGET_`, `STATE_`, `WORKFLOW_SERVICE_ROOT` — which exist only so that a feature can one day move to
+a host of its own. `OBJECT_STORE_SERVICE_ROOT` is the same host *without* the org segment, because the
+object endpoints carry none.
+
+**`THIRD_PARTY_ROOT` has to be overridden per stage.** It names the
 [`json-server` mock](../../tools/mock-backend/README.md) standing in for third-party REST sources —
 `application-properties`, read by the `like-button` demo widget, is the one thing that uses it — and
 `config.common.json` sets it to `http://localhost:3000`, which is right for `dev` and `ci` and a dead
 address in the browser of anyone using a deployment. A deployment cannot reach json-server directly
 either: it is deliberately given no domain, so `stage` and `prod` point at **their own origin's
-`/backend` prefix**, which `tools/docker/processpuzzle-testbed-frontend/nginx.conf` reverse-proxies to
-`json-server:3000`. Being same-origin, it needs no CORS entry. Every *other* root in
-`config.common.json` is already overridden in each stage file, so this is the single value where
-inheriting the common default is a bug rather than a default.
+`/third-party` prefix**, which `tools/docker/processpuzzle-testbed-frontend/nginx.conf`
+reverse-proxies to `json-server:3000`. Being same-origin, it needs no CORS entry.
 
 `stage` is on **`.de`**, matching the Coolify control plane, and each name has to agree with
-`tools/docker/env/.env.stage` — `AUTHENTICATION_SERVICE_ROOT` with `KC_HOSTNAME` *and*
-`PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL`, and the frontend's own origin with
-`APP_CORS_ALLOWED_ORIGINS`, since nginx does not proxy to the backend and the browser therefore calls
-`APP_SERVICE_ROOT` cross-origin. `prod` still names `.com` and is **unverified** — see
+`tools/docker/env/{infrastructure,testbed}/.env.stage` — `AUTHENTICATION_SERVICE_ROOT` with
+`KC_HOSTNAME` (infrastructure) *and* `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` (testbed), and the
+frontend's own origin with `APP_CORS_ALLOWED_ORIGINS`, since nginx does not proxy to the backend and
+the browser therefore calls `BACKEND_SERVICE_ROOT` cross-origin. `prod` still names `.com` and is **unverified** — see
 [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §12; confirm it against real
 DNS before the first prod deploy.
 
@@ -95,7 +104,7 @@ supply it.
 
 ### Docker compose files
 
-- **`tools/docker/docker-compose-infrastructure.yaml`** — the shared infrastructure layer: Keycloak + Postgres, MinIO, json-server, pgweb. One definition for `ci`, `stage` and `prod`, parameterized by `tools/docker/env/.env.<environment>`.
+- **`tools/docker/docker-compose-infrastructure.yaml`** — the shared infrastructure layer: Keycloak + Postgres, MinIO, json-server, pgweb. One definition for `ci`, `stage` and `prod`, parameterized by `tools/docker/env/infrastructure/.env.<environment>`.
 - **`tools/docker/docker-compose-apps.yaml`** — the testbed (nginx) and its Spring Boot backend: the testbed *stack's* own Coolify Docker Compose resource. Passes `PIPELINE_STAGE` and `FIREBASE_API_KEY` to the testbed container; both services healthchecked, and both on the network the infrastructure resource owns, which this file joins as `external`. Pull-only and standalone, because Coolify reads it alone — see [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §4.
 - **`tools/docker/docker-compose-apps-local.yaml`** / **`docker-compose-build.yaml`** / **`docker-compose-pull.yaml`** — the overlays CI and local development add on top, respectively: one compose project instead of two resources, `build:` from the working tree, and reuse of the images already on disk. Overlay them **after** the two base files; see [`tools/README.md`](../../tools/README.md).
 - **`tools/docker/minio/README.md`** — the MinIO sidecar's own README documents its custom image (pre-created `documents`/`images` buckets, `springboot/springboot123` service account) and credential override pattern.

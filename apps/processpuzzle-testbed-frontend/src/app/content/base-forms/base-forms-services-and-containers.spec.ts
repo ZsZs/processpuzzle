@@ -18,8 +18,8 @@ import { TrunkDataService } from './trunk-data/trunk-data.service';
 import { TrunkDataStore } from './trunk-data/trunk-data.store';
 
 const runtimeConfiguration = {
+  THIRD_PARTY_ROOT: 'https://api.example.test',
   BACKEND_SERVICE_ROOT: 'https://api.example.test',
-  APP_SERVICE_ROOT: 'https://api.example.test',
 };
 
 describe('base-form services and containers', () => {

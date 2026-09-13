@@ -10,7 +10,8 @@
 #
 # CI and local development still need to prove the seven images build, and to run against the version
 # in the working tree. Overlay this file for that:
-#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#   docker compose --env-file env/infrastructure/.env.ci --env-file env/testbed/.env.ci
+#     -f docker-compose-infrastructure.yaml
 #     -f docker-compose-apps.yaml -f docker-compose-build.yaml
 #     -f docker-compose-apps-local.yaml up -d --wait --build
 #

@@ -124,7 +124,7 @@ Coolify's project-level shared environment variables (host names, credentials) p
 - **Deployment trigger: the Coolify deploy webhook** (2026-09-04). One `curl` against the URL Coolify prints on the resource's Webhook page, wrapped in the [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml) composite action so the six app workflows reuse it. The whole URL comes from a secret, which keeps the action independent of Coolify's URL shape.
 - **One compose file per layer, not per environment** (2026-09-04). `docker-compose-ci.yaml` and `docker-compose-prod.yaml` were two definitions of the same infrastructure that had already drifted — prod had no MinIO and no pgweb. They are replaced by `docker-compose-infrastructure.yaml` (the shared layer) and `docker-compose-apps.yaml` (the testbed stack). CI and `npm run stack-*` overlay both.
 - **One Docker Compose resource per stack, not one Application resource per image** (2026-09-06). See §4 for the reasoning. `docker-compose-apps.yaml` stopped being a holding position and became the file a Coolify resource reads: pull-only, `external` network, and no `depends_on` naming a service it does not define. The pieces it gave up are restored for CI and local development by `docker-compose-build.yaml` (the `build:` sections) and the new `docker-compose-apps-local.yaml` (a non-external network and the cross-layer `depends_on`), overlaid **after** it so their values win.
-- **Committed `.env.<environment>` for non-secrets, GitHub Environment secrets for credentials** (2026-09-04). `tools/docker/env/.env.{ci,stage,prod}` are in git and hold no credentials except `ci`'s demo values, which were always in git. See §11 for how they reach Coolify, which does *not* read them.
+- **Committed `.env.<environment>` for non-secrets, GitHub Environment secrets for credentials** (2026-09-04). `tools/docker/env/{infrastructure,testbed}/.env.{ci,stage,prod}` are in git and hold no credentials except `ci`'s demo values, which were always in git. One subdirectory per deployable compose file, so each Coolify resource has an env file of its own; nine variables both need are deliberately duplicated, since compose interpolates each file independently. See §11 for how they reach Coolify, which does *not* read them.
 
 ## 9. Proposed default: image tagging & promotion
 
@@ -178,8 +178,9 @@ Nothing else changes — the testbed pair in this repository is the worked examp
 
 ### Secrets and variables per GitHub Environment
 
-`STAGE` and `PROD`, none of which existed before this change. `tools/docker/env/.env.example`
-documents where each is consumed.
+`STAGE` and `PROD`, none of which existed before this change.
+`tools/docker/env/{infrastructure,testbed}/.env.example` documents where each is consumed, per
+resource.
 
 | Secret | Used for |
 |---|---|
@@ -234,7 +235,7 @@ prod.
 
 ## 11. Three things to know about Coolify
 
-- **It does not read `--env-file`.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the *resource's own* environment variables. So for `stage` / `prod` the committed `tools/docker/env/.env.<environment>` file is the documented source of truth that has to be entered once into the resource (credentials marked as secret there), while `--env-file` is what `ci` and local development use. Every variable in the compose file carries a `${VAR:-<ci default>}` default, so one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
+- **It does not read `--env-file`.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the *resource's own* environment variables. So for `stage` / `prod` the committed `tools/docker/env/<resource>/.env.<environment>` file is the documented source of truth that has to be entered once into the resource (credentials marked as secret there), while `--env-file` is what `ci` and local development use. Every variable in the compose file carries a `${VAR:-<ci default>}` default, so one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
 - **`force=true` restarts without always re-pulling** ([coollabsio/coolify#5318](https://github.com/coollabsio/coolify/issues/5318)). A resource that watches a moving tag therefore needs Coolify's *"pull latest images and restart"* option enabled. That, plus watching `:stage` / `:prod`, is exactly §9's model. `tools/docker/docker-compose-infrastructure.yaml` additionally sets `pull_policy: always` on the five infrastructure services, so the file is correct on its own rather than depending on that checkbox.
 - **It builds before it deploys, from the repo root.** Coolify runs `docker compose … build --pull` ahead of `up`, passing `--project-directory <artifact dir>` — the repo root. Compose resolves a relative `build.context` against the *project directory*, not against the compose file's directory, so a `context: ../../` written for `tools/docker/` climbs two levels above the root and fails with `lstat /tools: no such file or directory`. Both halves of that are why the infrastructure compose file carries **no `build:` section at all**: fixing only the path would have Coolify succeed at the wrong thing, rebuilding on the deployment host bytes that §9 says must come from CI. The `build:` sections live in `tools/docker/docker-compose-build.yaml`, overlaid by CI and by `npm run stack-up-build`, where the project directory defaults to `tools/docker` and the relative context is correct. With nothing to build, Coolify's build step logs `No services to build` and exits 0.
 

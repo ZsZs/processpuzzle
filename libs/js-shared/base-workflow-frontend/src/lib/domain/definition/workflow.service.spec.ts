@@ -87,9 +87,9 @@ describe('WorkflowService', () => {
   });
 
   // WORKFLOW_SERVICE_ROOT is optional in BaseConfiguration; `serviceRootOf` falls back to
-  // APP_SERVICE_ROOT, which is the only root this workspace's deployments configure today.
-  it('falls back to APP_SERVICE_ROOT when no workflow root is configured', () => {
-    const { service: fallbackService, controller: fallbackController } = configure({ APP_SERVICE_ROOT: serviceRoot });
+  // BACKEND_SERVICE_ROOT, which is the only root this workspace's deployments configure today.
+  it('falls back to BACKEND_SERVICE_ROOT when no workflow root is configured', () => {
+    const { service: fallbackService, controller: fallbackController } = configure({ BACKEND_SERVICE_ROOT: serviceRoot });
 
     fallbackService.delete('order-fulfillment-workflow').subscribe();
 

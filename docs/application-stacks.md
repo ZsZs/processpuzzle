@@ -45,7 +45,8 @@ organization key and backend deployment belong to the individual customer.
 
 > **The Hostname row is the one thing that is not settled.** `stage` is deployed on **`.de`**, matching
 > the Coolify control plane: `testbed.stage.processpuzzle.de`, with `api.stage.processpuzzle.de` for
-> the backend and `auth.stage.processpuzzle.de` for Keycloak — see `tools/docker/env/.env.stage`. The
+> the backend and `auth.stage.processpuzzle.de` for Keycloak — see
+> `tools/docker/env/{infrastructure,testbed}/.env.stage`. The
 > `.com` names in the table above are the *intended* production names and nothing has verified those
 > records exist; `apps/processpuzzle-testbed-e2e/env/.env.prod` already disagrees with them by naming
 > `testbed.processpuzzle.de`. Resolving the split is tracked in
@@ -178,7 +179,7 @@ stays visible.
 | `processpuzzle-biz-frontend` | Tenant org-admin surface; reads an orgKey path segment, still calls `testbed-backend`. Now in the private repository, unchanged | Public site + onboarding, using the `processpuzzle-biz` Keycloak realm/client; no platform backend |
 | `processpuzzle-biz-backend` | Does not exist | Small onboarding-only backend, in the private repository |
 | Hostnames | Ports on `localhost` — 9090 here, 9091 / 9092 in the private repository | Subdomains of `processpuzzle.com` |
-| Prod application topology | Resolved for the shared services: `docker-compose-prod.yaml` is gone, replaced by one `docker-compose-infrastructure.yaml` plus `tools/docker/env/.env.prod`. What is still missing is a public origin for each *application* — nothing publishes port 80 or reverse-proxies `/api/` | Per-app deployment resources (strategy §§4, 10, 12), not a compose file |
+| Prod application topology | Resolved for the shared services: `docker-compose-prod.yaml` is gone, replaced by one `docker-compose-infrastructure.yaml` plus `tools/docker/env/infrastructure/.env.prod`. What is still missing is a public origin for each *application* — nothing publishes port 80 or reverse-proxies `/api/` | Per-app deployment resources (strategy §§4, 10, 12), not a compose file |
 | Schema management | Hibernate `ddl-auto: update` | A migration tool |
 
 **`processpuzzle-biz-frontend` changes meaning**, and that is the one item that is more than a rename. It

@@ -17,7 +17,7 @@ describe('AppDefinitionFacade', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { APP_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
         AppDefinitionFacade,
       ],
     });

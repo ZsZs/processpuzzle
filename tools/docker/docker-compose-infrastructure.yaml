@@ -8,10 +8,12 @@
 #
 # Every `${VAR:-…}` default below is the current CI value, so this file is correct for local
 # development. The three credentials docker-compose-prod.yaml already guarded keep the `:?` form: a
-# deployment that forgets one fails at `up` instead of silently at the first request. `.env.ci`
+# deployment that forgets one fails at `up` instead of silently at the first request.
+# `infrastructure/.env.ci`
 # supplies them, so `npm run stack-up` still needs no setup.
 #
-#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#   docker compose -p processpuzzle --env-file tools/docker/env/infrastructure/.env.ci \
+#     --env-file tools/docker/env/testbed/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml up -d --wait
 #

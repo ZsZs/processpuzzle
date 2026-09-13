@@ -9,7 +9,7 @@ import { WorkflowMapper } from './workflow.mapper';
  * than something every call has to carry.
  *
  * `WORKFLOW_SERVICE_ROOT` is optional in `BaseConfiguration`: `serviceRootOf` falls back to
- * `APP_SERVICE_ROOT`, which is what every deployment of this workspace configures today. Naming a
+ * `BACKEND_SERVICE_ROOT`, which is what every deployment of this workspace configures today. Naming a
  * root of its own is what lets base-workflow move to a host of its own later without any caller
  * changing.
  *

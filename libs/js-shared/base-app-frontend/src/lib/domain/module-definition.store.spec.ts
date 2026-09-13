@@ -13,7 +13,7 @@ describe('ModuleDefinitionStore', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { APP_SERVICE_ROOT: serviceRoot } } }],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: serviceRoot } } }],
     });
     store = TestBed.inject(ModuleDefinitionStore);
     controller = TestBed.inject(HttpTestingController);

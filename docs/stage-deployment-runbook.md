@@ -51,11 +51,11 @@ upload and download fails while the rest of the store works. Point the domain at
 would want a hostname of its own, since its credentials are MinIO's root user.
 
 The backend needs a name of its own because **nginx does not proxy to it**. The browser calls
-`APP_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing rather
-than decorative.
+`BACKEND_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing
+rather than decorative.
 
 `.de`, not `.com`: it matches the Coolify control plane. Production is still written `.com` in
-`.env.prod` and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
+both `.env.prod` files and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
 §12.
 
 ---
@@ -99,7 +99,8 @@ hand — otherwise a first-start timeout reds a workflow whose deployment actual
 
 ### Nothing else
 
-The seven credentials in [`.env.example`](../tools/docker/env/.env.example) (`POSTGRES_PASSWORD`,
+The seven credentials in [`infrastructure/.env.example`](../tools/docker/env/infrastructure/.env.example)
+and [`testbed/.env.example`](../tools/docker/env/testbed/.env.example) (`POSTGRES_PASSWORD`,
 `PROCESSPUZZLE_DB_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` / `_PASSWORD`, `MINIO_ROOT_PASSWORD`,
 `MINIO_SERVICE_PASSWORD`, `PLATFORM_ADMIN_CLIENT_SECRET`) are consumed **only by Coolify**. No
 workflow reads them — `deploy-infrastructure.yml` and `deploy-testbed-apps.yml` reference nothing but
@@ -168,8 +169,9 @@ network and will fail on `network processpuzzle has active endpoints` — see
 
 ### Full variable list for this resource
 
-Non-secret, copied from [`.env.stage`](../tools/docker/env/.env.stage) — which stays the source of
-truth, because Coolify does **not** read `--env-file`:
+Non-secret, copied from [`infrastructure/.env.stage`](../tools/docker/env/infrastructure/.env.stage)
+and [`testbed/.env.stage`](../tools/docker/env/testbed/.env.stage) — one file per resource, and each
+stays the source of truth for its own, because Coolify does **not** read `--env-file`:
 
 ```
 PP_IMAGE_REGISTRY=ghcr.io/zszs
@@ -517,12 +519,12 @@ docker ps --format '{{.Names}}	{{.Ports}}' | grep 8080  # coolify-proxy 0.0.0.0:
 ```
 
 So setting the port to `127.0.0.1:8080:8080` does not fix it either: a specific-address bind fails
-while the wildcard holds the port. Hence **8180** in §4 and in `.env.stage` / `.env.prod`.
+while the wildcard holds the port. Hence **8180** in §4 and in `testbed/.env.stage` / `testbed/.env.prod`.
 
 Nothing about the application changes. The proxy routes `api.stage.processpuzzle.de` to
-`testbed-backend:8080` over the compose network, `APP_SERVICE_ROOT` in `config.stage.json` names that
-public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the SSH-tunnel
-port moves. CI keeps `8080:8080` in `.env.ci` — a GitHub runner has no Coolify proxy, and the local
+`testbed-backend:8080` over the compose network, `BACKEND_SERVICE_ROOT` in `config.stage.json` names
+that public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the
+SSH-tunnel port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and the local
 `config.ci.json` expects the backend on `localhost:8080`.
 
 ### 7.3 `no available server`, with both containers healthy

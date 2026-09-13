@@ -19,7 +19,7 @@ import { EntityDefinitionMapper } from './entity-definition.mapper';
  * a shell that breaks a preview over one.
  *
  * `ENTITY_SERVICE_ROOT` is optional in `BaseConfiguration`: `serviceRootOf` falls back to
- * `APP_SERVICE_ROOT`, which is what every deployment of this workspace configures today.
+ * `BACKEND_SERVICE_ROOT`, which is what every deployment of this workspace configures today.
  *
  * Nothing is added on top of the generic CRUD. The contract's incremental attribute endpoints
  * (`POST/PUT/DELETE .../attributes/{attributeCode}`) are not used: the attributes are edited as an embedded

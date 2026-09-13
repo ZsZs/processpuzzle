@@ -17,7 +17,7 @@ import { Injectable, signal } from '@angular/core';
  * ```
  *
  * The **organization is not here**, unlike in the design proposal: in this workspace the tenant is
- * part of the configured service root (`WORKFLOW_SERVICE_ROOT`, falling back to `APP_SERVICE_ROOT` —
+ * part of the configured service root (`WORKFLOW_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT` —
  * `http://localhost:8080/organizations/processpuzzle-testbed` in dev), so every request is already
  * organization-scoped and no screen threads an `orgKey` through its calls. Putting one here would
  * invite a second, disagreeing source of the same fact.

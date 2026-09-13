@@ -38,7 +38,7 @@ describe('DocumentEditorComponent', () => {
         provideHttpClientTesting(),
         // The add-block actions are labelled through TranslocoPipe, which pulls in TranslocoService.
         provideTranslocoTesting({ translations: { en: { 'base_document.document.content.add_text_block': 'Add text block', 'base_document.document.content.add_widget_block': 'Add widget' } } }),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { DOCUMENT_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
       ],
     });
     fixture = TestBed.createComponent(EditorHostComponent);

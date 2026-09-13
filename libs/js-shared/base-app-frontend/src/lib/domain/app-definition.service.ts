@@ -6,8 +6,9 @@ import { AppDefinitionMapper } from './app-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/app-definitions`. As in base-rule, the organization is
- * part of the configured service root (`APP_SERVICE_ROOT`), so the tenant is a deployment concern
- * rather than something every call has to carry.
+ * part of the configured service root — `APP_SERVICE_ROOT`, the optional per-feature escape hatch,
+ * falling back to `BACKEND_SERVICE_ROOT`, which is what every deployment actually sets — so the
+ * tenant is a deployment concern rather than something every call has to carry.
  */
 @Injectable({ providedIn: 'root' })
 export class AppDefinitionService extends BaseEntityRestService<AppDefinition> {

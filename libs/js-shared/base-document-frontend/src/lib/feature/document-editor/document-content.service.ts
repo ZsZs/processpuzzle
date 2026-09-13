@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { BaseConfiguration, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { DocumentBlock } from '../../domain/base-document';
 
 /**
@@ -15,7 +15,10 @@ export class DocumentContentService {
   private readonly headers = {
     'Content-Type': 'application/json; charset=utf-8',
   };
-  private readonly baseUrl = inject<{ BASE_CONFIGURATION: BaseConfiguration }>(RUNTIME_CONFIGURATION).BASE_CONFIGURATION.DOCUMENT_SERVICE_ROOT;
+  // Through the shared helper rather than a bare read, so that `DOCUMENT_SERVICE_ROOT` being the
+  // optional per-feature escape hatch it is falls back to `BACKEND_SERVICE_ROOT` here as it does in
+  // BaseEntityRestService — a bare read would hand `undefined` to the template literal below.
+  private readonly baseUrl = serviceRootOf(inject(RUNTIME_CONFIGURATION), 'DOCUMENT_SERVICE_ROOT');
 
   /**
    * Blocks belong to a *locale's* draft, not to the document — the contract scopes every block operation to

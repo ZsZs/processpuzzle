@@ -9,7 +9,7 @@ import { StateMachineDefinitionMapper } from './state-machine-definition.mapper'
  * every call has to carry.
  *
  * `STATE_SERVICE_ROOT` is optional in `BaseConfiguration`: `serviceRootOf` falls back to
- * `APP_SERVICE_ROOT`, which is what every deployment of this workspace configures today. Naming a root
+ * `BACKEND_SERVICE_ROOT`, which is what every deployment of this workspace configures today. Naming a root
  * of its own is what lets base-state move to a host of its own later without any caller changing.
  *
  * Nothing is added on top of the generic CRUD. The operation layer of `base-state-api.yaml` — an entity

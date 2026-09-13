@@ -36,9 +36,9 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     protected resourceUrl: string,
   ) {
     // Through the shared helper rather than a bare read, so the fallback `BaseConfiguration` documents for
-    // the optional per-feature roots — absent, use `APP_SERVICE_ROOT` — holds for entity endpoints too and
-    // not only for the translations resource. No deployment's `BACKEND_SERVICE_ROOT` is absent, so this
-    // changes nothing for the services that were here before it.
+    // the optional per-feature roots — absent, use `BACKEND_SERVICE_ROOT` — holds for entity endpoints too
+    // and not only for the translations resource. No deployment leaves `BACKEND_SERVICE_ROOT` out, so a
+    // service naming an optional root of its own resolves the same way it always did.
     this.baseUrl = serviceRootOf(this.runtimeConfiguration, urlProperty);
   }
 

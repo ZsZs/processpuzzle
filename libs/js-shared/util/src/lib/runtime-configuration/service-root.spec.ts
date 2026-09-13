@@ -4,7 +4,7 @@ import { serviceRootOf } from './service-root';
 describe('serviceRootOf', () => {
   const configuration = {
     BASE_CONFIGURATION: {
-      APP_SERVICE_ROOT: 'http://localhost:8080/organizations/acme',
+      BACKEND_SERVICE_ROOT: 'http://localhost:8080/organizations/acme',
       ENTITY_SERVICE_ROOT: 'http://entities.acme/organizations/acme',
     },
   };
@@ -13,7 +13,7 @@ describe('serviceRootOf', () => {
     expect(serviceRootOf(configuration, 'ENTITY_SERVICE_ROOT')).toBe('http://entities.acme/organizations/acme');
   });
 
-  it('falls back to APP_SERVICE_ROOT for a feature root the configuration leaves out.', () => {
+  it('falls back to BACKEND_SERVICE_ROOT for a feature root the configuration leaves out.', () => {
     expect(serviceRootOf(configuration, 'WIDGET_SERVICE_ROOT')).toBe('http://localhost:8080/organizations/acme');
   });
 
@@ -26,7 +26,7 @@ describe('serviceRootOf', () => {
     expect(serviceRootOf({ LOGGING_CONFIGURATION: {} }, 'ENTITY_SERVICE_ROOT')).toBe('');
   });
 
-  it('returns an empty string when neither the feature root nor APP_SERVICE_ROOT is set.', () => {
-    expect(serviceRootOf({ BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000' } }, 'ENTITY_SERVICE_ROOT')).toBe('');
+  it('returns an empty string when neither the feature root nor BACKEND_SERVICE_ROOT is set.', () => {
+    expect(serviceRootOf({ BASE_CONFIGURATION: { THIRD_PARTY_ROOT: 'http://localhost:3000' } }, 'ENTITY_SERVICE_ROOT')).toBe('');
   });
 });

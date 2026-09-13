@@ -32,7 +32,7 @@ const PAGE_SIZE = 200;
  * read once and turned into a descriptor. The designer's own CRUD over definitions is a separate surface
  * with its own facade.
  *
- * A failure resolves to `[]` rather than propagating. The root falls back to `APP_SERVICE_ROOT` (see
+ * A failure resolves to `[]` rather than propagating. The root falls back to `BACKEND_SERVICE_ROOT` (see
  * {@link serviceRootOf}) and a deployment may point that at a host which does not serve this resource at
  * all — the json-server mock does not — so "no definitions" has to be an ordinary answer. What the caller
  * renders then is the same "no entity type registered" state as for an unknown entity, which is the truth.
