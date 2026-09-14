@@ -600,9 +600,9 @@ never removes the row, so each redeploy leaves a dead peer behind and each subse
 to discover that. **The cost grows with every deployment**, which is what makes this look
 intermittent: it fit inside `start_period: 150s` for months and then took 14 minutes.
 
-Fixed at the image level as of 2026-09-08 — `tools/docker/keycloak/Dockerfile` builds with
-`KC_CACHE=local`, so there is no cluster to join. `cache` is a build-time option, so it has to be
-baked in; supplying it at run time makes an `--optimized` start exit 2.
+Fixed at the image level — `tools/docker/keycloak/Dockerfile` sets `KC_CACHE=local` in both stages,
+so the final image starts without a cluster to join. Cache mode is evaluated at runtime; setting it
+only while building the optimized image does not persist it and silently restores JDBC_PING.
 
 Two consequences worth knowing. Deploying the fix needs the **image rebuilt and re-promoted**
 (`tools/docker/**` triggers Build-Infrastructure, which calls Deploy-Infrastructure), not just a

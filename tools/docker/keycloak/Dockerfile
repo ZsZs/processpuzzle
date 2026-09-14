@@ -14,10 +14,9 @@ ENV KC_METRICS_ENABLED=true
 # start_period compose declares the container unhealthy and takes down everything that waits on it
 # — an infrastructure deployment that fails while Keycloak is, in fact, coming up fine.
 #
-# `cache` is a BUILD-TIME option, hence here and not in the compose file: `kc.sh start --optimized`
-# exits 2 when a build-time option is supplied at run time (see docker-compose-infrastructure.yaml).
-# The trade is HA, which a single-container deployment does not have to begin with. Restoring it
-# means removing this line, rebuilding, and running more than one replica.
+# Cache mode is a run-time option, so it must be present in the final image as well as while the
+# optimized image is built. The builder-only setting is discarded by the second FROM, which silently
+# restores the distributed cache and its JDBC_PING startup delay.
 ENV KC_CACHE=local
 
 # Configure the database vendor (e.g., postgres, mysql, oracle, mssql)
@@ -49,6 +48,9 @@ ENV KC_HTTP_ENABLED=true
 # beyond the warning. A run-time option, so it is an overridable default here rather than baked.
 ENV KC_PROXY_HEADERS=xforwarded
 ENV KC_HOSTNAME_STRICT=false
+# Keep this in sync with the builder stage. `KC_CACHE` is evaluated at startup, not persisted by
+# `kc.sh build`, and a single-container deployment does not need distributed-cache HA.
+ENV KC_CACHE=local
 
 # Expose ports: 8080 (HTTP), 8443 (HTTPS), 9000 (Management/Health)
 EXPOSE 8080 8443 9000
