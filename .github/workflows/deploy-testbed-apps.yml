@@ -107,6 +107,32 @@ jobs:
     # Resolves the per-environment secrets and variables below.
     environment: ${{ needs.resolve.outputs.environment }}
     steps:
+      # BEFORE the deployment, because the two steps that verify it are `if:`-gated on these variables
+      # and an unset variable makes a step SKIP — silently, and with a green run to show for it. That is
+      # how the stage outage of 2026-09-15 got through: the `postgres_data` volume had been replaced
+      # under a running backend, every request answered 500 `relation "base_…" does not exist`, and the
+      # deployment that preceded it reported success because the STAGE environment declared neither URL
+      # and therefore ran neither the readiness poll nor the e2e suite.
+      #
+      # On STAGE the verification is not optional — a stack nothing exercises is a stack nobody knows
+      # about. PROD is still allowed to omit them: it runs the `smoke` scope and its hostnames are not
+      # settled (env/.env.prod says `.de`, docs/application-stacks.md says `.com`).
+      - name: Require the verification URLs
+        if: ${{ needs.resolve.outputs.environment == 'STAGE' }}
+        env:
+          TESTBED_FRONTEND_PUBLIC_URL: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL }}
+          TESTBED_BACKEND_PUBLIC_URL: ${{ vars.TESTBED_BACKEND_PUBLIC_URL }}
+        run: |
+          set -euo pipefail
+          MISSING=
+          if [ -z "${TESTBED_FRONTEND_PUBLIC_URL}" ]; then MISSING="${MISSING} TESTBED_FRONTEND_PUBLIC_URL"; fi
+          if [ -z "${TESTBED_BACKEND_PUBLIC_URL}" ]; then MISSING="${MISSING} TESTBED_BACKEND_PUBLIC_URL"; fi
+          if [ -n "${MISSING}" ]; then
+            echo "::error::Missing in the STAGE environment:${MISSING}. The readiness poll and the post-deploy e2e run are gated on these, so the deployment would report success without verifying anything. Set them under Settings -> Environments -> STAGE."
+            exit 1
+          fi
+          echo "Verifying against ${TESTBED_FRONTEND_PUBLIC_URL} and ${TESTBED_BACKEND_PUBLIC_URL}."
+
       - name: Checkout source code
         uses: actions/checkout@v5
 

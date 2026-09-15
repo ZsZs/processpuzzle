@@ -34,13 +34,25 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run serve-processpuzzle-testbed-frontend',
-    url: baseURL,
-    reuseExistingServer: true,
-    cwd: workspaceRoot,
-  },
+  /*
+   * Run your local dev server before starting the tests — for `dev` ONLY.
+   *
+   * `ci` targets the containerised stack on :9090 and `stage` / `prod` a deployed environment, and in
+   * none of the three can this command produce the `url` Playwright then waits for: it serves :4200.
+   * Left unconditional, a deployment that is down turns into `npm run serve-…` followed by a 60 s wait
+   * on an unrelated host — a timeout three layers from its cause, where the honest report is "the
+   * deployed frontend did not answer". Which is exactly what the post-deploy gate in
+   * .github/workflows/deploy-testbed-apps.yml needs it to say.
+   */
+  webServer:
+    environment === 'dev'
+      ? {
+          command: 'npm run serve-processpuzzle-testbed-frontend',
+          url: baseURL,
+          reuseExistingServer: true,
+          cwd: workspaceRoot,
+        }
+      : undefined,
   reporter: [
     ['html', { outputFolder: path.join(__dirname, 'reports/e2e'), open: 'on-failure' }],
     ['junit', { outputFile: path.join(__dirname, 'reports/e2e/results.xml') }], // combine multiple
