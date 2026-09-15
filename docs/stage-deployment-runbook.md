@@ -604,6 +604,10 @@ docker logs $KC 2>&1 | tail -30
 waiting on a container that was already gone — **§7.4a**. `status=running` with no
 `started in …s` line yet means it was still coming up — **§7.4b**.
 
+**Check the clock before either of them.** Subtract the `Container keycloak-… Started` timestamp
+from the failure timestamp. Less than ~2 minutes means the healthcheck budget did *not* elapse, so
+neither §7.4a nor §7.4b applies and no cause inside Keycloak can explain it — go to **§7.4c**.
+
 #### 7.4a Exited — almost always the database credentials
 
 ```
@@ -653,9 +657,9 @@ predates the fix.
 
 **A start that is merely slow is now a budget question, not this bug.** Measured against the
 promoted `:stage` image: **172 s** against an empty database — Liquibase's schema creation plus the
-import of the three realms — and **63 s** against a reused one. `start_period` is **300 s**, so a
+import of the three realms — and **63 s** against a reused one. The budget is `retries` x `interval` = **300 s**, so a
 warm start has wide headroom and even a first start fits. A deploy that still fails here after the
-full period is §7.4a, not a number to raise.
+full period is §7.4a, not a number to raise — and one that fails *inside* it is §7.4c.
 
 Two consequences worth knowing. Deploying the fix needs the **image rebuilt and re-promoted**
 (`tools/docker/**` triggers Build-Infrastructure, which calls Deploy-Infrastructure), not just a
@@ -670,11 +674,39 @@ docker exec $PG psql -U keycloak -d keycloak -c 'DELETE FROM "JGROUPS_PING";'
 
 Safe with Keycloak running — the rows are discovery hints, and a live node re-registers itself.
 
-One thing to check afterwards, whichever route you take: `keycloak-init` has
-`depends_on: keycloak: condition: service_healthy`, so an aborted deploy never ran it and the
-`platform-admin` service-account client may be missing. Without it the backend's identity ports
+One thing to check afterwards, whichever route you take: an aborted deploy may never have run
+`keycloak-init`, so the `platform-admin` service-account client may be missing. It no longer waits on
+Keycloak's *health* (`condition: service_started` — see §7.4c), so it now starts alongside Keycloak
+and polls for an admin login of its own for `KC_WAIT_TIMEOUT` seconds (600 by default); read its log
+rather than assuming it was skipped. Without it the backend's identity ports
 fall back to their no-op implementations and user management silently does nothing, while every
 other feature works. Re-running the deployment runs it; it is idempotent.
+
+#### 7.4c Failed in ~90 s — the start period is not in the effective config
+
+Observed on 2026-09-15: `Started 09:56:07`, `is unhealthy 09:57:34`. **87 seconds**, with
+`start_period: 300s` committed in the compose file at the deployed commit.
+
+That combination is impossible if the start period reached the container. Docker does not increment
+a healthcheck's failing streak while the container is inside its start period — the status stays
+`starting`, and compose's dependency wait goes on waiting. 87 s is instead exactly three of the 30 s
+intervals the file used to pair with `retries: 3`, counted from t=0: the arithmetic of a container
+whose effective config has **no** start period. Read it back on the host:
+
+```bash
+docker inspect --format '{{json .Config.Healthcheck}}' $(docker ps -aq --filter name=keycloak- | head -1)
+```
+
+`"StartPeriod": 0` — or the key absent — confirms it. The compose file is not what Coolify runs: it
+parses the file, re-serialises it into `/artifacts/<uuid>/`, and what survives that round trip is the
+authority.
+
+**The consequence for triage:** raising `start_period` cannot fix a deploy that fails inside it. The
+150 s -> 300 s change in `7e97f62a` was exactly that, and it changed nothing — the second deploy
+failed at the same 87 s. So the budget is now written as `retries: 20` x `interval: 15s`, which every
+Docker version honours whether or not the start period survives, and `keycloak-init` waits with
+`condition: service_started` so that the healthcheck no longer decides whether the deployment
+succeeds at all.
 
 ### 7.5 The `:?` guards become values, not errors
 

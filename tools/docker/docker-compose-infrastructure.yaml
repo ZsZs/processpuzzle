@@ -107,10 +107,30 @@ services:
     healthcheck:
       # Keycloak 26+ uses port 9000 for management/health by default
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3" ]
-      interval: 30s
+      # THE BUDGET IS `retries` x `interval` = 300s, and it is written that way ON PURPOSE.
+      #
+      # `start_period` is the cheaper way to say the same thing — failures inside it do not increment
+      # the failing streak, so the container stays `starting` rather than going `unhealthy`. It is
+      # also the one that did not survive the trip through Coolify. A 2026-09-15 stage deploy declared
+      # this container unhealthy 87 seconds after `Started`, with `start_period: 300s` in this file:
+      # 87s is three 30s intervals, i.e. exactly the old `retries: 3` spent from t=0, which is what
+      # Docker does when the effective config carries NO start period. Confirm on the host with
+      #
+      #   docker inspect --format '{{json .Config.Healthcheck}}' <keycloak container>
+      #
+      # and read `StartPeriod`. Raising `start_period` again cannot fix a deployment that fails inside
+      # it — that was the 150s -> 300s change in 7e97f62a, and it changed nothing.
+      #
+      # 20 x 15s tolerates the 172s an empty database needs (Liquibase plus the three realm imports)
+      # whether or not the start period is honoured. The cost is that a GENUINELY broken Keycloak now
+      # takes 300s rather than 90s to be reported unhealthy; that is affordable because, since
+      # `keycloak-init` stopped waiting on this healthcheck, nothing fails when it does.
+      interval: 15s
       timeout: 10s
-      retries: 3
-      # Failures before this elapses do not count against `retries`. Measured against the promoted
+      retries: 20
+      # Kept as the fast path: where it IS honoured, a success ends it early and post-readiness
+      # failures are then caught in `retries` x `interval` instead of from t=0. Measured against the
+      # promoted
       # `:stage` image: 172s on an empty database — Liquibase's schema creation plus the import of
       # the three realms — and 63s against a reused one. The 150s this used to be therefore had
       # NEGATIVE headroom for a first start, and survived only by spending `retries` afterwards; the
@@ -136,8 +156,23 @@ services:
     container_name: processpuzzle-keycloak-init
     depends_on:
       keycloak:
-        condition: service_healthy
+        # `service_started`, NOT `service_healthy`, and this is the difference between a slow Keycloak
+        # and a failed deployment. bootstrap-platform-admin-client.sh already waits for Keycloak
+        # itself — `until login; do sleep 2; done`, now with a deadline — so waiting here as well
+        # bought nothing and cost everything: this was the ONLY `depends_on … service_healthy` on
+        # keycloak in either compose file, so compose's dependency wait failing is what turned
+        # "Keycloak is still importing realms" into `docker compose up` exiting 1 and Coolify marking
+        # the whole infrastructure resource failed. No application stack's backend waits on Keycloak
+        # either; they discover it at their first token validation.
+        #
+        # What is given up: a Keycloak that never comes up no longer fails the deploy at the compose
+        # layer. It fails in this container instead, after KC_WAIT_TIMEOUT, with its own message —
+        # which is the more useful of the two, since "container … is unhealthy" never said why.
+        condition: service_started
     environment:
+      # How long to wait for Keycloak to accept an admin login before giving up. Bounded because
+      # `condition: service_started` means this container, not compose, is now what notices.
+      KC_WAIT_TIMEOUT: ${KC_WAIT_TIMEOUT:-600}
       # `create-realm` is a role of the master realm, and --import-realm skips a realm that already
       # exists, so the service account the backend uses cannot come from a realm import file. This
       # one-shot container creates it with the Admin CLI instead; it is idempotent, so it re-runs

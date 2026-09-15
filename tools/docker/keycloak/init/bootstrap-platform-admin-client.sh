@@ -31,8 +31,20 @@ login() {
   "$KCADM" config credentials --server "$KC_URL" --realm master --user "$KC_ADMIN" --password "$KC_ADMIN_PASSWORD" >/dev/null 2>&1
 }
 
-echo "Waiting for Keycloak at ${KC_URL} ..."
+# BOUNDED, because this loop is now the only thing waiting for Keycloak: the compose service
+# depends on it with `condition: service_started` rather than `service_healthy`, so a Keycloak that
+# never comes up would otherwise leave this container spinning silently forever.
+KC_WAIT_TIMEOUT="${KC_WAIT_TIMEOUT:-600}"
+deadline=$(( $(date +%s) + KC_WAIT_TIMEOUT ))
+
+echo "Waiting up to ${KC_WAIT_TIMEOUT}s for Keycloak at ${KC_URL} ..."
 until login; do
+  if [ "$(date +%s)" -ge "${deadline}" ]; then
+    echo "ERROR: Keycloak at ${KC_URL} did not accept an admin login for ${KC_ADMIN} within ${KC_WAIT_TIMEOUT}s." >&2
+    echo "       Read the keycloak container's log: this script cannot tell a slow start from a bad" >&2
+    echo "       KC_DB_PASSWORD, a wrong KC_ADMIN_PASSWORD or a realm import failure." >&2
+    exit 1
+  fi
   sleep 2
 done
 echo "Authenticated against ${KC_URL} as ${KC_ADMIN}."
