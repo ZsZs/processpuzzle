@@ -47,6 +47,11 @@ services:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
+    # The frontend's nginx proxies /third-party/ here and nothing `depends_on` this service, so a
+    # json-server that exits stays exited and every third-party call answers 502 with the rest of the
+    # application healthy. Default policy is `no`, which also means a daemon or host restart leaves it
+    # down. `minio` is the only other service that carries this today.
+    restart: unless-stopped
 
   keycloak:
     pull_policy: always
