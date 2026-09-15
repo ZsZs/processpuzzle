@@ -105,16 +105,25 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      # Failures before this elapses do not count against `retries`. Keycloak needs ~40s on a fresh
-      # database and was measured at 96s against a reused one — it spent the difference trying to
-      # rejoin jgroups peers a previous container had recorded, a cost that grew with every redeploy
-      # until a 2026-09-08 deployment spent 14 minutes on it and failed. The keycloak image now
-      # builds with KC_CACHE=local, which removes that phase entirely; the headroom below stays,
-      # because the first start against an empty database is still slow. Without this the retries are spent
-      # before it listens, the container is declared unhealthy, and every service that waits on it —
-      # every application stack's backend — refuses to start, seconds before Keycloak finishes
-      # coming up.
-      start_period: 150s
+      # Failures before this elapses do not count against `retries`. Measured against the promoted
+      # `:stage` image: 172s on an empty database — Liquibase's schema creation plus the import of
+      # the three realms — and 63s against a reused one. The 150s this used to be therefore had
+      # NEGATIVE headroom for a first start, and survived only by spending `retries` afterwards; the
+      # figures it cited (~40s fresh, 96s reused) predate both the realm imports and KC_CACHE=local.
+      #
+      # 300s is the empty-database measurement plus room for a server slower than the machine it was
+      # taken on. Overshooting costs nothing — a success ends the start period early, and Docker
+      # probes every `start_interval` (5s by default) while it lasts, not every `interval`.
+      # Undershooting spends the retries before Keycloak listens: the container is unhealthy and every
+      # service that waits on it — every application stack's backend — refuses to start, seconds
+      # before Keycloak finishes coming up.
+      #
+      # This is headroom, not a diagnosis. Keycloak exits 1 within ~20s of a wrong KC_DB_PASSWORD,
+      # while postgres keeps reporting healthy because `pg_isready` does not authenticate; compose
+      # then waits out the whole budget and blames the same "is unhealthy" on it. A deploy that fails
+      # at this healthcheck after the full period is a reason to read the container's log, not to
+      # raise this number again — see docs/stage-deployment-runbook.md §7.4.
+      start_period: 300s
 
   keycloak-init:
     pull_policy: always

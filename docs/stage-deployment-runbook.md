@@ -423,7 +423,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 7001 / 9090 / 8180) instead of the container port (8080 / 9000 / 9001 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
 | 502 persists after correcting the port | Coolify writes the Traefik labels at **container creation**, so saving the Domain field does not reach a running container — redeploy, then confirm with the `docker inspect` label check in [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
-| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy--stale-jgroups-peers) |
+| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy` | the message names the symptom only; read the container's exit code and log before anything else — usually the database password no longer matches the `postgres_data` volume, while `postgres` still reports healthy because `pg_isready` does not authenticate. See [§7.4](#74-dependency-failed-to-start-container-keycloak--is-unhealthy) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows `net::ERR_FAILED` and HTTP status **0** on API calls, with no CORS message | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS`, so the *preflight* is rejected with 403 `Invalid CORS request` — confirm with the `OPTIONS` check in [§6](#after-4-applications) |
 | `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the realm's CSP does not name the frontend's origin, so `Keycloak.init()` rejects and authentication never initialises — see [§5.2](#52-security-defenses) |
@@ -578,7 +578,7 @@ the container names it generated are not selectable and not what you configure. 
 has no router, check whether its domain is still attached to the old `processpuzzle-testbed-frontend`
 service key; see the note under [§4's Domains table](#domains).
 
-### 7.4 Keycloak unhealthy on redeploy — stale jgroups peers
+### 7.4 `dependency failed to start: container keycloak-… is unhealthy`
 
 The deploy waits on Keycloak and eventually gives up:
 
@@ -587,6 +587,43 @@ Container keycloak-… Waiting
 Container keycloak-… Error dependency keycloak failed to start
 dependency failed to start: container keycloak-… is unhealthy
 ```
+
+**This message names the symptom, never the cause.** Anything that keeps port 9000 from answering
+produces it, and the ~5–6 minutes compose spends before printing it are the healthcheck budget
+elapsing, not a measure of how long Keycloak tried. Two very different failures look identical from
+the deploy log, so read the container first — it outlives the failed deploy:
+
+```bash
+KC=$(docker ps -aq --filter name=keycloak- | head -1)
+docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}}' $KC
+docker logs $KC 2>&1 | tail -30
+```
+
+`status=exited exit=1` means Keycloak refused to start and the rest of the budget was compose
+waiting on a container that was already gone — **§7.4a**. `status=running` with no
+`started in …s` line yet means it was still coming up — **§7.4b**.
+
+#### 7.4a Exited — almost always the database credentials
+
+```
+FATAL: password authentication failed for user "keycloak"
+ERROR: Failed to start server in (production) mode
+```
+
+Keycloak exits 1 within ~20 s of this, and `postgres` goes on reporting **healthy** the whole
+time — its healthcheck is `pg_isready`, which does not authenticate. So a wrong password shows up
+as "Keycloak is unhealthy" while the database looks fine.
+
+`POSTGRES_PASSWORD` is only ever read when the `postgres_data` volume is **initialised**. Changing
+it in Coolify afterwards changes what Keycloak sends, not what the database expects, and the `:?`
+guard in the compose file checks that the variable is *present*, not that it still matches. Re-enter
+the original value; if it is lost, the only way forward is resetting the volume, which re-imports the
+realms from the image but loses everything created in the admin console since.
+
+The same trap applies to `PROCESSPUZZLE_DB_PASSWORD`, which §4 duplicates into the application
+resource — there it surfaces as a backend that cannot start rather than a Keycloak that cannot.
+
+#### 7.4b Still starting — stale jgroups peers (fixed at the image level)
 
 Nothing is wrong with Keycloak. Its log shows JOIN attempts against an address that answers
 `Connection refused`, then:
@@ -598,11 +635,26 @@ too many JOIN attempts (10): becoming singleton
 `JDBC_PING` records every container in the `JGROUPS_PING` table of the `keycloak` database and
 never removes the row, so each redeploy leaves a dead peer behind and each subsequent start pays
 to discover that. **The cost grows with every deployment**, which is what makes this look
-intermittent: it fit inside `start_period: 150s` for months and then took 14 minutes.
+intermittent: it fit inside the `start_period` of the day for months and then took 14 minutes.
 
-Fixed at the image level — `tools/docker/keycloak/Dockerfile` sets `KC_CACHE=local` in both stages,
-so the final image starts without a cluster to join. Cache mode is evaluated at runtime; setting it
-only while building the optimized image does not persist it and silently restores JDBC_PING.
+Fixed at the image level — `tools/docker/keycloak/Dockerfile` sets `KC_CACHE=local` in the **final**
+stage. Cache mode is a run-time option that `kc.sh build` does not persist, so setting it only while
+building the optimized image silently restored JDBC_PING; the builder-stage line is kept for symmetry
+but does nothing on its own. Confirm which is in force on any image with:
+
+```bash
+docker run --rm --entrypoint /opt/keycloak/bin/kc.sh \
+  ghcr.io/zszs/processpuzzle-keycloak:stage show-config | grep cache
+```
+
+`kc.cache = local (ENV)` is the fixed image. If that line is missing or says `ispn`, the promoted tag
+predates the fix.
+
+**A start that is merely slow is now a budget question, not this bug.** Measured against the
+promoted `:stage` image: **172 s** against an empty database — Liquibase's schema creation plus the
+import of the three realms — and **63 s** against a reused one. `start_period` is **300 s**, so a
+warm start has wide headroom and even a first start fits. A deploy that still fails here after the
+full period is §7.4a, not a number to raise.
 
 Two consequences worth knowing. Deploying the fix needs the **image rebuilt and re-promoted**
 (`tools/docker/**` triggers Build-Infrastructure, which calls Deploy-Infrastructure), not just a

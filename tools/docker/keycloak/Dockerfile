@@ -14,9 +14,16 @@ ENV KC_METRICS_ENABLED=true
 # start_period compose declares the container unhealthy and takes down everything that waits on it
 # — an infrastructure deployment that fails while Keycloak is, in fact, coming up fine.
 #
-# Cache mode is a run-time option, so it must be present in the final image as well as while the
-# optimized image is built. The builder-only setting is discarded by the second FROM, which silently
-# restores the distributed cache and its JDBC_PING startup delay.
+# Cache mode is a RUN-TIME option: `kc.sh build` does not persist it, so the builder stage's setting
+# below buys nothing on its own — `COPY --from=builder` carries the persisted build, and `cache` is
+# not part of it. It has to be set again in the final stage (it is, further down) or the distributed
+# cache and its JDBC_PING startup delay come back silently. Verify with:
+#
+#   docker run --rm --entrypoint /opt/keycloak/bin/kc.sh <image> show-config | grep cache
+#
+# which prints `kc.cache = local (ENV)` — contrast `kc.health-enabled = true (Persisted)` just above,
+# which IS baked by the build. Being run-time is also why supplying it does not make an `--optimized`
+# start exit 2, the way a genuine build-time option such as `http-relative-path` does.
 ENV KC_CACHE=local
 
 # Configure the database vendor (e.g., postgres, mysql, oracle, mssql)
@@ -48,8 +55,9 @@ ENV KC_HTTP_ENABLED=true
 # beyond the warning. A run-time option, so it is an overridable default here rather than baked.
 ENV KC_PROXY_HEADERS=xforwarded
 ENV KC_HOSTNAME_STRICT=false
-# Keep this in sync with the builder stage. `KC_CACHE` is evaluated at startup, not persisted by
-# `kc.sh build`, and a single-container deployment does not need distributed-cache HA.
+# THIS is the line that takes effect — see the builder stage for why the one up there does not, and
+# for the one-liner that verifies it. A single-container deployment does not need distributed-cache
+# HA; restoring it means deleting both lines, rebuilding, and running more than one replica.
 ENV KC_CACHE=local
 
 # Expose ports: 8080 (HTTP), 8443 (HTTPS), 9000 (Management/Health)
