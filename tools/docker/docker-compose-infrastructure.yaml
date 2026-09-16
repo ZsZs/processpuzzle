@@ -266,8 +266,45 @@ services:
       # The testbed stack, which is the database worth inspecting. Keycloak has its own (`keycloak`)
       # and the admin stack has `processpuzzle_admin`; pgweb shows one at a time, and switching means
       # changing PGWEB_DATABASE.
-      PGWEB_DATABASE_URL: postgres://${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}:${PROCESSPUZZLE_DB_PASSWORD}@postgres:5432/${PGWEB_DATABASE:-processpuzzle_testbed}?sslmode=disable
-    command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]
+      #
+      # Passed as DISCRETE values and turned into flags by the command below, NOT as the single
+      # `PGWEB_DATABASE_URL` this used to build by string concatenation. A password is not a URL
+      # component until it is percent-encoded, and interpolating a raw secret into a URI makes the
+      # deployment depend on which characters the secret happens to contain:
+      #
+      #   * `%`, `#`, `/` and any whitespace -- including a trailing newline picked up by pasting the
+      #     value into the Coolify UI -- make Go's net/url reject the string outright. pgweb then
+      #     prints `Error: Invalid URL. Valid format: postgres://user:password@host:port/db?sslmode=mode`
+      #     and exits, and `restart: unless-stopped` turns that into a crash loop. This is what the
+      #     2026-09-16 16:02 stage deployment did, ten times over, while every other consumer of the
+      #     same secret -- 10-init-db.sh, SPRING_DATASOURCE_PASSWORD -- was perfectly happy with it.
+      #   * Worse, `pass/word` parses as a VALID url with the host truncated, so a bad password can
+      #     also fail as a connection error rather than a config error.
+      #
+      # With `--user` / `--pass` / `--db` pgweb assembles the URL itself via net/url.UserPassword,
+      # which encodes the password correctly whatever it contains. The only cost is that the flags
+      # have to be expanded by a shell, hence `/bin/sh -c` (the image is Debian bullseye, not alpine
+      # as a comment here used to claim) and the `$$` that keeps compose from interpolating them at
+      # render time.
+      PP_DB_HOST: postgres
+      PP_DB_NAME: ${PGWEB_DATABASE:-processpuzzle_testbed}
+      PP_DB_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      PP_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
+    # `--ssl=disable` is explicit here where the URL carried `?sslmode=disable`: pgweb only defaults
+    # sslmode for `localhost` / `127.0.0.1`, and for any other host lib/pq's own default of
+    # `require` applies -- which this postgres does not serve.
+    #
+    # `entrypoint` is overridden, not just `command`: the image's ENTRYPOINT is
+    # `/usr/bin/pgweb --bind=0.0.0.0 --listen=8081`, so a `command` is APPENDED to it rather than
+    # replacing it. The previous `command: [ "pgweb", "--bind=0.0.0.0", ... ]` therefore ran
+    # `pgweb --bind=0.0.0.0 --listen=8081 pgweb --bind=0.0.0.0 --listen=8081 --prefix=/pgweb`, with a
+    # stray positional argument and every flag twice; it worked only because go-flags tolerates both.
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - >-
+        exec /usr/bin/pgweb --bind=0.0.0.0 --listen=8081 --prefix=pgweb --ssl=disable
+        --host="$$PP_DB_HOST" --port=5432 --db="$$PP_DB_NAME"
+        --user="$$PP_DB_USERNAME" --pass="$$PP_DB_PASSWORD"
     networks:
       - processpuzzle
     # The only long-running service here that had none, which is why Coolify reported the resource as
@@ -276,11 +313,18 @@ services:
     # that exits 0.
     #
     # Probes the --prefix above, not `/`: pgweb serves nothing at the root when mounted under a
-    # prefix, so a healthcheck on `/` would report a working pgweb as unhealthy. `wget` is busybox's,
-    # from the alpine base of sosedoff/pgweb; --spider makes it a HEAD-like check that discards the
-    # body. No dependent waits on this service, so a false negative costs a red dot, not a deployment.
+    # prefix, so a healthcheck on `/` would report a working pgweb as unhealthy.
+    #
+    # `curl`, NOT `wget`: sosedoff/pgweb is Debian-based and ships curl but no wget at all, so the
+    # previous probe failed with `wget: not found` on every single run and this container could never
+    # be anything but unhealthy. It cost only a red dot rather than a deployment -- nothing waits on
+    # this service -- which is exactly why it went unnoticed.
+    #
+    # And the probed path is `/pgweb/` WITH the trailing slash, which is the other half of the
+    # `--prefix` fix above: pgweb redirects `/pgweb` with a 301 that `curl -f` reports as success
+    # without ever reaching the app, so the slash is what makes this check mean something.
     healthcheck:
-      test: [ "CMD-SHELL", "wget --spider -q http://127.0.0.1:8081/pgweb || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:8081/pgweb/ || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
