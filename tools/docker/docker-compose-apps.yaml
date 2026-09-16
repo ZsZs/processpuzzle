@@ -45,6 +45,43 @@
 # the `build-image` action: two registries publishing the same application is one more than the
 # promote-don't-rebuild model can reason about.
 
+# -- The variables with NO default, deliberately -------------------------------------------------
+#
+# Most interpolations here keep a `${VAR:-default}` that makes the file render standalone. The
+# credentials and the deployment topology below deliberately do not:
+#
+#   PP_NETWORK  PP_IMAGE_TAG  PP_*_PUBLISH
+#   POSTGRES_PASSWORD  PROCESSPUZZLE_DB_PASSWORD  KEYCLOAK_ADMIN_USERNAME
+#   KEYCLOAK_ADMIN_PASSWORD  MINIO_ROOT_PASSWORD  MINIO_SERVICE_PASSWORD
+#   PLATFORM_ADMIN_CLIENT_SECRET
+#
+# The asymmetry is not about importance, it is about the failure mode. A default on
+# MINIO_BUCKET_PREFIX is harmless because getting it wrong is visible immediately. A default on
+# these is plausible but WRONG on a real host, and wrong quietly:
+#
+#   * A forgotten PP_*_PUBLISH falls back to the CI value, which binds 0.0.0.0 rather than
+#     127.0.0.1 -- every interface of a public host, on a port some other stack may already own.
+#     This actually happened on 2026-09-16: a stack deployed with 0.0.0.0:8081 instead of
+#     127.0.0.1:8181, and was caught only by luck, because that port happened to collide.
+#   * A forgotten PP_IMAGE_TAG falls back to `latest`, silently deploying a different build than
+#     the environment asked for; a forgotten PP_NETWORK detaches the stack from its own
+#     infrastructure.
+#   * A forgotten credential falls back to a published example value on a reachable host.
+#
+# Bare `${VAR}` fails loudly instead: `up` refuses outright for the tag, network and ports, and the
+# credentials fail at first connection rather than working with the wrong value.
+#
+# `${VAR:?message}` is NOT usable, and the three that still use it are a known defect rather than
+# the pattern to copy. Coolify does not implement the POSIX "error if unset" form -- it takes the
+# text after `:?` as the DEFAULT VALUE. A Coolify resource missing POSTGRES_PASSWORD therefore gets
+# the literal string `POSTGRES_PASSWORD must be set` as its password, consistently enough for
+# Postgres and Keycloak to agree and for nothing to look wrong. In a real shell (the init scripts
+# under postgresql/ and minio/) `:?` behaves as written and is the right form there.
+#
+# The accepted consequence: this file no longer renders without an environment. That is the point
+# -- `docker compose config` with no env file is now a check rather than a no-op. Adding a variable
+# to the list above means adding it to tools/docker/env/*/.env.ci in the same commit, or CI breaks.
+
 networks:
   processpuzzle:
     # The infrastructure resource owns this network; this resource joins it. `name` is what makes the
@@ -52,7 +89,7 @@ networks:
     # `external` back to false for the single-project CI and local topology, where the two layers
     # share one compose project and compose creates the network itself.
     external: true
-    name: ${PP_NETWORK:-processpuzzle}
+    name: ${PP_NETWORK}
 
 services:
   testbed-frontend:
@@ -63,7 +100,7 @@ services:
       # reaching it before the API answers is the first thing anyone notices.
       testbed-backend:
         condition: service_healthy
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG}
     # Both halves of one stack are named the same way, service and container alike: `testbed-frontend`
     # and `testbed-backend`. Neither matches its Nx project or its image — those keep the
     # `processpuzzle-` prefix that makes them unambiguous in a registry and in the Nx graph, which a
@@ -81,7 +118,7 @@ services:
       # interpolate to nothing in Coolify, which is the same value, only reached by an error.
       FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
     ports:
-      - "${PP_TESTBED_FRONTEND_PUBLISH:-9090:80}"
+      - "${PP_TESTBED_FRONTEND_PUBLISH}"
     tty: true
     networks:
       - processpuzzle
@@ -105,7 +142,7 @@ services:
   # something a backend provisions for itself.
   testbed-backend:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG}
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
@@ -114,13 +151,13 @@ services:
       # the compose network, so the host is the service name and not the published port.
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/processpuzzle_testbed}
       SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
-      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}
+      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
       PROCESSPUZZLE_SECURITY_STACK_REALM: ${PROCESSPUZZLE_SECURITY_STACK_REALM:-processpuzzle-testbed}
       MINIO_BUCKET_PREFIX: ${MINIO_BUCKET_PREFIX:-processpuzzle-testbed}
 
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
       MINIO_ACCESS_KEY: ${MINIO_SERVICE_USER:-springboot}
-      MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD:-springboot123}
+      MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD}
 
       # TWO endpoints, and they differ for the same reason the Keycloak pair does. MINIO_ENDPOINT
       # above is what this container calls; this one is baked into every PRESIGNED URL, which only
@@ -145,7 +182,7 @@ services:
       # the published port. Without the secret the identity ports fall back to their no-op
       # implementations and every other feature still works — see KeycloakAdminProperties.
       KEYCLOAK_ADMIN_URL: ${KC_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET}
 
       # Token validation needs BOTH URLs, and here they genuinely differ. The issuer is the origin the
       # BROWSER was redirected to: a token minted at localhost:7070 does not validate against an
@@ -163,7 +200,7 @@ services:
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}
     ports:
-      - "${PP_TESTBED_BACKEND_PUBLISH:-8080:8080}"
+      - "${PP_TESTBED_BACKEND_PUBLISH}"
     tty: true
     networks:
       - processpuzzle

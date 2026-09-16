@@ -22,8 +22,22 @@
 # instead would force quoting at every connection site forever.
 set -e
 
+# NO fallback on the password, and the `:?` is load-bearing. Two reasons this one is different
+# from the role name beside it:
+#
+#   1. CREATE ROLE below is guarded by a pg_roles existence check and there is no ALTER ROLE
+#      anywhere in this file. The password is therefore written ONCE, on the first start against an
+#      empty data directory, and is immutable afterwards. A fallback here does not produce a
+#      recoverable mistake; it bakes `processpuzzle` into the volume permanently, and every later
+#      correction of the environment variable is silently ignored.
+#   2. The compose files no longer default it either, so this was the last layer that could turn a
+#      forgotten deployment secret into a plausible wrong value. Removing only the compose default
+#      would have left the role created as `processpuzzle` with nothing to show for it.
+#
+# Unlike a compose file, this is a real shell, so `:?` behaves as written: the message goes to
+# stderr and the script exits non-zero, which fails container init loudly instead of half-way.
 APP_ROLE="${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}"
-APP_PASSWORD="${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}"
+APP_PASSWORD="${PROCESSPUZZLE_DB_PASSWORD:?PROCESSPUZZLE_DB_PASSWORD must be set; the application role password is written once, on first start against an empty volume, and cannot be changed afterwards}"
 
 # Keep the Keycloak database owner explicit. The command must be separate from CREATE DATABASE,
 # which PostgreSQL forbids inside a transaction block.
