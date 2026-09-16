@@ -21,7 +21,39 @@ KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD:-admin_password}"
 CLIENT_ID="${PLATFORM_ADMIN_CLIENT_ID:-platform-admin-service}"
 CLIENT_SECRET="${PLATFORM_ADMIN_CLIENT_SECRET:?PLATFORM_ADMIN_CLIENT_SECRET must be set}"
 
-KCADM=/opt/keycloak/bin/kcadm.sh
+# The browser-facing URLs of the two frontends that authenticate against the `processpuzzle-admin`
+# realm. They are environment-specific, and this is the ONLY place a deployment declares them.
+#
+# WHY NOT THE REALM IMPORT: `--import-realm` skips a realm that already exists rather than merging
+# into it, so tools/docker/keycloak/import/processpuzzle-admin-realm.json only ever describes a
+# realm on an EMPTY database. Every deployment past the first keeps whatever the first import
+# wrote — which is why stage ran with `http://localhost:9091` as its only allowed origin long
+# after it was reachable at admin.stage.processpuzzle.de, and why editing that JSON would not
+# have fixed it. These are reconciled on every start instead.
+#
+# WHAT GOES WRONG WHEN AN ORIGIN IS MISSING, in the order you meet it:
+#   1. GET /realms/<realm>/protocol/openid-connect/login-status-iframe.html/init?...&origin=<origin>
+#      answers 403, keycloak-js rejects init with "Error while checking login iframe", and the app
+#      initializer logs "Authentication initialization failed". The app boots unauthenticated.
+#   2. The login redirect is refused with "Invalid parameter: redirect_uri".
+#   3. The token request is blocked by CORS — `webOrigins=["+"]` below means "derive the allowed
+#      origins from redirectUris", so this list is the CORS allowlist too.
+# (1) fails first and hides the other two, so fixing only the iframe does not produce a login.
+#
+# COMMA-SEPARATED, not JSON, because Coolify supplies these through a web form and its parser is
+# not to be trusted with embedded quotes — the same reason `${VAR:?msg}` is unusable in the
+# compose files. to_json_array below builds what kcadm actually wants.
+#
+# Defaults are the local compose ports, so `npm run stack-up-admin-build` still needs no
+# environment. The `/*` suffix is required: it has to cover the silent SSO probe at
+# <root>/assets/auth/silent-check-sso.html that KeycloakAuthService configures.
+ADMIN_CLIENT_ROOT_URL="${ADMIN_CLIENT_ROOT_URL:-http://localhost:9091}"
+ADMIN_CLIENT_REDIRECT_URIS="${ADMIN_CLIENT_REDIRECT_URIS:-http://localhost:9091/*,http://localhost:4201/*}"
+BIZ_CLIENT_ROOT_URL="${BIZ_CLIENT_ROOT_URL:-http://localhost:9092}"
+BIZ_CLIENT_REDIRECT_URIS="${BIZ_CLIENT_REDIRECT_URIS:-http://localhost:9092/*,http://localhost:4202/*}"
+# Overridable so the argument construction below can be exercised against a stub; a container
+# never sets it.
+KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
 
 # kcadm stores an access token, and Keycloak's default lifespan for it is a minute. This script
 # makes enough calls — and waits on enough of them — to outlive one, so the login is a function and
@@ -49,12 +81,39 @@ until login; do
 done
 echo "Authenticated against ${KC_URL} as ${KC_ADMIN}."
 
+# Turns "https://a/*,https://b/*" into ["https://a/*","https://b/*"], which is the form kcadm
+# needs for a list-valued field. Blank entries and stray whitespace are dropped, so a trailing
+# comma or a space after one — both easy to leave in a web form — do not produce an empty
+# redirect URI, which Keycloak accepts and which then matches nothing.
+to_json_array() {
+  local csv="$1" item out="" glob_was_already_off=1
+  # Pathname expansion OFF around the split. The split has to be unquoted to break on IFS, and
+  # every entry ends in `/*` — with globbing live, bash would be free to rewrite an entry into
+  # matching filenames if the init container ever ran somewhere such a path existed. It does not
+  # today, which is exactly what would make the failure baffling later.
+  case "$-" in
+    *f*) ;;
+    *) glob_was_already_off=0; set -f ;;
+  esac
+  local IFS=","
+  for item in $csv; do
+    item="$(printf '%s' "$item" | tr -d '[:space:]')"
+    if [ -n "${item}" ]; then
+      out="${out:+${out},}\"${item}\""
+    fi
+  done
+  if [ "${glob_was_already_off}" -eq 0 ]; then set +f; fi
+  printf '[%s]' "${out}"
+}
+
 ensure_public_client() {
   local realm="$1"
   local client_id="$2"
   local client_name="$3"
   local root_url="$4"
-  local redirect_uris="$5"
+  # Accepts the comma-separated form the environment supplies; kcadm needs a JSON array.
+  local redirect_uris
+  redirect_uris="$(to_json_array "$5")"
   local client_uuid
 
   login
@@ -98,14 +157,30 @@ ensure_public_client() {
   fi
 }
 
-# Realm imports do not merge into existing realms. Reconcile this fallback client separately so
-# the Biz frontend can initialize on its local root URL before a tenant is selected.
+# Realm imports do not merge into existing realms, so both browser-facing clients of the
+# `processpuzzle-admin` realm are reconciled here on every container start instead. That is what
+# lets an origin be added to a realm that was imported months ago.
+#
+# The admin client was previously NOT reconciled — it was described only by the realm import — so
+# its redirect URIs were frozen at the localhost pair the first import wrote, and no redeploy
+# could widen them. That is the defect this call fixes; the Biz one below was already reconciled,
+# but against a hardcoded http://localhost:9092, so every deploy actively re-broke any origin
+# added by hand in the admin console.
+ensure_public_client \
+  processpuzzle-admin \
+  processpuzzle-admin \
+  'ProcessPuzzle Admin' \
+  "${ADMIN_CLIENT_ROOT_URL}" \
+  "${ADMIN_CLIENT_REDIRECT_URIS}"
+
+# The Biz frontend's fallback client, so it can initialize on its own root URL before a tenant —
+# and therefore a tenant realm — has been selected.
 ensure_public_client \
   processpuzzle-admin \
   processpuzzle-biz \
   'ProcessPuzzle Biz' \
-  http://localhost:9092 \
-  '["http://localhost:9092/*","http://localhost:4202/*"]'
+  "${BIZ_CLIENT_ROOT_URL}" \
+  "${BIZ_CLIENT_REDIRECT_URIS}"
 
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"

@@ -218,6 +218,21 @@ services:
       KC_ADMIN: ${KEYCLOAK_ADMIN_USERNAME:?KEYCLOAK_ADMIN_USERNAME must be set}
       KC_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set}
       PLATFORM_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET}
+      # The browser-facing URLs of the two frontends of the `processpuzzle-admin` realm, as a
+      # comma-separated list. Reconciled onto the Keycloak clients on every start, because
+      # `--import-realm` skips a realm that already exists and therefore cannot widen the redirect
+      # URIs of one imported earlier. A stage or prod deployment MUST set all four: leaving them
+      # empty keeps the localhost defaults baked into bootstrap-platform-admin-client.sh, and the
+      # frontend then fails at keycloak-js init with a 403 on the login-status-iframe `init` call
+      # and never authenticates.
+      #
+      # `${VAR:-}` rather than a default spelled out here: the defaults belong to the script, which
+      # documents them next to the failure they cause. An empty value is indistinguishable from an
+      # unset one to the script, which is what makes the pass-through work.
+      ADMIN_CLIENT_ROOT_URL: ${ADMIN_CLIENT_ROOT_URL:-}
+      ADMIN_CLIENT_REDIRECT_URIS: ${ADMIN_CLIENT_REDIRECT_URIS:-}
+      BIZ_CLIENT_ROOT_URL: ${BIZ_CLIENT_ROOT_URL:-}
+      BIZ_CLIENT_REDIRECT_URIS: ${BIZ_CLIENT_REDIRECT_URIS:-}
     networks:
       - processpuzzle
     restart: "no"
