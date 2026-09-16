@@ -186,6 +186,8 @@ services:
       # at this healthcheck after the full period is a reason to read the container's log, not to
       # raise this number again — see docs/stage-deployment-runbook.md §7.4.
       start_period: 300s
+    # `unless-stopped` for the same reason as postgres above: `no` makes any stop permanent.
+    restart: unless-stopped
 
   keycloak-init:
     pull_policy: always
@@ -283,6 +285,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    # `unless-stopped` for the same reason as postgres above: `no` makes any stop permanent.
+    restart: unless-stopped
 
   postgres:
     pull_policy: always
@@ -291,7 +295,29 @@ services:
     ports:
       - "${PP_POSTGRES_PUBLISH}"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # `/var/lib/postgresql`, NOT `/var/lib/postgresql/data`, and the distinction is the difference
+      # between a database that persists and one that does not.
+      #
+      # The official image changed `PGDATA` in 18+ to a version-specific `/var/lib/postgresql/<major>/docker`
+      # and moved its declared `VOLUME` to the parent `/var/lib/postgresql`
+      # (docker-library/postgres#1259). Mounted at the old `/var/lib/postgresql/data` the named volume
+      # becomes a SIBLING of the real data directory rather than its parent: Docker then satisfies the
+      # image's `VOLUME` with a fresh ANONYMOUS volume, the cluster is created in that, and
+      # `postgres_data` stays empty. Nothing reports an error — the only tell is `initdb` running on
+      # every single start.
+      #
+      # That is what it had been doing here. The 2026-09-16 15:26 container log shows
+      # `fixing permissions on existing directory /var/lib/postgresql/18/docker`, a full
+      # post-bootstrap initialization, `10-init-db.sh` running (it is
+      # `/docker-entrypoint-initdb.d/`, so first-init ONLY), and then Keycloak finding neither
+      # `MIGRATION_MODEL` nor `public.databasechangeloglock`. Every recreation was a brand new
+      # cluster, which is the real cause of the `relation "base_…" does not exist` 500s in
+      # docs/stage-deployment-runbook.md and of realms reverting to the committed import file.
+      #
+      # Do NOT "fix" this by setting `PGDATA` back to `/var/lib/postgresql/data`. That works, but it
+      # opts out of the layout `pg_upgrade --link` needs for the next major upgrade, which is the
+      # reason upstream moved it.
+      - postgres_data:/var/lib/postgresql
     environment:
       # Keycloak owns this database and this role. tools/docker/postgresql/10-init-db.sh creates the
       # per-stack application databases and their `processpuzzle` owner on an empty data directory;
@@ -313,6 +339,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # `unless-stopped`, like json-server and minio. Without a restart policy Docker defaults to
+    # `no`, and then ANY stop is permanent: a host reboot, a Docker daemon restart, an OOM kill or a
+    # `compose down` leaves the container dead until the next Coolify deploy, because nothing else
+    # ever starts it. That is what happened on 2026-09-16 — the postgres log ends
+    # `received fast shutdown request` / `database system is shut down` with no subsequent start,
+    # while minio and json-server came back on their own, and Traefik answered 503
+    # `no available server` for all three hostnames because the services behind them were gone.
+    #
+    # The two `-init` one-shots keep `restart: "no"` ON PURPOSE: they run to completion and exit 0,
+    # and a restart policy would loop them forever.
+    restart: unless-stopped
 
   # Applies newly introduced application databases to an existing postgres_data volume. The same
   # script also runs during PostgreSQL's first initialization; its idempotence makes this repeat
