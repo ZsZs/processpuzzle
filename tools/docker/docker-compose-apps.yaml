@@ -123,10 +123,20 @@ services:
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:80/home" ]
-      retries: 3
+      # `-f`, like every other healthcheck in both compose files. Without it curl exits 0 on any
+      # response it managed to read at all, so this reported a healthy container whenever nginx was
+      # listening — including while nginx answered /home with a 5xx. The check confirmed the process,
+      # not the service.
+      test: [ "CMD", "curl", "-f", "http://localhost:80/home" ]
+      # `retries` x `interval` = 120s, written that way because `start_period` does not survive the
+      # trip through Coolify — see testbed-backend below. nginx listens in about a second, so this is
+      # headroom rather than a measurement.
+      interval: 10s
       timeout: 5s
-      interval: 20s
+      retries: 12
+      start_period: 10s
+    # `unless-stopped` for the same reason as the infrastructure services: `no` makes any stop permanent.
+    restart: unless-stopped
 
   # ── One backend deployment per application stack ────────────────────────────────────────────────
   #
@@ -206,14 +216,32 @@ services:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
-      retries: 3
+      # THE BUDGET IS `retries` x `interval` = 420s, and it is written that way ON PURPOSE — the same
+      # reason Keycloak's is, in docker-compose-infrastructure.yaml:147. `start_period` does NOT
+      # survive the trip through Coolify, so the effective budget is the retries spent from t=0.
+      #
+      # `retries: 3` x `interval: 20s` left 60s of it, against an application that needs 145-262s to
+      # answer. That is what took stage down on 2026-09-15: the backend was declared unhealthy about a
+      # minute after `up`, the frontend's `depends_on: service_healthy` was therefore never satisfied,
+      # and Traefik answered every request for both hostnames with 503 `no available server` — the
+      # post-deploy e2e run included, whose global setup parsed that body as JSON and reported a
+      # SyntaxError. Raising `start_period` cannot fix a deployment that fails inside it. Confirm on
+      # the host with
+      #
+      #   docker inspect --format '{{json .Config.Healthcheck}}' testbed-backend
+      #
+      # and read `StartPeriod`.
+      #
+      # The cost is that a GENUINELY broken backend now takes 420s rather than 60s to be reported
+      # unhealthy. That is affordable; the converse was not.
+      interval: 15s
       timeout: 5s
-      interval: 20s
-      # Measured at ~145s originally, and at 262s on 2026-09-05 for a FIRST start against an empty
-      # database, where Spring Modulith's ArchUnit module-structure computation is joined by the whole
-      # metadata seeding pass. 30s here spent the retries long before the application was listening,
-      # so `up` aborted with "container is unhealthy" on an application that was starting perfectly
-      # well — and 240s did the same on that first start, three seconds of probing short of the
-      # application's own 262s. Hence the headroom: a probe failing inside start_period costs nothing,
-      # while one failing outside it takes down every service that waits on this one.
+      retries: 28
+      # Kept as the fast path: where it IS honoured, a success ends it early and post-readiness
+      # failures are then caught in `retries` x `interval` instead of from t=0. Measured at ~145s
+      # originally, and at 262s on 2026-09-05 for a FIRST start against an empty database, where
+      # Spring Modulith's ArchUnit module-structure computation is joined by the whole metadata
+      # seeding pass. Both figures are now covered whether or not the start period is honoured.
       start_period: 420s
+    # `unless-stopped` for the same reason as the infrastructure services: `no` makes any stop permanent.
+    restart: unless-stopped
