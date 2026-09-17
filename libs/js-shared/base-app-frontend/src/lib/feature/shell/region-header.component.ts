@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { WidgetInstance } from '@processpuzzle/base-widget';
+import { WidgetInstance } from '@processpuzzle/widgets';
 import { WidgetListComponent } from '../widget-list.component';
 
 /**

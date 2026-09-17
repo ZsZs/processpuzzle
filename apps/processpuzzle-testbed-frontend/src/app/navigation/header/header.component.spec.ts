@@ -6,7 +6,7 @@ import { Component, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { LanguageSelectorComponent, LikeButtonComponent, ShareButtonComponent } from '@processpuzzle/base-widget';
+import { LanguageSelectorComponent, LikeButtonComponent, ShareButtonComponent } from '@processpuzzle/widgets';
 import { NavigateBackComponent } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AuthButtonComponent } from '@processpuzzle/auth';

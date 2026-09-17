@@ -16,7 +16,7 @@ import { RuntimeConfiguration } from './runtime-configuration';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
 import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';

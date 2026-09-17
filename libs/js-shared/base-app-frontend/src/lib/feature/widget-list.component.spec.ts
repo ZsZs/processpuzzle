@@ -1,6 +1,6 @@
 import { Component, Type, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-widget';
+import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement } from '@processpuzzle/widgets';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { WidgetListComponent, toWidgetRows } from './widget-list.component';
 

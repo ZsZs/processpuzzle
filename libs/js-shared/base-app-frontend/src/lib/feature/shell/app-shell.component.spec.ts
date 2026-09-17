@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { WIDGET_REGISTRY } from '@processpuzzle/base-widget';
+import { WIDGET_REGISTRY } from '@processpuzzle/widgets';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';

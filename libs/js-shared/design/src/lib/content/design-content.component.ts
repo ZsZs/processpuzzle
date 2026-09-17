@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/base-widget';
+import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'pp-design-content',

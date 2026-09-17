@@ -1,7 +1,7 @@
-# @processpuzzle/base-widget
+# @processpuzzle/widgets
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-widgets.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_widget_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_widget_frontend)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fwidgets?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-widget)
+[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fwidgets?style=flat)](https://www.npmjs.com/package/@processpuzzle/widgets)
 
 This library provides a range of small widgets that can be built into an Angular application. These widgets primarily define UI elements 
 but also domain classes or signal stores. Some of them are even persistent, so they need appropriate configuration to access the backend.
@@ -146,7 +146,7 @@ The **ErrorSnackbar** provides a standardized error notification. `ErrorSnackbar
 ### Setup and Usage
 Register the provider in the application configuration:
 ```typescript
-import { provideErrorSnackbar } from '@processpuzzle/base-widget';
+import { provideErrorSnackbar } from '@processpuzzle/widgets';
 
 export const appConfig = {
   providers: [provideErrorSnackbar()],
@@ -168,7 +168,7 @@ The **ApplicationProperty** domain class and its NgRx Signals store persist simp
 ### Setup and Usage
 Provide the store where it is needed (e.g. in a route or component providers):
 ```typescript
-import { provideAppPropertyStore } from '@processpuzzle/base-widget';
+import { provideAppPropertyStore } from '@processpuzzle/widgets';
 
 providers: [provideAppPropertyStore()];
 ```
@@ -184,7 +184,7 @@ The **provideTranslocoService** helper configures Transloco for a `@processpuzzl
 
 ### Setup and Usage
 ```typescript
-import { provideTranslocoService } from '@processpuzzle/base-widget';
+import { provideTranslocoService } from '@processpuzzle/widgets';
 
 providers: [
   provideTranslocoService({
@@ -285,7 +285,7 @@ A **WidgetDefinition** describes a widget *type* — its key, name, category, ic
 ### Setup and Usage
 Spread the routes where the catalogue should live, and — because a base-entity screen resolves its entity and embedded levels through `BASE_ENTITY_FACADE_REGISTRY`, a token a library cannot contribute to without replacing it — register the facades in the application:
 ```typescript
-import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_ROUTES } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 
 providers: [
   ...BASE_WIDGET_FACADE_PROVIDERS,
