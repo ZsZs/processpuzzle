@@ -32,7 +32,7 @@ export class EntityObjectStateService {
    * @param entityName the machine's key — the entity *definition code*, e.g. `order`
    */
   findState(entityName: string, objectId: string): Observable<EntityObjectState | undefined> {
-    // The configured root carries no trailing slash — see the `APP_SERVICE_ROOT` values in the testbed's
+    // The configured root carries no trailing slash — see the `BACKEND_SERVICE_ROOT` values in the testbed's
     // `run-time-conf` — so the separator is added here, as `buildUrl` does for the CRUD services.
     const url = `${this.baseUrl}/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(objectId)}/state`;
     return this.httpClient.get<unknown>(url).pipe(

@@ -19,7 +19,7 @@ describe('BASE_DOCUMENT facade providers', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { DOCUMENT_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
         ...BASE_DOCUMENT_FACADE_PROVIDERS,
         // The embedded facades reach each other's stores and descriptors through the registry, which is
         // exactly what the application wires up by spreading the same map.

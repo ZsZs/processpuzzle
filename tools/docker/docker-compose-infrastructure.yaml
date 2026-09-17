@@ -8,10 +8,12 @@
 #
 # Every `${VAR:-…}` default below is the current CI value, so this file is correct for local
 # development. The three credentials docker-compose-prod.yaml already guarded keep the `:?` form: a
-# deployment that forgets one fails at `up` instead of silently at the first request. `.env.ci`
+# deployment that forgets one fails at `up` instead of silently at the first request.
+# `infrastructure/.env.ci`
 # supplies them, so `npm run stack-up` still needs no setup.
 #
-#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#   docker compose -p processpuzzle --env-file tools/docker/env/infrastructure/.env.ci \
+#     --env-file tools/docker/env/testbed/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml up -d --wait
 #
@@ -27,34 +29,76 @@
 # promoted `:stage` / `:prod` tag anyway (docs/build-deploy-strategy.md §9, §11). CI and local
 # development get the build path back by overlaying docker-compose-build.yaml.
 
+# -- The variables with NO default, deliberately -------------------------------------------------
+#
+# Most interpolations here keep a `${VAR:-default}` that makes the file render standalone. The
+# credentials and the deployment topology below deliberately do not:
+#
+#   PP_NETWORK  PP_IMAGE_TAG  PP_*_PUBLISH
+#   POSTGRES_PASSWORD  PROCESSPUZZLE_DB_PASSWORD  KEYCLOAK_ADMIN_USERNAME
+#   KEYCLOAK_ADMIN_PASSWORD  MINIO_ROOT_PASSWORD  MINIO_SERVICE_PASSWORD
+#   PLATFORM_ADMIN_CLIENT_SECRET
+#
+# The asymmetry is not about importance, it is about the failure mode. A default on
+# MINIO_BUCKET_PREFIX is harmless because getting it wrong is visible immediately. A default on
+# these is plausible but WRONG on a real host, and wrong quietly:
+#
+#   * A forgotten PP_*_PUBLISH falls back to the CI value, which binds 0.0.0.0 rather than
+#     127.0.0.1 -- every interface of a public host, on a port some other stack may already own.
+#     This actually happened on 2026-09-16: a stack deployed with 0.0.0.0:8081 instead of
+#     127.0.0.1:8181, and was caught only by luck, because that port happened to collide.
+#   * A forgotten PP_IMAGE_TAG falls back to `latest`, silently deploying a different build than
+#     the environment asked for; a forgotten PP_NETWORK detaches the stack from its own
+#     infrastructure.
+#   * A forgotten credential falls back to a published example value on a reachable host.
+#
+# Bare `${VAR}` fails loudly instead: `up` refuses outright for the tag, network and ports, and the
+# credentials fail at first connection rather than working with the wrong value.
+#
+# `${VAR:?message}` is NOT usable, and the three that still use it are a known defect rather than
+# the pattern to copy. Coolify does not implement the POSIX "error if unset" form -- it takes the
+# text after `:?` as the DEFAULT VALUE. A Coolify resource missing POSTGRES_PASSWORD therefore gets
+# the literal string `POSTGRES_PASSWORD must be set` as its password, consistently enough for
+# Postgres and Keycloak to agree and for nothing to look wrong. In a real shell (the init scripts
+# under postgresql/ and minio/) `:?` behaves as written and is the right form there.
+#
+# The accepted consequence: this file no longer renders without an environment. That is the point
+# -- `docker compose config` with no env file is now a check rather than a no-op. Adding a variable
+# to the list above means adding it to tools/docker/env/*/.env.ci in the same commit, or CI breaks.
+
 networks:
   processpuzzle:
     # Named explicitly so a per-app Coolify Application resource can join it as `external`.
-    name: ${PP_NETWORK:-processpuzzle}
+    name: ${PP_NETWORK}
     driver: bridge
 
 services:
   json-server:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-json-server:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-json-server:${PP_IMAGE_TAG}
     container_name: json-server
     ports:
-      - "${PP_JSON_SERVER_PUBLISH:-3000:3000}"
+      - "${PP_JSON_SERVER_PUBLISH}"
     tty: true
     networks:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:3000/test-entity" ]
+    # The frontend's nginx proxies /third-party/ here and nothing `depends_on` this service, so a
+    # json-server that exits stays exited and every third-party call answers 502 with the rest of the
+    # application healthy. Default policy is `no`, which also means a daemon or host restart leaves it
+    # down. `minio` is the only other service that carries this today.
+    restart: unless-stopped
 
   keycloak:
     pull_policy: always
     container_name: processpuzzle-keycloak
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak:${PP_IMAGE_TAG}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "${PP_KEYCLOAK_PUBLISH:-7070:8080}"
+      - "${PP_KEYCLOAK_PUBLISH}"
     environment:
       # Database connection
       KC_DB: postgres
@@ -100,28 +144,74 @@ services:
     healthcheck:
       # Keycloak 26+ uses port 9000 for management/health by default
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3" ]
-      interval: 30s
+      # THE BUDGET IS `retries` x `interval` = 300s, and it is written that way ON PURPOSE.
+      #
+      # `start_period` is the cheaper way to say the same thing — failures inside it do not increment
+      # the failing streak, so the container stays `starting` rather than going `unhealthy`. It is
+      # also the one that did not survive the trip through Coolify. A 2026-09-15 stage deploy declared
+      # this container unhealthy 87 seconds after `Started`, with `start_period: 300s` in this file:
+      # 87s is three 30s intervals, i.e. exactly the old `retries: 3` spent from t=0, which is what
+      # Docker does when the effective config carries NO start period. Confirm on the host with
+      #
+      #   docker inspect --format '{{json .Config.Healthcheck}}' <keycloak container>
+      #
+      # and read `StartPeriod`. Raising `start_period` again cannot fix a deployment that fails inside
+      # it — that was the 150s -> 300s change in 7e97f62a, and it changed nothing.
+      #
+      # 20 x 15s tolerates the 172s an empty database needs (Liquibase plus the three realm imports)
+      # whether or not the start period is honoured. The cost is that a GENUINELY broken Keycloak now
+      # takes 300s rather than 90s to be reported unhealthy; that is affordable because, since
+      # `keycloak-init` stopped waiting on this healthcheck, nothing fails when it does.
+      interval: 15s
       timeout: 10s
-      retries: 3
-      # Failures before this elapses do not count against `retries`. Keycloak needs ~40s on a fresh
-      # database and was measured at 96s against a reused one — it spent the difference trying to
-      # rejoin jgroups peers a previous container had recorded, a cost that grew with every redeploy
-      # until a 2026-09-08 deployment spent 14 minutes on it and failed. The keycloak image now
-      # builds with KC_CACHE=local, which removes that phase entirely; the headroom below stays,
-      # because the first start against an empty database is still slow. Without this the retries are spent
-      # before it listens, the container is declared unhealthy, and every service that waits on it —
-      # every application stack's backend — refuses to start, seconds before Keycloak finishes
-      # coming up.
-      start_period: 150s
+      retries: 20
+      # Kept as the fast path: where it IS honoured, a success ends it early and post-readiness
+      # failures are then caught in `retries` x `interval` instead of from t=0. Measured against the
+      # promoted
+      # `:stage` image: 172s on an empty database — Liquibase's schema creation plus the import of
+      # the three realms — and 63s against a reused one. The 150s this used to be therefore had
+      # NEGATIVE headroom for a first start, and survived only by spending `retries` afterwards; the
+      # figures it cited (~40s fresh, 96s reused) predate both the realm imports and KC_CACHE=local.
+      #
+      # 300s is the empty-database measurement plus room for a server slower than the machine it was
+      # taken on. Overshooting costs nothing — a success ends the start period early, and Docker
+      # probes every `start_interval` (5s by default) while it lasts, not every `interval`.
+      # Undershooting spends the retries before Keycloak listens: the container is unhealthy and every
+      # service that waits on it — every application stack's backend — refuses to start, seconds
+      # before Keycloak finishes coming up.
+      #
+      # This is headroom, not a diagnosis. Keycloak exits 1 within ~20s of a wrong KC_DB_PASSWORD,
+      # while postgres keeps reporting healthy because `pg_isready` does not authenticate; compose
+      # then waits out the whole budget and blames the same "is unhealthy" on it. A deploy that fails
+      # at this healthcheck after the full period is a reason to read the container's log, not to
+      # raise this number again — see docs/stage-deployment-runbook.md §7.4.
+      start_period: 300s
+    # `unless-stopped` for the same reason as postgres above: `no` makes any stop permanent.
+    restart: unless-stopped
 
   keycloak-init:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak-init:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak-init:${PP_IMAGE_TAG}
     container_name: processpuzzle-keycloak-init
     depends_on:
       keycloak:
-        condition: service_healthy
+        # `service_started`, NOT `service_healthy`, and this is the difference between a slow Keycloak
+        # and a failed deployment. bootstrap-platform-admin-client.sh already waits for Keycloak
+        # itself — `until login; do sleep 2; done`, now with a deadline — so waiting here as well
+        # bought nothing and cost everything: this was the ONLY `depends_on … service_healthy` on
+        # keycloak in either compose file, so compose's dependency wait failing is what turned
+        # "Keycloak is still importing realms" into `docker compose up` exiting 1 and Coolify marking
+        # the whole infrastructure resource failed. No application stack's backend waits on Keycloak
+        # either; they discover it at their first token validation.
+        #
+        # What is given up: a Keycloak that never comes up no longer fails the deploy at the compose
+        # layer. It fails in this container instead, after KC_WAIT_TIMEOUT, with its own message —
+        # which is the more useful of the two, since "container … is unhealthy" never said why.
+        condition: service_started
     environment:
+      # How long to wait for Keycloak to accept an admin login before giving up. Bounded because
+      # `condition: service_started` means this container, not compose, is now what notices.
+      KC_WAIT_TIMEOUT: ${KC_WAIT_TIMEOUT:-600}
       # `create-realm` is a role of the master realm, and --import-realm skips a realm that already
       # exists, so the service account the backend uses cannot come from a realm import file. This
       # one-shot container creates it with the Admin CLI instead; it is idempotent, so it re-runs
@@ -129,26 +219,41 @@ services:
       KC_URL: ${KC_INTERNAL_URL:-http://keycloak:8080}
       KC_ADMIN: ${KEYCLOAK_ADMIN_USERNAME:?KEYCLOAK_ADMIN_USERNAME must be set}
       KC_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set}
-      PLATFORM_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+      PLATFORM_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET}
+      # The browser-facing URLs of the two frontends of the `processpuzzle-admin` realm, as a
+      # comma-separated list. Reconciled onto the Keycloak clients on every start, because
+      # `--import-realm` skips a realm that already exists and therefore cannot widen the redirect
+      # URIs of one imported earlier. A stage or prod deployment MUST set all four: leaving them
+      # empty keeps the localhost defaults baked into bootstrap-platform-admin-client.sh, and the
+      # frontend then fails at keycloak-js init with a 403 on the login-status-iframe `init` call
+      # and never authenticates.
+      #
+      # `${VAR:-}` rather than a default spelled out here: the defaults belong to the script, which
+      # documents them next to the failure they cause. An empty value is indistinguishable from an
+      # unset one to the script, which is what makes the pass-through work.
+      ADMIN_CLIENT_ROOT_URL: ${ADMIN_CLIENT_ROOT_URL:-}
+      ADMIN_CLIENT_REDIRECT_URIS: ${ADMIN_CLIENT_REDIRECT_URIS:-}
+      BIZ_CLIENT_ROOT_URL: ${BIZ_CLIENT_ROOT_URL:-}
+      BIZ_CLIENT_REDIRECT_URIS: ${BIZ_CLIENT_REDIRECT_URIS:-}
     networks:
       - processpuzzle
     restart: "no"
 
   minio:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-minio:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-minio:${PP_IMAGE_TAG}
     container_name: processpuzzle-minio
     ports:
-      - "${PP_MINIO_API_PUBLISH:-7000:9000}"          # S3 API
-      - "${PP_MINIO_CONSOLE_PUBLISH:-7001:9001}"      # Web Console
+      - "${PP_MINIO_API_PUBLISH}"          # S3 API
+      - "${PP_MINIO_CONSOLE_PUBLISH}"      # Web Console
     environment:
       # Root credentials (admin)
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
 
       # Spring Boot service account credentials
       MINIO_SERVICE_USER: ${MINIO_SERVICE_USER:-springboot}
-      MINIO_SERVICE_PASSWORD: ${MINIO_SERVICE_PASSWORD:-springboot123}
+      MINIO_SERVICE_PASSWORD: ${MINIO_SERVICE_PASSWORD}
     volumes:
       - minio-data:/data
     networks:
@@ -171,13 +276,50 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${PP_PGWEB_PUBLISH:-8082:8081}"
+      - "${PP_PGWEB_PUBLISH}"
     environment:
       # The testbed stack, which is the database worth inspecting. Keycloak has its own (`keycloak`)
       # and the admin stack has `processpuzzle_admin`; pgweb shows one at a time, and switching means
       # changing PGWEB_DATABASE.
-      PGWEB_DATABASE_URL: postgres://${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}:${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}@postgres:5432/${PGWEB_DATABASE:-processpuzzle_testbed}?sslmode=disable
-    command: [ "pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=/pgweb" ]
+      #
+      # Passed as DISCRETE values and turned into flags by the command below, NOT as the single
+      # `PGWEB_DATABASE_URL` this used to build by string concatenation. A password is not a URL
+      # component until it is percent-encoded, and interpolating a raw secret into a URI makes the
+      # deployment depend on which characters the secret happens to contain:
+      #
+      #   * `%`, `#`, `/` and any whitespace -- including a trailing newline picked up by pasting the
+      #     value into the Coolify UI -- make Go's net/url reject the string outright. pgweb then
+      #     prints `Error: Invalid URL. Valid format: postgres://user:password@host:port/db?sslmode=mode`
+      #     and exits, and `restart: unless-stopped` turns that into a crash loop. This is what the
+      #     2026-09-16 16:02 stage deployment did, ten times over, while every other consumer of the
+      #     same secret -- 10-init-db.sh, SPRING_DATASOURCE_PASSWORD -- was perfectly happy with it.
+      #   * Worse, `pass/word` parses as a VALID url with the host truncated, so a bad password can
+      #     also fail as a connection error rather than a config error.
+      #
+      # With `--user` / `--pass` / `--db` pgweb assembles the URL itself via net/url.UserPassword,
+      # which encodes the password correctly whatever it contains. The only cost is that the flags
+      # have to be expanded by a shell, hence `/bin/sh -c` (the image is Debian bullseye, not alpine
+      # as a comment here used to claim) and the `$$` that keeps compose from interpolating them at
+      # render time.
+      PP_DB_HOST: postgres
+      PP_DB_NAME: ${PGWEB_DATABASE:-processpuzzle_testbed}
+      PP_DB_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      PP_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
+    # `--ssl=disable` is explicit here where the URL carried `?sslmode=disable`: pgweb only defaults
+    # sslmode for `localhost` / `127.0.0.1`, and for any other host lib/pq's own default of
+    # `require` applies -- which this postgres does not serve.
+    #
+    # `entrypoint` is overridden, not just `command`: the image's ENTRYPOINT is
+    # `/usr/bin/pgweb --bind=0.0.0.0 --listen=8081`, so a `command` is APPENDED to it rather than
+    # replacing it. The previous `command: [ "pgweb", "--bind=0.0.0.0", ... ]` therefore ran
+    # `pgweb --bind=0.0.0.0 --listen=8081 pgweb --bind=0.0.0.0 --listen=8081 --prefix=/pgweb`, with a
+    # stray positional argument and every flag twice; it worked only because go-flags tolerates both.
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - >-
+        exec /usr/bin/pgweb --bind=0.0.0.0 --listen=8081 --prefix=pgweb --ssl=disable
+        --host="$$PP_DB_HOST" --port=5432 --db="$$PP_DB_NAME"
+        --user="$$PP_DB_USERNAME" --pass="$$PP_DB_PASSWORD"
     networks:
       - processpuzzle
     # The only long-running service here that had none, which is why Coolify reported the resource as
@@ -186,30 +328,60 @@ services:
     # that exits 0.
     #
     # Probes the --prefix above, not `/`: pgweb serves nothing at the root when mounted under a
-    # prefix, so a healthcheck on `/` would report a working pgweb as unhealthy. `wget` is busybox's,
-    # from the alpine base of sosedoff/pgweb; --spider makes it a HEAD-like check that discards the
-    # body. No dependent waits on this service, so a false negative costs a red dot, not a deployment.
+    # prefix, so a healthcheck on `/` would report a working pgweb as unhealthy.
+    #
+    # `curl`, NOT `wget`: sosedoff/pgweb is Debian-based and ships curl but no wget at all, so the
+    # previous probe failed with `wget: not found` on every single run and this container could never
+    # be anything but unhealthy. It cost only a red dot rather than a deployment -- nothing waits on
+    # this service -- which is exactly why it went unnoticed.
+    #
+    # And the probed path is `/pgweb/` WITH the trailing slash, which is the other half of the
+    # `--prefix` fix above: pgweb redirects `/pgweb` with a 301 that `curl -f` reports as success
+    # without ever reaching the app, so the slash is what makes this check mean something.
     healthcheck:
-      test: [ "CMD-SHELL", "wget --spider -q http://127.0.0.1:8081/pgweb || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:8081/pgweb/ || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
+    # `unless-stopped` for the same reason as postgres above: `no` makes any stop permanent.
+    restart: unless-stopped
 
   postgres:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG}
     container_name: processpuzzle-postgres
     ports:
-      - "${PP_POSTGRES_PUBLISH:-5432:5432}"
+      - "${PP_POSTGRES_PUBLISH}"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # `/var/lib/postgresql`, NOT `/var/lib/postgresql/data`, and the distinction is the difference
+      # between a database that persists and one that does not.
+      #
+      # The official image changed `PGDATA` in 18+ to a version-specific `/var/lib/postgresql/<major>/docker`
+      # and moved its declared `VOLUME` to the parent `/var/lib/postgresql`
+      # (docker-library/postgres#1259). Mounted at the old `/var/lib/postgresql/data` the named volume
+      # becomes a SIBLING of the real data directory rather than its parent: Docker then satisfies the
+      # image's `VOLUME` with a fresh ANONYMOUS volume, the cluster is created in that, and
+      # `postgres_data` stays empty. Nothing reports an error — the only tell is `initdb` running on
+      # every single start.
+      #
+      # That is what it had been doing here. The 2026-09-16 15:26 container log shows
+      # `fixing permissions on existing directory /var/lib/postgresql/18/docker`, a full
+      # post-bootstrap initialization, `10-init-db.sh` running (it is
+      # `/docker-entrypoint-initdb.d/`, so first-init ONLY), and then Keycloak finding neither
+      # `MIGRATION_MODEL` nor `public.databasechangeloglock`. Every recreation was a brand new
+      # cluster, which is the real cause of the `relation "base_…" does not exist` 500s in
+      # docs/stage-deployment-runbook.md and of realms reverting to the committed import file.
+      #
+      # Do NOT "fix" this by setting `PGDATA` back to `/var/lib/postgresql/data`. That works, but it
+      # opts out of the layout `pg_upgrade --link` needs for the next major upgrade, which is the
+      # reason upstream moved it.
+      - postgres_data:/var/lib/postgresql
     environment:
-      # Keycloak owns this database and this role. The per-stack application databases and the
-      # `processpuzzle` role that owns them are created by tools/docker/postgresql/10-init-db.sh,
-      # which the entrypoint runs ONLY on an empty data directory — an existing postgres_data volume
-      # will not have them. Reset with `npm run stack-clean`, which is also what makes a renamed
-      # Keycloak realm appear, since --import-realm skips realms that exist.
+      # Keycloak owns this database and this role. tools/docker/postgresql/10-init-db.sh creates the
+      # per-stack application databases and their `processpuzzle` owner on an empty data directory;
+      # the postgres-init one-shot repeats that idempotently for existing postgres_data volumes.
+      # A renamed Keycloak realm still requires a reset because --import-realm skips existing realms.
       POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
       POSTGRES_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
@@ -218,7 +390,7 @@ services:
       # /docker-entrypoint-initdb.d/ cannot read an environment variable, which is why that script is
       # a shell script: it is the only way prod gets a different application password.
       PROCESSPUZZLE_DB_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
-      PROCESSPUZZLE_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}
+      PROCESSPUZZLE_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
     networks:
       - processpuzzle
     healthcheck:
@@ -226,6 +398,39 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # `unless-stopped`, like json-server and minio. Without a restart policy Docker defaults to
+    # `no`, and then ANY stop is permanent: a host reboot, a Docker daemon restart, an OOM kill or a
+    # `compose down` leaves the container dead until the next Coolify deploy, because nothing else
+    # ever starts it. That is what happened on 2026-09-16 — the postgres log ends
+    # `received fast shutdown request` / `database system is shut down` with no subsequent start,
+    # while minio and json-server came back on their own, and Traefik answered 503
+    # `no available server` for all three hostnames because the services behind them were gone.
+    #
+    # The two `-init` one-shots keep `restart: "no"` ON PURPOSE: they run to completion and exit 0,
+    # and a restart policy would loop them forever.
+    restart: unless-stopped
+
+  # Applies newly introduced application databases to an existing postgres_data volume. The same
+  # script also runs during PostgreSQL's first initialization; its idempotence makes this repeat
+  # safe and avoids resetting Keycloak merely to add a stack.
+  postgres-init:
+    pull_policy: always
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG}
+    container_name: processpuzzle-postgres-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      PROCESSPUZZLE_DB_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
+      PROCESSPUZZLE_DB_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
+    command: [ "/bin/bash", "/docker-entrypoint-initdb.d/10-init-db.sh" ]
+    networks:
+      - processpuzzle
+    restart: "no"
 
 volumes:
   minio-data:

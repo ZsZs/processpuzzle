@@ -83,6 +83,10 @@ export class ObjectStoreService {
 
   private resolveBaseUrl(): string {
     const baseConfiguration = Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION');
-    return Reflect.get(baseConfiguration, 'OBJECT_STORE_SERVICE_ROOT') ?? Reflect.get(baseConfiguration, 'BACKEND_SERVICE_ROOT') ?? '';
+    // No fallback to BACKEND_SERVICE_ROOT: that root is org-scoped (`<host>/organizations/<orgKey>`)
+    // while the object endpoints are not, so falling back to it would mint
+    // `…/organizations/<org>/objects/…`. OBJECT_STORE_SERVICE_ROOT is a required key, set in
+    // config.common.json, so `''` is reached only by a spec.
+    return Reflect.get(baseConfiguration, 'OBJECT_STORE_SERVICE_ROOT') ?? '';
   }
 }

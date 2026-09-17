@@ -14,8 +14,9 @@ with. It is not a backend for the platform's own features.
 Everything the platform itself owns — entities and entity definitions, rules, app and module
 definitions, widget definitions, state machines, workflows, documents, organizations — is served by
 `apps/processpuzzle-testbed-backend` (`:8080`) from the seed YAML in each `libs/java-shared/base-*-backend`
-library. The frontend reaches it through `APP_SERVICE_ROOT` and its per-feature siblings
-(`RULE_SERVICE_ROOT`, `STATE_SERVICE_ROOT`, …); only `BACKEND_SERVICE_ROOT` points here.
+library. The frontend reaches it through `BACKEND_SERVICE_ROOT` and, where a deployment splits a feature off,
+its optional per-feature siblings (`RULE_SERVICE_ROOT`, `STATE_SERVICE_ROOT`, …); only
+`THIRD_PARTY_ROOT` points here.
 
 Duplicating a platform resource here would give every such resource two answers that drift apart, so
 this mock deliberately serves none. Earlier revisions generated `<orgKey>-rules`,

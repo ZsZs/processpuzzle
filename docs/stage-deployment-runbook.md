@@ -51,11 +51,11 @@ upload and download fails while the rest of the store works. Point the domain at
 would want a hostname of its own, since its credentials are MinIO's root user.
 
 The backend needs a name of its own because **nginx does not proxy to it**. The browser calls
-`APP_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing rather
-than decorative.
+`BACKEND_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing
+rather than decorative.
 
 `.de`, not `.com`: it matches the Coolify control plane. Production is still written `.com` in
-`.env.prod` and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
+both `.env.prod` files and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
 §12.
 
 ---
@@ -99,7 +99,8 @@ hand — otherwise a first-start timeout reds a workflow whose deployment actual
 
 ### Nothing else
 
-The seven credentials in [`.env.example`](../tools/docker/env/.env.example) (`POSTGRES_PASSWORD`,
+The seven credentials in [`infrastructure/.env.example`](../tools/docker/env/infrastructure/.env.example)
+and [`testbed/.env.example`](../tools/docker/env/testbed/.env.example) (`POSTGRES_PASSWORD`,
 `PROCESSPUZZLE_DB_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` / `_PASSWORD`, `MINIO_ROOT_PASSWORD`,
 `MINIO_SERVICE_PASSWORD`, `PLATFORM_ADMIN_CLIENT_SECRET`) are consumed **only by Coolify**. No
 workflow reads them — `deploy-infrastructure.yml` and `deploy-testbed-apps.yml` reference nothing but
@@ -168,8 +169,9 @@ network and will fail on `network processpuzzle has active endpoints` — see
 
 ### Full variable list for this resource
 
-Non-secret, copied from [`.env.stage`](../tools/docker/env/.env.stage) — which stays the source of
-truth, because Coolify does **not** read `--env-file`:
+Non-secret, copied from [`infrastructure/.env.stage`](../tools/docker/env/infrastructure/.env.stage)
+and [`testbed/.env.stage`](../tools/docker/env/testbed/.env.stage) — one file per resource, and each
+stays the source of truth for its own, because Coolify does **not** read `--env-file`:
 
 ```
 PP_IMAGE_REGISTRY=ghcr.io/zszs
@@ -419,9 +421,10 @@ skipped.** Skipped means the webhook secret is still missing.
 | `Bind for :::8080 failed: port is already allocated` | `PP_TESTBED_BACKEND_PUBLISH` is unset on the resource, so it fell back to the CI default `8080:8080` — which `coolify-proxy` owns; see [§7.2](#72-port-is-already-allocated-on-8080) |
 | nginx exits, `host not found in upstream "json-server"` | the frontend is not on the infrastructure network — nginx resolves its upstream at startup |
 | **502 Bad Gateway** on a Coolify domain | the domain names the *host-published* port (7070 / 7000 / 7001 / 9090 / 8180) instead of the container port (8080 / 9000 / 9001 / 80 / 8080) — Traefik reaches containers over the network, where only the container port exists |
+| **502 Bad Gateway** on `/third-party/…` only, with an **HTML** error body | not Traefik — that is the frontend's own nginx failing to reach `json-server`. Traefik's 502 is plain text, so an HTML `<title>502 Bad Gateway</title>` means the request got as far as the `/third-party/` location. Either json-server is down, or nginx is holding the address it resolved at startup and the infrastructure resource has been redeployed since (each redeploy gives json-server a new IP). Distinguish with `docker exec testbed-frontend curl -sS http://json-server:3000/application-properties` — curl re-resolves, nginx did not, so a working curl beside a 502 is the stale address. Redeploying the applications resource clears it; the `resolver` in `nginx.conf` is what stops it recurring |
 | 502 persists after correcting the port | Coolify writes the Traefik labels at **container creation**, so saving the Domain field does not reach a running container — redeploy, then confirm with the `docker inspect` label check in [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Presigned upload/download URLs point at `localhost:7000` | `MINIO_PUBLIC_ENDPOINT` unset, so it fell back to the `minio-config.yaml` default |
-| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy`, after ~14 min | stale JDBC_PING peers — see [§7.4](#74-keycloak-unhealthy-on-redeploy--stale-jgroups-peers) |
+| Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy` | the message names the symptom only; read the container's exit code and log before anything else — usually the database password no longer matches the `postgres_data` volume, while `postgres` still reports healthy because `pg_isready` does not authenticate. See [§7.4](#74-dependency-failed-to-start-container-keycloak--is-unhealthy) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows `net::ERR_FAILED` and HTTP status **0** on API calls, with no CORS message | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS`, so the *preflight* is rejected with 403 `Invalid CORS request` — confirm with the `OPTIONS` check in [§6](#after-4-applications) |
 | `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the realm's CSP does not name the frontend's origin, so `Keycloak.init()` rejects and authentication never initialises — see [§5.2](#52-security-defenses) |
@@ -517,12 +520,12 @@ docker ps --format '{{.Names}}	{{.Ports}}' | grep 8080  # coolify-proxy 0.0.0.0:
 ```
 
 So setting the port to `127.0.0.1:8080:8080` does not fix it either: a specific-address bind fails
-while the wildcard holds the port. Hence **8180** in §4 and in `.env.stage` / `.env.prod`.
+while the wildcard holds the port. Hence **8180** in §4 and in `testbed/.env.stage` / `testbed/.env.prod`.
 
 Nothing about the application changes. The proxy routes `api.stage.processpuzzle.de` to
-`testbed-backend:8080` over the compose network, `APP_SERVICE_ROOT` in `config.stage.json` names that
-public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the SSH-tunnel
-port moves. CI keeps `8080:8080` in `.env.ci` — a GitHub runner has no Coolify proxy, and the local
+`testbed-backend:8080` over the compose network, `BACKEND_SERVICE_ROOT` in `config.stage.json` names
+that public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the
+SSH-tunnel port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and the local
 `config.ci.json` expects the backend on `localhost:8080`.
 
 ### 7.3 `no available server`, with both containers healthy
@@ -576,7 +579,7 @@ the container names it generated are not selectable and not what you configure. 
 has no router, check whether its domain is still attached to the old `processpuzzle-testbed-frontend`
 service key; see the note under [§4's Domains table](#domains).
 
-### 7.4 Keycloak unhealthy on redeploy — stale jgroups peers
+### 7.4 `dependency failed to start: container keycloak-… is unhealthy`
 
 The deploy waits on Keycloak and eventually gives up:
 
@@ -585,6 +588,47 @@ Container keycloak-… Waiting
 Container keycloak-… Error dependency keycloak failed to start
 dependency failed to start: container keycloak-… is unhealthy
 ```
+
+**This message names the symptom, never the cause.** Anything that keeps port 9000 from answering
+produces it, and the ~5–6 minutes compose spends before printing it are the healthcheck budget
+elapsing, not a measure of how long Keycloak tried. Two very different failures look identical from
+the deploy log, so read the container first — it outlives the failed deploy:
+
+```bash
+KC=$(docker ps -aq --filter name=keycloak- | head -1)
+docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}}' $KC
+docker logs $KC 2>&1 | tail -30
+```
+
+`status=exited exit=1` means Keycloak refused to start and the rest of the budget was compose
+waiting on a container that was already gone — **§7.4a**. `status=running` with no
+`started in …s` line yet means it was still coming up — **§7.4b**.
+
+**Check the clock before either of them.** Subtract the `Container keycloak-… Started` timestamp
+from the failure timestamp. Less than ~2 minutes means the healthcheck budget did *not* elapse, so
+neither §7.4a nor §7.4b applies and no cause inside Keycloak can explain it — go to **§7.4c**.
+
+#### 7.4a Exited — almost always the database credentials
+
+```
+FATAL: password authentication failed for user "keycloak"
+ERROR: Failed to start server in (production) mode
+```
+
+Keycloak exits 1 within ~20 s of this, and `postgres` goes on reporting **healthy** the whole
+time — its healthcheck is `pg_isready`, which does not authenticate. So a wrong password shows up
+as "Keycloak is unhealthy" while the database looks fine.
+
+`POSTGRES_PASSWORD` is only ever read when the `postgres_data` volume is **initialised**. Changing
+it in Coolify afterwards changes what Keycloak sends, not what the database expects, and the `:?`
+guard in the compose file checks that the variable is *present*, not that it still matches. Re-enter
+the original value; if it is lost, the only way forward is resetting the volume, which re-imports the
+realms from the image but loses everything created in the admin console since.
+
+The same trap applies to `PROCESSPUZZLE_DB_PASSWORD`, which §4 duplicates into the application
+resource — there it surfaces as a backend that cannot start rather than a Keycloak that cannot.
+
+#### 7.4b Still starting — stale jgroups peers (fixed at the image level)
 
 Nothing is wrong with Keycloak. Its log shows JOIN attempts against an address that answers
 `Connection refused`, then:
@@ -596,11 +640,26 @@ too many JOIN attempts (10): becoming singleton
 `JDBC_PING` records every container in the `JGROUPS_PING` table of the `keycloak` database and
 never removes the row, so each redeploy leaves a dead peer behind and each subsequent start pays
 to discover that. **The cost grows with every deployment**, which is what makes this look
-intermittent: it fit inside `start_period: 150s` for months and then took 14 minutes.
+intermittent: it fit inside the `start_period` of the day for months and then took 14 minutes.
 
-Fixed at the image level as of 2026-09-08 — `tools/docker/keycloak/Dockerfile` builds with
-`KC_CACHE=local`, so there is no cluster to join. `cache` is a build-time option, so it has to be
-baked in; supplying it at run time makes an `--optimized` start exit 2.
+Fixed at the image level — `tools/docker/keycloak/Dockerfile` sets `KC_CACHE=local` in the **final**
+stage. Cache mode is a run-time option that `kc.sh build` does not persist, so setting it only while
+building the optimized image silently restored JDBC_PING; the builder-stage line is kept for symmetry
+but does nothing on its own. Confirm which is in force on any image with:
+
+```bash
+docker run --rm --entrypoint /opt/keycloak/bin/kc.sh \
+  ghcr.io/zszs/processpuzzle-keycloak:stage show-config | grep cache
+```
+
+`kc.cache = local (ENV)` is the fixed image. If that line is missing or says `ispn`, the promoted tag
+predates the fix.
+
+**A start that is merely slow is now a budget question, not this bug.** Measured against the
+promoted `:stage` image: **172 s** against an empty database — Liquibase's schema creation plus the
+import of the three realms — and **63 s** against a reused one. The budget is `retries` x `interval` = **300 s**, so a
+warm start has wide headroom and even a first start fits. A deploy that still fails here after the
+full period is §7.4a, not a number to raise — and one that fails *inside* it is §7.4c.
 
 Two consequences worth knowing. Deploying the fix needs the **image rebuilt and re-promoted**
 (`tools/docker/**` triggers Build-Infrastructure, which calls Deploy-Infrastructure), not just a
@@ -615,11 +674,39 @@ docker exec $PG psql -U keycloak -d keycloak -c 'DELETE FROM "JGROUPS_PING";'
 
 Safe with Keycloak running — the rows are discovery hints, and a live node re-registers itself.
 
-One thing to check afterwards, whichever route you take: `keycloak-init` has
-`depends_on: keycloak: condition: service_healthy`, so an aborted deploy never ran it and the
-`platform-admin` service-account client may be missing. Without it the backend's identity ports
+One thing to check afterwards, whichever route you take: an aborted deploy may never have run
+`keycloak-init`, so the `platform-admin` service-account client may be missing. It no longer waits on
+Keycloak's *health* (`condition: service_started` — see §7.4c), so it now starts alongside Keycloak
+and polls for an admin login of its own for `KC_WAIT_TIMEOUT` seconds (600 by default); read its log
+rather than assuming it was skipped. Without it the backend's identity ports
 fall back to their no-op implementations and user management silently does nothing, while every
 other feature works. Re-running the deployment runs it; it is idempotent.
+
+#### 7.4c Failed in ~90 s — the start period is not in the effective config
+
+Observed on 2026-09-15: `Started 09:56:07`, `is unhealthy 09:57:34`. **87 seconds**, with
+`start_period: 300s` committed in the compose file at the deployed commit.
+
+That combination is impossible if the start period reached the container. Docker does not increment
+a healthcheck's failing streak while the container is inside its start period — the status stays
+`starting`, and compose's dependency wait goes on waiting. 87 s is instead exactly three of the 30 s
+intervals the file used to pair with `retries: 3`, counted from t=0: the arithmetic of a container
+whose effective config has **no** start period. Read it back on the host:
+
+```bash
+docker inspect --format '{{json .Config.Healthcheck}}' $(docker ps -aq --filter name=keycloak- | head -1)
+```
+
+`"StartPeriod": 0` — or the key absent — confirms it. The compose file is not what Coolify runs: it
+parses the file, re-serialises it into `/artifacts/<uuid>/`, and what survives that round trip is the
+authority.
+
+**The consequence for triage:** raising `start_period` cannot fix a deploy that fails inside it. The
+150 s -> 300 s change in `7e97f62a` was exactly that, and it changed nothing — the second deploy
+failed at the same 87 s. So the budget is now written as `retries: 20` x `interval: 15s`, which every
+Docker version honours whether or not the start period survives, and `keycloak-init` waits with
+`condition: service_started` so that the healthcheck no longer decides whether the deployment
+succeeds at all.
 
 ### 7.5 The `:?` guards become values, not errors
 

@@ -4,7 +4,7 @@ import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_RULE_ROUTES } from '@processpuzzle/base-rule';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
-import { BASE_WIDGET_ROUTES } from '@processpuzzle/base-widget';
+import { BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { DesignContentComponent } from './content/design-content.component';

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Type, computed, inject, input } from '@angular/core';
-import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement } from '@processpuzzle/base-widget';
+import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement } from '@processpuzzle/widgets';
 
 /**
  * One widget as it is rendered: the component the registry answered with, or none.

@@ -84,10 +84,10 @@ describe('StateMachineDefinitionService', () => {
     request.flush(STATE_MACHINE_DEFINITION_DTO);
   });
 
-  // STATE_SERVICE_ROOT is optional by contract; `serviceRootOf` falls back to APP_SERVICE_ROOT, which
+  // STATE_SERVICE_ROOT is optional by contract; `serviceRootOf` falls back to BACKEND_SERVICE_ROOT, which
   // is the only root this workspace's deployments actually configure today.
-  it('falls back to APP_SERVICE_ROOT when no state root is configured', () => {
-    const { service: fallbackService, controller: fallbackController } = configure({ APP_SERVICE_ROOT: serviceRoot });
+  it('falls back to BACKEND_SERVICE_ROOT when no state root is configured', () => {
+    const { service: fallbackService, controller: fallbackController } = configure({ BACKEND_SERVICE_ROOT: serviceRoot });
 
     fallbackService.delete('order').subscribe();
 

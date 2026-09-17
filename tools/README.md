@@ -32,7 +32,9 @@ that exist only because CI and local development need what a deployment must not
 what `npm run stack-up-build` does:
 
 ```sh
-docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+docker compose -p processpuzzle \
+  --env-file tools/docker/env/infrastructure/.env.ci \
+  --env-file tools/docker/env/testbed/.env.ci \
   -f tools/docker/docker-compose-infrastructure.yaml \
   -f tools/docker/docker-compose-apps.yaml \
   -f tools/docker/docker-compose-build.yaml \
@@ -174,12 +176,12 @@ Three names, on `.de` to match the Coolify control plane, and each has to agree 
 
 | Name | Set in | Must equal |
 | --- | --- | --- |
-| `testbed.stage.processpuzzle.de` | Coolify: the frontend service's domain | `APP_CORS_ALLOWED_ORIGINS` in `.env.stage`, the client's `redirectUris` in the testbed realm, and `PROCESSPUZZLE_TESTBED_BASE_URL` in `apps/processpuzzle-testbed-e2e/env/.env.stage` |
-| `api.stage.processpuzzle.de` | Coolify: the backend service's domain | `APP_SERVICE_ROOT` and friends in `config.stage.json` |
+| `testbed.stage.processpuzzle.de` | Coolify: the frontend service's domain | `APP_CORS_ALLOWED_ORIGINS` in `testbed/.env.stage`, the client's `redirectUris` in the testbed realm, and `PROCESSPUZZLE_TESTBED_BASE_URL` in `apps/processpuzzle-testbed-e2e/env/.env.stage` |
+| `api.stage.processpuzzle.de` | Coolify: the backend service's domain | `BACKEND_SERVICE_ROOT` in `config.stage.json` |
 | `auth.stage.processpuzzle.de` | Coolify: the Keycloak service's domain | `KC_HOSTNAME` **and** `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` in `.env.stage`, and `AUTHENTICATION_SERVICE_ROOT` / `authServerUrl` in `config.stage.json` |
 
 The backend needs a hostname of its own because **nginx does not proxy to it**: the browser calls
-`APP_SERVICE_ROOT` cross-origin from the frontend's origin, which is what makes
+`BACKEND_SERVICE_ROOT` cross-origin from the frontend's origin, which is what makes
 `APP_CORS_ALLOWED_ORIGINS` load-bearing rather than decorative. An origin missing from it arrives as
 HTTP status 0 with nothing to explain it, and an issuer that differs from `KC_HOSTNAME` by one
 character rejects every token.
@@ -190,21 +192,37 @@ against real DNS before the first prod deploy.**
 
 ## Environment configuration
 
-`tools/docker/env/` holds one file per environment, mirroring the
-`apps/processpuzzle-testbed-e2e/env/.env.<environment>` convention. They are what make one compose
-definition serve three environments:
+`tools/docker/env/` holds **one subdirectory per deployable compose file, and one file per
+environment inside it**, mirroring the `apps/processpuzzle-testbed-e2e/env/.env.<environment>`
+convention. They are what make one compose definition serve three environments:
+
+| Directory | Feeds | Holds |
+| --- | --- | --- |
+| `infrastructure/` | `docker-compose-infrastructure.yaml` | `PP_PGWEB_VERSION`, the six infra `PP_*_PUBLISH` port maps, the `KEYCLOAK_DB_*` / `POSTGRES_PASSWORD` / `PGWEB_DATABASE` database settings, `KC_HOSTNAME`, `KC_HOSTNAME_STRICT`, `KEYCLOAK_ADMIN_*` and `MINIO_ROOT_*` |
+| `testbed/` | `docker-compose-apps.yaml` | `PP_TESTBED_{FRONTEND,BACKEND}_PUBLISH`, `PIPELINE_STAGE`, `FIREBASE_API_KEY`, the `SPRING_*` and `PROCESSPUZZLE_SECURITY_*` settings, `MINIO_BUCKET_PREFIX`, `MINIO_ENDPOINT`, `MINIO_PUBLIC_ENDPOINT` and `APP_CORS_ALLOWED_ORIGINS` |
+
+A future `biz/` and `admin/` set sit beside `testbed/` — one per application stack. Inside each
+directory:
 
 | File | Committed | Holds |
 | --- | --- | --- |
 | `.env.ci` | yes | Everything, **including the demo credentials that were always in git**, so `npm run stack-up` needs no setup |
-| `.env.stage` / `.env.prod` | yes | Non-secret values only, for **both** resources: image tag, the `PP_*_PUBLISH` port mappings, network name, Keycloak hostname, role and database names, plus an application section — `PIPELINE_STAGE`, `SPRING_PROFILES_ACTIVE`, the stack's datasource / realm / bucket prefix, and the two that cannot take a CI default (`APP_CORS_ALLOWED_ORIGINS`, `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL`) |
-| `.env.example` | yes | Documents each secret variable and where it is consumed |
+| `.env.stage` / `.env.prod` | yes | Non-secret values only |
+| `.env.example` | yes | Documents each secret variable this resource needs, and where it is consumed |
 | `.env.local` | **no** (gitignored) | Copy of `.env.example` with real values, for running the stage/prod topology locally |
+
+**Nine variables are deliberately in both** — compose interpolates each file independently and
+Coolify enters variables per resource, so there is no way to share them: `PP_IMAGE_REGISTRY`,
+`PP_IMAGE_TAG`, `PP_NETWORK`, `PROCESSPUZZLE_DB_USERNAME`, `PROCESSPUZZLE_DB_PASSWORD`,
+`KC_INTERNAL_URL`, `PLATFORM_ADMIN_CLIENT_SECRET`, `MINIO_SERVICE_USER` and
+`MINIO_SERVICE_PASSWORD`. Each file's header lists this overlap set, so a value changed in one is
+known to need changing in the other. A combined run passes both files — repeated `--env-file` is
+additive.
 
 Two rules worth knowing:
 
-- **Credentials are not in the committed stage/prod files.** They come from the GitHub Environments `STAGE` and `PROD` (see [`.github/README.md`](../.github/README.md)). `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` and `KEYCLOAK_ADMIN_PASSWORD` carry a `${VAR:?…}` guard in the compose file, so a missing one fails at `up` rather than silently at the first request — which is why `docker compose --env-file env/.env.stage … config` is *expected* to fail until they are exported.
-- **Coolify does not read these files.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the resource's *own* environment variables; `--env-file` is not in that path. So `.env.stage` / `.env.prod` are the documented source of truth that has to be entered once into the resource, and `--env-file` is what `ci` and local development use. Because every variable carries a `${VAR:-<ci default>}` default, one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
+- **Credentials are not in the committed stage/prod files.** They come from the GitHub Environments `STAGE` and `PROD` (see [`.github/README.md`](../.github/README.md)). `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_USERNAME` and `KEYCLOAK_ADMIN_PASSWORD` carry a `${VAR:?…}` guard in the compose file, so a missing one fails at `up` rather than silently at the first request — which is why `docker compose --env-file env/infrastructure/.env.stage … config` is *expected* to fail until they are exported.
+- **Coolify does not read these files.** A Coolify Docker Compose resource reads the compose file from git and interpolates it with the resource's *own* environment variables; `--env-file` is not in that path. So each resource's own `.env.stage` / `.env.prod` is the documented source of truth that has to be entered once into that resource, and `--env-file` is what `ci` and local development use. Because every variable carries a `${VAR:-<ci default>}` default, one missed in Coolify degrades to the CI value rather than to an empty string — check the rendered `docker compose config` on the first deploy.
 
 Which variables go into which of the two resources, and the rest of the out-of-repo setup, is a
 checklist in [Deploying the testbed stack to stage](../docs/stage-deployment-runbook.md).
@@ -223,7 +241,7 @@ npm run stack-ps           # what is up, and how healthy
 npm run stack-clean        # down, including volumes — the only way to re-run first-start scripts
 ```
 
-`.env.ci` supplies `PIPELINE_STAGE`, so it needs no exporting; an exported value still wins, because
+`testbed/.env.ci` supplies `PIPELINE_STAGE`, so it needs no exporting; an exported value still wins, because
 the shell takes precedence over `--env-file`. `FIREBASE_API_KEY` needs nothing at all — it defaults
 to empty and the entrypoint no longer guards it.
 
@@ -231,7 +249,7 @@ to empty and the entrypoint no longer guards it.
 because that is how Coolify reads it — no overlay, no infrastructure file:
 
 ```sh
-docker compose --env-file tools/docker/env/.env.stage \
+docker compose --env-file tools/docker/env/testbed/.env.stage \
   -f tools/docker/docker-compose-apps.yaml config
 ```
 

@@ -121,8 +121,8 @@ describe('EntityDefinitionRegistry', () => {
 
   describe('with no ENTITY_SERVICE_ROOT of its own', () => {
     /** The fallback `BaseConfiguration` documents: the per-feature roots are optional, one host serves all. */
-    it('falls back to APP_SERVICE_ROOT', async () => {
-      ({ registry, controller } = setup({ APP_SERVICE_ROOT: 'http://localhost:8080/organizations/acme' }));
+    it('falls back to BACKEND_SERVICE_ROOT', async () => {
+      ({ registry, controller } = setup({ BACKEND_SERVICE_ROOT: 'http://localhost:8080/organizations/acme' }));
 
       const loaded = registry.load();
       controller.expectOne(ENTITY_DEFINITIONS_URL).flush({ content: TEST_ENTITY_DEFINITIONS });

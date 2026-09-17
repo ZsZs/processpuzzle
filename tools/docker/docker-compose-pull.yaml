@@ -6,7 +6,8 @@
 # GHCR for seven images on every stop/start cycle. `missing` settles it: pull only
 # when the image is absent locally.
 #
-#   docker compose --env-file env/.env.ci -f docker-compose-infrastructure.yaml
+#   docker compose --env-file env/infrastructure/.env.ci --env-file env/testbed/.env.ci
+#     -f docker-compose-infrastructure.yaml
 #     -f docker-compose-apps.yaml -f docker-compose-apps-local.yaml
 #     -f docker-compose-pull.yaml up -d
 #

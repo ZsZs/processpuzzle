@@ -21,7 +21,7 @@ describe('DocumentContentTabComponent', () => {
         provideHttpClientTesting(),
         // Flat dotted keys: TestTranslocoLoader drops nested objects when no scope is configured.
         provideTranslocoTesting({ translations: { en: { 'base_document.document.content.loading': 'Loading content…', 'base_document.document.content.add_text_block': 'Add text block' } } }),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { DOCUMENT_SERVICE_ROOT: SERVICE_ROOT } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: SERVICE_ROOT } } },
       ],
     });
     fixture = TestBed.createComponent(DocumentContentTabComponent);

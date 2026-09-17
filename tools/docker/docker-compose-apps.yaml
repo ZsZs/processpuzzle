@@ -24,13 +24,14 @@
 #   `depends_on` that survives — frontend → backend — names a service defined right here.
 #
 # Every `${VAR:-…}` default below is the current CI value, so the file is correct for local
-# development. .env.stage / .env.prod carry the two that cannot take a CI default
+# development. testbed/.env.stage / testbed/.env.prod carry the two that cannot take a CI default
 # (APP_CORS_ALLOWED_ORIGINS and PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL — a wrong value there is a
 # CORS failure and a 401, not a fallback).
 #
 # CI and local development overlay the pieces this file gives up:
 #
-#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#   docker compose -p processpuzzle --env-file tools/docker/env/infrastructure/.env.ci \
+#     --env-file tools/docker/env/testbed/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml \
 #     -f tools/docker/docker-compose-build.yaml \
@@ -44,6 +45,43 @@
 # the `build-image` action: two registries publishing the same application is one more than the
 # promote-don't-rebuild model can reason about.
 
+# -- The variables with NO default, deliberately -------------------------------------------------
+#
+# Most interpolations here keep a `${VAR:-default}` that makes the file render standalone. The
+# credentials and the deployment topology below deliberately do not:
+#
+#   PP_NETWORK  PP_IMAGE_TAG  PP_*_PUBLISH
+#   POSTGRES_PASSWORD  PROCESSPUZZLE_DB_PASSWORD  KEYCLOAK_ADMIN_USERNAME
+#   KEYCLOAK_ADMIN_PASSWORD  MINIO_ROOT_PASSWORD  MINIO_SERVICE_PASSWORD
+#   PLATFORM_ADMIN_CLIENT_SECRET
+#
+# The asymmetry is not about importance, it is about the failure mode. A default on
+# MINIO_BUCKET_PREFIX is harmless because getting it wrong is visible immediately. A default on
+# these is plausible but WRONG on a real host, and wrong quietly:
+#
+#   * A forgotten PP_*_PUBLISH falls back to the CI value, which binds 0.0.0.0 rather than
+#     127.0.0.1 -- every interface of a public host, on a port some other stack may already own.
+#     This actually happened on 2026-09-16: a stack deployed with 0.0.0.0:8081 instead of
+#     127.0.0.1:8181, and was caught only by luck, because that port happened to collide.
+#   * A forgotten PP_IMAGE_TAG falls back to `latest`, silently deploying a different build than
+#     the environment asked for; a forgotten PP_NETWORK detaches the stack from its own
+#     infrastructure.
+#   * A forgotten credential falls back to a published example value on a reachable host.
+#
+# Bare `${VAR}` fails loudly instead: `up` refuses outright for the tag, network and ports, and the
+# credentials fail at first connection rather than working with the wrong value.
+#
+# `${VAR:?message}` is NOT usable, and the three that still use it are a known defect rather than
+# the pattern to copy. Coolify does not implement the POSIX "error if unset" form -- it takes the
+# text after `:?` as the DEFAULT VALUE. A Coolify resource missing POSTGRES_PASSWORD therefore gets
+# the literal string `POSTGRES_PASSWORD must be set` as its password, consistently enough for
+# Postgres and Keycloak to agree and for nothing to look wrong. In a real shell (the init scripts
+# under postgresql/ and minio/) `:?` behaves as written and is the right form there.
+#
+# The accepted consequence: this file no longer renders without an environment. That is the point
+# -- `docker compose config` with no env file is now a check rather than a no-op. Adding a variable
+# to the list above means adding it to tools/docker/env/*/.env.ci in the same commit, or CI breaks.
+
 networks:
   processpuzzle:
     # The infrastructure resource owns this network; this resource joins it. `name` is what makes the
@@ -51,7 +89,7 @@ networks:
     # `external` back to false for the single-project CI and local topology, where the two layers
     # share one compose project and compose creates the network itself.
     external: true
-    name: ${PP_NETWORK:-processpuzzle}
+    name: ${PP_NETWORK}
 
 services:
   testbed-frontend:
@@ -62,7 +100,7 @@ services:
       # reaching it before the API answers is the first thing anyone notices.
       testbed-backend:
         condition: service_healthy
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG}
     # Both halves of one stack are named the same way, service and container alike: `testbed-frontend`
     # and `testbed-backend`. Neither matches its Nx project or its image — those keep the
     # `processpuzzle-` prefix that makes them unambiguous in a registry and in the Nx graph, which a
@@ -80,15 +118,25 @@ services:
       # interpolate to nothing in Coolify, which is the same value, only reached by an error.
       FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
     ports:
-      - "${PP_TESTBED_FRONTEND_PUBLISH:-9090:80}"
+      - "${PP_TESTBED_FRONTEND_PUBLISH}"
     tty: true
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:80/home" ]
-      retries: 3
+      # `-f`, like every other healthcheck in both compose files. Without it curl exits 0 on any
+      # response it managed to read at all, so this reported a healthy container whenever nginx was
+      # listening — including while nginx answered /home with a 5xx. The check confirmed the process,
+      # not the service.
+      test: [ "CMD", "curl", "-f", "http://localhost:80/home" ]
+      # `retries` x `interval` = 120s, written that way because `start_period` does not survive the
+      # trip through Coolify — see testbed-backend below. nginx listens in about a second, so this is
+      # headroom rather than a measurement.
+      interval: 10s
       timeout: 5s
-      interval: 20s
+      retries: 12
+      start_period: 10s
+    # `unless-stopped` for the same reason as the infrastructure services: `no` makes any stop permanent.
+    restart: unless-stopped
 
   # ── One backend deployment per application stack ────────────────────────────────────────────────
   #
@@ -104,7 +152,7 @@ services:
   # something a backend provisions for itself.
   testbed-backend:
     pull_policy: always
-    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG:-latest}
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG}
     container_name: testbed-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
@@ -113,13 +161,13 @@ services:
       # the compose network, so the host is the service name and not the published port.
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/processpuzzle_testbed}
       SPRING_DATASOURCE_USERNAME: ${PROCESSPUZZLE_DB_USERNAME:-processpuzzle}
-      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD:-processpuzzle}
+      SPRING_DATASOURCE_PASSWORD: ${PROCESSPUZZLE_DB_PASSWORD}
       PROCESSPUZZLE_SECURITY_STACK_REALM: ${PROCESSPUZZLE_SECURITY_STACK_REALM:-processpuzzle-testbed}
       MINIO_BUCKET_PREFIX: ${MINIO_BUCKET_PREFIX:-processpuzzle-testbed}
 
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
       MINIO_ACCESS_KEY: ${MINIO_SERVICE_USER:-springboot}
-      MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD:-springboot123}
+      MINIO_SECRET_KEY: ${MINIO_SERVICE_PASSWORD}
 
       # TWO endpoints, and they differ for the same reason the Keycloak pair does. MINIO_ENDPOINT
       # above is what this container calls; this one is baked into every PRESIGNED URL, which only
@@ -134,8 +182,8 @@ services:
       # the testbed container and 4200 its dev server.
       #
       # Load-bearing on stage and prod, where the CI default is simply wrong: nginx does NOT proxy to
-      # the backend, so the browser calls APP_SERVICE_ROOT cross-origin and this list is the only
-      # thing that lets it. .env.stage sets it to the frontend's own https origin.
+      # the backend, so the browser calls BACKEND_SERVICE_ROOT cross-origin and this list is the only
+      # thing that lets it. testbed/.env.stage sets it to the frontend's own https origin.
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
 
       # User management, which is org-admin's. This deployment does not create realms — that went
@@ -144,7 +192,7 @@ services:
       # the published port. Without the secret the identity ports fall back to their no-op
       # implementations and every other feature still works — see KeycloakAdminProperties.
       KEYCLOAK_ADMIN_URL: ${KC_INTERNAL_URL:-http://keycloak:8080}
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET:-platform-admin-secret}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${PLATFORM_ADMIN_CLIENT_SECRET}
 
       # Token validation needs BOTH URLs, and here they genuinely differ. The issuer is the origin the
       # BROWSER was redirected to: a token minted at localhost:7070 does not validate against an
@@ -157,25 +205,43 @@ services:
       # which is what a single-hostname reverse proxy in front of both arranges for prod.
       #
       # The issuer must equal KC_HOSTNAME of the infrastructure resource, to the character. Left at
-      # the CI default on stage it rejects every token minted by the real Keycloak, so .env.stage
+      # the CI default on stage it rejects every token minted by the real Keycloak, so testbed/.env.stage
       # sets it explicitly.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}
     ports:
-      - "${PP_TESTBED_BACKEND_PUBLISH:-8080:8080}"
+      - "${PP_TESTBED_BACKEND_PUBLISH}"
     tty: true
     networks:
       - processpuzzle
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
-      retries: 3
+      # THE BUDGET IS `retries` x `interval` = 420s, and it is written that way ON PURPOSE — the same
+      # reason Keycloak's is, in docker-compose-infrastructure.yaml:147. `start_period` does NOT
+      # survive the trip through Coolify, so the effective budget is the retries spent from t=0.
+      #
+      # `retries: 3` x `interval: 20s` left 60s of it, against an application that needs 145-262s to
+      # answer. That is what took stage down on 2026-09-15: the backend was declared unhealthy about a
+      # minute after `up`, the frontend's `depends_on: service_healthy` was therefore never satisfied,
+      # and Traefik answered every request for both hostnames with 503 `no available server` — the
+      # post-deploy e2e run included, whose global setup parsed that body as JSON and reported a
+      # SyntaxError. Raising `start_period` cannot fix a deployment that fails inside it. Confirm on
+      # the host with
+      #
+      #   docker inspect --format '{{json .Config.Healthcheck}}' testbed-backend
+      #
+      # and read `StartPeriod`.
+      #
+      # The cost is that a GENUINELY broken backend now takes 420s rather than 60s to be reported
+      # unhealthy. That is affordable; the converse was not.
+      interval: 15s
       timeout: 5s
-      interval: 20s
-      # Measured at ~145s originally, and at 262s on 2026-09-05 for a FIRST start against an empty
-      # database, where Spring Modulith's ArchUnit module-structure computation is joined by the whole
-      # metadata seeding pass. 30s here spent the retries long before the application was listening,
-      # so `up` aborted with "container is unhealthy" on an application that was starting perfectly
-      # well — and 240s did the same on that first start, three seconds of probing short of the
-      # application's own 262s. Hence the headroom: a probe failing inside start_period costs nothing,
-      # while one failing outside it takes down every service that waits on this one.
+      retries: 28
+      # Kept as the fast path: where it IS honoured, a success ends it early and post-readiness
+      # failures are then caught in `retries` x `interval` instead of from t=0. Measured at ~145s
+      # originally, and at 262s on 2026-09-05 for a FIRST start against an empty database, where
+      # Spring Modulith's ArchUnit module-structure computation is joined by the whole metadata
+      # seeding pass. Both figures are now covered whether or not the start period is honoured.
       start_period: 420s
+    # `unless-stopped` for the same reason as the infrastructure services: `no` makes any stop permanent.
+    restart: unless-stopped

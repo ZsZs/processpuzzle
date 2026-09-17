@@ -15,7 +15,8 @@
 #
 # Overlay it AFTER docker-compose-apps.yaml — order decides which value of `external` wins:
 #
-#   docker compose -p processpuzzle --env-file tools/docker/env/.env.ci \
+#   docker compose -p processpuzzle --env-file tools/docker/env/infrastructure/.env.ci \
+#     --env-file tools/docker/env/testbed/.env.ci \
 #     -f tools/docker/docker-compose-infrastructure.yaml \
 #     -f tools/docker/docker-compose-apps.yaml \
 #     -f tools/docker/docker-compose-apps-local.yaml up -d --wait

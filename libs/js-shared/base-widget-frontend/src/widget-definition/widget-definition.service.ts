@@ -6,8 +6,9 @@ import { WidgetDefinitionMapper } from './widget-definition.mapper';
 
 /**
  * REST access to `/organizations/{orgKey}/widget-definitions`. As for the app and module definitions, the
- * organization is part of the configured service root (`APP_SERVICE_ROOT`), so the tenant is a deployment
- * concern rather than something every call has to carry — one root serves every metadata resource.
+ * organization is part of the configured service root (`APP_SERVICE_ROOT`, falling back to
+ * `BACKEND_SERVICE_ROOT`), so the tenant is a deployment concern rather than something every call has to
+ * carry — one root serves every metadata resource.
  *
  * The URL variable is the widget key, which {@link WidgetDefinitionMapper} maps onto `id`, so the inherited
  * `findById` / `update` / `delete` address `.../widget-definitions/{key}`.

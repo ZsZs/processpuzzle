@@ -3,10 +3,8 @@
     "PIPELINE_STAGE": "stage",
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_PROVIDER": "rest",
-    "BACKEND_SERVICE_ROOT": "https://testbed.stage.processpuzzle.de/backend",
-    "APP_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
-    "DOCUMENT_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
-    "RULE_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "BACKEND_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "THIRD_PARTY_ROOT": "https://testbed.stage.processpuzzle.de/third-party",
     "OBJECT_STORE_SERVICE_ROOT": "https://api.stage.processpuzzle.de",
     "FIREBASE_CONFIGURATION": {}
   },

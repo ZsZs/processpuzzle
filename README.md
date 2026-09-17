@@ -216,7 +216,8 @@ Firebase, and nothing in this repository builds or configures a Firebase project
 `tools/docker/docker-compose-infrastructure.yaml` (the shared services) and
 `docker-compose-apps.yaml` (the testbed stack's two halves, joining the infrastructure resource's
 network as `external`). One definition each for `ci` / `stage` / `prod`, parameterized by
-`tools/docker/env/.env.<environment>`, and both pull-only so a deployment runs the images CI
+`tools/docker/env/<resource>/.env.<environment>` — one env file per deployable compose file — and both
+pull-only so a deployment runs the images CI
 promoted; `docker-compose-build.yaml` and `docker-compose-apps-local.yaml` overlay the `build:`
 sections and the single-project topology back for CI and local development. Together they compose
 NgInx serving the Angular app and reverse-proxying, the Spring Boot Modulith backend

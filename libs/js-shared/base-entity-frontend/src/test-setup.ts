@@ -213,7 +213,7 @@ export function setupMockService({
 export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[], requestPayload?: NavigationPayload) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const runtimeConfigMock = {
-    BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
+    BASE_CONFIGURATION: { THIRD_PARTY_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
     LOGGING_CONFIGURATION,
   };
   const mockService = mock<TestEntityService>();
@@ -267,7 +267,7 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
 export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false, extraProviders: Provider[] = []) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
   const runtimeConfigMock = {
-    BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
+    BASE_CONFIGURATION: { THIRD_PARTY_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
     LOGGING_CONFIGURATION,
   };
   const mockService = setupMockService();

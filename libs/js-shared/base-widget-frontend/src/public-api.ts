@@ -1,5 +1,5 @@
 /*
- * Public API Surface of @processpuzzle/base-widget
+ * Public API Surface of @processpuzzle/widgets
  */
 
 export { ApplicationProperty } from './app-property/app-property';

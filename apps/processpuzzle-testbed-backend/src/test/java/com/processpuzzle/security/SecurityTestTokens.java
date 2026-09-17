@@ -1,5 +1,8 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
+import com.processpuzzle.core.security.RealmRoleConverter;
+import com.processpuzzle.core.security.SecurityProperties;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -9,11 +12,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Builds the tokens the policy tests reason about, and puts them in the security context.
+ * Builds the tokens the two policy tests in this package reason about, and puts them in the security
+ * context.
  *
  * <p>Real {@link Jwt} instances rather than mocks, because the thing under test is how a claim is
  * read: the realm is derived from {@code iss} and the authorities from {@code realm_access.roles},
  * and a mocked token would let a test pass while the claim names were wrong.
+ *
+ * <p><b>A deliberate duplicate of {@code com.processpuzzle.core.security.SecurityTestTokens}</b>, and
+ * the smaller of two evils. The mechanism this helper drives moved to {@code processpuzzle-core}; the
+ * two policy implementations it is used by did not, for the reasons that package's {@code
+ * package-info} records. Sharing one helper across both would mean publishing a {@code test-jar} from
+ * {@code processpuzzle-core} — a new artifact on Maven Central, in the release pipeline, forever —
+ * so that two tests can call four methods. Duplicating test fixtures is cheap and visible; enlarging
+ * a published artifact's surface is neither.
+ *
+ * <p>It drifting from core's copy costs nothing: these fixtures exist to exercise
+ * {@link com.processpuzzle.security.JwtOrganizationAccessPolicy} and
+ * {@link com.processpuzzle.security.RealmRoleMembershipPolicy}, and both read the token only through
+ * {@link CurrentPrincipal}, which core's own tests cover directly.
  */
 public final class SecurityTestTokens {
 
@@ -26,9 +43,9 @@ public final class SecurityTestTokens {
 
     /** A tenant member's token, from the realm named after the organization. */
     public static void authenticateAs(String realm, String subject, String... realmRoles) {
+        Jwt token = token(realm, subject, realmRoles);
         SecurityContextHolder.getContext().setAuthentication(
-                new JwtAuthenticationToken(token(realm, subject, realmRoles),
-                        RealmRoleConverter.authoritiesOf(token(realm, subject, realmRoles)), subject));
+                new JwtAuthenticationToken(token, RealmRoleConverter.authoritiesOf(token), subject));
     }
 
     /** A ProcessPuzzle staff token: the admin stack realm, carrying {@code platform-admin}. */
@@ -49,23 +66,6 @@ public final class SecurityTestTokens {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(300))
                 .build();
-    }
-
-    /** A token whose {@code realm_access} claim is missing or the wrong shape. */
-    public static Jwt tokenWithoutRoleClaim(Object realmAccess) {
-        Jwt.Builder builder = Jwt.withTokenValue("token")
-                .header("alg", "RS256")
-                .issuer(ISSUER_BASE + "/realms/my-org")
-                .subject("ada")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(300));
-        if (realmAccess != null) {
-            builder.claim("realm_access", realmAccess);
-        } else {
-            // A JWT always has at least one claim; use one that is not realm_access.
-            builder.claim("scope", "openid");
-        }
-        return builder.build();
     }
 
     public static SecurityProperties properties() {

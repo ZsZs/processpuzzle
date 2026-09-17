@@ -68,7 +68,9 @@ jobs:
             ./tools/docker/docker-compose-apps.yaml
             ./tools/docker/docker-compose-build.yaml
             ./tools/docker/docker-compose-apps-local.yaml
-          compose-flags: '--env-file tools/docker/env/.env.ci'
+          # One env file per Coolify resource, and repeated `--env-file` is additive — the
+          # infrastructure file for the shared services, the testbed one for the stack's two halves.
+          compose-flags: '--env-file tools/docker/env/infrastructure/.env.ci --env-file tools/docker/env/testbed/.env.ci'
 
       - id: e2e-test
         name: run-e2e-tests

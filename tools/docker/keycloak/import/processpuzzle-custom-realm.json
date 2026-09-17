@@ -1,0 +1,13 @@
+{
+  "realm": "processpuzzle-custom",
+  "displayName": "ProcessPuzzle Custom",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "organizationsEnabled": true
+}

@@ -7,6 +7,6 @@ import { TestEntityComponentMapper } from './test-entity-component.mapper';
 @Injectable({ providedIn: 'root' })
 export class TestEntityComponentService extends BaseEntityRestService<TestEntityComponent> {
   constructor(protected override entityMapper: TestEntityComponentMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'test-entity-component');
+    super(entityMapper, 'THIRD_PARTY_ROOT', 'test-entity-component');
   }
 }

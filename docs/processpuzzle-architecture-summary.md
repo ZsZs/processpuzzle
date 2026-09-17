@@ -18,7 +18,7 @@ Break the ProcessPuzzle Platform into loosely coupled functional groups, user gr
 | **Bucket prefix** | `processpuzzle-testbed` | `processpuzzle-biz` (uncertain if needed) | `processpuzzle-admin` | `processpuzzle-custom` |
 | **Database** | `PROCESSPUZZLE_TESTBED` | `PROCESSPUZZLE_BIZ` (design preference; nothing actually persists) | `PROCESSPUZZLE_ADMIN` | `PROCESSPUZZLE_CUSTOM` |
 | **Frontend** | `processpuzzle-testbed-frontend` | `processpuzzle-biz-frontend` | `processpuzzle-admin-frontend` | One `custom-shell` build, org resolved at runtime (see §6) |
-| **Backend** | `processpuzzle-testbed-backend` | `processpuzzle-biz-backend` | `processpuzzle-admin-backend` | `processpuzzle-backend` (shared across all customers) |
+| **Backend** | `processpuzzle-testbed-backend` | `processpuzzle-biz-backend` | `processpuzzle-admin-backend` | `processpuzzle-custom-backend` (one deployment per customer) |
 
 ## 3. Shared Infrastructure
 
@@ -44,7 +44,7 @@ App-specific modules layer on top:
 **Cross-service edges** (the only two — everything else is in-process module composition within a single deployable):
 
 - **Biz → Admin** (REST) — record a new subscription/org.
-- **Admin → Custom** (REST) — Admin calls an internal API on `processpuzzle-backend` to seed the new org's domain data. This was chosen over Admin writing directly into `PROCESSPUZZLE_CUSTOM` via a secondary datasource, to keep database ownership clean per app even at the cost of one more service edge.
+- **Admin → Custom** (REST) — Admin calls the new customer's `processpuzzle-custom-backend` internal API to seed domain data. Provisioning creates that backend deployment before the call, keeping `PROCESSPUZZLE_CUSTOM` owned by Custom rather than giving Admin a secondary datasource.
 
 ## 5. Keycloak Multi-Tenancy (Custom)
 
@@ -55,7 +55,7 @@ App-specific modules layer on top:
 - **OrganizationGuard** (to be promoted to `processpuzzle-core`) checks that claim against the `:orgKey` path segment on every request — no custom group/claim-mapper plumbing needed.
 - Org provisioning splits into two Admin-owned actions:
   1. Admin creates the Keycloak Organization + first admin user directly via the Keycloak Admin REST API.
-  2. Admin calls the `processpuzzle-backend` internal API to seed the org's domain data (entities, roles, workflows) — see §4.
+  2. Admin provisions the customer's `processpuzzle-custom-backend` deployment, then calls its internal API to seed the org's domain data (entities, roles, workflows) — see §4.
 
 ![Custom org provisioning and authentication flow](diagrams/custom-org-provisioning-flow.svg)
 
@@ -78,7 +78,7 @@ Shared UI libs (`base-entity-frontend` incl. `WIDGET_REGISTRY`, workflow/state U
 
 ![Pooled multi-tenant schema for Custom vs Admin's org registry](diagrams/custom-db-pooled-tenancy.svg)
 
-- **`PROCESSPUZZLE_CUSTOM`** — pooled / shared-schema multi-tenancy. One physical database, one set of tables; every tenant-scoped table's primary key includes `orgKey` (the `@IdClass` composite-key pattern already established in `base-entity`/`base-workflow`). Reinforced with **Postgres row-level security** as a database-level defense-in-depth backstop on top of the existing app-layer enforcement (`@IdClass` + `OrganizationGuard`) — so a missed `orgKey` filter in application code can't leak cross-org data. RLS policies filter on `orgKey`, with the app setting a session-local variable per request (likely alongside `OrganizationGuard`, since both read the same token claim).
+- **`PROCESSPUZZLE_CUSTOM`** — pooled / shared-schema multi-tenancy, owned by the dedicated Custom backend deployed for each customer. One physical database, one set of tables; every tenant-scoped table's primary key includes `orgKey` (the `@IdClass` composite-key pattern already established in `base-entity`/`base-workflow`). Reinforced with **Postgres row-level security** as a database-level defense-in-depth backstop on top of the existing app-layer enforcement (`@IdClass` + `OrganizationGuard`) — so a missed `orgKey` filter in application code can't leak cross-org data. RLS policies filter on `orgKey`, with the app setting a session-local variable per request (likely alongside `OrganizationGuard`, since both read the same token claim).
 - **`PROCESSPUZZLE_ADMIN`** — structurally different: it *is* the org registry (Organisations, Administrators, Subscriptions, Billing), not `orgKey`-scoped tenant data. The pooled-schema pattern doesn't apply here.
 - **`PROCESSPUZZLE_TESTBED`** — inherits the same `orgKey`-scoped pooled schema as Custom (same shared libs), so Testbed can demonstrate org isolation itself as one of its showcased features, using a couple of demo orgs.
 

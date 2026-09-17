@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { WidgetInstance } from '@processpuzzle/base-widget';
+import { WidgetInstance } from '@processpuzzle/widgets';
 import { WidgetListComponent } from './widget-list.component';
 
 /**

@@ -1,5 +1,8 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.ApiSecurityErrorHandler;
+import com.processpuzzle.core.security.SecurityProperties;
+import com.processpuzzle.core.security.TenantAuthenticationManagerResolver;
 import com.processpuzzle.core.tenancy.KnownRealms;
 import org.springframework.beans.factory.ObjectProvider;
 import org.slf4j.Logger;

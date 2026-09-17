@@ -4,6 +4,6 @@ import { ApplicationPropertyMapper } from './app-property.mapper';
 
 export class ApplicationPropertyService extends BaseEntityRestService<ApplicationProperty> {
   constructor(protected override entityMapper: ApplicationPropertyMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'application-properties');
+    super(entityMapper, 'THIRD_PARTY_ROOT', 'application-properties');
   }
 }

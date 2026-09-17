@@ -14,7 +14,7 @@ import { AuthButtonComponent } from '@processpuzzle/auth';
 import { DesignRouteService } from '@processpuzzle/design';
 import { LayoutService, NavigateBackComponent, SubstringPipe } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/base-widget';
+import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, provideAppPropertyStore, ShareButtonComponent } from '@processpuzzle/widgets';
 
 @Component({
   selector: 'app-header',

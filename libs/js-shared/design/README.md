@@ -12,7 +12,7 @@ It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `
 
 ## Features
 
-- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/base-widget`, that links to each design building block.
+- **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/widgets`, that links to each design building block.
 - **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; pulls in the child routes exposed by sibling design libraries (`BASE_DOCUMENT_ROUTES`, `BASE_RULE_ROUTES`, `BASE_APP_ROUTES`, `BASE_WIDGET_ROUTES`).
 - **Application section** (`ApplicationDesignerComponent`) — one page at `/design/application` whose tabs switch between the entities that describe an application: its definition, the modules it mounts and the widget types those place. The tabs are child routes, so each one deep-links and the tab bar stays put while the user drills into a form. Their order, icons and labels are `APPLICATION_DESIGNER_TABS`.
 - **Route awareness** (`DesignRouteService`) — a root-provided Angular service exposing an `isDesignRoute` signal so surrounding UI (menus, breadcrumbs, toolbars) can adapt when the user is inside `/design`.
@@ -83,7 +83,7 @@ Runtime peer dependencies (see `package.json`):
 
 - `@angular/common`, `@angular/core`, `@angular/router` — `~22.0.5`; `@angular/material` — `^22.0.5`
 - `@jsverse/transloco` — `8.4.0`
-- `@processpuzzle/base-widget` — `^0.8.0`
+- `@processpuzzle/widgets` — `^0.8.0`
 - `rxjs` — `~7.8.2`
 
 ### Architecture Notes

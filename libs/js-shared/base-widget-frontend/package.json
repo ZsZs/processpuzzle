@@ -1,5 +1,5 @@
 {
-  "name": "@processpuzzle/base-widget",
+  "name": "@processpuzzle/widgets",
   "version": "0.9.1",
   "publishConfig": {
     "access": "public"

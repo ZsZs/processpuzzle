@@ -1,7 +1,7 @@
 # @processpuzzle/base-entity
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-entity-frontend.yml/badge.svg)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_entity&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_entity)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_entity_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_entity_frontend)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fbase-entity?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-entity)
 
 ## Introduction
@@ -102,13 +102,18 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
 
 ### 3. Extend the data service
 
-Pick `BaseEntityRestService` for an HTTP backend or `BaseEntityFirestoreService` for Firestore. Pass the mapper, a configuration key that resolves to the backend root URL, and the resource path.
+Pick `BaseEntityRestService` for an HTTP backend or `BaseEntityFirestoreService` for Firestore. Pass the mapper, a configuration key that resolves to the root URL, and the resource path.
+
+The key is a `BaseConfiguration` property name, resolved through `serviceRootOf`. Use
+`BACKEND_SERVICE_ROOT` for a resource served by the platform's own backend — or the optional
+per-feature root of the owning feature, which falls back to it. Use `THIRD_PARTY_ROOT` for a
+third-party source, as the example below does: `test-entity` is one of the json-server resources.
 
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class TestEntityService extends BaseEntityRestService<TestEntity> {
   constructor(protected override entityMapper: TestEntityMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'test-entity');
+    super(entityMapper, 'THIRD_PARTY_ROOT', 'test-entity');
   }
 }
 ```

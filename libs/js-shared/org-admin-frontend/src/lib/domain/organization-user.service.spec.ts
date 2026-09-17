@@ -130,10 +130,10 @@ describe('OrganizationUserService', () => {
     expect(invited.roles).toEqual(['org-member']);
   });
 
-  // ORG_ADMIN_SERVICE_ROOT is optional by contract; `serviceRootOf` falls back to APP_SERVICE_ROOT,
+  // ORG_ADMIN_SERVICE_ROOT is optional by contract; `serviceRootOf` falls back to BACKEND_SERVICE_ROOT,
   // which is the only root this workspace's deployments actually configure today.
-  it('falls back to APP_SERVICE_ROOT when no org-admin root is configured', () => {
-    const { service: fallbackService, controller: fallbackController } = configure({ APP_SERVICE_ROOT: serviceRoot });
+  it('falls back to BACKEND_SERVICE_ROOT when no org-admin root is configured', () => {
+    const { service: fallbackService, controller: fallbackController } = configure({ BACKEND_SERVICE_ROOT: serviceRoot });
 
     fallbackService.delete('kc-1').subscribe();
 

@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 import com.processpuzzle.core.tenancy.KnownRealms;
 import org.assertj.core.api.InstanceOfAssertFactories;

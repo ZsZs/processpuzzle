@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 import com.processpuzzle.core.exception.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +37,8 @@ import java.io.IOException;
  * therefore reclassifies it into a {@code BearerTokenError} carrying {@code SERVICE_UNAVAILABLE}, which
  * comes back through here as a body a client can read and retry on.
  *
- * <p>Registered in <em>two</em> places by {@link SecurityConfig}, which is the part worth knowing:
+ * <p>Registered in <em>two</em> places by the deploying application's {@code SecurityConfig}, which
+ * is the part worth knowing:
  * {@code exceptionHandling()} covers the {@code ExceptionTranslationFilter} path — no credential for a
  * protected path, or an authenticated caller without the authority — while
  * {@code oauth2ResourceServer()} keeps its <em>own</em> entry point for tokens it rejects while
@@ -58,7 +59,7 @@ import java.io.IOException;
  * answer 403, and that request must read as access-denied even though it arrived through the
  * authentication path.
  */
-class ApiSecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
+public class ApiSecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
     static final String AUTHENTICATION_REQUIRED = "security.authentication-required";
     static final String ACCESS_DENIED = "security.access-denied";
@@ -73,7 +74,7 @@ class ApiSecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedH
      *             {@code ObjectMapper} bean, and this body has to look like the ones the message
      *             converters write.
      */
-    ApiSecurityErrorHandler(ObjectMapper json) {
+    public ApiSecurityErrorHandler(ObjectMapper json) {
         this.json = json;
     }
 

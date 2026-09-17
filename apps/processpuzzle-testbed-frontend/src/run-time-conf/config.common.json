@@ -2,11 +2,9 @@
   "BASE_CONFIGURATION": {
     "BACKEND_SERVICE_PROVIDER": "rest",
     "DEPLOYMENT_ENVIRONMENT": "docker",
-    "BACKEND_SERVICE_ROOT": "http://localhost:3000",
+    "BACKEND_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
+    "THIRD_PARTY_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
-    "APP_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
-    "DOCUMENT_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
-    "RULE_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "FIREBASE_CONFIGURATION": {},
     "APPLICATION_VERSION": "1.4.0"
   },
@@ -42,7 +40,12 @@
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",
-    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070"
+    "AUTHENTICATION_SERVICE_ROOT": "http://localhost:7070",
+    "AUTH_SERVICE_CONFIG": {
+      "realm": "processpuzzle-testbed",
+      "clientId": "processpuzzle-testbed",
+      "authServerUrl": "http://localhost:7070"
+    }
   },
   "LOGGING_CONFIGURATION": {
     "level": "info",

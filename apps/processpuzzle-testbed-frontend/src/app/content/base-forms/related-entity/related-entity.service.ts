@@ -7,6 +7,6 @@ import { RelatedEntity } from './related-entity';
 @Injectable({ providedIn: 'root' })
 export class RelatedEntityService extends BaseEntityRestService<RelatedEntity> {
   constructor(protected override entityMapper: RelatedEntityMapper) {
-    super(entityMapper, 'BACKEND_SERVICE_ROOT', 'related-entity');
+    super(entityMapper, 'THIRD_PARTY_ROOT', 'related-entity');
   }
 }

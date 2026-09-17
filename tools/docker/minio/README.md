@@ -16,7 +16,7 @@ minio/
 
 | Resource | Value |
 |---|---|
-| Buckets | `<stack-prefix>-<purpose>` for each of the two stacks — 16 in all; see below |
+| Buckets | `<stack-prefix>-<purpose>` for the three defined storage namespaces — 24 in all; see below |
 | Bucket policy | Private (authenticated only) |
 | Admin user | `minioadmin` / `minioadmin` |
 | Service account | `springboot` / `springboot123` |
@@ -27,7 +27,7 @@ One MinIO serves every application stack, and the **bucket prefix is the whole i
 them** — see [`docs/application-stacks.md`](../../../docs/application-stacks.md). A bucket is named
 `<stack-prefix>-<purpose>`, e.g. `processpuzzle-admin-documents`.
 
-- **prefixes**: `processpuzzle-testbed`, `processpuzzle-admin` — each backend's `MINIO_BUCKET_PREFIX`.
+- **prefixes**: `processpuzzle-testbed`, `processpuzzle-admin`, `processpuzzle-custom` — each backend's `MINIO_BUCKET_PREFIX`. Biz storage is intentionally undecided.
 - **purposes**: `configuration`, `text`, `images`, `documents`, `audio`, `video`, `archives`, `logs` —
   `minio.buckets` in `libs/java-shared/processpuzzle-store/src/main/resources/minio-config.yaml`.
 

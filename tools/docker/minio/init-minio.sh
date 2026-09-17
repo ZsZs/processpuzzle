@@ -1,6 +1,20 @@
 #!/bin/sh
 set -e
 
+# -- Required credentials, checked before anything starts ----------------------
+# Deliberately up here rather than inline at the `mc admin user add` call below, which runs after
+# the server is already up: a missing secret should fail before the first byte is written, not
+# half-way through initialization. The service account is created once, so a fallback's failure
+# mode is a MinIO user called springboot/springboot123 on a host reachable from the internet. The
+# compose files no longer default these either, so this is the last layer that could turn a
+# forgotten deployment secret into a plausible wrong value.
+#
+# MINIO_SERVICE_USER deliberately keeps its default: it is a name, not a credential, and every
+# backend's MINIO_ACCESS_KEY agrees with it.
+: "${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}"
+: "${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}"
+: "${MINIO_SERVICE_PASSWORD:?MINIO_SERVICE_PASSWORD must be set; the Spring Boot service account is created on first start and its password becomes each backend MINIO_SECRET_KEY}"
+
 # ── Configuration ──────────────────────────────────────────────────────────────
 MINIO_ALIAS="local"
 MINIO_ENDPOINT="http://localhost:9000"
@@ -14,10 +28,10 @@ MINIO_ENDPOINT="http://localhost:9000"
 # because UploadObject asks CreateBucket for whatever bucket it needs and MinIO makes it on the
 # spot. So the list here is a convenience — a console with the expected buckets already in it — and
 # not a precondition. Adding a purpose to minio-config.yaml without adding it here is not a bug.
-# Both stacks, though only the testbed's application is built in this repository: the prefixes are
-# shared infrastructure, and the private admin backend writes under the second one. See
-# docs/platform-admin-extraction.md.
-STACK_PREFIXES="processpuzzle-testbed processpuzzle-admin"
+# The fixed Testbed and Admin prefixes, plus the shared Custom namespace. Customer backends use the
+# Custom prefix and are isolated by their authenticated organization key. Biz storage remains
+# intentionally undecided because it has no durable domain data.
+STACK_PREFIXES="processpuzzle-testbed processpuzzle-admin processpuzzle-custom"
 PURPOSES="configuration text images documents audio video archives logs"
 
 BUCKETS=""
@@ -60,7 +74,7 @@ done
 echo "Creating Spring Boot service account..."
 mc admin user add "${MINIO_ALIAS}" \
   "${MINIO_SERVICE_USER:-springboot}" \
-  "${MINIO_SERVICE_PASSWORD:-springboot123}" 2>/dev/null || \
+  "${MINIO_SERVICE_PASSWORD}" 2>/dev/null || \
   echo "Service account already exists, skipping."
 
 # Attach readwrite policy to service account

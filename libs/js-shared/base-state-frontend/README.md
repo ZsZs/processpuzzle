@@ -63,7 +63,7 @@ generic screens address it unchanged.
 
 | `BaseConfiguration` key | Meaning                                                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `STATE_SERVICE_ROOT`    | `<host>/organizations/<orgKey>` the state machine endpoints hang off. Optional — falls back to `APP_SERVICE_ROOT`. |
+| `STATE_SERVICE_ROOT`    | `<host>/organizations/<orgKey>` the state machine endpoints hang off. Optional — falls back to `BACKEND_SERVICE_ROOT`. |
 
 # State Machine Modeler
 ## Visual overview of the layers

@@ -1,5 +1,6 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

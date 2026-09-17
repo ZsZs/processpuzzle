@@ -31,19 +31,9 @@ describe('ObjectStoreService', () => {
       controller.verify();
     });
 
-    it('falls back to BACKEND_SERVICE_ROOT when OBJECT_STORE_SERVICE_ROOT is missing', () => {
-      TestBed.resetTestingModule();
-      const backendRoot = 'http://localhost:4200/services/backend/api/v1';
-      setup({ BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: backendRoot } });
-
-      service.deleteObjectByID('bucket', 'oid').subscribe();
-      const request = controller.expectOne(`${backendRoot}/objects/bucket/oid`);
-      expect(request.request.url).toBe(`${backendRoot}/objects/bucket/oid`);
-      request.flush(null);
-      controller.verify();
-    });
-
-    it('falls back to an empty base url when neither root is configured', () => {
+    // There is deliberately no fallback to BACKEND_SERVICE_ROOT: it is org-scoped and the object
+    // endpoints are not, so a fallback would produce `…/organizations/<org>/objects/…`.
+    it('falls back to an empty base url when OBJECT_STORE_SERVICE_ROOT is not configured', () => {
       TestBed.resetTestingModule();
       setup({ BASE_CONFIGURATION: {} });
 

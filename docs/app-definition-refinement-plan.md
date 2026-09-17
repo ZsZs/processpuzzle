@@ -132,6 +132,14 @@ rather than one commit, because the infrastructure split changes `util`'s depend
   (`scope:base-widget` / `type:domain`). The three dependents' peer ranges were pointing at
   versions that will never exist under the new name (`^0.3.1`, `^0.8.0`, `^0.8.3`) and are now
   `^0.9.1`, the carried-over version.
+
+  > **Reverted on 2026-09-17, npm name only.** The package is published as
+  > `@processpuzzle/widgets` again; the `base-widget-frontend` directory, Nx project name, tags and
+  > Sonar key from 2a stay as they are. Reason: the lib holds the transloco loader and error
+  > snackbar alongside the widget registry — the concern the split note below already raises — so
+  > `widgets` is the truer name, and keeping it means the 0.9.1 already on npm stays the same
+  > package rather than becoming an abandoned one. The three dependents' ranges now point at
+  > `@processpuzzle/widgets@^0.9.1`, which exists.
 - **2b — registry move.** `widget-registry/` (token + `widget-instance.ts`) moved from
   `base-entity-frontend` to `base-widget-frontend`; `base-document-frontend` gained the
   `@processpuzzle/base-widget` peer dep. `base-entity-frontend` now has **no** widget
