@@ -2,8 +2,11 @@
 // Per-lib JS/TS release orchestration.
 //
 // Subcommands:
-//   prepare --project <nx-project> --increment <major|minor|patch>
+//   prepare --project <nx-project> --increment <major|minor|patch> [--dry-run]
 //   order
+//
+// --dry-run keeps every check (branch, clean tree, production build) and prints the version
+// bump plus the dependents it would retarget, but writes nothing and runs no git/gh command.
 //
 // prepare flow (mirrors tools/scripts/release-java-lib.mjs):
 //   1. Assert on develop, clean tree
@@ -68,17 +71,24 @@ function capture(cmd, args) {
   return execFileSync(cmd, args, { shell: needsShell(cmd), encoding: 'utf8' }).trim();
 }
 
-function assertCleanTree() {
+// A dry run writes nothing, so a failing precondition is reported rather than fatal — that
+// way the checks below can be exercised from a tree that still holds work in progress.
+function assertOrWarn(dryRun, message) {
+  if (!dryRun) throw new Error(message);
+  console.warn(`[dry-run] WOULD FAIL: ${message}`);
+}
+
+function assertCleanTree(dryRun = false) {
   const status = capture('git', ['status', '--porcelain']);
   if (status) {
-    throw new Error(`Working tree is not clean:\n${status}`);
+    assertOrWarn(dryRun, `Working tree is not clean:\n${status}`);
   }
 }
 
-function assertOnBranch(branch) {
+function assertOnBranch(branch, dryRun = false) {
   const current = capture('git', ['branch', '--show-current']);
   if (current !== branch) {
-    throw new Error(`Expected to be on branch '${branch}', but on '${current}'`);
+    assertOrWarn(dryRun, `Expected to be on branch '${branch}', but on '${current}'`);
   }
 }
 
@@ -128,8 +138,9 @@ function projectPath(project) {
 const RANGE_KEYS = ['dependencies', 'peerDependencies'];
 
 // Rewrites every dependent's range on `packageName` to ^newVersion. Returns the paths of the
-// manifests it changed, so the caller can `git add` them.
-function retargetDependents(packageName, newVersion, selfPath) {
+// manifests it changed, so the caller can `git add` them. With dryRun the rewrites are only
+// reported, never written.
+function retargetDependents(packageName, newVersion, selfPath, dryRun = false) {
   const changed = [];
   for (const [dependent, path] of PROJECTS) {
     if (path === selfPath) continue;
@@ -143,7 +154,7 @@ function retargetDependents(packageName, newVersion, selfPath) {
       touched = true;
     }
     if (touched) {
-      writePackageJson(path, pkg);
+      if (!dryRun) writePackageJson(path, pkg);
       changed.push(`${path}/package.json`);
     }
   }
@@ -208,10 +219,10 @@ function order() {
   }
 }
 
-function prepare(project, increment) {
+function prepare(project, increment, dryRun = false) {
   const path = projectPath(project);
-  assertOnBranch('develop');
-  assertCleanTree();
+  assertOnBranch('develop', dryRun);
+  assertCleanTree(dryRun);
 
   const pkg = readPackageJson(path);
   const current = pkg.version;
@@ -224,36 +235,55 @@ function prepare(project, increment) {
   const newVersion = bumpVersion(current, increment);
   const branch = `release/${project}/${newVersion}`;
 
-  console.log(`\n>>> Releasing ${project}: ${current} -> ${newVersion} (${increment})\n`);
+  const tag = dryRun ? '[dry-run] ' : '';
+  console.log(
+    `\n>>> ${tag}Releasing ${project}: ${current} -> ${newVersion} (${increment})\n`,
+  );
 
   console.log('Pre-release safety check: building the target lib in production config...');
   run(NPX, ['nx', 'run', `${project}:build`, '--configuration=production']);
 
-  run('git', ['checkout', '-b', branch]);
+  const prBody =
+    `Release **${project}** at **${newVersion}** (${increment} bump).\n\n` +
+    `The npm publish workflow triggers on push to \`${branch}\`. ` +
+    `Merge this PR after publish succeeds.`;
+
+  if (!dryRun) run('git', ['checkout', '-b', branch]);
   pkg.version = newVersion;
-  writePackageJson(path, pkg);
+  if (!dryRun) writePackageJson(path, pkg);
 
   console.log(`Retargeting dependents' ranges on ${pkg.name}...`);
-  const dependents = retargetDependents(pkg.name, newVersion, path);
+  const dependents = retargetDependents(pkg.name, newVersion, path, dryRun);
   if (!dependents.length) {
     console.log('  (none)');
   }
 
   // The target's own package.json is always in the commit, so the release workflows'
   // `paths:` filter still matches.
-  run('git', ['add', `${path}/package.json`, ...dependents]);
-  run('git', ['commit', '-m', `release(${project}): bump version.`]);
-  run('git', ['push', '-u', 'origin', branch]);
-  run(GH, [
-    'pr', 'create',
-    '--base', 'develop',
-    '--head', branch,
-    '--title', `release(${project}): ${newVersion}`,
-    '--body',
-    `Release **${project}** at **${newVersion}** (${increment} bump).\n\n` +
-      `The npm publish workflow triggers on push to \`${branch}\`. ` +
-      `Merge this PR after publish succeeds.`,
-  ]);
+  const commands = [
+    ['git', ['checkout', '-b', branch]],
+    ['git', ['add', `${path}/package.json`, ...dependents]],
+    ['git', ['commit', '-m', `release(${project}): bump version.`]],
+    ['git', ['push', '-u', 'origin', branch]],
+    [GH, ['pr', 'create',
+      '--base', 'develop',
+      '--head', branch,
+      '--title', `release(${project}): ${newVersion}`,
+      '--body', prBody,
+    ]],
+  ];
+
+  if (dryRun) {
+    console.log(`\n[dry-run] Nothing was written. Would have run:`);
+    for (const [cmd, args] of commands) console.log(`  $ ${cmd} ${args.join(' ')}`);
+    console.log(
+      `\n[dry-run] ${project} ${current} -> ${newVersion} looks releasable ` +
+        `(${dependents.length} dependent manifest(s) retargeted).`,
+    );
+    return;
+  }
+
+  for (const [cmd, args] of commands.slice(1)) run(cmd, args);
 
   console.log(`\nBranch pushed, PR opened. Watch the release workflow, then merge the PR.`);
 }
@@ -261,7 +291,7 @@ function prepare(project, increment) {
 function usage() {
   return (
     `Usage:\n` +
-    `  node tools/scripts/release-js-lib.mjs prepare --project <name> --increment <major|minor|patch>\n` +
+    `  node tools/scripts/release-js-lib.mjs prepare --project <name> --increment <major|minor|patch> [--dry-run]\n` +
     `  node tools/scripts/release-js-lib.mjs order\n\n` +
     `Known projects:\n  ${[...PROJECTS.keys()].join('\n  ')}\n`
   );
@@ -292,6 +322,7 @@ function main() {
       options: {
         project: { type: 'string', short: 'p' },
         increment: { type: 'string', short: 'i' },
+        'dry-run': { type: 'boolean', short: 'n' },
       },
     }));
   } catch (err) {
@@ -316,7 +347,7 @@ function main() {
     process.exit(2);
   }
 
-  prepare(values.project, values.increment);
+  prepare(values.project, values.increment, values['dry-run'] ?? false);
 }
 
 try {
