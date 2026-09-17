@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 /** Shared constants used by security components. */
 public final class SecurityConstants {

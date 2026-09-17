@@ -1,5 +1,6 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

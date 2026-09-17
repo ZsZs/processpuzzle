@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

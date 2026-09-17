@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -38,7 +38,7 @@ public class RealmRoleConverter implements Converter<Jwt, AbstractAuthentication
     }
 
     /** The realm roles a token carries, as authorities. Empty when the claim is absent or malformed. */
-    static Collection<GrantedAuthority> authoritiesOf(Jwt jwt) {
+    public static Collection<GrantedAuthority> authoritiesOf(Jwt jwt) {
         Set<GrantedAuthority> authorities = new LinkedHashSet<>();
         for (String role : rolesOf(jwt)) {
             authorities.add(new SimpleGrantedAuthority(role));
