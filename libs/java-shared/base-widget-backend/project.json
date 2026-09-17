@@ -24,6 +24,7 @@
       }
     },
     "test": {
+      "outputs": ["{projectRoot}/reports/coverage"],
       "executor": "nx:run-commands",
       "dependsOn": ["^build"],
       "options": {
