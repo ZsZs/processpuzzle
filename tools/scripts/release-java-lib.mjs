@@ -39,8 +39,13 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
+const IS_WINDOWS = process.platform === 'win32';
+
 const MVN = process.env.MVN ?? 'mvn';
 const GH = process.env.GH ?? 'gh';
+// npx is npx.cmd on Windows, and execFileSync needs the extension: a bare `npx` is not an
+// executable file there, so it fails with ENOENT before the shell ever gets a chance.
+const NPX = process.env.NPX ?? (IS_WINDOWS ? 'npx.cmd' : 'npx');
 
 const JAVA_LIBS_DIR = 'libs/java-shared';
 const CENTRAL_BASE = 'https://repo1.maven.org/maven2';
@@ -70,7 +75,6 @@ const INCREMENTS = new Set(['major', 'minor', 'patch']);
 
 // See [[node-spawn-cmd-windows]] memory: .cmd/.bat on Windows need shell:true
 // (CVE-2024-27980) but shell:true mangles args for .exe callees. Predicate per callee.
-const IS_WINDOWS = process.platform === 'win32';
 function needsShell(cmd) {
   return IS_WINDOWS && (cmd === MVN || /\.(cmd|bat)$/i.test(cmd));
 }
@@ -389,7 +393,7 @@ function preflightBuild(project) {
   if (project === 'processpuzzle-parent') {
     run(MVN, ['-N', 'validate']);
   } else {
-    run(process.env.NPX ?? 'npx', ['nx', 'run', `${project}:build`]);
+    run(NPX, ['nx', 'run', `${project}:build`]);
   }
 }
 
