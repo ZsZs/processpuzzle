@@ -1,5 +1,6 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.workflow.execution.usecases.outbound.RoleMembershipPort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

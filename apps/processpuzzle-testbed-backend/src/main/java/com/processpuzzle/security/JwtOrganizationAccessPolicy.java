@@ -1,5 +1,6 @@
 package com.processpuzzle.security;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import org.springframework.stereotype.Component;

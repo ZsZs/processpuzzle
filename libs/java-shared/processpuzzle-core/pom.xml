@@ -66,6 +66,33 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- The resource-server mechanism in com.processpuzzle.core.security.
+
+             OPTIONAL, and this is the single most load-bearing word in this pom. Every feature
+             library depends on this artifact, so a normal-scope starter here lands Spring Security
+             on the compile classpath of every application that uses any of them. Boot's
+             SecurityAutoConfiguration is not component-scan dependent: its mere presence would
+             close applications that never asked for it behind generated-password HTTP Basic.
+             processpuzzle-biz-backend is the concrete case — it reaches this artifact transitively
+             through platform-admin-backend and has no security of its own, so a non-optional
+             dependency here would put its public sign-up funnel behind a login prompt.
+
+             Optional keeps the invariant the old apps/processpuzzle-testbed-backend package-info
+             stated as its reason to live in an application: a library consumer gets Spring Security
+             only by declaring the starter itself. An application that declares it and scans
+             com.processpuzzle gets the mechanism; one that does not is untouched, because these
+             classes are then simply absent from its classpath. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- RSQL query language for RsqlSpecificationBuilder -->
         <dependency>
             <groupId>cz.jirutka.rsql</groupId>

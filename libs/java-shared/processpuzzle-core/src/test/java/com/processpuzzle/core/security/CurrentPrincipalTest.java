@@ -1,4 +1,4 @@
-package com.processpuzzle.security;
+package com.processpuzzle.core.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
