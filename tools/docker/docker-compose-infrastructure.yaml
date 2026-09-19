@@ -235,6 +235,12 @@ services:
       ADMIN_CLIENT_REDIRECT_URIS: ${ADMIN_CLIENT_REDIRECT_URIS:-}
       BIZ_CLIENT_ROOT_URL: ${BIZ_CLIENT_ROOT_URL:-}
       BIZ_CLIENT_REDIRECT_URIS: ${BIZ_CLIENT_REDIRECT_URIS:-}
+      # The customer application's client, in the shared `processpuzzle-custom` realm. Reconciled
+      # for the same reason as the two above -- a realm import is skipped for a realm that already
+      # exists -- plus one of its own: platform-admin's activation mail names this client, so a
+      # Keycloak without it fails every customer's seed at PROVISIONING_IDENTITY.
+      CUSTOM_CLIENT_ROOT_URL: ${CUSTOM_CLIENT_ROOT_URL:-}
+      CUSTOM_CLIENT_REDIRECT_URIS: ${CUSTOM_CLIENT_REDIRECT_URIS:-}
     networks:
       - processpuzzle
     restart: "no"
