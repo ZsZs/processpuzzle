@@ -9,5 +9,4 @@
 `@processpuzzle/base-app-frontend` is the front-end building block of the ProcessPuzzle application shell. It provides the Angular shell (workspace layout, navigation, dockable panels, task surfaces) that hosts the other ProcessPuzzle Low-Code building blocks. The library complements the [`base-app-backend`](../../java-shared/base-app-backend/README.md) Spring Boot module that exposes application-level services such as user workspace and preferences.
 
 ## Status
-
 This library is currently a scaffold. The public API will grow as the application shell takes shape.

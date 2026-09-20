@@ -56,15 +56,8 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        # NPM_CONFIG_LOGLEVEL surfaces npm's OIDC token-exchange request, which is the only way to
-        # tell an unattempted exchange (npm too old) from a rejected one (publisher claim mismatch).
-        # Remove both the diagnostics and this env once trusted publishing is confirmed working.
-        env:
-          NPM_CONFIG_LOGLEVEL: verbose
         run: |
           npm install -g npm@latest
-          echo "node=$(node -v) npm=$(npm -v) which=$(which npm)"
-          echo "OIDC request url set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}${ACTIONS_ID_TOKEN_REQUEST_URL:-NO}"
           npx nx release publish --projects=test-util --access public --no-cloud
 
       - name: Create a Release
