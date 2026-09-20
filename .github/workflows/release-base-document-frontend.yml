@@ -58,6 +58,25 @@ jobs:
           git config --global user.email "zsolt.zsuffa@gmail.com"
           git config --global user.name "Zsolt Zsuffa"
 
+      # TEMPORARY — remove once the first publish of @processpuzzle/base-document succeeds.
+      # npm answers 404 both for "token not authorized for this name" and for "no token at
+      # all", so the publish error alone cannot tell the two apart. Prints no secret values:
+      # only the token's length, the .npmrc with values redacted, and what the token can see.
+      - name: Diagnose npm auth
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "NODE_AUTH_TOKEN length: ${#NODE_AUTH_TOKEN}"
+          userconfig=$(npm config get userconfig)
+          echo "--- $userconfig (values redacted) ---"
+          sed 's/=.*/=<redacted>/' "$userconfig" 2>/dev/null || echo "(no such file)"
+          echo "--- npm whoami ---"
+          npm whoami || echo "whoami FAILED"
+          echo "--- npm access list packages ---"
+          npm access list packages 2>&1 | head -40 || true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish packages
         shell: bash
         run: npx nx release publish --projects=base-document-frontend --access public --no-cloud
