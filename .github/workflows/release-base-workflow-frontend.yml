@@ -30,6 +30,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24.x
+          registry-url: https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Sets the base and head SHAs for the nx affected commands in CI
         uses: nrwl/nx-set-shas@v4
@@ -56,9 +60,10 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: |
-          npm install -g npm@latest
-          npx nx release publish --projects=base-workflow-frontend --access public --no-cloud
+        run: npx nx release publish --projects=base-workflow-frontend --access public --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Create a Release
         uses: elgohr/Github-Release-Action@v5
