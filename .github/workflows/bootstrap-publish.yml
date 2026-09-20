@@ -1,0 +1,75 @@
+name: Bootstrap-Publish
+# One-off, manually dispatched publish for a package that has NEVER been on npm.
+#
+# npm Trusted Publishing (which every Release-* workflow uses) is configured per
+# package on the package's own settings page on npmjs.com, so it cannot be set up
+# for a name that does not exist yet — see https://github.com/npm/cli/issues/8544.
+# The OIDC exchange then yields no credential and npm reports
+# "This command requires you to be logged in to https://registry.npmjs.org/".
+#
+# The way out is the standard bootstrap: publish the first version with a token,
+# register the trusted publisher on the now-existing package, revoke the token.
+# This workflow covers step one. It refuses to run against a package that already
+# exists, so it can never become a token-based back door around OIDC.
+on:
+  workflow_dispatch:
+    inputs:
+      nx_project:
+        description: Nx project to bootstrap
+        required: true
+        type: choice
+        options:
+          - base-app-frontend
+          - base-document-frontend
+          - base-state-frontend
+          - base-workflow-frontend
+          - org-admin-frontend
+permissions:
+  # id-token is for the provenance attestation, not for publish auth: with
+  # NPM_CONFIG_PROVENANCE set, npm needs it even on a token-authenticated publish.
+  id-token: write
+  contents: read
+jobs:
+  bootstrap-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org/
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            package-lock.json
+
+      - name: Install JavaScript dependencies
+        shell: bash
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Build the library
+        shell: bash
+        run: npm run build-${{ inputs.nx_project }}
+
+      - name: Refuse to bootstrap an already published package
+        shell: bash
+        run: |
+          package_name=$(node -p "require('./libs/js-shared/${{ inputs.nx_project }}/package.json').name")
+          echo "npm package: $package_name"
+          if npm view "$package_name" version > /dev/null 2>&1; then
+            echo "::error::$package_name already exists on npm — publish it through its Release-* workflow (trusted publishing) instead."
+            exit 1
+          fi
+
+      - name: Publish package
+        shell: bash
+        run: |
+          npm install -g npm@latest
+          npx nx release publish --projects=${{ inputs.nx_project }} --access public --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

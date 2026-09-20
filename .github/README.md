@@ -117,12 +117,19 @@ Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / 
 
 **Authentication is [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — there is no npm token.** The job's `id-token: write` permission lets the runner mint an OIDC token that npm exchanges for a short-lived publish credential, and provenance attestations are generated automatically (no `--provenance` flag, no `NPM_CONFIG_PROVENANCE`). This replaces `secrets.NPM_TOKEN`, whose expiry produced `Not Found - PUT .../@processpuzzle%2f<pkg>` in [run 35201527570](https://github.com/ZsZs/processpuzzle/actions/runs/35201527570).
 
-Three things this requires, all already in place:
+Three things this requires:
 - **A trusted publisher registered per package** on npmjs.com (*Settings → Trusted Publisher → GitHub Actions*): org `ZsZs`, repo `processpuzzle`, workflow filename `release-<project>.yml`, environment blank, with direct `npm publish` opted in. The one exception is `@processpuzzle/testbed`, whose job runs in the `PROD` GitHub environment — its publisher must name `PROD` in the environment field. A publisher connection cannot be edited after creation — delete and recreate it. This is also why each library keeps its own top-level workflow file: npm validates the *calling* workflow's filename, so folding these into one reusable workflow would break the match.
 - **npm CLI ≥ 11.5.1**, installed explicitly by the publish step rather than taken from whatever Node 24.x bundles.
 - **`repository.url` in the package's `package.json` matching this repo exactly** — npm rejects the publish otherwise.
 
-The `Install Node` step deliberately omits `registry-url`: `actions/setup-node` would otherwise write an `.npmrc` containing a `_authToken` placeholder, and a configured (dead or empty) token takes precedence over OIDC.
+The `Install Node` step deliberately omits `registry-url`: `actions/setup-node` would otherwise write an `.npmrc` containing a `_authToken` placeholder, and a configured (dead or empty) token takes precedence over OIDC. A corollary: `secrets.NPM_TOKEN` is *not* read by any `Release-*` workflow, so renewing it has no effect on a failing publish.
+
+### Bootstrapping a package that has never been published
+A trusted publisher is registered on a package's own settings page, which only exists once the package does — so the first publish of a new name cannot use OIDC ([npm/cli#8544](https://github.com/npm/cli/issues/8544)). It fails with the same `This command requires you to be logged in` as a missing publisher registration; the two are indistinguishable from the log.
+
+[`bootstrap-publish.yml`](workflows/bootstrap-publish.yml) covers that first publish: dispatch it manually with the Nx project name and it publishes with `secrets.NPM_TOKEN`, refusing to run if the package already exists. Then register the trusted publisher per the table below and revoke the token — every later release goes through OIDC.
+
+Still unpublished, and therefore still needing this: `@processpuzzle/base-app`, `@processpuzzle/base-document`, `@processpuzzle/base-state`, `@processpuzzle/base-workflow`, `@processpuzzle/org-admin`.
 
 Note that npm package names do not track Nx project names, so the registration is per the table below rather than per `--projects=`:
 
