@@ -113,7 +113,35 @@ Runs in `release-processpuzzle-testbed-frontend.yml` against the deployed PROD e
 Both Dockerfiles only `COPY dist/…`, so **Coolify cannot build these images** — a resource pointed at either one fails on the missing `dist/`. They must be deployed from the registry, which is what this pair exists to fill.
 
 ### NPM Publish
-Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / NX_HEAD, runs `lint-test-build`, then publishes with `npx nx release publish --projects=<project> --access public --no-cloud` (with `NPM_CONFIG_PROVENANCE: true`). The testbed `Release-*` workflow does the same plus copies `package.json`/`README.md` into the dist folder and strips `environment.ts` before publishing.
+Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / NX_HEAD, runs `lint-test-build`, then publishes with `npx nx release publish --projects=<project> --access public --no-cloud`. The testbed `Release-*` workflow does the same plus copies `package.json`/`README.md` into the dist folder and strips `environment.ts` before publishing.
+
+**Authentication is [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — there is no npm token.** The job's `id-token: write` permission lets the runner mint an OIDC token that npm exchanges for a short-lived publish credential, and provenance attestations are generated automatically (no `--provenance` flag, no `NPM_CONFIG_PROVENANCE`). This replaces `secrets.NPM_TOKEN`, whose expiry produced `Not Found - PUT .../@processpuzzle%2f<pkg>` in [run 35201527570](https://github.com/ZsZs/processpuzzle/actions/runs/35201527570).
+
+Three things this requires, all already in place:
+- **A trusted publisher registered per package** on npmjs.com (*Settings → Trusted Publisher → GitHub Actions*): org `ZsZs`, repo `processpuzzle`, workflow filename `release-<project>.yml`, environment blank, with direct `npm publish` opted in. The one exception is `@processpuzzle/testbed`, whose job runs in the `PROD` GitHub environment — its publisher must name `PROD` in the environment field. A publisher connection cannot be edited after creation — delete and recreate it. This is also why each library keeps its own top-level workflow file: npm validates the *calling* workflow's filename, so folding these into one reusable workflow would break the match.
+- **npm CLI ≥ 11.5.1**, installed explicitly by the publish step rather than taken from whatever Node 24.x bundles.
+- **`repository.url` in the package's `package.json` matching this repo exactly** — npm rejects the publish otherwise.
+
+The `Install Node` step deliberately omits `registry-url`: `actions/setup-node` would otherwise write an `.npmrc` containing a `_authToken` placeholder, and a configured (dead or empty) token takes precedence over OIDC.
+
+Note that npm package names do not track Nx project names, so the registration is per the table below rather than per `--projects=`:
+
+| npm package | Workflow filename | Environment |
+| --- | --- | --- |
+| `@processpuzzle/auth` | `release-auth.yml` | *(blank)* |
+| `@processpuzzle/base-app` | `release-base-app-frontend.yml` | *(blank)* |
+| `@processpuzzle/base-document` | `release-base-document-frontend.yml` | *(blank)* |
+| `@processpuzzle/base-entity` | `release-base-entity-frontend.yml` | *(blank)* |
+| `@processpuzzle/base-rule` | `release-base-rule-frontend.yml` | *(blank)* |
+| `@processpuzzle/base-state` | `release-base-state-frontend.yml` | *(blank)* |
+| `@processpuzzle/base-workflow` | `release-base-workflow-frontend.yml` | *(blank)* |
+| `@processpuzzle/design` | `release-design.yml` | *(blank)* |
+| `@processpuzzle/e2e-testing` | `release-e2e-testing.yml` | *(blank)* |
+| `@processpuzzle/org-admin` | `release-org-admin-frontend.yml` | *(blank)* |
+| `@processpuzzle/test-util` | `release-test-util.yml` | *(blank)* |
+| `@processpuzzle/testbed` | `release-processpuzzle-testbed-frontend.yml` | `PROD` |
+| `@processpuzzle/util` | `release-util.yml` | *(blank)* |
+| `@processpuzzle/widgets` | `release-base-widget-frontend.yml` | *(blank)* |
 
 ### Maven Central Publish
 For `api-contracts` the [`release-java`](actions/release-java/action.yml) action signs artifacts with the imported GPG key and deploys them to Maven Central using the Sonatype credentials.
@@ -128,7 +156,6 @@ Every release workflow finishes by creating a tag and release via `elgohr/Github
 | `GITHUB_TOKEN` | Automatic — checkout, releases, Sonar callback |
 | `SONAR_TOKEN` | SonarCloud scan |
 | `FIREBASE_TOKEN` | Injected as `FIREBASE_API_KEY` into the generated env file. Still required: the testbed container’s entrypoint fails fast on an unset one, and the Firebase-Auth / Firestore adapters read it when an application chooses them |
-| `NPM_TOKEN` | npm publish (`NODE_AUTH_TOKEN`) |
 | `CENTRAL_TOKEN_USERNAME`, `CENTRAL_TOKEN_PASSWORD` | Maven Central deploy |
 | `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE` | Signing Maven artifacts |
 
