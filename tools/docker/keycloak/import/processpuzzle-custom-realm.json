@@ -8,6 +8,77 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
+  "verifyEmail": true,
   "bruteForceProtected": true,
-  "organizationsEnabled": true
+  "organizationsEnabled": true,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "browserSecurityHeaders": {
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093; object-src 'none';",
+    "xFrameOptions": ""
+  },
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@processpuzzle.com",
+    "fromDisplayName": "ProcessPuzzle",
+    "replyTo": "support@processpuzzle.com",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "org-admin",
+        "description": "May administer this organization's users and roles."
+      },
+      {
+        "name": "org-member",
+        "description": "Member of this organization."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "processpuzzle-custom",
+      "name": "ProcessPuzzle Custom",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:9093",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:9093/*",
+        "http://localhost:4203/*"
+      ],
+      "webOrigins": [
+        "http://localhost:9093",
+        "http://localhost:4203"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:9093/*",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email",
+        "organization"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ]
 }

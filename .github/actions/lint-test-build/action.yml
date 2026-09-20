@@ -83,5 +83,7 @@ runs:
       uses: actions/upload-artifact@v5
       with:
         name: test-coverage-report-${{ github.sha }}
-        path: ${{inputs.base_dir}}/reports/coverage/lcov-report
+        # The whole directory, not the istanbul-only lcov-report/ subdirectory: java
+        # projects have jacoco's index.html + jacoco.xml here and no such subdirectory.
+        path: ${{inputs.base_dir}}/reports/coverage
         retention-days: 30

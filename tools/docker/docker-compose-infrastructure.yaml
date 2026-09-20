@@ -235,9 +235,54 @@ services:
       ADMIN_CLIENT_REDIRECT_URIS: ${ADMIN_CLIENT_REDIRECT_URIS:-}
       BIZ_CLIENT_ROOT_URL: ${BIZ_CLIENT_ROOT_URL:-}
       BIZ_CLIENT_REDIRECT_URIS: ${BIZ_CLIENT_REDIRECT_URIS:-}
+      # The customer application's client, in the shared `processpuzzle-custom` realm. Reconciled
+      # for the same reason as the two above -- a realm import is skipped for a realm that already
+      # exists -- plus one of its own: platform-admin's activation mail names this client, so a
+      # Keycloak without it fails every customer's seed at PROVISIONING_IDENTITY.
+      CUSTOM_CLIENT_ROOT_URL: ${CUSTOM_CLIENT_ROOT_URL:-}
+      CUSTOM_CLIENT_REDIRECT_URIS: ${CUSTOM_CLIENT_REDIRECT_URIS:-}
     networks:
       - processpuzzle
     restart: "no"
+
+  mailpit:
+    # The local SMTP sink, and the reason the `processpuzzle-custom` realm can send at all.
+    #
+    # Keycloak's execute-actions-email flow is what activates a new customer's account: the seed
+    # job creates the org-admin user and asks Keycloak to mail them the one-time link that verifies
+    # their address and sets their first password. That call fails outright if the realm's
+    # `smtpServer` names a host nothing answers on -- so without this container every local sign-up
+    # ends with the seed job FAILED at PROVISIONING_IDENTITY, which reads as a broken seed rather
+    # than as a missing mail server.
+    #
+    # A sink rather than a relay, deliberately. A local or CI stack must not be able to send real
+    # mail to a real address by accident, and the funnel's test data is full of plausible ones.
+    # Read what was "sent" at the console on PP_MAILPIT_UI_PUBLISH.
+    #
+    # Pinned rather than `latest`, per docs/build-deploy-strategy.md §2. Not built: the upstream
+    # image needs nothing added.
+    image: axllent/mailpit:${PP_MAILPIT_VERSION:-v1.21}
+    container_name: processpuzzle-mailpit
+    ports:
+      - "${PP_MAILPIT_UI_PUBLISH:-8025:8025}"      # Web console
+      - "${PP_MAILPIT_SMTP_PUBLISH:-1025:1025}"    # SMTP
+    environment:
+      MP_MAX_MESSAGES: ${MP_MAX_MESSAGES:-500}
+      # No authentication and no TLS: it is reachable only on this network, and the realm import
+      # is configured to match (`auth: false`, `starttls: false`). Turning either on here without
+      # changing the realm makes Keycloak fail to send with a message about the handshake rather
+      # than about the credential.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "/mailpit", "readyz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   minio:
     pull_policy: always

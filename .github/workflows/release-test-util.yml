@@ -30,10 +30,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24.x
-          registry-url: https://registry.npmjs.org/
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
 
       - name: Sets the base and head SHAs for the nx affected commands in CI
         uses: nrwl/nx-set-shas@v4
@@ -60,10 +56,16 @@ jobs:
 
       - name: Publish packages
         shell: bash
-        run: npx nx release publish --projects=test-util --access public --no-cloud
+        # NPM_CONFIG_LOGLEVEL surfaces npm's OIDC token-exchange request, which is the only way to
+        # tell an unattempted exchange (npm too old) from a rejected one (publisher claim mismatch).
+        # Remove both the diagnostics and this env once trusted publishing is confirmed working.
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_LOGLEVEL: verbose
+        run: |
+          npm install -g npm@latest
+          echo "node=$(node -v) npm=$(npm -v) which=$(which npm)"
+          echo "OIDC request url set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}${ACTIONS_ID_TOKEN_REQUEST_URL:-NO}"
+          npx nx release publish --projects=test-util --access public --no-cloud
 
       - name: Create a Release
         uses: elgohr/Github-Release-Action@v5

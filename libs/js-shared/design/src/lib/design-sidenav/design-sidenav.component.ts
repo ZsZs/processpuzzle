@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { MatListItem, MatNavList } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
-import { LayoutService } from '@processpuzzle/util';
+import { DESIGN_ROUTE_PREFIX, LayoutService } from '@processpuzzle/util';
 import { NgClass } from '@angular/common';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { DESIGN_ROUTES } from '../design.routes';
@@ -16,7 +16,7 @@ import { DESIGN_ROUTES } from '../design.routes';
       <ng-container *transloco="let t">
         <mat-nav-list>
           @for (item of routes; track item) {
-            <mat-list-item [routerLink]="'/design/' + item.path" [ngClass]="layoutService.layoutClass()">
+            <mat-list-item [routerLink]="prefix + '/design/' + item.path" [ngClass]="layoutService.layoutClass()">
               <span matListItemIcon class="material-symbols-outlined">{{ item.data?.['icon'] }}</span>
               <div matListItemTitle>&nbsp;{{ t(item.data?.['menuTitle']) }}</div>
             </mat-list-item>
@@ -29,6 +29,11 @@ import { DESIGN_ROUTES } from '../design.routes';
 })
 export class DesignSidenavComponent {
   readonly layoutService = inject(LayoutService);
+  /**
+   * `''` unless the hosting application mounts the designer under a path — see
+   * {@link DESIGN_ROUTE_PREFIX}.
+   */
+  readonly prefix = inject(DESIGN_ROUTE_PREFIX);
   /**
    * The sections of the designer: the top-level routes that declare a `menuTitle`, which is what this list
    * renders. Filtering on that rather than on `title` — as this did — says what the filter means: a route's

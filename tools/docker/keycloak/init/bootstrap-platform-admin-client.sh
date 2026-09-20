@@ -51,6 +51,8 @@ ADMIN_CLIENT_ROOT_URL="${ADMIN_CLIENT_ROOT_URL:-http://localhost:9091}"
 ADMIN_CLIENT_REDIRECT_URIS="${ADMIN_CLIENT_REDIRECT_URIS:-http://localhost:9091/*,http://localhost:4201/*}"
 BIZ_CLIENT_ROOT_URL="${BIZ_CLIENT_ROOT_URL:-http://localhost:9092}"
 BIZ_CLIENT_REDIRECT_URIS="${BIZ_CLIENT_REDIRECT_URIS:-http://localhost:9092/*,http://localhost:4202/*}"
+CUSTOM_CLIENT_ROOT_URL="${CUSTOM_CLIENT_ROOT_URL:-http://localhost:9093}"
+CUSTOM_CLIENT_REDIRECT_URIS="${CUSTOM_CLIENT_REDIRECT_URIS:-http://localhost:9093/*,http://localhost:4203/*}"
 # Overridable so the argument construction below can be exercised against a stub; a container
 # never sets it.
 KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
@@ -181,6 +183,27 @@ ensure_public_client \
   'ProcessPuzzle Biz' \
   "${BIZ_CLIENT_ROOT_URL}" \
   "${BIZ_CLIENT_REDIRECT_URIS}"
+
+# The customer application's client, in the realm every customer shares.
+#
+# Reconciled here for the reason the two above are, and with one extra consequence. A realm import
+# is skipped for a realm that already exists, so on any Keycloak that has run before, the
+# `processpuzzle-custom` client described in processpuzzle-custom-realm.json was never created --
+# and platform-admin's sendActivationEmail passes `client_id=processpuzzle-custom` to
+# execute-actions-email. Keycloak refuses an unknown client, so a customer's seed job fails at
+# PROVISIONING_IDENTITY on a Keycloak that looks perfectly healthy, and the customer is never told
+# their account exists.
+#
+# The redirect URIs matter as much as the client. Keycloak validates the `redirect_uri` on an
+# execute-actions-email against this list and drops one that does not match -- leaving the customer
+# on Keycloak's own "your account is updated" page instead of in their application. These have to
+# stay in step with platform-admin.customer.redirect-uri-template in processpuzzle-biz-backend.
+ensure_public_client \
+  processpuzzle-custom \
+  processpuzzle-custom \
+  'ProcessPuzzle Custom' \
+  "${CUSTOM_CLIENT_ROOT_URL}" \
+  "${CUSTOM_CLIENT_REDIRECT_URIS}"
 
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"

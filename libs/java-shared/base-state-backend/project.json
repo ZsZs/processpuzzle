@@ -24,6 +24,7 @@
       }
     },
     "test": {
+      "outputs": ["{projectRoot}/reports/coverage"],
       "executor": "nx:run-commands",
       "options": {
         "command": "mvn -pl libs/java-shared/base-state-backend -am test"

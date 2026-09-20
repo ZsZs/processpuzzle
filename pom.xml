@@ -325,6 +325,14 @@
               <goals>
                 <goal>report</goal>
               </goals>
+              <!-- Workspace convention: reports live in {projectRoot}/reports/coverage,
+                   the same place the vitest projects write theirs. Without this, jacoco
+                   defaults to ${project.reporting.outputDirectory}/jacoco. Every Java
+                   sonar-project.properties points sonar.coverage.jacoco.xmlReportPaths
+                   here — the property's default no longer matches. -->
+              <configuration>
+                <outputDirectory>${project.basedir}/reports/coverage</outputDirectory>
+              </configuration>
             </execution>
           </executions>
         </plugin>
