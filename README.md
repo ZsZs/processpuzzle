@@ -122,8 +122,14 @@ use in `allowedDependencies` and exposes only what it means to — `base-rule`, 
 `rule :: usecase` (`EvaluateObject` and the result types) and `rule :: domain` (`Severity` alone), keeping its
 repository and rule engine internal. `ProcessPuzzleBackendApplication` in `com.processpuzzle` is the Modulith
 root; `ModularityTests` in each library and in the application verify the declarations at build time, so a
-reach into another feature's internals fails the build rather than review. `/actuator/modulith` serves the
-same structure at run-time.
+reach into another feature's internals fails the build rather than review.
+
+That verification is **build-time only**. The testbed backend used to serve the same structure from
+`/actuator/modulith`, which meant recomputing it with ArchUnit over every class in the fat jar at each
+startup — 45–50s of CPU per boot, and a retained class graph that made this backend run 45–75% fatter than
+its siblings. It was removed on 2026-09-21 after the stage host ran out of memory; see
+[the runbook](/docs/stage-deployment-runbook.md) §7.6. `ModularityTests` still fails the build on a
+violation, which is the check that was doing the work.
 
 ### Event-driven feature integration
 Workflow automation only feels coherent if a data change, a rule verdict, a state transition and a workflow

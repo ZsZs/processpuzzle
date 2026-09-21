@@ -38,8 +38,13 @@ management:
   endpoints:
     web:
       base-path: /actuator
+      # `modulith` was removed here on 2026-09-21 along with the two runtime Spring Modulith
+      # artifacts in pom.xml — serving the module structure at run time meant computing it at every
+      # startup with ArchUnit, which cost 45-50s of CPU per boot and kept the resulting class graph
+      # resident. ModularityTests verifies the same structure at build time. See the pom for the
+      # full reasoning.
       exposure:
-        include: health,info,metrics,modulith
+        include: health,info,metrics
   endpoint:
     health:
       probes:
