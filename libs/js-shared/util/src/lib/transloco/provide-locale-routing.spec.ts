@@ -42,6 +42,10 @@ describe('provideLocaleRouting', () => {
         provideRouter([
           { path: 'home', component: BlankComponent },
           { path: 'orders', component: BlankComponent },
+          // The application's own root redirect, reproduced because the bare origin is the URL most
+          // visitors arrive on and it is the one case where the locale is applied to a URL the user
+          // never typed.
+          { path: '', pathMatch: 'full', redirectTo: 'home' },
         ]),
         provideLocationMocks(),
         { provide: TranslocoService, useValue: transloco },
@@ -64,6 +68,27 @@ describe('provideLocaleRouting', () => {
     await router.navigateByUrl('/home');
 
     expect(location.path()).toBe('/en/home');
+  });
+
+  it('sends the bare origin to the default language, so `localhost:4200/` lands on `/en/home`.', async () => {
+    // What a visitor typing the host with no path gets. The redirect resolves to `/home` and the
+    // serializer prefixes the active language on the way to the address bar, so the origin has one
+    // canonical landing URL rather than a prefix-free `/home` that only gains `/en` on the next click.
+    await router.navigateByUrl('/');
+
+    expect(location.path()).toBe('/en/home');
+  });
+
+  it('applies the locale to the bare origin without stranding the user on a history entry.', async () => {
+    await router.navigateByUrl('/orders');
+    await router.navigateByUrl('/');
+
+    // `/` is gone from history rather than sitting behind `/en/home`: Angular replaces the URL when a
+    // route redirects, so Back reaches the previous page instead of `/`, which would only redirect
+    // forward again and trap the user.
+    await location.back();
+
+    expect(location.path()).toBe('/en/orders');
   });
 
   it('resolves a deep link that names a language, and keeps its prefix.', async () => {
