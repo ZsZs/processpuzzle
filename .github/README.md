@@ -115,21 +115,18 @@ Both Dockerfiles only `COPY dist/…`, so **Coolify cannot build these images** 
 ### NPM Publish
 Each JS library's `Release-*` workflow uses `nrwl/nx-set-shas` to set NX_BASE / NX_HEAD, runs `lint-test-build`, then publishes with `npx nx release publish --projects=<project> --access public --no-cloud`. The testbed `Release-*` workflow does the same plus copies `package.json`/`README.md` into the dist folder and strips `environment.ts` before publishing.
 
-**Authentication is [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) for packages that already exist on npm, and `secrets.NPM_TOKEN` for the five that do not yet.** Under OIDC the job's `id-token: write` permission lets the runner mint a token that npm exchanges for a short-lived publish credential, and provenance attestations are generated automatically (no `--provenance` flag, no `NPM_CONFIG_PROVENANCE`).
+**Authentication is [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) for packages that already exist on npm, and `secrets.NPM_TOKEN` for the two that do not yet.** Under OIDC the job's `id-token: write` permission lets the runner mint a token that npm exchanges for a short-lived publish credential, and provenance attestations are generated automatically (no `--provenance` flag, no `NPM_CONFIG_PROVENANCE`).
 
 A trusted publisher is registered on a package's own settings page on npmjs.com, and that page only exists once the package does — so **the first publish of a new name cannot use OIDC** ([npm/cli#8544](https://github.com/npm/cli/issues/8544)). It fails with `This command requires you to be logged in`, the same message a missing publisher registration produces; the two are indistinguishable from the log.
 
-These five therefore keep the token form — `registry-url` on `setup-node` plus `NODE_AUTH_TOKEN` / `NPM_CONFIG_PROVENANCE` on both that step and the publish step:
+These two therefore keep the token form — `registry-url` on `setup-node` plus `NODE_AUTH_TOKEN` / `NPM_CONFIG_PROVENANCE` on both that step and the publish step:
 
 | npm package | Workflow |
 | --- | --- |
 | `@processpuzzle/base-app` | `release-base-app-frontend.yml` |
-| `@processpuzzle/base-document` | `release-base-document-frontend.yml` |
-| `@processpuzzle/base-state` | `release-base-state-frontend.yml` |
 | `@processpuzzle/base-workflow` | `release-base-workflow-frontend.yml` |
-| `@processpuzzle/org-admin` | `release-org-admin-frontend.yml` |
 
-Once one of them has published successfully, register its trusted publisher per the table at the end of this section and switch its workflow to the OIDC form — drop `registry-url` and both `env:` blocks, and add `npm install -g npm@latest` to the publish step. Keeping `NPM_TOKEN` alive costs nothing until the last of the five has moved over.
+Once one of them has published successfully, register its trusted publisher per the table at the end of this section and switch its workflow to the OIDC form — drop `registry-url` and both `env:` blocks, and add `npm install -g npm@latest` to the publish step. Keeping `NPM_TOKEN` alive costs nothing until the last of the two has moved over.
 
 The OIDC form requires three things:
 - **A trusted publisher registered per package** on npmjs.com (*Settings → Trusted Publisher → GitHub Actions*): org `ZsZs`, repo `processpuzzle`, workflow filename `release-<project>.yml`, environment blank, with direct `npm publish` opted in. The one exception is `@processpuzzle/testbed`, whose job runs in the `PROD` GitHub environment — its publisher must name `PROD` in the environment field. A publisher connection cannot be edited after creation — delete and recreate it. This is also why each library keeps its own top-level workflow file: npm validates the *calling* workflow's filename, so folding these into one reusable workflow would break the match.
