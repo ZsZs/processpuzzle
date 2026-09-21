@@ -125,10 +125,6 @@ function baseUrlOfTabRoute(currentUrl: string, tabSegment: string | undefined): 
   return tabIndex < 3 ? '' : segments.slice(0, tabIndex - 2).join('/');
 }
 
-function normalizeUrl(url: string): string {
-  return url.startsWith('/') ? url : '/' + url;
-}
-
 function lastKeyOf(target: Map<string, NavigationPayload>): string | undefined {
   let last: string | undefined;
   for (const key of target.keys()) last = key;
@@ -249,13 +245,36 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       return Reflect.get(route, '_routerState').snapshot.url;
     }
 
+    /**
+     * Whether `navigationEnd` is the navigation this store asked for.
+     *
+     * Compared as parsed trees rather than as strings, because the two sides are written in different URL
+     * spaces. This store builds its targets from the router *configuration* — `EntityRouteRegistry` walks
+     * `router.config` — which carries no decoration. Angular reports `NavigationEnd.url` through the
+     * application's `UrlSerializer`, which an application may have replaced with one that adds some:
+     * `provideLocaleRouting` prefixes the active language, so every reported URL reads `/en/…`.
+     *
+     * String-comparing those never matches, and the miss is silent rather than loud — the caller reads a
+     * `false` as "some navigation I did not initiate" and clears the payload stacks. That is what breaks a
+     * select round-trip: the form navigates to the target's list, the payload carrying *which control
+     * asked* is dropped on the way, and picking a row returns to a form with nothing selected.
+     *
+     * `router.parseUrl` runs the application's serializer, undoing whatever it added, and
+     * `UrlTree.toString()` re-serializes with Angular's default — so both sides land in one canonical,
+     * undecorated form and this store never has to know which serializer is installed.
+     */
     function isPendingNavigatorUrl(navigationEnd: NavigationEnd): boolean {
       if (!pendingNavigatorUrl) {
         return false;
       }
 
-      const normalizedPendingUrl = normalizeUrl(pendingNavigatorUrl);
-      return [navigationEnd.url, navigationEnd.urlAfterRedirects].some((url) => normalizeUrl(url) === normalizedPendingUrl);
+      const canonicalPendingUrl = canonicalUrl(pendingNavigatorUrl);
+      return [navigationEnd.url, navigationEnd.urlAfterRedirects].some((url) => canonicalUrl(url) === canonicalPendingUrl);
+    }
+
+    /** The URL as the router itself reads it, stripped of anything the application's serializer adds. */
+    function canonicalUrl(url: string): string {
+      return router.parseUrl(url).toString();
     }
 
     function initializeNavigationTracking(): void {
