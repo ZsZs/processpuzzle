@@ -4,7 +4,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_util&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_util)
 [![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Futil?style=flat)](https://www.npmjs.com/package/@processpuzzle/util)
 
-General-purpose utilities used across ProcessPuzzle Angular applications: small data structures, a runtime configuration loader, a central error handler, a logging provider, a layout service and a few helpers.
+General-purpose utilities used across ProcessPuzzle Angular applications: small data structures, a runtime configuration loader, a central error handler, a logging provider, a layout service, locale-aware routing and a few helpers.
 
 ## Installation
 
@@ -25,6 +25,9 @@ npm install @processpuzzle/util
 | `RUNTIME_CONFIGURATION` | injection token | Provides the merged runtime configuration. |
 | `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` | injection tokens | Configuration hooks. |
 | `BaseConfiguration`, `FirebaseConfig` | types | Shared configuration shapes. |
+| `provideLocaleRouting` | provider | Puts the active language in the URL (`/hu/base-entity`). |
+| `LocaleUrlSerializer` | Angular service | The `UrlSerializer` behind it; parses and emits the locale prefix. |
+| `splitLocaleFromUrl`, `withLocale` / `LocalizedUrl` | functions / type | Take the locale prefix off a URL and put it back. |
 | `provideLoggingService` / `LoggingConfiguration` | provider | Configures `ngx-logging-kit`. |
 | `provideCentralErrorHandler`, `CentralErrorHandler` | provider / class | Global Angular `ErrorHandler`. |
 | `centralHttpErrorInterceptor` | HTTP interceptor | Forwards HTTP errors to the central handler. |
@@ -119,6 +122,40 @@ The loaded value is then exposed to the rest of the app through the `RUNTIME_CON
 `BaseConfiguration` describes the minimum shape every application's configuration must satisfy (pipeline stage, backend provider, backend / object-store URLs and Firebase config). Extend it in your own `RuntimeConfiguration` type.
 
 The other tokens — `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` — are reserved for downstream libraries that wire configuration into their own bootstrap hooks.
+
+## Language in the URL
+
+`provideLocaleRouting()` makes the active language part of every URL — `/hu/base-entity` rather than `/base-entity` — so a page has one address per language and a shared link reproduces the sender's.
+
+It exists to complete a country-domain redirect. The edge sends `*.processpuzzle.hu/foo` to `*.processpuzzle.com/hu/foo` (see `tools/docker/processpuzzle-testbed-frontend/nginx.conf`); without this provider the prefix would fall into the index.html rewrite and the application would come up in its default language — a `.com` URL that says `hu` and renders English.
+
+```typescript
+providers: [
+  provideRouter(appRoutes, withComponentInputBinding()),
+  provideTranslocoService(runtimeConfiguration.LANGUAGE_CONFIGURATION),
+  provideLocaleRouting(), // after provideRouter — it overrides UrlSerializer
+];
+```
+
+**Order is load-bearing.** `provideRouter` binds `UrlSerializer` to `DefaultUrlSerializer`; the later provider wins, so moving this line above it turns the feature off without any error.
+
+### What it does
+
+| Direction | Mechanism |
+| --- | --- |
+| URL → language | `LocaleUrlSerializer.parse` strips a leading segment matching one of transloco's `availableLangs` and makes it the active language, at the *start* of the navigation so the incoming route's first render is already translated. |
+| language → URL | An app initializer watches `langChanges$` and rewrites the address bar with `Location.replaceState` — a language switch is not a navigation, so it adds no history entry. |
+
+Nothing above the serializer sees the prefix. Route configs, `routerLink`s and `router.navigate` calls keep using prefix-free paths, which is what lets base-app's run-time route builder work unchanged — there is no single route array a `:lang` parameter could have wrapped.
+
+### Consequences worth knowing
+
+- **The default language is prefixed too** (`/en/home`). Leaving it bare would make a page's canonical URL depend on which language it is in.
+- **Old, unprefixed URLs still resolve.** `parse` leaves a URL naming no language alone; it simply gains a prefix the next time the router writes the address bar.
+- **A top-level route must not be named after a language code.** `splitLocaleFromUrl` matches on membership in `availableLangs`, so a literal `/de` route would be swallowed. The platform's own top-level paths are words (`base-entity`, `design`, `ci-cd`), so this is avoidable rather than merely unlikely.
+- **OIDC redirect URIs gain the prefix**, because `KeycloakAuthService` builds them from `document.baseURI` plus the current route. The testbed realm registers `http://localhost:4200/*` and friends, whose `/*` already covers it; a client registered with exact paths would need updating.
+
+`splitLocaleFromUrl` and `withLocale` are exported for callers that need the same string surgery outside the router.
 
 ## Logging
 

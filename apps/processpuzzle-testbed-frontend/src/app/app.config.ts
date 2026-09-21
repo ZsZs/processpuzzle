@@ -7,6 +7,7 @@ import {
   LayoutService,
   provideCentralErrorHandler,
   provideErrorSnackbar,
+  provideLocaleRouting,
   provideLoggingService,
   provideTranslocoService,
   RUNTIME_CONFIGURATION,
@@ -161,6 +162,13 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideNativeDateAdapter(),
       provideShareButtonsOptions(shareIcons()),
       provideTranslocoService(runtimeConfiguration.LANGUAGE_CONFIGURATION),
+      // Puts the active language in the URL — `/hu/base-entity` — which is what makes the country-domain
+      // redirect in `tools/docker/processpuzzle-testbed-frontend/nginx.conf` mean something: without it
+      // `testbed.processpuzzle.hu/x` would land on a `.com` URL that says `hu` and renders English.
+      //
+      // MUST stay after `provideRouter`, which binds `UrlSerializer` to `DefaultUrlSerializer`; the later
+      // provider wins, so moving this line up turns the feature off silently.
+      provideLocaleRouting(),
       LayoutService,
       provideMarkdown({
         loader: HttpClient,

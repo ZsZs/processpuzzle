@@ -3,6 +3,7 @@ import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { buttonTestId, listCancelButtonTestId, listSelectButtonTestId, toTestId } from '../selectors/selector.builder';
 import { identificationAttr } from '../data/test-data-factory';
 import { entityIdFromDetailUrl, RouteResolver } from '../routing/route.resolver';
+import { waitForScreen } from './screen-ready';
 import { exactText } from '../selectors/text-match';
 
 export class EntityListPO {
@@ -17,6 +18,8 @@ export class EntityListPO {
   async navigateTo() {
     await this.page.goto(this.routes.listRoute(this.descriptor));
     await this.page.waitForURL(/\/list$/);
+    // Same hazard as the details form's, and the same reason — see {@link waitForScreen}.
+    await waitForScreen(this.page, 'base-list');
   }
 
   async clickNew() {
