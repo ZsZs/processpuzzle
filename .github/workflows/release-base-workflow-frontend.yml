@@ -26,6 +26,10 @@ jobs:
         with:
           path: libs/js-shared/base-workflow-frontend
 
+      # Token form, not OIDC: @processpuzzle/base-workflow does not exist on npm yet, and a
+      # trusted publisher can only be registered on an existing package's settings page
+      # (npm/cli#8544). `registry-url` is what writes the .npmrc NODE_AUTH_TOKEN lands in.
+      # Switch to the OIDC form (see release-util.yml) once the first publish succeeds.
       - name: Install Node
         uses: actions/setup-node@v5
         with:
