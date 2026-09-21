@@ -315,7 +315,8 @@ Two you can **omit**, because their compose defaults are already right:
 
 ## 5. Keycloak admin console on stage
 
-Two edits, both in the `processpuzzle-testbed` realm.
+Two edits in the `processpuzzle-testbed` realm, plus the same security-defenses edit in every other
+realm a browser frames — see [§5.3](#53-the-other-realms-need-the-same-security-defenses-edit).
 
 ### 5.1 Valid redirect URIs
 
@@ -365,6 +366,41 @@ Both values are in
 but `--import-realm` **skips a realm that already exists** — so the committed file only reaches a
 realm created after this change. The import file matters for a fresh environment; the console matters
 for the one already running.
+
+### 5.3 The other realms need the same security-defenses edit
+
+§5.2 is not a testbed peculiarity. Every realm that a browser puts in an `<iframe>` needs its own
+`frame-ancestors`, because the directive is served per realm — and Keycloak's default names only
+`'self'`, which is never the frontend's origin once Keycloak sits on `auth.` and the application does
+not.
+
+| Realm | Framed by | Content-Security-Policy |
+|---|---|---|
+| `processpuzzle-biz` | `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9092 https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
+| `processpuzzle-admin` | `processpuzzle-admin-frontend`, **and** `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9091 http://localhost:4201 http://localhost:9092 https://admin.stage.processpuzzle.de https://admin.processpuzzle.com https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
+
+X-Frame-Options *empty* in both, for the reason §5.2 gives.
+
+`processpuzzle-admin` carries the Biz origins as well as its own because it is Biz's
+`FALLBACK_AUTH_REALM`: the public site's landing pages, the sign-up funnel and every reserved path
+name no tenant, so they authenticate against `processpuzzle-admin` rather than against a per-tenant
+realm. A reader who assumes the admin realm is only ever framed by the admin console removes those
+three origins and breaks the public site, which is why they are listed here rather than left to
+inference.
+
+`processpuzzle-admin-realm.json` had **no `browserSecurityHeaders` block at all** until this change,
+so it ran on the Keycloak default and failed on stage the moment anything framed it. That failure is
+the one in §5.2 verbatim — `frame-ancestors 'self'` with no origin after it, then `Timeout when
+waiting for 3rd party check iframe message` — and it is worth knowing that the *bare* form of the
+message means a realm with no override or a realm that does not exist, while a form that lists
+origins means a realm whose override simply omits yours.
+
+`processpuzzle-custom` is not in the table: its `frame-ancestors` names `http://localhost:9093` and
+customer hostnames are per-deployment, so it is edited when a customer is provisioned rather than
+here.
+
+The §5.2 caveat applies to all of them: `--import-realm` skips an existing realm, so these committed
+values reach a fresh environment only. Every realm already running on stage needs the console edit.
 
 ---
 
@@ -440,7 +476,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy` | the message names the symptom only; read the container's exit code and log before anything else — usually the database password no longer matches the `postgres_data` volume, while `postgres` still reports healthy because `pg_isready` does not authenticate. See [§7.4](#74-dependency-failed-to-start-container-keycloak--is-unhealthy) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows `net::ERR_FAILED` and HTTP status **0** on API calls, with no CORS message | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS`, so the *preflight* is rejected with 403 `Invalid CORS request` — confirm with the `OPTIONS` check in [§6](#after-4-applications) |
-| `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the realm's CSP does not name the frontend's origin, so `Keycloak.init()` rejects and authentication never initialises — see [§5.2](#52-security-defenses) |
+| `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the browser could not frame the realm, so `Keycloak.init()` rejects and authentication never initialises. Read the directive the message quotes: if it **lists origins** and yours is missing, it is the realm's CSP — see [§5.2](#52-security-defenses) and [§5.3](#53-the-other-realms-need-the-same-security-defenses-edit). If it is the **bare** `frame-ancestors 'self'`, the realm has no override *or the realm does not exist* — Keycloak serves realm-not-found under the global headers, so a wrongly-resolved realm name reports as a CSP violation rather than as a 404. A `404` on `3p-cookies/step1.html` beside the violation distinguishes the second |
 | **500** on *every* resource, `relation "base_…" does not exist` | the `postgres_data` volume was replaced, and the backend has not restarted since — Hibernate owns the schema (`ddl-auto: update`) and only creates it at startup, so an empty database stays empty under a running backend. Restart the backend; allow ~7 min. A Keycloak realm that has silently reverted to the committed import file is the tell that the volume, not just one database, is new |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
 | **500** on every authenticated request | `PROCESSPUZZLE_SECURITY_JWKS_BASE_URL` was set to the public URL; it must stay `http://keycloak:8080` |
