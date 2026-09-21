@@ -35,6 +35,9 @@ Add the `LanguageSelector` component to your application:
 | `selectedLanguage` | `string` | The current active language code. This value indicates which language is selected by default. |
 Example Language Configuration:
 
+### Interaction with the URL
+The selector itself only calls `TranslocoService.setActiveLang`. In an application that also registers `provideLocaleRouting()` from `@processpuzzle/util`, that call additionally rewrites the address bar — `/en/base-entity` becomes `/hu/base-entity` — because the locale prefix is derived from the active language rather than from a route parameter. The switch replaces the current history entry instead of pushing one, so Back still leaves the page rather than merely undoing the language. Nothing has to be wired here for that to work, and nothing breaks in an application that does not register the provider.
+
 ## Like Button Component
 The **LikeButton** (`pp-like-button`) is an icon button that lets users "like" content and displays the current like count. The count is persisted through the `ApplicationPropertyStore` (a `likes` application property), and backend errors are surfaced via a snackbar.
 
