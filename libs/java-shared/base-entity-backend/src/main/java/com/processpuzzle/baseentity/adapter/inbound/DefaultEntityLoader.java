@@ -12,6 +12,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.EntityObjectInput;
@@ -27,7 +28,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Seeds the bundled default entity definitions and sample entity instances on startup, so a fresh
@@ -41,6 +45,13 @@ import java.util.Map;
  *
  * <p><strong>Existing data is never touched.</strong> A definition whose code is already present is
  * left untouched, and sample instances are not created if instances for that definition already exist.
+ *
+ * <p>The second half of that sentence was a promise this class did not keep until 2026-09-21: the
+ * definition guard was implemented and the instance guard was not, so every restart appended another
+ * full set of sample instances. On the stage host, which was restarting in an OOM loop, that had
+ * grown the seeded rows to 856 — see {@code GovernedStateConsistencyCheck}, which reads all of them
+ * at every boot. {@code EntityObjectRepository.existsByEntityDefinitionCode} had been declared for
+ * this and never wired up.
  *
  * <p>Nothing here can fail startup: every problem is logged and the next file, definition, or instance
  * is attempted.
@@ -57,6 +68,7 @@ public class DefaultEntityLoader {
     private final EntityDefinitionRepository definitionRepository;
     private final EntityDefinitionMapper definitionMapper;
     private final CreateEntityInstanceUseCase createInstanceUseCase;
+    private final EntityObjectRepository objectRepository;
     private final ResourcePatternResolver resourceResolver;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -66,11 +78,13 @@ public class DefaultEntityLoader {
                                EntityDefinitionRepository definitionRepository,
                                EntityDefinitionMapper definitionMapper,
                                CreateEntityInstanceUseCase createInstanceUseCase,
+                               EntityObjectRepository objectRepository,
                                ResourcePatternResolver resourceResolver) {
         this.createDefinitionUseCase = createDefinitionUseCase;
         this.definitionRepository = definitionRepository;
         this.definitionMapper = definitionMapper;
         this.createInstanceUseCase = createInstanceUseCase;
+        this.objectRepository = objectRepository;
         this.resourceResolver = resourceResolver;
     }
 
@@ -125,9 +139,16 @@ public class DefaultEntityLoader {
             definitionTally.add(createDefinition(definition, fileName));
         }
 
+        // SNAPSHOT BEFORE THE LOOP, and that ordering is the whole correctness of this guard. Asking
+        // the repository per instance would answer "no" for the first 'order' and "yes" for the three
+        // that follow it, so a fresh database would seed one of each rather than all of them.
+        Set<String> alreadySeeded = definitionsWithInstances(document);
+        alreadySeeded.forEach(code -> LOG.info(
+                "Default entity instances for definition '{}' already exist; left untouched.", code));
+
         Tally instanceTally = new Tally();
         for (EntityObjectInput entity : document.entities()) {
-            instanceTally.add(createInstance(orgKey, entity, fileName));
+            instanceTally.add(createInstance(orgKey, entity, fileName, alreadySeeded));
         }
 
         LOG.info("Loaded default entities from {} into organization '{}': definitions (created={}, already present={}, rejected={}), instances (created={}, already present={}, rejected={})",
@@ -172,10 +193,15 @@ public class DefaultEntityLoader {
      *               would carry, so a seeded instance's {@code EntityObjectCreatedEvent} is
      *               indistinguishable from one created over REST and its state machine starts too
      */
-    private Outcome createInstance(String orgKey, EntityObjectInput input, String fileName) {
+    private Outcome createInstance(String orgKey, EntityObjectInput input, String fileName,
+                                   Set<String> alreadySeeded) {
         if (input == null || isBlank(input.getEntityDefinitionCode()) || input.getPayload() == null) {
             LOG.warn("Skipping an entity instance in {}: missing entityDefinitionCode or payload.", fileName);
             return Outcome.REJECTED;
+        }
+
+        if (alreadySeeded.contains(input.getEntityDefinitionCode())) {
+            return Outcome.SKIPPED;
         }
 
         try {
@@ -198,6 +224,29 @@ public class DefaultEntityLoader {
                     input.getEntityDefinitionCode(), fileName, e);
             return Outcome.REJECTED;
         }
+    }
+
+    /**
+     * The definition codes in {@code document} that already have at least one instance, read in a
+     * single pass before anything is created.
+     *
+     * <p>Per DEFINITION rather than per instance, because an instance carries no natural key: the
+     * seed file gives a payload and nothing else, so there is no way to ask "is this particular row
+     * already here". "Has this definition been seeded at all" is the question that can be answered,
+     * and it is the one that matters — the alternative was asking nothing, which is what this method
+     * exists to fix.
+     *
+     * <p>Codes are global: {@code CreateEntityDefinition} rejects a duplicate code outright, so a
+     * code identifies one definition across every organization and the org-agnostic repository
+     * lookup is exact rather than approximate.
+     */
+    private Set<String> definitionsWithInstances(DefaultEntitiesDocument document) {
+        return document.entities().stream()
+                .filter(entity -> entity != null && !isBlank(entity.getEntityDefinitionCode()))
+                .map(EntityObjectInput::getEntityDefinitionCode)
+                .distinct()
+                .filter(objectRepository::existsByEntityDefinitionCode)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static String orgKeyOf(String fileName) {

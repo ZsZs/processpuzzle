@@ -151,6 +151,19 @@ Neither `pgweb` nor `json-server` gets a domain. `pgweb` is an unauthenticated d
 and must never be routed publicly; `json-server` is only reached in-network by the frontend's
 nginx. Both stay on their loopback publishes (`8082`, `3000`).
 
+Since 2026-09-21 `pgweb` also carries `profiles: [ "tools" ]`, so a bare `docker compose up` — which
+is what Coolify runs — no longer starts it at all. That is deliberate: an unauthenticated view of the
+testbed database has no reason to be up permanently, and it was one of the two processes whose
+allocations invoked the OOM killer (§7.6). Start it only when you need it, and stop it afterwards:
+
+```bash
+docker compose --profile tools -f tools/docker/docker-compose-infrastructure.yaml up -d pgweb
+docker rm -f processpuzzle-pgweb
+```
+
+Deploying this change does **not** remove an already-running `pgweb`; compose no longer considers it
+part of the project. Remove that container by hand, once.
+
 ### Confirm the network before moving on
 
 ```bash
@@ -742,6 +755,69 @@ docker exec <minio container>    printenv | grep MINIO_ROOT
 Either should echo your value; if it echoes a sentence, the variable is missing from the resource. The
 same reading also catches the `${VAR:-<ci default>}` cases, which fail even more quietly — MinIO
 announcing `Detected default credentials 'minioadmin:minioadmin'` is the only warning any of them give.
+
+### 7.6 A container is OOM-killed, and the symptom looks like runaway CPU
+
+`docker logs <id>` shows the application starting over and over with no shutdown message and no
+exception — just `Starting ProcessPuzzleTestbedBackendApplication … with PID 1` two or three times
+within a few minutes. CPU sits pegged. This is not a loop in the application: each boot costs 45–50s
+of near-saturated CPU, and `restart: unless-stopped` has no backoff, so a container being killed every
+few minutes never stops paying that cost.
+
+Confirm it is memory, and confirm **which kind**:
+
+```bash
+docker inspect <container> --format '{{.RestartCount}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}}'
+dmesg -T | grep -i -E 'oom|killed process' | tail
+free -h
+```
+
+The distinction that matters is in the dmesg line:
+
+- `constraint=CONSTRAINT_NONE … global_oom` — **the host** ran out. No cgroup limit was exceeded; the
+  kernel scanned every process and killed the largest resident one. The container named in
+  `task_memcg=` is the victim, not the cause — read which process *invoked* the killer, at the start
+  of the same block. Capping only the victim just nominates the next-largest process.
+- `constraint=CONSTRAINT_MEMCG` with `oom=true` on the container — that service genuinely exceeded its
+  own `mem_limit`. Raise the limit, or lower the JVM's `MaxRAMPercentage` inside it.
+
+#### The host memory budget
+
+This is a 3.8 GiB box with **no swap**, and it is close to full. Measured 2026-09-21 with the testbed
+backend stopped:
+
+| Group | Resident |
+| --- | --- |
+| Coolify itself (`coolify`, `-db`, `-redis`, `-realtime`, `-sentinel`, `-proxy`) | ~547 MiB |
+| OS + dockerd | ~640 MiB |
+| `custom-backend` / `biz-backend` / `admin-backend` (3 JVMs) | ~1265 MiB |
+| `keycloak` (4th JVM) | ~481 MiB |
+| `postgres` + `minio` + `json-server` + `mailpit` | ~390 MiB |
+| 3 frontends | ~20 MiB |
+| **testbed-backend (5th JVM), when running** | **~692 MiB** |
+
+That last row is ~120 MiB more than the host had left, which is why it was the one that died.
+
+Two structural problems, both now fixed in the compose files:
+
+1. **No service had a `mem_limit`**, so every JVM sized its heap at 25% of the *host* — five of them
+   claiming a combined ~4.8 GiB ceiling on a 3.8 GiB machine. They coexisted only because they never
+   filled at once. Every service now carries a limit and each JVM an explicit `MaxRAMPercentage`.
+2. **The testbed backend computed the Spring Modulith structure at run time**, which is why it ran
+   45–75% fatter than the three sibling backends on the same framework. That dependency is gone; it
+   should now sit in their 390–480 MiB range.
+
+**Add swap regardless.** A swapless host turns every transient spike into a kill, and 2–4 GiB of swap
+file costs nothing but disk:
+
+```bash
+fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+```
+
+And note the standing constraint: **four application stacks plus Keycloak plus Coolify on 3.8 GiB has
+no margin.** The fixes above buy roughly 500–600 MiB. The next stack added to this host, or any real
+traffic, needs a bigger box or one stack moved off it.
 
 ---
 

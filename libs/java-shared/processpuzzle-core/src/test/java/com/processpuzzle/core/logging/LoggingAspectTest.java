@@ -67,7 +67,9 @@ class LoggingAspectTest {
         assertThat(plainAppender.list).hasSize(2);
 
         ILoggingEvent entry = plainAppender.list.get(0);
-        assertThat(entry.getLevel()).isEqualTo(Level.INFO);
+        // DEBUG is the annotation default since 2026-09-21; the loggers here are set to TRACE in
+        // setUp(), which is what makes the trace visible at all. See LogClass for why it moved.
+        assertThat(entry.getLevel()).isEqualTo(Level.DEBUG);
         assertThat(entry.getFormattedMessage()).isEqualTo("→ PlainService.greet({\"name\":\"world\"})");
         assertThat(entry.getMDCPropertyMap())
                 .containsEntry(LoggingAspect.MDC_CLASS, "PlainService")
@@ -101,7 +103,23 @@ class LoggingAspectTest {
         proxy.publicTwo();
 
         assertThat(annotatedAppender.list).hasSize(4);
-        assertThat(annotatedAppender.list).allSatisfy(e -> assertThat(e.getLevel()).isEqualTo(Level.INFO));
+        assertThat(annotatedAppender.list).allSatisfy(e -> assertThat(e.getLevel()).isEqualTo(Level.DEBUG));
+    }
+
+    /**
+     * The point of the 2026-09-21 demotion, stated as a test: a type carrying a bare {@code
+     * @LogClass} traces NOTHING under a default log configuration, and has to be asked. Everything
+     * else in this class raises its loggers to TRACE in {@link #setUp()}, which would hide exactly
+     * the regression that matters — a later change putting the default back to INFO.
+     */
+    @Test
+    void logClass_isSilentAtTheDefaultLogLevel() {
+        annotatedLogger.setLevel(Level.INFO);
+
+        AnnotatedService proxy = proxy(new AnnotatedService());
+        proxy.publicOne();
+
+        assertThat(annotatedAppender.list).isEmpty();
     }
 
     @Test
