@@ -95,16 +95,39 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Spring Modulith: this application is the Modulith root, so it is where the module
-             structure is computed at runtime and exposed at /actuator/modulith. -->
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-core</artifactId>
-        </dependency>
+        <!-- Spring Modulith: this application is the Modulith root, so it is where the complete
+             module graph exists. It is verified AT BUILD TIME by ModularityTests, and no longer
+             computed at run time.
 
+             `spring-modulith-api` only — the annotations. `@Modulith` on the application class and
+             the `@ApplicationModule` / `@NamedInterface` declarations in the libraries' package-info
+             files all live here, and this artifact carries no ArchUnit and no autoconfiguration.
+             It arrives transitively from the libraries anyway; it is declared because this module's
+             own source imports it, and depending on a transitive is how a dependency disappears
+             under someone else's refactor.
+
+             REMOVED 2026-09-21: `spring-modulith-starter-core` and `spring-modulith-actuator`.
+             Together they pulled `spring-modulith-core` and `spring-modulith-runtime`, whose
+             autoconfiguration computed ApplicationModules on a background task at every startup —
+             an ArchUnit pass over every class in the fat jar. The log line was
+             `com.tngtech.archunit.core.PluginLoader ... [task-1] Detected Java version 25.0.4`,
+             and the cost was paid twice over:
+
+               * Startup. The 262s first-start figure in docker-compose-apps.yaml's healthcheck
+                 comment is mostly this. On a host that OOM-killed this container on a loop, 45-50s
+                 of saturated CPU per boot was the visible symptom.
+               * Memory. Retaining that class graph is the best explanation for this backend running
+                 at ~692MiB while custom-, biz- and admin-backend — same framework, same libraries —
+                 sit at 390-480MiB. It is the only one of the four that did this.
+
+             What is given up is `/actuator/modulith`, the run-time view of the structure (also
+             dropped from the actuator exposure list in application.yaml). ModularityTests still
+             verifies the same graph on every build, which is the check that can actually fail a
+             change; the endpoint only described it. Restore both artifacts if a tool ever needs to
+             read the structure from a running instance — but not on this host. -->
         <dependency>
             <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-actuator</artifactId>
+            <artifactId>spring-modulith-api</artifactId>
         </dependency>
 
         <dependency>

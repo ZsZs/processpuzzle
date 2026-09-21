@@ -79,6 +79,11 @@ services:
     container_name: json-server
     ports:
       - "${PP_JSON_SERVER_PUBLISH}"
+    # Node holds the whole db.json in memory and measured 83MiB on stage; 192m is headroom, not a
+    # target. Capped for the same reason as every other service here — see `keycloak` above — even
+    # though this one is nobody's idea of a memory hog: an uncapped container is an eligible OOM
+    # victim regardless of how much it normally uses.
+    mem_limit: 192m
     tty: true
     networks:
       - processpuzzle
@@ -99,7 +104,33 @@ services:
         condition: service_healthy
     ports:
       - "${PP_KEYCLOAK_PUBLISH}"
+    # ONE OF TWO JVMs on this host, and the reason both need a ceiling. A JVM with no -Xmx sizes its
+    # heap at 25% of what it believes is available; with no `mem_limit` that belief is the whole
+    # machine, so every JVM here independently reserves the right to grow to a quarter of the host.
+    # Five of them on a 3.8GiB box is a combined heap ceiling larger than the box — they coexist only
+    # because they never fill at once.
+    #
+    # On 2026-09-21 that stopped being true: the host hit a GLOBAL out-of-memory condition
+    # (`constraint=CONSTRAINT_NONE ... global_oom` in dmesg, invoked by coolify-redis and pgweb) and
+    # the kernel killed the largest RSS it could find, which was testbed-backend. A global OOM picks
+    # its victim by size, not by fault — so capping ONLY the process that happened to die would just
+    # nominate the next-largest one. Every memory-significant service therefore carries a limit.
+    #
+    # `mem_limit` rather than `deploy.resources.limits.memory`: both work under `docker compose` v2,
+    # but only `mem_limit` also applies under `docker stack`, and it is the form Coolify passes
+    # through unchanged. Setting it is also what makes MaxRAMPercentage below meaningful — the JVM
+    # reads the cgroup limit, so the percentage is of THIS number rather than of the host.
+    mem_limit: 640m
     environment:
+      # 60%, not the 75% a JVM alone on a box would take: Keycloak's non-heap footprint (metaspace,
+      # code cache, Quarkus' direct buffers, thread stacks) runs 150-200MiB, and a container killed
+      # for exceeding `mem_limit` is exactly the failure this whole block exists to prevent. Measured
+      # steady state on stage was 481MiB inside a 640m limit.
+      #
+      # JAVA_OPTS_APPEND rather than JAVA_OPTS: the latter REPLACES the tuned defaults the Keycloak
+      # image ships (GC selection, -XX:+ExitOnOutOfMemoryError among them) instead of adding to them.
+      JAVA_OPTS_APPEND: "-XX:MaxRAMPercentage=60"
+
       # Database connection
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB_NAME:-keycloak}
@@ -263,6 +294,9 @@ services:
     # image needs nothing added.
     image: axllent/mailpit:${PP_MAILPIT_VERSION:-v1.21}
     container_name: processpuzzle-mailpit
+    # 18MiB measured. `MP_MAX_MESSAGES: 500` bounds what it retains, so 96m is generous; the limit is
+    # here for eligibility rather than for size — see `keycloak` above.
+    mem_limit: 96m
     ports:
       - "${PP_MAILPIT_UI_PUBLISH:-8025:8025}"      # Web console
       - "${PP_MAILPIT_SMTP_PUBLISH:-1025:1025}"    # SMTP
@@ -291,6 +325,10 @@ services:
     ports:
       - "${PP_MINIO_API_PUBLISH}"          # S3 API
       - "${PP_MINIO_CONSOLE_PUBLISH}"      # Web Console
+    # 179MiB measured on stage. MinIO sizes internal buffers against available memory, so the limit
+    # is also what keeps it modest; 320m leaves room for concurrent multipart uploads of the 50MB
+    # files `spring.servlet.multipart.max-file-size` allows.
+    mem_limit: 320m
     environment:
       # Root credentials (admin)
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -315,8 +353,26 @@ services:
     # Not built: tools/docker/pgweb/Dockerfile was `FROM sosedoff/pgweb:latest` and added nothing, so
     # building and pushing a byte-identical image was waste. Pinned rather than `latest`, per
     # docs/build-deploy-strategy.md §2.
+    #
+    # OPT-IN since 2026-09-21, and the only service here that is. A compose service carrying a
+    # `profiles:` key does not start unless that profile is named, so neither Coolify nor CI — which
+    # both run a bare `docker compose up` — brings this up any more. Start it deliberately:
+    #
+    #   docker compose --profile tools -f tools/docker/docker-compose-infrastructure.yaml up -d pgweb
+    #
+    # Two reasons, and the second is the better one. It was one of the two processes whose allocation
+    # invoked the global OOM killer on 2026-09-21; and it is an UNAUTHENTICATED database browser
+    # (docs/stage-deployment-runbook.md:150) that has no business being up on a host that is short of
+    # memory, or indeed the rest of the time. 17MiB is not the point — the point is that a stage box
+    # should not run a permanent root-equivalent view of the testbed database nobody asked for.
+    #
+    # NOTE when deploying this change: an ALREADY RUNNING pgweb is not removed by a `docker compose
+    # down`/`up` that does not name the profile — compose does not consider it part of the project.
+    # Remove the existing container by hand once: `docker rm -f processpuzzle-pgweb`.
+    profiles: [ "tools" ]
     image: sosedoff/pgweb:${PP_PGWEB_VERSION:-0.17.0}
     container_name: processpuzzle-pgweb
+    mem_limit: 96m
     depends_on:
       postgres:
         condition: service_healthy
@@ -398,6 +454,14 @@ services:
     container_name: processpuzzle-postgres
     ports:
       - "${PP_POSTGRES_PUBLISH}"
+    # The most generous limit here relative to measured use (110MiB), and deliberately so: this one
+    # process backs Keycloak AND every application stack's database, so it is the single service
+    # whose death does the most damage. `shared_buffers` plus `work_mem` per sort per backend means
+    # its footprint scales with concurrent connections, and five Hikari pools can open a lot of them.
+    #
+    # 512m is a ceiling, not a reservation — Postgres will not grow into it unless asked. Raising
+    # `shared_buffers` above the 128MB default WOULD require raising this first.
+    mem_limit: 512m
     volumes:
       # `/var/lib/postgresql`, NOT `/var/lib/postgresql/data`, and the distinction is the difference
       # between a database that persists and one that does not.

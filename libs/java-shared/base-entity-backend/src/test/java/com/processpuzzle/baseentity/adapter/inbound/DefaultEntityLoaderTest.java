@@ -7,6 +7,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,6 +42,7 @@ class DefaultEntityLoaderTest {
     private EntityDefinitionRepository definitionRepository;
     private EntityDefinitionMapper definitionMapper;
     private CreateEntityInstanceUseCase createInstanceUseCase;
+    private EntityObjectRepository objectRepository;
     private ResourcePatternResolver resourceResolver;
     private DefaultEntityLoader loader;
 
@@ -50,10 +52,12 @@ class DefaultEntityLoaderTest {
         definitionRepository = mock(EntityDefinitionRepository.class);
         definitionMapper = new EntityDefinitionMapper();
         createInstanceUseCase = mock(CreateEntityInstanceUseCase.class);
+        objectRepository = mock(EntityObjectRepository.class);
         resourceResolver = mock(ResourcePatternResolver.class);
 
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{bundledTestbedFile()});
         when(definitionRepository.existsByCode(anyString())).thenReturn(false);
+        when(objectRepository.existsByEntityDefinitionCode(anyString())).thenReturn(false);
 
         when(createDefinitionUseCase.create(any(BaseEntityDefinition.class)))
                 .thenAnswer(call -> {
@@ -80,6 +84,7 @@ class DefaultEntityLoaderTest {
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
+                objectRepository,
                 resourceResolver
         );
     }
@@ -107,6 +112,41 @@ class DefaultEntityLoaderTest {
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
                 "order", "order", "order", "order", "special-order", "special-order");
         assertThat(payloadCaptor.getAllValues()).hasSize(11);
+    }
+
+    /**
+     * The regression that cost the stage host its memory. Until 2026-09-21 this loader created its
+     * sample instances unconditionally, so every restart appended another eleven rows — 856 of them
+     * by the time anyone counted, each re-read at boot by GovernedStateConsistencyCheck.
+     */
+    @Test
+    void createsNoInstanceForADefinitionThatAlreadyHasOne() {
+        when(objectRepository.existsByEntityDefinitionCode("order")).thenReturn(true);
+
+        loader.loadDefaults();
+
+        ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
+        verify(createInstanceUseCase, times(7)).create(anyString(), codeCaptor.capture(), any());
+
+        // The four 'order' rows are gone; nothing else is affected, 'special-order' least of all —
+        // it is a different definition despite the shared prefix.
+        assertThat(codeCaptor.getAllValues()).containsExactly(
+                "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
+                "special-order", "special-order");
+    }
+
+    /**
+     * The snapshot, which is what makes the guard correct on a FRESH database. Asked per instance
+     * instead of once up front, the first 'order' would be created and the repository would then
+     * answer "yes" for the three that follow it — seeding one row where the file asks for four.
+     */
+    @Test
+    void createsEveryInstanceOfADefinitionWhenTheFirstOneIsNew() {
+        loader.loadDefaults();
+
+        verify(objectRepository, times(1)).existsByEntityDefinitionCode("order");
+        verify(createInstanceUseCase, times(4))
+                .create(anyString(), argThat("order"::equals), any());
     }
 
     @Test

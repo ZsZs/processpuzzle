@@ -101,6 +101,9 @@ services:
       testbed-backend:
         condition: service_healthy
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-frontend:${PP_IMAGE_TAG}
+    # nginx serving static files: 12MiB measured, and it does not grow. Capped anyway — an uncapped
+    # container is an eligible OOM victim whatever its size. See testbed-backend below.
+    mem_limit: 96m
     # Both halves of one stack are named the same way, service and container alike: `testbed-frontend`
     # and `testbed-backend`. Neither matches its Nx project or its image — those keep the
     # `processpuzzle-` prefix that makes them unambiguous in a registry and in the Nx graph, which a
@@ -154,8 +157,47 @@ services:
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-testbed-backend:${PP_IMAGE_TAG}
     container_name: testbed-backend
+    # ── The limit this service died for the want of ─────────────────────────────────────────────
+    #
+    # 2026-09-21, 08:21:44 and again at 08:31:37: the host hit a GLOBAL out-of-memory condition and
+    # the kernel killed this JVM, twice, roughly ten minutes apart. dmesg:
+    #
+    #   oom-kill:constraint=CONSTRAINT_NONE,...,global_oom,task_memcg=/system.slice/docker-984744ff...
+    #   Out of memory: Killed process 680941 (java) total-vm:3660360kB, anon-rss:708620kB
+    #
+    # Read `constraint=CONSTRAINT_NONE` carefully: no cgroup limit was exceeded, because there was no
+    # cgroup limit. The HOST ran out (3.8GiB, no swap) and the kernel chose the largest resident
+    # process. The allocations that triggered it came from coolify-redis and pgweb — this container
+    # was the victim, not the cause. `restart: unless-stopped` then turned each kill into a fresh
+    # boot, and since a boot of this application is 45-50s of near-saturated CPU, the symptom that
+    # got noticed was CPU rather than memory.
+    #
+    # Two numbers make that not happen again. This one bounds the damage: exceeding `mem_limit` kills
+    # THIS container instead of letting the kernel pick a victim, which on a host running Keycloak
+    # and one Postgres for every stack is a materially better outcome. MaxRAMPercentage below bounds
+    # the cause.
+    #
+    # 768m against a measured 692MiB is deliberately close, because the host has no room for
+    # generosity — see the arithmetic in docs/stage-deployment-runbook.md. It is affordable only
+    # together with the runtime Spring Modulith removal in the same branch, which is what takes the
+    # steady state down toward the 390-480MiB the three sibling backends run at. WATCH
+    # `docker stats testbed-backend` after the first deployment: if it sits above ~700MiB, raise this
+    # and find the memory elsewhere rather than letting it be OOM-killed on a loop again.
+    mem_limit: 768m
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
+
+      # 65% of `mem_limit` = ~500MiB of heap, leaving ~270MiB for everything a Spring Boot process
+      # needs outside it: metaspace, the code cache, thread stacks, Hikari, and Netty/JDBC direct
+      # buffers. Uncapped, this JVM read the HOST's memory instead and claimed a ~980MiB ceiling on a
+      # 3.8GiB machine — as did Keycloak, and as did each of the three sibling backends. Five JVMs
+      # each entitled to a quarter of the host is a combined ceiling larger than the host.
+      #
+      # JAVA_TOOL_OPTIONS because the image's ENTRYPOINT is a bare `java -jar` with no JAVA_OPTS
+      # indirection (tools/docker/processpuzzle-testbed-backend/Dockerfile). The JVM picks it up on
+      # its own and announces it on stderr — the "Picked up JAVA_TOOL_OPTIONS" line in the log is
+      # expected, not a warning.
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65"
 
       # The testbed stack: database, realm and bucket prefix all name it. PostgreSQL is reached over
       # the compose network, so the host is the service name and not the published port.
