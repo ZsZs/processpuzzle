@@ -1,4 +1,4 @@
-import { provideRouter, Router, RouterOutlet } from '@angular/router';
+import { DefaultUrlSerializer, provideRouter, Router, RouterOutlet, UrlSerializer, UrlTree } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
@@ -390,5 +390,79 @@ describe('BaseFormNavigatorStore breadcrumb', () => {
     await store.navigateToList();
 
     expect(store.determineCurrentUrl()).toEqual('/samples/test-entity/list');
+  });
+});
+
+/**
+ * A serializer that decorates every URL it writes, as `provideLocaleRouting` in `@processpuzzle/util` does
+ * with the active language — `/test-entity/1/details` becomes `/en/test-entity/1/details`.
+ *
+ * Reproduced here rather than imported so the test states the *shape* of the hazard instead of one
+ * application's instance of it: any replacement `UrlSerializer` that adds something puts the store's own
+ * targets and Angular's reported URLs into two different spaces.
+ */
+class PrefixingUrlSerializer extends DefaultUrlSerializer {
+  override parse(url: string): UrlTree {
+    if (url === '/en') return super.parse('/');
+    return super.parse(url.startsWith('/en/') ? url.slice(3) : url);
+  }
+
+  override serialize(tree: UrlTree): string {
+    const path = super.serialize(tree);
+    return path === '/' ? '/en' : `/en${path}`;
+  }
+}
+
+/**
+ * The store builds its navigation targets from the router *configuration* — undecorated — while Angular
+ * reports `NavigationEnd.url` through the application's serializer. When those were compared as strings the
+ * match silently never happened, every navigation was read as one the store had not initiated, and the
+ * payload stacks were cleared under it: a select round-trip returned to the form having forgotten which
+ * control asked, which is what took out all 13 RELATIONSHIP e2e cases when locale routing was introduced.
+ */
+describe('BaseFormNavigatorStore, with a URL-decorating serializer installed', () => {
+  @Component({ selector: 'dummy-component', template: `<div></div>`, standalone: true })
+  class DummyComponent {}
+
+  const NavigatorStore = signalStore({ providedIn: 'root' }, BaseFormNavigatorStore('TestEntity'));
+  let store: InstanceType<typeof NavigatorStore>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [
+        provideLocationMocks(),
+        provideRouter([
+          { path: 'home', component: DummyComponent },
+          { path: 'test-entity/:id/details', component: DummyComponent },
+          { path: 'test-entity-component/list', component: DummyComponent },
+        ]),
+        // After `provideRouter`, which binds `UrlSerializer` to `DefaultUrlSerializer`; the later wins.
+        { provide: UrlSerializer, useClass: PrefixingUrlSerializer },
+        NavigatorStore,
+      ],
+    }).compileComponents();
+    await RouterTestingHarness.create('home');
+    store = TestBed.inject(NavigatorStore);
+  });
+
+  it('recognises its own navigation, so the payloads survive the decorated URL the router reports.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+    const listPayload: NavigationPayload = { command: NavigatorCommand.SELECT_OR_CREATE, attrName: 'component', payload: { entityName: 'TestEntity' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    await store.navigateToRelatedList('TestEntityComponent', 'home', listPayload);
+
+    expect(Array.from(store.navigatorPayloads().values())).toEqual([detailsPayload, listPayload]);
+  });
+
+  it('still clears the payloads on a navigation it did not initiate.', async () => {
+    const detailsPayload: NavigationPayload = { command: NavigatorCommand.EDIT, attrName: 'editTarget', payload: { id: '1' } };
+
+    await store.navigateToDetails('1', 'home', detailsPayload);
+    // Not through the store — the user clicked a link, so whatever the form was in the middle of is over.
+    await TestBed.inject(Router).navigateByUrl('/home');
+
+    expect(store.requestPayloads().size).toEqual(0);
+    expect(store.responsePayloads().size).toEqual(0);
   });
 });

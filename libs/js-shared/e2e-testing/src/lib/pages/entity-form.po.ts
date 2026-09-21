@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import { waitForScreen } from './screen-ready';
 import { blockingViolationsSelector, buttonTestId, toTestId } from '../selectors/selector.builder';
 import {
   type ControlInteractionContext,
@@ -59,6 +60,9 @@ export class EntityFormPO {
   async navigateToDetail(entityId: string) {
     await this.page.goto(this.routes.detailRoute(this.descriptor, entityId));
     await this.page.waitForURL(/\/details$/);
+    // Before {@link currentUrl} may be read: the URL matched above is the one asked for, not necessarily
+    // the one the application will settle on. See {@link waitForScreen}.
+    await waitForScreen(this.page, 'base-form');
   }
 
   /** The URL of the form currently open — the anchor an embedded drill-down returns to. */
