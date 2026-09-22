@@ -53,6 +53,19 @@ BIZ_CLIENT_ROOT_URL="${BIZ_CLIENT_ROOT_URL:-http://localhost:9092}"
 BIZ_CLIENT_REDIRECT_URIS="${BIZ_CLIENT_REDIRECT_URIS:-http://localhost:9092/*,http://localhost:4202/*}"
 CUSTOM_CLIENT_ROOT_URL="${CUSTOM_CLIENT_ROOT_URL:-http://localhost:9093}"
 CUSTOM_CLIENT_REDIRECT_URIS="${CUSTOM_CLIENT_REDIRECT_URIS:-http://localhost:9093/*,http://localhost:4203/*}"
+# This remains Mailpit by default so a local/CI sign-up can never mail a real customer. Stage and
+# production override the values through the infrastructure resource and this script reconciles
+# them on every start because realm imports are deliberately one-shot.
+CUSTOM_SMTP_HOST="${KEYCLOAK_CUSTOM_SMTP_HOST:-mailpit}"
+CUSTOM_SMTP_PORT="${KEYCLOAK_CUSTOM_SMTP_PORT:-1025}"
+CUSTOM_SMTP_FROM="${KEYCLOAK_CUSTOM_SMTP_FROM:-noreply@processpuzzle.com}"
+CUSTOM_SMTP_FROM_DISPLAY_NAME="${KEYCLOAK_CUSTOM_SMTP_FROM_DISPLAY_NAME:-ProcessPuzzle}"
+CUSTOM_SMTP_REPLY_TO="${KEYCLOAK_CUSTOM_SMTP_REPLY_TO:-support@processpuzzle.com}"
+CUSTOM_SMTP_AUTH="${KEYCLOAK_CUSTOM_SMTP_AUTH:-false}"
+CUSTOM_SMTP_USERNAME="${KEYCLOAK_CUSTOM_SMTP_USERNAME:-}"
+CUSTOM_SMTP_PASSWORD="${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}"
+CUSTOM_SMTP_STARTTLS="${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}"
+CUSTOM_SMTP_SSL="${KEYCLOAK_CUSTOM_SMTP_SSL:-false}"
 # Overridable so the argument construction below can be exercised against a stub; a container
 # never sets it.
 KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
@@ -204,6 +217,72 @@ ensure_public_client \
   'ProcessPuzzle Custom' \
   "${CUSTOM_CLIENT_ROOT_URL}" \
   "${CUSTOM_CLIENT_REDIRECT_URIS}"
+
+# `--import-realm` does not merge changes into an existing realm. Without this explicit update,
+# every deployed customer realm keeps the import's Mailpit endpoint and accepts activation emails
+# without ever delivering them to the new administrator.
+json_string() {
+  case "$1" in
+    *$'\n'*|*$'\r'*)
+      echo "ERROR: Keycloak SMTP values must not contain newlines." >&2
+      exit 1
+      ;;
+  esac
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+if [[ ! "${CUSTOM_SMTP_PORT}" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: KEYCLOAK_CUSTOM_SMTP_PORT must be a numeric SMTP port." >&2
+  exit 1
+fi
+
+case "${CUSTOM_SMTP_AUTH}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_AUTH must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+case "${CUSTOM_SMTP_STARTTLS}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_STARTTLS must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+case "${CUSTOM_SMTP_SSL}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_SSL must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+if [ "${CUSTOM_SMTP_AUTH}" = "true" ] && { [ -z "${CUSTOM_SMTP_USERNAME}" ] || [ -z "${CUSTOM_SMTP_PASSWORD}" ]; }; then
+  echo "ERROR: authenticated Keycloak SMTP requires username and password." >&2
+  exit 1
+fi
+
+smtp_server="$(printf '{"host":"%s","port":"%s","from":"%s","fromDisplayName":"%s","replyTo":"%s","auth":"%s","user":"%s","password":"%s","starttls":"%s","ssl":"%s"}' \
+  "$(json_string "${CUSTOM_SMTP_HOST}")" \
+  "$(json_string "${CUSTOM_SMTP_PORT}")" \
+  "$(json_string "${CUSTOM_SMTP_FROM}")" \
+  "$(json_string "${CUSTOM_SMTP_FROM_DISPLAY_NAME}")" \
+  "$(json_string "${CUSTOM_SMTP_REPLY_TO}")" \
+  "${CUSTOM_SMTP_AUTH}" \
+  "$(json_string "${CUSTOM_SMTP_USERNAME}")" \
+  "$(json_string "${CUSTOM_SMTP_PASSWORD}")" \
+  "${CUSTOM_SMTP_STARTTLS}" \
+  "${CUSTOM_SMTP_SSL}")"
+
+echo "Reconciling SMTP delivery for the customer realm via ${CUSTOM_SMTP_HOST}:${CUSTOM_SMTP_PORT} ..."
+login
+"$KCADM" update realms/processpuzzle-custom \
+  -s "verifyEmail=true" \
+  -s "actionTokenGeneratedByAdminLifespan=43200" \
+  -s "smtpServer=${smtp_server}"
 
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"
