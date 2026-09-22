@@ -3,7 +3,7 @@ import { MatDialogActions, MatDialogContent, MatDialogTitle } from '@angular/mat
 import { MatButton } from '@angular/material/button';
 import { NavigateBackService } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE, LOGOUT_REDIRECT_URL } from '@processpuzzle/auth/domain';
 
 @Component({
   selector: 'pp-logout',
@@ -36,6 +36,7 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 export class LogoutComponent {
   private readonly authService = inject(AUTHENTICATION_SERVICE);
   private readonly navigateBackService = inject(NavigateBackService);
+  private readonly logoutRedirectUrl = inject(LOGOUT_REDIRECT_URL, { optional: true });
   protected isLoading = signal(false);
 
   onCancel() {
@@ -46,8 +47,11 @@ export class LogoutComponent {
     try {
       this.isLoading.set(true);
       this.navigateBackService.getRouteStack().pop();
-      await this.authService.logout(this.navigateBackService.getRouteStack().pop());
-      this.navigateBackService.goBack();
+      const redirectUrl = this.logoutRedirectUrl ?? this.navigateBackService.getRouteStack().pop();
+      await this.authService.logout(redirectUrl);
+      // Keycloak normally replaces this document with the configured redirect. Retain the historic
+      // in-app back navigation only where no application has supplied an explicit public landing.
+      if (!this.logoutRedirectUrl) this.navigateBackService.goBack();
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
