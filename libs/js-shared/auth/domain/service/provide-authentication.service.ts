@@ -8,6 +8,13 @@ import { provideFirebaseAuthService } from './provide-firebase-auth-service';
 
 export const AUTHENTICATION_CONFIGURATION = new InjectionToken<AuthenticationConfiguration>('AUTHENTICATION_CONFIGURATION');
 export const AUTHENTICATION_SERVICE = new InjectionToken<AuthService>('AUTHENTICATION_SERVICE');
+/**
+ * An optional application-owned location to use after logout.
+ *
+ * A public home page should use this instead of the route the user left: returning to a guarded
+ * route after ending the SSO session immediately starts another login.
+ */
+export const LOGOUT_REDIRECT_URL = new InjectionToken<string>('LOGOUT_REDIRECT_URL');
 
 export interface AuthenticationConfiguration {
   readonly AUTHENTICATION_PROVIDER?: 'local-auth' | 'firebase-auth' | 'oauth2' | 'keycloak';
