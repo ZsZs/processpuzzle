@@ -15,22 +15,23 @@ import { LayoutService } from '@processpuzzle/util';
   selector: 'app-image-zoom',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <img
-      class="thumb"
-      [src]="src()"
-      [alt]="alt()"
+    <button
+      class="thumb-button"
+      type="button"
       (click)="open()"
-      loading="lazy"
-    />
+      [attr.aria-label]="'Zoom image: ' + alt()"
+    >
+      <img class="thumb" [src]="src()" [alt]="alt()" loading="lazy" />
+    </button>
 
     @if (isOpen()) {
-      <div class="overlay" (click)="close()">
+      <button class="overlay" type="button" (click)="close()" aria-label="Close image preview"></button>
+      <div class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="alt()">
         <img
           #fullImg
           class="full"
           [src]="src()"
           [alt]="alt()"
-          (click)="$event.stopPropagation()"
         />
         <button class="close-btn" type="button" (click)="close()" aria-label="Close">
           &times;
@@ -39,8 +40,16 @@ import { LayoutService } from '@processpuzzle/util';
     }
   `,
   styles: `
-    .thumb {
+    .thumb-button {
+      display: block;
+      max-width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
       cursor: zoom-in;
+    }
+
+    .thumb {
       max-width: 100%;
       display: block;
     }
@@ -53,8 +62,20 @@ import { LayoutService } from '@processpuzzle/util';
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      border: 0;
+      padding: 0;
       cursor: zoom-out;
       animation: fade-in 0.15s ease-out;
+    }
+
+    .dialog {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+      pointer-events: none;
     }
 
     .full {
@@ -63,6 +84,7 @@ import { LayoutService } from '@processpuzzle/util';
       max-height: none;
       cursor: default;
       box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
     }
 
     .close-btn {
@@ -75,6 +97,7 @@ import { LayoutService } from '@processpuzzle/util';
       border: none;
       color: #fff;
       cursor: pointer;
+      pointer-events: auto;
     }
 
     @keyframes fade-in {
