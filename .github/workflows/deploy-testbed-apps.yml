@@ -247,30 +247,14 @@ jobs:
             echo "  ready"
           done
 
-      # == TEMPORARILY DISABLED =======================================================================
-      #
-      # RESTORE THIS. Commented out while the Coolify deployment itself is being fixed: until the
-      # stack reliably comes back up, this step can only report the deployment's failure a second
-      # time, and it costs ~90s of `npm ci` and browser download to do it. The readiness poll above
-      # is deliberately LEFT IN PLACE — it is the diagnostic for what is being fixed, and it fails
-      # fast with the observed HTTP status.
-      #
-      # The `e2e-test` action is unchanged and still runs in Build- and
-      # Release-ProcessPuzzle-Testbed-Frontend, which drive a local stack rather than Coolify.
-      #
-      # Re-enable by deleting the `# ` prefix from the block below, once a deploy reaches
-      # "  ready" on both probes.
-      #
       # The integration test the deleted Firebase deploy workflow used to run after a STAGE deploy.
-      # Gated the same way as the readiness poll, so it stays dormant until the environment declares
-      # a public URL — the e2e project reads the host it targets from
-      # apps/processpuzzle-testbed-e2e/env/.env.<environment>, so that file has to agree with it.
-      # - name: Integration test against the deployed environment
-      #   if: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL != '' }}
-      #   uses: ./.github/actions/e2e-test
-      #   with:
-      #     base_dir: 'apps/processpuzzle-testbed-e2e'
-      #     target_environment: ${{ needs.resolve.outputs.env_tag }}
-      #     test_scope: ${{ needs.resolve.outputs.env_tag == 'prod' && 'smoke' || 'full' }}
-      #
-      # ===============================================================================================
+      # It runs only after the readiness gate, against the public environment selected above.
+      # The e2e project reads its target host from
+      # apps/processpuzzle-testbed-e2e/env/.env.<environment>, which must agree with the environment.
+      - name: Integration test against the deployed environment
+        if: ${{ vars.TESTBED_FRONTEND_PUBLIC_URL != '' }}
+        uses: ./.github/actions/e2e-test
+        with:
+          base_dir: 'apps/processpuzzle-testbed-e2e'
+          target_environment: ${{ needs.resolve.outputs.env_tag }}
+          test_scope: ${{ needs.resolve.outputs.env_tag == 'prod' && 'smoke' || 'full' }}

@@ -2,6 +2,7 @@ import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
+import { SidenavAutosizeDirective } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
 import { layoutOf, themeClassOf, themeVarsOf } from './app-shell.model';
@@ -35,7 +36,7 @@ import { NavOrientation } from './region-nav.component';
 @Component({
   selector: 'pp-app-shell',
   standalone: true,
-  imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet],
+  imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet, SidenavAutosizeDirective],
   // Both theme bindings go on the host rather than on a wrapper, so the element that *is* the shell is
   // also the element they cascade from — and so the host can be the grid, see the stylesheet. `[class]`
   // selects one of the scoped Material themes there; `[style]` carries the `--pp-*` overrides.
@@ -54,7 +55,7 @@ import { NavOrientation } from './region-nav.component';
 
     <mat-sidenav-container class="pp-app-shell__body">
       @if (sidenavView(); as view) {
-        <mat-sidenav class="pp-app-shell__sidenav" [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
+        <mat-sidenav class="pp-app-shell__sidenav" ppSidenavAutosize [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
           <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
         </mat-sidenav>
       }

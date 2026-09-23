@@ -24,6 +24,9 @@ export { ApplicationPropertyStore } from './app-property/app-property.store';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
+export { ImageZoomComponent } from './image-zoom/image-zoom.component';
+export { PhotoAlbumComponent } from './photo-album/photo-album.component';
+export type { PhotoAlbumImage } from './photo-album/photo-album.component';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
 export { MarkdownPageComponent } from './markdown-page/markdown-page.component';
@@ -31,6 +34,7 @@ export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component
 export { provideAppPropertyStore } from './app-property/app-property-store.provider';
 export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
+export { SidenavAutosizeDirective } from './sidenav-autosize/sidenav-autosize.directive';
 export { VersionButtonComponent } from './version-button/version-button.component';
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';
 export { hasDescribedProps, propsSchemaToDescriptors } from './widget-definition/props-schema-to-descriptors';

@@ -16,6 +16,8 @@ export class LayoutService {
   isLargeDevice = computed<boolean>(() => this.layoutClass() === this.WEB_LAYOUT || this.layoutClass() === '');
   isMediumDevice = computed<boolean>(() => this.layoutClass() === this.TABLET_LAYOUT);
   layoutClass = signal<string>(this.WEB_LAYOUT);
+  private readonly sidenavHideRequests = signal(0);
+  readonly isSidenavHidden = computed(() => this.sidenavHideRequests() > 0);
   sidenavMode = computed<SidenavStatus>(() => {
     let sideNavMode = SidenavStatus.EXPAND;
     if (this.isSmallDevice()) sideNavMode = SidenavStatus.CLOSE;
@@ -27,6 +29,18 @@ export class LayoutService {
 
   constructor() {
     this.observeBreakpoints();
+  }
+
+  hideSidenav(): () => void {
+    this.sidenavHideRequests.update((requests) => requests + 1);
+    let restored = false;
+
+    return () => {
+      if (restored) return;
+
+      restored = true;
+      this.sidenavHideRequests.update((requests) => Math.max(0, requests - 1));
+    };
   }
 
   // region protected, private helper methods

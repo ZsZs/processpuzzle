@@ -15,6 +15,7 @@ import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
+import { MarkdownPageComponent } from '@processpuzzle/widgets';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
 import { inject } from '@angular/core';
@@ -52,6 +53,21 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Widgets',
     data: { icon: 'web_asset', menuTitle: 'widgets' },
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/widgets/overview.component').then((comp) => comp.WidgetsOverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/widgets/samples.component').then((comp) => comp.WidgetsSamplesComponent),
+      },
+    ],
   },
   {
     path: 'auth-lib',
@@ -301,7 +317,7 @@ export const appRoutes: Route[] = [
     path: 'ci-cd',
     title: 'ProcessPuzzle Testbed - CI/CD',
     data: { icon: 'repartition', menuTitle: 'ci-cd', markdownSrc: 'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/.github/README.md' },
-    loadComponent: () => import('@processpuzzle/widgets').then((comp) => comp.MarkdownPageComponent),
+    component: MarkdownPageComponent,
   },
   {
     path: 'design',

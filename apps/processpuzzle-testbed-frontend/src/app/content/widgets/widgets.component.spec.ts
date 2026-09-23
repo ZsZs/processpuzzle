@@ -1,46 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
+import { provideRouter } from '@angular/router';
 import { WidgetsComponent } from './widgets.component';
-import { MarkdownComponent } from 'ngx-markdown';
-import { Component, input, output } from '@angular/core';
-
-@Component({ selector: 'markdown', template: '' })
-class MockMarkdownComponent {
-  readonly src = input<string>();
-  readonly load = output<string>();
-  readonly error = output<string | Error>();
-}
 
 describe('WidgetsComponent', () => {
-  const renderOptions = {
-    importOverrides: [{ replace: MarkdownComponent, with: MockMarkdownComponent }],
-  };
+  it('renders overview and samples navigation tabs', async () => {
+    const { getByRole } = await render(WidgetsComponent, {
+      providers: [provideRouter([])],
+    });
 
-  it('should create the component', async () => {
-    const { fixture } = await render(WidgetsComponent, renderOptions);
-    const componentInstance = fixture.componentInstance;
-
-    expect(componentInstance).toBeTruthy();
-  });
-
-  it('should call the onLoad method when triggered', async () => {
-    const { fixture } = await render(WidgetsComponent, renderOptions);
-    const componentInstance = fixture.componentInstance;
-    const onLoadSpy = vi.spyOn(componentInstance, 'onLoad');
-
-    componentInstance.onLoad();
-
-    expect(onLoadSpy).toHaveBeenCalled();
-  });
-
-  it('should call the onError method when triggered', async () => {
-    const { fixture } = await render(WidgetsComponent, renderOptions);
-    const componentInstance = fixture.componentInstance;
-    const onErrorSpy = vi.spyOn(componentInstance, 'onError');
-
-    componentInstance.onError();
-
-    expect(onErrorSpy).toHaveBeenCalled();
+    expect(getByRole('tab', { name: 'Overview' })).toBeInTheDocument();
+    expect(getByRole('tab', { name: 'Samples' })).toBeInTheDocument();
   });
 });
