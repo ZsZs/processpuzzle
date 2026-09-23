@@ -423,7 +423,7 @@ still says `.com` or `localhost`, `KC_HOSTNAME` did not take — redeploy.
 ### After §4 (applications)
 
 ```bash
-curl -fsS https://api.stage.processpuzzle.de/actuator/health
+curl -fsS https://api.stage.processpuzzle.de/actuator/health/readiness
 curl -fsS https://testbed.stage.processpuzzle.de/home
 curl -fsS https://testbed.stage.processpuzzle.de/assets/runtime-env.json   # must show PIPELINE_STAGE: stage
 ```

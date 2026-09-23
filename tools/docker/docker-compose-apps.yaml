@@ -257,7 +257,9 @@ services:
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      # `/actuator/health/readiness` includes an authenticated MinIO request, unlike the generic
+      # health endpoint. A backend with stale MinIO credentials must not be considered ready.
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness" ]
       # THE BUDGET IS `retries` x `interval` = 420s, and it is written that way ON PURPOSE — the same
       # reason Keycloak's is, in docker-compose-infrastructure.yaml:147. `start_period` does NOT
       # survive the trip through Coolify, so the effective budget is the retries spent from t=0.

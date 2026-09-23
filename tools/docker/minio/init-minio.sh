@@ -70,17 +70,24 @@ for BUCKET in ${BUCKETS}; do
   fi
 done
 
-# ── Create a dedicated service account for Spring Boot ────────────────────────
+# ── Reconcile the dedicated Spring Boot service account ───────────────────────
+# `mc admin user add` refuses an existing access key, which left a persisted user on
+# its old password after MINIO_SERVICE_PASSWORD was rotated. Recreate it so this
+# container's configured credential is always the credential the backend must use.
+SERVICE_USER="${MINIO_SERVICE_USER:-springboot}"
+if mc admin user info "${MINIO_ALIAS}" "${SERVICE_USER}" > /dev/null 2>&1; then
+  echo "Replacing existing Spring Boot service account..."
+  mc admin user remove "${MINIO_ALIAS}" "${SERVICE_USER}"
+fi
+
 echo "Creating Spring Boot service account..."
 mc admin user add "${MINIO_ALIAS}" \
-  "${MINIO_SERVICE_USER:-springboot}" \
-  "${MINIO_SERVICE_PASSWORD}" 2>/dev/null || \
-  echo "Service account already exists, skipping."
+  "${SERVICE_USER}" \
+  "${MINIO_SERVICE_PASSWORD}"
 
 # Attach readwrite policy to service account
 mc admin policy attach "${MINIO_ALIAS}" readwrite \
-  --user "${MINIO_SERVICE_USER:-springboot}" 2>/dev/null || \
-  echo "Policy already attached, skipping."
+  --user "${SERVICE_USER}"
 
 echo "✅ MinIO initialization complete."
 echo "   Buckets: ${BUCKETS}"

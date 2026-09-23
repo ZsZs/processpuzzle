@@ -186,7 +186,7 @@ jobs:
           # `depends_on` waits on the backend's healthcheck, and it is what the e2e suite targets.
           SENTINEL="${TESTBED_FRONTEND_PUBLIC_URL:+${TESTBED_FRONTEND_PUBLIC_URL}/home}"
           if [ -z "${SENTINEL}" ]; then
-            SENTINEL="${TESTBED_BACKEND_PUBLIC_URL:+${TESTBED_BACKEND_PUBLIC_URL}/actuator/health}"
+            SENTINEL="${TESTBED_BACKEND_PUBLIC_URL:+${TESTBED_BACKEND_PUBLIC_URL}/actuator/health/readiness}"
           fi
 
           # -- Phase 1: the outgoing containers stop answering ------------------------------------
@@ -218,7 +218,7 @@ jobs:
           # starts once that healthcheck passes -- so this waits longer than the infrastructure gate
           # does.
           DEADLINE=$(( $(date +%s) + 600 ))
-          for PROBE in "${TESTBED_BACKEND_PUBLIC_URL:+${TESTBED_BACKEND_PUBLIC_URL}/actuator/health}" \
+          for PROBE in "${TESTBED_BACKEND_PUBLIC_URL:+${TESTBED_BACKEND_PUBLIC_URL}/actuator/health/readiness}" \
                        "${TESTBED_FRONTEND_PUBLIC_URL:+${TESTBED_FRONTEND_PUBLIC_URL}/home}"; do
             [ -z "${PROBE}" ] && continue
             echo "Probing ${PROBE}"
