@@ -121,6 +121,33 @@ to_json_array() {
   printf '[%s]' "${out}"
 }
 
+frame_ancestors_from_redirect_uris() {
+  local csv="$1" item origin out="" glob_was_already_off=1
+  case "$-" in
+    *f*) ;;
+    *) glob_was_already_off=0; set -f ;;
+  esac
+  local IFS=","
+  for item in $csv; do
+    item="$(printf '%s' "$item" | tr -d '[:space:]')"
+    if [ -z "${item}" ]; then
+      continue
+    fi
+    if [[ ! "${item}" =~ ^https?://[A-Za-z0-9.-]+(:[0-9]+)?/\*$ ]]; then
+      echo "ERROR: Custom client redirect URI '${item}' must be an HTTP(S) origin followed by /*." >&2
+      exit 1
+    fi
+    origin="${item%/*}"
+    out="${out:+${out} }${origin}"
+  done
+  if [ "${glob_was_already_off}" -eq 0 ]; then set +f; fi
+  if [ -z "${out}" ]; then
+    echo "ERROR: At least one Custom client redirect URI is required to set frame ancestors." >&2
+    exit 1
+  fi
+  printf '%s' "${out}"
+}
+
 ensure_public_client() {
   local realm="$1"
   local client_id="$2"
@@ -217,6 +244,16 @@ ensure_public_client \
   'ProcessPuzzle Custom' \
   "${CUSTOM_CLIENT_ROOT_URL}" \
   "${CUSTOM_CLIENT_REDIRECT_URIS}"
+
+# Keycloak applies frame-ancestors per realm. Keeping it in lockstep with the Custom client's
+# redirect origins lets each environment frame Keycloak's login-status and third-party-cookie
+# probes, while still preventing unlisted sites from embedding the realm.
+custom_frame_ancestors="$(frame_ancestors_from_redirect_uris "${CUSTOM_CLIENT_REDIRECT_URIS}")"
+custom_content_security_policy="frame-src 'self'; frame-ancestors 'self' ${custom_frame_ancestors}; object-src 'none';"
+echo "Reconciling frame ancestors for the customer realm ..."
+login
+"$KCADM" update realms/processpuzzle-custom \
+  -s "browserSecurityHeaders={\"contentSecurityPolicy\":\"${custom_content_security_policy}\",\"xFrameOptions\":\"\"}"
 
 # `--import-realm` does not merge changes into an existing realm. Without this explicit update,
 # every deployed customer realm keeps the import's Mailpit endpoint and accepts activation emails

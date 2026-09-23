@@ -13,7 +13,7 @@
   "organizationsEnabled": true,
   "actionTokenGeneratedByAdminLifespan": 43200,
   "browserSecurityHeaders": {
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093; object-src 'none';",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093 http://localhost:4203; object-src 'none';",
     "xFrameOptions": ""
   },
   "smtpServer": {
