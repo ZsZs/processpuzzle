@@ -52,6 +52,21 @@ export const appRoutes: Route[] = [
     title: 'ProcessPuzzle Testbed - Widgets',
     data: { icon: 'web_asset', menuTitle: 'widgets' },
     loadComponent: () => import('./content/widgets/widgets.component').then((comp) => comp.WidgetsComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/widgets/overview.component').then((comp) => comp.WidgetsOverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/widgets/samples.component').then((comp) => comp.WidgetsSamplesComponent),
+      },
+    ],
   },
   {
     path: 'auth-lib',

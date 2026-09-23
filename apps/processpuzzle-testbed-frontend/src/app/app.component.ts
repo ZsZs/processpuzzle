@@ -5,6 +5,7 @@ import { SidenavComponent } from './navigation/sidenav/sidenav.component';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { FooterComponent } from './navigation/footer/footer.component';
 import { MatIconRegistry } from '@angular/material/icon';
+import { LayoutService } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignRouteService, DesignSidenavComponent } from '@processpuzzle/design';
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -18,6 +19,7 @@ import { SidenavAutosizeDirective } from '@processpuzzle/widgets';
 })
 export class AppComponent {
   readonly designRouteService = inject(DesignRouteService);
+  readonly layoutService = inject(LayoutService);
   readonly sidenavOpened = signal(true);
   title = 'processpuzzle-testbed';
 

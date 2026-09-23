@@ -1,5 +1,11 @@
-<markdown
-  [src]="'https://raw.githubusercontent.com/ZsZs/processpuzzle/refs/heads/develop/libs/js-shared/base-widget-frontend/README.md'"
-  (load)="onLoad()"
-  (error)="onError()">
-</markdown>
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
+  <a mat-tab-link routerLink="overview" routerLinkActive #overview="routerLinkActive" [active]="overview.isActive">
+    Overview
+  </a>
+  <a mat-tab-link routerLink="samples" routerLinkActive #samples="routerLinkActive" [active]="samples.isActive">
+    Samples
+  </a>
+</nav>
+<mat-tab-nav-panel #tabPanel>
+  <router-outlet></router-outlet>
+</mat-tab-nav-panel>

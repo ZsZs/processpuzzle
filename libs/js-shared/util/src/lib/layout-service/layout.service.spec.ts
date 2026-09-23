@@ -107,4 +107,19 @@ describe('LayoutService', () => {
     expect(service.isMediumDevice()).toBeFalsy();
     expect(service.isLargeDevice()).toBeTruthy();
   });
+
+  it('keeps the sidenav hidden until every request is restored', () => {
+    const restoreFirstRequest = service.hideSidenav();
+    const restoreSecondRequest = service.hideSidenav();
+
+    expect(service.isSidenavHidden()).toBeTruthy();
+
+    restoreFirstRequest();
+
+    expect(service.isSidenavHidden()).toBeTruthy();
+
+    restoreSecondRequest();
+
+    expect(service.isSidenavHidden()).toBeFalsy();
+  });
 });
