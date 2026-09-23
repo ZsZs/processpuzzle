@@ -7,9 +7,11 @@ import { FooterComponent } from './navigation/footer/footer.component';
 import { MatIconRegistry } from '@angular/material/icon';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignRouteService, DesignSidenavComponent } from '@processpuzzle/design';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { SidenavAutosizeDirective } from '@processpuzzle/widgets';
 
 @Component({
-  imports: [RouterModule, HeaderComponent, SidenavComponent, DesignSidenavComponent, MatSidenav, MatSidenavContent, MatSidenavContainer, FooterComponent],
+  imports: [RouterModule, HeaderComponent, SidenavComponent, DesignSidenavComponent, MatSidenav, MatSidenavContent, MatSidenavContainer, SidenavAutosizeDirective, FooterComponent],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

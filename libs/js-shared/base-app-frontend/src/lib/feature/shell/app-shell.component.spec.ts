@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { SidenavAutosizeDirective, WIDGET_REGISTRY } from '@processpuzzle/widgets';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
@@ -132,6 +132,7 @@ describe('AppShellComponent', () => {
       expect(sidenav()?.position).toBe('start');
       expect(sidenav()?.mode).toBe('side');
       expect(sidenav()?.opened).toBe(true);
+      expect(fixture.debugElement.query(By.directive(SidenavAutosizeDirective))).toBeTruthy();
     });
 
     it('honours the declared mode and a sidenav that starts closed', async () => {
