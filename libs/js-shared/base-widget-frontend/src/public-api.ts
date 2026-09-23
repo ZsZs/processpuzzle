@@ -25,6 +25,8 @@ export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
 export { ImageZoomComponent } from './image-zoom/image-zoom.component';
+export { PhotoAlbumComponent } from './photo-album/photo-album.component';
+export type { PhotoAlbumImage } from './photo-album/photo-album.component';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
 export { MarkdownPageComponent } from './markdown-page/markdown-page.component';

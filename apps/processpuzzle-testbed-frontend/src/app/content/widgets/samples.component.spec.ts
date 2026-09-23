@@ -5,7 +5,7 @@ import { LayoutService } from '@processpuzzle/util';
 import { WidgetsSamplesComponent } from './samples.component';
 
 describe('WidgetsSamplesComponent', () => {
-  it('shows the Conduct Race image and opens it at full size when clicked', async () => {
+  it('shows the image zoom sample and opens its image at full size', async () => {
     const restoreSidenav = vi.fn();
     const hideSidenav = vi.fn(() => restoreSidenav);
     const { getAllByRole, getByRole } = await render(WidgetsSamplesComponent, {
@@ -19,6 +19,38 @@ describe('WidgetsSamplesComponent', () => {
     fireEvent.click(thumbnail);
 
     const [, fullSizeImage] = getAllByRole('img', { name: 'Conduct Race diagram' });
+    expect(fullSizeImage).toHaveClass('full');
+    expect(hideSidenav).toHaveBeenCalledOnce();
+
+    fireEvent.click(getByRole('button', { name: 'Close' }));
+
+    expect(restoreSidenav).toHaveBeenCalledOnce();
+  });
+
+  it('shows one photo album image at a time and opens the selected image at full size', async () => {
+    const restoreSidenav = vi.fn();
+    const hideSidenav = vi.fn(() => restoreSidenav);
+    const { getAllByRole, getByRole, queryAllByRole } = await render(WidgetsSamplesComponent, {
+      providers: [{ provide: LayoutService, useValue: { hideSidenav } }],
+    });
+    const analyseRace = getByRole('img', { name: 'Analyse Race diagram' });
+
+    expect(analyseRace).toHaveAttribute('src', 'assets/Analyse_Race.png');
+    expect(queryAllByRole('img', { name: 'Plan Race diagram' })).toHaveLength(0);
+
+    fireEvent.click(getByRole('button', { name: 'Next image' }));
+
+    const [, conductRace] = getAllByRole('img', { name: 'Conduct Race diagram' });
+    expect(conductRace).toHaveAttribute('src', 'assets/Conduct_Race.png');
+
+    fireEvent.click(getByRole('button', { name: 'Next image' }));
+
+    const planRace = getByRole('img', { name: 'Plan Race diagram' });
+    expect(planRace).toHaveAttribute('src', 'assets/Plan_Race.png');
+
+    fireEvent.click(planRace);
+
+    const [, fullSizeImage] = getAllByRole('img', { name: 'Plan Race diagram' });
     expect(fullSizeImage).toHaveClass('full');
     expect(hideSidenav).toHaveBeenCalledOnce();
 
