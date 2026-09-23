@@ -378,6 +378,7 @@ not.
 |---|---|---|
 | `processpuzzle-biz` | `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9092 https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
 | `processpuzzle-admin` | `processpuzzle-admin-frontend`, **and** `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9091 http://localhost:4201 http://localhost:9092 https://admin.stage.processpuzzle.de https://admin.processpuzzle.com https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
+| `processpuzzle-custom` | `processpuzzle-custom-frontend` | Reconciled from `CUSTOM_CLIENT_REDIRECT_URIS` by `keycloak-init`; on stage: `frame-src 'self'; frame-ancestors 'self' https://custom.stage.processpuzzle.de; object-src 'none';` |
 
 X-Frame-Options *empty* in both, for the reason §5.2 gives.
 
@@ -395,9 +396,12 @@ waiting for 3rd party check iframe message` — and it is worth knowing that the
 message means a realm with no override or a realm that does not exist, while a form that lists
 origins means a realm whose override simply omits yours.
 
-`processpuzzle-custom` is not in the table: its `frame-ancestors` names `http://localhost:9093` and
-customer hostnames are per-deployment, so it is edited when a customer is provisioned rather than
-here.
+`processpuzzle-custom` is reconciled by `keycloak-init` rather than left to the realm import,
+because `--import-realm` skips realms that already exist. Its frame ancestors are derived from the
+same `CUSTOM_CLIENT_REDIRECT_URIS` value that reconciles the client, so its login-status and
+third-party-cookie iframes stay permitted when the customer shell's public origin changes. On stage,
+that value must be `https://custom.stage.processpuzzle.de/*`; the obsolete
+`customer.stage.processpuzzle.de` hostname does not authorize the deployed Custom shell.
 
 The §5.2 caveat applies to all of them: `--import-realm` skips an existing realm, so these committed
 values reach a fresh environment only. Every realm already running on stage needs the console edit.
