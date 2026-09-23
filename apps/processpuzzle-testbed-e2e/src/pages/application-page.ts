@@ -37,7 +37,7 @@ export class ApplicationPage {
   }
 
   async navigateToWidgetsPage() {
-    await this.navigateToPage('See Widgets Library', '**/widgets');
+    await this.navigateToPage('See Widgets Library', '**/widgets/overview');
   }
 
   async navigateToBaseEntityPage() {
