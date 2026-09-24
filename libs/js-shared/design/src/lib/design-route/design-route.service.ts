@@ -25,7 +25,12 @@ export class DesignRouteService {
       .subscribe((event) => this._isDesignRoute.set(this.matchesDesignRoute(event.urlAfterRedirects)));
   }
 
+  /**
+   * Compares the URL as the router reads it, not as the address bar shows it: `provideLocaleRouting`
+   * serializes every URL with the active language in front (`/en/design`). `parseUrl` runs that
+   * serializer, which strips the prefix, and `UrlTree.toString()` re-serializes with Angular's default.
+   */
   private matchesDesignRoute(url: string): boolean {
-    return url.startsWith(`${this.prefix}/design`);
+    return this.router.parseUrl(url).toString().startsWith(`${this.prefix}/design`);
   }
 }
