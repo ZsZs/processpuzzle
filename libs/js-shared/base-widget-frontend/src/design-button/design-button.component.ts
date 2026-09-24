@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { DESIGN_ROUTE_PREFIX, LayoutService } from '@processpuzzle/util';
+import { DESIGN_ROUTE_PREFIX } from '@processpuzzle/util';
 import { filter } from 'rxjs';
 
 @Component({
@@ -20,7 +20,6 @@ import { filter } from 'rxjs';
 })
 export class DesignButtonComponent {
   private readonly router = inject(Router);
-  private readonly layoutService = inject(LayoutService);
   /**
    * `''` unless the hosting application mounts the designer under a path — see
    * {@link DESIGN_ROUTE_PREFIX}. It prefixes the way *back* as well as the way in: in a shell whose
@@ -32,32 +31,22 @@ export class DesignButtonComponent {
   protected readonly icon = computed(() => (this.designMode() ? 'home' : 'design_services'));
   protected readonly routerLink = computed(() => (this.designMode() ? [`${this.prefix}/home`] : [`${this.prefix}/design`]));
   protected readonly ariaLabel = computed(() => (this.designMode() ? 'Home Button' : 'Design Button'));
-  private restoreSidenav?: () => void;
 
   constructor() {
-    this.updateSidenavVisibility(this.designMode());
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe((event) => {
-        const designMode = this.matchesDesignRoute(event.urlAfterRedirects);
-        this.designMode.set(designMode);
-        this.updateSidenavVisibility(designMode);
-      });
+      .subscribe((event) => this.designMode.set(this.matchesDesignRoute(event.urlAfterRedirects)));
   }
 
-  private updateSidenavVisibility(designMode: boolean): void {
-    if (designMode) {
-      this.restoreSidenav ??= this.layoutService.hideSidenav();
-    } else {
-      this.restoreSidenav?.();
-      this.restoreSidenav = undefined;
-    }
-  }
-
+  /**
+   * Compares the URL as the router reads it, not as the address bar shows it: `provideLocaleRouting`
+   * serializes every URL with the active language in front (`/en/design`). `parseUrl` runs that
+   * serializer, which strips the prefix, and `UrlTree.toString()` re-serializes with Angular's default.
+   */
   private matchesDesignRoute(url: string): boolean {
-    return url.startsWith(`${this.prefix}/design`);
+    return this.router.parseUrl(url).toString().startsWith(`${this.prefix}/design`);
   }
 }
