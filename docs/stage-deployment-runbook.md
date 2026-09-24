@@ -39,9 +39,17 @@ Three `A` records pointing at the Coolify host:
 | Record | Serves |
 |---|---|
 | `testbed.stage.processpuzzle.de` | the Angular frontend (nginx) |
-| `api.stage.processpuzzle.de` | the Spring Boot backend |
+| `api.testbed.stage.processpuzzle.de` | the Spring Boot backend, for direct access only — the browser reaches it same-origin at `testbed.stage.processpuzzle.de/api` |
 | `auth.stage.processpuzzle.de` | Keycloak |
 | `minio.stage.processpuzzle.de` | MinIO's **S3 API** (port 9000), for presigned URLs |
+
+Every hostname belongs to exactly **one** Coolify resource. Until 2026-09-24 the testbed backend served
+`api.stage.processpuzzle.de`, which processpuzzle-biz-backend also claimed; Traefik then routed some testbed
+calls to the biz backend, whose CORS allow-list answered them with a bare 403 — "Failed to fetch" in the app
+and a failed stage e2e, while the readiness probe (which sends no `Origin`) stayed green. The API hosts are now
+`api.testbed.stage`, `api.stage` (biz), `api.admin.stage` and `api.custom.stage`, and the testbed frontend no
+longer uses its own: like the other three stacks, it proxies `/api/` to its backend, so the browser never
+calls the platform cross-origin.
 
 MinIO needs one because `MinioConfig` builds a second, *presigning* client from
 `minio.public-endpoint` (`MINIO_PUBLIC_ENDPOINT`), and the URLs it signs are followed by the
@@ -50,9 +58,10 @@ upload and download fails while the rest of the store works. Point the domain at
 **9000** — the S3 API, not the 9001 console; publishing the console is a separate decision and
 would want a hostname of its own, since its credentials are MinIO's root user.
 
-The backend needs a name of its own because **nginx does not proxy to it**. The browser calls
-`BACKEND_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing
-rather than decorative.
+The browser does not need the backend's name: the frontend's nginx proxies `/api/` to it, and
+`BACKEND_SERVICE_ROOT` is that relative path. `api.testbed.stage` is kept for direct access — curl,
+tooling, a `dev` frontend pointed at stage — and `APP_CORS_ALLOWED_ORIGINS` matters only for callers
+that use it from a browser.
 
 `.de`, not `.com`: it matches the Coolify control plane. Production is still written `.com` in
 both `.env.prod` files and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
@@ -87,7 +96,7 @@ poll, and the Playwright run against the deployed environment.
 | Variable | Value |
 |---|---|
 | `TESTBED_FRONTEND_PUBLIC_URL` | `https://testbed.stage.processpuzzle.de` |
-| `TESTBED_BACKEND_PUBLIC_URL` | `https://api.stage.processpuzzle.de` |
+| `TESTBED_BACKEND_PUBLIC_URL` | `https://testbed.stage.processpuzzle.de/api` |
 
 `TESTBED_FRONTEND_PUBLIC_URL` must name the **same origin** as
 [`apps/processpuzzle-testbed-e2e/env/.env.stage`](../apps/processpuzzle-testbed-e2e/env/.env.stage),
@@ -243,7 +252,7 @@ Without the option the webhook cheerfully restarts the stale image and the deplo
 | Service | Domain | Container port |
 |---|---|---|
 | `testbed-frontend` | `https://testbed.stage.processpuzzle.de` | **80** |
-| `testbed-backend` | `https://api.stage.processpuzzle.de` | **8080** |
+| `testbed-backend` | `https://api.testbed.stage.processpuzzle.de` | **8080** |
 
 **⚠ Both domains have to be entered, with the `https://` scheme.** Coolify generates the Traefik
 router labels from this field alone — DNS pointing at the server does nothing by itself, and a
@@ -423,7 +432,7 @@ still says `.com` or `localhost`, `KC_HOSTNAME` did not take — redeploy.
 ### After §4 (applications)
 
 ```bash
-curl -fsS https://api.stage.processpuzzle.de/actuator/health/readiness
+curl -fsS https://testbed.stage.processpuzzle.de/api/actuator/health/readiness
 curl -fsS https://testbed.stage.processpuzzle.de/home
 curl -fsS https://testbed.stage.processpuzzle.de/assets/runtime-env.json   # must show PIPELINE_STAGE: stage
 ```
@@ -432,12 +441,13 @@ Allow up to **~7 minutes** for the backend's first start against an empty databa
 ArchUnit module-structure pass plus the metadata seeding was measured at 262 s, and the healthcheck's
 `start_period` is 420 s. A transient `unhealthy` inside that window is not a failure.
 
-**Then check the CORS allow-list**, which none of the three commands above touches — they send no
-`Origin`, so a backend that rejects the frontend's origin still answers all of them with 200:
+**Then check the CORS allow-list** — it matters only for callers of `api.testbed.stage` itself; the
+testbed frontend calls `/api` on its own origin and sends no preflight. None of the three commands above
+touches it — they send no `Origin`, so a backend that rejects an origin still answers all of them with 200:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' -X OPTIONS \
-  https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed/state-machines \
+  https://api.testbed.stage.processpuzzle.de/organizations/processpuzzle-testbed/state-machines \
   -H 'Origin: https://testbed.stage.processpuzzle.de' \
   -H 'Access-Control-Request-Method: GET'
 ```
@@ -575,11 +585,11 @@ docker ps --format '{{.Names}}	{{.Ports}}' | grep 8080  # coolify-proxy 0.0.0.0:
 So setting the port to `127.0.0.1:8080:8080` does not fix it either: a specific-address bind fails
 while the wildcard holds the port. Hence **8180** in §4 and in `testbed/.env.stage` / `testbed/.env.prod`.
 
-Nothing about the application changes. The proxy routes `api.stage.processpuzzle.de` to
-`testbed-backend:8080` over the compose network, `BACKEND_SERVICE_ROOT` in `config.stage.json` names
-that public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the
-SSH-tunnel port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and the local
-`config.ci.json` expects the backend on `localhost:8080`.
+Nothing about the application changes. The frontend's nginx proxies `/api/` to `testbed-backend:8080`
+over the compose network (and Coolify's proxy routes `api.testbed.stage.processpuzzle.de` there for
+direct access), and the healthcheck probes `localhost:8080` *inside* the container. Only the SSH-tunnel
+port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and a
+backend started by hand for a `dev` frontend is expected on `localhost:8080`.
 
 ### 7.3 `no available server`, with both containers healthy
 

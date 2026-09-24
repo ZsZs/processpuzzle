@@ -2,6 +2,8 @@
   "BASE_CONFIGURATION": {
     "PIPELINE_STAGE": "ci",
     "DEPLOYMENT_ENVIRONMENT": "docker",
+    "BACKEND_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
+    "OBJECT_STORE_SERVICE_ROOT": "/api",
     "FIREBASE_CONFIGURATION": {}
   },
   "AUTHENTICATION_CONFIGURATION": {
