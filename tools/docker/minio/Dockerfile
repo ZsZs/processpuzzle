@@ -1,11 +1,13 @@
-# ── Stage 1: MinIO server base image ──────────────────────────────────────────
-FROM quay.io/minio/minio:latest AS minio
+# MinIO withdrew its public images from quay.io and Docker Hub on 2026-09-24. pgsty/* are community
+# rebuilds of the upstream releases; pin RELEASE tags rather than `latest`, as the fork is third-party.
+ARG MINIO_IMAGE=pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+ARG MC_IMAGE=pgsty/mc:RELEASE.2026-09-16T00-00-00Z
 
-# ── Stage 2: MinIO Client (mc) for bucket/policy initialization ───────────────
-FROM quay.io/minio/mc:latest AS mc
+# ── MinIO Client (mc) for bucket/policy initialization ────────────────────────
+FROM ${MC_IMAGE} AS mc
 
 # ── Final image ───────────────────────────────────────────────────────────────
-FROM quay.io/minio/minio:latest
+FROM ${MINIO_IMAGE}
 
 # Copy MinIO Client binary from mc image
 COPY --from=mc /usr/bin/mc /usr/bin/mc
