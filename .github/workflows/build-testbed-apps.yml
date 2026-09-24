@@ -68,6 +68,7 @@ jobs:
   # Angular builder, the backend needs a JDK and Maven, and running them in parallel costs nothing.
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout source code
         uses: actions/checkout@v5
@@ -137,6 +138,7 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout source code
         uses: actions/checkout@v5

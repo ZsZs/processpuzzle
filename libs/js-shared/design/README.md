@@ -2,7 +2,7 @@
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-design.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_design&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_design)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fdesign?style=flat)](https://www.npmjs.com/package/@processpuzzle/design)
+[![npm version](https://img.shields.io/npm/v/%40processpuzzle%2Fdesign?style=flat)](https://www.npmjs.com/package/@processpuzzle/design)
 
 ## Introduction
 
