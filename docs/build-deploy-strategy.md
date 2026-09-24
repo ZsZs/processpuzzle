@@ -202,7 +202,8 @@ first start against an empty database. Setting them also turns on the post-deplo
 which reads the host it targets from `apps/processpuzzle-testbed-e2e/env/.env.<environment>` — so
 `TESTBED_FRONTEND_PUBLIC_URL` and that file have to name the same origin. On `STAGE` both are
 `https://testbed.stage.processpuzzle.de`, and `TESTBED_BACKEND_PUBLIC_URL` is
-`https://api.stage.processpuzzle.de`.
+`https://testbed.stage.processpuzzle.de/api` — the frontend's nginx proxy, so the readiness gate
+probes the backend along the same path the browser uses.
 
 ### The testbed pair — [`build-testbed-apps.yml`](../.github/workflows/build-testbed-apps.yml) + [`deploy-testbed-apps.yml`](../.github/workflows/deploy-testbed-apps.yml)
 
@@ -250,7 +251,7 @@ step once the manual path is proven.
   follow the same shape, each with its own apps compose file and its own Coolify Docker Compose
   resource.
 - **The registrable domain for prod.** `stage` is settled on `.de`, matching the Coolify control
-  plane: `testbed.stage.processpuzzle.de`, `api.stage.processpuzzle.de`,
+  plane: `testbed.stage.processpuzzle.de`, `api.testbed.stage.processpuzzle.de`,
   `auth.stage.processpuzzle.de`. `prod` still names `.com` in `.env.prod` and `config.prod.json`,
   while [Application stacks](application-stacks.md) names `testbed.processpuzzle.com` and the e2e
   project's `.env.prod` already names `testbed.processpuzzle.de`. Deliberately not guessed from
