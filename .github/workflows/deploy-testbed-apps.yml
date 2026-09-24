@@ -56,6 +56,7 @@ concurrency:
 jobs:
   resolve:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       environment: ${{ steps.resolve.outputs.environment }}
       env_tag: ${{ steps.resolve.outputs.env_tag }}
@@ -76,6 +77,7 @@ jobs:
   promote:
     needs: resolve
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -104,6 +106,12 @@ jobs:
   deploy:
     needs: [ resolve, promote ]
     runs-on: ubuntu-latest
+    # A healthy run is ~20 min: 2-3 for the readiness gate (14 at its limits), ~15 for the full e2e
+    # suite plus npm ci and the browser install. Without a cap, a suite whose tests all time out and
+    # retry (2 retries, one worker) holds the runner for GitHub's 6-hour default — and, since the
+    # concurrency group never cancels, every later stage deploy queues behind it. Run 35975671299 on
+    # 2026-09-24 took 58 min this way.
+    timeout-minutes: 45
     # Resolves the per-environment secrets and variables below.
     environment: ${{ needs.resolve.outputs.environment }}
     steps:
