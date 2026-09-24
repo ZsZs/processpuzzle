@@ -13,7 +13,7 @@
   "organizationsEnabled": true,
   "actionTokenGeneratedByAdminLifespan": 43200,
   "browserSecurityHeaders": {
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093 http://localhost:4203; object-src 'none';",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093 http://localhost:4203 http://localhost:9092 http://localhost:4202; object-src 'none';",
     "xFrameOptions": ""
   },
   "smtpServer": {
@@ -60,6 +60,47 @@
       ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:9093/*",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email",
+        "organization"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "processpuzzle-biz",
+      "name": "ProcessPuzzle Biz",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:9092",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:9092/*",
+        "http://localhost:4202/*"
+      ],
+      "webOrigins": [
+        "http://localhost:9092",
+        "http://localhost:4202"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:9092/*",
         "pkce.code.challenge.method": "S256"
       },
       "protocol": "openid-connect",

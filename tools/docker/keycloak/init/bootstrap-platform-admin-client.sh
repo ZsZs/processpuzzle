@@ -134,7 +134,7 @@ frame_ancestors_from_redirect_uris() {
       continue
     fi
     if [[ ! "${item}" =~ ^https?://[A-Za-z0-9.-]+(:[0-9]+)?/\*$ ]]; then
-      echo "ERROR: Custom client redirect URI '${item}' must be an HTTP(S) origin followed by /*." >&2
+      echo "ERROR: Customer realm client redirect URI '${item}' must be an HTTP(S) origin followed by /*." >&2
       exit 1
     fi
     origin="${item%/*}"
@@ -199,6 +199,28 @@ ensure_public_client() {
   fi
 }
 
+# Makes a client scope one of the client's DEFAULT scopes, so its claims are in every token rather
+# than only when the client asks for them. A client created by `ensure_public_client` gets the
+# realm's default scopes, and Keycloak attaches `organization` as an OPTIONAL one.
+ensure_default_client_scope() {
+  local realm="$1" client_id="$2" scope_name="$3" client_uuid scope_uuid
+
+  login
+  client_uuid="$("$KCADM" get clients -r "${realm}" --query "clientId=${client_id}" --fields id --format csv --noquotes | head -1)"
+  # grep and cut rather than awk: the Keycloak image this runs in ships no awk.
+  scope_uuid="$("$KCADM" get client-scopes -r "${realm}" --fields id,name --format csv --noquotes | grep ",${scope_name}\$" | cut -d, -f1 | head -1 || true)"
+  if [ -z "${scope_uuid}" ]; then
+    echo "  WARNING: realm '${realm}' has no client scope '${scope_name}'; '${client_id}' tokens will not carry it."
+    return 0
+  fi
+  echo "Ensuring '${scope_name}' is a default scope of '${client_id}' in '${realm}' ..."
+  # Out of the OPTIONAL list first: while the scope is optional, the PUT below answers 204 and
+  # changes nothing. The DELETE fails harmlessly when it is not optional; the PUT is a no-op when it
+  # is already a default. Idempotent both ways.
+  "$KCADM" delete "clients/${client_uuid}/optional-client-scopes/${scope_uuid}" -r "${realm}" >/dev/null 2>&1 || true
+  "$KCADM" update "clients/${client_uuid}/default-client-scopes/${scope_uuid}" -r "${realm}" -n -b '{}'
+}
+
 # Realm imports do not merge into existing realms, so both browser-facing clients of the
 # `processpuzzle-admin` realm are reconciled here on every container start instead. That is what
 # lets an origin be added to a realm that was imported months ago.
@@ -226,18 +248,13 @@ ensure_public_client \
 
 # The customer application's client, in the realm every customer shares.
 #
-# Reconciled here for the reason the two above are, and with one extra consequence. A realm import
-# is skipped for a realm that already exists, so on any Keycloak that has run before, the
-# `processpuzzle-custom` client described in processpuzzle-custom-realm.json was never created --
-# and platform-admin's sendActivationEmail passes `client_id=processpuzzle-custom` to
-# execute-actions-email. Keycloak refuses an unknown client, so a customer's seed job fails at
-# PROVISIONING_IDENTITY on a Keycloak that looks perfectly healthy, and the customer is never told
-# their account exists.
+# Reconciled here for the reason the two above are: a realm import is skipped for a realm that
+# already exists, so on any Keycloak that has run before, the clients described in
+# processpuzzle-custom-realm.json were never created.
 #
-# The redirect URIs matter as much as the client. Keycloak validates the `redirect_uri` on an
-# execute-actions-email against this list and drops one that does not match -- leaving the customer
-# on Keycloak's own "your account is updated" page instead of in their application. These have to
-# stay in step with platform-admin.customer.redirect-uri-template in processpuzzle-biz-backend.
+# These redirect URIs are the customer application's own login, and have to cover
+# platform-subscription.application-url-template in processpuzzle-biz-backend -- the link Customer
+# Home offers. The activation mail names the `processpuzzle-biz` client below instead.
 ensure_public_client \
   processpuzzle-custom \
   processpuzzle-custom \
@@ -245,10 +262,34 @@ ensure_public_client \
   "${CUSTOM_CLIENT_ROOT_URL}" \
   "${CUSTOM_CLIENT_REDIRECT_URIS}"
 
-# Keycloak applies frame-ancestors per realm. Keeping it in lockstep with the Custom client's
-# redirect origins lets each environment frame Keycloak's login-status and third-party-cookie
-# probes, while still preventing unlisted sites from embedding the realm.
-custom_frame_ancestors="$(frame_ancestors_from_redirect_uris "${CUSTOM_CLIENT_REDIRECT_URIS}")"
+# The Biz frontend's client in the customers' realm: Customer Home logs the subscriber in here, with
+# the account the activation mail set a password for. Same origins as its `processpuzzle-admin` twin
+# above.
+#
+# NOT optional. platform-admin's sendActivationEmail passes `client_id=processpuzzle-biz` to
+# execute-actions-email, and Keycloak refuses an unknown client -- so without it a customer's seed
+# job fails at PROVISIONING_IDENTITY on a Keycloak that looks perfectly healthy, and the customer is
+# never told their account exists. The redirect to Customer Home is validated against these URIs,
+# and one that does not match leaves the customer on Keycloak's own "account updated" page.
+#
+# One realm for Customer Home and the customer application is what makes the link between them
+# single sign-on: Keycloak's session cookie is per realm, so the second application finds the
+# session the first one started.
+ensure_public_client \
+  processpuzzle-custom \
+  processpuzzle-biz \
+  'ProcessPuzzle Biz' \
+  "${BIZ_CLIENT_ROOT_URL}" \
+  "${BIZ_CLIENT_REDIRECT_URIS}"
+# Customer Home's API authorizes on the token's `organization` claim; without the scope there is none.
+ensure_default_client_scope processpuzzle-custom processpuzzle-biz organization
+
+# Keycloak applies frame-ancestors per realm. Keeping it in lockstep with the redirect origins of
+# both clients in the realm lets each environment frame Keycloak's login-status and third-party-cookie
+# probes, while still preventing unlisted sites from embedding the realm. Biz's origins are in the
+# list because Customer Home logs in here too: without them its silent SSO check is refused and
+# keycloak-js init times out, so the login-guarded portal never renders.
+custom_frame_ancestors="$(frame_ancestors_from_redirect_uris "${CUSTOM_CLIENT_REDIRECT_URIS},${BIZ_CLIENT_REDIRECT_URIS}")"
 custom_content_security_policy="frame-src 'self'; frame-ancestors 'self' ${custom_frame_ancestors}; object-src 'none';"
 echo "Reconciling frame ancestors for the customer realm ..."
 login

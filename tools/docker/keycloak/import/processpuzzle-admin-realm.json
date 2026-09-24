@@ -10,7 +10,7 @@
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
   "browserSecurityHeaders": {
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9091 http://localhost:4201 http://localhost:9092 https://admin.stage.processpuzzle.de https://admin.processpuzzle.com https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9091 http://localhost:4201 http://localhost:9092 http://localhost:4202 https://admin.stage.processpuzzle.de https://admin.processpuzzle.com https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';",
     "xFrameOptions": ""
   },
   "roles": {
