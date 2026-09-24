@@ -1,7 +1,7 @@
 # ProcessPuzzle Testbed
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-processpuzzle-testbed-frontend.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_testbed_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_testbed_frontend&branch=develop)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Ftestbed?style=flat)](https://www.npmjs.com/package/@processpuzzle/testbed)
+[![npm version](https://img.shields.io/npm/v/%40processpuzzle%2Ftestbed?style=flat)](https://www.npmjs.com/package/@processpuzzle/testbed)
 
 ## Introduction
 ProcessPuzzle Testbed is the reference Angular application of the [ProcessPuzzle](https://processpuzzle.com) platform. It serves two purposes: it is a **living demonstration** of what can be built with the `@processpuzzle/*` libraries, and it is the **integration test harness** that exercises those libraries end-to-end in a realistic application context.
