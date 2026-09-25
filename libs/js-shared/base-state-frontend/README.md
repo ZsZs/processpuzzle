@@ -2,7 +2,7 @@
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-base-state-frontend.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_base_state_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_base_state_frontend)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Fbase-state?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-state)
+[![npm version](https://img.shields.io/npm/v/%40processpuzzle%2Fbase-state?style=flat)](https://www.npmjs.com/package/@processpuzzle/base-state)
 
 ## Introduction
 
@@ -91,4 +91,3 @@ StateMachine
 StateDefinition[] + TransitionDefinition[]
 ↓
 ActionDefinition[] + GuardDefinition[]
-

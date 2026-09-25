@@ -3,7 +3,7 @@
 # Built from the Keycloak image itself rather than from a shell base plus curl: kcadm.sh ships with
 # it, and reproducing what that script does with raw Admin API calls would mean hand-rolling token
 # acquisition, refresh and the role-mapping payloads — the exact things this bootstrap must get right.
-FROM quay.io/keycloak/keycloak:26.4.7
+FROM quay.io/keycloak/keycloak:26.7.4
 
 USER root
 COPY tools/docker/keycloak/init/bootstrap-platform-admin-client.sh /opt/keycloak/bin/bootstrap-platform-admin-client.sh

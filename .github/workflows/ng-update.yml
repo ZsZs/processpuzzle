@@ -6,6 +6,7 @@ on: # when the action should run. Can also be a CRON or in response to external 
 jobs:
   ngxUptodate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Updating ng dependencies # the magic happens here!
         uses: fast-facts/ng-update@v1

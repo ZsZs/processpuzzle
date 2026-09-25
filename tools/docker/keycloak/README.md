@@ -1,6 +1,6 @@
 # Keycloak (CI / local Docker)
 
-This image is built from `quay.io/keycloak/keycloak:26.4.7` and is wired up by `tools/docker/docker-compose-infrastructure.yaml` to talk to the `postgres` service.
+This image is built from `quay.io/keycloak/keycloak:26.7.4` and is wired up by `tools/docker/docker-compose-infrastructure.yaml` to talk to the `postgres` service.
 
 ## Realm config as code
 

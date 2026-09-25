@@ -22,6 +22,11 @@ import java.util.List;
  * tenant registry, and therefore may name realms differently, substitutes its own implementation of
  * this port and resolves the realm from that registry.
  *
+ * <p>The other model is <b>one realm, tenants as Organizations</b> ({@code
+ * keycloak.admin.organization-realm}): there the {@code orgKey} is an organization's alias, and a
+ * role is that organization's group rather than a realm role, because a realm role in a shared realm
+ * would be every tenant's. {@code RoleDirectoryConfiguration} picks the adapter.
+ *
  * <h2>Every operation is idempotent</h2>
  *
  * <p>Writes are projections of an already-committed fact, so they will be retried — by the next

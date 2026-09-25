@@ -50,7 +50,7 @@ export class HeaderComponent {
   readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
   readonly toggleSideNav = output<undefined>();
   readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
-  readonly title = computed(() => (this.isDesignRoute() ? 'ProcessPuzzle Designer' : 'ProcessPuzzle Testbed'));
+  readonly title = computed(() => (this.isDesignRoute() ? 'Design Tools' : 'ProcessPuzzle Testbed'));
 
   // region event handlers
   async onLogoClick() {

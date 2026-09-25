@@ -2,7 +2,7 @@
 
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-org-admin-frontend.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_org_admin_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_org_admin_frontend)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Forg-admin?style=flat)](https://www.npmjs.com/package/@processpuzzle/org-admin)
+[![npm version](https://img.shields.io/npm/v/%40processpuzzle%2Forg-admin?style=flat)](https://www.npmjs.com/package/@processpuzzle/org-admin)
 
 ## Introduction
 

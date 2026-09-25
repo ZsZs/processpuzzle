@@ -1,0 +1,69 @@
+name: coolify-sync-env
+description: >
+  Makes one Coolify resource's environment variables equal to a committed env file plus named GitHub
+  secrets, or reports where they differ. Run it before coolify-deploy.
+inputs:
+  webhook:
+    description: >
+      The resource's deploy webhook URL, the same secret coolify-deploy takes. The Coolify host and the
+      resource uuid are both read from it, so no second secret or variable names the resource.
+    required: true
+  token:
+    description: >
+      Coolify API token. `report` and `check` need `read`; `sync` needs `write`. Add `read:sensitive`
+      to compare values rather than only the presence of each key. The `deploy` permission alone,
+      which is all coolify-deploy needs, is refused here.
+    required: true
+  mode:
+    description: >
+      `off`, `report` (warn on drift, never write, never fail), `check` (fail on drift) or `sync`
+      (upsert, then fail if the resource still differs). Callers pass a repository or environment
+      variable so each environment opts in on its own.
+    required: false
+    default: report
+  env-file:
+    description: The committed non-secret values, e.g. tools/docker/env/custom/.env.stage.
+    required: true
+  secrets:
+    description: >
+      The caller's whole secrets context, passed as toJSON(secrets) inside an expression. Only the
+      names listed in `secret-keys` are read from it. (Written without the expression braces on
+      purpose: the runner evaluates expressions in action.yml descriptions too, and `secrets` does
+      not exist in a composite action, so a literal one fails the action at load time.)
+    required: false
+    default: '{}'
+  secret-keys:
+    description: >
+      Whitespace- or comma-separated names of the GitHub secrets this resource needs. Each must exist
+      and be non-empty, and none may also appear in the env file.
+    required: false
+    default: ''
+  compose-file:
+    description: >
+      The compose file the resource deploys. When given, every variable it interpolates must come from
+      the env file, the secret list or `defaults-allowed`, because Coolify stores a compose default
+      as the resource's value for any key it has not got, and that is how a CI default such as
+      http://localhost:7070 ends up running on stage without anyone having typed it.
+    required: false
+    default: ''
+  defaults-allowed:
+    description: >
+      Compose variables whose `:-` default is correct in every environment, so git deliberately does
+      not set them. They are never written, and their current Coolify value is printed for review.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Sync Coolify environment
+      shell: bash
+      env:
+        COOLIFY_WEBHOOK: ${{ inputs.webhook }}
+        COOLIFY_TOKEN: ${{ inputs.token }}
+        MODE: ${{ inputs.mode }}
+        ENV_FILE: ${{ inputs.env-file }}
+        SECRETS_JSON: ${{ inputs.secrets }}
+        SECRET_KEYS: ${{ inputs.secret-keys }}
+        COMPOSE_FILE: ${{ inputs.compose-file }}
+        DEFAULTS_ALLOWED: ${{ inputs.defaults-allowed }}
+      run: python3 "${GITHUB_ACTION_PATH}/sync_env.py"

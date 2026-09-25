@@ -1,21 +1,11 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MarkdownComponent } from 'ngx-markdown';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
 
 @Component({
   selector: 'app-widgets',
-  imports: [CommonModule, MarkdownComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, MatTabNav, MatTabNavPanel, MatTabLink],
   templateUrl: './widgets.component.html',
 })
-export class WidgetsComponent {
-  // region event handling methods
-  onLoad(): void {
-    return;
-  }
-
-  onError(): void {
-    return;
-  }
-
-  // endregion
-}
+export class WidgetsComponent {}

@@ -53,6 +53,19 @@ BIZ_CLIENT_ROOT_URL="${BIZ_CLIENT_ROOT_URL:-http://localhost:9092}"
 BIZ_CLIENT_REDIRECT_URIS="${BIZ_CLIENT_REDIRECT_URIS:-http://localhost:9092/*,http://localhost:4202/*}"
 CUSTOM_CLIENT_ROOT_URL="${CUSTOM_CLIENT_ROOT_URL:-http://localhost:9093}"
 CUSTOM_CLIENT_REDIRECT_URIS="${CUSTOM_CLIENT_REDIRECT_URIS:-http://localhost:9093/*,http://localhost:4203/*}"
+# This remains Mailpit by default so a local/CI sign-up can never mail a real customer. Stage and
+# production override the values through the infrastructure resource and this script reconciles
+# them on every start because realm imports are deliberately one-shot.
+CUSTOM_SMTP_HOST="${KEYCLOAK_CUSTOM_SMTP_HOST:-mailpit}"
+CUSTOM_SMTP_PORT="${KEYCLOAK_CUSTOM_SMTP_PORT:-1025}"
+CUSTOM_SMTP_FROM="${KEYCLOAK_CUSTOM_SMTP_FROM:-noreply@processpuzzle.com}"
+CUSTOM_SMTP_FROM_DISPLAY_NAME="${KEYCLOAK_CUSTOM_SMTP_FROM_DISPLAY_NAME:-ProcessPuzzle}"
+CUSTOM_SMTP_REPLY_TO="${KEYCLOAK_CUSTOM_SMTP_REPLY_TO:-support@processpuzzle.com}"
+CUSTOM_SMTP_AUTH="${KEYCLOAK_CUSTOM_SMTP_AUTH:-false}"
+CUSTOM_SMTP_USERNAME="${KEYCLOAK_CUSTOM_SMTP_USERNAME:-}"
+CUSTOM_SMTP_PASSWORD="${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}"
+CUSTOM_SMTP_STARTTLS="${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}"
+CUSTOM_SMTP_SSL="${KEYCLOAK_CUSTOM_SMTP_SSL:-false}"
 # Overridable so the argument construction below can be exercised against a stub; a container
 # never sets it.
 KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
@@ -108,6 +121,33 @@ to_json_array() {
   printf '[%s]' "${out}"
 }
 
+frame_ancestors_from_redirect_uris() {
+  local csv="$1" item origin out="" glob_was_already_off=1
+  case "$-" in
+    *f*) ;;
+    *) glob_was_already_off=0; set -f ;;
+  esac
+  local IFS=","
+  for item in $csv; do
+    item="$(printf '%s' "$item" | tr -d '[:space:]')"
+    if [ -z "${item}" ]; then
+      continue
+    fi
+    if [[ ! "${item}" =~ ^https?://[A-Za-z0-9.-]+(:[0-9]+)?/\*$ ]]; then
+      echo "ERROR: Customer realm client redirect URI '${item}' must be an HTTP(S) origin followed by /*." >&2
+      exit 1
+    fi
+    origin="${item%/*}"
+    out="${out:+${out} }${origin}"
+  done
+  if [ "${glob_was_already_off}" -eq 0 ]; then set +f; fi
+  if [ -z "${out}" ]; then
+    echo "ERROR: At least one Custom client redirect URI is required to set frame ancestors." >&2
+    exit 1
+  fi
+  printf '%s' "${out}"
+}
+
 ensure_public_client() {
   local realm="$1"
   local client_id="$2"
@@ -159,6 +199,49 @@ ensure_public_client() {
   fi
 }
 
+# Makes a client scope one of the client's DEFAULT scopes, so its claims are in every token rather
+# than only when the client asks for them. A client created by `ensure_public_client` gets the
+# realm's default scopes, and Keycloak attaches `organization` as an OPTIONAL one.
+ensure_default_client_scope() {
+  local realm="$1" client_id="$2" scope_name="$3" client_uuid scope_uuid
+
+  login
+  client_uuid="$("$KCADM" get clients -r "${realm}" --query "clientId=${client_id}" --fields id --format csv --noquotes | head -1)"
+  # grep and cut rather than awk: the Keycloak image this runs in ships no awk.
+  scope_uuid="$("$KCADM" get client-scopes -r "${realm}" --fields id,name --format csv --noquotes | grep ",${scope_name}\$" | cut -d, -f1 | head -1 || true)"
+  if [ -z "${scope_uuid}" ]; then
+    echo "  WARNING: realm '${realm}' has no client scope '${scope_name}'; '${client_id}' tokens will not carry it."
+    return 0
+  fi
+  echo "Ensuring '${scope_name}' is a default scope of '${client_id}' in '${realm}' ..."
+  # Out of the OPTIONAL list first: while the scope is optional, the PUT below answers 204 and
+  # changes nothing. The DELETE fails harmlessly when it is not optional; the PUT is a no-op when it
+  # is already a default. Idempotent both ways.
+  "$KCADM" delete "clients/${client_uuid}/optional-client-scopes/${scope_uuid}" -r "${realm}" >/dev/null 2>&1 || true
+  "$KCADM" update "clients/${client_uuid}/default-client-scopes/${scope_uuid}" -r "${realm}" -n -b '{}'
+}
+
+# Adds a protocol mapper to a client scope unless one of that TYPE is already there. Keyed on the
+# mapper type rather than its name, so a mapper someone added by hand under another name is not
+# duplicated; its configuration is then left as they set it.
+ensure_scope_mapper() {
+  local realm="$1" scope_name="$2" mapper_name="$3" mapper_type="$4" mapper_config="$5" scope_uuid
+
+  login
+  scope_uuid="$("$KCADM" get client-scopes -r "${realm}" --fields id,name --format csv --noquotes | grep ",${scope_name}\$" | cut -d, -f1 | head -1 || true)"
+  if [ -z "${scope_uuid}" ]; then
+    echo "  WARNING: realm '${realm}' has no client scope '${scope_name}'; cannot add '${mapper_name}'."
+    return 0
+  fi
+  if "$KCADM" get "client-scopes/${scope_uuid}/protocol-mappers/models" -r "${realm}" --fields protocolMapper --format csv --noquotes | grep -qx "${mapper_type}"; then
+    echo "Scope '${scope_name}' in '${realm}' already has a ${mapper_type}."
+    return 0
+  fi
+  echo "Adding '${mapper_name}' to scope '${scope_name}' in '${realm}' ..."
+  "$KCADM" create "client-scopes/${scope_uuid}/protocol-mappers/models" -r "${realm}" \
+    -b "{\"name\":\"${mapper_name}\",\"protocol\":\"openid-connect\",\"protocolMapper\":\"${mapper_type}\",\"config\":${mapper_config}}"
+}
+
 # Realm imports do not merge into existing realms, so both browser-facing clients of the
 # `processpuzzle-admin` realm are reconciled here on every container start instead. That is what
 # lets an origin be added to a realm that was imported months ago.
@@ -186,24 +269,133 @@ ensure_public_client \
 
 # The customer application's client, in the realm every customer shares.
 #
-# Reconciled here for the reason the two above are, and with one extra consequence. A realm import
-# is skipped for a realm that already exists, so on any Keycloak that has run before, the
-# `processpuzzle-custom` client described in processpuzzle-custom-realm.json was never created --
-# and platform-admin's sendActivationEmail passes `client_id=processpuzzle-custom` to
-# execute-actions-email. Keycloak refuses an unknown client, so a customer's seed job fails at
-# PROVISIONING_IDENTITY on a Keycloak that looks perfectly healthy, and the customer is never told
-# their account exists.
+# Reconciled here for the reason the two above are: a realm import is skipped for a realm that
+# already exists, so on any Keycloak that has run before, the clients described in
+# processpuzzle-custom-realm.json were never created.
 #
-# The redirect URIs matter as much as the client. Keycloak validates the `redirect_uri` on an
-# execute-actions-email against this list and drops one that does not match -- leaving the customer
-# on Keycloak's own "your account is updated" page instead of in their application. These have to
-# stay in step with platform-admin.customer.redirect-uri-template in processpuzzle-biz-backend.
+# These redirect URIs are the customer application's own login, and have to cover
+# platform-subscription.application-url-template in processpuzzle-biz-backend -- the link Customer
+# Home offers. The activation mail names the `processpuzzle-biz` client below instead.
 ensure_public_client \
   processpuzzle-custom \
   processpuzzle-custom \
   'ProcessPuzzle Custom' \
   "${CUSTOM_CLIENT_ROOT_URL}" \
   "${CUSTOM_CLIENT_REDIRECT_URIS}"
+
+# The Biz frontend's client in the customers' realm: Customer Home logs the subscriber in here, with
+# the account the activation mail set a password for. Same origins as its `processpuzzle-admin` twin
+# above.
+#
+# NOT optional. platform-admin's sendActivationEmail passes `client_id=processpuzzle-biz` to
+# execute-actions-email, and Keycloak refuses an unknown client -- so without it a customer's seed
+# job fails at PROVISIONING_IDENTITY on a Keycloak that looks perfectly healthy, and the customer is
+# never told their account exists. The redirect to Customer Home is validated against these URIs,
+# and one that does not match leaves the customer on Keycloak's own "account updated" page.
+#
+# One realm for Customer Home and the customer application is what makes the link between them
+# single sign-on: Keycloak's session cookie is per realm, so the second application finds the
+# session the first one started.
+ensure_public_client \
+  processpuzzle-custom \
+  processpuzzle-biz \
+  'ProcessPuzzle Biz' \
+  "${BIZ_CLIENT_ROOT_URL}" \
+  "${BIZ_CLIENT_REDIRECT_URIS}"
+# Customer Home's API authorizes on the token's `organization` claim; without the scope there is none.
+ensure_default_client_scope processpuzzle-custom processpuzzle-biz organization
+
+# A customer's workflow roles are Keycloak Organization GROUPS — one hierarchy per organization, so
+# two customers' `reviewer` roles are two different groups (Keycloak 26.6+). This mapper nests them
+# into the claim the backends already read, under the organization they belong to:
+#
+#   "organization": { "acme": { "groups": ["/reviewer"] } }
+#
+# It changes the claim from a list of aliases to an object keyed by alias, which the custom backend's
+# OrganizationClaim reads either way. Reconciled here rather than in the realm import: that file does
+# not describe client scopes (Keycloak creates `organization` itself), and an import is skipped for a
+# realm that already exists anyway.
+ensure_scope_mapper processpuzzle-custom organization 'organization groups' \
+  oidc-organization-group-membership-mapper \
+  '{"id.token.claim":"true","access.token.claim":"true","userinfo.token.claim":"true","introspection.token.claim":"true"}'
+
+# Keycloak applies frame-ancestors per realm. Keeping it in lockstep with the redirect origins of
+# both clients in the realm lets each environment frame Keycloak's login-status and third-party-cookie
+# probes, while still preventing unlisted sites from embedding the realm. Biz's origins are in the
+# list because Customer Home logs in here too: without them its silent SSO check is refused and
+# keycloak-js init times out, so the login-guarded portal never renders.
+custom_frame_ancestors="$(frame_ancestors_from_redirect_uris "${CUSTOM_CLIENT_REDIRECT_URIS},${BIZ_CLIENT_REDIRECT_URIS}")"
+custom_content_security_policy="frame-src 'self'; frame-ancestors 'self' ${custom_frame_ancestors}; object-src 'none';"
+echo "Reconciling frame ancestors for the customer realm ..."
+login
+"$KCADM" update realms/processpuzzle-custom \
+  -s "browserSecurityHeaders={\"contentSecurityPolicy\":\"${custom_content_security_policy}\",\"xFrameOptions\":\"\"}"
+
+# `--import-realm` does not merge changes into an existing realm. Without this explicit update,
+# every deployed customer realm keeps the import's Mailpit endpoint and accepts activation emails
+# without ever delivering them to the new administrator.
+json_string() {
+  case "$1" in
+    *$'\n'*|*$'\r'*)
+      echo "ERROR: Keycloak SMTP values must not contain newlines." >&2
+      exit 1
+      ;;
+  esac
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+if [[ ! "${CUSTOM_SMTP_PORT}" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: KEYCLOAK_CUSTOM_SMTP_PORT must be a numeric SMTP port." >&2
+  exit 1
+fi
+
+case "${CUSTOM_SMTP_AUTH}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_AUTH must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+case "${CUSTOM_SMTP_STARTTLS}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_STARTTLS must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+case "${CUSTOM_SMTP_SSL}" in
+  true|false) ;;
+  *)
+    echo "ERROR: KEYCLOAK_CUSTOM_SMTP_SSL must be true or false." >&2
+    exit 1
+    ;;
+esac
+
+if [ "${CUSTOM_SMTP_AUTH}" = "true" ] && { [ -z "${CUSTOM_SMTP_USERNAME}" ] || [ -z "${CUSTOM_SMTP_PASSWORD}" ]; }; then
+  echo "ERROR: authenticated Keycloak SMTP requires username and password." >&2
+  exit 1
+fi
+
+smtp_server="$(printf '{"host":"%s","port":"%s","from":"%s","fromDisplayName":"%s","replyTo":"%s","auth":"%s","user":"%s","password":"%s","starttls":"%s","ssl":"%s"}' \
+  "$(json_string "${CUSTOM_SMTP_HOST}")" \
+  "$(json_string "${CUSTOM_SMTP_PORT}")" \
+  "$(json_string "${CUSTOM_SMTP_FROM}")" \
+  "$(json_string "${CUSTOM_SMTP_FROM_DISPLAY_NAME}")" \
+  "$(json_string "${CUSTOM_SMTP_REPLY_TO}")" \
+  "${CUSTOM_SMTP_AUTH}" \
+  "$(json_string "${CUSTOM_SMTP_USERNAME}")" \
+  "$(json_string "${CUSTOM_SMTP_PASSWORD}")" \
+  "${CUSTOM_SMTP_STARTTLS}" \
+  "${CUSTOM_SMTP_SSL}")"
+
+echo "Reconciling SMTP delivery for the customer realm via ${CUSTOM_SMTP_HOST}:${CUSTOM_SMTP_PORT} ..."
+login
+"$KCADM" update realms/processpuzzle-custom \
+  -s "verifyEmail=true" \
+  -s "actionTokenGeneratedByAdminLifespan=43200" \
+  -s "smtpServer=${smtp_server}"
 
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"

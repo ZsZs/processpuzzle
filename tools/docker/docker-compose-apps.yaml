@@ -223,9 +223,10 @@ services:
       # with nothing to explain it; an origin belonging to another stack has no business here. 9090 is
       # the testbed container and 4200 its dev server.
       #
-      # Load-bearing on stage and prod, where the CI default is simply wrong: nginx does NOT proxy to
-      # the backend, so the browser calls BACKEND_SERVICE_ROOT cross-origin and this list is the only
-      # thing that lets it. testbed/.env.stage sets it to the frontend's own https origin.
+      # The testbed frontend itself no longer depends on it: its nginx proxies /api/ to this backend,
+      # so the browser calls BACKEND_SERVICE_ROOT same-origin. It still governs every browser that
+      # calls the backend's own hostname directly — a `dev` frontend on 4200, or a deployed one on
+      # stage — which is why testbed/.env.stage narrows it to the frontend's https origin.
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
 
       # User management, which is org-admin's. This deployment does not create realms — that went
@@ -257,7 +258,9 @@ services:
     networks:
       - processpuzzle
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      # `/actuator/health/readiness` includes an authenticated MinIO request, unlike the generic
+      # health endpoint. A backend with stale MinIO credentials must not be considered ready.
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness" ]
       # THE BUDGET IS `retries` x `interval` = 420s, and it is written that way ON PURPOSE — the same
       # reason Keycloak's is, in docker-compose-infrastructure.yaml:147. `start_period` does NOT
       # survive the trip through Coolify, so the effective budget is the retries spent from t=0.

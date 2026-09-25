@@ -16,6 +16,8 @@ ProcessPuzzle Store is a Spring Boot-based library designed to provide a unified
     - **URI Generation**: Get the public or internal URI for an object.
 - **Metadata Support**: Handle custom headers like `X-Object-Name` and `X-Object-Bucket`.
 - **Spring Boot Integration**: Easy configuration via standard properties and YAML factories.
+- **MinIO Health Indicator**: Publishes authenticated MinIO connectivity as the `minio` Actuator
+  health contributor.
 
 ## Technologies
 
@@ -51,6 +53,20 @@ minio:
 | `minio.secretKey` | Secret key for authentication. |
 | `minio.buckets` | Map of logical bucket names to actual MinIO bucket names. |
 | `minio.mimeTypes` | Map of extensions to MIME types. |
+
+### Readiness
+
+Applications can include MinIO in their readiness group to reject deployments whose configured
+service account cannot access object storage:
+
+```yaml
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState,minio
+```
 
 ## Usage
 

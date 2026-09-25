@@ -52,16 +52,6 @@ jobs:
           firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'prod'
 
-      # Smoke-tests whatever is CURRENTLY deployed at prod — this workflow no longer puts it there,
-      # so a failure here means prod needs a Deploy-Testbed-Apps run, not that this release is bad.
-      - id: integration-test
-        name: run-integration-tests
-        uses: ./.github/actions/e2e-test
-        with:
-          target_environment: 'prod'
-          base_dir: 'apps/processpuzzle-testbed-e2e'
-          test_scope: 'smoke'
-
       - name: Config Git
         shell: bash
         run: |

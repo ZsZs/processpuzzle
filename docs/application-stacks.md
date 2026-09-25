@@ -44,7 +44,7 @@ Custom differs only where it must: its shared realm, database, and bucket prefix
 organization key and backend deployment belong to the individual customer.
 
 > **The Hostname row is the one thing that is not settled.** `stage` is deployed on **`.de`**, matching
-> the Coolify control plane: `testbed.stage.processpuzzle.de`, with `api.stage.processpuzzle.de` for
+> the Coolify control plane: `testbed.stage.processpuzzle.de`, with `testbed.stage.processpuzzle.de/api` for
 > the backend and `auth.stage.processpuzzle.de` for Keycloak — see
 > `tools/docker/env/{infrastructure,testbed}/.env.stage`. The
 > `.com` names in the table above are the *intended* production names and nothing has verified those

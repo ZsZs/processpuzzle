@@ -177,14 +177,13 @@ Three names, on `.de` to match the Coolify control plane, and each has to agree 
 | Name | Set in | Must equal |
 | --- | --- | --- |
 | `testbed.stage.processpuzzle.de` | Coolify: the frontend service's domain | `APP_CORS_ALLOWED_ORIGINS` in `testbed/.env.stage`, the client's `redirectUris` in the testbed realm, and `PROCESSPUZZLE_TESTBED_BASE_URL` in `apps/processpuzzle-testbed-e2e/env/.env.stage` |
-| `api.stage.processpuzzle.de` | Coolify: the backend service's domain | `BACKEND_SERVICE_ROOT` in `config.stage.json` |
+| `api.testbed.stage.processpuzzle.de` | Coolify: the backend service's domain | nothing in the repository — direct access only; `config.stage.json` reaches the backend same-origin at `/api` |
 | `auth.stage.processpuzzle.de` | Coolify: the Keycloak service's domain | `KC_HOSTNAME` **and** `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` in `.env.stage`, and `AUTHENTICATION_SERVICE_ROOT` / `authServerUrl` in `config.stage.json` |
 
-The backend needs a hostname of its own because **nginx does not proxy to it**: the browser calls
-`BACKEND_SERVICE_ROOT` cross-origin from the frontend's origin, which is what makes
-`APP_CORS_ALLOWED_ORIGINS` load-bearing rather than decorative. An origin missing from it arrives as
-HTTP status 0 with nothing to explain it, and an issuer that differs from `KC_HOSTNAME` by one
-character rejects every token.
+The browser reaches the backend through the frontend's nginx at `/api`, so it needs no hostname of
+its own; `api.testbed.stage` is for direct access, and `APP_CORS_ALLOWED_ORIGINS` only matters for a
+browser that uses it. An issuer that differs from `KC_HOSTNAME` by one character rejects every
+token.
 
 `prod` still names `.com`, and that split is unresolved — see
 [`docs/build-deploy-strategy.md`](../docs/build-deploy-strategy.md) §12. **Confirm the prod names

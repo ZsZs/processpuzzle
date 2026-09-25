@@ -39,9 +39,17 @@ Three `A` records pointing at the Coolify host:
 | Record | Serves |
 |---|---|
 | `testbed.stage.processpuzzle.de` | the Angular frontend (nginx) |
-| `api.stage.processpuzzle.de` | the Spring Boot backend |
+| `api.testbed.stage.processpuzzle.de` | the Spring Boot backend, for direct access only — the browser reaches it same-origin at `testbed.stage.processpuzzle.de/api` |
 | `auth.stage.processpuzzle.de` | Keycloak |
 | `minio.stage.processpuzzle.de` | MinIO's **S3 API** (port 9000), for presigned URLs |
+
+Every hostname belongs to exactly **one** Coolify resource. Until 2026-09-24 the testbed backend served
+`api.stage.processpuzzle.de`, which processpuzzle-biz-backend also claimed; Traefik then routed some testbed
+calls to the biz backend, whose CORS allow-list answered them with a bare 403 — "Failed to fetch" in the app
+and a failed stage e2e, while the readiness probe (which sends no `Origin`) stayed green. The API hosts are now
+`api.testbed.stage`, `api.stage` (biz), `api.admin.stage` and `api.custom.stage`, and the testbed frontend no
+longer uses its own: like the other three stacks, it proxies `/api/` to its backend, so the browser never
+calls the platform cross-origin.
 
 MinIO needs one because `MinioConfig` builds a second, *presigning* client from
 `minio.public-endpoint` (`MINIO_PUBLIC_ENDPOINT`), and the URLs it signs are followed by the
@@ -50,9 +58,10 @@ upload and download fails while the rest of the store works. Point the domain at
 **9000** — the S3 API, not the 9001 console; publishing the console is a separate decision and
 would want a hostname of its own, since its credentials are MinIO's root user.
 
-The backend needs a name of its own because **nginx does not proxy to it**. The browser calls
-`BACKEND_SERVICE_ROOT` cross-origin, which is what makes `APP_CORS_ALLOWED_ORIGINS` load-bearing
-rather than decorative.
+The browser does not need the backend's name: the frontend's nginx proxies `/api/` to it, and
+`BACKEND_SERVICE_ROOT` is that relative path. `api.testbed.stage` is kept for direct access — curl,
+tooling, a `dev` frontend pointed at stage — and `APP_CORS_ALLOWED_ORIGINS` matters only for callers
+that use it from a browser.
 
 `.de`, not `.com`: it matches the Coolify control plane. Production is still written `.com` in
 both `.env.prod` files and is deliberately unresolved — see [Build and deployment](build-deploy-strategy.md)
@@ -87,7 +96,7 @@ poll, and the Playwright run against the deployed environment.
 | Variable | Value |
 |---|---|
 | `TESTBED_FRONTEND_PUBLIC_URL` | `https://testbed.stage.processpuzzle.de` |
-| `TESTBED_BACKEND_PUBLIC_URL` | `https://api.stage.processpuzzle.de` |
+| `TESTBED_BACKEND_PUBLIC_URL` | `https://testbed.stage.processpuzzle.de/api` |
 
 `TESTBED_FRONTEND_PUBLIC_URL` must name the **same origin** as
 [`apps/processpuzzle-testbed-e2e/env/.env.stage`](../apps/processpuzzle-testbed-e2e/env/.env.stage),
@@ -243,7 +252,7 @@ Without the option the webhook cheerfully restarts the stale image and the deplo
 | Service | Domain | Container port |
 |---|---|---|
 | `testbed-frontend` | `https://testbed.stage.processpuzzle.de` | **80** |
-| `testbed-backend` | `https://api.stage.processpuzzle.de` | **8080** |
+| `testbed-backend` | `https://api.testbed.stage.processpuzzle.de` | **8080** |
 
 **⚠ Both domains have to be entered, with the `https://` scheme.** Coolify generates the Traefik
 router labels from this field alone — DNS pointing at the server does nothing by itself, and a
@@ -315,7 +324,8 @@ Two you can **omit**, because their compose defaults are already right:
 
 ## 5. Keycloak admin console on stage
 
-Two edits, both in the `processpuzzle-testbed` realm.
+Two edits in the `processpuzzle-testbed` realm, plus the same security-defenses edit in every other
+realm a browser frames — see [§5.3](#53-the-other-realms-need-the-same-security-defenses-edit).
 
 ### 5.1 Valid redirect URIs
 
@@ -366,6 +376,45 @@ but `--import-realm` **skips a realm that already exists** — so the committed 
 realm created after this change. The import file matters for a fresh environment; the console matters
 for the one already running.
 
+### 5.3 The other realms need the same security-defenses edit
+
+§5.2 is not a testbed peculiarity. Every realm that a browser puts in an `<iframe>` needs its own
+`frame-ancestors`, because the directive is served per realm — and Keycloak's default names only
+`'self'`, which is never the frontend's origin once Keycloak sits on `auth.` and the application does
+not.
+
+| Realm | Framed by | Content-Security-Policy |
+|---|---|---|
+| `processpuzzle-biz` | `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9092 https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
+| `processpuzzle-admin` | `processpuzzle-admin-frontend`, **and** `processpuzzle-biz-frontend` | `frame-src 'self'; frame-ancestors 'self' http://localhost:9091 http://localhost:4201 http://localhost:9092 https://admin.stage.processpuzzle.de https://admin.processpuzzle.com https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';` |
+| `processpuzzle-custom` | `processpuzzle-custom-frontend` | Reconciled from `CUSTOM_CLIENT_REDIRECT_URIS` by `keycloak-init`; on stage: `frame-src 'self'; frame-ancestors 'self' https://custom.stage.processpuzzle.de; object-src 'none';` |
+
+X-Frame-Options *empty* in both, for the reason §5.2 gives.
+
+`processpuzzle-admin` carries the Biz origins as well as its own because it is Biz's
+`FALLBACK_AUTH_REALM`: the public site's landing pages, the sign-up funnel and every reserved path
+name no tenant, so they authenticate against `processpuzzle-admin` rather than against a per-tenant
+realm. A reader who assumes the admin realm is only ever framed by the admin console removes those
+three origins and breaks the public site, which is why they are listed here rather than left to
+inference.
+
+`processpuzzle-admin-realm.json` had **no `browserSecurityHeaders` block at all** until this change,
+so it ran on the Keycloak default and failed on stage the moment anything framed it. That failure is
+the one in §5.2 verbatim — `frame-ancestors 'self'` with no origin after it, then `Timeout when
+waiting for 3rd party check iframe message` — and it is worth knowing that the *bare* form of the
+message means a realm with no override or a realm that does not exist, while a form that lists
+origins means a realm whose override simply omits yours.
+
+`processpuzzle-custom` is reconciled by `keycloak-init` rather than left to the realm import,
+because `--import-realm` skips realms that already exist. Its frame ancestors are derived from the
+same `CUSTOM_CLIENT_REDIRECT_URIS` value that reconciles the client, so its login-status and
+third-party-cookie iframes stay permitted when the customer shell's public origin changes. On stage,
+that value must be `https://custom.stage.processpuzzle.de/*`; the obsolete
+`customer.stage.processpuzzle.de` hostname does not authorize the deployed Custom shell.
+
+The §5.2 caveat applies to all of them: `--import-realm` skips an existing realm, so these committed
+values reach a fresh environment only. Every realm already running on stage needs the console edit.
+
 ---
 
 ## 6. Verify
@@ -383,7 +432,7 @@ still says `.com` or `localhost`, `KC_HOSTNAME` did not take — redeploy.
 ### After §4 (applications)
 
 ```bash
-curl -fsS https://api.stage.processpuzzle.de/actuator/health
+curl -fsS https://testbed.stage.processpuzzle.de/api/actuator/health/readiness
 curl -fsS https://testbed.stage.processpuzzle.de/home
 curl -fsS https://testbed.stage.processpuzzle.de/assets/runtime-env.json   # must show PIPELINE_STAGE: stage
 ```
@@ -392,12 +441,13 @@ Allow up to **~7 minutes** for the backend's first start against an empty databa
 ArchUnit module-structure pass plus the metadata seeding was measured at 262 s, and the healthcheck's
 `start_period` is 420 s. A transient `unhealthy` inside that window is not a failure.
 
-**Then check the CORS allow-list**, which none of the three commands above touches — they send no
-`Origin`, so a backend that rejects the frontend's origin still answers all of them with 200:
+**Then check the CORS allow-list** — it matters only for callers of `api.testbed.stage` itself; the
+testbed frontend calls `/api` on its own origin and sends no preflight. None of the three commands above
+touches it — they send no `Origin`, so a backend that rejects an origin still answers all of them with 200:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' -X OPTIONS \
-  https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed/state-machines \
+  https://api.testbed.stage.processpuzzle.de/organizations/processpuzzle-testbed/state-machines \
   -H 'Origin: https://testbed.stage.processpuzzle.de' \
   -H 'Access-Control-Request-Method: GET'
 ```
@@ -440,7 +490,7 @@ skipped.** Skipped means the webhook secret is still missing.
 | Infrastructure deploy fails with `dependency failed to start: container keycloak-… is unhealthy` | the message names the symptom only; read the container's exit code and log before anything else — usually the database password no longer matches the `postgres_data` volume, while `postgres` still reports healthy because `pg_isready` does not authenticate. See [§7.4](#74-dependency-failed-to-start-container-keycloak--is-unhealthy) |
 | Browser shows `no available server`, both containers healthy | no domain set on the *service*, so no Traefik router exists — see [§7.3](#73-no-available-server-with-both-containers-healthy) |
 | Browser shows `net::ERR_FAILED` and HTTP status **0** on API calls, with no CORS message | the frontend's origin is missing from `APP_CORS_ALLOWED_ORIGINS`, so the *preflight* is rejected with 403 `Invalid CORS request` — confirm with the `OPTIONS` check in [§6](#after-4-applications) |
-| `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the realm's CSP does not name the frontend's origin, so `Keycloak.init()` rejects and authentication never initialises — see [§5.2](#52-security-defenses) |
+| `Framing 'https://auth…' violates … frame-ancestors`, then `Timeout when waiting for 3rd party check iframe message` | the browser could not frame the realm, so `Keycloak.init()` rejects and authentication never initialises. Read the directive the message quotes: if it **lists origins** and yours is missing, it is the realm's CSP — see [§5.2](#52-security-defenses) and [§5.3](#53-the-other-realms-need-the-same-security-defenses-edit). If it is the **bare** `frame-ancestors 'self'`, the realm has no override *or the realm does not exist* — Keycloak serves realm-not-found under the global headers, so a wrongly-resolved realm name reports as a CSP violation rather than as a 404. A `404` on `3p-cookies/step1.html` beside the violation distinguishes the second |
 | **500** on *every* resource, `relation "base_…" does not exist` | the `postgres_data` volume was replaced, and the backend has not restarted since — Hibernate owns the schema (`ddl-auto: update`) and only creates it at startup, so an empty database stays empty under a running backend. Restart the backend; allow ~7 min. A Keycloak realm that has silently reverted to the committed import file is the tell that the volume, not just one database, is new |
 | **401** on every authenticated request | `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` ≠ Keycloak's advertised issuer |
 | **500** on every authenticated request | `PROCESSPUZZLE_SECURITY_JWKS_BASE_URL` was set to the public URL; it must stay `http://keycloak:8080` |
@@ -535,11 +585,11 @@ docker ps --format '{{.Names}}	{{.Ports}}' | grep 8080  # coolify-proxy 0.0.0.0:
 So setting the port to `127.0.0.1:8080:8080` does not fix it either: a specific-address bind fails
 while the wildcard holds the port. Hence **8180** in §4 and in `testbed/.env.stage` / `testbed/.env.prod`.
 
-Nothing about the application changes. The proxy routes `api.stage.processpuzzle.de` to
-`testbed-backend:8080` over the compose network, `BACKEND_SERVICE_ROOT` in `config.stage.json` names
-that public URL, and the healthcheck probes `localhost:8080` *inside* the container. Only the
-SSH-tunnel port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and the local
-`config.ci.json` expects the backend on `localhost:8080`.
+Nothing about the application changes. The frontend's nginx proxies `/api/` to `testbed-backend:8080`
+over the compose network (and Coolify's proxy routes `api.testbed.stage.processpuzzle.de` there for
+direct access), and the healthcheck probes `localhost:8080` *inside* the container. Only the SSH-tunnel
+port moves. CI keeps `8080:8080` in `testbed/.env.ci` — a GitHub runner has no Coolify proxy, and a
+backend started by hand for a `dev` frontend is expected on `localhost:8080`.
 
 ### 7.3 `no available server`, with both containers healthy
 

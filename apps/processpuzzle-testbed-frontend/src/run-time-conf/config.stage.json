@@ -3,9 +3,9 @@
     "PIPELINE_STAGE": "stage",
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_PROVIDER": "rest",
-    "BACKEND_SERVICE_ROOT": "https://api.stage.processpuzzle.de/organizations/processpuzzle-testbed",
+    "BACKEND_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
     "THIRD_PARTY_ROOT": "https://testbed.stage.processpuzzle.de/third-party",
-    "OBJECT_STORE_SERVICE_ROOT": "https://api.stage.processpuzzle.de",
+    "OBJECT_STORE_SERVICE_ROOT": "/api",
     "FIREBASE_CONFIGURATION": {}
   },
   "AUTHENTICATION_CONFIGURATION": {

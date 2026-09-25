@@ -272,6 +272,19 @@ services:
       # Keycloak without it fails every customer's seed at PROVISIONING_IDENTITY.
       CUSTOM_CLIENT_ROOT_URL: ${CUSTOM_CLIENT_ROOT_URL:-}
       CUSTOM_CLIENT_REDIRECT_URIS: ${CUSTOM_CLIENT_REDIRECT_URIS:-}
+      # The customer realm's SMTP configuration is reconciled here, not only in its realm import:
+      # Keycloak imports a realm once and then skips it on every later deploy. Local and CI retain
+      # Mailpit's safe defaults; stage/prod set the KEYCLOAK_CUSTOM_SMTP_* values in this resource.
+      KEYCLOAK_CUSTOM_SMTP_HOST: ${KEYCLOAK_CUSTOM_SMTP_HOST:-mailpit}
+      KEYCLOAK_CUSTOM_SMTP_PORT: ${KEYCLOAK_CUSTOM_SMTP_PORT:-1025}
+      KEYCLOAK_CUSTOM_SMTP_FROM: ${KEYCLOAK_CUSTOM_SMTP_FROM:-noreply@processpuzzle.com}
+      KEYCLOAK_CUSTOM_SMTP_FROM_DISPLAY_NAME: ${KEYCLOAK_CUSTOM_SMTP_FROM_DISPLAY_NAME:-ProcessPuzzle}
+      KEYCLOAK_CUSTOM_SMTP_REPLY_TO: ${KEYCLOAK_CUSTOM_SMTP_REPLY_TO:-support@processpuzzle.com}
+      KEYCLOAK_CUSTOM_SMTP_AUTH: ${KEYCLOAK_CUSTOM_SMTP_AUTH:-false}
+      KEYCLOAK_CUSTOM_SMTP_USERNAME: ${KEYCLOAK_CUSTOM_SMTP_USERNAME:-}
+      KEYCLOAK_CUSTOM_SMTP_PASSWORD: ${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}
+      KEYCLOAK_CUSTOM_SMTP_STARTTLS: ${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}
+      KEYCLOAK_CUSTOM_SMTP_SSL: ${KEYCLOAK_CUSTOM_SMTP_SSL:-false}
     networks:
       - processpuzzle
     restart: "no"

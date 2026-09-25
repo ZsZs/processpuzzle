@@ -186,7 +186,7 @@ resource.
 |---|---|
 | `COOLIFY_WEBHOOK` | full deploy webhook URL of the **infrastructure** Docker Compose resource, including `?uuid=`. Store it **without** a trailing `&force=false` — [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml) appends its own `force`, and a duplicate parameter is ambiguous |
 | `COOLIFY_WEBHOOK_TESTBED` | the same, for the testbed stack's **Docker Compose** resource — one resource holding both halves, so one webhook redeploys both. Missing it fails the deploy |
-| `COOLIFY_TOKEN` | Coolify API token, `deploy` permission only |
+| `COOLIFY_TOKEN` | Coolify API token. `deploy` is enough for [`coolify-deploy`](../.github/actions/coolify-deploy/action.yml); a stack that also runs [`coolify-sync-env`](../.github/actions/coolify-sync-env/action.yml) needs `read` (report/check) or `write` (sync), plus `read:sensitive` to compare values rather than only keys |
 | `POSTGRES_PASSWORD` | Keycloak's own DB role |
 | `PROCESSPUZZLE_DB_PASSWORD` | the application role created by `10-init-db.sh` |
 | `KEYCLOAK_ADMIN_USERNAME` / `KEYCLOAK_ADMIN_PASSWORD` | bootstrap admin |
@@ -202,7 +202,8 @@ first start against an empty database. Setting them also turns on the post-deplo
 which reads the host it targets from `apps/processpuzzle-testbed-e2e/env/.env.<environment>` — so
 `TESTBED_FRONTEND_PUBLIC_URL` and that file have to name the same origin. On `STAGE` both are
 `https://testbed.stage.processpuzzle.de`, and `TESTBED_BACKEND_PUBLIC_URL` is
-`https://api.stage.processpuzzle.de`.
+`https://testbed.stage.processpuzzle.de/api` — the frontend's nginx proxy, so the readiness gate
+probes the backend along the same path the browser uses.
 
 ### The testbed pair — [`build-testbed-apps.yml`](../.github/workflows/build-testbed-apps.yml) + [`deploy-testbed-apps.yml`](../.github/workflows/deploy-testbed-apps.yml)
 
@@ -239,10 +240,19 @@ prod.
 - **`force=true` restarts without always re-pulling** ([coollabsio/coolify#5318](https://github.com/coollabsio/coolify/issues/5318)). A resource that watches a moving tag therefore needs Coolify's *"pull latest images and restart"* option enabled. That, plus watching `:stage` / `:prod`, is exactly §9's model. `tools/docker/docker-compose-infrastructure.yaml` additionally sets `pull_policy: always` on the five infrastructure services, so the file is correct on its own rather than depending on that checkbox.
 - **It builds before it deploys, from the repo root.** Coolify runs `docker compose … build --pull` ahead of `up`, passing `--project-directory <artifact dir>` — the repo root. Compose resolves a relative `build.context` against the *project directory*, not against the compose file's directory, so a `context: ../../` written for `tools/docker/` climbs two levels above the root and fails with `lstat /tools: no such file or directory`. Both halves of that are why the infrastructure compose file carries **no `build:` section at all**: fixing only the path would have Coolify succeed at the wrong thing, rebuilding on the deployment host bytes that §9 says must come from CI. The `build:` sections live in `tools/docker/docker-compose-build.yaml`, overlaid by CI and by `npm run stack-up-build`, where the project directory defaults to `tools/docker` and the relative context is correct. With nothing to build, Coolify's build step logs `No services to build` and exits 0.
 
-*Optional follow-up, deliberately not done here:* push the `.env.<environment>` values into the
-Coolify resource over its API before triggering the deploy, making the repo the true source of truth.
-It needs an endpoint shape verified against the running Coolify version, so it should land as its own
-step once the manual path is proven.
+*Follow-up, done 2026-09-25:* [`coolify-sync-env`](../.github/actions/coolify-sync-env/action.yml)
+pushes a resource's committed `.env.<environment>` plus the GitHub secrets it names into the resource
+over Coolify's API (`PATCH /api/v1/{applications|services}/{uuid}/envs/bulk`, an upsert by key), then
+reads the environment back and compares. A deploy workflow runs it just before `coolify-deploy`, with
+`mode` taken from a repository or environment variable, so each environment opts in on its own:
+`report` (the default: warnings only, never writes), `check` (fails on drift) or `sync`. It also
+checks that every variable the compose file interpolates is supplied by git or explicitly left to its
+default. That closes the gap the first bullet above describes, which is worse than it reads: when
+Coolify parses a compose file it *stores* each `${VAR:-default}` as the resource's value for any key it
+has not got yet, so a missed variable shows up in the Coolify UI looking configured, holding the CI
+value. That is how the Custom stack ran on stage with `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL=http://localhost:7070`
+and refused every customer token as `Untrusted token issuer`. It never deletes: keys in Coolify that
+git does not manage are reported, not removed.
 
 ## 12. Still open
 
@@ -250,7 +260,7 @@ step once the manual path is proven.
   follow the same shape, each with its own apps compose file and its own Coolify Docker Compose
   resource.
 - **The registrable domain for prod.** `stage` is settled on `.de`, matching the Coolify control
-  plane: `testbed.stage.processpuzzle.de`, `api.stage.processpuzzle.de`,
+  plane: `testbed.stage.processpuzzle.de`, `api.testbed.stage.processpuzzle.de`,
   `auth.stage.processpuzzle.de`. `prod` still names `.com` in `.env.prod` and `config.prod.json`,
   while [Application stacks](application-stacks.md) names `testbed.processpuzzle.com` and the e2e
   project's `.env.prod` already names `testbed.processpuzzle.de`. Deliberately not guessed from

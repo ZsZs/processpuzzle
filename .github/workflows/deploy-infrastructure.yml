@@ -51,6 +51,7 @@ jobs:
   # defaults the choice and workflow_call requires it, so it should never be reached.
   resolve:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       environment: ${{ steps.resolve.outputs.environment }}
       env_tag: ${{ steps.resolve.outputs.env_tag }}
@@ -73,6 +74,7 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.promote == 'false'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -140,6 +142,7 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.promote == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -172,6 +175,7 @@ jobs:
     # deployment — but a failed one must.
     if: ${{ !cancelled() && needs.resolve.result == 'success' && needs.build-and-push.result != 'failure' && needs.promote.result != 'failure' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Resolves the per-environment secrets and variables below.
     environment: ${{ needs.resolve.outputs.environment }}
     steps:

@@ -1,7 +1,7 @@
 # ProcessPuzzle Testbed
 ![Build and Test](https://github.com/ZsZs/processpuzzle/actions/workflows/build-processpuzzle-testbed-frontend.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=processpuzzle_testbed_frontend&metric=alert_status)](https://sonarcloud.io/summary?id=processpuzzle_testbed_frontend&branch=develop)
-[![Node version](https://img.shields.io/npm/v/%40processpuzzle%2Ftestbed?style=flat)](https://www.npmjs.com/package/@processpuzzle/testbed)
+[![npm version](https://img.shields.io/npm/v/%40processpuzzle%2Ftestbed?style=flat)](https://www.npmjs.com/package/@processpuzzle/testbed)
 
 ## Introduction
 ProcessPuzzle Testbed is the reference Angular application of the [ProcessPuzzle](https://processpuzzle.com) platform. It serves two purposes: it is a **living demonstration** of what can be built with the `@processpuzzle/*` libraries, and it is the **integration test harness** that exercises those libraries end-to-end in a realistic application context.
@@ -48,20 +48,23 @@ Loaded at bootstrap by `ConfigurationService` (`libs/js-shared/util/.../configur
 | Stage | `BACKEND_SERVICE_ROOT` | `THIRD_PARTY_ROOT` | Auth provider | Notes |
 |---|---|---|---|---|
 | **dev** | `localhost:8080/organizations/processpuzzle-testbed` (common) | `localhost:3000` (common) | Keycloak on `localhost:7070` | `level: debug`; run `npm run stack-up-infra` for the services it talks to |
-| **ci** | same — inherited from common | same — inherited from common | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
-| **stage** | `api.stage.processpuzzle.de/organizations/processpuzzle-testbed` | `testbed.stage.processpuzzle.de/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
-| **prod** | `api.processpuzzle.com/organizations/processpuzzle-testbed` | `testbed.processpuzzle.com/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
+| **ci** | `/api/organizations/processpuzzle-testbed` — proxied by the frontend's nginx | same — inherited from common | Keycloak `processpuzzle-testbed` realm | Runs inside the `ci` compose stack |
+| **stage** | `/api/organizations/processpuzzle-testbed` — proxied by the frontend's nginx | `testbed.stage.processpuzzle.de/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.stage.processpuzzle.de` | The Coolify-deployed stack, served at `testbed.stage.processpuzzle.de` |
+| **prod** | `/api/organizations/processpuzzle-testbed` — proxied by the frontend's nginx | `testbed.processpuzzle.com/third-party` | Keycloak `processpuzzle-testbed` realm on `auth.processpuzzle.com` | Same, promoted image |
 
 `config.ci.json` and `config.dev.json` name **no roots at all** — they carry only `PIPELINE_STAGE`,
 `DEPLOYMENT_ENVIRONMENT` and `FIREBASE_CONFIGURATION`, because both run against the local compose
 stack that `config.common.json` already describes.
 
 **Three roots, and they resolve to three different places.** `BACKEND_SERVICE_ROOT` is the
-org-scoped root of this stack's Spring Boot backend (`<host>/organizations/processpuzzle-testbed`) and
+org-scoped root of this stack's Spring Boot backend (`<root>/organizations/processpuzzle-testbed`) and
 is *the* fallback for every optional per-feature root — `APP_`, `DOCUMENT_`, `RULE_`, `ENTITY_`,
 `WIDGET_`, `STATE_`, `WORKFLOW_SERVICE_ROOT` — which exist only so that a feature can one day move to
 a host of its own. `OBJECT_STORE_SERVICE_ROOT` is the same host *without* the org segment, because the
-object endpoints carry none.
+object endpoints carry none. Outside `dev` both are relative `/api` paths, which
+`tools/docker/processpuzzle-testbed-frontend/nginx.conf` reverse-proxies to `testbed-backend:8080` — the
+pattern the admin, biz and custom frontends follow — so the browser never calls the platform
+cross-origin. `dev` has no nginx in front of `ng serve` and keeps `localhost:8080`.
 
 **`THIRD_PARTY_ROOT` has to be overridden per stage.** It names the
 [`json-server` mock](../../tools/mock-backend/README.md) standing in for third-party REST sources —
@@ -74,9 +77,8 @@ reverse-proxies to `json-server:3000`. Being same-origin, it needs no CORS entry
 
 `stage` is on **`.de`**, matching the Coolify control plane, and each name has to agree with
 `tools/docker/env/{infrastructure,testbed}/.env.stage` — `AUTHENTICATION_SERVICE_ROOT` with
-`KC_HOSTNAME` (infrastructure) *and* `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` (testbed), and the
-frontend's own origin with `APP_CORS_ALLOWED_ORIGINS`, since nginx does not proxy to the backend and
-the browser therefore calls `BACKEND_SERVICE_ROOT` cross-origin. `prod` still names `.com` and is **unverified** — see
+`KC_HOSTNAME` (infrastructure) *and* `PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL` (testbed). `prod` still
+names `.com` and is **unverified** — see
 [`docs/build-deploy-strategy.md`](../../docs/build-deploy-strategy.md) §12; confirm it against real
 DNS before the first prod deploy.
 

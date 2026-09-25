@@ -109,6 +109,10 @@ MINIO_SERVICE_USER=springboot
 MINIO_SERVICE_PASSWORD=springboot123
 ```
 
+The container reconciles the persisted service account on every start. Restart MinIO after changing
+`MINIO_SERVICE_PASSWORD`; it recreates the configured service user and reapplies the `readwrite`
+policy. The backend deployment must use the same value.
+
 ```yaml
 # docker-compose.yml
 environment:

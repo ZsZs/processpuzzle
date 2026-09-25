@@ -10,7 +10,7 @@
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
   "browserSecurityHeaders": {
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9092; object-src 'none';",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9092 https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';",
     "xFrameOptions": ""
   },
   "clients": [
