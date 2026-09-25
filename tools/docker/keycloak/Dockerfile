@@ -1,5 +1,5 @@
 # Stage 1: Build/Optimization stage
-FROM quay.io/keycloak/keycloak:26.4.7 AS builder
+FROM quay.io/keycloak/keycloak:26.7.4 AS builder
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -38,7 +38,7 @@ WORKDIR /opt/keycloak
 RUN /opt/keycloak/bin/kc.sh build
 
 # Stage 2: Runtime stage
-FROM quay.io/keycloak/keycloak:26.4.7
+FROM quay.io/keycloak/keycloak:26.7.4
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 # Bake the realm definition into the image. --import-realm on start is idempotent:

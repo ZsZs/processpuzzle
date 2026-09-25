@@ -221,6 +221,27 @@ ensure_default_client_scope() {
   "$KCADM" update "clients/${client_uuid}/default-client-scopes/${scope_uuid}" -r "${realm}" -n -b '{}'
 }
 
+# Adds a protocol mapper to a client scope unless one of that TYPE is already there. Keyed on the
+# mapper type rather than its name, so a mapper someone added by hand under another name is not
+# duplicated; its configuration is then left as they set it.
+ensure_scope_mapper() {
+  local realm="$1" scope_name="$2" mapper_name="$3" mapper_type="$4" mapper_config="$5" scope_uuid
+
+  login
+  scope_uuid="$("$KCADM" get client-scopes -r "${realm}" --fields id,name --format csv --noquotes | grep ",${scope_name}\$" | cut -d, -f1 | head -1 || true)"
+  if [ -z "${scope_uuid}" ]; then
+    echo "  WARNING: realm '${realm}' has no client scope '${scope_name}'; cannot add '${mapper_name}'."
+    return 0
+  fi
+  if "$KCADM" get "client-scopes/${scope_uuid}/protocol-mappers/models" -r "${realm}" --fields protocolMapper --format csv --noquotes | grep -qx "${mapper_type}"; then
+    echo "Scope '${scope_name}' in '${realm}' already has a ${mapper_type}."
+    return 0
+  fi
+  echo "Adding '${mapper_name}' to scope '${scope_name}' in '${realm}' ..."
+  "$KCADM" create "client-scopes/${scope_uuid}/protocol-mappers/models" -r "${realm}" \
+    -b "{\"name\":\"${mapper_name}\",\"protocol\":\"openid-connect\",\"protocolMapper\":\"${mapper_type}\",\"config\":${mapper_config}}"
+}
+
 # Realm imports do not merge into existing realms, so both browser-facing clients of the
 # `processpuzzle-admin` realm are reconciled here on every container start instead. That is what
 # lets an origin be added to a realm that was imported months ago.
@@ -283,6 +304,20 @@ ensure_public_client \
   "${BIZ_CLIENT_REDIRECT_URIS}"
 # Customer Home's API authorizes on the token's `organization` claim; without the scope there is none.
 ensure_default_client_scope processpuzzle-custom processpuzzle-biz organization
+
+# A customer's workflow roles are Keycloak Organization GROUPS — one hierarchy per organization, so
+# two customers' `reviewer` roles are two different groups (Keycloak 26.6+). This mapper nests them
+# into the claim the backends already read, under the organization they belong to:
+#
+#   "organization": { "acme": { "groups": ["/reviewer"] } }
+#
+# It changes the claim from a list of aliases to an object keyed by alias, which the custom backend's
+# OrganizationClaim reads either way. Reconciled here rather than in the realm import: that file does
+# not describe client scopes (Keycloak creates `organization` itself), and an import is skipped for a
+# realm that already exists anyway.
+ensure_scope_mapper processpuzzle-custom organization 'organization groups' \
+  oidc-organization-group-membership-mapper \
+  '{"id.token.claim":"true","access.token.claim":"true","userinfo.token.claim":"true","introspection.token.claim":"true"}'
 
 # Keycloak applies frame-ancestors per realm. Keeping it in lockstep with the redirect origins of
 # both clients in the realm lets each environment frame Keycloak's login-status and third-party-cookie
