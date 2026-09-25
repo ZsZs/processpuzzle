@@ -102,7 +102,7 @@
     <base-workflow-backend.version>1.0.6</base-workflow-backend.version>
     <base-widget-backend.version>1.0.0</base-widget-backend.version>
     <org-admin-backend.version>1.0.0</org-admin-backend.version>
-    <processpuzzle-core.version>1.1.2</processpuzzle-core.version>
+    <processpuzzle-core.version>1.2.0</processpuzzle-core.version>
     <processpuzzle-store.version>1.1.2</processpuzzle-store.version>
   </properties>
 
