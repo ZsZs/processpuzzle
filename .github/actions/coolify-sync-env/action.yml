@@ -25,7 +25,11 @@ inputs:
     description: The committed non-secret values, e.g. tools/docker/env/custom/.env.stage.
     required: true
   secrets:
-    description: '`${{ toJSON(secrets) }}`. Only the names listed in `secret-keys` are read from it.'
+    description: >
+      The caller's whole secrets context, passed as toJSON(secrets) inside an expression. Only the
+      names listed in `secret-keys` are read from it. (Written without the expression braces on
+      purpose: the runner evaluates expressions in action.yml descriptions too, and `secrets` does
+      not exist in a composite action, so a literal one fails the action at load time.)
     required: false
     default: '{}'
   secret-keys:
