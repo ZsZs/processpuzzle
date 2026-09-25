@@ -26,11 +26,25 @@ import java.util.Set;
  * <p>Keycloak also carries per-client roles under {@code resource_access.<client>.roles}. Deliberately
  * ignored: this platform grants realm roles, and reading both would let one role name mean two things
  * depending on which claim it arrived in.
+ *
+ * <h2>Organization groups are roles too</h2>
+ *
+ * <p>Where tenants are Keycloak Organizations in one shared realm, a tenant's own roles are its
+ * organization's top-level groups, and the token carries them under that organization:
+ * {@code "organization": {"acme": {"groups": ["/reviewer"]}}}. Those become authorities as well,
+ * {@code reviewer} verbatim, so a workflow role reads the same whichever tenancy model issued it.
+ *
+ * <p><b>Only when the token names exactly one organization.</b> Authorities are computed here, before
+ * anything knows which tenant the request is for, so a token naming two organizations would merge
+ * their roles — and one tenant's {@code approver} would then count in the other. That case fails
+ * closed: no group roles at all. Nested groups are structure, not roles, and are skipped.
  */
 public class RealmRoleConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private static final String REALM_ACCESS = "realm_access";
     private static final String ROLES = "roles";
+    private static final String ORGANIZATION = "organization";
+    private static final String GROUPS = "groups";
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
@@ -43,7 +57,27 @@ public class RealmRoleConverter implements Converter<Jwt, AbstractAuthentication
         for (String role : rolesOf(jwt)) {
             authorities.add(new SimpleGrantedAuthority(role));
         }
+        for (String role : organizationGroupRolesOf(jwt)) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
         return authorities;
+    }
+
+    /** The one organization's top-level group names; empty unless exactly one organization is named. */
+    private static List<String> organizationGroupRolesOf(Jwt jwt) {
+        if (!(jwt.getClaims().get(ORGANIZATION) instanceof Map<?, ?> byAlias) || byAlias.size() != 1) {
+            return List.of();
+        }
+        if (!(byAlias.values().iterator().next() instanceof Map<?, ?> organization)
+                || !(organization.get(GROUPS) instanceof Collection<?> groups)) {
+            return List.of();
+        }
+        return groups.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .filter(path -> path.length() > 1 && path.startsWith("/") && path.indexOf('/', 1) < 0)
+                .map(path -> path.substring(1))
+                .toList();
     }
 
     @SuppressWarnings("unchecked")
