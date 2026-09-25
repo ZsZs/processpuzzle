@@ -73,6 +73,14 @@ public class KeycloakAdminClient {
     }
 
     /**
+     * The realm tenants share as Organizations, or empty for realm-per-tenant. See
+     * {@link KeycloakAdminProperties#getOrganizationRealm()}.
+     */
+    public Optional<String> organizationRealm() {
+        return properties.isOrganizationMode() ? Optional.of(properties.getOrganizationRealm()) : Optional.empty();
+    }
+
+    /**
      * Sends a request to the Admin API and returns the deserialized body.
      *
      * @param path path below the server root, starting with {@code /admin}

@@ -56,8 +56,24 @@ public class KeycloakAdminProperties {
     /** Web origin registered on each tenant's client, for the CORS preflight the SPA triggers. */
     private String tenantWebOrigin = "http://localhost:4200";
 
+    /**
+     * The one realm every tenant shares, when tenants are Keycloak <em>Organizations</em> rather than
+     * realms of their own. Empty — the default — means realm-per-tenant, the testbed's model: the
+     * tenant's directory is the realm named after its {@code orgKey}.
+     *
+     * <p>Set, the {@code orgKey} names an organization (by alias) inside this realm instead, and a
+     * tenant's own roles are that organization's groups, which Keycloak scopes to it (26.6+). This is
+     * the Custom stack's model: every customer lives in {@code processpuzzle-custom}.
+     */
+    private String organizationRealm = "";
+
     /** Whether a usable admin client is configured at all. */
     public boolean isConfigured() {
         return clientSecret != null && !clientSecret.isBlank();
+    }
+
+    /** Whether tenants are Organizations inside {@link #getOrganizationRealm()}. */
+    public boolean isOrganizationMode() {
+        return organizationRealm != null && !organizationRealm.isBlank();
     }
 }

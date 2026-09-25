@@ -9,8 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Picks the {@link RoleDirectoryPort} implementation from configuration: the Keycloak adapter when an
- * admin secret is configured, {@link NoOpRoleDirectoryPort} otherwise.
+ * Picks the {@link RoleDirectoryPort} implementation from configuration: a Keycloak adapter when an
+ * admin secret is configured — Organization groups when {@code keycloak.admin.organization-realm}
+ * is set, realm roles otherwise — and {@link NoOpRoleDirectoryPort} when it is not.
  *
  * <p>The decision is delegated to {@code KeycloakAdminClient.isConfigured()} rather than re-reading
  * the property here, so no two features can disagree about whether an identity provider exists.
@@ -31,6 +32,11 @@ public class RoleDirectoryConfiguration {
                     + "carry the roles it defines.");
             return new NoOpRoleDirectoryPort();
         }
-        return new KeycloakRoleDirectoryAdapter(client);
+        return client.organizationRealm()
+                .<RoleDirectoryPort>map(realm -> {
+                    LOG.info("Workflow roles are projected into Organization groups in realm '{}'.", realm);
+                    return new KeycloakOrganizationRoleDirectoryAdapter(client, realm);
+                })
+                .orElseGet(() -> new KeycloakRoleDirectoryAdapter(client));
     }
 }

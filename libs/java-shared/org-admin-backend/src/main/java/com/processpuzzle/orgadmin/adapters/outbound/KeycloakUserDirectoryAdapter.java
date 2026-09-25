@@ -222,12 +222,12 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
      * came back, and one more when the page came back full — enough for "next page" to be offered
      * exactly when there is one, and honest about being an estimate (see {@code DirectoryPage}).
      */
-    private static long estimateTotal(int returned, int page, int size) {
+    static long estimateTotal(int returned, int page, int size) {
         long consumed = (long) page * size + returned;
         return returned == size ? consumed + 1 : consumed;
     }
 
-    private static DirectoryUser toUser(Map<String, Object> raw, List<String> roles) {
+    static DirectoryUser toUser(Map<String, Object> raw, List<String> roles) {
         Long createdTimestamp = raw.get("createdTimestamp") instanceof Number number
                 ? number.longValue() : null;
         return new DirectoryUser(
@@ -252,7 +252,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
         return (Map<String, Object>) raw;
     }
 
-    private static String str(Object raw) {
+    static String str(Object raw) {
         return raw == null ? null : String.valueOf(raw);
     }
 

@@ -9,8 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Picks the {@link UserDirectoryPort} implementation from configuration: the Keycloak adapter when an
- * admin secret is configured, {@link NoOpUserDirectoryPort} otherwise.
+ * Picks the {@link UserDirectoryPort} implementation from configuration: a Keycloak adapter when an
+ * admin secret is configured — per organization when {@code keycloak.admin.organization-realm} is
+ * set, per realm otherwise — and {@link NoOpUserDirectoryPort} when it is not.
  *
  * <p>The decision is delegated to {@code KeycloakAdminClient.isConfigured()} rather than re-reading
  * the property here, so the two modules cannot disagree about whether a directory exists — one
@@ -31,6 +32,11 @@ public class UserDirectoryConfiguration {
                     + "unavailable. Reads answer empty and writes are refused with 503.");
             return new NoOpUserDirectoryPort();
         }
-        return new KeycloakUserDirectoryAdapter(client);
+        return client.organizationRealm()
+                .<UserDirectoryPort>map(realm -> {
+                    LOG.info("Organization user management runs on Keycloak Organizations in realm '{}'.", realm);
+                    return new KeycloakOrganizationUserDirectoryAdapter(client, realm);
+                })
+                .orElseGet(() -> new KeycloakUserDirectoryAdapter(client));
     }
 }
