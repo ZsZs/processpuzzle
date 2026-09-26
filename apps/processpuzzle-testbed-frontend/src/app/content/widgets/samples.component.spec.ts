@@ -11,7 +11,10 @@ describe('WidgetsSamplesComponent', () => {
     });
 
     expect(getByText('© Zsolt Zsuffa 2026')).toBeTruthy();
-    expect(getByRole('table', { name: 'Inputs' })).toHaveTextContent('text string Yes The copyright notice to display.');
+    expect(getByRole('cell', { name: 'text' })).toBeTruthy();
+    expect(getByRole('cell', { name: 'string' })).toBeTruthy();
+    expect(getByRole('cell', { name: 'Yes' })).toBeTruthy();
+    expect(getByRole('cell', { name: 'The copyright notice to display.' })).toBeTruthy();
   });
 
   it('shows the image zoom sample and opens its image at full size', async () => {
