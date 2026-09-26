@@ -22,7 +22,7 @@ import { AppShellComponent } from './shell/app-shell.component';
   imports: [AppShellComponent],
   template: `
     <div class="pp-app-preview">
-      <pp-app-shell [definition]="app()" />
+      <pp-app-shell [definition]="app()" [persistTheme]="false" />
     </div>
   `,
   styles: [

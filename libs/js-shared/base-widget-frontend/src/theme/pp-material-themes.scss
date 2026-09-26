@@ -1,0 +1,165 @@
+@use 'sass:map';
+@use 'sass:list';
+@use '@angular/material' as mat;
+@use './pp-brand-palette' as pp-brand;
+@use './pp-indigo-pink-palette' as indigo-pink;
+@use './pp-deeppurple-amber-palette' as deeppurple-amber;
+@use './pp-pink-bluegrey-palette' as pink-bluegrey;
+@use './pp-purple-green-palette' as purple-green;
+
+////
+/// The Material themes an `AppDefinition` may name in `theme.materialTheme`, each emitted under a
+/// class so that a *subtree* can wear one — which is what lets the designer's Preview tab render a
+/// previewed application in its own theme while the designer around it keeps its own.
+///
+/// This works because `mat.theme()` emits nothing but `--mat-sys-*` custom properties: a Material theme
+/// is a set of cascading variables, so it can be declared on any element rather than only on `html`.
+/// Angular's own prebuilt themes (`@angular/material/prebuilt-themes/*.css`) cannot be reused for this —
+/// their `html` selector is baked into the shipped CSS — so the palettes are referenced directly here.
+/// The names are those of Angular's prebuilt themes, plus `processpuzzle`: the four Material 3 ones use the
+/// same palettes as their prebuilt files, the four Material 2 ones (`indigo-pink` …) are re-created from
+/// their seed colours in `_pp-<name>-palette.scss`, as is the brand. `THEME_PRESETS` in
+/// `themes-button/theme-presets.ts` is the list this has to stay in step with.
+///
+/// ### The `--pp-*` tokens follow the chosen theme
+/// Framework surfaces — header, sidenav, cards, form buttons, chips — paint with the `--pp-*` tokens of
+/// `pp-colors.css`, not with `--mat-sys-*`. So each block also says what those tokens are under it:
+/// - `processpuzzle` keeps the brand colours, and is the preset a definition naming none is rendered
+///   in. Only the content and card surfaces turn dark in a dark scheme; the brand chrome stays.
+/// - every other preset maps the four base colours onto Material roles, so a chosen theme recolours the
+///   whole shell, and every lib component reading a base colour directly follows along.
+///
+/// Both re-declare the semantic tokens as well, because a custom property holding `var()` is resolved
+/// where it is *declared*: the `--pp-surface-header: var(--pp-color-light-green)` of `:root` reaches
+/// the shell already computed, and redefining the base colour here — or in a definition's
+/// `tokenOverrides` — would change nothing derived from it. The host application's own chrome, outside
+/// any `.pp-theme-*` subtree, is untouched.
+///
+/// `theme-type: color-scheme` is what keeps this to one block per theme rather than three: it emits every token
+/// as `light-dark(<light>, <dark>)`, and `light-dark()` resolves against the **element's own**
+/// `color-scheme`. So one block per palette serves light, dark and auto, and the three scheme classes at
+/// the bottom are the entire light/dark switch.
+///
+/// ### Registering it
+/// A global stylesheet rather than a component's, because several full token sets are ~32 kB (about 3 kB
+/// gzipped) and Angular's `anyComponentStyle` budget is meant to catch exactly that shape of file. Add it
+/// to the consuming application's `styles` array, next to `pp-colors.css`:
+///
+/// ```jsonc
+/// "styles": [
+///   "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
+///   "libs/js-shared/base-widget-frontend/src/theme/pp-material-themes.scss",
+///   "src/styles.scss"
+/// ]
+/// ```
+///
+/// Without it, `AppShellComponent` and `ThemeService` still set the classes and simply inherits the host application's
+/// theme — a missing registration costs theming, not correctness.
+///
+/// ### CDK overlays
+/// A dialog, menu or tooltip renders into `.cdk-overlay-container`, by default a child of `<body>` and so
+/// outside a themed subtree. Where the theme is the document's — `ThemeService`'s root instance — that is
+/// no problem. `AppShellComponent` provides its own `OverlayContainer` inside its host, so that overlays
+/// opened from a themed shell wear its theme too.
+////
+
+$pp-material-themes: (
+  processpuzzle: (pp-brand.$primary-palette, pp-brand.$tertiary-palette),
+  azure-blue: (mat.$azure-palette, mat.$blue-palette),
+  rose-red: (mat.$rose-palette, mat.$red-palette),
+  magenta-violet: (mat.$magenta-palette, mat.$violet-palette),
+  cyan-orange: (mat.$cyan-palette, mat.$orange-palette),
+  indigo-pink: (indigo-pink.$primary-palette, indigo-pink.$tertiary-palette),
+  deeppurple-amber: (deeppurple-amber.$primary-palette, deeppurple-amber.$tertiary-palette),
+  pink-bluegrey: (pink-bluegrey.$primary-palette, pink-bluegrey.$tertiary-palette),
+  purple-green: (purple-green.$primary-palette, purple-green.$tertiary-palette),
+);
+
+/// The semantic tokens of `pp-colors.css`, re-declared so that they resolve against the base colours in
+/// effect *here*. Keep in step with that file. The arguments are the places a preset departs from it:
+/// the text drawn on the accent and on the highlight, the two text-bearing surfaces, and the header text,
+/// which `pp-colors.css` leaves undeclared so that the host application's chrome inherits its colour.
+@mixin pp-semantic-tokens(
+  $on-accent: var(--pp-color-white),
+  $on-highlight: var(--pp-color-dark-blue),
+  $surface-base: var(--pp-color-white),
+  $surface-card: var(--pp-color-light-blue),
+  $on-header
+) {
+  --pp-surface-base: #{$surface-base};
+  --pp-surface-header: var(--pp-color-light-green);
+  --pp-on-header: #{$on-header};
+  --pp-surface-card: #{$surface-card};
+  --pp-surface-sidenav: var(--pp-color-dark-blue);
+  --pp-on-sidenav: #{$on-accent};
+  --pp-button-primary-bg: var(--pp-color-dark-blue);
+  --pp-button-primary-text: #{$on-accent};
+  --pp-button-secondary-bg: var(--pp-color-white);
+  --pp-button-secondary-text: var(--pp-color-dark-blue);
+  --pp-button-delete-bg: var(--pp-color-light-green);
+  --pp-button-delete-text: #{$on-highlight};
+  --pp-chip-bg: var(--pp-color-dark-blue);
+  --pp-chip-text: #{$on-accent};
+}
+
+/// The brand stays; only the surfaces text is read against in the content area follow the scheme. The
+/// header stays light green in a dark scheme too, so its text there is the light green's darkest tone.
+@mixin pp-brand-tokens {
+  @include pp-semantic-tokens(
+    $surface-base: light-dark(var(--pp-color-white), var(--mat-sys-surface)),
+    $surface-card: light-dark(var(--pp-color-light-blue), var(--mat-sys-surface-container-high)),
+    $on-header: light-dark(var(--mat-sys-on-surface), #{map.get(pp-brand.$tertiary-palette, 10)})
+  );
+}
+
+/// The four brand colours as Material roles, chosen by what each one does in `pp-colors.css`: dark blue
+/// is the accent (sidenav, primary buttons, borders), white the ground, light green the header and
+/// highlights, light blue the cards.
+@mixin pp-tokens-from-material {
+  --pp-color-dark-blue: var(--mat-sys-primary);
+  --pp-color-white: var(--mat-sys-surface);
+  --pp-color-light-green: var(--mat-sys-tertiary-container);
+  --pp-color-light-blue: var(--mat-sys-secondary-container);
+  @include pp-semantic-tokens(
+    $on-accent: var(--mat-sys-on-primary),
+    $on-highlight: var(--mat-sys-on-tertiary-container),
+    $on-header: var(--mat-sys-on-tertiary-container)
+  );
+}
+
+@each $name, $palettes in $pp-material-themes {
+  .pp-theme-#{$name} {
+    @include mat.theme(
+      (
+        color: (
+          theme-type: color-scheme,
+          primary: list.nth($palettes, 1),
+          tertiary: list.nth($palettes, 2),
+        ),
+        typography: Roboto,
+        density: 0,
+      )
+    );
+
+    @if $name == processpuzzle {
+      @include pp-brand-tokens;
+    } @else {
+      @include pp-tokens-from-material;
+    }
+  }
+}
+
+// Which half of every light-dark() above is used. Also the real CSS `color-scheme`, so that native
+// widgets — scrollbars, date and colour pickers, form controls — match the previewed application rather
+// than the page hosting it.
+.pp-scheme-light {
+  color-scheme: light;
+}
+
+.pp-scheme-dark {
+  color-scheme: dark;
+}
+
+.pp-scheme-auto {
+  color-scheme: light dark;
+}

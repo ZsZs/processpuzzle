@@ -1,5 +1,5 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
-import { WidgetInstance } from '@processpuzzle/widgets';
+import { THEME_COLOR_SCHEMES, THEME_PRESETS, ThemeColorScheme, ThemePreset, WidgetInstance } from '@processpuzzle/widgets';
 
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/widgets';
 
@@ -24,11 +24,16 @@ export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzz
  * never instances of these classes, so nothing may rely on `instanceof` or on a method.
  */
 
-export const MATERIAL_THEMES = ['azure-blue', 'rose-red', 'magenta-violet', 'cyan-orange'] as const;
-export type MaterialTheme = (typeof MATERIAL_THEMES)[number];
+/**
+ * The theme presets and colour schemes the contract's `MaterialTheme` / `ColorScheme` enums allow. They are
+ * the widgets library's lists, because that is where the stylesheet defining them and the `ThemesButton`
+ * picking from them live.
+ */
+export const MATERIAL_THEMES = THEME_PRESETS;
+export type MaterialTheme = ThemePreset;
 
-export const COLOR_SCHEMES = ['light', 'dark', 'auto'] as const;
-export type ColorScheme = (typeof COLOR_SCHEMES)[number];
+export const COLOR_SCHEMES = THEME_COLOR_SCHEMES;
+export type ColorScheme = ThemeColorScheme;
 
 export const LAYOUT_PRESETS = ['sidenav-left', 'sidenav-right', 'top-nav'] as const;
 export type LayoutPreset = (typeof LAYOUT_PRESETS)[number];
@@ -63,7 +68,7 @@ export enum AppDefinitionStatus {
 export interface ThemeDefinition {
   materialTheme?: MaterialTheme;
   colorScheme?: ColorScheme;
-  /** Overrides for the `--pp-*` custom properties of `widgets/src/theme/pp-colors.css`. */
+  /** Overrides for the `--pp-*` custom properties of `base-widget-frontend/src/theme/pp-colors.css`. */
   tokenOverrides?: Record<string, string>;
   logoUrl?: string;
   faviconUrl?: string;

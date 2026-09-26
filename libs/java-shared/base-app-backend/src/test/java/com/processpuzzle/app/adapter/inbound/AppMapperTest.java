@@ -237,7 +237,7 @@ class AppMapperTest {
 
         AppGraph graph = mapper.toDomainGraph(input);
 
-        assertThat(graph.theme().materialTheme()).isEqualTo("azure-blue");
+        assertThat(graph.theme().materialTheme()).isEqualTo("processpuzzle");
         assertThat(graph.theme().colorScheme()).isEqualTo("light");
         assertThat(graph.layout().preset()).isEqualTo("sidenav-left");
         assertThat(graph.layout().sidenavMode()).isEqualTo("side");

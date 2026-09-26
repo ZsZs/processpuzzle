@@ -91,6 +91,8 @@ appDefinitions:
         widgets:
           - id: header-language-selector
             type: language-selector
+          - id: header-themes-button
+            type: themes-button
           # Chrome, so the header rather than a route: a like and a share act on the application the user
           # is in, not on whatever screen happens to be open, and they stay put while the content changes.
           - id: header-like-button

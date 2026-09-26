@@ -12,7 +12,7 @@ import java.util.Map;
  * holding an enum constant that a later release removes would be unreadable. The allowed
  * values are checked by {@code AppDefinitionValidator} instead.
  *
- * @param materialTheme prebuilt Angular Material theme name, e.g. {@code azure-blue}
+ * @param materialTheme Material theme preset name, e.g. {@code processpuzzle} or {@code azure-blue}
  * @param colorScheme {@code light}, {@code dark} or {@code auto}
  * @param tokenOverrides overrides for the {@code --pp-*} CSS custom properties, keyed with the leading {@code --}
  * @param logoUrl tenant logo shown in the header region
