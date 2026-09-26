@@ -652,11 +652,14 @@ components:
     MaterialTheme:
       type: string
       description: >-
-        One of the prebuilt Angular Material theme stylesheets the platform ships (Material 3
-        palettes). A closed enum on purpose — unlike widget `type`, a value here has to
-        correspond to a stylesheet that actually exists in the deployed bundle.
-      enum: [ azure-blue, rose-red, magenta-violet, cyan-orange ]
-      default: azure-blue
+        One of the Material 3 theme presets the platform ships in
+        `libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss`: `processpuzzle`,
+        the brand look, or one of Angular Material's prebuilt palette pairs. Each preset also
+        recolours the ProcessPuzzle surfaces (header, sidenav, cards, buttons). A closed enum on
+        purpose — unlike widget `type`, a value here has to correspond to a preset that actually
+        exists in the deployed bundle.
+      enum: [ processpuzzle, azure-blue, rose-red, magenta-violet, cyan-orange ]
+      default: processpuzzle
 
     ColorScheme:
       type: string
@@ -680,7 +683,7 @@ components:
           type: object
           description: >-
             Overrides for the `--pp-*` custom properties declared in
-            `libs/js-shared/widgets/src/theme/pp-colors.css`, applied as a `:root` style
+            `libs/js-shared/base-widget-frontend/src/theme/pp-colors.css`, applied as a `:root` style
             block after that file. Keys are token names *with* the leading `--`; values are
             any valid CSS color. Overriding a base token (`--pp-color-*`) retints every
             surface derived from it, a surface or button token retargets one place.

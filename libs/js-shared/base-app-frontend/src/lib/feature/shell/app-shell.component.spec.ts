@@ -212,10 +212,10 @@ describe('AppShellComponent', () => {
       expect([...shellElement().classList]).toEqual(expect.arrayContaining(['pp-theme-rose-red', 'pp-scheme-dark']));
     });
 
-    it('wears no theme class when the definition names no Material theme', async () => {
+    it('wears the processpuzzle preset when the definition names no Material theme', async () => {
       await render(new AppDefinition({ id: 'demo-app', name: 'Demo' }));
 
-      expect([...shellElement().classList].filter((name) => name.startsWith('pp-theme-') || name.startsWith('pp-scheme-'))).toEqual([]);
+      expect([...shellElement().classList].filter((name) => name.startsWith('pp-theme-') || name.startsWith('pp-scheme-'))).toEqual(['pp-theme-processpuzzle', 'pp-scheme-light']);
     });
 
     it('swaps the theme class when the definition is edited', async () => {

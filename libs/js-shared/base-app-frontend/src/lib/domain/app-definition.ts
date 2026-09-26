@@ -24,7 +24,11 @@ export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzz
  * never instances of these classes, so nothing may rely on `instanceof` or on a method.
  */
 
-export const MATERIAL_THEMES = ['azure-blue', 'rose-red', 'magenta-violet', 'cyan-orange'] as const;
+/**
+ * The presets of `src/theme/pp-material-themes.scss`, in the order the designer offers them. `processpuzzle`
+ * is the brand look and the default; the others are Angular Material's prebuilt palette pairs.
+ */
+export const MATERIAL_THEMES = ['processpuzzle', 'azure-blue', 'rose-red', 'magenta-violet', 'cyan-orange'] as const;
 export type MaterialTheme = (typeof MATERIAL_THEMES)[number];
 
 export const COLOR_SCHEMES = ['light', 'dark', 'auto'] as const;

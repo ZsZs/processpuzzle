@@ -70,6 +70,7 @@ describe('createAppDefinitionDescriptor', () => {
   it('offers the closed enums of the contract as dropdowns', () => {
     expect(byName('status')?.formControlType).toBe(FormControlType.DROPDOWN);
     expect(byName('materialTheme')?.getSelectables()).toEqual([
+      { key: 'processpuzzle', value: 'processpuzzle' },
       { key: 'azure-blue', value: 'azure-blue' },
       { key: 'rose-red', value: 'rose-red' },
       { key: 'magenta-violet', value: 'magenta-violet' },

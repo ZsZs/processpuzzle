@@ -250,6 +250,7 @@ platform's look.
 | Base | `--pp-color-dark-blue` | `rgb(24, 111, 206)` | sidenav |
 | Surface | `--pp-surface-header` / `-card` / `-sidenav` / `-base` | → base colors | semantic roles |
 | Surface | `--pp-on-sidenav` | `--pp-color-white` | sidenav text |
+| Surface | `--pp-on-header` | *(inherited)* | header / footer text — declared only by `base-app`'s theme presets |
 | Button | `--pp-button-primary-bg` / `-text` | dark-blue / white | Save, card actions |
 | Button | `--pp-button-secondary-bg` / `-text` | white / dark-blue | Cancel |
 | Button | `--pp-button-delete-bg` / `-text` | light-green / dark-blue | Delete |
@@ -268,8 +269,11 @@ own global styles. An application that hosts `base-app` — the designer's Previ
 ```
 
 ### Per-application Material themes
-`AppDefinition.theme.materialTheme` names one of four Material themes and `colorScheme` picks light, dark
-or auto. `pp-material-themes.scss` emits each theme under a **class** rather than under `html`, which is
+`AppDefinition.theme.materialTheme` names one of the presets of `pp-material-themes.scss` —
+`processpuzzle` (the brand look, and the default) or one of Angular Material's prebuilt palette pairs —
+and `colorScheme` picks light, dark or auto. A preset themes the ProcessPuzzle surfaces too: every preset
+other than `processpuzzle` maps the `--pp-*` tokens onto Material roles, so header, sidenav, cards and
+buttons follow the chosen palette, and `tokenOverrides` fine-tune on top. `pp-material-themes.scss` emits each theme under a **class** rather than under `html`, which is
 what lets one *subtree* wear a theme: `AppShellComponent` puts `pp-theme-<name> pp-scheme-<scheme>` on its
 own host, so a previewed application is themed independently of the designer around it. This is possible
 because `mat.theme()` emits nothing but `--mat-sys-*` custom properties, and those cascade — Angular's

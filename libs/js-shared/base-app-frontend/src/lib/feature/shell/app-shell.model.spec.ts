@@ -77,12 +77,10 @@ describe('themeClassOf', () => {
     expect(themeClassOf(new AppDefinition({ materialTheme: 'cyan-orange', colorScheme: 'auto' }))).toBe('pp-theme-cyan-orange pp-scheme-auto');
   });
 
-  it('applies nothing at all when no Material theme is named', () => {
-    // Including when a scheme *is* named: a scheme without a theme is half a theme, and inheriting the
-    // host application's is the honest reading. See the note on themeClassOf.
-    expect(themeClassOf(new AppDefinition({ id: 'demo' }))).toBe('');
-    expect(themeClassOf(new AppDefinition({ colorScheme: 'dark' }))).toBe('');
-    expect(themeClassOf(undefined)).toBe('');
+  it('wears the processpuzzle preset when no Material theme is named, as the contract defaults it', () => {
+    expect(themeClassOf(new AppDefinition({ id: 'demo' }))).toBe('pp-theme-processpuzzle pp-scheme-light');
+    expect(themeClassOf(new AppDefinition({ colorScheme: 'dark' }))).toBe('pp-theme-processpuzzle pp-scheme-dark');
+    expect(themeClassOf(undefined)).toBe('pp-theme-processpuzzle pp-scheme-light');
   });
 
   it('falls back to the nested theme object when nothing flattened it', () => {

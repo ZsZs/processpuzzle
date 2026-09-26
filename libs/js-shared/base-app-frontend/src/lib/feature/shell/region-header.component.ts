@@ -32,6 +32,7 @@ import { WidgetListComponent } from '../widget-list.component';
       :host {
         align-items: center;
         background-color: var(--pp-surface-header);
+        color: var(--pp-on-header);
         display: flex;
         flex: 1;
         gap: 16px;
