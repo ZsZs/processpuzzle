@@ -1,5 +1,6 @@
 import { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { CopyrightComponent } from './copyright/copyright.component';
 import { LanguageSelectorComponent } from './language-selector/language-selector.component';
 import { LikeButtonComponent } from './like-button/like-button.component';
 import { MarkdownPageComponent } from './markdown-page/markdown-page.component';
@@ -28,6 +29,7 @@ import { provideWidget } from './widget-registry/widget-registry.token';
  * say so. {@link provideBaseWidgets} is the convenience for the common "register them all" case.
  */
 export const CARDS_GRID_WIDGET = 'cards-grid';
+export const COPYRIGHT_WIDGET = 'copyright';
 export const LANGUAGE_SELECTOR_WIDGET = 'language-selector';
 export const LIKE_BUTTON_WIDGET = 'like-button';
 export const MARKDOWN_PAGE_WIDGET = 'markdown-page';
@@ -36,6 +38,10 @@ export const VERSION_BUTTON_WIDGET = 'version-button';
 
 export function provideCardsGridWidget(): Provider[] {
   return provideWidget(CARDS_GRID_WIDGET, MatCardsGridComponent);
+}
+
+export function provideCopyrightWidget(): Provider[] {
+  return provideWidget(COPYRIGHT_WIDGET, CopyrightComponent);
 }
 
 export function provideLanguageSelectorWidget(): Provider[] {
@@ -66,6 +72,7 @@ export function provideVersionButtonWidget(): Provider[] {
 export function provideBaseWidgets(): Provider[] {
   return [
     provideCardsGridWidget(),
+    provideCopyrightWidget(),
     provideLanguageSelectorWidget(),
     provideLikeButtonWidget(),
     provideMarkdownPageWidget(),

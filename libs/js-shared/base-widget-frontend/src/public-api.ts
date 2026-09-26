@@ -7,6 +7,7 @@ export {
   BASE_WIDGET_ENTITY_FACADES,
   BASE_WIDGET_FACADE_PROVIDERS,
   CARDS_GRID_WIDGET,
+  COPYRIGHT_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
@@ -14,6 +15,7 @@ export {
   VERSION_BUTTON_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
+  provideCopyrightWidget,
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
@@ -21,6 +23,7 @@ export {
   provideVersionButtonWidget,
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
+export { CopyrightComponent } from './copyright/copyright.component';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
@@ -40,7 +43,15 @@ export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-reg
 export { hasDescribedProps, propsSchemaToDescriptors } from './widget-definition/props-schema-to-descriptors';
 export { ATTRIBUTE_VISIBILITY_MODES, InputPort, OutputPort, PORT_TYPES, WIDGET_DEFINITION_STATUSES, WidgetDefinition } from './widget-definition/widget-definition';
 export type { AttributeVisibility, AttributeVisibilityMode, PortType, PropsSchema, PropsSchemaProperty, WidgetDefinitionStatus } from './widget-definition/widget-definition';
-export { BASE_ENTITY_TRANSLOCO_SCOPE, BASE_WIDGET_TRANSLOCO_SCOPE, PUBLISH_BUTTON_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY, WIDGET_DEFINITION_I18N_SCOPE, WIDGET_INPUT_PORT_I18N_SCOPE, WIDGET_OUTPUT_PORT_I18N_SCOPE } from './base-widget.i18n';
+export {
+  BASE_ENTITY_TRANSLOCO_SCOPE,
+  BASE_WIDGET_TRANSLOCO_SCOPE,
+  PUBLISH_BUTTON_I18N_KEY,
+  PUBLISH_TOOLTIP_I18N_KEY,
+  WIDGET_DEFINITION_I18N_SCOPE,
+  WIDGET_INPUT_PORT_I18N_SCOPE,
+  WIDGET_OUTPUT_PORT_I18N_SCOPE,
+} from './base-widget.i18n';
 export { BASE_WIDGET_ROUTES } from './base-widget.routes';
 export { createWidgetDefinitionDescriptor, WIDGET_KEY_PATTERN } from './widget-definition/widget-definition.descriptors';
 export { createWidgetInputPortDescriptor, createWidgetOutputPortDescriptor, WIDGET_PORT_ID_FIELD } from './widget-definition/widget-port.descriptors';

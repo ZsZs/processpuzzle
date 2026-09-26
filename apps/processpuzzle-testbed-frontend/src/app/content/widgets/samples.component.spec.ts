@@ -5,6 +5,15 @@ import { LayoutService } from '@processpuzzle/util';
 import { WidgetsSamplesComponent } from './samples.component';
 
 describe('WidgetsSamplesComponent', () => {
+  it('shows the copyright sample and documents its required text input', async () => {
+    const { getByRole, getByText } = await render(WidgetsSamplesComponent, {
+      providers: [{ provide: LayoutService, useValue: { hideSidenav: vi.fn() } }],
+    });
+
+    expect(getByText('© Zsolt Zsuffa 2026')).toBeTruthy();
+    expect(getByRole('table', { name: 'Inputs' })).toHaveTextContent('text string Yes The copyright notice to display.');
+  });
+
   it('shows the image zoom sample and opens its image at full size', async () => {
     const restoreSidenav = vi.fn();
     const hideSidenav = vi.fn(() => restoreSidenav);
