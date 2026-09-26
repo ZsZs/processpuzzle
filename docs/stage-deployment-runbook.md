@@ -833,8 +833,8 @@ The distinction that matters is in the dmesg line:
 
 #### The host memory budget
 
-This is a 3.8 GiB box with **no swap**, and it is close to full. Measured 2026-09-21 with the testbed
-backend stopped:
+This is a 3.8 GiB box, close to full, and until 2026-09-26 it had **no swap**. Measured
+2026-09-21 with the testbed backend stopped:
 
 | Group | Resident |
 | --- | --- |
@@ -857,12 +857,16 @@ Two structural problems, both now fixed in the compose files:
    45–75% fatter than the three sibling backends on the same framework. That dependency is gone; it
    should now sit in their 390–480 MiB range.
 
-**Add swap regardless.** A swapless host turns every transient spike into a kill, and 2–4 GiB of swap
-file costs nothing but disk:
+**Swap: added 2026-09-26** — a 4 GiB `/swapfile` (in `/etc/fstab`) with `vm.swappiness=10`
+(`/etc/sysctl.d/99-swappiness.conf`), so it is a safety net rather than a working set. Before it, a
+swapless host turned every transient spike into a stall or a kill: on 2026-09-25 a merge that
+redeployed the Custom, Biz and Admin stacks at once left every hostname timing out for several
+minutes, and failed the Biz stage e2e. For a new host, the same setup:
 
 ```bash
 fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
+echo 'vm.swappiness=10' > /etc/sysctl.d/99-swappiness.conf && sysctl --system
 ```
 
 And note the standing constraint: **four application stacks plus Keycloak plus Coolify on 3.8 GiB has
