@@ -75,6 +75,10 @@ describe('createAppDefinitionDescriptor', () => {
       { key: 'rose-red', value: 'rose-red' },
       { key: 'magenta-violet', value: 'magenta-violet' },
       { key: 'cyan-orange', value: 'cyan-orange' },
+      { key: 'indigo-pink', value: 'indigo-pink' },
+      { key: 'deeppurple-amber', value: 'deeppurple-amber' },
+      { key: 'pink-bluegrey', value: 'pink-bluegrey' },
+      { key: 'purple-green', value: 'purple-green' },
     ]);
     expect(byName('colorScheme')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['light', 'dark', 'auto']);
     expect(byName('preset')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['sidenav-left', 'sidenav-right', 'top-nav']);

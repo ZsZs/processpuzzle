@@ -6,6 +6,7 @@ import { LikeButtonComponent } from './like-button/like-button.component';
 import { MarkdownPageComponent } from './markdown-page/markdown-page.component';
 import { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 import { ShareButtonComponent } from './share-button/share-button.component';
+import { ThemesButtonComponent } from './themes-button/themes-button.component';
 import { VersionButtonComponent } from './version-button/version-button.component';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
 import { WIDGET_DEFINITION_ENTITY_NAME, WIDGET_INPUT_PORT_ENTITY_NAME, WIDGET_OUTPUT_PORT_ENTITY_NAME } from './widget-definition/widget-entity-names';
@@ -34,6 +35,7 @@ export const LANGUAGE_SELECTOR_WIDGET = 'language-selector';
 export const LIKE_BUTTON_WIDGET = 'like-button';
 export const MARKDOWN_PAGE_WIDGET = 'markdown-page';
 export const SHARE_BUTTON_WIDGET = 'share-button';
+export const THEMES_BUTTON_WIDGET = 'themes-button';
 export const VERSION_BUTTON_WIDGET = 'version-button';
 
 export function provideCardsGridWidget(): Provider[] {
@@ -60,6 +62,10 @@ export function provideShareButtonWidget(): Provider[] {
   return provideWidget(SHARE_BUTTON_WIDGET, ShareButtonComponent);
 }
 
+export function provideThemesButtonWidget(): Provider[] {
+  return provideWidget(THEMES_BUTTON_WIDGET, ThemesButtonComponent);
+}
+
 export function provideVersionButtonWidget(): Provider[] {
   return provideWidget(VERSION_BUTTON_WIDGET, VersionButtonComponent);
 }
@@ -77,6 +83,7 @@ export function provideBaseWidgets(): Provider[] {
     provideLikeButtonWidget(),
     provideMarkdownPageWidget(),
     provideShareButtonWidget(),
+    provideThemesButtonWidget(),
     provideVersionButtonWidget(),
   ];
 }

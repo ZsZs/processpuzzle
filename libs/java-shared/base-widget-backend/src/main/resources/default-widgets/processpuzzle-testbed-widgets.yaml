@@ -103,6 +103,19 @@ widgetDefinitions:
       properties: {}
       additionalProperties: false
 
+  - key: themes-button
+    name: Themes button
+    translocoId: base_widget.themes_button.name
+    description: >-
+      Lets the user pick one of the theme presets and a light, dark or automatic colour scheme. Inside
+      an application it overrides that application's theme and is remembered per application.
+    category: Navigation
+    icon: palette
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+
   - key: like-button
     name: Like button
     translocoId: base_widget.like_button.name

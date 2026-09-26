@@ -2,6 +2,10 @@
 @use 'sass:list';
 @use '@angular/material' as mat;
 @use './pp-brand-palette' as pp-brand;
+@use './pp-indigo-pink-palette' as indigo-pink;
+@use './pp-deeppurple-amber-palette' as deeppurple-amber;
+@use './pp-pink-bluegrey-palette' as pink-bluegrey;
+@use './pp-purple-green-palette' as purple-green;
 
 ////
 /// The Material themes an `AppDefinition` may name in `theme.materialTheme`, each emitted under a
@@ -12,8 +16,10 @@
 /// is a set of cascading variables, so it can be declared on any element rather than only on `html`.
 /// Angular's own prebuilt themes (`@angular/material/prebuilt-themes/*.css`) cannot be reused for this —
 /// their `html` selector is baked into the shipped CSS — so the palettes are referenced directly here.
-/// Apart from `processpuzzle`, the names and their palette pairs match those prebuilt files, and
-/// `MATERIAL_THEMES` in `app-definition.ts` is the list this has to stay in step with.
+/// The names are those of Angular's prebuilt themes, plus `processpuzzle`: the four Material 3 ones use the
+/// same palettes as their prebuilt files, the four Material 2 ones (`indigo-pink` …) are re-created from
+/// their seed colours in `_pp-<name>-palette.scss`, as is the brand. `THEME_PRESETS` in
+/// `themes-button/theme-presets.ts` is the list this has to stay in step with.
 ///
 /// ### The `--pp-*` tokens follow the chosen theme
 /// Framework surfaces — header, sidenav, cards, form buttons, chips — paint with the `--pp-*` tokens of
@@ -42,20 +48,19 @@
 /// ```jsonc
 /// "styles": [
 ///   "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",
-///   "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss",
+///   "libs/js-shared/base-widget-frontend/src/theme/pp-material-themes.scss",
 ///   "src/styles.scss"
 /// ]
 /// ```
 ///
-/// Without it, `AppShellComponent` still sets the classes and simply inherits the host application's
+/// Without it, `AppShellComponent` and `ThemeService` still set the classes and simply inherits the host application's
 /// theme — a missing registration costs theming, not correctness.
 ///
-/// ### Known limitation: CDK overlays
-/// A dialog, menu, tooltip, snackbar or `mat-select` panel renders into `.cdk-overlay-container`, a child
-/// of `<body>` and therefore outside the themed subtree, so it keeps the host application's theme. This
-/// does not arise in a standalone deployment, where the application's theme is the document's; in the
-/// Preview tab an overlay opened from inside the preview will look like the designer. Closing that needs
-/// a per-panel class or a scoped `OverlayContainer`, neither of which belongs in a stylesheet.
+/// ### CDK overlays
+/// A dialog, menu or tooltip renders into `.cdk-overlay-container`, by default a child of `<body>` and so
+/// outside a themed subtree. Where the theme is the document's — `ThemeService`'s root instance — that is
+/// no problem. `AppShellComponent` provides its own `OverlayContainer` inside its host, so that overlays
+/// opened from a themed shell wear its theme too.
 ////
 
 $pp-material-themes: (
@@ -64,6 +69,10 @@ $pp-material-themes: (
   rose-red: (mat.$rose-palette, mat.$red-palette),
   magenta-violet: (mat.$magenta-palette, mat.$violet-palette),
   cyan-orange: (mat.$cyan-palette, mat.$orange-palette),
+  indigo-pink: (indigo-pink.$primary-palette, indigo-pink.$tertiary-palette),
+  deeppurple-amber: (deeppurple-amber.$primary-palette, deeppurple-amber.$tertiary-palette),
+  pink-bluegrey: (pink-bluegrey.$primary-palette, pink-bluegrey.$tertiary-palette),
+  purple-green: (purple-green.$primary-palette, purple-green.$tertiary-palette),
 );
 
 /// The semantic tokens of `pp-colors.css`, re-declared so that they resolve against the base colours in

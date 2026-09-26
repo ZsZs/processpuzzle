@@ -1,4 +1,5 @@
-import { AppDefinition, ColorScheme, LayoutPreset, MaterialTheme, SidenavMode } from '../../domain/app-definition';
+import { ThemeSelection } from '@processpuzzle/widgets';
+import { AppDefinition, LayoutPreset, SidenavMode } from '../../domain/app-definition';
 
 /**
  * The layout decisions {@link AppShellComponent} renders from, resolved out of an `AppDefinition`'s
@@ -69,7 +70,8 @@ export function layoutOf(definition: AppDefinition | undefined): ResolvedLayout 
  *
  * Custom properties cascade, so setting them on one element re-tints every framework surface below it
  * — which is what makes a themed preview possible at all without an iframe. `materialTheme` and
- * `colorScheme` are not handled here but by {@link themeClassOf}, as classes on the same element.
+ * `colorScheme` are not handled here but by {@link themeDefaultsOf} and the shell's `ThemeService`, as
+ * classes on the same element.
  *
  * Keys are passed through untouched, including their leading `--`: Angular's `[style]` binding treats
  * a custom property as a custom property, and the contract calls these overrides of the tokens in
@@ -94,22 +96,14 @@ export function knownRoutePathsOf(definition: AppDefinition | undefined): string
   return [...declared, ...mounted].filter((path): path is string => !!path);
 }
 
-/** The theme and scheme a definition that names none is rendered in, matching the contract's own defaults. */
-const DEFAULT_MATERIAL_THEME: MaterialTheme = 'processpuzzle';
-const DEFAULT_COLOR_SCHEME: ColorScheme = 'light';
-
 /**
- * Which of the scoped Material themes in `src/theme/pp-material-themes.scss` the shell should wear, as the
- * class names that select it — `pp-theme-<materialTheme> pp-scheme-<colorScheme>`.
- *
- * A definition naming no theme wears `processpuzzle`, the contract's default, rather than inheriting the
- * host's: the shell's surfaces are painted by `--pp-*` tokens that each preset declares, and a shell that
- * inherited them would look like whatever application happened to host it. The server fills the same
- * default in on save, so this only decides how an unsaved or hand-built definition renders.
+ * The theme preset and colour scheme a definition declares, as the defaults of the shell's `ThemeService` —
+ * which a user's choice in a `ThemesButton` overrides, and which fall back to the ProcessPuzzle look, light,
+ * for whatever the definition leaves unset. Those fallbacks are the contract's defaults too, so the server
+ * fills the same values in on save.
  */
-export function themeClassOf(definition: AppDefinition | undefined): string {
-  const materialTheme = definition?.materialTheme ?? definition?.theme?.materialTheme ?? DEFAULT_MATERIAL_THEME;
-
-  const colorScheme = definition?.colorScheme ?? definition?.theme?.colorScheme ?? DEFAULT_COLOR_SCHEME;
-  return `pp-theme-${materialTheme} pp-scheme-${colorScheme}`;
+export function themeDefaultsOf(definition: AppDefinition | undefined): Partial<ThemeSelection> {
+  const preset = definition?.materialTheme ?? definition?.theme?.materialTheme;
+  const scheme = definition?.colorScheme ?? definition?.theme?.colorScheme;
+  return { ...(preset ? { preset } : {}), ...(scheme ? { scheme } : {}) };
 }

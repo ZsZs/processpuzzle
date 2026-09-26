@@ -1,9 +1,10 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { SidenavAutosizeDirective, WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { SidenavAutosizeDirective, ThemeService, WIDGET_REGISTRY } from '@processpuzzle/widgets';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
@@ -215,7 +216,7 @@ describe('AppShellComponent', () => {
     it('wears the processpuzzle preset when the definition names no Material theme', async () => {
       await render(new AppDefinition({ id: 'demo-app', name: 'Demo' }));
 
-      expect([...shellElement().classList].filter((name) => name.startsWith('pp-theme-') || name.startsWith('pp-scheme-'))).toEqual(['pp-theme-processpuzzle', 'pp-scheme-light']);
+      expect([...shellElement().classList].filter((name) => name.startsWith('pp-theme-') || name.startsWith('pp-scheme-')).sort()).toEqual(['pp-scheme-light', 'pp-theme-processpuzzle']);
     });
 
     it('swaps the theme class when the definition is edited', async () => {
@@ -226,6 +227,56 @@ describe('AppShellComponent', () => {
 
       expect([...shellElement().classList]).toContain('pp-theme-cyan-orange');
       expect([...shellElement().classList]).not.toContain('pp-theme-azure-blue');
+    });
+
+    describe('a theme the user picks', () => {
+      const storageKey = 'pp-theme:demo-app';
+      beforeEach(() => localStorage.removeItem(storageKey));
+
+      function pick(preset: 'purple-green'): void {
+        fixture.debugElement.injector.get(ThemeService).selectPreset(preset);
+        fixture.detectChanges();
+      }
+
+      it('overrides the definition and is remembered per application', async () => {
+        await render(new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'azure-blue', colorScheme: 'dark' }));
+
+        pick('purple-green');
+
+        expect([...shellElement().classList]).toEqual(expect.arrayContaining(['pp-theme-purple-green', 'pp-scheme-dark']));
+        expect(JSON.parse(localStorage.getItem(storageKey) ?? '{}')).toEqual({ preset: 'purple-green' });
+      });
+
+      it('is restored when the application is rendered again', async () => {
+        localStorage.setItem(storageKey, JSON.stringify({ preset: 'purple-green' }));
+
+        await render(new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'azure-blue' }));
+
+        expect([...shellElement().classList]).toContain('pp-theme-purple-green');
+      });
+
+      it('is only tried out, and dropped on the next edit, when the theme is not persisted', async () => {
+        TestBed.configureTestingModule({ providers: [provideRouter([]), provideTranslocoTesting({ translations: {} })] });
+        fixture = TestBed.createComponent(AppShellComponent);
+        fixture.componentRef.setInput('persistTheme', false);
+        fixture.componentRef.setInput('definition', new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'azure-blue' }));
+        fixture.detectChanges();
+
+        pick('purple-green');
+        expect(localStorage.getItem(storageKey)).toBeNull();
+
+        fixture.componentRef.setInput('definition', new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'rose-red' }));
+        fixture.detectChanges();
+        expect([...shellElement().classList]).toContain('pp-theme-rose-red');
+      });
+    });
+
+    it('renders overlays inside its host, so that they wear its theme', async () => {
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo', materialTheme: 'rose-red' }));
+
+      const container = fixture.debugElement.injector.get(OverlayContainer).getContainerElement();
+
+      expect(shellElement().contains(container)).toBe(true);
     });
   });
 });

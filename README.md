@@ -263,7 +263,7 @@ own global styles. An application that hosts `base-app` — the designer's Previ
 ```jsonc
 "styles": [
   "libs/js-shared/base-widget-frontend/src/theme/pp-colors.css",        // or the published package path
-  "libs/js-shared/base-app-frontend/src/theme/pp-material-themes.scss", // only if you host base-app
+  "libs/js-shared/base-widget-frontend/src/theme/pp-material-themes.scss", // presets for base-app and the ThemesButton
   "src/styles.scss"
 ]
 ```
@@ -273,17 +273,23 @@ own global styles. An application that hosts `base-app` — the designer's Previ
 `processpuzzle` (the brand look, and the default) or one of Angular Material's prebuilt palette pairs —
 and `colorScheme` picks light, dark or auto. A preset themes the ProcessPuzzle surfaces too: every preset
 other than `processpuzzle` maps the `--pp-*` tokens onto Material roles, so header, sidenav, cards and
-buttons follow the chosen palette, and `tokenOverrides` fine-tune on top. `pp-material-themes.scss` emits each theme under a **class** rather than under `html`, which is
+buttons follow the chosen palette, and `tokenOverrides` fine-tune on top.
+
+The definition's theme is the application's *default*. The `ThemesButton` widget (`themes-button`)
+lets a user pick a preset and light / dark / auto for themselves: placed in an application's region it
+overrides that application's theme, remembered per application; placed in a host application's own
+toolbar it themes the whole document.
+
+`pp-material-themes.scss` emits each theme under a **class** rather than under `html`, which is
 what lets one *subtree* wear a theme: `AppShellComponent` puts `pp-theme-<name> pp-scheme-<scheme>` on its
 own host, so a previewed application is themed independently of the designer around it. This is possible
 because `mat.theme()` emits nothing but `--mat-sys-*` custom properties, and those cascade — Angular's
 prebuilt theme files cannot be used the same way, since their `html` selector is baked in.
 
 Two things to know. If the sheet is not registered the shell still sets the classes and simply inherits
-the host application's theme — you lose theming, not correctness. And CDK overlays (dialogs, menus,
-tooltips, `mat-select` panels) render into `.cdk-overlay-container` under `<body>`, outside the themed
-subtree, so they keep the host's theme; in a standalone deployment this does not arise, because there the
-application's theme *is* the document's.
+the host application's theme — you lose theming, not correctness. CDK overlays (dialogs, menus, tooltips)
+normally render under `<body>`, outside the themed subtree; `AppShellComponent` therefore provides its own
+`OverlayContainer` inside its host, so overlays opened from a shell wear the shell's theme.
 
 ### Overriding colors
 Redefine any token in a `:root` block in your **own** global stylesheet (loaded after `pp-colors.css`);

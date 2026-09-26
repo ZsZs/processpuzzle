@@ -2,12 +2,13 @@ import { fireEvent, render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
 import { describe, expect, it, vi } from 'vitest';
 import { LayoutService } from '@processpuzzle/util';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { WidgetsSamplesComponent } from './samples.component';
 
 describe('WidgetsSamplesComponent', () => {
   it('shows the copyright sample and documents its required text input', async () => {
     const { getByRole, getByText } = await render(WidgetsSamplesComponent, {
-      providers: [{ provide: LayoutService, useValue: { hideSidenav: vi.fn() } }],
+      providers: [{ provide: LayoutService, useValue: { hideSidenav: vi.fn() } }, provideTranslocoTesting({ translations: {} })],
     });
 
     expect(getByText('© Zsolt Zsuffa 2026')).toBeTruthy();
@@ -21,7 +22,7 @@ describe('WidgetsSamplesComponent', () => {
     const restoreSidenav = vi.fn();
     const hideSidenav = vi.fn(() => restoreSidenav);
     const { getAllByRole, getByRole } = await render(WidgetsSamplesComponent, {
-      providers: [{ provide: LayoutService, useValue: { hideSidenav } }],
+      providers: [{ provide: LayoutService, useValue: { hideSidenav } }, provideTranslocoTesting({ translations: {} })],
     });
     const [thumbnail] = getAllByRole('img', { name: 'Conduct Race diagram' });
 
@@ -43,7 +44,7 @@ describe('WidgetsSamplesComponent', () => {
     const restoreSidenav = vi.fn();
     const hideSidenav = vi.fn(() => restoreSidenav);
     const { getAllByRole, getByRole, queryAllByRole } = await render(WidgetsSamplesComponent, {
-      providers: [{ provide: LayoutService, useValue: { hideSidenav } }],
+      providers: [{ provide: LayoutService, useValue: { hideSidenav } }, provideTranslocoTesting({ translations: {} })],
     });
     const analyseRace = getByRole('img', { name: 'Analyse Race diagram' });
 
@@ -69,5 +70,15 @@ describe('WidgetsSamplesComponent', () => {
     fireEvent.click(getByRole('button', { name: 'Close' }));
 
     expect(restoreSidenav).toHaveBeenCalledOnce();
+  });
+
+  it('shows the themes button sample, themed on its own box rather than the page', async () => {
+    const { container, getByRole } = await render(WidgetsSamplesComponent, {
+      providers: [{ provide: LayoutService, useValue: { hideSidenav: vi.fn() } }, provideTranslocoTesting({ translations: {} })],
+    });
+
+    expect(container.querySelector('app-themes-button-sample')).toHaveClass('pp-theme-processpuzzle', 'pp-scheme-light');
+    expect(document.documentElement.className).not.toContain('pp-theme-');
+    expect(getByRole('cell', { name: 'themeChange' })).toBeTruthy();
   });
 });

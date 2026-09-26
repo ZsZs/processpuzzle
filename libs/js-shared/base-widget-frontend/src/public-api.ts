@@ -12,6 +12,7 @@ export {
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
   SHARE_BUTTON_WIDGET,
+  THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
@@ -20,6 +21,7 @@ export {
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
   provideShareButtonWidget,
+  provideThemesButtonWidget,
   provideVersionButtonWidget,
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
@@ -38,6 +40,19 @@ export { provideAppPropertyStore } from './app-property/app-property-store.provi
 export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { SidenavAutosizeDirective } from './sidenav-autosize/sidenav-autosize.directive';
+export {
+  DEFAULT_THEME_COLOR_SCHEME,
+  DEFAULT_THEME_PRESET,
+  isThemeColorScheme,
+  isThemePreset,
+  THEME_COLOR_SCHEMES,
+  THEME_PRESET_SWATCHES,
+  THEME_PRESETS,
+  themeClassesFor,
+} from './themes-button/theme-presets';
+export type { ThemeColorScheme, ThemePreset, ThemeSelection } from './themes-button/theme-presets';
+export { DOCUMENT_THEME_STORAGE_KEY, ThemeService } from './themes-button/theme.service';
+export { ThemesButtonComponent } from './themes-button/themes-button.component';
 export { VersionButtonComponent } from './version-button/version-button.component';
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';
 export { hasDescribedProps, propsSchemaToDescriptors } from './widget-definition/props-schema-to-descriptors';

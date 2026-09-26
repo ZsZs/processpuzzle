@@ -8,6 +8,7 @@ import {
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
   SHARE_BUTTON_WIDGET,
+  THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
@@ -23,7 +24,7 @@ describe('base-widget providers', () => {
     const registry = TestBed.inject(WIDGET_REGISTRY);
 
     expect([...registry.keys()].sort()).toEqual(
-      [CARDS_GRID_WIDGET, COPYRIGHT_WIDGET, LANGUAGE_SELECTOR_WIDGET, LIKE_BUTTON_WIDGET, MARKDOWN_PAGE_WIDGET, SHARE_BUTTON_WIDGET, VERSION_BUTTON_WIDGET].sort(),
+      [CARDS_GRID_WIDGET, COPYRIGHT_WIDGET, LANGUAGE_SELECTOR_WIDGET, LIKE_BUTTON_WIDGET, MARKDOWN_PAGE_WIDGET, SHARE_BUTTON_WIDGET, THEMES_BUTTON_WIDGET, VERSION_BUTTON_WIDGET].sort(),
     );
     expect(registry.get(CARDS_GRID_WIDGET)).toBe(MatCardsGridComponent);
     expect(registry.get(COPYRIGHT_WIDGET)).toBe(CopyrightComponent);

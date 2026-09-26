@@ -74,7 +74,7 @@ class DefaultAppLoaderTest {
      * the alternative is the seed naming a widget nobody implements and no build noticing.
      */
     private static final List<String> REGISTERED_WIDGET_TYPES =
-            List.of("cards-grid", "language-selector", "like-button", "markdown-page", "share-button", "version-button");
+            List.of("cards-grid", "language-selector", "like-button", "markdown-page", "share-button", "themes-button", "version-button");
 
     private AppEndpoint endpoint;
     private ResourcePatternResolver resourceResolver;

@@ -8,5 +8,22 @@
   "german": "Alemán",
   "french": "Francés",
   "hungarian": "Húngaro",
-  "spanish": "Español"
+  "spanish": "Español",
+  "themes": {
+    "button": "Elegir tema",
+    "processpuzzle": "ProcessPuzzle",
+    "azure-blue": "Azur y Azul",
+    "rose-red": "Rosa y Rojo",
+    "magenta-violet": "Magenta y Violeta",
+    "cyan-orange": "Cian y Naranja",
+    "indigo-pink": "Índigo y Rosa",
+    "deeppurple-amber": "Púrpura oscuro y Ámbar",
+    "pink-bluegrey": "Rosa y Gris azulado",
+    "purple-green": "Púrpura y Verde",
+    "scheme": "Esquema de color",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "auto": "Según el sistema",
+    "reset": "Restablecer valor predeterminado"
+  }
 }
