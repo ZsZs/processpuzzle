@@ -107,7 +107,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   }
 
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
-    const componentType = FORM_CONTROL_COMPONENTS[column.formControlType];
+    const componentType = column.formControlType === FormControlType.CUSTOM ? (column as BaseEntityAttrDescriptor).component : FORM_CONTROL_COMPONENTS[column.formControlType];
     if (!componentType) throw new Error('Undefined form control type');
     return componentType as unknown as Type<BaseFormControlComponent<Entity>>;
   }

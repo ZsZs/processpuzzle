@@ -10,8 +10,8 @@ How an `AppDefinition`'s flat `routes[]` becomes real, navigable Angular routes 
   contributes and children derived from authored paths are concatenated, not one replacing the other.
 - `app-route-renderer.ts` — `AppRouteRenderer`, the injectable `RouteRenderer` implementation.
   Dispatches on `RouteDefinition.kind`.
-- `route-widgets.component.ts` — renders `kind: 'WIDGETS'`. Same WIDGET_REGISTRY +
-  NgComponentOutlet pattern `DocumentEditorComponent` uses for STANDALONE widget blocks.
+- `route-widgets.component.ts` — renders `kind: 'WIDGETS'` through base-widget's
+  `WidgetHostComponent`, the same host `DocumentEditorComponent` uses for STANDALONE widget blocks.
 - `kind: 'ENTITY'` is **not rendered here.** base-entity owns it: `AppRouteRenderer` calls
   `EntityScreenResolver.resolve(entityName)` and spreads the `Route` that `entityScreenRoute()` returns,
   adding only what an application definition contributes — the authored title, `entityMode` and

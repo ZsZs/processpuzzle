@@ -84,13 +84,22 @@ appDefinitions:
     # mistyped or aspirational type is accepted here and fails at render time, in the preview, with
     # nothing to point at. Seed data is the wrong place to be aspirational about that.
     regions:
-      # The header carries the brand block from the definition itself (name, logoUrl); its widgets are
-      # what goes beside it. There is no 'content' region: the content area is the router outlet the
-      # routes below fill.
+      # The header is widgets only, the brand included: app-logo and app-title read the definition's
+      # logoUrl and name through the shell, and nav-menu stands in for the sidenav on a handset layout,
+      # where the shell renders none. There is no 'content' region: the content area is the router
+      # outlet the routes below fill.
       - type: header
         widgets:
+          - id: header-app-logo
+            type: app-logo
+          - id: header-app-title
+            type: app-title
+          - id: header-nav-menu
+            type: nav-menu
           - id: header-language-selector
             type: language-selector
+          - id: header-themes-button
+            type: themes-button
           # Chrome, so the header rather than a route: a like and a share act on the application the user
           # is in, not on whatever screen happens to be open, and they stay put while the content changes.
           - id: header-like-button

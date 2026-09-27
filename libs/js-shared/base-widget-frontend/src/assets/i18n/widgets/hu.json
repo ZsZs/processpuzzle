@@ -8,5 +8,22 @@
   "german": "Német",
   "french": "Francia",
   "hungarian": "Magyar",
-  "spanish": "Spanyol"
+  "spanish": "Spanyol",
+  "themes": {
+    "button": "Téma választása",
+    "processpuzzle": "ProcessPuzzle",
+    "azure-blue": "Azúr & Kék",
+    "rose-red": "Rózsa & Piros",
+    "magenta-violet": "Bíbor & Ibolya",
+    "cyan-orange": "Cián & Narancs",
+    "indigo-pink": "Indigó & Rózsaszín",
+    "deeppurple-amber": "Mélylila & Borostyán",
+    "pink-bluegrey": "Rózsaszín & Kékesszürke",
+    "purple-green": "Lila & Zöld",
+    "scheme": "Színséma",
+    "light": "Világos",
+    "dark": "Sötét",
+    "auto": "Rendszer szerint",
+    "reset": "Alapértelmezés visszaállítása"
+  }
 }

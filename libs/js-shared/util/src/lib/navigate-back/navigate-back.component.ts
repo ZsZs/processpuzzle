@@ -13,10 +13,11 @@ import { MatIconButton } from '@angular/material/button';
   `,
   styles: [
     `
+      /* Heavier than the default glyph; the colour is inherited, so the arrow follows the theme of the
+         surface it sits on rather than being black on every header. */
       .fat-back-arrow {
-        font-size: 24px; /* Größerer und fetterer Pfeil */
-        font-variation-settings: 'wght' 1200; /* Fettigkeitsgrad (700 = fett) */
-        color: #000; /* Schwarz als Farbe */
+        font-size: 24px;
+        font-variation-settings: 'wght' 1200;
       }
     `,
   ],

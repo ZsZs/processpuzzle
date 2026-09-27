@@ -1,4 +1,5 @@
 import { InjectionToken, Optional, Provider, SkipSelf, Type } from '@angular/core';
+import type { WidgetDefinition } from '../widget-definition/widget-definition';
 
 /**
  * PLACEMENT: this lives in base-widget-frontend, the library of widget building blocks. It was
@@ -23,18 +24,33 @@ import { InjectionToken, Optional, Provider, SkipSelf, Type } from '@angular/cor
  */
 
 /**
- * Maps a widget registry key (WidgetInstance.type / DocumentBlock.type) to the Angular component
- * that renders it. Populated by each feature lib's own provider function — this file never
- * imports a concrete widget component itself, so app-shell, base-document, and any future
- * consumer share one registry without depending on each other.
+ * The description half of a {@link WidgetRegistration}: the fields of a `WidgetDefinition` a widget's author
+ * knows at build time, as opposed to the ones the server assigns (org, status, versions, timestamps).
+ *
+ * It is the frontend twin of the catalogue entry the backend seeds, and `widget-contract.spec.ts` holds the
+ * two — and the component's own inputs and outputs — to each other. `name` is the only required field, so an
+ * aggregator's spec can register a stand-in component without describing it in full.
  */
-export const WIDGET_REGISTRY = new InjectionToken<ReadonlyMap<string, Type<unknown>>>('WIDGET_REGISTRY');
+export type WidgetDescription = Pick<WidgetDefinition, 'name'> & Partial<Pick<WidgetDefinition, 'translocoId' | 'description' | 'category' | 'icon' | 'propsSchema' | 'inputPorts' | 'outputPorts'>>;
 
-/** One pending registration. Internal: consumers see only the assembled {@link WIDGET_REGISTRY} map. */
-interface WidgetRegistration {
+/**
+ * One widget type: the registry key, the component that renders it and the description of its interface.
+ * Declared beside the component, in the widget's own `<name>.widget.ts`, so the three cannot drift apart
+ * unnoticed.
+ */
+export interface WidgetRegistration {
+  /** The registry key — what `WidgetInstance.type` names, and the `key` of the matching `WidgetDefinition`. */
   type: string;
   component: Type<unknown>;
+  definition: WidgetDescription;
 }
+
+/**
+ * Maps a widget registry key (WidgetInstance.type / DocumentBlock.type) to its registration. Populated by
+ * each feature lib's own provider function — this file never imports a concrete widget component itself,
+ * so app-shell, base-document, and any future consumer share one registry without depending on each other.
+ */
+export const WIDGET_REGISTRY = new InjectionToken<ReadonlyMap<string, WidgetRegistration>>('WIDGET_REGISTRY');
 
 const WIDGET_REGISTRATIONS = new InjectionToken<WidgetRegistration[]>('WIDGET_REGISTRATIONS');
 
@@ -59,19 +75,19 @@ const WIDGET_REGISTRATIONS = new InjectionToken<WidgetRegistration[]>('WIDGET_RE
  * each factory reads the whole multi array, so they all assemble the same map. Registration order
  * therefore does not matter.
  */
-export function provideWidget(type: string, component: Type<unknown>): Provider[] {
+export function provideWidget(registration: WidgetRegistration): Provider[] {
   return [
-    { provide: WIDGET_REGISTRATIONS, useValue: { type, component }, multi: true },
+    { provide: WIDGET_REGISTRATIONS, useValue: registration, multi: true },
     {
       provide: WIDGET_REGISTRY,
-      useFactory: (registrations: WidgetRegistration[], inherited: ReadonlyMap<string, Type<unknown>> | null) => {
+      useFactory: (registrations: WidgetRegistration[], inherited: ReadonlyMap<string, WidgetRegistration> | null) => {
         const map = new Map(inherited ?? []);
         for (const registration of registrations) {
           const existing = map.get(registration.type);
-          if (existing && existing !== registration.component) {
+          if (existing && existing.component !== registration.component) {
             throw new Error(`WIDGET_REGISTRY: '${registration.type}' is already registered to a different component.`);
           }
-          map.set(registration.type, registration.component);
+          map.set(registration.type, registration);
         }
         return map;
       },

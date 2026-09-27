@@ -35,13 +35,9 @@ export class AppRegionRenderer {
   render = (region: RegionDefinition, definition: AppDefinition | undefined): RegionView | undefined => {
     switch (region.type) {
       case 'header':
-        return {
-          slot: 'header',
-          component: RegionHeaderComponent,
-          // Brand from the definition, widgets from the region: the two halves of a header row come
-          // from different levels of the document, and only this function knows both.
-          inputs: { title: definition?.name ?? '', logoUrl: definition?.logoUrl ?? definition?.theme?.logoUrl, widgets: region.widgets ?? [] },
-        };
+        // Widgets alone: the brand is an `app-logo` and an `app-title` widget like any other, reading the
+        // definition's name and logo through the shell's APPLICATION_CONTEXT.
+        return { slot: 'header', component: RegionHeaderComponent, inputs: { widgets: region.widgets ?? [] } };
       case 'footer':
         return { slot: 'footer', component: RegionFooterComponent, inputs: { widgets: region.widgets ?? [] } };
       case 'sidenav':

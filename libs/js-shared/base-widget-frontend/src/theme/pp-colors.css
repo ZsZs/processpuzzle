@@ -21,6 +21,8 @@
   /* --- Semantic surfaces (role -> base color) --- */
   --pp-surface-base: var(--pp-color-white);
   --pp-surface-header: var(--pp-color-light-green);
+  /* --pp-on-header: text on the header / footer. Deliberately not declared here, so that a host
+     application's chrome inherits its text colour; base-app's theme presets declare it. */
   --pp-surface-card: var(--pp-color-light-blue);
   --pp-surface-sidenav: var(--pp-color-dark-blue);
   --pp-on-sidenav: var(--pp-color-white);

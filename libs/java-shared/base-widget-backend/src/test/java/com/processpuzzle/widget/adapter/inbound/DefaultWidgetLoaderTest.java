@@ -68,7 +68,9 @@ class DefaultWidgetLoaderTest {
         // The catalogue holds exactly the keys base-widget-frontend's provideBaseWidgets() registers; a
         // palette entry with no component behind it only fails when an app is previewed. See the file header.
         assertThat(capturedDefinitions()).extracting(WidgetDefinitionInput::getKey)
-                .containsExactly("cards-grid", "markdown-page", "language-selector", "like-button", "share-button", "version-button");
+                .containsExactly("cards-grid", "markdown-page", "image-zoom", "photo-album", "app-logo", "app-title", "nav-menu",
+                        "navigate-back", "language-selector", "themes-button", "like-button", "share-button", "version-button",
+                        "design-button", "copyright");
     }
 
     @Test
@@ -217,7 +219,7 @@ class DefaultWidgetLoaderTest {
         // render a row editor, and a mapper that flattened it would leave the designer with a text box.
         assertThat(nested(cardsGrid.getPropsSchema(), "properties", "cards")).containsEntry("type", "array");
         assertThat(nested(cardsGrid.getPropsSchema(), "properties", "cards", "items", "properties"))
-                .containsKeys("title", "imageUrl", "actionLink");
+                .containsKeys("title", "subtitle", "content", "actions", "menuItems");
 
         WidgetDefinitionInput markdownPage = capturedDefinitions().get(1);
         assertThat(markdownPage.getName()).isEqualTo("Markdown page");

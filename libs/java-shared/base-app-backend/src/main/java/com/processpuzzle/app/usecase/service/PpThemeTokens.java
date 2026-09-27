@@ -5,7 +5,7 @@ import java.util.Set;
 /**
  * The {@code --pp-*} CSS custom properties a theme may override.
  *
- * <p>These names are duplicated from {@code libs/js-shared/widgets/src/theme/pp-colors.css}, which
+ * <p>These names are duplicated from {@code libs/js-shared/base-widget-frontend/src/theme/pp-colors.css}, which
  * is the real source of truth — the tokens are a frontend concern and the backend has no way to
  * read that file at run-time. Keep the two in sync when adding a token; the only consequence of
  * drift is that a newly added token is rejected by validation until it is listed here.
@@ -21,6 +21,7 @@ public final class PpThemeTokens {
             // semantic surfaces
             "--pp-surface-base",
             "--pp-surface-header",
+            "--pp-on-header",
             "--pp-surface-card",
             "--pp-surface-sidenav",
             "--pp-on-sidenav",

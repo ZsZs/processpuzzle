@@ -1,12 +1,18 @@
+import { Dialog } from '@angular/cdk/dialog';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { NgComponentOutlet } from '@angular/common';
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
-import { SidenavAutosizeDirective } from '@processpuzzle/widgets';
+import { LayoutService } from '@processpuzzle/util';
+import { APPLICATION_CONTEXT, SidenavAutosizeDirective, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
-import { layoutOf, themeClassOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
+import { ShellApplicationContext } from './shell-application-context';
+import { ShellOverlayContainer } from './shell-overlay-container';
 
 /**
  * The run-time shell of a metadata-defined application: the chrome an `AppDefinition` describes, with a
@@ -23,12 +29,14 @@ import { NavOrientation } from './region-nav.component';
  * details form re-renders through ordinary signal propagation instead of a clear-and-rebuild that would
  * drop scroll position and focus on every keystroke.
  *
- * The whole theme is applied here, not only the brand colours: `--pp-*` overrides as a style binding and
- * the definition's `materialTheme` / `colorScheme` as a class selecting one of the scoped Material themes
- * in `src/theme/pp-material-themes.scss`. Both work because a Material theme is a set of custom
- * properties and nothing else. That file is a **global stylesheet the application registers**; if it is
- * not registered the classes below still land and the shell simply inherits the host's theme. See it for
- * the one thing this cannot reach — CDK overlays, which render outside the shell's subtree.
+ * The whole theme is applied here, not only the brand colours: `--pp-*` overrides as a style binding, and
+ * a class selecting one of the scoped Material themes of widgets' `src/theme/pp-material-themes.scss`. The
+ * class comes from the shell's own {@link ThemeService}: the definition's `materialTheme` / `colorScheme`
+ * are its defaults, and a `ThemesButton` placed in one of the regions overrides them for this application
+ * only. Both work because a Material theme is a set of custom properties and nothing else. That file is a
+ * **global stylesheet the application registers**; if it is not registered the classes still land and the
+ * shell simply inherits the host's theme. Overlays opened from inside the shell render into a
+ * {@link ShellOverlayContainer} in its host, so they are themed as well.
  *
  * Not yet handled, deliberately: **no routes are registered** under the outlet. That is the nested router
  * context, which needs `EntityTabDescriptor` to be able to carry child routes.
@@ -37,6 +45,14 @@ import { NavOrientation } from './region-nav.component';
   selector: 'pp-app-shell',
   standalone: true,
   imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet, SidenavAutosizeDirective],
+  providers: [
+    ThemeService,
+    ShellApplicationContext,
+    { provide: APPLICATION_CONTEXT, useExisting: ShellApplicationContext },
+    { provide: OverlayContainer, useClass: ShellOverlayContainer },
+    Dialog,
+    MatDialog,
+  ],
   // Both theme bindings go on the host rather than on a wrapper, so the element that *is* the shell is
   // also the element they cascade from — and so the host can be the grid, see the stylesheet. `[class]`
   // selects one of the scoped Material themes there; `[style]` carries the `--pp-*` overrides.
@@ -55,7 +71,13 @@ import { NavOrientation } from './region-nav.component';
 
     <mat-sidenav-container class="pp-app-shell__body">
       @if (sidenavView(); as view) {
-        <mat-sidenav class="pp-app-shell__sidenav" ppSidenavAutosize [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
+        <mat-sidenav
+          class="pp-app-shell__sidenav"
+          ppSidenavAutosize
+          [mode]="layout().sidenavMode"
+          [opened]="layout().sidenavOpened && !layoutService.isSidenavHidden()"
+          [position]="layout().sidenavPosition"
+        >
           <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
         </mat-sidenav>
       }
@@ -80,11 +102,30 @@ export class AppShellComponent {
    */
   readonly definition = input<AppDefinition | undefined>(undefined);
 
+  /**
+   * Whether a theme the user picks in a `ThemesButton` inside the shell is remembered, per application id.
+   * The designer's preview turns it off: there a choice is only tried out, and a stored one would shadow the
+   * theme being edited in the neighbouring form.
+   */
+  readonly persistTheme = input(true);
+
   private readonly regionRenderer = inject(AppRegionRenderer);
+  private readonly theme = inject(ThemeService);
+  private readonly applicationContext = inject(ShellApplicationContext);
+  protected readonly layoutService = inject(LayoutService);
 
   protected readonly layout = computed(() => layoutOf(this.definition()));
   protected readonly themeVars = computed(() => themeVarsOf(this.definition()));
-  protected readonly themeClass = computed(() => themeClassOf(this.definition()));
+  protected readonly themeClass = this.theme.themeClass;
+
+  // Re-run on every edit of the definition. Persisting, that re-reads the same stored choice; in the preview
+  // it drops the choice tried out there, so an edit to the theme fields always shows.
+  private readonly applyThemeDefaults = effect(() => {
+    const definition = this.definition();
+    this.theme.setDefaults(themeDefaultsOf(definition));
+    this.theme.persistUnder(this.persistTheme() && definition?.id ? `pp-theme:${definition.id}` : null);
+    this.applicationContext.definition.set(definition);
+  });
 
   private readonly regionViews = computed(() =>
     (this.definition()?.regions ?? []).map((region) => this.regionRenderer.render(region, this.definition())).filter((view): view is RegionView => view !== undefined),
@@ -98,14 +139,22 @@ export class AppShellComponent {
    * decided in the template, so each slot is one unambiguous `@if` and the mutual exclusion is stated
    * once, here.
    */
-  protected readonly sidenavView = computed(() => (this.layout().hasSidenav ? this.viewOf('sidenav') : undefined));
+  protected readonly sidenavView = computed(() => (this.layout().hasSidenav && !this.isSmallScreen() ? this.viewOf('sidenav') : undefined));
 
   /**
    * The same nav relocated into the header row under `top-nav`. It is placed beside the header region
    * rather than inside it, so that a `top-nav` app which declares no header region is still navigable —
    * and so that the shell still never invents a region that was not authored.
    */
-  protected readonly topNavView = computed(() => (this.layout().hasSidenav ? undefined : this.viewOf('sidenav')));
+  protected readonly topNavView = computed(() => (this.layout().hasSidenav || this.isSmallScreen() ? undefined : this.viewOf('sidenav')));
+
+  /**
+   * A handset layout has room for neither a sidenav nor a horizontal nav row, so the shell renders the nav
+   * in neither place there; a `nav-menu` widget in the header stands in for it, reading the same entries
+   * through the APPLICATION_CONTEXT. A definition with no such widget is not navigable on a phone — which is
+   * why the seeded applications all place one.
+   */
+  private readonly isSmallScreen = computed(() => this.layoutService.isSmallDevice());
 
   /**
    * The nav view's own inputs with the axis the layout dictates laid over them.
@@ -114,7 +163,9 @@ export class AppShellComponent {
    * freshly built object on every change-detection pass, so it would re-diff and re-apply the nav's
    * inputs continuously. Memoized, the identity only changes when the definition or the preset does.
    */
-  protected readonly sidenavInputs = computed(() => this.navInputsOf(this.sidenavView(), 'vertical'));
+  // Compact on a tablet layout, the sidenav's middle size: the drawer is sized to its content, so compact
+  // rows are what narrow it to a rail. See SidenavAutosizeDirective for how the content margin follows.
+  protected readonly sidenavInputs = computed(() => ({ ...this.navInputsOf(this.sidenavView(), 'vertical'), compact: this.layoutService.isMediumDevice() }));
   protected readonly topNavInputs = computed(() => this.navInputsOf(this.topNavView(), 'horizontal'));
 
   private navInputsOf(view: RegionView | undefined, orientation: NavOrientation): Record<string, unknown> {

@@ -2,15 +2,25 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import {
+  APP_LOGO_WIDGET,
+  APP_TITLE_WIDGET,
   CARDS_GRID_WIDGET,
+  COPYRIGHT_WIDGET,
+  DESIGN_BUTTON_WIDGET,
+  IMAGE_ZOOM_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  NAV_MENU_WIDGET,
+  NAVIGATE_BACK_WIDGET,
+  PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
+  THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
 } from './base-widget.providers';
+import { CopyrightComponent } from './copyright/copyright.component';
 import { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 import { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
 
@@ -20,8 +30,27 @@ describe('base-widget providers', () => {
 
     const registry = TestBed.inject(WIDGET_REGISTRY);
 
-    expect([...registry.keys()].sort()).toEqual([CARDS_GRID_WIDGET, LANGUAGE_SELECTOR_WIDGET, LIKE_BUTTON_WIDGET, MARKDOWN_PAGE_WIDGET, SHARE_BUTTON_WIDGET, VERSION_BUTTON_WIDGET].sort());
-    expect(registry.get(CARDS_GRID_WIDGET)).toBe(MatCardsGridComponent);
+    expect([...registry.keys()].sort()).toEqual(
+      [
+        APP_LOGO_WIDGET,
+        APP_TITLE_WIDGET,
+        CARDS_GRID_WIDGET,
+        COPYRIGHT_WIDGET,
+        DESIGN_BUTTON_WIDGET,
+        IMAGE_ZOOM_WIDGET,
+        LANGUAGE_SELECTOR_WIDGET,
+        LIKE_BUTTON_WIDGET,
+        MARKDOWN_PAGE_WIDGET,
+        NAV_MENU_WIDGET,
+        NAVIGATE_BACK_WIDGET,
+        PHOTO_ALBUM_WIDGET,
+        SHARE_BUTTON_WIDGET,
+        THEMES_BUTTON_WIDGET,
+        VERSION_BUTTON_WIDGET,
+      ].sort(),
+    );
+    expect(registry.get(CARDS_GRID_WIDGET)?.component).toBe(MatCardsGridComponent);
+    expect(registry.get(COPYRIGHT_WIDGET)?.component).toBe(CopyrightComponent);
   });
 
   it('registers a single widget without the others', () => {
@@ -39,10 +68,19 @@ describe('base-widget providers', () => {
     TestBed.configureTestingModule({ providers: [provideBaseWidgets()] });
     const parent = TestBed.inject(Injector);
 
-    const child = Injector.create({ providers: [provideWidget('document-viewer', DocumentViewerComponent)], parent });
+    const child = Injector.create({ providers: [provideWidget({ type: 'document-viewer', component: DocumentViewerComponent, definition: { name: 'Document viewer' } })], parent });
     const registry = runInInjectionContext(child, () => child.get(WIDGET_REGISTRY));
 
-    expect(registry.get('document-viewer')).toBe(DocumentViewerComponent);
-    expect(registry.get(CARDS_GRID_WIDGET)).toBe(MatCardsGridComponent);
+    expect(registry.get('document-viewer')?.component).toBe(DocumentViewerComponent);
+    expect(registry.get(CARDS_GRID_WIDGET)?.component).toBe(MatCardsGridComponent);
+  });
+
+  it('refuses a second component under a key already taken', () => {
+    class OtherGridComponent {}
+    TestBed.configureTestingModule({
+      providers: [provideCardsGridWidget(), provideWidget({ type: CARDS_GRID_WIDGET, component: OtherGridComponent, definition: { name: 'Other grid' } })],
+    });
+
+    expect(() => TestBed.inject(WIDGET_REGISTRY)).toThrow(/'cards-grid' is already registered/);
   });
 });

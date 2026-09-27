@@ -19,6 +19,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
+import { BaseFormControlComponent } from './base-form-control.component';
+
+@Component({ selector: 'test-custom-control', template: `<span class="test-custom-control">custom</span>` })
+class TestCustomControlComponent extends BaseFormControlComponent<TestEntity> {}
 
 describe('BaseEntityFormBuilder', () => {
   @Component({
@@ -75,6 +79,9 @@ describe('BaseEntityFormBuilder', () => {
   const lookupDescriptor = new BaseEntityAttrDescriptor('lookupValue', FormControlType.LOOKUP);
   lookupDescriptor.linkedEntityType = 'TestEntityLookup';
 
+  const customDescriptor = new BaseEntityAttrDescriptor('custom', FormControlType.CUSTOM);
+  customDescriptor.component = TestCustomControlComponent;
+
   const descriptors: AbstractAttrDescriptor[] = [
     new FlexboxDescriptor(
       [
@@ -89,6 +96,7 @@ describe('BaseEntityFormBuilder', () => {
         componentDescriptor,
         ownedComponentDescriptor,
         embeddedComponentDescriptor,
+        customDescriptor,
       ],
       FlexDirection.CONTAINER,
     ),
@@ -130,6 +138,11 @@ describe('BaseEntityFormBuilder', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
     expect(formBuilder).toBeTruthy();
+  });
+
+  it('buildForm() renders a CUSTOM attribute with the component its descriptor names', () => {
+    expect(fixture.debugElement.query(By.css('flex-box test-custom-control .test-custom-control'))).toBeTruthy();
+    expect(component.form.get('custom')).toBeTruthy();
   });
 
   it('buildForm() instantiates from controls according to the descriptors.', () => {

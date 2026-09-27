@@ -10,6 +10,13 @@ import { PropsSchema } from './widget-definition';
  * against real cases rather than a schema written to suit the mapper.
  */
 describe('propsSchemaToDescriptors', () => {
+  it('edits an artifact-formatted prop with the ARTIFACT control', () => {
+    const [logo] = propsSchemaToDescriptors({ type: 'object', properties: { logo: { type: 'object', format: 'artifact', title: 'Logo' } } });
+
+    expect((logo as BaseEntityAttrDescriptor).formControlType).toBe(FormControlType.ARTIFACT);
+    expect((logo as BaseEntityAttrDescriptor).label).toBe('Logo');
+  });
+
   const descriptorFor = (schema: PropsSchema, name: string) => propsSchemaToDescriptors(schema).find((d) => d.attrName === name) as BaseEntityAttrDescriptor;
 
   describe('the entity-grid props documented in base-app-api.yaml', () => {

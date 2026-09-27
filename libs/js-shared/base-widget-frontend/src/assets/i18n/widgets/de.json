@@ -8,5 +8,22 @@
   "german": "Deutsch",
   "french": "Französisch",
   "hungarian": "Ungarisch",
-  "spanish": "Spanisch"
+  "spanish": "Spanisch",
+  "themes": {
+    "button": "Design wählen",
+    "processpuzzle": "ProcessPuzzle",
+    "azure-blue": "Azur & Blau",
+    "rose-red": "Rosé & Rot",
+    "magenta-violet": "Magenta & Violett",
+    "cyan-orange": "Cyan & Orange",
+    "indigo-pink": "Indigo & Pink",
+    "deeppurple-amber": "Dunkellila & Bernstein",
+    "pink-bluegrey": "Pink & Blaugrau",
+    "purple-green": "Lila & Grün",
+    "scheme": "Farbschema",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "auto": "Systemeinstellung",
+    "reset": "Auf Standard zurücksetzen"
+  }
 }

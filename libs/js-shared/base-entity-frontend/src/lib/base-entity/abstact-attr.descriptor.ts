@@ -3,6 +3,8 @@ export enum FormControlType {
   ARTIFACT = 'ARTIFACT',
   CHECKBOX = 'CHECKBOX',
   COMPONENTS = 'COMPONENTS',
+  /** Rendered by the descriptor's own `component` — the extension point for controls base-entity cannot know. */
+  CUSTOM = 'CUSTOM',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
   EMBEDDED_COMPONENTS = 'EMBEDDED_COMPONENTS',

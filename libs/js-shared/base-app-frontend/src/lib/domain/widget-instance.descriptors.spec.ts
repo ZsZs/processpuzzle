@@ -1,3 +1,4 @@
+import { WidgetPropsAttrDescriptor } from '@processpuzzle/widgets';
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
@@ -43,13 +44,18 @@ describe('createWidgetInstanceDescriptor', () => {
     expect(byName('type')?.getSelectables()).toBeUndefined();
   });
 
-  it('edits the per-type props through a key/value editor', () => {
-    expect(byName('props')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
+  it('edits the per-type props through a form generated from the type', () => {
+    expect(byName('props')?.formControlType).toBe(FormControlType.CUSTOM);
+    expect(byName('props')).toBeInstanceOf(WidgetPropsAttrDescriptor);
   });
 
   it('offers the two placements and embeds no widget of its own', () => {
     expect(byName('placement')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('placement')?.getSelectables()?.map((selectable) => selectable.key)).toEqual(['STANDALONE', 'REFERENCED']);
+    expect(
+      byName('placement')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.key),
+    ).toEqual(['STANDALONE', 'REFERENCED']);
     expect(descriptor.embeddedAttrFor(APP_WIDGET_ENTITY_NAME)).toBeUndefined();
   });
 

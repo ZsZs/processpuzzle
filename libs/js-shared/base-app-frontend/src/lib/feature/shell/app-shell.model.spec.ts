@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
-import { layoutOf, themeClassOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
 
 describe('layoutOf', () => {
   it('defaults an app that declares no layout to a left sidenav, open, in side mode', () => {
@@ -64,35 +64,26 @@ describe('layoutOf', () => {
   });
 });
 
-describe('themeClassOf', () => {
-  it('names the scoped Material theme and the scheme that selects its light-dark half', () => {
-    expect(themeClassOf(new AppDefinition({ materialTheme: 'rose-red', colorScheme: 'dark' }))).toBe('pp-theme-rose-red pp-scheme-dark');
+describe('themeDefaultsOf', () => {
+  it('declares the preset and scheme the definition names', () => {
+    expect(themeDefaultsOf(new AppDefinition({ materialTheme: 'rose-red', colorScheme: 'dark' }))).toEqual({ preset: 'rose-red', scheme: 'dark' });
   });
 
-  it('defaults an unstated scheme to light', () => {
-    expect(themeClassOf(new AppDefinition({ materialTheme: 'azure-blue' }))).toBe('pp-theme-azure-blue pp-scheme-light');
-  });
-
-  it('passes auto through, which the stylesheet turns into color-scheme: light dark', () => {
-    expect(themeClassOf(new AppDefinition({ materialTheme: 'cyan-orange', colorScheme: 'auto' }))).toBe('pp-theme-cyan-orange pp-scheme-auto');
-  });
-
-  it('applies nothing at all when no Material theme is named', () => {
-    // Including when a scheme *is* named: a scheme without a theme is half a theme, and inheriting the
-    // host application's is the honest reading. See the note on themeClassOf.
-    expect(themeClassOf(new AppDefinition({ id: 'demo' }))).toBe('');
-    expect(themeClassOf(new AppDefinition({ colorScheme: 'dark' }))).toBe('');
-    expect(themeClassOf(undefined)).toBe('');
+  it('leaves out what the definition does not name, so the service falls back to its own defaults', () => {
+    expect(themeDefaultsOf(new AppDefinition({ materialTheme: 'azure-blue' }))).toEqual({ preset: 'azure-blue' });
+    expect(themeDefaultsOf(new AppDefinition({ colorScheme: 'auto' }))).toEqual({ scheme: 'auto' });
+    expect(themeDefaultsOf(new AppDefinition({ id: 'demo' }))).toEqual({});
+    expect(themeDefaultsOf(undefined)).toEqual({});
   });
 
   it('falls back to the nested theme object when nothing flattened it', () => {
-    expect(themeClassOf(new AppDefinition({ theme: { materialTheme: 'magenta-violet', colorScheme: 'dark' } }))).toBe('pp-theme-magenta-violet pp-scheme-dark');
+    expect(themeDefaultsOf(new AppDefinition({ theme: { materialTheme: 'magenta-violet', colorScheme: 'dark' } }))).toEqual({ preset: 'magenta-violet', scheme: 'dark' });
   });
 
   it('prefers the flattened fields over the nested ones, as a save does', () => {
     const definition = new AppDefinition({ materialTheme: 'rose-red', colorScheme: 'light', theme: { materialTheme: 'azure-blue', colorScheme: 'dark' } });
 
-    expect(themeClassOf(definition)).toBe('pp-theme-rose-red pp-scheme-light');
+    expect(themeDefaultsOf(definition)).toEqual({ preset: 'rose-red', scheme: 'light' });
   });
 });
 
