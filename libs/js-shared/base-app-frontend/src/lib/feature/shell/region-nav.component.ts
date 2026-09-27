@@ -63,7 +63,10 @@ export function toNavRows(items: NavItem[] | undefined, knownPaths: string[]): N
  * Whitespace-only counts as absent — an item mid-authoring is a group node, not a broken link.
  */
 function normalize(routePath: string | undefined): string | undefined {
-  const trimmed = routePath?.trim().replace(/^\/+|\/+$/g, '').trim();
+  const trimmed = routePath
+    ?.trim()
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
   return trimmed ? trimmed : undefined;
 }
 
@@ -91,9 +94,15 @@ function normalize(routePath: string | undefined): string | undefined {
   standalone: true,
   imports: [MatNavList, MatListItem, MatListItemIcon, MatListItemTitle, NgTemplateOutlet, RouterLink, RouterLinkActive, EntityLabelPipe],
   template: `
-    <mat-nav-list [class.pp-region-nav--horizontal]="orientation() === 'horizontal'">
-      <ng-container *ngTemplateOutlet="rowList; context: { $implicit: rows(), depth: 0 }"></ng-container>
-    </mat-nav-list>
+    @if (compact()) {
+      <nav class="pp-region-nav--compact">
+        <ng-container *ngTemplateOutlet="compactRowList; context: { $implicit: rows() }"></ng-container>
+      </nav>
+    } @else {
+      <mat-nav-list [class.pp-region-nav--horizontal]="orientation() === 'horizontal'">
+        <ng-container *ngTemplateOutlet="rowList; context: { $implicit: rows(), depth: 0 }"></ng-container>
+      </mat-nav-list>
+    }
 
     <!--
       Recursive through ngTemplateOutlet: a NavItem nests in itself, so the depth is not knowable here.
@@ -141,6 +150,39 @@ function normalize(routePath: string | undefined): string | undefined {
         }
       }
     </ng-template>
+    <!--
+      The compact rows of a tablet layout: the icon above a short label, so the drawer — which is sized to its
+      content — narrows to a rail. Plain elements rather than list items, whose fixed height and leading-icon
+      slot are exactly the row layout this replaces. Nesting is shown by order alone; a rail has no room for
+      indentation.
+    -->
+    <ng-template #compactRowList let-rows>
+      @for (row of rows; track row.id) {
+        @if (row.routePath; as routePath) {
+          <a class="pp-region-nav__compact-item" [routerLink]="routePath" routerLinkActive="pp-region-nav__item--active" [attr.data-testid]="'nav-' + row.id">
+            @if (row.icon) {
+              <span class="material-symbols-outlined pp-region-nav__compact-icon">{{ row.icon }}</span>
+            }
+            <span class="pp-region-nav__compact-label">{{ row.translocoId | ppLabel: row.label }}</span>
+          </a>
+        } @else {
+          <span
+            class="pp-region-nav__compact-item"
+            [class.pp-region-nav__item--unresolved]="row.unresolved"
+            [title]="row.unresolved ? 'No route of this application matches this navigation entry yet.' : ''"
+            [attr.data-testid]="'nav-' + row.id"
+          >
+            @if (row.icon) {
+              <span class="material-symbols-outlined pp-region-nav__compact-icon">{{ row.icon }}</span>
+            }
+            <span class="pp-region-nav__compact-label">{{ row.translocoId | ppLabel: row.label }}</span>
+          </span>
+        }
+        @if (row.children.length) {
+          <ng-container *ngTemplateOutlet="compactRowList; context: { $implicit: row.children }"></ng-container>
+        }
+      }
+    </ng-template>
   `,
   styles: [
     `
@@ -154,6 +196,34 @@ function normalize(routePath: string | undefined): string | undefined {
       .pp-region-nav--horizontal .pp-region-nav__item {
         width: auto;
       }
+      .pp-region-nav--compact {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 4px;
+      }
+      .pp-region-nav__compact-item {
+        align-items: center;
+        border-radius: 8px;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px 4px;
+        text-decoration: none;
+      }
+      a.pp-region-nav__compact-item:hover,
+      .pp-region-nav__compact-item.pp-region-nav__item--active {
+        background-color: color-mix(in srgb, currentColor 12%, transparent);
+      }
+      .pp-region-nav__compact-label {
+        font: var(--mat-sys-label-small);
+        max-width: 80px;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       .pp-region-nav__item--unresolved {
         font-style: italic;
         opacity: 0.6;
@@ -164,6 +234,11 @@ function normalize(routePath: string | undefined): string | undefined {
 export class RegionNavComponent {
   readonly navItems = input<NavItem[]>([]);
   readonly orientation = input<NavOrientation>('vertical');
+  /**
+   * Icon-over-label rows for a narrow layout. Set by the shell on a tablet layout, where a content-sized
+   * drawer with full rows would take too much of the screen; meaningless for the horizontal nav.
+   */
+  readonly compact = input(false);
   /** Route paths the definition accounts for, supplied by `AppRegionRenderer`. See {@link toNavRows}. */
   readonly knownPaths = input<string[]>([]);
 

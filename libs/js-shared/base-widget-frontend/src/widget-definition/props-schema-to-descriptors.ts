@@ -12,7 +12,8 @@ import { PropsSchema, PropsSchemaProperty } from './widget-definition';
  *
  * ## Deliberately a subset of JSON Schema
  *
- * Only the keywords that map onto a form control are read: `type`, `enum`, `format`, `maxLength`,
+ * Only the keywords that map onto a form control are read: `type`, `enum`, `format` (including the
+ * {@link ARTIFACT_FORMAT} extension), `maxLength`,
  * `title`, `description`, `required`, and `items.type` for arrays. Everything else — `oneOf`,
  * `$ref`, `patternProperties`, nested object schemas, tuple `items` — is *not* interpreted, and the
  * property falls back to {@link FormControlType.ADDITIONAL_PROPERTIES}, the same open editor used
@@ -59,7 +60,17 @@ function toDescriptor(name: string, property: PropsSchemaProperty, isRequired: b
   return descriptor;
 }
 
+/**
+ * A non-standard JSON Schema `format`: the prop holds a reference to an object-store artifact (an
+ * `ArtifactAttr`), edited with the upload/select control rather than as text. JSON Schema leaves `format`
+ * open to extension, and a validator that does not know it ignores it.
+ */
+export const ARTIFACT_FORMAT = 'artifact';
+
 function controlType(property: PropsSchemaProperty): FormControlType {
+  if (property.format === ARTIFACT_FORMAT) {
+    return FormControlType.ARTIFACT;
+  }
   if (property.enum?.length) {
     return FormControlType.DROPDOWN;
   }

@@ -11,7 +11,7 @@ import { CardsGridSpec, MatCardsGridComponent } from '@processpuzzle/widgets';
   template: `
     <div>
       <ng-container *transloco="let t; prefix: 'design'">
-        <mat-cards-grid [cards]="cards"></mat-cards-grid>
+        <pp-cards-grid [cards]="cards"></pp-cards-grid>
       </ng-container>
     </div>
   `,

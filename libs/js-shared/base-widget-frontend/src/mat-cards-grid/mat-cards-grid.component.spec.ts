@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 // Create a test host component to test the component with inputs
 @Component({
-  template: ` <mat-cards-grid [cards]="cards"></mat-cards-grid>`,
+  template: ` <pp-cards-grid [cards]="cards"></pp-cards-grid>`,
   standalone: true,
   imports: [MatCardsGridComponent],
 })
@@ -108,12 +108,11 @@ describe('MatCardsGridComponent', () => {
     expect(buttons[1].textContent).toContain('Test Button 2');
     //    expect(buttons[1].getAttribute('ng-reflect-router-link')).toBe('/test2');
   });
-
 });
 
 // Separate host so the icon card is present on first render, exercising the @if (card.icon) branch.
 @Component({
-  template: ` <mat-cards-grid [cards]="cards"></mat-cards-grid>`,
+  template: ` <pp-cards-grid [cards]="cards"></pp-cards-grid>`,
   standalone: true,
   imports: [MatCardsGridComponent],
 })
@@ -137,7 +136,7 @@ describe('MatCardsGridComponent with an icon card', () => {
 
 // Host with a card that declares menu items, exercising the @if (card.menuItems) branch.
 @Component({
-  template: ` <mat-cards-grid [cards]="cards"></mat-cards-grid>`,
+  template: ` <pp-cards-grid [cards]="cards"></pp-cards-grid>`,
   standalone: true,
   imports: [MatCardsGridComponent],
 })

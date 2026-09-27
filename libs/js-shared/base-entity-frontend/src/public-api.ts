@@ -2,6 +2,8 @@
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
 export type { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
+export { ObjectStoreService } from './lib/object-store/object-store.service';
+export type { ObjectUriResponse } from './lib/object-store/object-store.service';
 export { BaseEntityContainerComponent } from './lib/base-entity-container.component';
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
@@ -9,6 +11,8 @@ export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/bas
 export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
 export { toSelectables } from './lib/base-entity/selectables';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
+export { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
+export type { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
 export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-components/embedded-component-ref.component';

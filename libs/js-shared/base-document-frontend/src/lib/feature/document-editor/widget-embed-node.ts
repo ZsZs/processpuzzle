@@ -1,27 +1,18 @@
-import { createComponent, EnvironmentInjector, Signal, Type, effect, runInInjectionContext } from '@angular/core';
+import { createComponent, EnvironmentInjector, Signal, effect, runInInjectionContext } from '@angular/core';
+import { resolveWidgetInputs, widgetOutputBindings, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
 import { Node, mergeAttributes } from '@tiptap/core';
 import { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { NodeView } from '@tiptap/pm/view';
 import { DocumentBlock, WidgetPlacement } from '../../domain/base-document';
 
-/**
- * A widget-typed prop the mounted component reads, roughly mirroring what a base-app widget
- * component already expects: `props` (the block's static config) plus resolved values for any
- * `inputBindings`. Resolving a binding to an actual value is the frontend's job per the
- * contract's own scope boundary — this file only wires whatever `resolveBinding` returns onto
- * the mounted component's inputs, it never decides what a binding *means*.
- */
-export interface WidgetEmbedHostProps {
-  props: Record<string, unknown>;
-  resolveBinding: (portName: string) => unknown;
-}
-
 export interface WidgetEmbedNodeDeps {
   environmentInjector: EnvironmentInjector;
-  widgetRegistry: ReadonlyMap<string, Type<unknown>>;
+  widgetRegistry: ReadonlyMap<string, WidgetRegistration>;
   /** Kept live so a NodeView already on screen re-resolves if the referenced block's props change — e.g. the Properties-adjacent port list, or a future prop-editing panel. */
   blocksById: Signal<ReadonlyMap<string, DocumentBlock>>;
   resolveBinding: (portName: string) => unknown;
+  /** Receives every event of an output the embedded block's `outputBindings` bind. */
+  publishOutput: (event: WidgetPortEvent) => void;
 }
 
 const NODE_NAME = 'widgetEmbed';
@@ -64,9 +55,14 @@ class WidgetEmbedNodeView implements NodeView {
   private mountPoint: HTMLElement;
   private componentRef: ReturnType<typeof createComponent> | null = null;
   private currentBlockId: string | null = null;
+  /** What the mounted component is bound *to*; a change re-mounts it, since output bindings are fixed at creation. */
+  private currentShape: string | null = null;
   private effectRef: ReturnType<typeof effect> | null = null;
 
-  constructor(private node: ProseMirrorNode, private deps: WidgetEmbedNodeDeps) {
+  constructor(
+    private node: ProseMirrorNode,
+    private deps: WidgetEmbedNodeDeps,
+  ) {
     this.dom = document.createElement('div');
     this.dom.classList.add('pp-widget-embed');
     this.mountPoint = document.createElement('div');
@@ -76,16 +72,14 @@ class WidgetEmbedNodeView implements NodeView {
     // constructs NodeViews itself, not Angular's DI. effect() re-runs this whenever the
     // referenced block changes, which covers both "props edited elsewhere" and "block deleted
     // out from under an embed still on screen" without any manual subscription bookkeeping.
-    this.effectRef = runInInjectionContext(deps.environmentInjector, () =>
-      effect(() => this.render(deps.blocksById())),
-    );
+    this.effectRef = runInInjectionContext(deps.environmentInjector, () => effect(() => this.render(deps.blocksById())));
   }
 
   private render(blocksById: ReadonlyMap<string, DocumentBlock>) {
     const blockId = this.node.attrs['blockId'] as string | null;
     const block = blockId ? blocksById.get(blockId) : undefined;
 
-    if (this.componentRef && this.currentBlockId === blockId && block) {
+    if (this.componentRef && this.currentBlockId === blockId && block && this.currentShape === shapeOf(block)) {
       // Same block, still resolvable — just push fresh props, no need to tear down and remount.
       this.applyProps(block);
       return;
@@ -106,13 +100,16 @@ class WidgetEmbedNodeView implements NodeView {
       return;
     }
 
-    const component = block.type ? this.deps.widgetRegistry.get(block.type) : undefined;
-    if (!component) {
+    const registration = block.type ? this.deps.widgetRegistry.get(block.type) : undefined;
+    if (!registration) {
       this.renderProblem(`No widget registered for type '${block.type}'.`);
       return;
     }
 
-    this.componentRef = createComponent(component, { environmentInjector: this.deps.environmentInjector });
+    // Outputs can only be bound at creation, which is why a change to them re-mounts — see currentShape.
+    const bindings = widgetOutputBindings(block, registration.component, this.deps.publishOutput);
+    this.componentRef = createComponent(registration.component, { environmentInjector: this.deps.environmentInjector, bindings });
+    this.currentShape = shapeOf(block);
     this.applyProps(block);
     this.mountPoint.replaceChildren(this.componentRef.location.nativeElement);
     this.componentRef.changeDetectorRef.detectChanges();
@@ -120,17 +117,10 @@ class WidgetEmbedNodeView implements NodeView {
 
   private applyProps(block: DocumentBlock) {
     if (!this.componentRef) return;
-    const resolveBinding = (widgetPropName: string) => {
-      const portName = block.inputBindings?.[widgetPropName];
-      return portName ? this.deps.resolveBinding(portName) : undefined;
-    };
-    // Every declared input binding wins over the matching static prop, if any — a bound value
-    // is the document author saying "this one comes from the host," not a fallback.
-    const resolvedProps: Record<string, unknown> = { ...block.props };
-    for (const widgetPropName of Object.keys(block.inputBindings ?? {})) {
-      resolvedProps[widgetPropName] = resolveBinding(widgetPropName);
-    }
-    for (const [key, value] of Object.entries(resolvedProps)) {
+    // The one resolution rule every widget container shares: a bound value wins over a static prop of
+    // the same name, and a prop the component does not declare is dropped rather than failing setInput.
+    const inputs = resolveWidgetInputs(block, this.componentRef.componentType, this.deps.resolveBinding);
+    for (const [key, value] of Object.entries(inputs)) {
       this.componentRef.setInput(key, value);
     }
     this.componentRef.changeDetectorRef.detectChanges();
@@ -146,6 +136,7 @@ class WidgetEmbedNodeView implements NodeView {
   private teardown() {
     this.componentRef?.destroy();
     this.componentRef = null;
+    this.currentShape = null;
   }
 
   // ProseMirror calls update() when the node's attrs might have changed (e.g. undo/redo moved
@@ -170,4 +161,8 @@ class WidgetEmbedNodeView implements NodeView {
     this.effectRef?.destroy();
     this.teardown();
   }
+}
+
+function shapeOf(block: DocumentBlock): string {
+  return `${block.type}|${JSON.stringify(block.outputBindings ?? {})}`;
 }

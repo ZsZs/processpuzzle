@@ -27,6 +27,7 @@
     "test": {
       "executor": "@nx/angular:unit-test",
       "dependsOn": ["build"],
+      "inputs": ["default", "^production", "{workspaceRoot}/libs/java-shared/base-widget-backend/src/main/resources/default-widgets/*.yaml"],
       "outputs": ["{projectRoot}/reports/coverage"],
       "options": {
         "runner": "vitest",

@@ -27,7 +27,7 @@ describe('WidgetsSamplesComponent', () => {
     const [thumbnail] = getAllByRole('img', { name: 'Conduct Race diagram' });
 
     expect(thumbnail).toHaveAttribute('src', 'assets/Conduct_Race.png');
-    expect(thumbnail.closest('app-image-zoom')).toHaveClass('image-zoom-sample');
+    expect(thumbnail.closest('pp-image-zoom')).toHaveClass('image-zoom-sample');
 
     fireEvent.click(thumbnail);
 

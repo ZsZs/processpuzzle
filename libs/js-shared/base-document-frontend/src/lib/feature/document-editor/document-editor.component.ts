@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, OnChanges, signal, Type } from '@angular/core';
+import { Component, computed, inject, input, OnChanges, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { WIDGET_REGISTRY, WidgetHostComponent, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
 import { DocumentBlock, BlockKind, WidgetPlacement } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockComponent } from './document-text-block.component';
@@ -13,7 +13,7 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
  * The primary editing surface for a document's content — see BaseDocumentContainerComponent
  * for how this sits alongside the generic Properties form on one screen. Renders the flat
  * block list in order: TEXT blocks get their own DocumentTextBlockComponent/Editor instance,
- * STANDALONE WIDGET blocks mount directly via NgComponentOutlet. REFERENCED WIDGET blocks are
+ * STANDALONE WIDGET blocks mount through base-widget's WidgetHostComponent. REFERENCED WIDGET blocks are
  * deliberately absent from this top-level list — they only ever render inside whichever TEXT
  * block's Tiptap content embeds them via widgetEmbed (see DocumentTextBlockComponent), which is
  * the one place base-document-api.yaml lets a REFERENCED block appear.
@@ -21,7 +21,7 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
 @Component({
   selector: 'pp-document-editor',
   standalone: true,
-  imports: [CommonModule, DocumentTextBlockComponent, MatButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
+  imports: [CommonModule, DocumentTextBlockComponent, WidgetHostComponent, MatButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
   providers: [DocumentContentStore],
   template: `
     <div class="pp-document-editor">
@@ -31,7 +31,7 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
             <pp-document-text-block [block]="block" />
           }
           @case (blockKindWidget) {
-            <ng-container *ngComponentOutlet="componentFor(block); inputs: propsFor(block)" />
+            <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
           }
         }
       }
@@ -47,8 +47,8 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
             {{ 'base_document.document.content.add_widget_block' | transloco }}
           </button>
           <mat-menu #widgetMenu>
-            @for (widgetType of widgetTypes(); track widgetType) {
-              <button mat-menu-item type="button" (click)="onAddWidgetBlock(widgetType)">{{ widgetType }}</button>
+            @for (widget of widgetTypes(); track widget.type) {
+              <button mat-menu-item type="button" (click)="onAddWidgetBlock(widget.type)">{{ widget.definition.name }}</button>
             }
           </mat-menu>
         }
@@ -77,14 +77,14 @@ export class DocumentEditorComponent implements OnChanges {
   /** False when the locale has no draft yet, so the first append creates one. See DocumentContentStore. */
   readonly translationExists = input<boolean>(true);
 
-  private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map<string, Type<unknown>>();
+  private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map<string, WidgetRegistration>();
   private readonly contentStore = inject(DocumentContentStore);
 
   protected readonly blockKindText = BlockKind.TEXT;
   protected readonly blockKindWidget = BlockKind.WIDGET;
   protected readonly isAppending = signal(false);
   protected readonly appendError = signal<string | undefined>(undefined);
-  protected readonly widgetTypes = computed(() => [...this.widgetRegistry.keys()]);
+  protected readonly widgetTypes = computed(() => [...this.widgetRegistry.values()]);
 
   /**
    * Re-seeds the content store whenever a different document is loaded — cheap, since
@@ -107,21 +107,11 @@ export class DocumentEditorComponent implements OnChanges {
   // needing to re-fetch the whole document.
   protected readonly standaloneBlocks = computed(() => this.contentStore.blocks().filter((b) => b.kind !== BlockKind.WIDGET || b.placement !== WidgetPlacement.REFERENCED));
 
-  protected componentFor(block: DocumentBlock): Type<unknown> | null {
-    return block.type ? this.widgetRegistry.get(block.type) ?? null : null;
-  }
+  /** An arrow, so the host can call it unbound. Bindings resolve against the store — see its own note. */
+  protected readonly resolveBinding = (portName: string): unknown => this.contentStore.resolveBinding(portName);
 
-  protected propsFor(block: DocumentBlock): Record<string, unknown> {
-    // Same resolution rule as WidgetEmbedNodeView.applyProps: a declared input binding wins
-    // over the matching static prop. Kept intentionally duplicated rather than shared, since
-    // one is plain-object-in-a-template and the other runs inside a ProseMirror NodeView with
-    // no template binding mechanism at all — a shared helper would need to abstract over that
-    // difference for no real benefit at this size.
-    const resolved: Record<string, unknown> = { ...block.props };
-    for (const [widgetPropName, portName] of Object.entries(block.inputBindings ?? {})) {
-      resolved[widgetPropName] = this.contentStore.resolveBinding(portName);
-    }
-    return resolved;
+  protected onPortEmit(event: WidgetPortEvent): void {
+    this.contentStore.publishOutput(event.port, event.value);
   }
 
   /**

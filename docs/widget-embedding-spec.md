@@ -1,229 +1,130 @@
-# Generic Widget Embedding — Technical Spec
+# Widget Embedding — Technical Spec
 
-**Scope:** `base-app-frontend` — enable existing widgets (e.g. `mat-card-grid`) to be embedded into any route both **compile-time** (static config) and **runtime** (backend-driven config), through one generic mechanism.
+**Scope:** `base-widget-frontend` (the contract, registry and host), and its two aggregators —
+`base-app-frontend` (routes and shell regions) and `base-document-frontend` (WIDGET blocks and inline embeds).
+
+Status: implemented. This spec replaces an earlier draft that proposed a single `config` input, a
+`slot`/`role` pair on the instance and a `route-widget-layout` entity; see [§7](#7-decisions-and-rejected-alternatives)
+for why each was dropped.
 
 ---
 
 ## 1. Goals
 
-- One host mechanism, regardless of whether a widget's configuration is compiled into the app or fetched from the backend at runtime.
-- Same widget type usable on multiple routes with different configuration (card count, content, links, etc.).
-- Adding a new widget type should not require touching a central switch statement or router config.
-- Config coming from the backend should be validated before reaching a widget's inputs.
+- **One interface per widget.** Whoever places a widget — a designer in an `AppDefinition`, an author in a
+  document, a developer in a template — configures it the same way and gets the same behavior.
+- **One host.** Every aggregator renders a `WidgetInstance` through the same component, with the same
+  unknown-type fallback, the same prop filtering and the same output wiring.
+- **Self-describing widgets.** A widget's description (props schema, ports, palette metadata) lives next to
+  its component and is checked against it at test time, so the catalogue cannot promise what the component
+  does not do.
+- **Additive.** A new widget type is one registration in its own library; nothing central changes.
 
-## 2. Core Abstractions
+## 2. The widget contract
 
-### 2.1 Widget contract
+A component is a widget when it satisfies these rules — `widget-contract.spec.ts` enforces them for every
+widget `provideBaseWidgets()` registers:
 
-Every embeddable widget exposes a single required `config` input and nothing else mandatory.
+1. **Configuration arrives through signal `input()`s**, one per `propsSchema` property, named identically.
+   No `@Input()` decorators, no aliases, no second name for the same value.
+2. **The set of inputs equals the set of `propsSchema.properties`.** An undescribed input cannot be
+   configured by a designer; a described prop without an input is silently dropped.
+3. **Events leave through `output()`s**, and every output is declared as an `outputPort` of the same name.
+4. **Environment comes through DI, configuration through inputs.** Transloco, `RUNTIME_CONFIGURATION`, the
+   application-property store or the router are the environment — a widget may inject them. Anything a
+   designer should be able to vary per placement is an input.
+5. **Sensible defaults.** An input is `input.required()` only when the widget cannot render without it; the
+   schema lists exactly those under `required`. A widget placed with no props must not throw, except for
+   its required props.
+6. **Selector prefix `pp-`.** Registry keys are semantic (`cards-grid`), selectors are `pp-<key>` where
+   practical.
 
-```typescript
-export interface WidgetConfig {
-  [key: string]: unknown;
-}
+Props are *spread* onto inputs rather than passed as one `config` object: `inputBindings` bind one prop to
+one port, a widget stays usable directly in a template (`<pp-copyright [text]="…" />`), and signal inputs
+change-detect per value.
 
-@Component({ /* ... */ })
-export class MatCardGridWidgetComponent {
-  config = input.required<MatCardGridConfig>();
-}
-
-export interface MatCardGridConfig extends WidgetConfig {
-  cards: { title: string; body: string; link?: string; imageUrl?: string }[];
-  columns?: number;
-}
-```
-
-### 2.2 Widget registry (type → component)
-
-Widgets self-register via a DI multi-token, so new widget types are additive.
-
-```typescript
-export const WIDGET_REGISTRY = new InjectionToken<WidgetRegistryEntry[]>('WIDGET_REGISTRY');
-
-export interface WidgetRegistryEntry {
-  type: string;                          // e.g. 'mat-card-grid'
-  component: Type<unknown>;              // eager reference, or...
-  loadComponent?: () => Promise<Type<unknown>>; // lazy reference (preferred at scale)
-}
-
-// per-feature module providers:
-{
-  provide: WIDGET_REGISTRY,
-  useValue: {
-    type: 'mat-card-grid',
-    loadComponent: () => import('./mat-card-grid-widget.component').then(m => m.MatCardGridWidgetComponent),
-  },
-  multi: true,
-}
-```
+## 3. Registration
 
 ```typescript
-@Injectable({ providedIn: 'root' })
-export class WidgetRegistryService {
-  private entries = inject(WIDGET_REGISTRY, { optional: true }) ?? [];
-  private byType = new Map(this.entries.map(e => [e.type, e]));
-
-  entryFor(type: string): WidgetRegistryEntry | undefined {
-    return this.byType.get(type);
-  }
-
-  async componentFor(type: string): Promise<Type<unknown> | undefined> {
-    const entry = this.byType.get(type);
-    if (!entry) return undefined;
-    return entry.component ?? entry.loadComponent?.();
-  }
+export interface WidgetRegistration {
+  type: string;                 // registry key == WidgetInstance.type == WidgetDefinition.key
+  component: Type<unknown>;
+  definition: WidgetDescription; // name, translocoId, description, category, icon, propsSchema, inputPorts, outputPorts
 }
+
+provideWidget(registration: WidgetRegistration): Provider[];
+WIDGET_REGISTRY: InjectionToken<ReadonlyMap<string, WidgetRegistration>>;
 ```
 
-### 2.3 Widget instance descriptor
+Each widget folder has a `<name>.widget.ts` exporting its key constant and its `WidgetRegistration`.
+`base-widget.providers.ts` wraps each in a `provide<Name>Widget()` and `provideBaseWidgets()` registers them
+all. Registrations merge within one injector (`multi`) and across injectors (`@Optional() @SkipSelf()`),
+so an aggregator — base-document's future `document-viewer` — adds its own without replacing these.
 
-The one shape that varies per route — identical whether it originates from a static config object or a backend entity.
+`WidgetDescription` is the frontend twin of the `WidgetDefinition` resource. The backend seed
+(`base-widget-backend/.../default-widgets/processpuzzle-testbed-widgets.yaml`) must carry the same entries;
+`widget-contract.spec.ts` compares them field by field. The YAML is still what a tenant's catalogue is seeded
+from — the registration is what keeps it honest.
 
-```typescript
-export interface WidgetInstance {
-  id: string;
-  type: string;          // key into WidgetRegistryService
-  config: WidgetConfig;  // shape depends on `type`
-  order?: number;
-}
+## 4. The host
+
+```html
+<pp-widget-host [widget]="instance" [bindingResolver]="resolve" (portEmit)="onPort($event)" />
 ```
 
-### 2.4 Config sources
+`WidgetHostComponent` (`base-widget-frontend`) renders one placement:
 
-```typescript
-export abstract class WidgetConfigSource {
-  abstract instancesForRoute(routeKey: string): Signal<WidgetInstance[]>;
-}
+- looks `widget.type` up in `WIDGET_REGISTRY`; an unregistered type renders a placeholder naming the type
+  (`data-testid="unregistered-<id>"`) instead of throwing;
+- resolves inputs with `resolveWidgetInputs()`: `props`, overlaid by each `inputBindings` entry resolved
+  through `bindingResolver`, filtered to the inputs the component declares (a stale prop is dropped with a
+  console warning, never a runtime error);
+- binds every output named in `outputBindings` and re-emits it as `portEmit: { widgetId, port, value }`;
+- creates the component through `ViewContainerRef.createComponent`, re-creating it only when the type or the
+  set of bound names changes — edits to values flow through `setInput`.
 
-@Injectable()
-export class StaticWidgetConfigSource extends WidgetConfigSource {
-  // reads from an imported const map, keyed by routeKey
-  instancesForRoute(routeKey: string): Signal<WidgetInstance[]> {
-    return signal(STATIC_WIDGETS_BY_ROUTE[routeKey] ?? []);
-  }
-}
+The Tiptap node view of base-document cannot use a template, so it calls the same two functions
+(`resolveWidgetInputs`, `widgetOutputBindings`) around `createComponent`. There is no third resolution rule.
 
-@Injectable()
-export class RemoteWidgetConfigSource extends WidgetConfigSource {
-  private http = inject(HttpClient);
+Placement stays the container's concern: `REFERENCED` instances are skipped by the container's list (base-app's
+`WidgetListComponent`, base-document's editor) and rendered where a `childIds` entry or a `widgetEmbed` node
+points at them.
 
-  instancesForRoute(routeKey: string): Signal<WidgetInstance[]> {
-    const resource = httpResource<WidgetInstance[]>(() => `/api/route-widget-layout/${routeKey}`);
-    return computed(() => resource.value() ?? []);
-  }
-}
-```
+## 5. Where instances come from
 
-A route declares which source it uses via route `data`:
+There is no separate layout entity. An `AppDefinition` already holds `routes[].widgets` (routes of kind
+`WIDGETS`) and `regions[].widgets` (header / footer); a document holds WIDGET blocks. A compile-time
+application is a const `AppDefinition`, a run-time one is fetched — the shell cannot tell the difference.
 
-```typescript
-{ path: 'dashboard', data: { widgetSource: 'static', routeKey: 'dashboard' } }
-{ path: 'landing/:pageKey', data: { widgetSource: 'remote' } }
-```
+## 5a. The application context
 
-```typescript
-@Injectable({ providedIn: 'root' })
-export class WidgetSourceResolverService {
-  private staticSource = inject(StaticWidgetConfigSource);
-  private remoteSource = inject(RemoteWidgetConfigSource);
+Chrome widgets that show the application itself — `app-title`, `app-logo`, `nav-menu` — read its name, logo
+and navigation from `APPLICATION_CONTEXT` (`base-widget-frontend`), which `AppShellComponent` provides from
+the `AppDefinition` it renders. Their props override it, which is how the same widgets work in a document
+placed outside any application. This is rule 4 of §2: the application is environment, not configuration.
 
-  instancesForCurrentRoute(route: ActivatedRoute): Signal<WidgetInstance[]> {
-    const data = route.snapshot.data;
-    const routeKey = data['routeKey'] ?? route.snapshot.paramMap.get('pageKey') ?? route.snapshot.url.join('/');
-    return data['widgetSource'] === 'remote'
-      ? this.remoteSource.instancesForRoute(routeKey)
-      : this.staticSource.instancesForRoute(routeKey);
-  }
-}
-```
+So the shell header has no built-in brand block: it is widgets only, and the seeded applications place
+`app-logo`, `app-title` and `nav-menu` there. On a handset layout the shell renders the nav region nowhere —
+neither as a sidenav nor as a top-nav row — and `nav-menu` (visible on small screens by default) stands in.
 
-## 3. Generic Host Component
+## 6. Validation
 
-```typescript
-@Component({
-  selector: 'pp-widget-host',
-  standalone: true,
-  imports: [NgComponentOutlet],
-  template: `
-    @for (instance of instances(); track instance.id) {
-      <ng-container
-        *ngComponentOutlet="componentFor(instance) | async; inputs: { config: instance.config }"
-      />
-    }
-  `,
-})
-export class WidgetHostComponent {
-  instances = input.required<WidgetInstance[]>();
-  private registry = inject(WidgetRegistryService);
+- **Design time:** the widget-instance form edits `props` with `WidgetPropsControlComponent` — a base-entity
+  `CUSTOM` control that builds a nested form from the selected type's registered `propsSchema`
+  (`propsSchemaToDescriptors`) and rebuilds it when the type changes. `format: 'artifact'` maps to the
+  ARTIFACT control (an object-store reference, as `app-logo`'s `logo`). An unregistered or undescribed type
+  falls back to the open key/value editor; arrays of objects are not yet editable as rows.
+- **Render time:** `resolveWidgetInputs()` drops props the component does not declare.
+- **Build time:** `widget-contract.spec.ts` — inputs ⇔ schema, outputs ⇔ output ports, registration ⇔ seed YAML.
 
-  componentFor(instance: WidgetInstance) {
-    return this.registry.componentFor(instance.type);
-  }
-}
-```
+## 7. Decisions and rejected alternatives
 
-Route usage — identical for static and remote:
-
-```typescript
-@Component({ template: `<pp-widget-host [instances]="widgetInstances()" />` })
-export class SomeRouteComponent {
-  private route = inject(ActivatedRoute);
-  private sourceResolver = inject(WidgetSourceResolverService);
-  widgetInstances = this.sourceResolver.instancesForCurrentRoute(this.route);
-}
-```
-
-## 4. Backend Shape (EAV/JSONB)
-
-Route widget layouts fit the existing `base-entity-backend` two-layer EAV/JSONB model without schema changes:
-
-- Entity type: `route-widget-layout`
-- Key attribute: `routeKey` (string, unique per layout)
-- JSONB attribute: `instances` → `WidgetInstance[]`
-
-```json
-{
-  "entityType": "route-widget-layout",
-  "routeKey": "landing/spring-promo",
-  "instances": [
-    {
-      "id": "hero-cards",
-      "type": "mat-card-grid",
-      "order": 1,
-      "config": {
-        "columns": 3,
-        "cards": [
-          { "title": "Feature A", "body": "...", "link": "/features/a" }
-        ]
-      }
-    }
-  ]
-}
-```
-
-`GET /api/route-widget-layout/{routeKey}` returns `instances` directly.
-
-## 5. Validation
-
-Backend-sourced config is untyped JSON on the wire. Validate per `type` immediately after fetch, before it reaches a widget's `config.required()` input:
-
-```typescript
-const schemasByType: Record<string, ZodSchema> = {
-  'mat-card-grid': matCardGridConfigSchema,
-};
-
-function validateInstance(instance: WidgetInstance): WidgetInstance | null {
-  const schema = schemasByType[instance.type];
-  if (!schema) return instance; // unknown type handled by fallback widget, not here
-  const result = schema.safeParse(instance.config);
-  return result.success ? instance : null; // drop or flag invalid instances
-}
-```
-
-## 6. Open Items / Recommendations
-
-- **Lazy loading**: prefer `loadComponent` over eager `component` in registry entries once there are more than a handful of widget types, so routes only download what they use.
-- **Unknown type fallback**: render a placeholder widget when `registry.componentFor(type)` resolves to `undefined` (e.g. stale backend config referencing a removed widget type), rather than throwing.
-- **Ordering**: sort `instances()` by `order` before rendering, or let the host component do it once, to keep config sources dumb.
-- **Caching**: `RemoteWidgetConfigSource` can lean on Angular's `httpResource` (or an equivalent signal-based cache) to avoid refetching on repeated route entry within a session.
-- **Editing UI**: since `route-widget-layout` is just another EAV entity, an admin UI for editing `instances` JSON could reuse whatever generic entity editor already exists for `base-entity-backend`.
+| Draft proposal | Decision |
+| --- | --- |
+| One `config` input | Rejected — breaks per-prop `inputBindings` and template use; see §2. |
+| `slot` on the instance | Rejected — the container (region type, route, document block) is the slot. |
+| `role` in the registry | Rejected — `WidgetDefinition.category` already classifies widgets for the palette. |
+| `WidgetConfigSource` + `route-widget-layout` entity | Rejected — `AppDefinition` is that source, static or remote. |
+| Zod schemas | Rejected — `propsSchema` (JSON Schema) is already the contract. |
+| Lazy `loadComponent` | Deferred until the widget count warrants it. |
+| `PageContentProvider` | Deferred — no consumer yet. |

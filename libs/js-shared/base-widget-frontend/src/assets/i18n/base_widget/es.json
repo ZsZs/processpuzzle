@@ -36,5 +36,50 @@
   "publish": {
     "button": "Publicar",
     "tooltip": "Promover esta versión para que las instancias puedan confiar en su esquema de props"
+  },
+  "cards_grid": {
+    "name": "Cuadrícula de tarjetas"
+  },
+  "copyright": {
+    "name": "Derechos de autor"
+  },
+  "design_button": {
+    "name": "Botón de diseño"
+  },
+  "image_zoom": {
+    "name": "Zoom de imagen"
+  },
+  "language_selector": {
+    "name": "Selector de idioma"
+  },
+  "like_button": {
+    "name": "Botón Me gusta"
+  },
+  "markdown_page": {
+    "name": "Página Markdown"
+  },
+  "photo_album": {
+    "name": "Álbum de fotos"
+  },
+  "share_button": {
+    "name": "Botón Compartir"
+  },
+  "themes_button": {
+    "name": "Botón de temas"
+  },
+  "version_button": {
+    "name": "Botón de versión"
+  },
+  "app_logo": {
+    "name": "Logotipo de la aplicación"
+  },
+  "app_title": {
+    "name": "Título de la aplicación"
+  },
+  "nav_menu": {
+    "name": "Menú de navegación"
+  },
+  "navigate_back": {
+    "name": "Volver"
   }
 }

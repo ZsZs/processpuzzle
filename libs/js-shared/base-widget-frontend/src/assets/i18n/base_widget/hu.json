@@ -36,5 +36,50 @@
   "publish": {
     "button": "Közzététel",
     "tooltip": "Verzió közzététele, hogy a példányok építhessenek a props sémájára"
+  },
+  "cards_grid": {
+    "name": "Kártyarács"
+  },
+  "copyright": {
+    "name": "Szerzői jog"
+  },
+  "design_button": {
+    "name": "Tervező gomb"
+  },
+  "image_zoom": {
+    "name": "Képnagyító"
+  },
+  "language_selector": {
+    "name": "Nyelvválasztó"
+  },
+  "like_button": {
+    "name": "Tetszik gomb"
+  },
+  "markdown_page": {
+    "name": "Markdown oldal"
+  },
+  "photo_album": {
+    "name": "Fotóalbum"
+  },
+  "share_button": {
+    "name": "Megosztás gomb"
+  },
+  "themes_button": {
+    "name": "Témaválasztó gomb"
+  },
+  "version_button": {
+    "name": "Verzió gomb"
+  },
+  "app_logo": {
+    "name": "Alkalmazás logó"
+  },
+  "app_title": {
+    "name": "Alkalmazás címe"
+  },
+  "nav_menu": {
+    "name": "Navigációs menü"
+  },
+  "navigate_back": {
+    "name": "Vissza"
   }
 }

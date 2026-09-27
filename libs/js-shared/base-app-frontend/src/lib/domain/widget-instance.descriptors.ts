@@ -1,4 +1,5 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { createWidgetPropsAttrDescriptor } from '@processpuzzle/widgets';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
 import { WIDGET_PLACEMENTS } from './app-definition';
 import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
@@ -19,9 +20,9 @@ function createWidgetInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   typeAttr.required = true;
   typeAttr.placeholder = 'Widget registry key, e.g. entity-grid';
 
-  // Each widget type owns and validates its own props shape, so the only thing this form can
-  // honestly offer is an open key/value editor.
-  const propsAttr = new BaseEntityAttrDescriptor('props', FormControlType.ADDITIONAL_PROPERTIES, 'Props');
+  // Generated from the chosen type's `propsSchema`, as registered in the WIDGET_REGISTRY: one typed control per
+  // prop, rebuilt when `type` changes. A type nobody registered or described gets the open key/value editor.
+  const propsAttr = createWidgetPropsAttrDescriptor('props', 'type', 'Props');
   propsAttr.hideInTable = true;
 
   // Widgets do not nest: a container widget type lists the ids of siblings in `props.childIds`, and each

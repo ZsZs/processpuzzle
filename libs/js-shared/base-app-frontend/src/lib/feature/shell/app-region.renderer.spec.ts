@@ -10,20 +10,15 @@ describe('AppRegionRenderer', () => {
   const renderer = new AppRegionRenderer();
   const app = new AppDefinition({ id: 'demo', name: 'Demo Application', logoUrl: '/demo-logo.svg' });
 
-  it('renders a header with the brand from the definition and the widgets from the region', () => {
+  // The brand is widgets too — app-logo and app-title read it through the APPLICATION_CONTEXT.
+  it('renders a header from its widgets alone', () => {
     const widgets = [{ id: 'language', type: 'language-selector' }];
 
     expect(renderer.render(new RegionDefinition({ type: 'header', widgets }), app)).toEqual({
       slot: 'header',
       component: RegionHeaderComponent,
-      inputs: { title: 'Demo Application', logoUrl: '/demo-logo.svg', widgets },
+      inputs: { widgets },
     });
-  });
-
-  it('falls back to the nested theme for a logo nothing flattened', () => {
-    const definition = new AppDefinition({ name: 'Demo', theme: { logoUrl: '/nested-logo.svg' } });
-
-    expect(renderer.render(new RegionDefinition({ type: 'header' }), definition)?.inputs['logoUrl']).toBe('/nested-logo.svg');
   });
 
   it('renders a footer from its widgets alone', () => {
@@ -68,6 +63,6 @@ describe('AppRegionRenderer', () => {
   });
 
   it('renders a header before a definition has loaded', () => {
-    expect(renderer.render(new RegionDefinition({ type: 'header' }), undefined)?.inputs).toEqual({ title: '', logoUrl: undefined, widgets: [] });
+    expect(renderer.render(new RegionDefinition({ type: 'header' }), undefined)?.inputs).toEqual({ widgets: [] });
   });
 });

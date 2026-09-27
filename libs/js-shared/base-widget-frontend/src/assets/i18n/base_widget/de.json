@@ -36,5 +36,50 @@
   "publish": {
     "button": "Veröffentlichen",
     "tooltip": "Diese Version freigeben, damit Instanzen sich auf ihr Props-Schema verlassen können"
+  },
+  "cards_grid": {
+    "name": "Kartenraster"
+  },
+  "copyright": {
+    "name": "Urheberrecht"
+  },
+  "design_button": {
+    "name": "Design-Schaltfläche"
+  },
+  "image_zoom": {
+    "name": "Bildzoom"
+  },
+  "language_selector": {
+    "name": "Sprachauswahl"
+  },
+  "like_button": {
+    "name": "Gefällt-mir-Schaltfläche"
+  },
+  "markdown_page": {
+    "name": "Markdown-Seite"
+  },
+  "photo_album": {
+    "name": "Fotoalbum"
+  },
+  "share_button": {
+    "name": "Teilen-Schaltfläche"
+  },
+  "themes_button": {
+    "name": "Design-Auswahl"
+  },
+  "version_button": {
+    "name": "Versionsanzeige"
+  },
+  "app_logo": {
+    "name": "Anwendungslogo"
+  },
+  "app_title": {
+    "name": "Anwendungstitel"
+  },
+  "nav_menu": {
+    "name": "Navigationsmenü"
+  },
+  "navigate_back": {
+    "name": "Zurück"
   }
 }

@@ -3,12 +3,12 @@ import { WidgetInstance } from '@processpuzzle/widgets';
 import { WidgetListComponent } from '../widget-list.component';
 
 /**
- * The `header` region: the application's brand block and the widgets the region declares.
+ * The `header` region: the widgets the region declares, laid out in one row.
  *
- * The brand is the shell's contribution rather than the region's — `logoUrl` and the title come from
- * the definition's theme and name, not from anything authored on the region — which is why they are
- * inputs the renderer fills instead of something this component reaches into a store for. That keeps
- * it renderable from a spec with three inputs and no providers.
+ * The brand is widgets too — `app-logo` and `app-title` — which read the application's name and logo from
+ * the shell's `APPLICATION_CONTEXT`. So a designer orders, omits or restyles them like any other widget, and
+ * the header has no second, built-in way of showing the same thing. `--pp-app-title-color` is set to the
+ * on-header colour here, so the title stays legible on the header surface whatever the theme.
  *
  * Nav items are *not* handled here. Under the `top-nav` preset the shell places the `sidenav` region's
  * nav beside this component in the same row, so that a `top-nav` app with no header region is still
@@ -18,41 +18,17 @@ import { WidgetListComponent } from '../widget-list.component';
   selector: 'pp-region-header',
   standalone: true,
   imports: [WidgetListComponent],
-  template: `
-    <div class="pp-region-header__brand">
-      @if (logoUrl(); as logo) {
-        <img class="pp-region-header__logo" [src]="logo" [alt]="title()" />
-      }
-      <h2 class="pp-region-header__title">{{ title() }}</h2>
-    </div>
-    <pp-widget-list [widgets]="widgets()" />
-  `,
+  template: `<pp-widget-list [widgets]="widgets()" />`,
   styles: [
     `
       :host {
-        align-items: center;
+        --pp-app-title-color: var(--pp-on-header, inherit);
         background-color: var(--pp-surface-header);
         color: var(--pp-on-header);
-        display: flex;
-        flex: 1;
-        gap: 16px;
-        justify-content: space-between;
-        padding: 8px 16px;
-      }
-      .pp-region-header__brand {
         align-items: center;
         display: flex;
-        gap: 12px;
-        min-width: 0;
-      }
-      .pp-region-header__logo {
-        display: block;
-        max-height: 48px;
-        max-width: 160px;
-        object-fit: contain;
-      }
-      .pp-region-header__title {
-        margin: 0;
+        flex: 1;
+        padding: 8px 16px;
       }
       /*
        * A row, because a header's widgets sit beside one another. The list component itself stays
@@ -63,13 +39,13 @@ import { WidgetListComponent } from '../widget-list.component';
       pp-widget-list {
         align-items: center;
         display: flex;
+        flex: 1;
         gap: 8px;
+        min-width: 0;
       }
     `,
   ],
 })
 export class RegionHeaderComponent {
-  readonly title = input('');
-  readonly logoUrl = input<string | undefined>(undefined);
   readonly widgets = input<WidgetInstance[]>([]);
 }

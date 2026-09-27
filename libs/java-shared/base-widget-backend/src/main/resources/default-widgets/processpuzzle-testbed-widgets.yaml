@@ -13,28 +13,30 @@
 # passes through the same mapper and the same key/port validation as a definition a designer saves.
 # Keys are lowercase-hyphen, as the contract's WidgetKey pattern requires.
 #
-# Every `key` below is a key `provideBaseWidgets()` registers in base-widget-frontend's WIDGET_REGISTRY,
-# and the catalogue holds nothing else. That is the whole point of the file: a palette entry a designer
-# can place is a promise that something will render it, and a key with no component behind it is a
-# promise the shell cannot keep — it surfaces only when the app is previewed, long after the choice.
-# So the list is kept in step with base-widget.providers.ts by hand, and shrinks rather than grows
-# ahead of the implementation. They arrive as drafts: publishing is the designer's decision, and it
-# leaves the Publish action something to do.
+# Every entry below is a copy of a `WidgetRegistration.definition` in base-widget-frontend — each widget's
+# `<name>.widget.ts`, beside its component — and the catalogue holds nothing else. That is the whole point
+# of the file: a palette entry a designer can place is a promise that something will render it, and a key
+# with no component behind it is a promise the shell cannot keep — it surfaces only when the app is
+# previewed, long after the choice. base-widget-frontend's `widget-contract.spec.ts` compares the two field
+# by field, so edit the registration first and copy it here; the spec says which field disagrees. They
+# arrive as drafts: publishing is the designer's decision, and it leaves the Publish action something to do.
+#
+# Seeding is create-only: a definition already present in an organization is left untouched, so a change
+# here reaches a fresh database only — an existing one needs the definition edited or deleted first.
 #
 # The widgets divide into two kinds, and the difference shows in `propsSchema`. Content widgets are
-# configured — they take props and declare a schema for them. Chrome widgets (the four at the bottom)
-# read what they need from the application's own providers, so they take no props at all, which an
-# *empty* schema says and a null one would not: null means "nobody has described this yet".
+# configured — they take props and declare a schema for them. Chrome widgets read what they need from the
+# application's own providers, so most take no props at all, which an *empty* schema says and a null one
+# would not: null means "nobody has described this yet". Every schema closes `additionalProperties`,
+# because its properties are exactly the component's inputs.
 
 widgetDefinitions:
-  # The palette entry of the card grid the testbed's content pages are built from. `propsSchema` is the
-  # JSON Schema of its `props` — stored verbatim and never interpreted server-side — and is what lets the
-  # designer render a generated props form instead of a raw JSON editor.
+  # ── Content widgets ──
   - key: cards-grid
     name: Cards grid
     translocoId: base_widget.cards_grid.name
     description: >-
-      A responsive grid of Material cards, each with an image, a title and an action link.
+      A responsive grid of Material cards, each with a title, optional subtitle and text, action buttons and a menu.
     category: Content
     icon: grid_view
     propsSchema:
@@ -48,24 +50,72 @@ widgetDefinitions:
             properties:
               title:
                 type: string
-              imageUrl:
+                title: Title
+              subtitle:
                 type: string
-                format: uri
-              actionLink:
+                title: Subtitle
+              icon:
                 type: string
+                title: Icon
+              content:
+                type: array
+                title: Content
+                description: The first entry is a paragraph, the rest a bulleted list.
+                items:
+                  type: string
+              actions:
+                type: array
+                title: Actions
+                items:
+                  type: object
+                  properties:
+                    caption:
+                      type: string
+                    link:
+                      type: string
+                    buttonType:
+                      type: string
+                      enum:
+                      - text
+                      - filled
+                      - elevated
+                      - outlined
+                      - tonal
+                  required:
+                  - caption
+                  - link
+              menuItems:
+                type: array
+                title: Menu items
+                items:
+                  type: object
+                  properties:
+                    label:
+                      type: string
+                    link:
+                      type: string
+                    icon:
+                      type: string
+                  required:
+                  - label
+                  - link
+              translocoPrefix:
+                type: string
+                title: Transloco prefix
+            required:
+            - title
+      required:
+      - cards
+      additionalProperties: false
     inputPorts:
-      - name: cards
-        type: ARRAY
-        required: true
-        description: The cards to render, in order.
-
-  # The markdown renderer behind the testbed's documentation pages. A single string port, which is what
-  # makes it the simplest useful example of a widget type: one input, no output, one schema property.
+    - name: cards
+      type: ARRAY
+      required: true
+      description: The cards to render, in order.
   - key: markdown-page
     name: Markdown page
     translocoId: base_widget.markdown_page.name
-    description: >-
-      Renders a Markdown document, resolving its source relative to the active language.
+    description: Renders a Markdown document fetched from a URL.
     category: Content
     icon: article
     propsSchema:
@@ -74,81 +124,258 @@ widgetDefinitions:
         markdownSrc:
           type: string
           title: Markdown source
-          description: Path of the document, without the language segment.
+          description: URL of the document to render.
       required:
-        - markdownSrc
+      - markdownSrc
+      additionalProperties: false
     inputPorts:
-      - name: markdownSrc
-        type: STRING
-        required: true
-        description: Path of the document to render.
+    - name: markdownSrc
+      type: STRING
+      required: true
+      description: URL of the document to render.
+  - key: image-zoom
+    name: Image zoom
+    translocoId: base_widget.image_zoom.name
+    description: An image thumbnail that opens full size on click.
+    category: Content
+    icon: zoom_in
+    propsSchema:
+      type: object
+      properties:
+        src:
+          type: string
+          title: Image URL
+          format: uri
+        alt:
+          type: string
+          title: Alternative text
+      required:
+      - src
+      additionalProperties: false
+    inputPorts:
+    - name: src
+      type: STRING
+      required: true
+      description: URL of the image.
+  - key: photo-album
+    name: Photo album
+    translocoId: base_widget.photo_album.name
+    description: Pages through a series of images, each opening full size on click.
+    category: Content
+    icon: photo_library
+    propsSchema:
+      type: object
+      properties:
+        images:
+          type: array
+          title: Images
+          items:
+            type: object
+            properties:
+              src:
+                type: string
+                format: uri
+              alt:
+                type: string
+            required:
+            - src
+            - alt
+        maxHeight:
+          type: string
+          title: Maximum height
+          description: A CSS length, or a number of pixels. Defaults to 240px.
+      required:
+      - images
+      additionalProperties: false
+    inputPorts:
+    - name: images
+      type: ARRAY
+      required: true
+      description: The images to page through, in order.
 
   # ── Chrome widgets ──
   #
-  # The four below are what a header or footer region is made of. None takes props: each reads its
-  # state from a provider the hosting application already supplies — the Transloco service, the
-  # application property store, the share-buttons options, RUNTIME_CONFIGURATION. An empty
-  # `properties` map is therefore the accurate schema, and it is what stops the designer from
-  # offering a props form for a widget that has nothing to configure.
-
+  # What a header or footer region is made of. The first three read the application's name, logo and
+  # navigation from the shell's APPLICATION_CONTEXT, so in an application's own header they need no props.
+  - key: app-logo
+    name: Application logo
+    translocoId: base_widget.app_logo.name
+    description: A small logo linking home. Defaults to the logo of the application it is placed in.
+    category: Navigation
+    icon: image
+    propsSchema:
+      type: object
+      properties:
+        logo:
+          type: object
+          format: artifact
+          title: Logo
+          description: An uploaded image; overrides the application's logo.
+        alt:
+          type: string
+          title: Alternative text
+        link:
+          type: string
+          title: Link
+          description: Route the logo navigates to. Defaults to /; empty for no link.
+      additionalProperties: false
+  - key: app-title
+    name: Application title
+    translocoId: base_widget.app_title.name
+    description: >-
+      The application's name as a heading, coloured by the theme. Defaults to the name of the application it is placed
+      in.
+    category: Navigation
+    icon: title
+    propsSchema:
+      type: object
+      properties:
+        title:
+          type: string
+          title: Title
+          description: Overrides the application's name, e.g. inside a document.
+      additionalProperties: false
+    inputPorts:
+    - name: title
+      type: STRING
+      required: false
+      description: The text of the heading.
+  - key: nav-menu
+    name: Navigation menu
+    translocoId: base_widget.nav_menu.name
+    description: >-
+      The application's navigation as a drop-down menu, standing in for the sidenav on small screens.
+    category: Navigation
+    icon: menu
+    propsSchema:
+      type: object
+      properties:
+        visibility:
+          type: string
+          title: Visibility
+          enum:
+          - small-screens
+          - always
+          description: Defaults to small screens, where the sidenav is hidden.
+        items:
+          type: array
+          title: Items
+          description: Overrides the application's navigation.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              translocoId:
+                type: string
+              icon:
+                type: string
+              routePath:
+                type: string
+              children:
+                type: array
+            required:
+            - id
+            - label
+      additionalProperties: false
+  - key: navigate-back
+    name: Navigate back
+    translocoId: base_widget.navigate_back.name
+    description: Returns to the previous page of the navigation history.
+    category: Navigation
+    icon: arrow_back
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: language-selector
     name: Language selector
     translocoId: base_widget.language_selector.name
-    description: >-
-      Switches the active language, listing the locales the application was configured with.
+    description: Switches the active language, listing the locales the application was configured with.
     category: Navigation
     icon: translate
     propsSchema:
       type: object
       properties: {}
       additionalProperties: false
-
   - key: themes-button
     name: Themes button
     translocoId: base_widget.themes_button.name
     description: >-
-      Lets the user pick one of the theme presets and a light, dark or automatic colour scheme. Inside
-      an application it overrides that application's theme and is remembered per application.
+      Lets the user pick one of the theme presets and a light, dark or automatic colour scheme. Inside an application
+      it overrides that application's theme and is remembered per application.
     category: Navigation
     icon: palette
     propsSchema:
       type: object
       properties: {}
       additionalProperties: false
-
+    outputPorts:
+    - name: themeChange
+      type: OBJECT
+      description: The selection, preset and colour scheme, after every change the user makes.
   - key: like-button
     name: Like button
     translocoId: base_widget.like_button.name
     description: >-
-      A toggle that counts likes of the current application, persisted through the application
-      property store.
+      A toggle that counts likes of the current application, persisted through the application property store.
     category: Social
     icon: thumb_up
     propsSchema:
       type: object
       properties: {}
       additionalProperties: false
-
   - key: share-button
     name: Share button
     translocoId: base_widget.share_button.name
-    description: >-
-      Shares the current page to the social networks the application enabled.
+    description: Shares the current page to the social networks the application enabled.
     category: Social
     icon: share
     propsSchema:
       type: object
       properties: {}
       additionalProperties: false
-
   - key: version-button
     name: Version button
     translocoId: base_widget.version_button.name
-    description: >-
-      Shows the running application's version, read from its runtime configuration.
+    description: Shows the running application's version, read from its runtime configuration.
     category: System
     icon: info
     propsSchema:
       type: object
       properties: {}
       additionalProperties: false
+  - key: design-button
+    name: Design button
+    translocoId: base_widget.design_button.name
+    description: >-
+      Toggles between the application and its designer, under the route prefix the application provides.
+    category: Navigation
+    icon: design_services
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+  - key: copyright
+    name: Copyright
+    translocoId: base_widget.copyright.name
+    description: A copyright notice, prefixed with the © sign.
+    category: System
+    icon: copyright
+    propsSchema:
+      type: object
+      properties:
+        text:
+          type: string
+          title: Text
+          description: The notice after the © sign, e.g. "2026 ProcessPuzzle".
+      required:
+      - text
+      additionalProperties: false
+    inputPorts:
+    - name: text
+      type: STRING
+      required: true
+      description: The notice after the © sign.

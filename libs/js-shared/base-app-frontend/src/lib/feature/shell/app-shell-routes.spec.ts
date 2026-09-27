@@ -51,7 +51,9 @@ describe('AppShellRoutesFactory', () => {
   });
 
   it('renders one route per authored route, through AppRouteRenderer', async () => {
-    appStore.loadById.mockReturnValue(new AppDefinition({ id: 'demo', routes: [widgetsRoute('orders'), new RouteDefinition({ path: 'claims', title: 'Claims', kind: 'ENTITY', entityName: 'Claim' })] }));
+    appStore.loadById.mockReturnValue(
+      new AppDefinition({ id: 'demo', routes: [widgetsRoute('orders'), new RouteDefinition({ path: 'claims', title: 'Claims', kind: 'ENTITY', entityName: 'Claim' })] }),
+    );
 
     const children = await factory().childrenOf('demo');
 
@@ -165,7 +167,10 @@ describe('appShellRoutesGuard', () => {
   beforeEach(() => vi.resetAllMocks());
 
   it('fills the tab route’s children with the previewed application’s routes', async () => {
-    const built: Routes = [{ path: '', pathMatch: 'full', redirectTo: 'orders' }, { path: 'orders', component: RouteWidgetsComponent }];
+    const built: Routes = [
+      { path: '', pathMatch: 'full', redirectTo: 'orders' },
+      { path: 'orders', component: RouteWidgetsComponent },
+    ];
     factoryStub.childrenOf.mockResolvedValue(built);
     const route: Route = { path: ':entityId/preview', children: [] };
 

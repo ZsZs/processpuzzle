@@ -1,41 +1,19 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  HostListener,
-  inject,
-  input,
-  OnDestroy,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { LayoutService } from '@processpuzzle/util';
 
 @Component({
-  selector: 'app-image-zoom',
+  selector: 'pp-image-zoom',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
-      class="thumb-button"
-      type="button"
-      (click)="open()"
-      [attr.aria-label]="'Zoom image: ' + alt()"
-    >
+    <button class="thumb-button" type="button" (click)="open()" [attr.aria-label]="'Zoom image: ' + alt()">
       <img class="thumb" [src]="src()" [alt]="alt()" loading="lazy" />
     </button>
 
     @if (isOpen()) {
       <button class="overlay" type="button" (click)="close()" aria-label="Close image preview"></button>
       <div class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="alt()">
-        <img
-          #fullImg
-          class="full"
-          [src]="src()"
-          [alt]="alt()"
-        />
-        <button class="close-btn" type="button" (click)="close()" aria-label="Close">
-          &times;
-        </button>
+        <img #fullImg class="full" [src]="src()" [alt]="alt()" />
+        <button class="close-btn" type="button" (click)="close()" aria-label="Close">&times;</button>
       </div>
     }
   `,
@@ -101,8 +79,12 @@ import { LayoutService } from '@processpuzzle/util';
     }
 
     @keyframes fade-in {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
   `,
 })
