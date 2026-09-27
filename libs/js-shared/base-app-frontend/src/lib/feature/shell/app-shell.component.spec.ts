@@ -1,13 +1,14 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { Component, input } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { SidenavAutosizeDirective, ThemeService, WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { LayoutService } from '@processpuzzle/util';
+import { APPLICATION_CONTEXT, AppTitleComponent, SidenavAutosizeDirective, ThemeService, WIDGET_REGISTRY } from '@processpuzzle/widgets';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AppDefinition } from '../../domain/app-definition';
+import { AppDefinition, RouteDefinition } from '../../domain/app-definition';
 import { AppShellComponent } from './app-shell.component';
 
 @Component({ selector: 'pp-shell-test-widget', template: `<span class="test-widget">{{ label() }}</span>` })
@@ -17,6 +18,8 @@ class ShellTestWidgetComponent {
 
 describe('AppShellComponent', () => {
   let fixture: ComponentFixture<AppShellComponent>;
+  /** The breakpoint the shell sees. A handset layout drops the nav from both of its places. */
+  const smallDevice = signal(false);
 
   async function render(definition: AppDefinition | undefined, withRegistry = true) {
     TestBed.configureTestingModule({
@@ -27,8 +30,17 @@ describe('AppShellComponent', () => {
         provideRouter([]),
         provideTranslocoTesting({ translations: {} }),
         ...(withRegistry
-          ? [{ provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', { type: 'test-widget', component: ShellTestWidgetComponent, definition: { name: 'Test widget' } }]]) }]
+          ? [
+              {
+                provide: WIDGET_REGISTRY,
+                useValue: new Map([
+                  ['test-widget', { type: 'test-widget', component: ShellTestWidgetComponent, definition: { name: 'Test widget' } }],
+                  ['app-title', { type: 'app-title', component: AppTitleComponent, definition: { name: 'Application title' } }],
+                ]),
+              },
+            ]
           : []),
+        { provide: LayoutService, useValue: { isSmallDevice: smallDevice, layoutClass: signal('web-layout'), isSidenavHidden: signal(false), sidenavMode: signal(0) } },
       ],
     });
 
@@ -47,26 +59,63 @@ describe('AppShellComponent', () => {
     return fixture.nativeElement;
   }
 
-  beforeEach(() => TestBed.resetTestingModule());
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    smallDevice.set(false);
+  });
 
   describe('regions', () => {
-    it('renders configured header and footer widgets, and the brand from the definition', async () => {
+    it('renders configured header and footer widgets, the brand among them', async () => {
       await render(
         new AppDefinition({
           id: 'demo-app',
           name: 'Demo Application',
           logoUrl: '/demo-logo.svg',
           regions: [
-            { type: 'header', widgets: [{ id: 'language', type: 'test-widget', props: { label: 'Language' } }] },
+            {
+              type: 'header',
+              widgets: [
+                { id: 'title', type: 'app-title' },
+                { id: 'language', type: 'test-widget', props: { label: 'Language' } },
+              ],
+            },
             { type: 'footer', widgets: [{ id: 'version', type: 'test-widget', props: { label: 'Version' } }] },
           ],
         }),
       );
 
-      expect(fixture.nativeElement.querySelector('pp-region-header img')?.getAttribute('src')).toBe('/demo-logo.svg');
-      expect(fixture.nativeElement.querySelector('.pp-region-header__title')?.textContent?.trim()).toBe('Demo Application');
+      expect(fixture.nativeElement.querySelector('pp-region-header .pp-app-title')?.textContent?.trim()).toBe('Demo Application');
       expect(fixture.nativeElement.querySelector('pp-region-header .test-widget')?.textContent).toContain('Language');
       expect(fixture.nativeElement.querySelector('pp-region-footer .test-widget')?.textContent).toContain('Version');
+    });
+
+    it("provides the definition's name, logo and navigation to the widgets below it", async () => {
+      await render(
+        new AppDefinition({
+          id: 'demo-app',
+          name: 'Demo Application',
+          logoUrl: '/demo-logo.svg',
+          routes: [new RouteDefinition({ path: 'orders', title: 'Orders', kind: 'WIDGETS' })],
+          regions: [
+            {
+              type: 'sidenav',
+              navItems: [
+                { id: 'nav-orders', label: 'Orders', routePath: 'orders' },
+                { id: 'nav-gone', label: 'Gone', routePath: 'nowhere' },
+              ],
+            },
+          ],
+        }),
+      );
+
+      const context = fixture.debugElement.injector.get(APPLICATION_CONTEXT);
+      expect(context.name()).toBe('Demo Application');
+      expect(context.logoUrl()).toBe('/demo-logo.svg');
+      // An entry naming no known route keeps its place but not its link, as in the sidenav.
+      expect(context.navItems()).toEqual([
+        { id: 'nav-orders', label: 'Orders', routePath: 'orders' },
+        { id: 'nav-gone', label: 'Gone' },
+      ]);
     });
 
     it('does not invent header or footer regions when they are absent', async () => {
@@ -163,6 +212,15 @@ describe('AppShellComponent', () => {
 
       expect(fixture.nativeElement.querySelector('pp-region-header')).toBeNull();
       expect(fixture.nativeElement.querySelector('.pp-app-shell__top pp-region-nav')).not.toBeNull();
+    });
+
+    // The nav-menu widget stands in for it there, reading the same entries through the APPLICATION_CONTEXT.
+    it.each(['sidenav-left', 'top-nav'] as const)('renders the nav nowhere on a handset layout (%s)', async (preset) => {
+      smallDevice.set(true);
+      await render(withSidenav({ preset }));
+
+      expect(sidenav()).toBeUndefined();
+      expect(fixture.nativeElement.querySelector('pp-region-nav')).toBeNull();
     });
 
     it('renders nested nav items, a group before the children it expands', async () => {

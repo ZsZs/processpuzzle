@@ -1,3 +1,4 @@
+import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 
 export type Selectable = { key: string; value: unknown };
@@ -29,6 +30,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    */
   pattern?: string;
   referenceIdField?: string = 'id';
+  /**
+   * The control of a {@link FormControlType.CUSTOM} attribute: a `BaseFormControlComponent` subclass the form
+   * builder creates like any built-in control. Typed loosely because the base class is generic over the entity
+   * and lives in the form layer, which this descriptor must not import.
+   */
+  component?: Type<unknown>;
   private _label?: string;
   private _linkedEntityType?: string;
 

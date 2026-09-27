@@ -195,7 +195,101 @@ widgetDefinitions:
 
   # ── Chrome widgets ──
   #
-  # What a header or footer region is made of.
+  # What a header or footer region is made of. The first three read the application's name, logo and
+  # navigation from the shell's APPLICATION_CONTEXT, so in an application's own header they need no props.
+  - key: app-logo
+    name: Application logo
+    translocoId: base_widget.app_logo.name
+    description: A small logo linking home. Defaults to the logo of the application it is placed in.
+    category: Navigation
+    icon: image
+    propsSchema:
+      type: object
+      properties:
+        logo:
+          type: object
+          format: artifact
+          title: Logo
+          description: An uploaded image; overrides the application's logo.
+        alt:
+          type: string
+          title: Alternative text
+        link:
+          type: string
+          title: Link
+          description: Route the logo navigates to. Defaults to /; empty for no link.
+      additionalProperties: false
+  - key: app-title
+    name: Application title
+    translocoId: base_widget.app_title.name
+    description: >-
+      The application's name as a heading, coloured by the theme. Defaults to the name of the application it is placed
+      in.
+    category: Navigation
+    icon: title
+    propsSchema:
+      type: object
+      properties:
+        title:
+          type: string
+          title: Title
+          description: Overrides the application's name, e.g. inside a document.
+      additionalProperties: false
+    inputPorts:
+    - name: title
+      type: STRING
+      required: false
+      description: The text of the heading.
+  - key: nav-menu
+    name: Navigation menu
+    translocoId: base_widget.nav_menu.name
+    description: >-
+      The application's navigation as a drop-down menu, standing in for the sidenav on small screens.
+    category: Navigation
+    icon: menu
+    propsSchema:
+      type: object
+      properties:
+        visibility:
+          type: string
+          title: Visibility
+          enum:
+          - small-screens
+          - always
+          description: Defaults to small screens, where the sidenav is hidden.
+        items:
+          type: array
+          title: Items
+          description: Overrides the application's navigation.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              translocoId:
+                type: string
+              icon:
+                type: string
+              routePath:
+                type: string
+              children:
+                type: array
+            required:
+            - id
+            - label
+      additionalProperties: false
+  - key: navigate-back
+    name: Navigate back
+    translocoId: base_widget.navigate_back.name
+    description: Returns to the previous page of the navigation history.
+    category: Navigation
+    icon: arrow_back
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: language-selector
     name: Language selector
     translocoId: base_widget.language_selector.name

@@ -1,5 +1,9 @@
 import { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { APP_LOGO_WIDGET, APP_LOGO_WIDGET_REGISTRATION } from './app-logo/app-logo.widget';
+import { APP_TITLE_WIDGET, APP_TITLE_WIDGET_REGISTRATION } from './app-title/app-title.widget';
+import { NAV_MENU_WIDGET, NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
+import { NAVIGATE_BACK_WIDGET, NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
 import { CARDS_GRID_WIDGET, CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
 import { COPYRIGHT_WIDGET, COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
 import { DESIGN_BUTTON_WIDGET, DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
@@ -18,6 +22,8 @@ import { WidgetOutputPortFacade } from './widget-definition/widget-output-port.f
 import { provideWidget, WidgetRegistration } from './widget-registry/widget-registry.token';
 
 export {
+  APP_LOGO_WIDGET,
+  APP_TITLE_WIDGET,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
@@ -25,6 +31,8 @@ export {
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  NAV_MENU_WIDGET,
+  NAVIGATE_BACK_WIDGET,
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
@@ -51,6 +59,22 @@ export {
  * wants a document to be able to embed a share button but not a language selector should be able to
  * say so. {@link provideBaseWidgets} is the convenience for the common "register them all" case.
  */
+
+export function provideAppLogoWidget(): Provider[] {
+  return provideWidget(APP_LOGO_WIDGET_REGISTRATION);
+}
+
+export function provideAppTitleWidget(): Provider[] {
+  return provideWidget(APP_TITLE_WIDGET_REGISTRATION);
+}
+
+export function provideNavMenuWidget(): Provider[] {
+  return provideWidget(NAV_MENU_WIDGET_REGISTRATION);
+}
+
+export function provideNavigateBackWidget(): Provider[] {
+  return provideWidget(NAVIGATE_BACK_WIDGET_REGISTRATION);
+}
 
 export function provideCardsGridWidget(): Provider[] {
   return provideWidget(CARDS_GRID_WIDGET_REGISTRATION);
@@ -98,6 +122,8 @@ export function provideVersionButtonWidget(): Provider[] {
 
 /** Every registration this library ships, in key order — what {@link provideBaseWidgets} registers. */
 export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
+  APP_LOGO_WIDGET_REGISTRATION,
+  APP_TITLE_WIDGET_REGISTRATION,
   CARDS_GRID_WIDGET_REGISTRATION,
   COPYRIGHT_WIDGET_REGISTRATION,
   DESIGN_BUTTON_WIDGET_REGISTRATION,
@@ -105,6 +131,8 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   LANGUAGE_SELECTOR_WIDGET_REGISTRATION,
   LIKE_BUTTON_WIDGET_REGISTRATION,
   MARKDOWN_PAGE_WIDGET_REGISTRATION,
+  NAV_MENU_WIDGET_REGISTRATION,
+  NAVIGATE_BACK_WIDGET_REGISTRATION,
   PHOTO_ALBUM_WIDGET_REGISTRATION,
   SHARE_BUTTON_WIDGET_REGISTRATION,
   THEMES_BUTTON_WIDGET_REGISTRATION,

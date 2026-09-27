@@ -6,6 +6,8 @@ export { ApplicationProperty } from './app-property/app-property';
 export {
   BASE_WIDGET_ENTITY_FACADES,
   BASE_WIDGET_FACADE_PROVIDERS,
+  APP_LOGO_WIDGET,
+  APP_TITLE_WIDGET,
   BASE_WIDGET_REGISTRATIONS,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
@@ -14,10 +16,14 @@ export {
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  NAV_MENU_WIDGET,
+  NAVIGATE_BACK_WIDGET,
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
+  provideAppLogoWidget,
+  provideAppTitleWidget,
   provideBaseWidgets,
   provideCardsGridWidget,
   provideCopyrightWidget,
@@ -26,6 +32,8 @@ export {
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
+  provideNavMenuWidget,
+  provideNavigateBackWidget,
   providePhotoAlbumWidget,
   provideShareButtonWidget,
   provideThemesButtonWidget,
@@ -92,3 +100,11 @@ export { resolveWidgetInputs, widgetOutputBindings } from './widget-host/widget-
 export type { HostedWidget, WidgetBindingResolver, WidgetPortEvent } from './widget-host/widget-bindings';
 export { widgetsRoutes } from './widgets.routes';
 export { BASE_WIDGET_TRANSLATION_SOURCE } from './base-widget.i18n';
+export { APPLICATION_CONTEXT } from './app-context/application-context';
+export type { ApplicationContext, NavMenuItem } from './app-context/application-context';
+export { AppLogoComponent } from './app-logo/app-logo.component';
+export { AppTitleComponent } from './app-title/app-title.component';
+export { NAV_MENU_VISIBILITIES, NavMenuComponent } from './nav-menu/nav-menu.component';
+export type { NavMenuVisibility } from './nav-menu/nav-menu.component';
+export { ARTIFACT_FORMAT } from './widget-definition/props-schema-to-descriptors';
+export { createWidgetPropsAttrDescriptor, WidgetPropsAttrDescriptor, WidgetPropsControlComponent } from './widget-props/widget-props-control.component';

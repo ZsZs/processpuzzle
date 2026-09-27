@@ -2,6 +2,8 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import {
+  APP_LOGO_WIDGET,
+  APP_TITLE_WIDGET,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
@@ -9,6 +11,8 @@ import {
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  NAV_MENU_WIDGET,
+  NAVIGATE_BACK_WIDGET,
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
@@ -28,6 +32,8 @@ describe('base-widget providers', () => {
 
     expect([...registry.keys()].sort()).toEqual(
       [
+        APP_LOGO_WIDGET,
+        APP_TITLE_WIDGET,
         CARDS_GRID_WIDGET,
         COPYRIGHT_WIDGET,
         DESIGN_BUTTON_WIDGET,
@@ -35,6 +41,8 @@ describe('base-widget providers', () => {
         LANGUAGE_SELECTOR_WIDGET,
         LIKE_BUTTON_WIDGET,
         MARKDOWN_PAGE_WIDGET,
+        NAV_MENU_WIDGET,
+        NAVIGATE_BACK_WIDGET,
         PHOTO_ALBUM_WIDGET,
         SHARE_BUTTON_WIDGET,
         THEMES_BUTTON_WIDGET,

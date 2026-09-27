@@ -69,5 +69,17 @@
   },
   "version_button": {
     "name": "Verzió gomb"
+  },
+  "app_logo": {
+    "name": "Alkalmazás logó"
+  },
+  "app_title": {
+    "name": "Alkalmazás címe"
+  },
+  "nav_menu": {
+    "name": "Navigációs menü"
+  },
+  "navigate_back": {
+    "name": "Vissza"
   }
 }

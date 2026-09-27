@@ -69,5 +69,17 @@
   },
   "version_button": {
     "name": "Version button"
+  },
+  "app_logo": {
+    "name": "Application logo"
+  },
+  "app_title": {
+    "name": "Application title"
+  },
+  "nav_menu": {
+    "name": "Navigation menu"
+  },
+  "navigate_back": {
+    "name": "Navigate back"
   }
 }

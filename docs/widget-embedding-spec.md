@@ -69,12 +69,12 @@ from — the registration is what keeps it honest.
 ## 4. The host
 
 ```html
-<pp-widget-host [instance]="instance" [bindingResolver]="resolve" (portEmit)="onPort($event)" />
+<pp-widget-host [widget]="instance" [bindingResolver]="resolve" (portEmit)="onPort($event)" />
 ```
 
 `WidgetHostComponent` (`base-widget-frontend`) renders one placement:
 
-- looks `instance.type` up in `WIDGET_REGISTRY`; an unregistered type renders a placeholder naming the type
+- looks `widget.type` up in `WIDGET_REGISTRY`; an unregistered type renders a placeholder naming the type
   (`data-testid="unregistered-<id>"`) instead of throwing;
 - resolves inputs with `resolveWidgetInputs()`: `props`, overlaid by each `inputBindings` entry resolved
   through `bindingResolver`, filtered to the inputs the component declares (a stale prop is dropped with a
@@ -96,10 +96,24 @@ There is no separate layout entity. An `AppDefinition` already holds `routes[].w
 `WIDGETS`) and `regions[].widgets` (header / footer); a document holds WIDGET blocks. A compile-time
 application is a const `AppDefinition`, a run-time one is fetched — the shell cannot tell the difference.
 
+## 5a. The application context
+
+Chrome widgets that show the application itself — `app-title`, `app-logo`, `nav-menu` — read its name, logo
+and navigation from `APPLICATION_CONTEXT` (`base-widget-frontend`), which `AppShellComponent` provides from
+the `AppDefinition` it renders. Their props override it, which is how the same widgets work in a document
+placed outside any application. This is rule 4 of §2: the application is environment, not configuration.
+
+So the shell header has no built-in brand block: it is widgets only, and the seeded applications place
+`app-logo`, `app-title` and `nav-menu` there. On a handset layout the shell renders the nav region nowhere —
+neither as a sidenav nor as a top-nav row — and `nav-menu` (visible on small screens by default) stands in.
+
 ## 6. Validation
 
-- **Design time:** the designer renders a props form generated from `propsSchema`
-  (`propsSchemaToDescriptors`), so authored props already have the declared shape.
+- **Design time:** the widget-instance form edits `props` with `WidgetPropsControlComponent` — a base-entity
+  `CUSTOM` control that builds a nested form from the selected type's registered `propsSchema`
+  (`propsSchemaToDescriptors`) and rebuilds it when the type changes. `format: 'artifact'` maps to the
+  ARTIFACT control (an object-store reference, as `app-logo`'s `logo`). An unregistered or undescribed type
+  falls back to the open key/value editor; arrays of objects are not yet editable as rows.
 - **Render time:** `resolveWidgetInputs()` drops props the component does not declare.
 - **Build time:** `widget-contract.spec.ts` — inputs ⇔ schema, outputs ⇔ output ports, registration ⇔ seed YAML.
 
