@@ -23,12 +23,7 @@ describe('DocumentContentStore', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: SERVICE_ROOT } } },
-        DocumentContentStore,
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: SERVICE_ROOT } } }, DocumentContentStore],
     });
     store = TestBed.inject(DocumentContentStore);
     controller = TestBed.inject(HttpTestingController);
@@ -134,5 +129,27 @@ describe('DocumentContentStore', () => {
     const uninitialized = new DocumentContentStore(TestBed.inject(DocumentContentService), TestBed.inject(BaseDocumentService));
 
     await expect(uninitialized.appendTextBlock()).rejects.toThrow(/initialize/);
+  });
+
+  it('leaves input bindings unresolved until a container supplies their values', () => {
+    expect(store.resolveBinding('heading')).toBeUndefined();
+  });
+
+  it('publishes the latest output value without mutating previous snapshots or other ports', () => {
+    const initial = store.outputValues();
+    store.publishOutput('selection', { id: 'first' });
+    const first = store.outputValues();
+    store.publishOutput('count', 2);
+    store.publishOutput('selection', { id: 'second' });
+
+    expect(initial.size).toBe(0);
+    expect(first).toEqual(new Map([['selection', { id: 'first' }]]));
+    expect(store.outputValues()).toEqual(
+      new Map<string, unknown>([
+        ['selection', { id: 'second' }],
+        ['count', 2],
+      ]),
+    );
+    controller.expectNone((request) => request.method !== 'GET');
   });
 });

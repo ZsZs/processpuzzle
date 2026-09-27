@@ -1,43 +1,41 @@
 import { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
-import { APP_LOGO_WIDGET, APP_LOGO_WIDGET_REGISTRATION } from './app-logo/app-logo.widget';
-import { APP_TITLE_WIDGET, APP_TITLE_WIDGET_REGISTRATION } from './app-title/app-title.widget';
-import { NAV_MENU_WIDGET, NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
-import { NAVIGATE_BACK_WIDGET, NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
-import { CARDS_GRID_WIDGET, CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
-import { COPYRIGHT_WIDGET, COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
-import { DESIGN_BUTTON_WIDGET, DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
-import { IMAGE_ZOOM_WIDGET, IMAGE_ZOOM_WIDGET_REGISTRATION } from './image-zoom/image-zoom.widget';
-import { LANGUAGE_SELECTOR_WIDGET, LANGUAGE_SELECTOR_WIDGET_REGISTRATION } from './language-selector/language-selector.widget';
-import { LIKE_BUTTON_WIDGET, LIKE_BUTTON_WIDGET_REGISTRATION } from './like-button/like-button.widget';
-import { MARKDOWN_PAGE_WIDGET, MARKDOWN_PAGE_WIDGET_REGISTRATION } from './markdown-page/markdown-page.widget';
-import { PHOTO_ALBUM_WIDGET, PHOTO_ALBUM_WIDGET_REGISTRATION } from './photo-album/photo-album.widget';
-import { SHARE_BUTTON_WIDGET, SHARE_BUTTON_WIDGET_REGISTRATION } from './share-button/share-button.widget';
-import { THEMES_BUTTON_WIDGET, THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
-import { VERSION_BUTTON_WIDGET, VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
+import { APP_LOGO_WIDGET_REGISTRATION } from './app-logo/app-logo.widget';
+import { APP_TITLE_WIDGET_REGISTRATION } from './app-title/app-title.widget';
+import { NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
+import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
+import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
+import { COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
+import { DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
+import { IMAGE_ZOOM_WIDGET_REGISTRATION } from './image-zoom/image-zoom.widget';
+import { LANGUAGE_SELECTOR_WIDGET_REGISTRATION } from './language-selector/language-selector.widget';
+import { LIKE_BUTTON_WIDGET_REGISTRATION } from './like-button/like-button.widget';
+import { MARKDOWN_PAGE_WIDGET_REGISTRATION } from './markdown-page/markdown-page.widget';
+import { PHOTO_ALBUM_WIDGET_REGISTRATION } from './photo-album/photo-album.widget';
+import { SHARE_BUTTON_WIDGET_REGISTRATION } from './share-button/share-button.widget';
+import { THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
+import { VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
 import { WIDGET_DEFINITION_ENTITY_NAME, WIDGET_INPUT_PORT_ENTITY_NAME, WIDGET_OUTPUT_PORT_ENTITY_NAME } from './widget-definition/widget-entity-names';
 import { WidgetInputPortFacade } from './widget-definition/widget-input-port.facade';
 import { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
 import { provideWidget, WidgetRegistration } from './widget-registry/widget-registry.token';
 
-export {
-  APP_LOGO_WIDGET,
-  APP_TITLE_WIDGET,
-  CARDS_GRID_WIDGET,
-  COPYRIGHT_WIDGET,
-  DESIGN_BUTTON_WIDGET,
-  IMAGE_ZOOM_WIDGET,
-  LANGUAGE_SELECTOR_WIDGET,
-  LIKE_BUTTON_WIDGET,
-  MARKDOWN_PAGE_WIDGET,
-  NAV_MENU_WIDGET,
-  NAVIGATE_BACK_WIDGET,
-  PHOTO_ALBUM_WIDGET,
-  SHARE_BUTTON_WIDGET,
-  THEMES_BUTTON_WIDGET,
-  VERSION_BUTTON_WIDGET,
-};
+export { APP_LOGO_WIDGET } from './app-logo/app-logo.widget';
+export { APP_TITLE_WIDGET } from './app-title/app-title.widget';
+export { CARDS_GRID_WIDGET } from './mat-cards-grid/cards-grid.widget';
+export { COPYRIGHT_WIDGET } from './copyright/copyright.widget';
+export { DESIGN_BUTTON_WIDGET } from './design-button/design-button.widget';
+export { IMAGE_ZOOM_WIDGET } from './image-zoom/image-zoom.widget';
+export { LANGUAGE_SELECTOR_WIDGET } from './language-selector/language-selector.widget';
+export { LIKE_BUTTON_WIDGET } from './like-button/like-button.widget';
+export { MARKDOWN_PAGE_WIDGET } from './markdown-page/markdown-page.widget';
+export { NAV_MENU_WIDGET } from './nav-menu/nav-menu.widget';
+export { NAVIGATE_BACK_WIDGET } from './navigate-back/navigate-back.widget';
+export { PHOTO_ALBUM_WIDGET } from './photo-album/photo-album.widget';
+export { SHARE_BUTTON_WIDGET } from './share-button/share-button.widget';
+export { THEMES_BUTTON_WIDGET } from './themes-button/themes-button.widget';
+export { VERSION_BUTTON_WIDGET } from './version-button/version-button.widget';
 
 /**
  * Registry keys for this library's widgets, and the `provide*Widget()` call per key.
@@ -145,7 +143,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
  * the registry merges through Angular's `@Optional() @SkipSelf()` resolution rather than replacing.
  */
 export function provideBaseWidgets(): Provider[] {
-  return BASE_WIDGET_REGISTRATIONS.map((registration) => provideWidget(registration)).flat();
+  return BASE_WIDGET_REGISTRATIONS.flatMap((registration) => provideWidget(registration));
 }
 
 /**

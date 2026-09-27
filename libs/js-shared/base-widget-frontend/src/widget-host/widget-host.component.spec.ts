@@ -5,9 +5,10 @@ import { WIDGET_REGISTRY, WidgetRegistration } from '../widget-registry/widget-r
 import { HostedWidget, resolveWidgetInputs, WidgetPortEvent } from './widget-bindings';
 import { WidgetHostComponent } from './widget-host.component';
 
-@Component({ selector: 'pp-host-test-widget', template: `<button class="host-test-widget" (click)="clicked.emit(label())">{{ label() }}</button>` })
+@Component({ selector: 'pp-host-test-widget', template: `<button class="host-test-widget" [title]="title()" (click)="clicked.emit(label())">{{ label() }}</button>` })
 class HostTestWidgetComponent {
   readonly label = input('');
+  readonly title = input('');
   readonly clicked = output<string>();
 }
 
@@ -65,6 +66,30 @@ describe('WidgetHostComponent', () => {
     fixture.detectChanges();
 
     expect(button().textContent).toContain('port heading');
+  });
+
+  it('preserves the widget instance when input property order changes', () => {
+    render({ id: 'w1', type: 'test-widget', props: { title: 'Before title', label: 'Before' } });
+    const first = button();
+
+    fixture.componentRef.setInput('widget', { id: 'w1', type: 'test-widget', props: { label: 'After', title: 'After title' } });
+    fixture.detectChanges();
+
+    expect(button()).toBe(first);
+    expect(button().textContent).toBe('After');
+    expect(button().title).toBe('After title');
+  });
+
+  it('recreates the widget when an input is removed so its default is restored', () => {
+    render({ id: 'w1', type: 'test-widget', props: { title: 'Custom title', label: 'Hello' } });
+    const first = button();
+
+    fixture.componentRef.setInput('widget', { id: 'w1', type: 'test-widget', props: { label: 'Hello' } });
+    fixture.detectChanges();
+
+    expect(button()).not.toBe(first);
+    expect(button().textContent).toBe('Hello');
+    expect(button().title).toBe('');
   });
 
   it('re-emits a bound output addressed to its container port', () => {

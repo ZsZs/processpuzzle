@@ -1,11 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { WIDGET_REGISTRY, WidgetRegistration } from '@processpuzzle/widgets';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlockKind, DocumentBlock, WidgetPlacement } from '../../domain/base-document';
+import { DocumentContentStore } from './document-content.store';
 import { DocumentEditorComponent } from './document-editor.component';
 
 function widgetBlock(id: string, placement: WidgetPlacement): DocumentBlock {
@@ -41,6 +43,7 @@ describe('DocumentEditorComponent', () => {
         { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
       ],
     });
+
     fixture = TestBed.createComponent(EditorHostComponent);
   });
 
@@ -137,5 +140,92 @@ describe('DocumentEditorComponent', () => {
 
     expect(editor()).toBe(firstInstance);
     expect(renderedBlockIds()).toEqual(['second-block']);
+  });
+});
+
+@Component({
+  selector: 'pp-document-test-widget',
+  template: `<button class="document-test-widget" (click)="selected.emit(label())">{{ label() }}</button>`,
+})
+class DocumentTestWidgetComponent {
+  readonly label = input('');
+  readonly selected = output<string>();
+}
+
+describe('DocumentEditorComponent widget bindings', () => {
+  let fixture: ComponentFixture<DocumentEditorComponent>;
+  let store: DocumentContentStore;
+
+  beforeEach(() => {
+    const registry: ReadonlyMap<string, WidgetRegistration> = new Map([['test-widget', { type: 'test-widget', component: DocumentTestWidgetComponent, definition: { name: 'Test widget' } }]]);
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTranslocoTesting({ translations: { en: { 'base_document.document.content.add_text_block': 'Add text block', 'base_document.document.content.add_widget_block': 'Add widget' } } }),
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: 'http://localhost:3000/organizations/processpuzzle-testbed' } } },
+        { provide: WIDGET_REGISTRY, useValue: registry },
+      ],
+    });
+    fixture = TestBed.createComponent(DocumentEditorComponent);
+    store = fixture.debugElement.injector.get(DocumentContentStore);
+    fixture.componentRef.setInput('documentId', 'bound-document');
+    fixture.componentRef.setInput('locale', 'en');
+  });
+
+  function render(placement: WidgetPlacement) {
+    const widget: DocumentBlock = {
+      id: 'bound-widget',
+      kind: BlockKind.WIDGET,
+      placement,
+      type: 'test-widget',
+      props: { label: 'Static heading' },
+      inputBindings: { label: 'heading' },
+      outputBindings: { selected: 'selection' },
+    };
+    const blocks: DocumentBlock[] = [widget];
+    if (placement === WidgetPlacement.REFERENCED) {
+      blocks.unshift({
+        id: 'prose',
+        kind: BlockKind.TEXT,
+        editable: true,
+        content: { type: 'doc', content: [{ type: 'paragraph' }, { type: 'widgetEmbed', attrs: { blockId: widget.id } }] },
+      });
+    }
+    fixture.componentRef.setInput('blocks', blocks);
+    fixture.detectChanges();
+    TestBed.tick();
+  }
+
+  it.each([WidgetPlacement.STANDALONE, WidgetPlacement.REFERENCED])('routes %s widget inputs and outputs through the document store', (placement) => {
+    const resolve = vi.spyOn(store, 'resolveBinding').mockReturnValue('Document heading');
+    render(placement);
+
+    const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('.document-test-widget');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].textContent).toBe('Document heading');
+    expect(resolve).toHaveBeenCalledWith('heading');
+
+    buttons[0].click();
+
+    expect(store.outputValues().get('selection')).toBe('Document heading');
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('adds the selected registered widget as a standalone block', async () => {
+    fixture.componentRef.setInput('blocks', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="document-add-widget-block"]')).not.toBeNull();
+
+    const pending = fixture.componentInstance.onAddWidgetBlock('test-widget');
+    const request = TestBed.inject(HttpTestingController).expectOne('http://localhost:3000/organizations/processpuzzle-testbed/documents/bound-document/translations/en/blocks');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ kind: BlockKind.WIDGET, placement: WidgetPlacement.STANDALONE, type: 'test-widget', props: {} });
+    request.flush({ ...request.request.body, id: 'new-widget', props: { label: 'Added widget' } });
+    await pending;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.document-test-widget').textContent).toBe('Added widget');
+    TestBed.inject(HttpTestingController).verify();
   });
 });

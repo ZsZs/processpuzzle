@@ -67,7 +67,9 @@ export class WidgetHostComponent {
   /** What forces a re-creation. A string, so that an equal shape recomputed from a new object is still equal. */
   private readonly shape = computed(() => {
     const widget = this.widget();
-    return `${widget.type}|${Object.keys(this.inputs()).sort().join(',')}|${JSON.stringify(widget.outputBindings ?? {})}`;
+    return `${widget.type}|${Object.keys(this.inputs())
+      .sort((left, right) => left.localeCompare(right))
+      .join(',')}|${JSON.stringify(widget.outputBindings ?? {})}`;
   });
 
   protected readonly explanation = computed(() => `No component is registered for widget type '${this.widget().type}' — check the provideWidget() calls of this application.`);
