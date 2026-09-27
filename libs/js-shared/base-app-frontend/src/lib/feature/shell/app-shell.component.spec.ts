@@ -20,6 +20,9 @@ describe('AppShellComponent', () => {
   let fixture: ComponentFixture<AppShellComponent>;
   /** The breakpoint the shell sees. A handset layout drops the nav from both of its places. */
   const smallDevice = signal(false);
+  const mediumDevice = signal(false);
+  /** Raised by a full-screen viewer — an image zoom, a photo album — that wants the sidenav out of the way. */
+  const sidenavHidden = signal(false);
 
   async function render(definition: AppDefinition | undefined, withRegistry = true) {
     TestBed.configureTestingModule({
@@ -40,7 +43,7 @@ describe('AppShellComponent', () => {
               },
             ]
           : []),
-        { provide: LayoutService, useValue: { isSmallDevice: smallDevice, layoutClass: signal('web-layout'), isSidenavHidden: signal(false), sidenavMode: signal(0) } },
+        { provide: LayoutService, useValue: { isSmallDevice: smallDevice, isMediumDevice: mediumDevice, layoutClass: signal('web-layout'), isSidenavHidden: sidenavHidden, sidenavMode: signal(0) } },
       ],
     });
 
@@ -62,6 +65,8 @@ describe('AppShellComponent', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     smallDevice.set(false);
+    mediumDevice.set(false);
+    sidenavHidden.set(false);
   });
 
   describe('regions', () => {
@@ -212,6 +217,32 @@ describe('AppShellComponent', () => {
 
       expect(fixture.nativeElement.querySelector('pp-region-header')).toBeNull();
       expect(fixture.nativeElement.querySelector('.pp-app-shell__top pp-region-nav')).not.toBeNull();
+    });
+
+    it('narrows the sidenav to compact rows on a tablet layout', async () => {
+      mediumDevice.set(true);
+      await render(withSidenav());
+
+      expect(fixture.nativeElement.querySelector('.pp-app-shell__sidenav .pp-region-nav--compact')).not.toBeNull();
+    });
+
+    it('renders full rows on a wide layout', async () => {
+      await render(withSidenav());
+
+      expect(fixture.nativeElement.querySelector('.pp-app-shell__sidenav mat-nav-list')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('.pp-region-nav--compact')).toBeNull();
+    });
+
+    it('closes the sidenav while a viewer asks for the space, and reopens it after', async () => {
+      await render(withSidenav());
+
+      sidenavHidden.set(true);
+      fixture.detectChanges();
+      expect(sidenav()?.opened).toBe(false);
+
+      sidenavHidden.set(false);
+      fixture.detectChanges();
+      expect(sidenav()?.opened).toBe(true);
     });
 
     // The nav-menu widget stands in for it there, reading the same entries through the APPLICATION_CONTEXT.

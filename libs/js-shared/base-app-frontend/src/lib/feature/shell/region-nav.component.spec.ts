@@ -54,7 +54,7 @@ describe('toNavRows', () => {
 describe('RegionNavComponent', () => {
   let fixture: ComponentFixture<RegionNavComponent>;
 
-  async function render(navItems: NavItem[], knownPaths: string[] = []) {
+  async function render(navItems: NavItem[], knownPaths: string[] = [], compact = false) {
     TestBed.resetTestingModule();
     // Transloco is required because the rows render their label through `ppLabel`, which injects
     // TranslocoService. With no translations registered every key falls back to the authored literal,
@@ -63,6 +63,7 @@ describe('RegionNavComponent', () => {
     fixture = TestBed.createComponent(RegionNavComponent);
     fixture.componentRef.setInput('navItems', navItems);
     fixture.componentRef.setInput('knownPaths', knownPaths);
+    fixture.componentRef.setInput('compact', compact);
     fixture.detectChanges();
     await fixture.whenStable();
   }
@@ -126,5 +127,26 @@ describe('RegionNavComponent', () => {
 
     expect(item('group').style.paddingInlineStart).toBe('0px');
     expect(item('child').style.paddingInlineStart).toBe('12px');
+  });
+
+  describe('compact', () => {
+    it('stacks the icon over the label, a link for a resolved item', async () => {
+      await render([{ id: 'nav-orders', label: 'Orders', icon: 'receipt_long', routePath: 'orders' }], ['orders'], true);
+
+      const row = item('nav-orders');
+      expect(row.localName).toBe('a');
+      expect(row.getAttribute('href')).toBe('/orders');
+      expect(row.querySelector('.pp-region-nav__compact-icon')?.textContent).toBe('receipt_long');
+      expect(row.querySelector('.pp-region-nav__compact-label')?.textContent).toBe('Orders');
+      expect(fixture.nativeElement.querySelector('mat-nav-list')).toBeNull();
+    });
+
+    it('keeps a group and its children in order, without indentation', async () => {
+      await render([{ id: 'group', label: 'Group', children: [{ id: 'child', label: 'Child', routePath: 'orders' }] }], ['orders'], true);
+
+      const rows = [...fixture.nativeElement.querySelectorAll('.pp-region-nav__compact-item')].map((row) => (row as HTMLElement).dataset['testid']);
+      expect(rows).toEqual(['nav-group', 'nav-child']);
+      expect(item('group').localName).toBe('span');
+    });
   });
 });

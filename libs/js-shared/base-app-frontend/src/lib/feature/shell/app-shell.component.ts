@@ -71,7 +71,13 @@ import { ShellOverlayContainer } from './shell-overlay-container';
 
     <mat-sidenav-container class="pp-app-shell__body">
       @if (sidenavView(); as view) {
-        <mat-sidenav class="pp-app-shell__sidenav" ppSidenavAutosize [mode]="layout().sidenavMode" [opened]="layout().sidenavOpened" [position]="layout().sidenavPosition">
+        <mat-sidenav
+          class="pp-app-shell__sidenav"
+          ppSidenavAutosize
+          [mode]="layout().sidenavMode"
+          [opened]="layout().sidenavOpened && !layoutService.isSidenavHidden()"
+          [position]="layout().sidenavPosition"
+        >
           <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
         </mat-sidenav>
       }
@@ -106,7 +112,7 @@ export class AppShellComponent {
   private readonly regionRenderer = inject(AppRegionRenderer);
   private readonly theme = inject(ThemeService);
   private readonly applicationContext = inject(ShellApplicationContext);
-  private readonly layoutService = inject(LayoutService);
+  protected readonly layoutService = inject(LayoutService);
 
   protected readonly layout = computed(() => layoutOf(this.definition()));
   protected readonly themeVars = computed(() => themeVarsOf(this.definition()));
@@ -157,7 +163,9 @@ export class AppShellComponent {
    * freshly built object on every change-detection pass, so it would re-diff and re-apply the nav's
    * inputs continuously. Memoized, the identity only changes when the definition or the preset does.
    */
-  protected readonly sidenavInputs = computed(() => this.navInputsOf(this.sidenavView(), 'vertical'));
+  // Compact on a tablet layout, the sidenav's middle size: the drawer is sized to its content, so compact
+  // rows are what narrow it to a rail. See SidenavAutosizeDirective for how the content margin follows.
+  protected readonly sidenavInputs = computed(() => ({ ...this.navInputsOf(this.sidenavView(), 'vertical'), compact: this.layoutService.isMediumDevice() }));
   protected readonly topNavInputs = computed(() => this.navInputsOf(this.topNavView(), 'horizontal'));
 
   private navInputsOf(view: RegionView | undefined, orientation: NavOrientation): Record<string, unknown> {

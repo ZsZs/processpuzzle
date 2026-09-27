@@ -33,10 +33,13 @@
   min-height: 0;
 }
 
+/* Sized to its content, as the testbed's sidenav is: full rows on a wide screen, a compact rail on a tablet
+   (see RegionNavComponent's `compact`). ppSidenavAutosize keeps the content margin in step when the width
+   changes on its own — icon font or translations arriving — which Material's `autosize` misses zoneless. */
 .pp-app-shell__sidenav {
   background-color: var(--pp-surface-sidenav);
   color: var(--pp-on-sidenav);
-  min-width: 200px;
+  width: auto;
 }
 
 .pp-app-shell__content {
