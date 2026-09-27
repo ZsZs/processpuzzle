@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { NgClass } from '@angular/common';
@@ -10,12 +10,12 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
-  selector: 'mat-cards-grid',
+  selector: 'pp-cards-grid',
   standalone: true,
   imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon, MatMenuModule],
   template: `
     <div [ngClass]="layoutService.layoutClass()">
-      @for (card of cards; track $index) {
+      @for (card of cards(); track $index) {
         <ng-container *transloco="let t; prefix: card.translocoPrefix">
           <mat-card class="default-mat-card">
             <mat-card-header>
@@ -50,7 +50,7 @@ import { MatMenuModule } from '@angular/material/menu';
                 </mat-menu>
               }
             </mat-card-header>
-            @if (hasValue(card.content)) {
+            @if (card.content && hasValue(card.content)) {
               <mat-card-content>
                 <div>
                   {{ t(card.content[0]) }}
@@ -81,10 +81,11 @@ import { MatMenuModule } from '@angular/material/menu';
   styleUrls: ['./mat-cards-grid.component.css'],
 })
 export class MatCardsGridComponent {
-  @Input() cards: CardsGridSpec[] = [];
+  readonly cards = input<CardsGridSpec[]>([]);
   readonly layoutService = inject(LayoutService);
 
-  hasValue(textValue: string | Array<string>) {
-    return textValue.length > 0;
+  // Undefined-tolerant: a designer-authored card carries only the fields its author filled in.
+  hasValue(textValue: string | Array<string> | undefined) {
+    return !!textValue && textValue.length > 0;
   }
 }

@@ -95,8 +95,8 @@ export class ThemesButtonSampleComponent {
     <section>
       <h1>Themes button</h1>
       <p>
-        Picks one of the theme presets and a light, dark or automatic colour scheme for the nearest ThemeService: the whole document in a host application's
-        toolbar, one application inside a base-app shell. Here it themes only the box below.
+        Picks one of the theme presets and a light, dark or automatic colour scheme for the nearest ThemeService: the whole document in a host application's toolbar, one application inside a base-app
+        shell. Here it themes only the box below.
       </p>
       <app-themes-button-sample />
 
@@ -124,13 +124,13 @@ export class ThemesButtonSampleComponent {
     <section>
       <h1>Image zoom</h1>
       <p>Click the image to view it at its original size.</p>
-      <app-image-zoom class="image-zoom-sample" src="assets/Conduct_Race.png" alt="Conduct Race diagram" />
+      <pp-image-zoom class="image-zoom-sample" src="assets/Conduct_Race.png" alt="Conduct Race diagram" />
     </section>
 
     <section>
       <h1>Photo album</h1>
       <p>Use the arrows to browse the images, then select one to view it at its original size.</p>
-      <app-photo-album [images]="images" [maxHeight]="240" />
+      <pp-photo-album [images]="images" [maxHeight]="240" />
     </section>
   `,
   styles: `

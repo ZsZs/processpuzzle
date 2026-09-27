@@ -4,8 +4,8 @@ import { WidgetInstance } from '@processpuzzle/widgets';
 import { WidgetListComponent } from './widget-list.component';
 
 /**
- * Renders a route whose kind is WIDGETS: every STANDALONE instance in order, via NgComponentOutlet
- * resolved against WIDGET_REGISTRY. REFERENCED instances are skipped here for the same reason
+ * Renders a route whose kind is WIDGETS: every STANDALONE instance in order, each through base-widget's
+ * WidgetHostComponent. REFERENCED instances are skipped here for the same reason
  * DocumentEditorComponent skips them at its top level — they're placed by whichever STANDALONE
  * container widget names them in props.childIds, not by this component.
  *

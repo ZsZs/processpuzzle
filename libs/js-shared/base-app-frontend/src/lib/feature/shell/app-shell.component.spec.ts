@@ -26,7 +26,9 @@ describe('AppShellComponent', () => {
       providers: [
         provideRouter([]),
         provideTranslocoTesting({ translations: {} }),
-        ...(withRegistry ? [{ provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', ShellTestWidgetComponent]]) }] : []),
+        ...(withRegistry
+          ? [{ provide: WIDGET_REGISTRY, useValue: new Map([['test-widget', { type: 'test-widget', component: ShellTestWidgetComponent, definition: { name: 'Test widget' } }]]) }]
+          : []),
       ],
     });
 
@@ -93,9 +95,7 @@ describe('AppShellComponent', () => {
       // jsdom does no layout, so the row order is the most of "the footer sits at the bottom" that a unit
       // test can hold onto. It is the part that regressed: with the footer anywhere but last, or the body
       // not between them, no amount of grid sizing puts it at the bottom.
-      await render(
-        new AppDefinition({ id: 'demo-app', name: 'Demo', regions: [{ type: 'header' }, { type: 'footer' }, { type: 'sidenav', navItems: [] }] }),
-      );
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo', regions: [{ type: 'header' }, { type: 'footer' }, { type: 'sidenav', navItems: [] }] }));
 
       const rows = [...fixture.nativeElement.children].map((node) => (node as HTMLElement).localName);
       expect(rows).toEqual(['div', 'mat-sidenav-container', 'pp-region-footer']);
@@ -179,7 +179,15 @@ describe('AppShellComponent', () => {
     it('renders the icon of a nav item that declares one, and none for an item that does not', async () => {
       await render(
         withSidenav({
-          regions: [{ type: 'sidenav', navItems: [{ id: 'nav-orders', label: 'Orders', icon: 'receipt_long' }, { id: 'nav-plain', label: 'Plain' }] }],
+          regions: [
+            {
+              type: 'sidenav',
+              navItems: [
+                { id: 'nav-orders', label: 'Orders', icon: 'receipt_long' },
+                { id: 'nav-plain', label: 'Plain' },
+              ],
+            },
+          ],
         }),
       );
 

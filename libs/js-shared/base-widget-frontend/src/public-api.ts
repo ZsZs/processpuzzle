@@ -6,20 +6,27 @@ export { ApplicationProperty } from './app-property/app-property';
 export {
   BASE_WIDGET_ENTITY_FACADES,
   BASE_WIDGET_FACADE_PROVIDERS,
+  BASE_WIDGET_REGISTRATIONS,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
+  DESIGN_BUTTON_WIDGET,
+  IMAGE_ZOOM_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
   provideCopyrightWidget,
+  provideDesignButtonWidget,
+  provideImageZoomWidget,
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
+  providePhotoAlbumWidget,
   provideShareButtonWidget,
   provideThemesButtonWidget,
   provideVersionButtonWidget,
@@ -79,5 +86,9 @@ export { WidgetDefinitionPublishStore, WidgetDefinitionStore } from './widget-de
 export { WidgetInputPortFacade } from './widget-definition/widget-input-port.facade';
 export { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
 export { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
+export type { WidgetDescription, WidgetRegistration } from './widget-registry/widget-registry.token';
+export { WidgetHostComponent } from './widget-host/widget-host.component';
+export { resolveWidgetInputs, widgetOutputBindings } from './widget-host/widget-bindings';
+export type { HostedWidget, WidgetBindingResolver, WidgetPortEvent } from './widget-host/widget-bindings';
 export { widgetsRoutes } from './widgets.routes';
 export { BASE_WIDGET_TRANSLATION_SOURCE } from './base-widget.i18n';

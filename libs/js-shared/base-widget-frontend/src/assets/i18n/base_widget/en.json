@@ -36,5 +36,38 @@
   "publish": {
     "button": "Publish",
     "tooltip": "Promote this version, so instances may rely on its props schema"
+  },
+  "cards_grid": {
+    "name": "Cards grid"
+  },
+  "copyright": {
+    "name": "Copyright"
+  },
+  "design_button": {
+    "name": "Design button"
+  },
+  "image_zoom": {
+    "name": "Image zoom"
+  },
+  "language_selector": {
+    "name": "Language selector"
+  },
+  "like_button": {
+    "name": "Like button"
+  },
+  "markdown_page": {
+    "name": "Markdown page"
+  },
+  "photo_album": {
+    "name": "Photo album"
+  },
+  "share_button": {
+    "name": "Share button"
+  },
+  "themes_button": {
+    "name": "Themes button"
+  },
+  "version_button": {
+    "name": "Version button"
   }
 }

@@ -75,6 +75,18 @@ export class DocumentContentStore {
   }
 
   /**
+   * The latest value each output port was emitted with, keyed by port name — the other half of
+   * {@link resolveBinding}'s seam. A widget's `outputBindings` route its events here through the widget
+   * host; what the document's *container* does with them is, like input resolution, the embedding story's
+   * to design. Until then the values are kept rather than dropped, so they are observable.
+   */
+  readonly outputValues = signal<ReadonlyMap<string, unknown>>(new Map());
+
+  publishOutput(portName: string, value: unknown) {
+    this.outputValues.update((values) => new Map(values).set(portName, value));
+  }
+
+  /**
    * Debounced per block id so a fast typist doesn't fire a PUT per keystroke, but two different
    * blocks being edited near-simultaneously (unlikely today, single-editor-per-document, but the
    * per-id Subject costs nothing) still save independently rather than one debounce window

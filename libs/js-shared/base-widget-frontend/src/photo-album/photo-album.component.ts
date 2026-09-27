@@ -7,7 +7,7 @@ export interface PhotoAlbumImage {
 }
 
 @Component({
-  selector: 'app-photo-album',
+  selector: 'pp-photo-album',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (currentImage(); as image) {
@@ -155,7 +155,7 @@ export interface PhotoAlbumImage {
 })
 export class PhotoAlbumComponent implements OnDestroy {
   readonly images = input.required<readonly PhotoAlbumImage[]>();
-  readonly maxHeight = input.required<string | number>();
+  readonly maxHeight = input<string | number>(240);
 
   readonly selectedIndex = signal(0);
   readonly currentImage = computed(() => this.images()[this.selectedIndex()]);

@@ -1,25 +1,47 @@
 import { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
-import { CopyrightComponent } from './copyright/copyright.component';
-import { LanguageSelectorComponent } from './language-selector/language-selector.component';
-import { LikeButtonComponent } from './like-button/like-button.component';
-import { MarkdownPageComponent } from './markdown-page/markdown-page.component';
-import { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
-import { ShareButtonComponent } from './share-button/share-button.component';
-import { ThemesButtonComponent } from './themes-button/themes-button.component';
-import { VersionButtonComponent } from './version-button/version-button.component';
+import { CARDS_GRID_WIDGET, CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
+import { COPYRIGHT_WIDGET, COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
+import { DESIGN_BUTTON_WIDGET, DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
+import { IMAGE_ZOOM_WIDGET, IMAGE_ZOOM_WIDGET_REGISTRATION } from './image-zoom/image-zoom.widget';
+import { LANGUAGE_SELECTOR_WIDGET, LANGUAGE_SELECTOR_WIDGET_REGISTRATION } from './language-selector/language-selector.widget';
+import { LIKE_BUTTON_WIDGET, LIKE_BUTTON_WIDGET_REGISTRATION } from './like-button/like-button.widget';
+import { MARKDOWN_PAGE_WIDGET, MARKDOWN_PAGE_WIDGET_REGISTRATION } from './markdown-page/markdown-page.widget';
+import { PHOTO_ALBUM_WIDGET, PHOTO_ALBUM_WIDGET_REGISTRATION } from './photo-album/photo-album.widget';
+import { SHARE_BUTTON_WIDGET, SHARE_BUTTON_WIDGET_REGISTRATION } from './share-button/share-button.widget';
+import { THEMES_BUTTON_WIDGET, THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
+import { VERSION_BUTTON_WIDGET, VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
 import { WIDGET_DEFINITION_ENTITY_NAME, WIDGET_INPUT_PORT_ENTITY_NAME, WIDGET_OUTPUT_PORT_ENTITY_NAME } from './widget-definition/widget-entity-names';
 import { WidgetInputPortFacade } from './widget-definition/widget-input-port.facade';
 import { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
-import { provideWidget } from './widget-registry/widget-registry.token';
+import { provideWidget, WidgetRegistration } from './widget-registry/widget-registry.token';
+
+export {
+  CARDS_GRID_WIDGET,
+  COPYRIGHT_WIDGET,
+  DESIGN_BUTTON_WIDGET,
+  IMAGE_ZOOM_WIDGET,
+  LANGUAGE_SELECTOR_WIDGET,
+  LIKE_BUTTON_WIDGET,
+  MARKDOWN_PAGE_WIDGET,
+  PHOTO_ALBUM_WIDGET,
+  SHARE_BUTTON_WIDGET,
+  THEMES_BUTTON_WIDGET,
+  VERSION_BUTTON_WIDGET,
+};
 
 /**
  * Registry keys for this library's widgets, and the `provide*Widget()` call per key.
  *
+ * Each key and its {@link WidgetRegistration} — component plus description — is declared in the widget's
+ * own `<name>.widget.ts`, beside the component, so that the description is edited where the inputs it
+ * describes are. `widget-contract.spec.ts` holds every one of them to its component and to the seeded
+ * catalogue.
+ *
  * A key is what a `WidgetInstance.type` names, so it is part of the contract with every stored
  * AppDefinition and document — **renaming one silently orphans every instance that references it**,
- * which is why they are declared here as constants rather than typed inline at each call site.
+ * which is why they are declared as constants rather than typed inline at each call site.
  *
  * The keys are semantic, not implementation names: `cards-grid`, not `mat-cards-grid`. That the grid
  * happens to be built from Material cards is not something a designer choosing a widget should have
@@ -29,46 +51,65 @@ import { provideWidget } from './widget-registry/widget-registry.token';
  * wants a document to be able to embed a share button but not a language selector should be able to
  * say so. {@link provideBaseWidgets} is the convenience for the common "register them all" case.
  */
-export const CARDS_GRID_WIDGET = 'cards-grid';
-export const COPYRIGHT_WIDGET = 'copyright';
-export const LANGUAGE_SELECTOR_WIDGET = 'language-selector';
-export const LIKE_BUTTON_WIDGET = 'like-button';
-export const MARKDOWN_PAGE_WIDGET = 'markdown-page';
-export const SHARE_BUTTON_WIDGET = 'share-button';
-export const THEMES_BUTTON_WIDGET = 'themes-button';
-export const VERSION_BUTTON_WIDGET = 'version-button';
 
 export function provideCardsGridWidget(): Provider[] {
-  return provideWidget(CARDS_GRID_WIDGET, MatCardsGridComponent);
+  return provideWidget(CARDS_GRID_WIDGET_REGISTRATION);
 }
 
 export function provideCopyrightWidget(): Provider[] {
-  return provideWidget(COPYRIGHT_WIDGET, CopyrightComponent);
+  return provideWidget(COPYRIGHT_WIDGET_REGISTRATION);
+}
+
+export function provideDesignButtonWidget(): Provider[] {
+  return provideWidget(DESIGN_BUTTON_WIDGET_REGISTRATION);
+}
+
+export function provideImageZoomWidget(): Provider[] {
+  return provideWidget(IMAGE_ZOOM_WIDGET_REGISTRATION);
 }
 
 export function provideLanguageSelectorWidget(): Provider[] {
-  return provideWidget(LANGUAGE_SELECTOR_WIDGET, LanguageSelectorComponent);
+  return provideWidget(LANGUAGE_SELECTOR_WIDGET_REGISTRATION);
 }
 
 export function provideLikeButtonWidget(): Provider[] {
-  return provideWidget(LIKE_BUTTON_WIDGET, LikeButtonComponent);
+  return provideWidget(LIKE_BUTTON_WIDGET_REGISTRATION);
 }
 
 export function provideMarkdownPageWidget(): Provider[] {
-  return provideWidget(MARKDOWN_PAGE_WIDGET, MarkdownPageComponent);
+  return provideWidget(MARKDOWN_PAGE_WIDGET_REGISTRATION);
+}
+
+export function providePhotoAlbumWidget(): Provider[] {
+  return provideWidget(PHOTO_ALBUM_WIDGET_REGISTRATION);
 }
 
 export function provideShareButtonWidget(): Provider[] {
-  return provideWidget(SHARE_BUTTON_WIDGET, ShareButtonComponent);
+  return provideWidget(SHARE_BUTTON_WIDGET_REGISTRATION);
 }
 
 export function provideThemesButtonWidget(): Provider[] {
-  return provideWidget(THEMES_BUTTON_WIDGET, ThemesButtonComponent);
+  return provideWidget(THEMES_BUTTON_WIDGET_REGISTRATION);
 }
 
 export function provideVersionButtonWidget(): Provider[] {
-  return provideWidget(VERSION_BUTTON_WIDGET, VersionButtonComponent);
+  return provideWidget(VERSION_BUTTON_WIDGET_REGISTRATION);
 }
+
+/** Every registration this library ships, in key order — what {@link provideBaseWidgets} registers. */
+export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
+  CARDS_GRID_WIDGET_REGISTRATION,
+  COPYRIGHT_WIDGET_REGISTRATION,
+  DESIGN_BUTTON_WIDGET_REGISTRATION,
+  IMAGE_ZOOM_WIDGET_REGISTRATION,
+  LANGUAGE_SELECTOR_WIDGET_REGISTRATION,
+  LIKE_BUTTON_WIDGET_REGISTRATION,
+  MARKDOWN_PAGE_WIDGET_REGISTRATION,
+  PHOTO_ALBUM_WIDGET_REGISTRATION,
+  SHARE_BUTTON_WIDGET_REGISTRATION,
+  THEMES_BUTTON_WIDGET_REGISTRATION,
+  VERSION_BUTTON_WIDGET_REGISTRATION,
+];
 
 /**
  * Registers every widget this library ships. Composes with any other `provideWidget()` call —
@@ -76,16 +117,7 @@ export function provideVersionButtonWidget(): Provider[] {
  * the registry merges through Angular's `@Optional() @SkipSelf()` resolution rather than replacing.
  */
 export function provideBaseWidgets(): Provider[] {
-  return [
-    provideCardsGridWidget(),
-    provideCopyrightWidget(),
-    provideLanguageSelectorWidget(),
-    provideLikeButtonWidget(),
-    provideMarkdownPageWidget(),
-    provideShareButtonWidget(),
-    provideThemesButtonWidget(),
-    provideVersionButtonWidget(),
-  ];
+  return BASE_WIDGET_REGISTRATIONS.map((registration) => provideWidget(registration)).flat();
 }
 
 /**

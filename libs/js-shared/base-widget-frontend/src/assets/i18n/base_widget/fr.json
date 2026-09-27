@@ -36,5 +36,38 @@
   "publish": {
     "button": "Publier",
     "tooltip": "Promouvoir cette version, afin que les instances puissent se fier à son schéma de props"
+  },
+  "cards_grid": {
+    "name": "Grille de cartes"
+  },
+  "copyright": {
+    "name": "Droits d'auteur"
+  },
+  "design_button": {
+    "name": "Bouton de conception"
+  },
+  "image_zoom": {
+    "name": "Zoom d'image"
+  },
+  "language_selector": {
+    "name": "Sélecteur de langue"
+  },
+  "like_button": {
+    "name": "Bouton J'aime"
+  },
+  "markdown_page": {
+    "name": "Page Markdown"
+  },
+  "photo_album": {
+    "name": "Album photo"
+  },
+  "share_button": {
+    "name": "Bouton de partage"
+  },
+  "themes_button": {
+    "name": "Bouton de thèmes"
+  },
+  "version_button": {
+    "name": "Bouton de version"
   }
 }

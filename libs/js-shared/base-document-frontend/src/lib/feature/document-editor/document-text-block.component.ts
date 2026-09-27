@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, computed, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { WIDGET_REGISTRY, WidgetRegistration } from '@processpuzzle/widgets';
 import { DocumentBlock } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';
@@ -71,7 +71,7 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
 
   private readonly editorHost = viewChild.required<ElementRef<HTMLElement>>('editorHost');
   private readonly environmentInjector = inject(EnvironmentInjector);
-  private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map();
+  private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map<string, WidgetRegistration>();
   private readonly contentStore = inject(DocumentContentStore);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -90,6 +90,7 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
           widgetRegistry: this.widgetRegistry,
           blocksById: this.contentStore.blocksById,
           resolveBinding: (portName) => this.contentStore.resolveBinding(portName),
+          publishOutput: (event) => this.contentStore.publishOutput(event.port, event.value),
         }),
       ],
       onUpdate: ({ editor }) => {

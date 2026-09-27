@@ -1,39 +1,29 @@
-import { Component, Type, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement } from '@processpuzzle/widgets';
+import { WIDGET_REGISTRY, WidgetInstance, WidgetPlacement, WidgetRegistration } from '@processpuzzle/widgets';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { WidgetListComponent, toWidgetRows } from './widget-list.component';
+import { WidgetListComponent, standaloneWidgets } from './widget-list.component';
 
 @Component({ selector: 'pp-list-test-widget', template: `<span class="test-widget">{{ label() }}</span>` })
 class ListTestWidgetComponent {
   readonly label = input('');
 }
 
-const REGISTRY: ReadonlyMap<string, Type<unknown>> = new Map<string, Type<unknown>>([['test-widget', ListTestWidgetComponent]]);
+const REGISTRY: ReadonlyMap<string, WidgetRegistration> = new Map([['test-widget', { type: 'test-widget', component: ListTestWidgetComponent, definition: { name: 'Test widget' } }]]);
 
-describe('toWidgetRows', () => {
-  it('resolves the component of a registered type', () => {
-    const rows = toWidgetRows([new WidgetInstance({ id: 'w1', type: 'test-widget', props: { label: 'Hello' } })], REGISTRY);
-
-    expect(rows).toEqual([{ id: 'w1', type: 'test-widget', props: { label: 'Hello' }, component: ListTestWidgetComponent }]);
-  });
-
-  it('keeps an unregistered type as a row with no component, rather than dropping or rejecting it', () => {
-    const rows = toWidgetRows([new WidgetInstance({ id: 'w1', type: 'entity-grid' })], REGISTRY);
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0].component).toBeUndefined();
-    expect(rows[0].type).toBe('entity-grid');
+describe('standaloneWidgets', () => {
+  it('keeps an unregistered type, rather than dropping or rejecting it', () => {
+    expect(standaloneWidgets([new WidgetInstance({ id: 'w1', type: 'entity-grid' })])).toHaveLength(1);
   });
 
   it('omits a widget a container places by id', () => {
     const referenced = new WidgetInstance({ id: 'w2', type: 'test-widget', placement: WidgetPlacement.REFERENCED });
 
-    expect(toWidgetRows([referenced], REGISTRY)).toEqual([]);
+    expect(standaloneWidgets([referenced])).toEqual([]);
   });
 
-  it('maps an absent list to no rows', () => {
-    expect(toWidgetRows(undefined, REGISTRY)).toEqual([]);
+  it('maps an absent list to no widgets', () => {
+    expect(standaloneWidgets(undefined)).toEqual([]);
   });
 });
 

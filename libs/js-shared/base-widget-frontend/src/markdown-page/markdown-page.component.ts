@@ -11,9 +11,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class MarkdownPageComponent {
   private readonly snackBar = inject(MatSnackBar);
-  markdownSrcInput = input<string>('');
-  markdownSrc = input<string>();
-  src = computed(() => this.markdownSrcInput() || this.markdownSrc() || '');
+  /** Bound by a widget placement's props, or from route data by `withComponentInputBinding()`. */
+  readonly markdownSrc = input<string>('');
+  readonly src = computed(() => this.markdownSrc() ?? '');
 
   // region event handling methods
   onLoad() {
