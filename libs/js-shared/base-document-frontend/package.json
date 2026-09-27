@@ -19,7 +19,7 @@
     "@angular/common": "~22.0.1",
     "@angular/core": "~22.0.1",
     "@ngrx/signals": "^21.1.1",
-    "@processpuzzle/base-entity": "^1.2.2",
+    "@processpuzzle/base-entity": "^1.3.0",
     "@processpuzzle/widgets": "^1.0.0",
     "@processpuzzle/util": "^1.2.0",
     "@tiptap/core": "^3.29.2",
