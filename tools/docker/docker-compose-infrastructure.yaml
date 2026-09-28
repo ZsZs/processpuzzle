@@ -285,6 +285,11 @@ services:
       KEYCLOAK_CUSTOM_SMTP_PASSWORD: ${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}
       KEYCLOAK_CUSTOM_SMTP_STARTTLS: ${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}
       KEYCLOAK_CUSTOM_SMTP_SSL: ${KEYCLOAK_CUSTOM_SMTP_SSL:-false}
+      # The staff account the private repository's end-to-end suite logs in with, re-created on every
+      # start because stage is reset regularly. Both or neither; unset locally and in CI, which use
+      # the seeded `platform-admin` instead.
+      PLATFORM_ADMIN_E2E_USERNAME: ${PLATFORM_ADMIN_E2E_USERNAME:-}
+      PLATFORM_ADMIN_E2E_PASSWORD: ${PLATFORM_ADMIN_E2E_PASSWORD:-}
     networks:
       - processpuzzle
     restart: "no"
