@@ -75,7 +75,8 @@ class DefaultAppLoaderTest {
      */
     private static final List<String> REGISTERED_WIDGET_TYPES =
             List.of("app-logo", "app-title", "cards-grid", "copyright", "design-button", "image-zoom", "language-selector", "like-button",
-                    "markdown-page", "nav-menu", "navigate-back", "photo-album", "share-button", "themes-button", "version-button");
+                    "markdown-page", "nav-bar", "nav-menu", "navigate-back", "photo-album", "share-button", "spacer", "themes-button",
+                    "version-button");
 
     private AppEndpoint endpoint;
     private ResourcePatternResolver resourceResolver;

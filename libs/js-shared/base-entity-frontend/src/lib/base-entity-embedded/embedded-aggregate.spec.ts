@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendRow, findRow, indexOfRow, readOwner, readRows, removeRow, replaceRow, rowId, writeRows } from './embedded-aggregate';
+import { appendRow, findRow, indexOfRow, moveRow, readOwner, readRows, removeRow, replaceRow, rowId, writeRows } from './embedded-aggregate';
 
 /** Mirrors the testbed's shape: a root with embedded rows that themselves carry embedded rows. */
 function anAggregate() {
@@ -130,6 +130,26 @@ describe('embedded-aggregate', () => {
       expect(removeRow(rows, 'a')).toEqual([{ id: 'b' }]);
       expect(removeRow(rows, 'missing')).toEqual(rows);
       expect(rows).toHaveLength(2);
+    });
+
+    it('moves a row to a position, shifting the rows in between, without mutating the input', () => {
+      const rows = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+      expect(moveRow(rows, 'a', 2)).toEqual([{ id: 'b' }, { id: 'c' }, { id: 'a' }]);
+      expect(moveRow(rows, 'c', 0)).toEqual([{ id: 'c' }, { id: 'a' }, { id: 'b' }]);
+      expect(rows.map((row) => row.id)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('clamps the target position and ignores an unknown row', () => {
+      const rows = [{ id: 'a' }, { id: 'b' }];
+
+      expect(moveRow(rows, 'a', 5)).toEqual([{ id: 'b' }, { id: 'a' }]);
+      expect(moveRow(rows, 'b', -1)).toEqual([{ id: 'b' }, { id: 'a' }]);
+      expect(moveRow(rows, 'missing', 0)).toEqual(rows);
+    });
+
+    it('moves by referenceIdField', () => {
+      expect(moveRow([{ type: 'header' }, { type: 'footer' }], 'footer', 0, 'type')).toEqual([{ type: 'footer' }, { type: 'header' }]);
     });
 
     it('replaces and removes by referenceIdField', () => {

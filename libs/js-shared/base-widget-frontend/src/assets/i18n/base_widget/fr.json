@@ -64,6 +64,9 @@
   "share_button": {
     "name": "Bouton de partage"
   },
+  "spacer": {
+    "name": "Espaceur"
+  },
   "themes_button": {
     "name": "Bouton de thèmes"
   },
@@ -75,6 +78,9 @@
   },
   "app_title": {
     "name": "Titre de l'application"
+  },
+  "nav_bar": {
+    "name": "Barre de navigation"
   },
   "nav_menu": {
     "name": "Menu de navigation"

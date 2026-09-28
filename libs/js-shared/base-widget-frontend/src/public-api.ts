@@ -16,10 +16,12 @@ export {
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  NAV_BAR_WIDGET,
   NAV_MENU_WIDGET,
   NAVIGATE_BACK_WIDGET,
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
+  SPACER_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideAppLogoWidget,
@@ -32,10 +34,12 @@ export {
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
+  provideNavBarWidget,
   provideNavMenuWidget,
   provideNavigateBackWidget,
   providePhotoAlbumWidget,
   provideShareButtonWidget,
+  provideSpacerWidget,
   provideThemesButtonWidget,
   provideVersionButtonWidget,
 } from './base-widget.providers';
@@ -106,5 +110,8 @@ export { AppLogoComponent } from './app-logo/app-logo.component';
 export { AppTitleComponent } from './app-title/app-title.component';
 export { NAV_MENU_VISIBILITIES, NavMenuComponent } from './nav-menu/nav-menu.component';
 export type { NavMenuVisibility } from './nav-menu/nav-menu.component';
+export { NAV_BAR_VISIBILITIES, NavBarComponent } from './nav-bar/nav-bar.component';
+export type { NavBarVisibility } from './nav-bar/nav-bar.component';
+export { SpacerComponent } from './spacer/spacer.component';
 export { ARTIFACT_FORMAT } from './widget-definition/props-schema-to-descriptors';
 export { createWidgetPropsAttrDescriptor, WidgetPropsAttrDescriptor, WidgetPropsControlComponent } from './widget-props/widget-props-control.component';

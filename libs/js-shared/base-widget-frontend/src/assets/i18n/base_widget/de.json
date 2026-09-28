@@ -64,6 +64,9 @@
   "share_button": {
     "name": "Teilen-Schaltfläche"
   },
+  "spacer": {
+    "name": "Abstandhalter"
+  },
   "themes_button": {
     "name": "Design-Auswahl"
   },
@@ -75,6 +78,9 @@
   },
   "app_title": {
     "name": "Anwendungstitel"
+  },
+  "nav_bar": {
+    "name": "Navigationsleiste"
   },
   "nav_menu": {
     "name": "Navigationsmenü"

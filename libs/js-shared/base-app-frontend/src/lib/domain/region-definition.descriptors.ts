@@ -24,10 +24,14 @@ function createRegionDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const navItemsAttr = new BaseEntityAttrDescriptor('navItems', FormControlType.EMBEDDED_COMPONENTS, 'Nav Items');
   navItemsAttr.linkedEntityType = APP_NAV_ITEM_ENTITY_NAME;
   navItemsAttr.hideInTable = true;
+  // Listed in this order by the nav.
+  navItemsAttr.ordered = true;
 
   const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.EMBEDDED_COMPONENTS, 'Widgets');
   widgetsAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   widgetsAttr.hideInTable = true;
+  // Rendered in this order, which is also how a spacer aligns the widgets around it.
+  widgetsAttr.ordered = true;
 
   const flexBoxContainer = new FlexboxDescriptor([typeAttr, navItemsAttr, widgetsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };

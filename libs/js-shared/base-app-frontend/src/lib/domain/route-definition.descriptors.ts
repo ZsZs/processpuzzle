@@ -53,6 +53,8 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const widgetsAttr = new BaseEntityAttrDescriptor('widgets', FormControlType.EMBEDDED_COMPONENTS, 'Widgets');
   widgetsAttr.linkedEntityType = APP_WIDGET_ENTITY_NAME;
   widgetsAttr.hideInTable = true;
+  // Rendered in this order, which is also how a spacer aligns the widgets around it.
+  widgetsAttr.ordered = true;
 
   const documentSlugAttr = new BaseEntityAttrDescriptor('documentSlug', FormControlType.TEXT_BOX, 'Document Slug');
   documentSlugAttr.placeholder = 'DOCUMENT only: slug of the document to render';
