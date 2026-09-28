@@ -66,6 +66,13 @@ CUSTOM_SMTP_USERNAME="${KEYCLOAK_CUSTOM_SMTP_USERNAME:-}"
 CUSTOM_SMTP_PASSWORD="${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}"
 CUSTOM_SMTP_STARTTLS="${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}"
 CUSTOM_SMTP_SSL="${KEYCLOAK_CUSTOM_SMTP_SSL:-false}"
+# A staff account in `processpuzzle-admin` holding the `platform-admin` role, for the end-to-end
+# suite of the private repository: it deletes the organizations each run creates. Reconciled here,
+# not in the realm import, because stage is reset regularly and a hand-made account does not
+# survive the reset. Optional: local and CI leave both unset and log in as the seeded
+# `platform-admin` instead.
+E2E_STAFF_USERNAME="${PLATFORM_ADMIN_E2E_USERNAME:-}"
+E2E_STAFF_PASSWORD="${PLATFORM_ADMIN_E2E_PASSWORD:-}"
 # Overridable so the argument construction below can be exercised against a stub; a container
 # never sets it.
 KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
@@ -396,6 +403,53 @@ login
   -s "verifyEmail=true" \
   -s "actionTokenGeneratedByAdminLifespan=43200" \
   -s "smtpServer=${smtp_server}"
+
+# --- the end-to-end staff account ---------------------------------------------------------------
+# Both or neither: one without the other is a misconfigured resource, and skipping quietly would
+# surface much later as an e2e run that cannot log in.
+ensure_staff_user() {
+  local realm="processpuzzle-admin"
+  local username="$1"
+  local password="$2"
+  local user_id
+
+  login
+  user_id="$("$KCADM" get users -r "${realm}" --query "username=${username}" --query exact=true --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+
+  # Names and an address because Keycloak's user profile requires them: without them the first
+  # login is interrupted by an "update your account" page, which an unattended browser never passes.
+  # `requiredActions=[]` on update for the same reason.
+  if [ -z "${user_id}" ]; then
+    echo "Creating staff user '${username}' in '${realm}' ..."
+    "$KCADM" create users -r "${realm}" \
+      -s "username=${username}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'firstName=E2E' \
+      -s 'lastName=Staff' \
+      -s "email=${username}@e2e.processpuzzle.local"
+  else
+    echo "Reconciling staff user '${username}' in '${realm}' ..."
+    "$KCADM" update "users/${user_id}" -r "${realm}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'requiredActions=[]'
+  fi
+
+  # Set on every start, so rotating the secret needs nothing more than a redeploy.
+  "$KCADM" set-password -r "${realm}" --username "${username}" --new-password "${password}"
+  # Additive and idempotent, like the grants below.
+  "$KCADM" add-roles -r "${realm}" --uusername "${username}" --rolename platform-admin
+}
+
+if [ -n "${E2E_STAFF_USERNAME}" ] && [ -n "${E2E_STAFF_PASSWORD}" ]; then
+  ensure_staff_user "${E2E_STAFF_USERNAME}" "${E2E_STAFF_PASSWORD}"
+elif [ -n "${E2E_STAFF_USERNAME}${E2E_STAFF_PASSWORD}" ]; then
+  echo "ERROR: set both PLATFORM_ADMIN_E2E_USERNAME and PLATFORM_ADMIN_E2E_PASSWORD, or neither." >&2
+  exit 1
+else
+  echo "No PLATFORM_ADMIN_E2E_USERNAME; skipping the end-to-end staff user."
+fi
 
 # --- the client -------------------------------------------------------------------------------
 existing_id="$("$KCADM" get clients -r master --query "clientId=${CLIENT_ID}" --fields id --format csv --noquotes 2>/dev/null | tail -n +1 | head -1 || true)"
