@@ -78,6 +78,7 @@ export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/
 export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';
 export { RegionHeaderComponent } from './lib/feature/shell/region-header.component';
 export { RegionNavComponent, type NavOrientation } from './lib/feature/shell/region-nav.component';
+export { APP_CONCEPTS, AppConceptsGuideComponent, appConceptAnchor, type AppConcept } from './lib/feature/app-concepts-guide.component';
 export { APP_PREVIEW_TAB } from './lib/feature/app-preview-tab';
 export { ModuleDefinitionContainerComponent } from './lib/feature/module-definition-container.component';
 export { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './lib/base-app.providers';

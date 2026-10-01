@@ -1,0 +1,373 @@
+openapi: 3.0.3
+info:
+  title: Sailboat Recognition Service
+  version: 0.1.0
+  description: >
+    Vision service that enrolls sailboats from photos and identifies them in
+    race-start videos (detection, tracking, sail number OCR, embedding match).
+    Processing of videos is asynchronous.
+servers:
+  - url: http://localhost:8000/v1
+    description: Local development
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Enrollment
+  - name: Recognition
+  - name: Review
+
+paths:
+  /boats/{boatId}/enrollment-photos:
+    post:
+      tags: [Enrollment]
+      operationId: uploadEnrollmentPhotos
+      summary: Upload enrollment photos for a boat
+      parameters:
+        - $ref: '#/components/parameters/BoatId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photos]
+              properties:
+                photos:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: binary
+                sailNumber:
+                  type: string
+                  example: GER 1234
+      responses:
+        '202':
+          description: Photos accepted, embeddings are computed asynchronously
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentStatus'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+
+  /boats/{boatId}/enrollment:
+    get:
+      tags: [Enrollment]
+      operationId: getEnrollment
+      summary: Get enrollment status of a boat
+      parameters:
+        - $ref: '#/components/parameters/BoatId'
+      responses:
+        '200':
+          description: Enrollment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentStatus'
+        '404':
+          $ref: '#/components/responses/Problem'
+    delete:
+      tags: [Enrollment]
+      operationId: deleteEnrollment
+      summary: Delete the gallery of a boat
+      parameters:
+        - $ref: '#/components/parameters/BoatId'
+      responses:
+        '204':
+          description: Gallery deleted
+        '404':
+          $ref: '#/components/responses/Problem'
+
+  /races/{raceId}/recognition-jobs:
+    post:
+      tags: [Recognition]
+      operationId: createRecognitionJob
+      summary: Start a recognition job for a race-start video
+      parameters:
+        - $ref: '#/components/parameters/RaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [boatIds]
+              properties:
+                video:
+                  type: string
+                  format: binary
+                  description: Video file. Provide either video or mediaUrl.
+                mediaUrl:
+                  type: string
+                  format: uri
+                boatIds:
+                  type: array
+                  items:
+                    type: string
+                  description: Start list; candidates are restricted to these boats.
+                classId:
+                  type: string
+                callbackUrl:
+                  type: string
+                  format: uri
+                  description: Webhook called when the job is done or failed.
+      responses:
+        '202':
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [jobId]
+                properties:
+                  jobId:
+                    type: string
+                    example: j-123
+        '400':
+          $ref: '#/components/responses/Problem'
+
+  /recognition-jobs/{jobId}:
+    get:
+      tags: [Recognition]
+      operationId: getRecognitionJob
+      summary: Get job status and progress
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+        '404':
+          $ref: '#/components/responses/Problem'
+
+  /recognition-jobs/{jobId}/results:
+    get:
+      tags: [Recognition]
+      operationId: getRecognitionResults
+      summary: Get recognized tracks with candidates
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Recognition results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionResults'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Job is not finished yet
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /recognition-jobs/{jobId}/tracks/{trackId}/confirm:
+    post:
+      tags: [Review]
+      operationId: confirmTrack
+      summary: Manually assign a boat to a track
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/TrackId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [boatId]
+              properties:
+                boatId:
+                  type: string
+      responses:
+        '200':
+          description: Track confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '404':
+          $ref: '#/components/responses/Problem'
+
+  /recognition-jobs/{jobId}/tracks/{trackId}/reject:
+    post:
+      tags: [Review]
+      operationId: rejectTrack
+      summary: Mark a track as not a registered boat
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/TrackId'
+      responses:
+        '200':
+          description: Track rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '404':
+          $ref: '#/components/responses/Problem'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    BoatId:
+      name: boatId
+      in: path
+      required: true
+      schema:
+        type: string
+    RaceId:
+      name: raceId
+      in: path
+      required: true
+      schema:
+        type: string
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+    TrackId:
+      name: trackId
+      in: path
+      required: true
+      schema:
+        type: integer
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Problem:
+      description: Error (RFC 7807 problem details)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    EnrollmentStatus:
+      type: object
+      required: [boatId, status, photoCount]
+      properties:
+        boatId:
+          type: string
+        status:
+          type: string
+          enum: [pending, ready, failed]
+        photoCount:
+          type: integer
+        sailNumber:
+          type: string
+          nullable: true
+
+    JobStatus:
+      type: object
+      required: [jobId, status, progress]
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, done, failed]
+        progress:
+          type: number
+          minimum: 0
+          maximum: 1
+        error:
+          type: string
+          nullable: true
+
+    Ocr:
+      type: object
+      properties:
+        text:
+          type: string
+          example: GER 1234
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    Candidate:
+      type: object
+      required: [boatId, score]
+      properties:
+        boatId:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    Track:
+      type: object
+      required: [trackId, status]
+      properties:
+        trackId:
+          type: integer
+        status:
+          type: string
+          enum: [auto_matched, needs_review, confirmed, rejected]
+        boatId:
+          type: string
+          nullable: true
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        ocr:
+          $ref: '#/components/schemas/Ocr'
+        bestCropUrl:
+          type: string
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+
+    RecognitionResults:
+      type: object
+      required: [jobId, tracks]
+      properties:
+        jobId:
+          type: string
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'

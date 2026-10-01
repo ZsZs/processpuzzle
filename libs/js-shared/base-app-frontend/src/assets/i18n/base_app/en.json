@@ -24,13 +24,41 @@
     "modules": "Modules",
     "tabs": {
       "preview": "{{ entity }} - preview"
+    },
+    "_tooltips": {
+      "id": "Unique within your organization and used verbatim in the application's URL. Short, lower-case and hyphenated, e.g. claims-app; avoid changing it later. — Guide: Application",
+      "name": "The application's name as users see it, e.g. in the app-title widget. — Guide: Application",
+      "translocoId": "Optional translation key; when set, it is shown instead of the Name in other languages. — Guide: Application",
+      "description": "A note for you and your fellow designers; users do not see it. — Guide: Application",
+      "status": "DRAFT until the definition is published, PUBLISHED afterwards. Set by the system. — Guide: Save, preview and publish",
+      "version": "Increases with every save. Set by the system. — Guide: Save, preview and publish",
+      "publishedVersion": "The version users currently get. Changes only when you press Publish. — Guide: Save, preview and publish",
+      "updatedAt": "When the definition was last saved. Set by the system.",
+      "materialTheme": "The colour palette of the whole application. processpuzzle is the brand look; the others also recolour header, sidenav, cards and buttons. — Guide: Theme",
+      "colorScheme": "Light, dark, or auto (follows the user's operating system). — Guide: Theme",
+      "logoUrl": "Address of the logo image shown by the app-logo widget. — Guide: Theme",
+      "faviconUrl": "Address of the small icon shown in the browser tab. — Guide: Theme",
+      "tokenOverrides": "Fine-tuning on top of the theme: a --pp-… colour token and its value, e.g. --pp-surface-sidenav = #0d1b2a. — Guide: Theme",
+      "preset": "Where the navigation sits: in a side panel on the left or right, or in the header row (top-nav). — Guide: Layout",
+      "sidenavMode": "side: panel beside the page · over: panel over the page · push: the page slides aside while the panel is open. — Guide: Layout",
+      "contentMaxWidth": "Maximum width of the pages as a CSS length, e.g. 1280px; empty means full width. — Guide: Layout",
+      "sidenavCollapsible": "Whether users can close the navigation panel. — Guide: Layout",
+      "sidenavOpenByDefault": "Whether the navigation panel starts open. — Guide: Layout",
+      "regions": "The frame around the pages: header, sidenav and footer, at most one of each. — Guide: Regions",
+      "routes": "The pages of the application, one row per page. Add them before the navigation items that point at them. — Guide: Routes",
+      "modules": "Separately authored parts of the application whose routes appear under a base path. — Guide: Modules"
     }
   },
   "app_region": {
     "_self": "Region",
     "type": "Type",
     "navItems": "Nav Items",
-    "widgets": "Widgets"
+    "widgets": "Widgets",
+    "_tooltips": {
+      "type": "header (top), sidenav (navigation panel) or footer (bottom). Each type can be used once. — Guide: Regions",
+      "navItems": "The menu entries of the sidenav. Used only by the sidenav region. — Guide: Navigation items",
+      "widgets": "The widgets of the header or footer, laid out in one row in this order. Use a spacer to push the following ones to the right. — Guide: Header"
+    }
   },
   "app_route": {
     "_self": "Route",
@@ -44,12 +72,29 @@
     "documentSlug": "Document Slug",
     "entityName": "Entity Name",
     "entityMode": "Entity Mode",
-    "rsqlFilter": "Rsql Filter"
+    "rsqlFilter": "Rsql Filter",
+    "_tooltips": {
+      "path": "The page's address relative to the application, without a leading slash, e.g. claims/open. A :name segment is a parameter, e.g. claims/:id. — Guide: Routes",
+      "title": "The page's title. — Guide: Routes",
+      "translocoId": "Optional translation key of the title, shown instead of it in other languages. — Guide: Routes",
+      "icon": "A Material or FontAwesome icon name. — Guide: Routes",
+      "roles": "The roles allowed to open this page; empty means any signed-in member of your organization. Not enforced yet. — Guide: Roles",
+      "kind": "What the page shows: WIDGETS, ENTITY (generated list and form of an entity) or DOCUMENT. The fields below apply to the chosen kind only. — Guide: Routes",
+      "widgets": "WIDGETS only: the widgets of the page, shown one under the other in this order. — Guide: Widgets",
+      "documentSlug": "DOCUMENT only: the slug of the document to show. Not rendered yet. — Guide: Documents",
+      "entityName": "ENTITY only: the name of an entity defined under Entities; its list and form are generated for you. — Guide: Entities",
+      "entityMode": "ENTITY only: open on the list or on a record's details. Stored, not applied yet. — Guide: Entities",
+      "rsqlFilter": "ENTITY + LIST only: a pre-filter such as status==OPEN. Stored, not applied yet. — Guide: Entities"
+    }
   },
   "app_module_mount": {
     "_self": "Module Mount",
     "moduleKey": "Module Key",
-    "basePath": "Base Path"
+    "basePath": "Base Path",
+    "_tooltips": {
+      "moduleKey": "The Key of a module authored under Modules. — Guide: Modules",
+      "basePath": "The prefix the module's routes appear under: base path claims turns the module's route open into claims/open. — Guide: Modules"
+    }
   },
   "app_nav_item": {
     "_self": "Nav Item",
@@ -59,14 +104,29 @@
     "icon": "Icon",
     "routePath": "Route",
     "roles": "Roles",
-    "children": "Children"
+    "children": "Children",
+    "_tooltips": {
+      "id": "Unique identifier of the entry within the menu, e.g. nav-claims. — Guide: Navigation items",
+      "label": "The text of the menu entry. — Guide: Navigation items",
+      "translocoId": "Optional translation key of the label, shown instead of it in other languages. — Guide: Navigation items",
+      "icon": "A Material or FontAwesome icon name. — Guide: Navigation items",
+      "routePath": "The Path of the route this entry opens, exactly as written on the route. Leave empty to make the entry a group of its children. — Guide: Navigation items",
+      "roles": "The roles allowed to see this entry; empty means any signed-in member of your organization. Not enforced yet. — Guide: Roles",
+      "children": "The entries under a group entry. Only meaningful when Route is empty. — Guide: Navigation items"
+    }
   },
   "app_widget": {
     "_self": "Widget",
     "id": "Id",
     "type": "Type",
     "props": "Props",
-    "placement": "Placement"
+    "placement": "Placement",
+    "_tooltips": {
+      "id": "Unique within its page or region, e.g. widget-claims-grid. A container widget refers to other widgets by this id. — Guide: Widgets",
+      "type": "Which widget this is; only the widgets available in this installation are offered. — Guide: Widgets",
+      "props": "The widget's settings. The form adapts to the chosen type. — Guide: Widgets",
+      "placement": "STANDALONE: shown where it is listed. REFERENCED: shown only inside the container widget that lists its id. — Guide: Widgets"
+    }
   },
   "module_definition": {
     "_self": "Module",
@@ -77,10 +137,84 @@
     "translocoScope": "Transloco Scope",
     "version": "Version",
     "updatedAt": "Updated At",
-    "routes": "Routes"
+    "routes": "Routes",
+    "_tooltips": {
+      "id": "Unique within your organization; applications mount the module by this key. Must not change once the module is in use. — Guide: Modules",
+      "name": "The module's name. — Guide: Modules",
+      "translocoId": "Optional translation key of the name. — Guide: Modules",
+      "description": "A note for you and your fellow designers. — Guide: Modules",
+      "translocoScope": "The scope the module's translations are loaded under; empty means the Key. — Guide: Modules",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the module was last saved. Set by the system.",
+      "routes": "The module's pages. Their paths are relative to the base path the module is mounted at. — Guide: Modules"
+    }
   },
   "publish": {
     "button": "Publish",
     "tooltip": "Publish the saved definition: its version becomes the published version"
+  },
+  "concepts": {
+    "title": "How a dynamic application is put together",
+    "intro": "An <b>Application</b> in ProcessPuzzle is not programmed — it is <b>described</b>. Everything you enter here (the frame, the menu, the pages and what each page shows) is stored as data, and the application shell builds the running application from that description at run time. Changing the application means editing its definition and publishing it again; nothing has to be rebuilt or redeployed.",
+    "assembling": {
+      "title": "Assembling your application, step by step",
+      "body": "<ol><li><b>Create the application</b> — give it an Id and a Name.</li><li><b>Choose its look</b> — a Material theme, a colour scheme and a layout preset.</li><li><b>Add the pages</b> — one <b>Route</b> per page, and decide what each one renders: widgets, an entity or a document.</li><li><b>Build the frame</b> — add the <b>header</b>, <b>sidenav</b> and <b>footer</b> regions; fill the header and footer with widgets and the sidenav with navigation items pointing at your routes.</li><li><b>Check it</b> on the <b>Preview</b> tab.</li><li><b>Publish</b> it, so that users get the new version.</li></ol><p>Routes come before navigation on purpose: a navigation item points at a route by its path, so it is easiest to write once the route exists.</p>"
+    },
+    "application": {
+      "title": "Application",
+      "body": "<p>The top-level record that holds everything else. Its <b>Id</b> is unique within your organization and is used verbatim in the application's URL, so pick a short, lower-case, hyphenated value such as <code>claims-app</code> and avoid changing it later. The <b>Name</b> is what users see, for example in the <code>app-title</code> widget; the optional <b>Transloco Id</b> is a translation key used instead of the Name when the application is shown in other languages. The <b>Description</b> is for you and your fellow designers.</p>"
+    },
+    "theme": {
+      "title": "Theme",
+      "body": "<p>Decides the colours of the whole application.</p><ul><li><b>Material Theme</b> — <code>processpuzzle</code> is the brand look and the default; the others are Angular Material palettes, and each of them recolours the header, sidenav, cards and buttons as well.</li><li><b>Color Scheme</b> — light, dark, or auto (follows the user's operating system).</li><li><b>Logo Url</b> and <b>Favicon Url</b> — the images shown by the <code>app-logo</code> widget and in the browser tab.</li><li><b>Token Overrides</b> — fine-tuning on top of the theme: a <code>--pp-…</code> colour token and its value, e.g. <code>--pp-surface-sidenav</code> → <code>#0d1b2a</code>.</li></ul><p>What you choose here is the application's <i>default</i>. If you place a <code>themes-button</code> widget in the header, each user can pick a theme of their own, which is then remembered for them.</p>"
+    },
+    "layout": {
+      "title": "Layout",
+      "body": "<p>Decides where the regions sit around the pages.</p><ul><li><b>Layout Preset</b> — <code>sidenav-left</code> or <code>sidenav-right</code> put the navigation in a side panel; <code>top-nav</code> puts it in the header row instead.</li><li><b>Sidenav Mode</b> — <code>side</code> keeps the panel beside the page, <code>over</code> lays it over the page, <code>push</code> slides the page aside while the panel is open.</li><li><b>Sidenav Collapsible</b> / <b>Sidenav Open By Default</b> — whether users can close the panel, and whether it starts open.</li><li><b>Content Max Width</b> — a CSS length such as <code>1280px</code> that keeps pages readable on wide screens; empty means full width.</li></ul>"
+    },
+    "regions": {
+      "title": "Regions — the frame around the pages",
+      "body": "<p>A region is a fixed part of the screen that stays in place while users move between pages. There are three types, and an application has at most one of each: <b>header</b> (top), <b>sidenav</b> (the navigation panel) and <b>footer</b> (bottom). Header and footer contain <b>widgets</b>; the sidenav contains <b>navigation items</b>. The area in the middle is not a region: it shows whichever <b>route</b> the user is on. A region you leave out simply does not appear.</p>"
+    },
+    "header": {
+      "title": "Header",
+      "body": "<p>The bar across the top of the application. Its widgets are laid out in one row, left to right, in the order they are listed. Typical content is <code>app-logo</code> and <code>app-title</code> on the left, a <code>spacer</code> that pushes everything after it to the right, and a <code>themes-button</code> at the far right. The logo and title are ordinary widgets that read the application's Logo Url and Name, so you decide whether and where they appear. With the <code>top-nav</code> layout the navigation items are shown in the header row as well.</p>"
+    },
+    "footer": {
+      "title": "Footer",
+      "body": "<p>The bar across the bottom of the application. It works exactly like the header — a row of widgets in the order listed, with a <code>spacer</code> to push them apart — and is a good place for copyright notes, contact details or links. It stays at the bottom of the screen even when a page is short.</p>"
+    },
+    "navigation": {
+      "title": "Navigation items",
+      "body": "<p>The entries of the menu, added to the <b>sidenav</b> region. Each one has a <b>Label</b> (optionally translated through its <b>Transloco Id</b>), an <b>Icon</b> (a Material or FontAwesome icon name) and a <b>Route</b>: the <b>Path</b> of the route it opens, written exactly as on the route, e.g. <code>claims/open</code>. An item without a route is a <b>group</b>: it opens and closes the items you add under its <b>Children</b>, so menus can be nested. A path that names no route yet is only a warning — it may belong to a module that has not been written yet.</p>"
+    },
+    "routes": {
+      "title": "Routes — the pages",
+      "body": "<p>Every page of the application is a route.</p><ul><li><b>Path</b> — the page's address relative to the application, without a leading slash: <code>claims</code>, <code>claims/open</code>. A <code>:name</code> segment is a parameter, e.g. <code>claims/:id</code>.</li><li><b>Title</b>, <b>Transloco Id</b> and <b>Icon</b> — how the page is named and shown.</li><li><b>Renders</b> — what the page shows: <code>WIDGETS</code>, <code>ENTITY</code> or <code>DOCUMENT</code>. The fields below it apply to the chosen kind only.</li></ul><p>Routes are a flat list. You never nest them by hand: <code>claims</code> and <code>claims/open</code> are two separate entries, and the shell works out from their paths that one lies under the other.</p>"
+    },
+    "widgets": {
+      "title": "Widgets — the building blocks",
+      "body": "<p>A widget is a ready-made piece of user interface — a logo, a title, a spacer, a theme picker, a grid of entities, a document viewer and more. Widgets are used in the header and the footer, and on <code>WIDGETS</code> routes, where they are stacked one under the other. The order in the list is the order on the screen.</p><ul><li><b>Id</b> — unique within its page or region, e.g. <code>widget-claims-grid</code>.</li><li><b>Type</b> — which widget it is; only the widgets available in this installation are offered.</li><li><b>Props</b> — the widget's settings. The form adapts to the chosen type and shows only the settings that type understands.</li><li><b>Placement</b> — <code>STANDALONE</code> widgets are shown where they are listed. A container widget (such as a card grid) arranges other widgets by listing their ids in its props; mark those as <code>REFERENCED</code>, so they appear inside the container and not a second time on their own.</li></ul>"
+    },
+    "entities": {
+      "title": "Entities — data pages without design work",
+      "body": "<p>An <code>ENTITY</code> route shows one kind of business data — claims, customers, orders — without any page having to be designed. Set <b>Entity Name</b> to the name of an entity defined under <b>Entities</b> in the designer, and the framework generates a searchable list and a details form for it from the entity's attributes, together with the validation rules defined for it. From there users open, create, edit and delete records.</p><p><b>Entity Mode</b> (<code>LIST</code> or <code>DETAILS</code>) and <b>Rsql Filter</b> (a pre-filter such as <code>status==OPEN</code>) are stored with the route but not applied yet: the page currently always opens on the full list.</p>"
+    },
+    "documents": {
+      "title": "Documents",
+      "body": "<p>A <code>DOCUMENT</code> route shows a document — content composed of text, images, data values and widgets, authored in the <b>Documents</b> designer. Set <b>Document Slug</b> to the slug of the document. Rendering a document as a page is not available yet, so the Preview shows a short notice in its place; to show document content today, use a <code>WIDGETS</code> route with a <code>document-viewer</code> widget.</p>"
+    },
+    "modules": {
+      "title": "Modules",
+      "body": "<p>A larger application can be split into <b>modules</b>. A module is authored separately, under <b>Modules</b>, and holds routes of its own; its <b>Key</b> must not change once the module is in use. An application includes a module through a <b>Module Mount</b>: <b>Module Key</b> names the module, and <b>Base Path</b> is the prefix its routes appear under — mounting a module under <code>claims</code> turns its route <code>open</code> into <code>claims/open</code>. A module cannot mount other modules; one level is all there is.</p>"
+    },
+    "roles": {
+      "title": "Roles",
+      "body": "<p>Routes and navigation items can name the <b>Roles</b> allowed to use them. Leaving the list empty means any signed-in member of your organization. Roles are stored with the definition, but the Preview does not restrict anything by them yet.</p>"
+    },
+    "lifecycle": {
+      "title": "Save, preview and publish",
+      "body": "<p>A new application starts as a <b>Draft</b>. <b>Save</b> stores your changes; the <b>Preview</b> tab then shows the saved definition exactly as the running application renders it, theme included — check it there before going further. <b>Publish</b> makes the saved version the <b>Published Version</b>, the one users get. You can keep editing and saving afterwards; users see the changes only once you publish again.</p>"
+    }
   }
 }

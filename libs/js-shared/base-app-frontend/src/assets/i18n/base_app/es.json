@@ -24,13 +24,41 @@
     "modules": "Módulos",
     "tabs": {
       "preview": "{{ entity }} - vista previa"
+    },
+    "_tooltips": {
+      "id": "Único dentro de tu organización y se usa tal cual en la URL de la aplicación. Corto, en minúsculas y con guiones, p. ej. claims-app; evita cambiarlo más adelante. — Guía: Aplicación",
+      "name": "El nombre de la aplicación tal como lo ven los usuarios, p. ej. en el widget app-title. — Guía: Aplicación",
+      "translocoId": "Clave de traducción opcional; si se indica, se muestra en lugar del Nombre en otros idiomas. — Guía: Aplicación",
+      "description": "Una nota para ti y los demás diseñadores; los usuarios no la ven. — Guía: Aplicación",
+      "status": "DRAFT hasta que se publica la definición, PUBLISHED a partir de entonces. Lo establece el sistema. — Guía: Guardar, previsualizar y publicar",
+      "version": "Aumenta con cada guardado. Lo establece el sistema. — Guía: Guardar, previsualizar y publicar",
+      "publishedVersion": "La versión que reciben actualmente los usuarios. Solo cambia cuando pulsas Publicar. — Guía: Guardar, previsualizar y publicar",
+      "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
+      "materialTheme": "La paleta de colores de toda la aplicación. processpuzzle es el aspecto de la marca; las demás también cambian el color del encabezado, el menú lateral, las tarjetas y los botones. — Guía: Tema",
+      "colorScheme": "Claro, oscuro o automático (sigue el sistema operativo del usuario). — Guía: Tema",
+      "logoUrl": "Dirección de la imagen del logotipo que muestra el widget app-logo. — Guía: Tema",
+      "faviconUrl": "Dirección del icono pequeño que se muestra en la pestaña del navegador. — Guía: Tema",
+      "tokenOverrides": "Ajustes finos sobre el tema: un token de color --pp-… y su valor, p. ej. --pp-surface-sidenav = #0d1b2a. — Guía: Tema",
+      "preset": "Dónde se sitúa la navegación: en un panel lateral a la izquierda o a la derecha, o en la fila del encabezado (top-nav). — Guía: Diseño",
+      "sidenavMode": "side: panel junto a la página · over: panel sobre la página · push: la página se desplaza a un lado mientras el panel está abierto. — Guía: Diseño",
+      "contentMaxWidth": "Ancho máximo de las páginas como longitud CSS, p. ej. 1280px; vacío significa ancho completo. — Guía: Diseño",
+      "sidenavCollapsible": "Si los usuarios pueden cerrar el panel de navegación. — Guía: Diseño",
+      "sidenavOpenByDefault": "Si el panel de navegación empieza abierto. — Guía: Diseño",
+      "regions": "El marco alrededor de las páginas: header, sidenav y footer, como máximo uno de cada. — Guía: Regiones",
+      "routes": "Las páginas de la aplicación, una fila por página. Añádelas antes que los elementos de navegación que apuntan a ellas. — Guía: Rutas",
+      "modules": "Partes de la aplicación creadas por separado cuyas rutas aparecen bajo una ruta base. — Guía: Módulos"
     }
   },
   "app_region": {
     "_self": "Región",
     "type": "Tipo",
     "navItems": "Elementos de navegación",
-    "widgets": "Widgets"
+    "widgets": "Widgets",
+    "_tooltips": {
+      "type": "header (arriba), sidenav (panel de navegación) o footer (abajo). Cada tipo puede usarse una vez. — Guía: Regiones",
+      "navItems": "Las entradas de menú del sidenav. Solo las usa la región sidenav. — Guía: Elementos de navegación",
+      "widgets": "Los widgets del encabezado o del pie de página, colocados en una fila en este orden. Usa un spacer para desplazar los siguientes a la derecha. — Guía: Encabezado"
+    }
   },
   "app_route": {
     "_self": "Ruta",
@@ -44,12 +72,29 @@
     "documentSlug": "Slug del documento",
     "entityName": "Nombre de la entidad",
     "entityMode": "Modo de la entidad",
-    "rsqlFilter": "Filtro RSQL"
+    "rsqlFilter": "Filtro RSQL",
+    "_tooltips": {
+      "path": "La dirección de la página relativa a la aplicación, sin barra inicial, p. ej. claims/open. Un segmento :name es un parámetro, p. ej. claims/:id. — Guía: Rutas",
+      "title": "El título de la página. — Guía: Rutas",
+      "translocoId": "Clave de traducción opcional del título; se muestra en su lugar en otros idiomas. — Guía: Rutas",
+      "icon": "Nombre de un icono de Material o FontAwesome. — Guía: Rutas",
+      "roles": "Los roles que pueden abrir esta página; vacío significa cualquier miembro de tu organización que haya iniciado sesión. Aún no se aplica. — Guía: Roles",
+      "kind": "Lo que muestra la página: WIDGETS, ENTITY (lista y formulario generados de una entidad) o DOCUMENT. Los campos de abajo solo se aplican al tipo elegido. — Guía: Rutas",
+      "widgets": "Solo WIDGETS: los widgets de la página, mostrados uno debajo de otro en este orden. — Guía: Widgets",
+      "documentSlug": "Solo DOCUMENT: el slug del documento que se muestra. Aún no se renderiza. — Guía: Documentos",
+      "entityName": "Solo ENTITY: el nombre de una entidad definida en Entidades; su lista y su formulario se generan automáticamente. — Guía: Entidades",
+      "entityMode": "Solo ENTITY: abrir en la lista o en los detalles de un registro. Se guarda, pero aún no se aplica. — Guía: Entidades",
+      "rsqlFilter": "Solo ENTITY + LIST: un filtro previo como status==OPEN. Se guarda, pero aún no se aplica. — Guía: Entidades"
+    }
   },
   "app_module_mount": {
     "_self": "Montaje de módulo",
     "moduleKey": "Clave del módulo",
-    "basePath": "Ruta base"
+    "basePath": "Ruta base",
+    "_tooltips": {
+      "moduleKey": "La Clave de un módulo creado en Módulos. — Guía: Módulos",
+      "basePath": "El prefijo bajo el que aparecen las rutas del módulo: la ruta base claims convierte la ruta open del módulo en claims/open. — Guía: Módulos"
+    }
   },
   "app_nav_item": {
     "_self": "Elemento de navegación",
@@ -59,14 +104,29 @@
     "icon": "Icono",
     "routePath": "Ruta",
     "roles": "Roles",
-    "children": "Elementos hijos"
+    "children": "Elementos hijos",
+    "_tooltips": {
+      "id": "Identificador único de la entrada dentro del menú, p. ej. nav-claims. — Guía: Elementos de navegación",
+      "label": "El texto de la entrada de menú. — Guía: Elementos de navegación",
+      "translocoId": "Clave de traducción opcional de la etiqueta; se muestra en su lugar en otros idiomas. — Guía: Elementos de navegación",
+      "icon": "Nombre de un icono de Material o FontAwesome. — Guía: Elementos de navegación",
+      "routePath": "La Ruta de acceso de la ruta que abre esta entrada, exactamente como está escrita en la ruta. Déjalo vacío para que la entrada agrupe a sus hijos. — Guía: Elementos de navegación",
+      "roles": "Los roles que pueden ver esta entrada; vacío significa cualquier miembro de tu organización que haya iniciado sesión. Aún no se aplica. — Guía: Roles",
+      "children": "Las entradas bajo una entrada de grupo. Solo tiene sentido cuando Ruta está vacío. — Guía: Elementos de navegación"
+    }
   },
   "app_widget": {
     "_self": "Widget",
     "id": "Id",
     "type": "Tipo",
     "props": "Propiedades",
-    "placement": "Ubicación"
+    "placement": "Ubicación",
+    "_tooltips": {
+      "id": "Único dentro de su página o región, p. ej. widget-claims-grid. Un widget contenedor hace referencia a otros widgets mediante este id. — Guía: Widgets",
+      "type": "Qué widget es; solo se ofrecen los widgets disponibles en esta instalación. — Guía: Widgets",
+      "props": "La configuración del widget. El formulario se adapta al tipo elegido. — Guía: Widgets",
+      "placement": "STANDALONE: se muestra donde aparece en la lista. REFERENCED: se muestra solo dentro del widget contenedor que incluye su id. — Guía: Widgets"
+    }
   },
   "module_definition": {
     "_self": "Módulo",
@@ -77,10 +137,84 @@
     "translocoScope": "Ámbito de Transloco",
     "version": "Versión",
     "updatedAt": "Actualizado el",
-    "routes": "Rutas"
+    "routes": "Rutas",
+    "_tooltips": {
+      "id": "Única dentro de tu organización; las aplicaciones montan el módulo mediante esta clave. No debe cambiar una vez que el módulo está en uso. — Guía: Módulos",
+      "name": "El nombre del módulo. — Guía: Módulos",
+      "translocoId": "Clave de traducción opcional del nombre. — Guía: Módulos",
+      "description": "Una nota para ti y los demás diseñadores. — Guía: Módulos",
+      "translocoScope": "El ámbito bajo el que se cargan las traducciones del módulo; vacío significa la Clave. — Guía: Módulos",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó el módulo por última vez. Lo establece el sistema.",
+      "routes": "Las páginas del módulo. Sus rutas de acceso son relativas a la ruta base en la que se monta el módulo. — Guía: Módulos"
+    }
   },
   "publish": {
     "button": "Publicar",
     "tooltip": "Publica la definición guardada: su versión pasa a ser la versión publicada"
+  },
+  "concepts": {
+    "title": "Cómo se construye una aplicación dinámica",
+    "intro": "En ProcessPuzzle, una <b>Aplicación</b> no se programa: se <b>describe</b>. Todo lo que introduces aquí (el marco, el menú, las páginas y lo que muestra cada una) se guarda como datos, y el shell de la aplicación construye la aplicación en funcionamiento a partir de esa descripción en tiempo de ejecución. Para cambiar la aplicación basta con editar su definición y volver a publicarla; no hay que recompilar ni volver a desplegar nada.",
+    "assembling": {
+      "title": "Cómo montar tu aplicación, paso a paso",
+      "body": "<ol><li><b>Crea la aplicación</b>: dale un Id y un Nombre.</li><li><b>Elige su aspecto</b>: un tema de Material, un esquema de color y una plantilla de diseño.</li><li><b>Añade las páginas</b>: una <b>Ruta</b> por página, y decide qué muestra cada una: widgets, una entidad o un documento.</li><li><b>Construye el marco</b>: añade las regiones de <b>encabezado</b>, <b>menú lateral</b> y <b>pie de página</b>; llena el encabezado y el pie de página con widgets, y el menú lateral con elementos de navegación que apunten a tus rutas.</li><li><b>Compruébala</b> en la pestaña <b>Vista previa</b>.</li><li><b>Publícala</b>, para que los usuarios reciban la nueva versión.</li></ol><p>Las rutas van antes que la navegación a propósito: un elemento de navegación apunta a una ruta mediante su ruta de acceso, así que es más fácil escribirlo cuando la ruta ya existe.</p>"
+    },
+    "application": {
+      "title": "Aplicación",
+      "body": "<p>El registro principal que contiene todo lo demás. Su <b>Id</b> es único dentro de tu organización y se usa tal cual en la URL de la aplicación, así que elige un valor corto, en minúsculas y con guiones, como <code>claims-app</code>, y evita cambiarlo más adelante. El <b>Nombre</b> es lo que ven los usuarios, por ejemplo en el widget <code>app-title</code>; el <b>Id de Transloco</b> opcional es una clave de traducción que se usa en lugar del Nombre cuando la aplicación se muestra en otros idiomas. La <b>Descripción</b> es para ti y para los demás diseñadores.</p>"
+    },
+    "theme": {
+      "title": "Tema",
+      "body": "<p>Define los colores de toda la aplicación.</p><ul><li><b>Tema de Material</b>: <code>processpuzzle</code> es el aspecto de la marca y el valor predeterminado; los demás son paletas de Angular Material, y cada una de ellas cambia también el color del encabezado, el menú lateral, las tarjetas y los botones.</li><li><b>Esquema de color</b>: claro, oscuro o automático (sigue el sistema operativo del usuario).</li><li><b>URL del logotipo</b> y <b>URL del favicon</b>: las imágenes que muestra el widget <code>app-logo</code> y la pestaña del navegador.</li><li><b>Sobrescrituras de tokens</b>: ajustes finos sobre el tema: un token de color <code>--pp-…</code> y su valor, p. ej. <code>--pp-surface-sidenav</code> → <code>#0d1b2a</code>.</li></ul><p>Lo que elijas aquí es el tema <i>predeterminado</i> de la aplicación. Si colocas un widget <code>themes-button</code> en el encabezado, cada usuario podrá elegir su propio tema, que se recordará para él.</p>"
+    },
+    "layout": {
+      "title": "Diseño",
+      "body": "<p>Define dónde se sitúan las regiones alrededor de las páginas.</p><ul><li><b>Plantilla de diseño</b>: <code>sidenav-left</code> o <code>sidenav-right</code> colocan la navegación en un panel lateral; <code>top-nav</code> la coloca en cambio en la fila del encabezado.</li><li><b>Modo del menú lateral</b>: <code>side</code> mantiene el panel junto a la página, <code>over</code> lo superpone a la página y <code>push</code> desplaza la página a un lado mientras el panel está abierto.</li><li><b>Menú lateral plegable</b> / <b>Menú lateral abierto por defecto</b>: si los usuarios pueden cerrar el panel y si empieza abierto.</li><li><b>Ancho máximo del contenido</b>: una longitud CSS como <code>1280px</code> que mantiene las páginas legibles en pantallas anchas; si se deja vacío, se usa todo el ancho.</li></ul>"
+    },
+    "regions": {
+      "title": "Regiones: el marco alrededor de las páginas",
+      "body": "<p>Una región es una parte fija de la pantalla que permanece en su sitio mientras los usuarios pasan de una página a otra. Hay tres tipos, y una aplicación tiene como máximo una de cada: <b>encabezado</b> (arriba), <b>menú lateral</b> (el panel de navegación) y <b>pie de página</b> (abajo). El encabezado y el pie de página contienen <b>widgets</b>; el menú lateral contiene <b>elementos de navegación</b>. La zona central no es una región: muestra la <b>ruta</b> en la que se encuentre el usuario. Una región que no añadas simplemente no aparece.</p>"
+    },
+    "header": {
+      "title": "Encabezado",
+      "body": "<p>La barra que recorre la parte superior de la aplicación. Sus widgets se colocan en una fila, de izquierda a derecha, en el orden en que aparecen en la lista. Lo habitual es poner <code>app-logo</code> y <code>app-title</code> a la izquierda, un <code>spacer</code> que empuja todo lo que va después hacia la derecha y un <code>themes-button</code> en el extremo derecho. El logotipo y el título son widgets normales que leen la URL del logotipo y el Nombre de la aplicación, así que tú decides si aparecen y dónde. Con el diseño <code>top-nav</code>, los elementos de navegación también se muestran en la fila del encabezado.</p>"
+    },
+    "footer": {
+      "title": "Pie de página",
+      "body": "<p>La barra que recorre la parte inferior de la aplicación. Funciona exactamente igual que el encabezado (una fila de widgets en el orden de la lista, con un <code>spacer</code> para separarlos) y es un buen lugar para avisos de copyright, datos de contacto o enlaces. Se queda en la parte inferior de la pantalla incluso cuando la página es corta.</p>"
+    },
+    "navigation": {
+      "title": "Elementos de navegación",
+      "body": "<p>Las entradas del menú, que se añaden a la región de <b>menú lateral</b>. Cada una tiene una <b>Etiqueta</b> (que puede traducirse mediante su <b>Id de Transloco</b>), un <b>Icono</b> (el nombre de un icono de Material o FontAwesome) y una <b>Ruta</b>: la <b>Ruta de acceso</b> de la ruta que abre, escrita exactamente igual que en la ruta, p. ej. <code>claims/open</code>. Un elemento sin ruta es un <b>grupo</b>: abre y cierra los elementos que añadas en sus <b>Elementos hijos</b>, de modo que los menús pueden anidarse. Una ruta de acceso que todavía no corresponde a ninguna ruta solo genera un aviso: puede pertenecer a un módulo que aún no se ha creado.</p>"
+    },
+    "routes": {
+      "title": "Rutas: las páginas",
+      "body": "<p>Cada página de la aplicación es una ruta.</p><ul><li><b>Ruta de acceso</b>: la dirección de la página relativa a la aplicación, sin barra inicial: <code>claims</code>, <code>claims/open</code>. Un segmento <code>:name</code> es un parámetro, p. ej. <code>claims/:id</code>.</li><li><b>Título</b>, <b>Id de Transloco</b> e <b>Icono</b>: cómo se llama y cómo se muestra la página.</li><li><b>Muestra</b>: lo que muestra la página: <code>WIDGETS</code>, <code>ENTITY</code> o <code>DOCUMENT</code>. Los campos que aparecen debajo solo se aplican al tipo elegido.</li></ul><p>Las rutas forman una lista plana. Nunca se anidan a mano: <code>claims</code> y <code>claims/open</code> son dos entradas distintas, y el shell deduce de sus rutas de acceso que una está dentro de la otra.</p>"
+    },
+    "widgets": {
+      "title": "Widgets: las piezas de construcción",
+      "body": "<p>Un widget es una pieza de interfaz de usuario ya preparada: un logotipo, un título, un espaciador, un selector de tema, una cuadrícula de entidades, un visor de documentos y mucho más. Los widgets se usan en el encabezado y en el pie de página, y en las rutas <code>WIDGETS</code>, donde se apilan uno debajo de otro. El orden de la lista es el orden en la pantalla.</p><ul><li><b>Id</b>: único dentro de su página o región, p. ej. <code>widget-claims-grid</code>.</li><li><b>Tipo</b>: qué widget es; solo se ofrecen los widgets disponibles en esta instalación.</li><li><b>Propiedades</b>: la configuración del widget. El formulario se adapta al tipo elegido y muestra solo las opciones que ese tipo entiende.</li><li><b>Ubicación</b>: los widgets <code>STANDALONE</code> se muestran donde aparecen en la lista. Un widget contenedor (como una cuadrícula de tarjetas) organiza otros widgets indicando sus ids en sus propiedades; márcalos como <code>REFERENCED</code> para que aparezcan dentro del contenedor y no una segunda vez por separado.</li></ul>"
+    },
+    "entities": {
+      "title": "Entidades: páginas de datos sin trabajo de diseño",
+      "body": "<p>Una ruta <code>ENTITY</code> muestra un tipo de datos de negocio (reclamaciones, clientes, pedidos) sin necesidad de diseñar ninguna página. Indica en <b>Nombre de la entidad</b> el nombre de una entidad definida en <b>Entidades</b> dentro del diseñador, y el framework genera para ella una lista con búsqueda y un formulario de detalle a partir de los atributos de la entidad, junto con las reglas de validación definidas para ella. Desde ahí, los usuarios abren, crean, editan y eliminan registros.</p><p>El <b>Modo de la entidad</b> (<code>LIST</code> o <code>DETAILS</code>) y el <b>Filtro RSQL</b> (un filtro previo como <code>status==OPEN</code>) se guardan con la ruta, pero todavía no se aplican: por ahora, la página siempre se abre con la lista completa.</p>"
+    },
+    "documents": {
+      "title": "Documentos",
+      "body": "<p>Una ruta <code>DOCUMENT</code> muestra un documento: contenido compuesto de texto, imágenes, valores de datos y widgets, creado en el diseñador de <b>Documentos</b>. Indica en <b>Slug del documento</b> el slug del documento. Todavía no es posible mostrar un documento como página, así que la vista previa muestra un breve aviso en su lugar; para mostrar hoy el contenido de un documento, usa una ruta <code>WIDGETS</code> con un widget <code>document-viewer</code>.</p>"
+    },
+    "modules": {
+      "title": "Módulos",
+      "body": "<p>Una aplicación grande puede dividirse en <b>módulos</b>. Un módulo se crea por separado, en <b>Módulos</b>, y tiene sus propias rutas; su <b>Clave</b> no debe cambiar una vez que el módulo está en uso. Una aplicación incluye un módulo mediante un <b>Montaje de módulo</b>: la <b>Clave del módulo</b> indica el módulo, y la <b>Ruta base</b> es el prefijo bajo el que aparecen sus rutas; al montar un módulo bajo <code>claims</code>, su ruta <code>open</code> se convierte en <code>claims/open</code>. Un módulo no puede montar otros módulos: solo existe un nivel.</p>"
+    },
+    "roles": {
+      "title": "Roles",
+      "body": "<p>Las rutas y los elementos de navegación pueden indicar los <b>Roles</b> que pueden usarlos. Si dejas la lista vacía, cualquier miembro de tu organización que haya iniciado sesión puede usarlos. Los roles se guardan con la definición, pero la vista previa todavía no aplica ninguna restricción según ellos.</p>"
+    },
+    "lifecycle": {
+      "title": "Guardar, previsualizar y publicar",
+      "body": "<p>Una aplicación nueva empieza como <b>Borrador</b>. <b>Guardar</b> almacena tus cambios; después, la pestaña <b>Vista previa</b> muestra la definición guardada exactamente como la muestra la aplicación en funcionamiento, tema incluido: compruébala ahí antes de seguir. <b>Publicar</b> convierte la versión guardada en la <b>Versión publicada</b>, la que reciben los usuarios. Puedes seguir editando y guardando después; los usuarios solo verán los cambios cuando vuelvas a publicar.</p>"
+    }
   }
 }

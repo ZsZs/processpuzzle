@@ -1,4 +1,6 @@
-import { inject, Injectable, Signal, Type, ViewContainerRef } from '@angular/core';
+import { DirectiveWithBindings, inject, Injectable, inputBinding, Signal, Type, ViewContainerRef } from '@angular/core';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TranslocoService } from '@jsverse/transloco';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
@@ -24,6 +26,7 @@ import { NGXLogger } from 'ngx-logging-kit';
 import { LookupComponent } from './lookup/lookup.component';
 import { TitleComponent } from './title/title.component';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
+import { translateLabel } from '../i18n/entity-label.pipe';
 
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
@@ -50,6 +53,8 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
 @Injectable({ providedIn: 'root' })
 export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   private readonly logger = inject(NGXLogger);
+  // Optional so a host without transloco still gets a working form — its tooltips fall back to `description`.
+  private readonly transloco = inject(TranslocoService, { optional: true });
 
   // region public methods
   public buildForm(
@@ -71,11 +76,13 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
           const currentAttrValue = initialValues != null && Object.hasOwn(initialValues, column.attrName) ? initialValues[column.attrName] : Reflect.get(entity(), column.attrName);
           baseEntityForm.addControl(column.attrName, this.createFormControlFor(column, currentAttrValue));
 
-          const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType);
-          componentRef.setInput('config', column);
-          componentRef.setInput('entity', entity());
-          componentRef.setInput('entityName', entityName);
-          componentRef.setInput('value', currentAttrValue);
+          // Inputs as bindings rather than `setInput`: Angular refuses `setInput` on a component created with
+          // binding functions, and the tooltip directive needs those. Each is a snapshot taken here, as before.
+          const currentEntity = entity();
+          const componentRef = viewContainerRef.createComponent<BaseFormControlComponent<Entity>>(formControlType, {
+            bindings: [inputBinding('config', () => column), inputBinding('entity', () => currentEntity), inputBinding('entityName', () => entityName), inputBinding('value', () => currentAttrValue)],
+            directives: this.tooltipFor(column),
+          });
           componentRef.instance.formGroup = baseEntityForm;
           componentRef.instance.store = store;
           componentRef.instance.formBuilder = this;
@@ -96,6 +103,24 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   // endregion
 
   // region protected, private helper methods
+  /**
+   * The tooltip of one control, attached to the control's host element so that every control type — the
+   * ones base-entity ships and the CUSTOM ones it cannot know — gets it without a template change.
+   *
+   * The message is read from {@link AbstractAttrDescriptor.tooltipI18nKey}, falling back to the
+   * descriptor's `description` (which is also what an entity authored as metadata carries). The binding is a
+   * getter, re-read on every change detection, so a language switch or a lazily-loaded scope shows up without
+   * rebuilding the form. An attribute with neither a key nor a description gets no tooltip directive at all;
+   * an empty message is one MatTooltip never opens.
+   */
+  private tooltipFor(column: BaseEntityAttrDescriptor): DirectiveWithBindings<MatTooltip>[] {
+    const key = column.tooltipI18nKey();
+    const fallback = column.description ?? '';
+    if (!key && !fallback) return [];
+    const message = () => (this.transloco ? translateLabel(this.transloco, key, fallback) : fallback);
+    return [{ type: MatTooltip, bindings: [inputBinding('matTooltip', message), inputBinding('matTooltipPosition', () => 'above'), inputBinding('matTooltipShowDelay', () => 500)] }];
+  }
+
   private createFormControlFor(column: BaseEntityAttrDescriptor, currentAttrValue: unknown): AbstractControl {
     const validators = [];
     if (column.required) validators.push(Validators.required);
