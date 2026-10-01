@@ -8,10 +8,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -145,6 +152,56 @@ class LoggingAspectTest {
                 .orElseThrow();
         assertThat(errorEvent.getFormattedMessage()).isEqualTo("✗ PlainService.explode threw IllegalStateException");
         assertThat(errorEvent.getThrowableProxy().getMessage()).isEqualTo("boom");
+    }
+
+    @Test
+    void exceptionAnAdviceAnswers_isASingleWarnLine() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConflictAdvice.class)) {
+            PlainService proxy = proxy(new PlainService(), new HandledExceptionClassifier(context));
+            plainLogger.setLevel(Level.INFO);
+
+            Throwable thrown = catchThrowable(proxy::conflict);
+
+            assertThat(thrown).isInstanceOf(ConflictException.class);
+            assertThat(plainAppender.list).noneMatch(e -> e.getLevel() == Level.ERROR);
+            ILoggingEvent warnEvent = plainAppender.list.stream().filter(e -> e.getLevel() == Level.WARN).findFirst().orElseThrow();
+            assertThat(warnEvent.getFormattedMessage()).isEqualTo("✗ PlainService.conflict threw ConflictException: taken");
+            assertThat(warnEvent.getThrowableProxy()).isNull();
+        }
+    }
+
+    @Test
+    void exceptionAnAdviceAnswers_carriesItsStackTraceAtDebug() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConflictAdvice.class)) {
+            PlainService proxy = proxy(new PlainService(), new HandledExceptionClassifier(context));
+
+            catchThrowable(proxy::conflict);
+
+            ILoggingEvent warnEvent = plainAppender.list.stream().filter(e -> e.getLevel() == Level.WARN).findFirst().orElseThrow();
+            assertThat(warnEvent.getThrowableProxy().getMessage()).isEqualTo("taken");
+        }
+    }
+
+    @Test
+    void exceptionNoAdviceClaims_staysAnError() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConflictAdvice.class)) {
+            PlainService proxy = proxy(new PlainService(), new HandledExceptionClassifier(context));
+
+            catchThrowable(proxy::explode);
+
+            assertThat(plainAppender.list).anyMatch(e -> e.getLevel() == Level.ERROR);
+            assertThat(plainAppender.list).noneMatch(e -> e.getLevel() == Level.WARN);
+        }
+    }
+
+    @Test
+    void exceptionDeclaringItsOwn4xx_isAWarnWithoutAnyContext() {
+        PlainService proxy = proxy(new PlainService());
+
+        catchThrowable(proxy::notFound);
+
+        assertThat(plainAppender.list).noneMatch(e -> e.getLevel() == Level.ERROR);
+        assertThat(plainAppender.list).anyMatch(e -> e.getLevel() == Level.WARN);
     }
 
     @Test
@@ -298,8 +355,13 @@ class LoggingAspectTest {
 
     @SuppressWarnings("unchecked")
     private static <T> T proxy(T target) {
+        return proxy(target, new HandledExceptionClassifier(null));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T proxy(T target, HandledExceptionClassifier classifier) {
         AspectJProxyFactory factory = new AspectJProxyFactory(target);
-        factory.addAspect(new LoggingAspect());
+        factory.addAspect(new LoggingAspect(new ObjectMapper(), classifier));
         return (T) factory.getProxy();
     }
 
@@ -333,6 +395,30 @@ class LoggingAspectTest {
         @LogMethod
         public void explode() {
             throw new IllegalStateException("boom");
+        }
+
+        @LogMethod
+        public void conflict() {
+            throw new ConflictException("taken");
+        }
+
+        @LogMethod
+        public void notFound() {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "nothing here");
+        }
+    }
+
+    static class ConflictException extends RuntimeException {
+        ConflictException(String message) {
+            super(message);
+        }
+    }
+
+    @RestControllerAdvice
+    static class ConflictAdvice {
+        @ExceptionHandler(ConflictException.class)
+        ResponseEntity<String> handle(ConflictException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
         }
     }
 

@@ -1,6 +1,8 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.domain.AppDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.model.ModuleDefinition;
@@ -79,6 +81,8 @@ class DefaultAppLoaderTest {
                     "version-button");
 
     private AppEndpoint endpoint;
+    private AppDefinitionRepository appRepository;
+    private ModuleDefinitionRepository moduleRepository;
     private ResourcePatternResolver resourceResolver;
     private Set<String> knownTenants;
     private ObjectProvider<TenantDirectory> tenantDirectoryProvider;
@@ -88,6 +92,8 @@ class DefaultAppLoaderTest {
     @SuppressWarnings("unchecked")
     void setUp() throws IOException {
         endpoint = mock(AppEndpoint.class);
+        appRepository = mock(AppDefinitionRepository.class);
+        moduleRepository = mock(ModuleDefinitionRepository.class);
         resourceResolver = mock(ResourcePatternResolver.class);
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { bundledTestbedFile() });
         knownTenants = new HashSet<>(Set.of(TESTBED_KEY, "other-org"));
@@ -100,7 +106,7 @@ class DefaultAppLoaderTest {
         });
         when(endpoint.createAppDefinition(anyString(), any())).thenAnswer(call -> created(call.getArgument(1)));
         when(endpoint.createModuleDefinition(anyString(), any())).thenAnswer(call -> createdModule(call.getArgument(1)));
-        loader = new DefaultAppLoader(endpoint, tenantDirectoryProvider, resourceResolver);
+        loader = new DefaultAppLoader(endpoint, appRepository, moduleRepository, tenantDirectoryProvider, resourceResolver);
     }
 
     @Test
@@ -147,6 +153,17 @@ class DefaultAppLoaderTest {
                 .when(endpoint).createAppDefinition(anyString(), any());
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aDefinitionAlreadyInTheRepository_neverReachesTheEndpoint() {
+        when(appRepository.existsByOrgKeyAndId(TESTBED_KEY, "demo")).thenReturn(true);
+        when(moduleRepository.existsByOrgKeyAndKey(TESTBED_KEY, "order-admin")).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createAppDefinition(anyString(), any());
+        verify(endpoint, never()).createModuleDefinition(anyString(), any());
     }
 
     @Test
