@@ -29,13 +29,13 @@ export const APP_CONCEPTS = [
 ] as const;
 export type AppConcept = (typeof APP_CONCEPTS)[number];
 
-/** Element id of a concept's section; append it as the URL fragment of the list page to land on it. */
+/** Element id of a concept's section; append it as the URL fragment of a page hosting the guide. */
 export function appConceptAnchor(concept: AppConcept): string {
   return `app-concept-${concept}`;
 }
 
 /**
- * The guide shown under the App Definition list: what a dynamic application is made of and how the
+ * The guide hosted by the application samples page: what a dynamic application is made of and how the
  * pieces relate, written for the person assembling one rather than for a developer.
  *
  * The bodies are translation values carrying a little inline markup (`<b>`, `<code>`, `<ul>`), bound

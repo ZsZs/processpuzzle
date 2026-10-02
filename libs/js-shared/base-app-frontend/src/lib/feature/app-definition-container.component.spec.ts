@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
@@ -72,15 +72,6 @@ describe('AppDefinitionContainerComponent', () => {
     expect(component.canPublish()).toBe(true);
     await component.onPublish();
     expect(storeStub.publish).toHaveBeenCalledWith('demo');
-  });
-
-  it('shows the concepts guide only under the list', async () => {
-    const { component } = await setup();
-    const route = TestBed.inject(ActivatedRoute) as { firstChild: unknown };
-
-    expect(component.isListPage()).toBe(false);
-    Object.defineProperty(route, 'firstChild', { value: { routeConfig: { path: 'list' } } });
-    expect(component['childIsList']()).toBe(true);
   });
 
   it('keeps Publish disabled while a request is in flight', async () => {

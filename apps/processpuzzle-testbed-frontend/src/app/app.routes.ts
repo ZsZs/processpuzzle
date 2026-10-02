@@ -309,7 +309,7 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./content/base-apps/samples.component').then((comp) => comp.SamplesComponent),
         // `BASE_APP_ROUTES` brings the whole `app-definition` branch — the routable definition plus the
         // four embedded levels below it — and declares its own transloco scopes, so nothing is added here.
-        children: BASE_APP_ROUTES,
+        children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES],
       },
     ],
   },
