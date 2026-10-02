@@ -24,7 +24,7 @@ public class HandledExceptionClassifier {
 
     /** {@code null} outside a Spring context, where only a self-declared 4xx counts as handled. */
     private final ApplicationContext context;
-    private volatile List<Advice> advices;
+    private List<Advice> advices;
 
     public HandledExceptionClassifier(ApplicationContext context) {
         this.context = context;
@@ -44,7 +44,7 @@ public class HandledExceptionClassifier {
     }
 
     /** Looked up on first use rather than at construction: the advices are not all registered that early. */
-    private List<Advice> advices() {
+    private synchronized List<Advice> advices() {
         List<Advice> resolved = advices;
         if (resolved == null) {
             if (context == null) {

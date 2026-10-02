@@ -104,12 +104,7 @@ public class LoggingAspect {
                 if (handledExceptions.isHandled(declaringType, throwable)) {
                     if (logger.isWarnEnabled()) {
                         setInvocationMdc(className, methodName, callId, parentCallId, depth);
-                        var event = logger.atLevel(Level.WARN);
-                        if (logger.isDebugEnabled()) {
-                            event = event.setCause(throwable);
-                        }
-                        event.log("{}✗ {}.{} threw {}: {}", indent, className, methodName,
-                                throwable.getClass().getSimpleName(), throwable.getMessage());
+                        logHandledException(logger, throwable, indent, className, methodName);
                     }
                 } else if (logger.isErrorEnabled()) {
                     setInvocationMdc(className, methodName, callId, parentCallId, depth);
@@ -135,6 +130,15 @@ public class LoggingAspect {
             }
             clearInvocationMdc();
         }
+    }
+
+    private void logHandledException(Logger logger, Throwable throwable, String indent, String className, String methodName) {
+        var event = logger.atLevel(Level.WARN);
+        if (logger.isDebugEnabled()) {
+            event = event.setCause(throwable);
+        }
+        event.log("{}✗ {}.{} threw {}: {}", indent, className, methodName,
+                throwable.getClass().getSimpleName(), throwable.getMessage());
     }
 
     private void setInvocationMdc(String className, String methodName, String callId, String parentCallId, int depth) {

@@ -189,8 +189,9 @@ class LoggingAspectTest {
 
             catchThrowable(proxy::explode);
 
-            assertThat(plainAppender.list).anyMatch(e -> e.getLevel() == Level.ERROR);
-            assertThat(plainAppender.list).noneMatch(e -> e.getLevel() == Level.WARN);
+            assertThat(plainAppender.list)
+                    .anyMatch(e -> e.getLevel() == Level.ERROR)
+                    .noneMatch(e -> e.getLevel() == Level.WARN);
         }
     }
 
@@ -200,8 +201,9 @@ class LoggingAspectTest {
 
         catchThrowable(proxy::notFound);
 
-        assertThat(plainAppender.list).noneMatch(e -> e.getLevel() == Level.ERROR);
-        assertThat(plainAppender.list).anyMatch(e -> e.getLevel() == Level.WARN);
+        assertThat(plainAppender.list)
+                .noneMatch(e -> e.getLevel() == Level.ERROR)
+                .anyMatch(e -> e.getLevel() == Level.WARN);
     }
 
     @Test
