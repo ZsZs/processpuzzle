@@ -12,7 +12,9 @@
     "isLinkToDetails": "Titre de l'enregistrement",
     "linkedEntityType": "Entité liée",
     "defaultValue": "Valeur par défaut",
-    "enumValues": "Valeurs d'énumération"
+    "enumValues": "Valeurs d'énumération",
+    "dateStyle": "Style de date",
+    "timeStyle": "Style d’heure"
   },
   "entity_definition": {
     "_self": "Définition d'entité",

@@ -571,6 +571,27 @@ components:
         libs/js-shared/base-entity-frontend FlexDirection).
       enum: [ CONTAINER, COLUMN, ROW ]
 
+    DateStyle:
+      type: string
+      description: Intl.DateTimeFormat dateStyle used to render the date part of a DATE / DATE_TIME attribute.
+      enum: [ none, short, medium, long, full ]
+
+    TimeStyle:
+      type: string
+      description: Intl.DateTimeFormat timeStyle used to render the time part of a DATE_TIME attribute.
+      enum: [ none, short, medium, long ]
+
+    AttributeDateFormat:
+      type: object
+      description: >-
+        Named display style of a DATE / DATE_TIME attribute, rendered at run time in the
+        active language. Omitted styles fall back to the value kind's default.
+      properties:
+        dateStyle:
+          $ref: '#/components/schemas/DateStyle'
+        timeStyle:
+          $ref: '#/components/schemas/TimeStyle'
+
     Selectable:
       type: object
       description: Key-value option for selectable controls (dropdown, radio, etc.).
@@ -621,6 +642,8 @@ components:
               type: string
             format:
               type: string
+            dateFormat:
+              $ref: '#/components/schemas/AttributeDateFormat'
             isLinkToDetails:
               type: boolean
               default: false
@@ -725,6 +748,8 @@ components:
           items:
             type: string
           description: Only meaningful when valueKind=ENUM.
+        dateFormat:
+          $ref: '#/components/schemas/AttributeDateFormat'
         linkedEntityType:
           type: string
           description: >

@@ -36,13 +36,6 @@ export function linkedFixtureAttrKey(entityName: string, attrName: string): stri
   return `${entityName}.${attrName}`;
 }
 
-function sameCalendarDay(a: string, b: string): boolean {
-  const da = new Date(a);
-  const db = new Date(b);
-  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
-  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
-}
-
 function expectOptions(context: ControlInteractionContext): { timeout?: number } | undefined {
   return context.expectTimeoutMs === undefined ? undefined : { timeout: context.expectTimeoutMs };
 }
@@ -242,30 +235,100 @@ class CheckboxControlTester extends ControlTester {
   }
 }
 
+type DateStyle = 'none' | 'short' | 'medium' | 'long' | 'full';
+type TimeStyle = 'none' | 'short' | 'medium' | 'long';
+type DateFormat = { dateStyle: DateStyle; timeStyle: TimeStyle };
+
+/**
+ * The language the page renders in: the locale segment its URL leads with, as `provideLocaleRouting` writes
+ * it. A URL without one is the default language, which the testbed and the biz applications both make `en`.
+ */
+function pageLang(page: Page): string {
+  const [first] = new URL(page.url()).pathname.split('/').filter((segment) => segment !== '');
+  return first && /^[a-z]{2}(-[A-Z]{2})?$/.test(first) ? first : 'en';
+}
+
+/**
+ * Formats a local date the way the page does, in the page itself rather than in Node, so the browser's ICU
+ * — the one the control rendered with — produces the expectation too.
+ */
+async function formatInPage(page: Page, value: string, options: Intl.DateTimeFormatOptions, lang: string): Promise<string> {
+  return page.evaluate(
+    ([text, intlOptions, locale]) => {
+      const [datePart, timePart = '00:00'] = (text as string).split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      return new Intl.DateTimeFormat(locale as string, intlOptions as Intl.DateTimeFormatOptions).format(new Date(year, month - 1, day, hours, minutes));
+    },
+    [value, options, lang] as const,
+  );
+}
+
+/**
+ * A DATE control: a date field, plus a time field when the attribute's `dateFormat` has a `timeStyle`.
+ *
+ * The date is typed as ISO, which the locale adapter accepts under every language. What the field then shows
+ * is locale-formatted text — `15.01.2026`, `2026. jan. 15.` — and that is not reliably parseable back, so the
+ * assertion formats the *expected* value in the attribute's style and compares strings instead. The style comes
+ * from the serialized descriptor, which carries it already resolved with the defaults.
+ */
 class DateControlTester extends ControlTester {
   innerLocator(): string {
-    return 'input[matInput]';
+    return 'input.pp-date-input';
   }
 
+  private get format(): DateFormat {
+    const dateFormat = (this.attr as { dateFormat?: Partial<DateFormat> }).dateFormat;
+    return { dateStyle: dateFormat?.dateStyle ?? 'medium', timeStyle: dateFormat?.timeStyle ?? 'none' };
+  }
+
+  private get hasTime(): boolean {
+    return this.format.timeStyle !== 'none';
+  }
+
+  private get hasDate(): boolean {
+    return this.format.dateStyle !== 'none';
+  }
+
+  /** Local date-time values without a zone, so the time typed and the time asserted are the same wall clock. */
   override createValue(_context: ControlDataContext): string {
-    return '2026-01-15';
+    return this.hasTime ? '2026-01-15T09:30' : '2026-01-15';
   }
 
   override updateValue(_context: ControlDataContext, _original: Record<string, string>): string {
-    return '2026-02-20';
+    return this.hasTime ? '2026-02-20T14:15' : '2026-02-20';
+  }
+
+  private timeInput(context: ControlInteractionContext): Locator {
+    return this.control(context.page, context.descriptor).locator('input.pp-time-input').first();
   }
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
-    const inner = this.inner(context.page, context.descriptor);
-    await inner.fill(value);
-    await inner.blur();
+    const [datePart, timePart] = value.split('T');
+    if (this.hasDate) {
+      const inner = this.inner(context.page, context.descriptor);
+      await inner.fill(datePart);
+      await inner.blur();
+    }
+    if (this.hasTime && timePart) {
+      const time = this.timeInput(context);
+      await time.fill(timePart);
+      await time.blur();
+    }
   }
 
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
-    const input = this.inner(context.page, context.descriptor);
-    await expect(input).not.toHaveValue('', expectOptions(context));
-    const actual = await input.inputValue();
-    expect(sameCalendarDay(actual, value), `DATE ${this.attr.attrName}: expected ${value}, got "${actual}"`).toBe(true);
+    const lang = pageLang(context.page);
+    const { dateStyle, timeStyle } = this.format;
+    // `none` is this format's word for "no such part"; Intl has no such value, so it is never passed on.
+    if (dateStyle !== 'none') {
+      const expected = await formatInPage(context.page, value, { dateStyle }, lang);
+      await expect(this.inner(context.page, context.descriptor), `DATE ${this.attr.attrName} in ${lang}`).toHaveValue(expected, expectOptions(context));
+    }
+    if (timeStyle !== 'none') {
+      const expected = await formatInPage(context.page, value, { timeStyle }, lang);
+      await expect(this.timeInput(context), `DATE ${this.attr.attrName} time in ${lang}`).toHaveValue(expected, expectOptions(context));
+    }
   }
 }
 

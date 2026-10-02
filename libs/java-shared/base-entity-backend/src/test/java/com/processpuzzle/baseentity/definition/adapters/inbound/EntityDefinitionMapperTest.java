@@ -2,6 +2,10 @@ package com.processpuzzle.baseentity.definition.adapters.inbound;
 
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.DateFormat;
+import com.processpuzzle.baseentity.model.AttributeDateFormat;
+import com.processpuzzle.baseentity.model.DateStyle;
+import com.processpuzzle.baseentity.model.TimeStyle;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxContainer;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxDescriptor;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
@@ -55,6 +59,43 @@ class EntityDefinitionMapperTest {
         assertThat(model.getCode()).isEqualTo("partner");
         assertThat(model.getAttributes()).hasSize(1);
         assertThat(model.getAttributes().get(0).getCode()).isEqualTo("name");
+    }
+
+    @Test
+    void dateFormat_roundTripsThroughAttributeAndDescriptor() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("born");
+        attrInput.setName("Born");
+        attrInput.setValueKind(ValueKind.DATE_TIME);
+        attrInput.setFormControlType(FormControlType.DATE_TIME);
+        attrInput.setDateFormat(new AttributeDateFormat().dateStyle(DateStyle.SHORT).timeStyle(TimeStyle.MEDIUM));
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.getDateFormat()).isEqualTo(new DateFormat(
+                com.processpuzzle.baseentity.definition.domain.DateStyle.SHORT,
+                com.processpuzzle.baseentity.definition.domain.TimeStyle.MEDIUM));
+
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getDateFormat().getDateStyle()).isEqualTo(DateStyle.SHORT);
+        assertThat(model.getDateFormat().getTimeStyle()).isEqualTo(TimeStyle.MEDIUM);
+
+        com.processpuzzle.baseentity.definition.domain.AttributeDescriptor descriptor = mapper.toAttributeDescriptor(domain);
+        assertThat(descriptor.getDateFormat()).isEqualTo(domain.getDateFormat());
+
+        com.processpuzzle.baseentity.model.AttributeDescriptor descriptorModel = mapper.toModel(descriptor);
+        assertThat(descriptorModel.getDateFormat().getDateStyle()).isEqualTo(DateStyle.SHORT);
+        assertThat(mapper.toDomain(descriptorModel).getDateFormat()).isEqualTo(domain.getDateFormat());
+    }
+
+    @Test
+    void dateFormat_partialAndAbsent_mapToNulls() {
+        assertThat(mapper.toDomain((AttributeDateFormat) null)).isNull();
+        assertThat(mapper.toModel((DateFormat) null)).isNull();
+        DateFormat dateOnly = mapper.toDomain(new AttributeDateFormat().dateStyle(DateStyle.LONG));
+        assertThat(dateOnly.timeStyle()).isNull();
+        AttributeDateFormat timeOnly = mapper.toModel(new DateFormat(null, com.processpuzzle.baseentity.definition.domain.TimeStyle.SHORT));
+        assertThat(timeOnly.getDateStyle()).isNull();
+        assertThat(timeOnly.getTimeStyle()).isEqualTo(TimeStyle.SHORT);
     }
 
     @Test

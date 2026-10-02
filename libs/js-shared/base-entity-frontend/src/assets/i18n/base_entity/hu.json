@@ -12,7 +12,9 @@
     "isLinkToDetails": "A rekord címe",
     "linkedEntityType": "Kapcsolt entitás",
     "defaultValue": "Alapértelmezett érték",
-    "enumValues": "Felsorolás értékei"
+    "enumValues": "Felsorolás értékei",
+    "dateStyle": "Dátum stílusa",
+    "timeStyle": "Idő stílusa"
   },
   "entity_definition": {
     "_self": "Entitásdefiníció",

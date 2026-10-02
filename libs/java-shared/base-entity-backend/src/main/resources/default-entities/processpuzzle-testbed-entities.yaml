@@ -110,11 +110,16 @@ entityDefinitions:
         displayOrder: 5
         valueKind: DATE
         formControlType: DATE
+        dateFormat:
+          dateStyle: short
       - code: dateTimeAttr
         name: Date Time
         displayOrder: 6
         valueKind: DATE_TIME
         formControlType: DATE_TIME
+        dateFormat:
+          dateStyle: medium
+          timeStyle: short
       - code: enumAttr
         name: Status
         displayOrder: 7

@@ -171,6 +171,24 @@ describe('TAGS fixture values', () => {
   });
 });
 
+describe('DATE fixture values', () => {
+  const noContext = {} as never;
+
+  it('generates a calendar day for a date-only format, the default included', () => {
+    const tester = createControlTester(attr({ attrName: 'born', formControlType: 'DATE' }));
+
+    expect(tester.createValue(noContext)).toBe('2026-01-15');
+    expect(tester.updateValue(noContext, { born: '2026-01-15' })).toBe('2026-02-20');
+  });
+
+  it('generates a local wall-clock time when the serialized format has a timeStyle', () => {
+    const tester = createControlTester(attr({ attrName: 'seen', formControlType: 'DATE', dateFormat: { dateStyle: 'medium', timeStyle: 'short' } }));
+
+    expect(tester.createValue(noContext)).toBe('2026-01-15T09:30');
+    expect(tester.updateValue(noContext, { seen: '2026-01-15T09:30' })).toBe('2026-02-20T14:15');
+  });
+});
+
 describe('DROPDOWN option values', () => {
   const dropdown = (fixture: Record<string, unknown>) => createControlTester(attr({ attrName: 'status', formControlType: 'DROPDOWN', ...fixture }));
   const noContext = {} as never;

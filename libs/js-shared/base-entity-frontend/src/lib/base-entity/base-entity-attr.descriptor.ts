@@ -1,5 +1,6 @@
 import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
+import type { DateFormat } from './date-format';
 
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
@@ -9,6 +10,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   styleClass? = '';
   labelClass?: string = '';
   format?: string;
+  /**
+   * `DATE` only: the named style the value is shown and edited in, rendered in the active language. Absent
+   * styles fall back to the defaults of `effectiveDateFormat`; a `timeStyle` other than `none` adds a time
+   * field and makes the value an instant rather than a calendar day.
+   */
+  dateFormat?: DateFormat;
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
   visible = true;

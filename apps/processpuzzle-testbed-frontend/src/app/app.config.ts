@@ -14,7 +14,6 @@ import {
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
@@ -29,6 +28,7 @@ import {
   BASE_ENTITY_FACADE_REGISTRY,
   BASE_ENTITY_TRANSLATION_SOURCE,
   provideEntityRouteRegistry,
+  provideLocaleDateAdapter,
 } from '@processpuzzle/base-entity';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
@@ -159,7 +159,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideErrorSnackbar(),
       provideRouter(appRoutes, withComponentInputBinding()),
       provideEntityRouteRegistry(),
-      provideNativeDateAdapter(),
+      provideLocaleDateAdapter(),
       provideShareButtonsOptions(shareIcons()),
       provideTranslocoService(runtimeConfiguration.LANGUAGE_CONFIGURATION),
       // Puts the active language in the URL — `/hu/base-entity` — which is what makes the country-domain

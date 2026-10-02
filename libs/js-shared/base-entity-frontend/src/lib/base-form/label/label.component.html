@@ -1,7 +1,7 @@
 @if (config().visible) {
   @if (config().isHeading) {
-    <h3 [id]="config().attrName">{{ value() }}</h3>
+    <h3 [id]="config().attrName">{{ text() }}</h3>
   } @else {
-    <p [id]="config().attrName" [ngStyle]="config().style">{{ value() }}</p>
+    <p [id]="config().attrName" [ngStyle]="config().style">{{ text() }}</p>
   }
 }
