@@ -21,6 +21,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   visible = true;
   showThumbnail?: boolean = true;
   hideInTable?: boolean = false;
+  /**
+   * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,
+   * a status, a date. A hugging cell never grows past 60% of the table's width; longer content is cut off
+   * with an ellipsis. Columns that are not autosized fill the remaining width and wrap.
+   */
+  autosizeColumn?: boolean = false;
   isHeading?: boolean;
   placeholder?: string;
   lines?: number;

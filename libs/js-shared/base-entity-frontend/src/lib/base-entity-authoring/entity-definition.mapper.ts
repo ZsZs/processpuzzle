@@ -20,6 +20,7 @@ interface EntityAttributeDto {
   dateFormat?: DateFormat;
   linkedEntityType?: string;
   isLinkToDetails?: boolean;
+  autosizeColumn?: boolean;
 }
 
 /** `BaseEntityDefinition` on the way in, `BaseEntityDefinitionInput` on the way out. */
@@ -115,11 +116,12 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     timeStyle: dto.dateFormat?.timeStyle,
     linkedEntityType: dto.linkedEntityType,
     isLinkToDetails: dto.isLinkToDetails,
+    autosizeColumn: dto.autosizeColumn,
   });
 }
 
 /**
- * The four flags are written explicitly rather than left off when false, because the enclosing PUT is a
+ * The five flags are written explicitly rather than left off when false, because the enclosing PUT is a
  * full replacement: an absent flag is an unset one, and the form's unticked checkbox has to say so.
  *
  * `id` is not emitted — `BaseEntityAttributeInput` has no such field, and `code` is what identifies the
@@ -141,6 +143,7 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     dateFormat: dateFormatOf(attribute),
     linkedEntityType: attribute.linkedEntityType,
     isLinkToDetails: attribute.isLinkToDetails ?? false,
+    autosizeColumn: attribute.autosizeColumn ?? false,
   };
 }
 

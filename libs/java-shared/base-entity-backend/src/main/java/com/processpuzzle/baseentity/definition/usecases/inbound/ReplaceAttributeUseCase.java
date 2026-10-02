@@ -39,6 +39,7 @@ public class ReplaceAttributeUseCase {
         existing.setDateFormat(desiredState.getDateFormat());
         existing.setLinkedEntityType(desiredState.getLinkedEntityType());
         existing.setLinkToDetails(desiredState.isLinkToDetails());
+        existing.setAutosizeColumn(desiredState.isAutosizeColumn());
         existing.setValidationRules(desiredState.getValidationRules());
 
         validator.validate(definition);

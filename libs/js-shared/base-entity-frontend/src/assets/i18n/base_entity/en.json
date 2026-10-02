@@ -10,6 +10,7 @@
     "isMultiValued": "Multi-valued",
     "indexed": "Indexed",
     "isLinkToDetails": "Titles the record",
+    "autosizeColumn": "Hugs its list column",
     "linkedEntityType": "Linked Entity",
     "defaultValue": "Default Value",
     "enumValues": "Enum Values",

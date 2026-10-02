@@ -113,6 +113,8 @@ export class EntityAttributeDefinition implements BaseEntity {
   linkedEntityType?: string;
   /** Marks the attribute that titles an instance — the descriptor's `isLinkToDetails`. */
   isLinkToDetails?: boolean;
+  /** The list column hugs its content instead of filling the remaining width — the descriptor's `autosizeColumn`. */
+  autosizeColumn?: boolean;
 
   constructor(init: Partial<EntityAttributeDefinition> = {}) {
     this.code = init.code ?? '';
@@ -133,6 +135,7 @@ export class EntityAttributeDefinition implements BaseEntity {
     this.timeStyle = init.timeStyle;
     this.linkedEntityType = init.linkedEntityType;
     this.isLinkToDetails = init.isLinkToDetails;
+    this.autosizeColumn = init.autosizeColumn;
   }
 }
 

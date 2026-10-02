@@ -53,6 +53,11 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // At most one attribute of a definition may set it; the backend is what enforces that, since a form
   // editing one row cannot see its siblings.
   const isLinkToDetailsAttr = new BaseEntityAttrDescriptor('isLinkToDetails', FormControlType.CHECKBOX, 'Titles the record');
+  // How the attribute's column sits in the generated list — a layout choice, so not a column of this list.
+  const autosizeColumnAttr = new BaseEntityAttrDescriptor('autosizeColumn', FormControlType.CHECKBOX, 'Hugs its list column');
+  autosizeColumnAttr.hideInTable = true;
+  // The flag columns hold a single word each; letting them hug leaves the width to the code and the name.
+  [requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr].forEach((flagAttr) => (flagAttr.autosizeColumn = true));
   // endregion
 
   // region conditional fields
@@ -90,7 +95,7 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const kindRow = new FlexboxDescriptor([valueKindAttr, formControlTypeAttr, displayOrderAttr], FlexDirection.ROW);
   kindRow.style = { 'column-gap': '10px' };
-  const flagRow = new FlexboxDescriptor([requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr], FlexDirection.ROW);
+  const flagRow = new FlexboxDescriptor([requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr, autosizeColumnAttr], FlexDirection.ROW);
   flagRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };

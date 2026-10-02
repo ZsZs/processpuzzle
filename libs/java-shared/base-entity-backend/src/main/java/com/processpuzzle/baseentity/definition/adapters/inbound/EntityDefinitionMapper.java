@@ -60,6 +60,7 @@ public class EntityDefinitionMapper {
             .dateFormat(toDomain(input.getDateFormat()))
             .linkedEntityType(input.getLinkedEntityType())
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
+            .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
             .validationRules(input.getValidationRules())
             .build();
     }
@@ -107,6 +108,7 @@ public class EntityDefinitionMapper {
         model.setDateFormat(toModel(attribute.getDateFormat()));
         model.setLinkedEntityType(attribute.getLinkedEntityType());
         model.setIsLinkToDetails(attribute.isLinkToDetails());
+        model.setAutosizeColumn(attribute.isAutosizeColumn());
         model.setValidationRules(attribute.getValidationRules());
         return model;
     }
@@ -254,6 +256,7 @@ public class EntityDefinitionMapper {
             .visible(input.getVisible())
             .showThumbnail(input.getShowThumbnail())
             .hideInTable(input.getHideInTable())
+            .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
             .isHeading(input.getIsHeading())
             .placeholder(input.getPlaceholder())
             .lines(input.getLines())
@@ -288,6 +291,7 @@ public class EntityDefinitionMapper {
         model.setVisible(descriptor.getVisible());
         model.setShowThumbnail(descriptor.getShowThumbnail());
         model.setHideInTable(descriptor.getHideInTable());
+        model.setAutosizeColumn(descriptor.isAutosizeColumn());
         model.setIsHeading(descriptor.getIsHeading());
         model.setPlaceholder(descriptor.getPlaceholder());
         model.setLines(descriptor.getLines());
@@ -369,6 +373,7 @@ public class EntityDefinitionMapper {
             .formControlType(toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType.fromValue(attribute.getFormControlType().name())))
             .required(attribute.isRequired())
             .isLinkToDetails(attribute.isLinkToDetails())
+            .autosizeColumn(attribute.isAutosizeColumn())
             .linkedEntityType(attribute.getLinkedEntityType())
             .dateFormat(attribute.getDateFormat())
             .build();

@@ -36,6 +36,8 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   relatedEntitiesAttr.linkedEntityType = 'Related Entity';
   relatedEntitiesAttr.hideInTable = true;
   additionalPropertiesAttr.hideInTable = true;
+  // Short values hug their columns, leaving the width to the name and the description.
+  [booleanAttr, numberAttr, dateAttr, enumAttr].forEach((attr) => (attr.autosizeColumn = true));
 
   const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, additionalPropertiesAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
   const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr, embeddedComponentsAttr], FlexDirection.COLUMN);

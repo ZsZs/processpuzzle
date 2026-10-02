@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import {
+  type FixtureOverride,
   type LinkedEntityFixture,
   controlTestersFor,
   linkedFixtureAttrKey,
@@ -31,6 +32,7 @@ export class EntityCrudFixtureManager {
     private readonly descriptorMap: Map<string, BaseEntityDescriptor>,
     private readonly uniqueSuffix: string,
     private readonly expectTimeoutMs?: number,
+    private readonly fixtureOverrides: FixtureOverride[] = [],
   ) {}
 
   async testSetup(page: Page, descriptor: BaseEntityDescriptor): Promise<void> {
@@ -288,6 +290,7 @@ export class EntityCrudFixtureManager {
       createdDataByEntity: this.createdDataByEntity,
       linkedFixturesByAttr: this.linkedFixturesByAttr,
       uniqueSuffix,
+      fixtureOverrides: this.fixtureOverrides,
     };
   }
 }

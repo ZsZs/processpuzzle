@@ -10,6 +10,7 @@
     "isMultiValued": "Multivaleur",
     "indexed": "Indexé",
     "isLinkToDetails": "Titre de l'enregistrement",
+    "autosizeColumn": "Ajuste sa colonne de liste",
     "linkedEntityType": "Entité liée",
     "defaultValue": "Valeur par défaut",
     "enumValues": "Valeurs d'énumération",

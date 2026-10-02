@@ -50,6 +50,13 @@ describe('descriptorOf', () => {
     expect(attrOf(ORDER_DEFINITION, 'total')?.required).toBe(false);
   });
 
+  it('carries autosizeColumn through, so the list hugs the columns the author asked it to', () => {
+    const definition = { code: 'x', name: 'X', attributes: [{ code: 'hugging', formControlType: 'TEXT', autosizeColumn: true }, { code: 'filling', formControlType: 'TEXT' }] };
+
+    expect(attrOf(definition, 'hugging')?.autosizeColumn).toBe(true);
+    expect(attrOf(definition, 'filling')?.autosizeColumn).toBe(false);
+  });
+
   it('marks the isLinkToDetails attribute, which is what the list links from and the status bar names', () => {
     const descriptor = descriptorOf(ORDER_DEFINITION, lookup);
 

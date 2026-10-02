@@ -19,6 +19,7 @@ export {
   type ControlDataContext,
   type ControlInteractionContext,
   type FillControlOptions,
+  type FixtureOverride,
   type LinkedEntityFixture,
   type RelationshipKind,
 } from './lib/controls/control-tester';

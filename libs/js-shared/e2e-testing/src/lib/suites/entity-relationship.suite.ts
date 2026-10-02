@@ -1,7 +1,7 @@
 import { test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { parentReferenceAttrName, relationshipTestersFor, type RelationshipControlTester } from '../controls/control-tester';
+import { type FixtureOverride, parentReferenceAttrName, relationshipTestersFor, type RelationshipControlTester } from '../controls/control-tester';
 import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
 import { buildCreateDataForContext, buildUpdateDataForContext, identificationAttr } from '../data/test-data-factory';
 import { EntityFormPO } from '../pages/entity-form.po';
@@ -33,6 +33,11 @@ export interface DefineEntityRelationshipSuiteOptions {
    * test of its own, so the enclosing test runs, records the reason as an annotation, and skips the descent.
    */
   excludedRelationships?: ExcludedRelationship[];
+  /**
+   * Values pinned on a child's generated fixture where one of its fields is only kept for some value of
+   * another — the alternative to excluding the whole relationship. See {@link FixtureOverride}.
+   */
+  fixtureOverrides?: FixtureOverride[];
 }
 
 /** One `<entity>.<attribute>` the suite is told not to exercise, and why. */
@@ -100,7 +105,7 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
 
           const linked = linkedDescriptor as BaseEntityDescriptor;
           const suffix = uniqueSuffix(descriptor, tester, testInfo.retry);
-          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs);
+          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides);
 
           const context = { page, routes, descriptorMap, manager, options, suffix };
           switch (tester.kind) {
@@ -229,7 +234,7 @@ async function exerciseComponents(
 
   const childSuffix = `${context.suffix}-component`;
   const childOptions = { uniqueSuffix: childSuffix, expectTimeoutMs: context.options.expectTimeoutMs };
-  const childData = buildCreateDataForContext({ descriptor: linkedDescriptor, descriptorMap, uniqueSuffix: childSuffix });
+  const childData = buildCreateDataForContext({ descriptor: linkedDescriptor, descriptorMap, uniqueSuffix: childSuffix, fixtureOverrides: context.options.fixtureOverrides });
   const childName = rowDisplayValue(linkedDescriptor, childData);
   // The foreign key back to the owner is left out of the fill: attaching the row is what stamps it, and
   // reaching the owner's picker from here would abandon the round trip already in progress.
@@ -351,6 +356,7 @@ async function exerciseEmbeddedLevel(
     descriptor: childDescriptor,
     descriptorMap,
     uniqueSuffix: `${context.suffix}-d${depth}`,
+    fixtureOverrides: context.options.fixtureOverrides,
   });
   const contextOptions = { uniqueSuffix: `${context.suffix}-d${depth}`, expectTimeoutMs: context.options.expectTimeoutMs };
   await childForm.fillForm(childData, {}, {}, contextOptions);
@@ -375,7 +381,10 @@ async function exerciseEmbeddedLevel(
   // containing document, which is why the owner's form never saves in this flow and the reload below is what
   // proves the edit was persisted. The identification attribute is left alone, so the row keeps its address —
   // which is also why an entity identified by its only editable attribute has nothing left to change here.
-  const updatedChildData = buildUpdateDataForContext({ descriptor: childDescriptor, descriptorMap, uniqueSuffix: `${context.suffix}-d${depth}` }, childData);
+  const updatedChildData = buildUpdateDataForContext(
+    { descriptor: childDescriptor, descriptorMap, uniqueSuffix: `${context.suffix}-d${depth}`, fixtureOverrides: context.options.fixtureOverrides },
+    childData,
+  );
   if (differsFrom(updatedChildData, childData)) {
     await childForm.fillForm(updatedChildData, {}, {}, contextOptions);
     await childForm.saveReturningTo(ownerUrl);
