@@ -36,6 +36,7 @@ public class ReplaceAttributeUseCase {
         existing.setIndexed(desiredState.isIndexed());
         existing.setDefaultValue(desiredState.getDefaultValue());
         existing.setEnumValues(desiredState.getEnumValues());
+        existing.setDateFormat(desiredState.getDateFormat());
         existing.setLinkedEntityType(desiredState.getLinkedEntityType());
         existing.setLinkToDetails(desiredState.isLinkToDetails());
         existing.setValidationRules(desiredState.getValidationRules());

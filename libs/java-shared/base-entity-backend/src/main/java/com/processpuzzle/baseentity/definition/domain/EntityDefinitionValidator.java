@@ -57,6 +57,25 @@ public class EntityDefinitionValidator {
             violations.add(new Violation(attribute.getCode(),
                 "%s attributes require linkedEntityType".formatted(attribute.getFormControlType())));
         }
+        validateDateFormat(attribute, violations);
+    }
+
+    private void validateDateFormat(BaseEntityAttribute attribute, List<Violation> violations) {
+        DateFormat dateFormat = attribute.getDateFormat();
+        if (dateFormat == null) {
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.DATE && attribute.getValueKind() != ValueKind.DATE_TIME) {
+            violations.add(new Violation(attribute.getCode(), "dateFormat requires valueKind=DATE or DATE_TIME"));
+            return;
+        }
+        boolean noTime = dateFormat.timeStyle() == null || dateFormat.timeStyle() == TimeStyle.NONE;
+        if (attribute.getValueKind() == ValueKind.DATE && !noTime) {
+            violations.add(new Violation(attribute.getCode(), "valueKind=DATE cannot declare a dateFormat timeStyle"));
+        }
+        if (dateFormat.dateStyle() == DateStyle.NONE && dateFormat.timeStyle() == TimeStyle.NONE) {
+            violations.add(new Violation(attribute.getCode(), "dateFormat dateStyle and timeStyle cannot both be none"));
+        }
     }
 
     private void validateEmbeddedComponentsUniqueness(BaseEntityDefinition definition, List<Violation> violations) {

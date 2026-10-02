@@ -1,4 +1,5 @@
 import type { BaseEntity } from '../base-entity/base-entity';
+import type { DateFormat, DateStyle, TimeStyle } from '../base-entity/date-format';
 
 /**
  * The knowledge layer of `base-entity-api.yaml` as the frontend reads it: what an entity *type* is,
@@ -96,6 +97,14 @@ export class EntityAttributeDefinition implements BaseEntity {
   defaultValue?: unknown;
   /** Only meaningful for `valueKind: ENUM`; becomes the dropdown's options. */
   enumValues?: string[];
+  /** Only meaningful for `valueKind: DATE / DATE_TIME`: the named style the value is shown and edited in. */
+  dateFormat?: DateFormat;
+  /**
+   * The authoring form's flat view of {@link dateFormat}: the form builder binds one control per attribute
+   * name and cannot reach into a nested object. The authoring mapper folds the two back on save.
+   */
+  dateStyle?: DateStyle;
+  timeStyle?: TimeStyle;
   /**
    * **Code** of the definition this attribute points at — a child carried inline
    * (`EMBEDDED_COMPONENTS`) or a parent referenced by key (`FOREIGN_KEY`). The descriptor's
@@ -119,6 +128,9 @@ export class EntityAttributeDefinition implements BaseEntity {
     this.indexed = init.indexed;
     this.defaultValue = init.defaultValue;
     this.enumValues = init.enumValues;
+    this.dateFormat = init.dateFormat;
+    this.dateStyle = init.dateStyle;
+    this.timeStyle = init.timeStyle;
     this.linkedEntityType = init.linkedEntityType;
     this.isLinkToDetails = init.isLinkToDetails;
   }

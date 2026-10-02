@@ -12,7 +12,9 @@
     "isLinkToDetails": "Titles the record",
     "linkedEntityType": "Linked Entity",
     "defaultValue": "Default Value",
-    "enumValues": "Enum Values"
+    "enumValues": "Enum Values",
+    "dateStyle": "Date Style",
+    "timeStyle": "Time Style"
   },
   "entity_definition": {
     "_self": "Entity Definition",

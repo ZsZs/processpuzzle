@@ -1,7 +1,8 @@
 import { Component, computed, inject, InjectionToken, Injector, type ProviderToken, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
+import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
+import { effectiveDateFormat } from '../base-entity/date-format';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityFacade } from './base-entity-facade';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
@@ -66,6 +67,8 @@ export class EntityRegistryComponent {
         styleClass: attr.styleClass,
         labelClass: attr.labelClass,
         format: attr.format,
+        // Resolved rather than raw, so the e2e date tester formats its expectation without restating the defaults.
+        dateFormat: attr.formControlType === FormControlType.DATE ? effectiveDateFormat(attr) : undefined,
         isLinkToDetails: attr.isLinkToDetails,
         selectables: attr.getSelectables(),
         visible: attr.visible,

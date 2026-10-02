@@ -20,6 +20,7 @@ import { type NavigationPayload, NavigatorCommand } from '../base-form-navigator
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { EntityLabelPipe } from '../i18n/entity-label.pipe';
+import { DateFormatPipe } from '../i18n/date-format.pipe';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -45,6 +46,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     SlicePipe,
     MatButton,
     EntityLabelPipe,
+    DateFormatPipe,
   ],
   templateUrl: 'base-entity-list.component.html',
   styleUrl: 'base-entity-list.component.css',

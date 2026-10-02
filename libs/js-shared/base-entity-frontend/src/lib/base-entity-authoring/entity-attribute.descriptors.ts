@@ -1,6 +1,7 @@
 import { FormControlType, type AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { toSelectables } from '../base-entity/selectables';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
@@ -55,7 +56,7 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // endregion
 
   // region conditional fields
-  // Each is meaningful only for some `valueKind` / `formControlType` combinations, and all three are
+  // Each is meaningful only for some `valueKind` / `formControlType` combinations, and all of them are
   // shown unconditionally: the form builder has no notion of a control whose visibility depends on
   // another control's value, and the backend ignores a field that does not apply to the kind.
   //
@@ -76,6 +77,13 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // acceptable for the same reason: every default a seed file has ever carried is a scalar.
   const defaultValueAttr = new BaseEntityAttrDescriptor('defaultValue', FormControlType.TEXT_BOX, 'Default Value');
   defaultValueAttr.hideInTable = true;
+
+  // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
+  // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
+  const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
+  dateStyleAttr.hideInTable = true;
+  const timeStyleAttr = new BaseEntityAttrDescriptor('timeStyle', FormControlType.DROPDOWN, 'Time Style', toSelectables(TIME_STYLES));
+  timeStyleAttr.hideInTable = true;
   // endregion
 
   const identityRow = new FlexboxDescriptor([codeAttr, nameAttr], FlexDirection.ROW);
@@ -87,7 +95,10 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, flagRow, referenceRow, enumValuesAttr], FlexDirection.COLUMN);
+  const formatRow = new FlexboxDescriptor([dateStyleAttr, timeStyleAttr], FlexDirection.ROW);
+  formatRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, flagRow, referenceRow, formatRow, enumValuesAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

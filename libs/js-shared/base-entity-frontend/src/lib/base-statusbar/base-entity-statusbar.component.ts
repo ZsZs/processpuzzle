@@ -3,7 +3,11 @@ import { CommonModule } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { injectActiveLang } from '@processpuzzle/util';
+import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { effectiveDateFormat, formatDateValue } from '../base-entity/date-format';
+import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
 import { createTestId } from '../base-entity/base-entity-utility';
 import { rowId } from '../base-entity-embedded/embedded-aggregate';
@@ -156,6 +160,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
   private readonly descriptorRegistry = inject(BaseEntityDescriptorRegistry);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = injectActiveLang();
   private readonly violationsStore = inject(RuleViolationsSingletonStore);
   errorCount = this.violationsStore.errorCount;
   warningCount = this.violationsStore.warningCount;
@@ -226,7 +231,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
     const attrName = descriptor.titleAttrName();
     const row = this.findRowOfLevel(level, descriptor, ownerDescriptor);
     const value = attrName ? row?.[attrName] : undefined;
-    if (value != null && String(value).length > 0) return String(value);
+    if (value != null && String(value).length > 0) return this.titleText(descriptor, attrName, value);
 
     return level.entityId && level.entityId !== BaseUrlSegments.NewEntity ? level.entityId : translateLabel(this.transloco, descriptor.i18nKey(), descriptor.entityName);
   }
@@ -260,7 +265,14 @@ export class BaseEntityStatusbarComponent implements OnInit {
     const attrName = descriptor.titleAttrName();
     const currentEntity = this.store?.currentEntity() as Record<string, unknown> | undefined;
     const value = attrName ? currentEntity?.[attrName] : undefined;
-    return value != null ? String(value) : '';
+    return value != null ? this.titleText(descriptor, attrName, value) : '';
+  }
+
+  /** A date title reads in its attribute's style and the active language, as it does in the list. */
+  private titleText(descriptor: BaseEntityDescriptor, attrName: string, value: unknown): string {
+    const attr = filterAttributeDescriptors(descriptor.attrDescriptors).find((candidate) => candidate.attrName === attrName);
+    if (attr?.formControlType !== FormControlType.DATE) return String(value);
+    return String(formatDateValue(value, effectiveDateFormat(attr), this.activeLang()));
   }
 
   private evaluateEntityTitle(title: string | (() => string)): string {

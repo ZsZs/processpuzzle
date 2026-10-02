@@ -86,6 +86,11 @@ public class BaseEntityAttribute {
     @Column(columnDefinition = "jsonb")
     private List<String> enumValues;
 
+    /** Only meaningful when valueKind = DATE or DATE_TIME. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private DateFormat dateFormat;
+
     /**
      * Entity definition code this attribute points at. Required when formControlType is
      * FOREIGN_KEY (parent reference for a non-embedded component) or EMBEDDED_COMPONENTS

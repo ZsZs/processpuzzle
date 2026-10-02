@@ -16,6 +16,7 @@ export type { ErrorResponse } from './lib/error-handler/error-response';
 export { getEnvironment } from './lib/runtime-configuration/get-environment';
 export { LayoutService } from './lib/layout-service/layout.service';
 export type { LanguageConfig, LanguageDefinition } from './lib/transloco/language-config';
+export { injectActiveLang } from './lib/transloco/active-lang';
 export { LocaleUrlSerializer } from './lib/transloco/locale-url-serializer';
 export { splitLocaleFromUrl, withLocale } from './lib/transloco/locale-url';
 export type { LocalizedUrl } from './lib/transloco/locale-url';

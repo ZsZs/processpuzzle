@@ -50,6 +50,12 @@ export interface PdfExportOptions {
    * Defaults to true.
    */
   includeFooter?: boolean;
+
+  /**
+   * Language dates and numbers are written in — the active Transloco language. Defaults to the browser's,
+   * which is what a user who switched the application's language does not expect.
+   */
+  locale?: string;
 }
 
 export interface PdfExportResult {

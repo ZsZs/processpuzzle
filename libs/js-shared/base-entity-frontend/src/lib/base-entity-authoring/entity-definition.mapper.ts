@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import type { BaseEntityMapper } from '../base-entity.mapper';
+import type { DateFormat } from '../base-entity/date-format';
 import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
@@ -16,6 +17,7 @@ interface EntityAttributeDto {
   indexed?: boolean;
   defaultValue?: unknown;
   enumValues?: string[];
+  dateFormat?: DateFormat;
   linkedEntityType?: string;
   isLinkToDetails?: boolean;
 }
@@ -108,6 +110,9 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     indexed: dto.indexed,
     defaultValue: dto.defaultValue,
     enumValues: dto.enumValues,
+    dateFormat: dto.dateFormat,
+    dateStyle: dto.dateFormat?.dateStyle,
+    timeStyle: dto.dateFormat?.timeStyle,
     linkedEntityType: dto.linkedEntityType,
     isLinkToDetails: dto.isLinkToDetails,
   });
@@ -133,8 +138,22 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     indexed: attribute.indexed ?? false,
     defaultValue: attribute.defaultValue,
     enumValues: attribute.enumValues,
+    dateFormat: dateFormatOf(attribute),
     linkedEntityType: attribute.linkedEntityType,
     isLinkToDetails: attribute.isLinkToDetails ?? false,
   };
+}
+
+/**
+ * The form's `dateStyle` / `timeStyle` folded into the contract's `dateFormat`. A style that does not apply
+ * to the value kind is dropped rather than sent, so changing a DATE_TIME attribute to TEXT — or to DATE —
+ * does not turn the save into a 422 over a dropdown the user can no longer see a reason for.
+ */
+function dateFormatOf(attribute: EntityAttributeDefinition): DateFormat | undefined {
+  if (attribute.valueKind !== 'DATE' && attribute.valueKind !== 'DATE_TIME') return undefined;
+  const dateStyle = attribute.dateStyle || undefined;
+  const timeStyle = attribute.valueKind === 'DATE' ? undefined : attribute.timeStyle || undefined;
+  if (!dateStyle && !timeStyle) return undefined;
+  return { ...(dateStyle && { dateStyle }), ...(timeStyle && { timeStyle }) };
 }
 // endregion

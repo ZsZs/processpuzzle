@@ -4,6 +4,10 @@ import com.processpuzzle.baseentity.definition.domain.AbstractAttrDescriptor;
 import com.processpuzzle.baseentity.definition.domain.AttributeDescriptor;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.DateFormat;
+import com.processpuzzle.baseentity.definition.domain.DateStyle;
+import com.processpuzzle.baseentity.definition.domain.TimeStyle;
+import com.processpuzzle.baseentity.model.AttributeDateFormat;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.Page;
@@ -53,6 +57,7 @@ public class EntityDefinitionMapper {
             .indexed(Boolean.TRUE.equals(input.getIndexed()))
             .defaultValue(input.getDefaultValue())
             .enumValues(input.getEnumValues())
+            .dateFormat(toDomain(input.getDateFormat()))
             .linkedEntityType(input.getLinkedEntityType())
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
             .validationRules(input.getValidationRules())
@@ -99,6 +104,7 @@ public class EntityDefinitionMapper {
         model.setIndexed(attribute.isIndexed());
         model.setDefaultValue(attribute.getDefaultValue());
         model.setEnumValues(attribute.getEnumValues());
+        model.setDateFormat(toModel(attribute.getDateFormat()));
         model.setLinkedEntityType(attribute.getLinkedEntityType());
         model.setIsLinkToDetails(attribute.isLinkToDetails());
         model.setValidationRules(attribute.getValidationRules());
@@ -148,6 +154,26 @@ public class EntityDefinitionMapper {
 
     public com.processpuzzle.baseentity.model.FlexDirection toModelFlexDirection(com.processpuzzle.baseentity.definition.domain.FlexDirection direction) {
         return direction == null ? null : com.processpuzzle.baseentity.model.FlexDirection.fromValue(direction.name());
+    }
+
+    public DateFormat toDomain(AttributeDateFormat input) {
+        if (input == null) {
+            return null;
+        }
+        return new DateFormat(
+            input.getDateStyle() == null ? null : DateStyle.valueOf(input.getDateStyle().name()),
+            input.getTimeStyle() == null ? null : TimeStyle.valueOf(input.getTimeStyle().name()));
+    }
+
+    public AttributeDateFormat toModel(DateFormat dateFormat) {
+        if (dateFormat == null) {
+            return null;
+        }
+        return new AttributeDateFormat()
+            .dateStyle(dateFormat.dateStyle() == null ? null
+                : com.processpuzzle.baseentity.model.DateStyle.valueOf(dateFormat.dateStyle().name()))
+            .timeStyle(dateFormat.timeStyle() == null ? null
+                : com.processpuzzle.baseentity.model.TimeStyle.valueOf(dateFormat.timeStyle().name()));
     }
 
     public com.processpuzzle.baseentity.definition.domain.Selectable toDomain(com.processpuzzle.baseentity.model.Selectable selectable) {
@@ -222,6 +248,7 @@ public class EntityDefinitionMapper {
             .styleClass(input.getStyleClass())
             .labelClass(input.getLabelClass())
             .format(input.getFormat())
+            .dateFormat(toDomain(input.getDateFormat()))
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
             .selectables(input.getSelectables() != null ? input.getSelectables().stream().map(this::toDomain).toList() : null)
             .visible(input.getVisible())
@@ -253,6 +280,7 @@ public class EntityDefinitionMapper {
         model.setStyleClass(descriptor.getStyleClass());
         model.setLabelClass(descriptor.getLabelClass());
         model.setFormat(descriptor.getFormat());
+        model.setDateFormat(toModel(descriptor.getDateFormat()));
         model.setIsLinkToDetails(descriptor.isLinkToDetails());
         if (descriptor.getSelectables() != null) {
             model.setSelectables(descriptor.getSelectables().stream().map(this::toModel).toList());
@@ -342,6 +370,7 @@ public class EntityDefinitionMapper {
             .required(attribute.isRequired())
             .isLinkToDetails(attribute.isLinkToDetails())
             .linkedEntityType(attribute.getLinkedEntityType())
+            .dateFormat(attribute.getDateFormat())
             .build();
     }
 

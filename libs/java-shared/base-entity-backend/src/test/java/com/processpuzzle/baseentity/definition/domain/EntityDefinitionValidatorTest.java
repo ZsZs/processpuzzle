@@ -38,6 +38,55 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_dateFormatOnDateKinds_passes() {
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.NONE))));
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT))));
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.NONE, TimeStyle.SHORT))));
+    }
+
+    @Test
+    void validate_dateFormatOnNonDateKind_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.TEXT, new DateFormat(DateStyle.SHORT, null)),
+                "dateFormat requires valueKind=DATE or DATE_TIME");
+    }
+
+    @Test
+    void validate_dateFormatTimeStyleOnDate_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.SHORT)),
+                "valueKind=DATE cannot declare a dateFormat timeStyle");
+    }
+
+    @Test
+    void validate_dateFormatBothNone_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.NONE, TimeStyle.NONE)),
+                "dateStyle and timeStyle cannot both be none");
+    }
+
+    private static BaseEntityAttribute dateAttribute(ValueKind valueKind, DateFormat dateFormat) {
+        return BaseEntityAttribute.builder()
+                .code("born")
+                .name("Born")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.DATE)
+                .dateFormat(dateFormat)
+                .build();
+    }
+
+    private static BaseEntityDefinition definitionWith(BaseEntityAttribute attribute) {
+        return BaseEntityDefinition.builder().code("person").name("Person").attributes(List.of(attribute)).build();
+    }
+
+    private void assertSingleViolation(BaseEntityAttribute attribute, String message) {
+        assertThatThrownBy(() -> validator.validate(definitionWith(attribute)))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> {
+                    ValidationException ve = (ValidationException) ex;
+                    assertThat(ve.getViolations()).hasSize(1);
+                    assertThat(ve.getViolations().get(0).message()).contains(message);
+                });
+    }
+
+    @Test
     void validate_embeddedWithoutComponentParents_throwsValidationException() {
         BaseEntityDefinition definition = BaseEntityDefinition.builder()
                 .code("address")

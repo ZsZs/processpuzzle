@@ -24,4 +24,15 @@ describe('LabelComponent', () => {
     const labelElement = fixture.debugElement.query(By.css(`#${labelConfig.attrName}`)).nativeElement;
     expect(labelElement.innerHTML).toContain('Dynamic component loader');
   });
+
+  it('renders a date value in the attribute dateFormat and the active language', async () => {
+    const dateLabel = new BaseEntityAttrDescriptor('date', FormControlType.LABEL);
+    dateLabel.dateFormat = { dateStyle: 'short' };
+    const entity = new TestEntity('1', 'label');
+    entity.date = '1960-12-09' as unknown as Date;
+
+    const { fixture } = await setupFormControlTest(LabelComponent, dateLabel, entity);
+    const labelElement = fixture.debugElement.query(By.css('#date')).nativeElement;
+    expect(labelElement.textContent.trim()).toBe(new Intl.DateTimeFormat('en', { dateStyle: 'short' }).format(new Date(1960, 11, 9)));
+  });
 });

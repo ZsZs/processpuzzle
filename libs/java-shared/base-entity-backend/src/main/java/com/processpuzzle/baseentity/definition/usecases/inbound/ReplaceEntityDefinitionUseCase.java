@@ -71,6 +71,7 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setIndexed(desired.isIndexed());
         existing.setDefaultValue(desired.getDefaultValue());
         existing.setEnumValues(desired.getEnumValues());
+        existing.setDateFormat(desired.getDateFormat());
         existing.setLinkedEntityType(desired.getLinkedEntityType());
         existing.setLinkToDetails(desired.isLinkToDetails());
         existing.setValidationRules(desired.getValidationRules());

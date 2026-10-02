@@ -24,6 +24,7 @@ public class AttributeDescriptor extends AbstractAttrDescriptor {
     private String styleClass;
     private String labelClass;
     private String format;
+    private DateFormat dateFormat;
     @lombok.Builder.Default
     private boolean isLinkToDetails = false;
     private List<Selectable> selectables;

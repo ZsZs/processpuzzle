@@ -12,7 +12,9 @@
     "isLinkToDetails": "Benennt den Datensatz",
     "linkedEntityType": "Verknüpfte Entität",
     "defaultValue": "Standardwert",
-    "enumValues": "Aufzählungswerte"
+    "enumValues": "Aufzählungswerte",
+    "dateStyle": "Datumsstil",
+    "timeStyle": "Zeitstil"
   },
   "entity_definition": {
     "_self": "Entitätsdefinition",

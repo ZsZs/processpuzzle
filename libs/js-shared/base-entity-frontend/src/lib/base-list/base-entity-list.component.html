@@ -18,7 +18,7 @@
         <mat-header-cell *matHeaderCellDef mat-sort-header>{{ colDescriptor.i18nKey() | ppLabel: colDescriptor.label }}</mat-header-cell>
         <mat-cell (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
           @if (colDescriptor.isLinkToDetails) {
-            <a class="link-to-details" (click)="onNavigateToDetails(element)">{{ element[colDescriptor.attrName] }}</a>
+            <a class="link-to-details" (click)="onNavigateToDetails(element)">{{ colDescriptor.formControlType === 'DATE' ? (element[colDescriptor.attrName] | ppDate: colDescriptor.dateFormat) : element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.linkedEntityType !== undefined ) {
             <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
           } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null ) {
@@ -26,6 +26,8 @@
             <a (click)="onDownloadObject(artifact, $event)">{{ ((artifact.name ?? artifact.objectId ?? '') | slice:0:20) + ((artifact.name ?? artifact.objectId ?? '').length > 20 ? '...' : '') }}</a>
           } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined ) {
             {{ (element[colDescriptor.attrName].join(', ') | slice:0:20) + (element[colDescriptor.attrName].join(', ').length > 20 ? '...' : '') }}
+          } @else if (colDescriptor.formControlType === 'DATE') {
+            {{ element[colDescriptor.attrName] | ppDate: colDescriptor.dateFormat }}
           } @else {
             {{ element[colDescriptor.attrName] }}
           }

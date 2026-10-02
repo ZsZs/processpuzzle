@@ -9,7 +9,7 @@ import { BaseEntityContainerComponent } from './lib/base-entity-container.compon
 import { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 import { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
 import { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
-import { ANIMATION_MODULE_TYPE, Component, ComponentRef, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, Component, ComponentRef, EnvironmentProviders, inject, input, InputSignal, OnInit, Provider, Signal, signal, Type, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseFormHostDirective } from './lib/base-form/base-form-host.directive';
 import { TestEntity, TestEnum } from './lib/test-entity';
@@ -312,7 +312,7 @@ export async function setupFormControlTest<C extends BaseFormControlComponent<Te
   controlType: Type<C>,
   config: FlexboxDescriptor | BaseEntityAttrDescriptor,
   entity: TestEntity,
-  providers: Provider[] = [],
+  providers: (Provider | EnvironmentProviders)[] = [],
 ) {
   await TestBed.configureTestingModule({
     imports: [MockControlContainerComponent],

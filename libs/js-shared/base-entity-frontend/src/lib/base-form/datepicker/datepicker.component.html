@@ -1,11 +1,42 @@
 @if (config().visible) {
-  <div class="row" style="margin-bottom: 10px" [formGroup]="formGroup">
-    <mat-form-field>
-      <mat-label [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
-      <input matInput [id]="config().attrName" [matDatepicker]="picker" formControlName="{{ config().attrName }}" />
-      <mat-hint>MM-DD-YYYY</mat-hint>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
+  <div class="row date-time" style="margin-bottom: 10px">
+    @if (showsDate()) {
+      <mat-form-field>
+        <mat-label [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
+        <input
+          matInput
+          class="pp-date-input"
+          [id]="config().attrName"
+          [matDatepicker]="picker"
+          [value]="picked()"
+          [disabled]="control.disabled"
+          (dateChange)="onDateChange($event.value)"
+          (blur)="onBlur()"
+        />
+        <mat-hint>{{ dateHint() }}</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    }
+    @if (showsTime()) {
+      <mat-form-field>
+        @if (!showsDate()) {
+          <mat-label [attr.for]="config().attrName + '-time'">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
+        }
+        <input
+          matInput
+          class="pp-time-input"
+          [id]="config().attrName + '-time'"
+          [matTimepicker]="timepicker"
+          [value]="picked()"
+          [disabled]="control.disabled"
+          (valueChange)="onTimeChange($event)"
+          (blur)="onBlur()"
+        />
+        <mat-hint>{{ timeHint() }}</mat-hint>
+        <mat-timepicker-toggle matIconSuffix [for]="timepicker"></mat-timepicker-toggle>
+        <mat-timepicker #timepicker></mat-timepicker>
+      </mat-form-field>
+    }
   </div>
 }

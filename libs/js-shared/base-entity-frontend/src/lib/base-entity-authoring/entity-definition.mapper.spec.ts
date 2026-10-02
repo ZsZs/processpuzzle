@@ -151,4 +151,31 @@ describe('EntityDefinitionMapper', () => {
     expect(roundTripped.code).toBe('order');
     expect(roundTripped.attributes?.[0].code).toBe('orderNumber');
   });
+
+  describe('dateFormat', () => {
+    const definitionWith = (attribute: Partial<EntityAttributeDefinition>) =>
+      new EntityDefinition({ code: 'person', name: 'Person', attributes: [new EntityAttributeDefinition({ code: 'born', formControlType: 'DATE', ...attribute })] });
+
+    it('unfolds a received dateFormat into the flat fields the form edits', () => {
+      const definition = mapper.fromDto({ code: 'person', attributes: [{ code: 'born', valueKind: 'DATE_TIME', formControlType: 'DATE_TIME', dateFormat: { dateStyle: 'short', timeStyle: 'medium' } }] });
+
+      expect(definition.attributes?.[0]).toMatchObject({ dateFormat: { dateStyle: 'short', timeStyle: 'medium' }, dateStyle: 'short', timeStyle: 'medium' });
+    });
+
+    it('folds the edited styles back into dateFormat, the stale nested value notwithstanding', () => {
+      const dto = mapper.toDto(definitionWith({ valueKind: 'DATE_TIME', dateFormat: { dateStyle: 'short' }, dateStyle: 'long', timeStyle: 'short' }));
+
+      expect(dto.attributes?.[0].dateFormat).toEqual({ dateStyle: 'long', timeStyle: 'short' });
+      expect(dto.attributes?.[0]).not.toHaveProperty('dateStyle');
+    });
+
+    it('drops the time style of a DATE attribute and the whole format of a non-date one', () => {
+      expect(mapper.toDto(definitionWith({ valueKind: 'DATE', dateStyle: 'short', timeStyle: 'short' })).attributes?.[0].dateFormat).toEqual({ dateStyle: 'short' });
+      expect(mapper.toDto(definitionWith({ valueKind: 'TEXT', dateStyle: 'short' })).attributes?.[0].dateFormat).toBeUndefined();
+    });
+
+    it('sends no dateFormat when neither style is picked, so the value kind default applies', () => {
+      expect(mapper.toDto(definitionWith({ valueKind: 'DATE_TIME' })).attributes?.[0].dateFormat).toBeUndefined();
+    });
+  });
 });

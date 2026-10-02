@@ -17,7 +17,7 @@ import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescript
 import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideLocaleDateAdapter } from './datepicker/locale-date.adapter';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { BaseFormControlComponent } from './base-form-control.component';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -117,7 +117,7 @@ describe('BaseEntityFormBuilder', () => {
         BaseEntityFormBuilder,
         provideHttpClient(),
         provideLogger({ level: 7 }),
-        provideNativeDateAdapter(),
+        provideLocaleDateAdapter(),
         provideRouter([]),
         provideTranslocoTesting({ translations: {} }),
         TestEntityStore,
