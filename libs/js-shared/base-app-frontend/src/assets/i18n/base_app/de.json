@@ -24,13 +24,41 @@
     "modules": "Module",
     "tabs": {
       "preview": "{{ entity }} - Vorschau"
+    },
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation und unverändert in der URL der Anwendung verwendet. Kurz, kleingeschrieben und mit Bindestrichen, z. B. claims-app; ändern Sie sie später möglichst nicht. — Leitfaden: Anwendung",
+      "name": "Der Name der Anwendung, wie Benutzer ihn sehen, z. B. im Widget app-title. — Leitfaden: Anwendung",
+      "translocoId": "Optionaler Übersetzungsschlüssel; wenn gesetzt, wird er in anderen Sprachen anstelle des Namens angezeigt. — Leitfaden: Anwendung",
+      "description": "Eine Notiz für Sie und Ihre Designer-Kollegen; Benutzer sehen sie nicht. — Leitfaden: Anwendung",
+      "status": "DRAFT, bis die Definition veröffentlicht ist, danach PUBLISHED. Wird vom System gesetzt. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
+      "publishedVersion": "Die Version, die Benutzer derzeit erhalten. Ändert sich nur, wenn Sie Veröffentlichen drücken. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
+      "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "materialTheme": "Die Farbpalette der gesamten Anwendung. processpuzzle ist das Marken-Design; die anderen färben auch Kopfzeile, Seitennavigation, Karten und Schaltflächen um. — Leitfaden: Theme",
+      "colorScheme": "Hell, dunkel oder automatisch (folgt dem Betriebssystem des Benutzers). — Leitfaden: Theme",
+      "logoUrl": "Adresse des Logobilds, das das Widget app-logo anzeigt. — Leitfaden: Theme",
+      "faviconUrl": "Adresse des kleinen Symbols im Browser-Tab. — Leitfaden: Theme",
+      "tokenOverrides": "Feinabstimmung über dem Theme: ein --pp-…-Farbtoken und sein Wert, z. B. --pp-surface-sidenav = #0d1b2a. — Leitfaden: Theme",
+      "preset": "Wo die Navigation sitzt: in einem Seitenbereich links oder rechts oder in der Kopfzeile (top-nav). — Leitfaden: Layout",
+      "sidenavMode": "side: Bereich neben der Seite · over: Bereich über der Seite · push: Die Seite rückt beiseite, solange der Bereich geöffnet ist. — Leitfaden: Layout",
+      "contentMaxWidth": "Maximale Breite der Seiten als CSS-Länge, z. B. 1280px; leer bedeutet volle Breite. — Leitfaden: Layout",
+      "sidenavCollapsible": "Ob Benutzer den Navigationsbereich schließen können. — Leitfaden: Layout",
+      "sidenavOpenByDefault": "Ob der Navigationsbereich anfangs geöffnet ist. — Leitfaden: Layout",
+      "regions": "Der Rahmen um die Seiten: header, sidenav und footer, von jedem höchstens einer. — Leitfaden: Bereiche",
+      "routes": "Die Seiten der Anwendung, eine Zeile pro Seite. Legen Sie sie vor den Navigationseinträgen an, die auf sie verweisen. — Leitfaden: Routen",
+      "modules": "Separat erstellte Teile der Anwendung, deren Routen unter einem Basispfad erscheinen. — Leitfaden: Module"
     }
   },
   "app_region": {
     "_self": "Bereich",
     "type": "Typ",
     "navItems": "Navigationseinträge",
-    "widgets": "Widgets"
+    "widgets": "Widgets",
+    "_tooltips": {
+      "type": "header (oben), sidenav (Navigationsbereich) oder footer (unten). Jeder Typ kann einmal verwendet werden. — Leitfaden: Bereiche",
+      "navItems": "Die Menüeinträge der Seitennavigation. Nur vom Bereich sidenav verwendet. — Leitfaden: Navigationseinträge",
+      "widgets": "Die Widgets der Kopf- oder Fußzeile, in dieser Reihenfolge in einer Zeile angeordnet. Mit einem spacer schieben Sie die folgenden nach rechts. — Leitfaden: Kopfzeile (header)"
+    }
   },
   "app_route": {
     "_self": "Route",
@@ -44,12 +72,29 @@
     "documentSlug": "Dokument-Slug",
     "entityName": "Entitätsname",
     "entityMode": "Entitätsmodus",
-    "rsqlFilter": "RSQL-Filter"
+    "rsqlFilter": "RSQL-Filter",
+    "_tooltips": {
+      "path": "Die Adresse der Seite relativ zur Anwendung, ohne führenden Schrägstrich, z. B. claims/open. Ein Segment :name ist ein Parameter, z. B. claims/:id. — Leitfaden: Routen",
+      "title": "Der Titel der Seite. — Leitfaden: Routen",
+      "translocoId": "Optionaler Übersetzungsschlüssel des Titels, in anderen Sprachen anstelle des Titels angezeigt. — Leitfaden: Routen",
+      "icon": "Ein Material- oder FontAwesome-Symbolname. — Leitfaden: Routen",
+      "roles": "Die Rollen, die diese Seite öffnen dürfen; leer bedeutet jedes angemeldete Mitglied Ihrer Organisation. Noch nicht durchgesetzt. — Leitfaden: Rollen",
+      "kind": "Was die Seite zeigt: WIDGETS, ENTITY (generierte Liste und Formular einer Entität) oder DOCUMENT. Die Felder darunter gelten nur für die gewählte Art. — Leitfaden: Routen",
+      "widgets": "Nur WIDGETS: die Widgets der Seite, in dieser Reihenfolge untereinander angezeigt. — Leitfaden: Widgets",
+      "documentSlug": "Nur DOCUMENT: der Slug des anzuzeigenden Dokuments. Wird noch nicht dargestellt. — Leitfaden: Dokumente",
+      "entityName": "Nur ENTITY: der Name einer unter Entitäten definierten Entität; Liste und Formular werden für Sie generiert. — Leitfaden: Entitäten",
+      "entityMode": "Nur ENTITY: mit der Liste oder den Details eines Datensatzes öffnen. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
+      "rsqlFilter": "Nur ENTITY + LIST: ein Vorfilter wie status==OPEN. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten"
+    }
   },
   "app_module_mount": {
     "_self": "Modul-Einbindung",
     "moduleKey": "Modulschlüssel",
-    "basePath": "Basispfad"
+    "basePath": "Basispfad",
+    "_tooltips": {
+      "moduleKey": "Der Schlüssel eines unter Module erstellten Moduls. — Leitfaden: Module",
+      "basePath": "Das Präfix, unter dem die Routen des Moduls erscheinen: Basispfad claims macht aus der Modulroute open claims/open. — Leitfaden: Module"
+    }
   },
   "app_nav_item": {
     "_self": "Navigationseintrag",
@@ -59,14 +104,29 @@
     "icon": "Symbol",
     "routePath": "Route",
     "roles": "Rollen",
-    "children": "Untereinträge"
+    "children": "Untereinträge",
+    "_tooltips": {
+      "id": "Eindeutiger Bezeichner des Eintrags innerhalb des Menüs, z. B. nav-claims. — Leitfaden: Navigationseinträge",
+      "label": "Der Text des Menüeintrags. — Leitfaden: Navigationseinträge",
+      "translocoId": "Optionaler Übersetzungsschlüssel der Bezeichnung, in anderen Sprachen anstelle der Bezeichnung angezeigt. — Leitfaden: Navigationseinträge",
+      "icon": "Ein Material- oder FontAwesome-Symbolname. — Leitfaden: Navigationseinträge",
+      "routePath": "Der Pfad der Route, die dieser Eintrag öffnet, genau wie bei der Route angegeben. Leer lassen, um den Eintrag zu einer Gruppe seiner Untereinträge zu machen. — Leitfaden: Navigationseinträge",
+      "roles": "Die Rollen, die diesen Eintrag sehen dürfen; leer bedeutet jedes angemeldete Mitglied Ihrer Organisation. Noch nicht durchgesetzt. — Leitfaden: Rollen",
+      "children": "Die Einträge unter einem Gruppeneintrag. Nur sinnvoll, wenn Route leer ist. — Leitfaden: Navigationseinträge"
+    }
   },
   "app_widget": {
     "_self": "Widget",
     "id": "Id",
     "type": "Typ",
     "props": "Eigenschaften",
-    "placement": "Platzierung"
+    "placement": "Platzierung",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb seiner Seite oder seines Bereichs, z. B. widget-claims-grid. Ein Container-Widget verweist über diese Id auf andere Widgets. — Leitfaden: Widgets",
+      "type": "Welches Widget dies ist; angeboten werden nur die in dieser Installation verfügbaren Widgets. — Leitfaden: Widgets",
+      "props": "Die Einstellungen des Widgets. Das Formular passt sich dem gewählten Typ an. — Leitfaden: Widgets",
+      "placement": "STANDALONE: dort angezeigt, wo es aufgeführt ist. REFERENCED: nur innerhalb des Container-Widgets angezeigt, das seine Id aufführt. — Leitfaden: Widgets"
+    }
   },
   "module_definition": {
     "_self": "Modul",
@@ -77,10 +137,84 @@
     "translocoScope": "Transloco-Bereich",
     "version": "Version",
     "updatedAt": "Geändert am",
-    "routes": "Routen"
+    "routes": "Routen",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation; Anwendungen binden das Modul über diesen Schlüssel ein. Darf sich nicht ändern, sobald das Modul verwendet wird. — Leitfaden: Module",
+      "name": "Der Name des Moduls. — Leitfaden: Module",
+      "translocoId": "Optionaler Übersetzungsschlüssel des Namens. — Leitfaden: Module",
+      "description": "Eine Notiz für Sie und Ihre Designer-Kollegen. — Leitfaden: Module",
+      "translocoScope": "Der Bereich, unter dem die Übersetzungen des Moduls geladen werden; leer bedeutet der Schlüssel. — Leitfaden: Module",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann das Modul zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "routes": "Die Seiten des Moduls. Ihre Pfade sind relativ zum Basispfad, unter dem das Modul eingebunden ist. — Leitfaden: Module"
+    }
   },
   "publish": {
     "button": "Veröffentlichen",
     "tooltip": "Die gespeicherte Definition veröffentlichen: ihre Version wird zur veröffentlichten Version"
+  },
+  "concepts": {
+    "title": "Wie eine dynamische Anwendung aufgebaut ist",
+    "intro": "Eine <b>Anwendung</b> wird in ProcessPuzzle nicht programmiert – sie wird <b>beschrieben</b>. Alles, was Sie hier eingeben (der Rahmen, das Menü, die Seiten und was jede Seite zeigt), wird als Daten gespeichert, und die Anwendungsoberfläche baut daraus zur Laufzeit die laufende Anwendung auf. Um die Anwendung zu ändern, bearbeiten Sie ihre Definition und veröffentlichen sie erneut; es muss nichts neu gebaut oder neu ausgeliefert werden.",
+    "assembling": {
+      "title": "Ihre Anwendung Schritt für Schritt zusammenstellen",
+      "body": "<ol><li><b>Anwendung anlegen</b> – geben Sie ihr eine Id und einen Namen.</li><li><b>Aussehen wählen</b> – ein Material-Theme, ein Farbschema und eine Layout-Vorlage.</li><li><b>Seiten hinzufügen</b> – eine <b>Route</b> pro Seite; legen Sie fest, was jede davon zeigt: Widgets, eine Entität oder ein Dokument.</li><li><b>Rahmen bauen</b> – fügen Sie die Bereiche <b>header</b>, <b>sidenav</b> und <b>footer</b> hinzu; füllen Sie header und footer mit Widgets und die sidenav mit Navigationseinträgen, die auf Ihre Routen verweisen.</li><li><b>Prüfen</b> Sie das Ergebnis im Tab <b>Vorschau</b>.</li><li><b>Veröffentlichen</b> Sie die Anwendung, damit die Benutzer die neue Version erhalten.</li></ol><p>Routen kommen bewusst vor der Navigation: Ein Navigationseintrag verweist über ihren Pfad auf eine Route, daher lässt er sich am einfachsten anlegen, wenn die Route bereits existiert.</p>"
+    },
+    "application": {
+      "title": "Anwendung",
+      "body": "<p>Der oberste Datensatz, der alles andere enthält. Ihre <b>Id</b> ist innerhalb Ihrer Organisation eindeutig und wird unverändert in der URL der Anwendung verwendet. Wählen Sie daher einen kurzen Wert in Kleinbuchstaben mit Bindestrichen, z. B. <code>claims-app</code>, und ändern Sie ihn später möglichst nicht. Der <b>Name</b> ist das, was die Benutzer sehen, zum Beispiel im Widget <code>app-title</code>; die optionale <b>Transloco-Id</b> ist ein Übersetzungsschlüssel, der anstelle des Namens verwendet wird, wenn die Anwendung in anderen Sprachen angezeigt wird. Die <b>Beschreibung</b> ist für Sie und Ihre Designer-Kollegen gedacht.</p>"
+    },
+    "theme": {
+      "title": "Theme",
+      "body": "<p>Bestimmt die Farben der gesamten Anwendung.</p><ul><li><b>Material-Theme</b> – <code>processpuzzle</code> ist das Marken-Design und die Voreinstellung; die anderen sind Angular-Material-Paletten, und jede davon färbt auch header, sidenav, Karten und Schaltflächen passend ein.</li><li><b>Farbschema</b> – hell, dunkel oder automatisch (richtet sich nach dem Betriebssystem des Benutzers).</li><li><b>Logo-URL</b> und <b>Favicon-URL</b> – die Bilder, die das Widget <code>app-logo</code> und der Browser-Tab anzeigen.</li><li><b>Token-Überschreibungen</b> – Feinabstimmung zusätzlich zum Theme: ein <code>--pp-…</code>-Farbtoken und sein Wert, z. B. <code>--pp-surface-sidenav</code> → <code>#0d1b2a</code>.</li></ul><p>Was Sie hier wählen, ist die <i>Voreinstellung</i> der Anwendung. Wenn Sie ein Widget <code>themes-button</code> im header platzieren, kann jeder Benutzer ein eigenes Theme wählen, das dann für ihn gespeichert wird.</p>"
+    },
+    "layout": {
+      "title": "Layout",
+      "body": "<p>Bestimmt, wo die Bereiche rund um die Seiten liegen.</p><ul><li><b>Layout-Vorlage</b> – <code>sidenav-left</code> oder <code>sidenav-right</code> zeigen die Navigation in einer Seitenleiste; <code>top-nav</code> zeigt sie stattdessen in der Kopfzeile.</li><li><b>Modus der Seitennavigation</b> – <code>side</code> hält die Leiste neben der Seite, <code>over</code> legt sie über die Seite, <code>push</code> schiebt die Seite beiseite, solange die Leiste geöffnet ist.</li><li><b>Seitennavigation einklappbar</b> / <b>Seitennavigation standardmäßig geöffnet</b> – ob die Benutzer die Leiste schließen können und ob sie anfangs geöffnet ist.</li><li><b>Maximale Inhaltsbreite</b> – eine CSS-Länge wie <code>1280px</code>, die Seiten auf breiten Bildschirmen gut lesbar hält; leer bedeutet volle Breite.</li></ul>"
+    },
+    "regions": {
+      "title": "Bereiche – der Rahmen um die Seiten",
+      "body": "<p>Ein Bereich ist ein fester Teil des Bildschirms, der an seinem Platz bleibt, während die Benutzer zwischen den Seiten wechseln. Es gibt drei Typen, und eine Anwendung hat von jedem höchstens einen: <b>header</b> (oben), <b>sidenav</b> (die Navigationsleiste) und <b>footer</b> (unten). Header und footer enthalten <b>Widgets</b>; die sidenav enthält <b>Navigationseinträge</b>. Die Fläche in der Mitte ist kein Bereich: Sie zeigt die <b>Route</b>, auf der sich der Benutzer gerade befindet. Ein Bereich, den Sie weglassen, wird einfach nicht angezeigt.</p>"
+    },
+    "header": {
+      "title": "Kopfzeile (header)",
+      "body": "<p>Die Leiste am oberen Rand der Anwendung. Ihre Widgets werden in einer Zeile von links nach rechts angeordnet, in der Reihenfolge, in der sie aufgeführt sind. Typischer Inhalt sind <code>app-logo</code> und <code>app-title</code> links, ein <code>spacer</code>, der alles danach nach rechts schiebt, und ein <code>themes-button</code> ganz rechts. Logo und Titel sind gewöhnliche Widgets, die die Logo-URL und den Namen der Anwendung lesen – Sie entscheiden also, ob und wo sie erscheinen. Beim Layout <code>top-nav</code> werden auch die Navigationseinträge in der Kopfzeile angezeigt.</p>"
+    },
+    "footer": {
+      "title": "Fußzeile (footer)",
+      "body": "<p>Die Leiste am unteren Rand der Anwendung. Sie funktioniert genau wie die Kopfzeile – eine Reihe von Widgets in der aufgeführten Reihenfolge, mit einem <code>spacer</code>, um sie auseinanderzuschieben – und eignet sich gut für Copyright-Hinweise, Kontaktdaten oder Links. Sie bleibt auch dann am unteren Bildschirmrand, wenn eine Seite kurz ist.</p>"
+    },
+    "navigation": {
+      "title": "Navigationseinträge",
+      "body": "<p>Die Einträge des Menüs, die dem Bereich <b>sidenav</b> hinzugefügt werden. Jeder hat eine <b>Bezeichnung</b> (optional über seine <b>Transloco-Id</b> übersetzt), ein <b>Symbol</b> (der Name eines Material- oder FontAwesome-Symbols) und eine <b>Route</b>: den <b>Pfad</b> der Route, die er öffnet, genau so geschrieben wie bei der Route, z. B. <code>claims/open</code>. Ein Eintrag ohne Route ist eine <b>Gruppe</b>: Er klappt die Einträge auf und zu, die Sie unter seinen <b>Untereinträgen</b> hinzufügen – so lassen sich Menüs verschachteln. Ein Pfad, zu dem es noch keine Route gibt, ist nur eine Warnung – er kann zu einem Modul gehören, das noch nicht erstellt wurde.</p>"
+    },
+    "routes": {
+      "title": "Routen – die Seiten",
+      "body": "<p>Jede Seite der Anwendung ist eine Route.</p><ul><li><b>Pfad</b> – die Adresse der Seite relativ zur Anwendung, ohne führenden Schrägstrich: <code>claims</code>, <code>claims/open</code>. Ein Segment <code>:name</code> ist ein Parameter, z. B. <code>claims/:id</code>.</li><li><b>Titel</b>, <b>Transloco-Id</b> und <b>Symbol</b> – wie die Seite benannt und dargestellt wird.</li><li><b>Zeigt</b> – was die Seite anzeigt: <code>WIDGETS</code>, <code>ENTITY</code> oder <code>DOCUMENT</code>. Die Felder darunter gelten nur für die gewählte Art.</li></ul><p>Routen sind eine flache Liste. Sie verschachteln sie nie von Hand: <code>claims</code> und <code>claims/open</code> sind zwei getrennte Einträge, und die Anwendungsoberfläche erkennt anhand ihrer Pfade, dass die eine unter der anderen liegt.</p>"
+    },
+    "widgets": {
+      "title": "Widgets – die Bausteine",
+      "body": "<p>Ein Widget ist ein fertiger Baustein der Benutzeroberfläche – ein Logo, ein Titel, ein Abstandhalter, eine Theme-Auswahl, ein Raster von Entitäten, ein Dokumentbetrachter und mehr. Widgets werden in Kopf- und Fußzeile verwendet sowie auf <code>WIDGETS</code>-Routen, wo sie untereinander gestapelt werden. Die Reihenfolge in der Liste ist die Reihenfolge auf dem Bildschirm.</p><ul><li><b>Id</b> – eindeutig innerhalb ihrer Seite oder ihres Bereichs, z. B. <code>widget-claims-grid</code>.</li><li><b>Typ</b> – um welches Widget es sich handelt; angeboten werden nur die Widgets, die in dieser Installation verfügbar sind.</li><li><b>Eigenschaften</b> – die Einstellungen des Widgets. Das Formular passt sich dem gewählten Typ an und zeigt nur die Einstellungen, die dieser Typ kennt.</li><li><b>Platzierung</b> – <code>STANDALONE</code>-Widgets werden dort angezeigt, wo sie aufgeführt sind. Ein Container-Widget (etwa ein Kartenraster) ordnet andere Widgets an, indem es deren Ids in seinen Eigenschaften aufführt; markieren Sie diese als <code>REFERENCED</code>, damit sie innerhalb des Containers erscheinen und nicht ein zweites Mal für sich allein.</li></ul>"
+    },
+    "entities": {
+      "title": "Entitäten – Datenseiten ohne Gestaltungsaufwand",
+      "body": "<p>Eine <code>ENTITY</code>-Route zeigt eine Art von Geschäftsdaten – Schadensfälle, Kunden, Bestellungen –, ohne dass eine Seite gestaltet werden muss. Setzen Sie den <b>Entitätsnamen</b> auf den Namen einer Entität, die im Designer unter <b>Entitäten</b> definiert ist, und das Framework erzeugt daraus anhand der Attribute der Entität eine durchsuchbare Liste und ein Detailformular, zusammen mit den für sie definierten Validierungsregeln. Von dort aus können Benutzer Datensätze öffnen, anlegen, bearbeiten und löschen.</p><p><b>Entitätsmodus</b> (<code>LIST</code> oder <code>DETAILS</code>) und <b>RSQL-Filter</b> (ein Vorfilter wie <code>status==OPEN</code>) werden mit der Route gespeichert, aber noch nicht angewendet: Die Seite öffnet derzeit immer die vollständige Liste.</p>"
+    },
+    "documents": {
+      "title": "Dokumente",
+      "body": "<p>Eine <code>DOCUMENT</code>-Route zeigt ein Dokument – Inhalt aus Text, Bildern, Datenwerten und Widgets, erstellt im Designer unter <b>Dokumente</b>. Setzen Sie den <b>Dokument-Slug</b> auf den Slug des Dokuments. Das Darstellen eines Dokuments als Seite ist noch nicht verfügbar, daher zeigt die Vorschau an dieser Stelle einen kurzen Hinweis; um Dokumentinhalte schon heute anzuzeigen, verwenden Sie eine <code>WIDGETS</code>-Route mit einem Widget <code>document-viewer</code>.</p>"
+    },
+    "modules": {
+      "title": "Module",
+      "body": "<p>Eine größere Anwendung lässt sich in <b>Module</b> aufteilen. Ein Modul wird separat unter <b>Module</b> erstellt und enthält eigene Routen; sein <b>Schlüssel</b> darf sich nicht mehr ändern, sobald das Modul verwendet wird. Eine Anwendung bindet ein Modul über eine <b>Modul-Einbindung</b> ein: Der <b>Modulschlüssel</b> benennt das Modul, und der <b>Basispfad</b> ist das Präfix, unter dem seine Routen erscheinen – bindet man ein Modul unter <code>claims</code> ein, wird aus seiner Route <code>open</code> die Route <code>claims/open</code>. Ein Modul kann keine weiteren Module einbinden; es gibt nur eine Ebene.</p>"
+    },
+    "roles": {
+      "title": "Rollen",
+      "body": "<p>Routen und Navigationseinträge können die <b>Rollen</b> nennen, die sie verwenden dürfen. Bleibt die Liste leer, darf jedes angemeldete Mitglied Ihrer Organisation sie verwenden. Rollen werden mit der Definition gespeichert, aber die Vorschau schränkt anhand von ihnen noch nichts ein.</p>"
+    },
+    "lifecycle": {
+      "title": "Speichern, Vorschau und Veröffentlichen",
+      "body": "<p>Eine neue Anwendung beginnt als <b>Entwurf</b>. <b>Speichern</b> sichert Ihre Änderungen; der Tab <b>Vorschau</b> zeigt dann die gespeicherte Definition genau so, wie die laufende Anwendung sie darstellt, einschließlich Theme – prüfen Sie sie dort, bevor Sie weitermachen. <b>Veröffentlichen</b> macht die gespeicherte Version zur <b>Veröffentlichten Version</b>, die die Benutzer erhalten. Sie können danach weiter bearbeiten und speichern; die Benutzer sehen die Änderungen erst, wenn Sie erneut veröffentlichen.</p>"
+    }
   }
 }

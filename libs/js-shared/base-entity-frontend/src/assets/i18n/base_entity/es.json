@@ -78,6 +78,8 @@
     "apply_button": "Aplicar"
   },
   "embedded_components": {
-    "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él."
+    "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él.",
+    "move_up": "Subir",
+    "move_down": "Bajar"
   }
 }

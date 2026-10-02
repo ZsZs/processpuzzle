@@ -47,7 +47,7 @@ export { APP_MODULE_MOUNT_ENTITY_NAME, APP_MODULE_MOUNT_ID_FIELD, createModuleMo
 export { APP_NAV_ITEM_ENTITY_NAME, createNavItemDescriptor } from './lib/domain/nav-item.descriptors';
 export { APP_REGION_ENTITY_NAME, APP_REGION_ID_FIELD, createRegionDefinitionDescriptor } from './lib/domain/region-definition.descriptors';
 export { APP_ROUTE_ENTITY_NAME, APP_ROUTE_ID_FIELD, createRouteDefinitionDescriptor } from './lib/domain/route-definition.descriptors';
-export { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor } from './lib/domain/widget-instance.descriptors';
+export { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor, widgetTypeSelectables } from './lib/domain/widget-instance.descriptors';
 export { MODULE_DEFINITION_ENTITY_NAME, createModuleDefinitionDescriptor } from './lib/domain/module-definition.descriptors';
 export { AppDefinitionMapper } from './lib/domain/app-definition.mapper';
 export { AppDefinitionService } from './lib/domain/app-definition.service';
@@ -78,6 +78,7 @@ export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/
 export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';
 export { RegionHeaderComponent } from './lib/feature/shell/region-header.component';
 export { RegionNavComponent, type NavOrientation } from './lib/feature/shell/region-nav.component';
+export { APP_CONCEPTS, AppConceptsGuideComponent, appConceptAnchor, type AppConcept } from './lib/feature/app-concepts-guide.component';
 export { APP_PREVIEW_TAB } from './lib/feature/app-preview-tab';
 export { ModuleDefinitionContainerComponent } from './lib/feature/module-definition-container.component';
 export { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './lib/base-app.providers';

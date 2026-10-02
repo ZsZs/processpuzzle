@@ -78,6 +78,8 @@
     "apply_button": "Übernehmen"
   },
   "embedded_components": {
-    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert."
+    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert.",
+    "move_up": "Nach oben",
+    "move_down": "Nach unten"
   }
 }

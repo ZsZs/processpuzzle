@@ -31,6 +31,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   pattern?: string;
   referenceIdField?: string = 'id';
   /**
+   * `EMBEDDED_COMPONENTS` only: the rows' order means something — widgets render in it, nav items are listed
+   * in it — so the list lets the user reorder them. The order is the array's, so it needs nothing from the
+   * backend beyond keeping the array as sent.
+   */
+  ordered = false;
+  /**
    * The control of a {@link FormControlType.CUSTOM} attribute: a `BaseFormControlComponent` subclass the form
    * builder creates like any built-in control. Typed loosely because the base class is generic over the entity
    * and lives in the form layer, which this descriptor must not import.

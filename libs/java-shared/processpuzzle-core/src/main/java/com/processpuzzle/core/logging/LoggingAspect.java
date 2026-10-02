@@ -39,13 +39,19 @@ public class LoggingAspect {
     private static final ThreadLocal<Deque<String>> CALL_STACK = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final ObjectMapper objectMapper;
+    private final HandledExceptionClassifier handledExceptions;
 
     public LoggingAspect() {
         this(new ObjectMapper());
     }
 
     public LoggingAspect(ObjectMapper objectMapper) {
+        this(objectMapper, new HandledExceptionClassifier(null));
+    }
+
+    public LoggingAspect(ObjectMapper objectMapper, HandledExceptionClassifier handledExceptions) {
         this.objectMapper = objectMapper;
+        this.handledExceptions = handledExceptions;
     }
 
     @Around("@annotation(logMethod)")
@@ -93,7 +99,14 @@ public class LoggingAspect {
             try {
                 result = joinPoint.proceed();
             } catch (Throwable throwable) {
-                if (logger.isErrorEnabled()) {
+                // An exception the API answers on purpose is an outcome, not a fault: one WARN line, with
+                // the stack trace only for whoever turned this logger up to DEBUG.
+                if (handledExceptions.isHandled(declaringType, throwable)) {
+                    if (logger.isWarnEnabled()) {
+                        setInvocationMdc(className, methodName, callId, parentCallId, depth);
+                        logHandledException(logger, throwable, indent, className, methodName);
+                    }
+                } else if (logger.isErrorEnabled()) {
                     setInvocationMdc(className, methodName, callId, parentCallId, depth);
                     logger.atLevel(Level.ERROR)
                             .setCause(throwable)
@@ -117,6 +130,15 @@ public class LoggingAspect {
             }
             clearInvocationMdc();
         }
+    }
+
+    private void logHandledException(Logger logger, Throwable throwable, String indent, String className, String methodName) {
+        var event = logger.atLevel(Level.WARN);
+        if (logger.isDebugEnabled()) {
+            event = event.setCause(throwable);
+        }
+        event.log("{}✗ {}.{} threw {}: {}", indent, className, methodName,
+                throwable.getClass().getSimpleName(), throwable.getMessage());
     }
 
     private void setInvocationMdc(String className, String methodName, String callId, String parentCallId, int depth) {

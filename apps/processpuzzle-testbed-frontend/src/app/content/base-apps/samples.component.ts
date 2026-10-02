@@ -1,14 +1,20 @@
-import { Component, computed, viewChild } from '@angular/core';
-import { SampleHostComponent, SampleTab } from '../common/sample-host.component';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { AppConceptsGuideComponent } from '@processpuzzle/base-app';
 
 @Component({
   selector: 'base-apps-samples',
   standalone: true,
-  imports: [SampleHostComponent],
-  template: ` <pp-sample-host prefix="base-apps" groupName="appSample" ariaLabel="Application Sample" [tabs]="tabs" /> `,
+  imports: [AppConceptsGuideComponent, RouterOutlet, TranslocoDirective],
+  providers: [provideTranslocoScope({ scope: 'base_app', alias: 'base_app' })],
+  template: `
+    <ng-container *transloco="let t; prefix: 'base-apps'">
+      <p>{{ t('samples_desc_1') }}</p>
+      <p><strong>{{ t('samples_desc_2') }}</strong></p>
+    </ng-container>
+    <router-outlet />
+    <pp-app-concepts-guide />
+  `,
 })
-export class SamplesComponent {
-  private readonly host = viewChild(SampleHostComponent);
-  readonly tabs: SampleTab[] = [{ route: 'app-definition', label: 'App Definition' }];
-  readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');
-}
+export class SamplesComponent {}

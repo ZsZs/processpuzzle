@@ -89,16 +89,22 @@ mat-card-actions {
     display: revert;
 }
 
-.base-entity-form-delete-button {
+/* The compact icon buttons of a list row: delete, and move up / down on an ordered embedded list. */
+.base-entity-form-delete-button,
+.base-entity-form-row-button {
     width: 24px;
     height: 24px;
     padding: 0;
-    margin-left: 4px;
     line-height: 24px;
     vertical-align: middle;
 }
 
-.base-entity-form-delete-button mat-icon {
+.base-entity-form-delete-button {
+    margin-left: 4px;
+}
+
+.base-entity-form-delete-button mat-icon,
+.base-entity-form-row-button mat-icon {
     width: 18px;
     height: 18px;
     font-size: 18px;

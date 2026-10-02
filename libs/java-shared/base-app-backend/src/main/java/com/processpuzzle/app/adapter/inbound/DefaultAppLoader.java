@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.app.adapter.inbound.dto.DefaultAppsDocument;
+import com.processpuzzle.app.domain.AppDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -52,7 +54,10 @@ import java.io.InputStream;
  *
  * <p><strong>Existing data is never touched.</strong> An organization that already exists is loaded
  * into rather than re-provisioned, and an app or module definition whose key is already present is left
- * exactly as it is. Restarting against a persistent database therefore cannot overwrite a designer's
+ * exactly as it is. Presence is checked against the repositories before the endpoint is called, as
+ * {@code DefaultEntityLoader} does: left to the endpoint's conflict exception, every already-seeded
+ * definition would be logged by {@code LoggingAspect} as an ERROR with a stack trace on every restart.
+ * The conflict is still caught, for the race with a concurrent create. Restarting against a persistent database therefore cannot overwrite a designer's
  * edits with the bundled defaults, which also makes the loader safe to leave enabled outside
  * development.
  *
@@ -68,6 +73,8 @@ public class DefaultAppLoader {
     private static final String DEFAULT_APPS_LOCATION = "classpath*:default-apps/*" + APPS_FILE_SUFFIX;
 
     private final AppEndpoint endpoint;
+    private final AppDefinitionRepository appRepository;
+    private final ModuleDefinitionRepository moduleRepository;
     private final ObjectProvider<TenantDirectory> tenantDirectoryProvider;
     private final ResourcePatternResolver resourceResolver;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
@@ -75,9 +82,13 @@ public class DefaultAppLoader {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     public DefaultAppLoader(AppEndpoint endpoint,
+                            AppDefinitionRepository appRepository,
+                            ModuleDefinitionRepository moduleRepository,
                             ObjectProvider<TenantDirectory> tenantDirectoryProvider,
                             ResourcePatternResolver resourceResolver) {
         this.endpoint = endpoint;
+        this.appRepository = appRepository;
+        this.moduleRepository = moduleRepository;
         this.tenantDirectoryProvider = tenantDirectoryProvider;
         this.resourceResolver = resourceResolver;
     }
@@ -178,6 +189,10 @@ public class DefaultAppLoader {
             return Outcome.REJECTED;
         }
 
+        if (appRepository.existsByOrgKeyAndId(orgKey, definition.getId())) {
+            return alreadyPresent("app", definition.getId(), orgKey);
+        }
+
         try {
             AppDefinition created = endpoint.createAppDefinition(orgKey, definition).getBody();
             LOG.info("Created default app definition '{}' in organization '{}' as revision {}.",
@@ -185,9 +200,7 @@ public class DefaultAppLoader {
                     created == null || created.getVersion() == null ? "?" : created.getVersion());
             return Outcome.CREATED;
         } catch (AppDefinitionAlreadyExistsException e) {
-            LOG.info("Default app definition '{}' already exists in organization '{}'; left untouched.",
-                    definition.getId(), orgKey);
-            return Outcome.SKIPPED;
+            return alreadyPresent("app", definition.getId(), orgKey);
         } catch (AppDefinitionInvalidException e) {
             // Logged problem by problem: the whole point of a validated default is that a broken one
             // says which part is broken.
@@ -215,6 +228,10 @@ public class DefaultAppLoader {
             return Outcome.REJECTED;
         }
 
+        if (moduleRepository.existsByOrgKeyAndKey(orgKey, module.getKey())) {
+            return alreadyPresent("module", module.getKey(), orgKey);
+        }
+
         try {
             ModuleDefinition created = endpoint.createModuleDefinition(orgKey, module).getBody();
             LOG.info("Created default module definition '{}' in organization '{}' as revision {}.",
@@ -222,9 +239,7 @@ public class DefaultAppLoader {
                     created == null || created.getVersion() == null ? "?" : created.getVersion());
             return Outcome.CREATED;
         } catch (ModuleDefinitionAlreadyExistsException e) {
-            LOG.info("Default module definition '{}' already exists in organization '{}'; left untouched.",
-                    module.getKey(), orgKey);
-            return Outcome.SKIPPED;
+            return alreadyPresent("module", module.getKey(), orgKey);
         } catch (ModuleDefinitionInvalidException e) {
             LOG.warn("Default module definition '{}' from {} was rejected by validation.",
                     module.getKey(), fileName);
@@ -246,6 +261,11 @@ public class DefaultAppLoader {
         }
         String orgKey = fileName.substring(0, fileName.length() - APPS_FILE_SUFFIX.length());
         return orgKey.isBlank() ? null : orgKey;
+    }
+
+    private static Outcome alreadyPresent(String kind, String key, String orgKey) {
+        LOG.info("Default {} definition '{}' already exists in organization '{}'; left untouched.", kind, key, orgKey);
+        return Outcome.SKIPPED;
     }
 
     private static boolean isBlank(String value) {

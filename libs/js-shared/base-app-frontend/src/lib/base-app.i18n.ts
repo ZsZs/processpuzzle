@@ -52,6 +52,9 @@ export const APP_MODULE_MOUNT_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_modu
 export const APP_NAV_ITEM_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_nav_item`;
 export const APP_WIDGET_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_widget`;
 
+/** Key root of the dynamic-application guide shown under the App Definition list. */
+export const APP_CONCEPTS_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.concepts`;
+
 /** Keys of the `Publish` form action contributed by `AppDefinitionContainerComponent`. */
 export const PUBLISH_BUTTON_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.button`;
 export const PUBLISH_TOOLTIP_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.tooltip`;

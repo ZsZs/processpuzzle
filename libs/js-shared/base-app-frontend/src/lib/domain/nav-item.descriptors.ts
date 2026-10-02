@@ -36,6 +36,8 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   const childrenAttr = new BaseEntityAttrDescriptor('children', FormControlType.EMBEDDED_COMPONENTS, 'Children');
   childrenAttr.linkedEntityType = APP_NAV_ITEM_ENTITY_NAME;
   childrenAttr.hideInTable = true;
+  // Listed in this order under their group.
+  childrenAttr.ordered = true;
 
   const identityRow = new FlexboxDescriptor([idAttr, labelAttr, translocoIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };

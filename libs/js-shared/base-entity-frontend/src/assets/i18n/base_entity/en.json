@@ -78,6 +78,8 @@
     "apply_button": "Apply"
   },
   "embedded_components": {
-    "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it."
+    "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it.",
+    "move_up": "Move up",
+    "move_down": "Move down"
   }
 }

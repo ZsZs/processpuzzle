@@ -2,6 +2,7 @@ import { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
 import { APP_LOGO_WIDGET_REGISTRATION } from './app-logo/app-logo.widget';
 import { APP_TITLE_WIDGET_REGISTRATION } from './app-title/app-title.widget';
+import { NAV_BAR_WIDGET_REGISTRATION } from './nav-bar/nav-bar.widget';
 import { NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
 import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
 import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
@@ -13,6 +14,7 @@ import { LIKE_BUTTON_WIDGET_REGISTRATION } from './like-button/like-button.widge
 import { MARKDOWN_PAGE_WIDGET_REGISTRATION } from './markdown-page/markdown-page.widget';
 import { PHOTO_ALBUM_WIDGET_REGISTRATION } from './photo-album/photo-album.widget';
 import { SHARE_BUTTON_WIDGET_REGISTRATION } from './share-button/share-button.widget';
+import { SPACER_WIDGET_REGISTRATION } from './spacer/spacer.widget';
 import { THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
 import { VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
@@ -30,10 +32,12 @@ export { IMAGE_ZOOM_WIDGET } from './image-zoom/image-zoom.widget';
 export { LANGUAGE_SELECTOR_WIDGET } from './language-selector/language-selector.widget';
 export { LIKE_BUTTON_WIDGET } from './like-button/like-button.widget';
 export { MARKDOWN_PAGE_WIDGET } from './markdown-page/markdown-page.widget';
+export { NAV_BAR_WIDGET } from './nav-bar/nav-bar.widget';
 export { NAV_MENU_WIDGET } from './nav-menu/nav-menu.widget';
 export { NAVIGATE_BACK_WIDGET } from './navigate-back/navigate-back.widget';
 export { PHOTO_ALBUM_WIDGET } from './photo-album/photo-album.widget';
 export { SHARE_BUTTON_WIDGET } from './share-button/share-button.widget';
+export { SPACER_WIDGET } from './spacer/spacer.widget';
 export { THEMES_BUTTON_WIDGET } from './themes-button/themes-button.widget';
 export { VERSION_BUTTON_WIDGET } from './version-button/version-button.widget';
 
@@ -64,6 +68,10 @@ export function provideAppLogoWidget(): Provider[] {
 
 export function provideAppTitleWidget(): Provider[] {
   return provideWidget(APP_TITLE_WIDGET_REGISTRATION);
+}
+
+export function provideNavBarWidget(): Provider[] {
+  return provideWidget(NAV_BAR_WIDGET_REGISTRATION);
 }
 
 export function provideNavMenuWidget(): Provider[] {
@@ -110,6 +118,10 @@ export function provideShareButtonWidget(): Provider[] {
   return provideWidget(SHARE_BUTTON_WIDGET_REGISTRATION);
 }
 
+export function provideSpacerWidget(): Provider[] {
+  return provideWidget(SPACER_WIDGET_REGISTRATION);
+}
+
 export function provideThemesButtonWidget(): Provider[] {
   return provideWidget(THEMES_BUTTON_WIDGET_REGISTRATION);
 }
@@ -129,10 +141,12 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   LANGUAGE_SELECTOR_WIDGET_REGISTRATION,
   LIKE_BUTTON_WIDGET_REGISTRATION,
   MARKDOWN_PAGE_WIDGET_REGISTRATION,
+  NAV_BAR_WIDGET_REGISTRATION,
   NAV_MENU_WIDGET_REGISTRATION,
   NAVIGATE_BACK_WIDGET_REGISTRATION,
   PHOTO_ALBUM_WIDGET_REGISTRATION,
   SHARE_BUTTON_WIDGET_REGISTRATION,
+  SPACER_WIDGET_REGISTRATION,
   THEMES_BUTTON_WIDGET_REGISTRATION,
   VERSION_BUTTON_WIDGET_REGISTRATION,
 ];

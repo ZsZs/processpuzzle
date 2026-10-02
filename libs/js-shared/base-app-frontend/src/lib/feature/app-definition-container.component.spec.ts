@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
@@ -16,7 +17,7 @@ describe('AppDefinitionContainerComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppDefinitionContainerComponent],
-      providers: [{ provide: AppDefinitionStore, useValue: storeStub }],
+      providers: [provideRouter([]), { provide: AppDefinitionStore, useValue: storeStub }],
     })
       .overrideComponent(AppDefinitionContainerComponent, { set: { template: '', imports: [] } })
       .compileComponents();

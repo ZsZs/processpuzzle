@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.widget.adapter.inbound.dto.DefaultWidgetsDocument;
+import com.processpuzzle.widget.domain.WidgetDefinitionRepository;
 import com.processpuzzle.widget.model.WidgetDefinition;
 import com.processpuzzle.widget.model.WidgetDefinitionInput;
 import com.processpuzzle.widget.usecase.exception.WidgetDefinitionAlreadyExistsException;
@@ -65,13 +66,16 @@ public class DefaultWidgetLoader {
     private static final String DEFAULT_WIDGETS_LOCATION = "classpath*:default-widgets/*" + WIDGETS_FILE_SUFFIX;
 
     private final WidgetEndpoint endpoint;
+    private final WidgetDefinitionRepository repository;
     private final ResourcePatternResolver resourceResolver;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    public DefaultWidgetLoader(WidgetEndpoint endpoint, ResourcePatternResolver resourceResolver) {
+    public DefaultWidgetLoader(WidgetEndpoint endpoint, WidgetDefinitionRepository repository,
+                               ResourcePatternResolver resourceResolver) {
         this.endpoint = endpoint;
+        this.repository = repository;
         this.resourceResolver = resourceResolver;
     }
 
@@ -126,6 +130,13 @@ public class DefaultWidgetLoader {
             return Outcome.REJECTED;
         }
 
+        // Checked here rather than left to the endpoint's conflict exception, which LoggingAspect would log
+        // as an ERROR with a stack trace for every already-seeded widget on every restart. The catch below
+        // stays for the race with a concurrent create.
+        if (repository.existsByOrgKeyAndKey(orgKey, definition.getKey())) {
+            return alreadyPresent(definition.getKey(), orgKey);
+        }
+
         try {
             WidgetDefinition created = endpoint.createWidgetDefinition(orgKey, definition).getBody();
             LOG.info("Created default widget definition '{}' in organization '{}' as revision {}.",
@@ -133,9 +144,7 @@ public class DefaultWidgetLoader {
                     created == null || created.getVersion() == null ? "?" : created.getVersion());
             return Outcome.CREATED;
         } catch (WidgetDefinitionAlreadyExistsException e) {
-            LOG.info("Default widget definition '{}' already exists in organization '{}'; left untouched.",
-                    definition.getKey(), orgKey);
-            return Outcome.SKIPPED;
+            return alreadyPresent(definition.getKey(), orgKey);
         } catch (WidgetDefinitionInvalidException e) {
             // The whole point of a validated default is that a broken one says which part is broken.
             LOG.warn("Default widget definition '{}' from {} was rejected: {}",
@@ -146,6 +155,11 @@ public class DefaultWidgetLoader {
                     definition.getKey(), fileName, orgKey, e);
             return Outcome.REJECTED;
         }
+    }
+
+    private static Outcome alreadyPresent(String key, String orgKey) {
+        LOG.info("Default widget definition '{}' already exists in organization '{}'; left untouched.", key, orgKey);
+        return Outcome.SKIPPED;
     }
 
     /** The part of {@code <orgKey>-widgets.yaml} before the suffix, or {@code null} if there is none. */

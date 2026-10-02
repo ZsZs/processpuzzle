@@ -18,10 +18,11 @@ import { EmbeddedComponentsListComponent } from './embedded-components-list.comp
 const PARENT_ENTITY_NAME = 'TestEntity';
 const EMBEDDED_ENTITY_NAME = 'EmbeddedComponent';
 
-function makeConfig(referenceIdField?: string): BaseEntityAttrDescriptor {
+function makeConfig(referenceIdField?: string, ordered = false): BaseEntityAttrDescriptor {
   const config = new BaseEntityAttrDescriptor('embeddedComponents', FormControlType.EMBEDDED_COMPONENTS, 'Embedded Components');
   config.linkedEntityType = EMBEDDED_ENTITY_NAME;
   if (referenceIdField) config.referenceIdField = referenceIdField;
+  config.ordered = ordered;
   return config;
 }
 
@@ -241,6 +242,85 @@ describe('EmbeddedComponentsListComponent', () => {
       component.deleteComponent({ id: 'a' });
 
       expect(store.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reordering', () => {
+    const threeRows = () => makeEmbeddedStore([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    const query = (fixture: { nativeElement: HTMLElement }, testId: string) => [...fixture.nativeElement.querySelectorAll<HTMLButtonElement>(`[data-testid="${testId}"]`)];
+
+    it('offers no reordering unless the attribute is ordered', async () => {
+      const { component, fixture } = await setupList({ store: threeRows() });
+
+      expect(component.reorderable()).toBe(false);
+      expect(query(fixture, 'embedded-row-move-up')).toHaveLength(0);
+      expect(query(fixture, 'embedded-row-drag-handle')).toHaveLength(0);
+    });
+
+    it('offers a handle and move buttons per row, the first row unable to go up and the last down', async () => {
+      const { fixture } = await setupList({ config: makeConfig(undefined, true), store: threeRows() });
+
+      expect(query(fixture, 'embedded-row-drag-handle')).toHaveLength(3);
+      expect(query(fixture, 'embedded-row-move-up').map((button) => button.disabled)).toEqual([true, false, false]);
+      expect(query(fixture, 'embedded-row-move-down').map((button) => button.disabled)).toEqual([false, false, true]);
+    });
+
+    it('has nothing to order with a single row', async () => {
+      const { component } = await setupList({ config: makeConfig(undefined, true), store: makeEmbeddedStore([{ id: 'a' }]) });
+
+      expect(component.reorderable()).toBe(false);
+    });
+
+    const listed = (component: { rows: () => EmbeddedRow[] }) => component.rows().map((row) => row['id']);
+
+    it('rearranges the rows with the move buttons and leaves saving them to the owner', async () => {
+      const store = threeRows();
+      const { component, fixture } = await setupList({ config: makeConfig(undefined, true), store });
+
+      query(fixture, 'embedded-row-move-down')[0].click();
+      fixture.detectChanges();
+      query(fixture, 'embedded-row-move-up')[2].click();
+      fixture.detectChanges();
+
+      expect(listed(component)).toEqual(['b', 'c', 'a']);
+      expect(component.formGroup.get('embeddedComponents')?.value.map((row: EmbeddedRow) => row['id'])).toEqual(['b', 'c', 'a']);
+      expect(component.formGroup.dirty).toBe(true);
+    });
+
+    it('moves the dragged row to where it was dropped, and ignores a drop in place', async () => {
+      const { component, fixture } = await setupList({ config: makeConfig(undefined, true), store: threeRows() });
+
+      component.dropComponent({ previousIndex: 1, currentIndex: 1 } as never);
+      expect(component.formGroup.dirty).toBe(false);
+
+      component.dropComponent({ previousIndex: 0, currentIndex: 2 } as never);
+      fixture.detectChanges();
+      expect(listed(component)).toEqual(['b', 'c', 'a']);
+      expect(component.formGroup.dirty).toBe(true);
+    });
+
+    it('keeps the arrangement when a child is added or deleted before the owner is saved', async () => {
+      const store = threeRows();
+      const { component, fixture } = await setupList({ config: makeConfig(undefined, true), store });
+      component.moveComponent({ id: 'c' }, 0);
+
+      store.entities.set([{ id: 'a' }, { id: 'c' }, { id: 'd' }]);
+      fixture.detectChanges();
+
+      expect(listed(component)).toEqual(['c', 'a', 'd']);
+      expect(component.formGroup.get('embeddedComponents')?.value.map((row: EmbeddedRow) => row['id'])).toEqual(['c', 'a', 'd']);
+    });
+
+    it('does not reorder a disabled list', async () => {
+      const config = makeConfig(undefined, true);
+      config.disabled = true;
+      const { component } = await setupList({ config, store: threeRows() });
+
+      component.moveComponent({ id: 'a' }, 1);
+
+      expect(component.reorderable()).toBe(false);
+      expect(listed(component)).toEqual(['a', 'b', 'c']);
+      expect(component.formGroup.dirty).toBe(false);
     });
   });
 

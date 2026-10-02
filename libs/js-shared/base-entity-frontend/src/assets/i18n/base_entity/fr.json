@@ -78,6 +78,8 @@
     "apply_button": "Appliquer"
   },
   "embedded_components": {
-    "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké."
+    "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké.",
+    "move_up": "Monter",
+    "move_down": "Descendre"
   }
 }
