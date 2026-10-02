@@ -1,5 +1,5 @@
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { type ControlDataContext, controlTestersFor, identificationAttrFromTesters } from '../controls/control-tester';
+import { type ControlDataContext, controlTestersFor, type FixtureOverride, identificationAttrFromTesters } from '../controls/control-tester';
 
 /** Returns only attrs that represent actual form inputs. */
 export function inputAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
@@ -37,7 +37,11 @@ export function buildCreateDataForContext(context: ControlDataContext): Record<s
   for (const tester of controlTestersFor(context.descriptor)) {
     data[tester.attr.attrName] = tester.createValue(context);
   }
-  return data;
+  return { ...data, ...fixtureOverrideFor(context)?.create };
+}
+
+function fixtureOverrideFor(context: ControlDataContext): FixtureOverride | undefined {
+  return context.fixtureOverrides?.find((override) => override.entityName === context.descriptor.entityName);
 }
 
 /**
@@ -88,7 +92,7 @@ export function buildUpdateDataForContext(context: ControlDataContext, original:
     if (tester.attr.attrName === IDENTITY_ATTR_NAME) continue;
     updated[tester.attr.attrName] = tester.updateValue(context, original);
   }
-  return updated;
+  return { ...updated, ...fixtureOverrideFor(context)?.update };
 }
 
 export { linkedFixtureAttrKey } from '../controls/control-tester';

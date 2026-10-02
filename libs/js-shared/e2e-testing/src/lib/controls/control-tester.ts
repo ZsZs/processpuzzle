@@ -19,6 +19,20 @@ export interface ControlDataContext {
   linkedFixturesByAttr?: Record<string, LinkedEntityFixture>;
   linkedDisplayValuesByAttr?: Record<string, string>;
   uniqueSuffix?: string;
+  fixtureOverrides?: FixtureOverride[];
+}
+
+/**
+ * Values an application pins on one entity's generated fixture, because a field's value is only kept when
+ * another field has a particular one — a `dateStyle` is persisted only on a DATE / DATE_TIME attribute, say —
+ * and the generator, picking every control's value on its own, cannot know that. The pinned values replace
+ * the generated ones; every other field is still generated.
+ */
+export interface FixtureOverride {
+  entityName: string;
+  create?: Record<string, string>;
+  update?: Record<string, string>;
+  reason: string;
 }
 
 export interface ControlInteractionContext extends ControlDataContext {
