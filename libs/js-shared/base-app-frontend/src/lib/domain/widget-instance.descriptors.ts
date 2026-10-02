@@ -56,9 +56,9 @@ export function createWidgetInstanceDescriptor(widgetTypes: SelectablesInput = [
 }
 
 /**
- * The registered widget types as dropdown options, sorted. `key` and `value` are both the registry key,
+ * The registered widget types as dropdown options, sorted alphabetically using the current locale. `key` and `value` are both the registry key,
  * because the dropdown stores and displays `value` — a display name there would be saved as the type.
  */
 export function widgetTypeSelectables(registry: ReadonlyMap<string, WidgetRegistration>): Selectable[] {
-  return toSelectables([...registry.keys()].sort());
+  return toSelectables([...registry.keys()].sort((left, right) => left.localeCompare(right)));
 }

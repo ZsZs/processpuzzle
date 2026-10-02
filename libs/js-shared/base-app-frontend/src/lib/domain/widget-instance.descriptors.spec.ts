@@ -84,6 +84,16 @@ describe('widgetTypeSelectables', () => {
     ]);
   });
 
+  it('sorts mixed-case keys alphabetically without changing the registry order', () => {
+    const registry = new Map([['Markdown', registration('Markdown')], ['entity-grid', registration('entity-grid')]]);
+
+    expect(widgetTypeSelectables(registry)).toEqual([
+      { key: 'entity-grid', value: 'entity-grid' },
+      { key: 'Markdown', value: 'Markdown' },
+    ]);
+    expect([...registry.keys()]).toEqual(['Markdown', 'entity-grid']);
+  });
+
   it('is empty for an empty registry', () => {
     expect(widgetTypeSelectables(new Map())).toEqual([]);
   });
