@@ -45,10 +45,13 @@ export class LocaleDateAdapter extends NativeDateAdapter {
       order.forEach((part, index) => (parts[part] = part === 'month' ? numbers[index] - 1 : numbers[index]));
     } else return null;
 
-    const year = parts.year! < 100 ? parts.year! + (parts.year! < 50 ? 2000 : 1900) : parts.year!;
-    const date = new Date(year, parts.month!, parts.day!);
+    const { year: parsedYear, month: parsedMonth, day } = parts;
+    if (parsedYear === undefined || parsedMonth === undefined || day === undefined) return this.invalid();
+    let year = parsedYear;
+    if (year < 100) year += year < 50 ? 2000 : 1900;
+    const date = new Date(year, parsedMonth, day);
     // Out-of-range parts (`31.02.`) roll over in the Date constructor; refuse them instead of moving the day.
-    if (date.getFullYear() !== year || date.getMonth() !== parts.month || date.getDate() !== parts.day) return this.invalid();
+    if (date.getFullYear() !== year || date.getMonth() !== parsedMonth || date.getDate() !== day) return this.invalid();
     return date;
   }
 

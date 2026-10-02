@@ -68,7 +68,10 @@ export class DatepickerComponent<Entity extends BaseEntity> extends BaseFormCont
       this.dateFormats.display.timeOptionLabel = intlOptionsOf({ dateStyle: 'none', timeStyle: 'short' });
     }
 
-    this.control = this.formGroup.get(this.config().attrName)!;
+    const attrName = this.config().attrName;
+    const control = this.formGroup.get(attrName);
+    if (!control) throw new Error(`Form control '${attrName}' is missing.`);
+    this.control = control;
     this.holdsDate = this.control.value instanceof Date;
     this.picked.set(toDateValue(this.control.value) ?? null);
     this.control.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {

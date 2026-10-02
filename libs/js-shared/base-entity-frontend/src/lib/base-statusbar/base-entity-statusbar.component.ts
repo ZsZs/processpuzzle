@@ -231,7 +231,8 @@ export class BaseEntityStatusbarComponent implements OnInit {
     const attrName = descriptor.titleAttrName();
     const row = this.findRowOfLevel(level, descriptor, ownerDescriptor);
     const value = attrName ? row?.[attrName] : undefined;
-    if (value != null && String(value).length > 0) return this.titleText(descriptor, attrName, value);
+    const title = value != null ? this.titleText(descriptor, attrName, value) : '';
+    if (title.length > 0) return title;
 
     return level.entityId && level.entityId !== BaseUrlSegments.NewEntity ? level.entityId : translateLabel(this.transloco, descriptor.i18nKey(), descriptor.entityName);
   }

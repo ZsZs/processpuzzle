@@ -44,11 +44,15 @@ describe('LocaleDateAdapter', () => {
     adapter.setLocale('de');
     expect(adapter.parse('09.12.60', null)).toEqual(born);
     expect(adapter.parse('15.01.26', null)).toEqual(new Date(2026, 0, 15));
+    expect(adapter.parse('15.01.49', null)).toEqual(new Date(2049, 0, 15));
+    expect(adapter.parse('15.01.50', null)).toEqual(new Date(1950, 0, 15));
   });
 
   it('refuses a day that does not exist rather than rolling it over', () => {
     adapter.setLocale('de');
-    expect(adapter.isValid(adapter.parse('31.02.2026', null)!)).toBe(false);
+    const date = adapter.parse('31.02.2026', null);
+    if (date === null) throw new Error('Expected an invalid Date rather than null');
+    expect(adapter.isValid(date)).toBe(false);
   });
 
   it('answers empty input with null', () => {

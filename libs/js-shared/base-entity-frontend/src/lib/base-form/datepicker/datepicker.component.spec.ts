@@ -19,6 +19,13 @@ async function setup(dateFormat?: BaseEntityAttrDescriptor['dateFormat'], date: 
 }
 
 describe('DatepickerComponent', () => {
+  it('reports a missing form control explicitly', async () => {
+    const { component } = await setup();
+    component.formGroup.removeControl('date');
+
+    expect(() => component.ngOnInit()).toThrow("Form control 'date' is missing.");
+  });
+
   it('hints with today in the attribute style instead of a fixed pattern', async () => {
     const { element } = await setup({ dateStyle: 'short' });
 

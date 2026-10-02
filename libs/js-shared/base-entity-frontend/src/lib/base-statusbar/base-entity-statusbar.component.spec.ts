@@ -98,6 +98,18 @@ describe('BaseStatusbarComponent', () => {
     expect(TestBed.inject(BaseFormNavigatorSingletonStore).returnTo()).toEqual('');
   });
 
+  it.each([
+    { name: '', expected: 'embedded_1_1' },
+    { name: '0', expected: '0' },
+  ])('resolves a breadcrumb title of "$name" as "$expected"', async ({ name, expected }) => {
+    const { fixture, router } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, EMBEDDED_FACADE_PROVIDERS);
+    TestBed.inject(EmbeddedComponentFacadeStub).store.entities.set([{ id: 'embedded_1_1', name }]);
+    await router.navigateByUrl('/test-entity/1/details/embedded-component/embedded_1_1/details');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.crumb-current')?.textContent?.trim()).toBe(expected);
+  });
+
   it('summarises the violations of the level the user is on, not only those of the outermost entity', async () => {
     const { fixture, router } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, EMBEDDED_FACADE_PROVIDERS);
     await router.navigateByUrl('/test-entity/1/details/embedded-component/embedded_1_1/details');
