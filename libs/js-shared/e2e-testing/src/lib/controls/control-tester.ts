@@ -320,11 +320,12 @@ class DateControlTester extends ControlTester {
   override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
     const lang = pageLang(context.page);
     const { dateStyle, timeStyle } = this.format;
-    if (this.hasDate) {
+    // `none` is this format's word for "no such part"; Intl has no such value, so it is never passed on.
+    if (dateStyle !== 'none') {
       const expected = await formatInPage(context.page, value, { dateStyle }, lang);
       await expect(this.inner(context.page, context.descriptor), `DATE ${this.attr.attrName} in ${lang}`).toHaveValue(expected, expectOptions(context));
     }
-    if (this.hasTime) {
+    if (timeStyle !== 'none') {
       const expected = await formatInPage(context.page, value, { timeStyle }, lang);
       await expect(this.timeInput(context), `DATE ${this.attr.attrName} time in ${lang}`).toHaveValue(expected, expectOptions(context));
     }
