@@ -88,6 +88,23 @@ class EntityDefinitionMapperTest {
     }
 
     @Test
+    void autosizeColumn_roundTripsFromInputToModelAndDescriptor() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("status");
+        attrInput.setValueKind(ValueKind.TEXT);
+        attrInput.setFormControlType(FormControlType.TEXT);
+        attrInput.setAutosizeColumn(true);
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.isAutosizeColumn()).isTrue();
+        assertThat(mapper.toModel(domain).getAutosizeColumn()).isTrue();
+        assertThat(mapper.toAttributeDescriptor(domain).isAutosizeColumn()).isTrue();
+
+        attrInput.setAutosizeColumn(null);
+        assertThat(mapper.toDomain(attrInput).isAutosizeColumn()).isFalse();
+    }
+
+    @Test
     void dateFormat_partialAndAbsent_mapToNulls() {
         assertThat(mapper.toDomain((AttributeDateFormat) null)).isNull();
         assertThat(mapper.toModel((DateFormat) null)).isNull();
@@ -205,6 +222,7 @@ class EntityDefinitionMapperTest {
                 .formControlType(com.processpuzzle.baseentity.definition.domain.FormControlType.TEXT_BOX)
                 .required(true)
                 .isLinkToDetails(true)
+                .autosizeColumn(true)
                 .build();
 
         BaseEntityDefinition def = BaseEntityDefinition.builder()
@@ -223,6 +241,7 @@ class EntityDefinitionMapperTest {
         assertThat(attrDesc.getLabel()).isEqualTo("Title");
         assertThat(attrDesc.isRequired()).isTrue();
         assertThat(attrDesc.isLinkToDetails()).isTrue();
+        assertThat(attrDesc.isAutosizeColumn()).isTrue();
     }
 
     @Test
@@ -342,6 +361,7 @@ class EntityDefinitionMapperTest {
         modelAttr.setVisible(true);
         modelAttr.setShowThumbnail(false);
         modelAttr.setHideInTable(true);
+        modelAttr.setAutosizeColumn(true);
         modelAttr.setIsHeading(false);
         modelAttr.setPlaceholder("Enter...");
         modelAttr.setLines(3);
@@ -355,11 +375,13 @@ class EntityDefinitionMapperTest {
         assertThat(domainAttr.getAttrName()).isEqualTo("custom");
         assertThat(domainAttr.getSelectables()).hasSize(1);
         assertThat(domainAttr.getSelectables().get(0).getKey()).isEqualTo("k1");
+        assertThat(domainAttr.isAutosizeColumn()).isTrue();
 
         com.processpuzzle.baseentity.model.AttributeDescriptor mappedBack = mapper.toModel(domainAttr);
         assertThat(mappedBack.getAttrName()).isEqualTo("custom");
         assertThat(mappedBack.getSelectables()).hasSize(1);
         assertThat(mappedBack.getSelectables().get(0).getKey()).isEqualTo("k1");
+        assertThat(mappedBack.getAutosizeColumn()).isTrue();
     }
 
     @Test

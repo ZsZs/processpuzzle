@@ -37,6 +37,16 @@ describe('EntityListComponent', () => {
       expect(tableHeader).toBeTruthy();
     });
 
+    it('autosize class on the header and the cells of an autosized column only', async () => {
+      const autosizedConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
+      autosizedConfig.autosizeColumn = true;
+      const { fixture } = await setupListComponentTest([autosizedConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      const autosized = (column: string) => fixture.debugElement.queryAll(By.css(`.mat-column-${column}`)).map((cell) => cell.nativeElement.classList.contains('pp-col-autosize'));
+
+      expect(autosized('name')).toEqual([true, true, true]);
+      expect(autosized('description')).toEqual([false, false, false]);
+    });
+
     it('paginator element', async () => {
       const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
       const matPaginator = fixture.debugElement.query(By.css('mat-paginator')).nativeElement;

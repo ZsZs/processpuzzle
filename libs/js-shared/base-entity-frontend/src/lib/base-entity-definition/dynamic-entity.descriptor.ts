@@ -125,6 +125,7 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
   );
 
   attrDescriptor.required = attribute.required === true;
+  attrDescriptor.autosizeColumn = attribute.autosizeColumn === true;
   attrDescriptor.description = attribute.description;
   // Resolved here because this is the last place that knows the value kind: the descriptor carries none,
   // and a DATE_TIME attribute without a format of its own must still get a time field.

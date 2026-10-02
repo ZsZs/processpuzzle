@@ -27,6 +27,7 @@ describe('EntityDefinitionMapper', () => {
         required: true,
         indexed: true,
         isLinkToDetails: true,
+        autosizeColumn: true,
       },
     ],
   };
@@ -66,7 +67,7 @@ describe('EntityDefinitionMapper', () => {
 
       expect(attributes).toHaveLength(1);
       expect(attributes[0]).toBeInstanceOf(EntityAttributeDefinition);
-      expect(attributes[0]).toMatchObject({ code: 'orderNumber', name: 'Order #', displayOrder: 1, valueKind: 'TEXT', formControlType: 'TEXT_BOX', required: true, indexed: true, isLinkToDetails: true });
+      expect(attributes[0]).toMatchObject({ code: 'orderNumber', name: 'Order #', displayOrder: 1, valueKind: 'TEXT', formControlType: 'TEXT_BOX', required: true, indexed: true, isLinkToDetails: true, autosizeColumn: true });
     });
 
     it('falls back to the id when a response names no code', () => {
@@ -133,7 +134,7 @@ describe('EntityDefinitionMapper', () => {
     it('sends every attribute flag explicitly, false included', () => {
       const dto = mapper.toDto(definition);
 
-      expect(dto.attributes?.[0]).toMatchObject({ required: true, isMultiValued: false, indexed: false, isLinkToDetails: false });
+      expect(dto.attributes?.[0]).toMatchObject({ required: true, isMultiValued: false, indexed: false, isLinkToDetails: false, autosizeColumn: false });
     });
 
     /** Neither is part of `BaseEntityAttributeInput` — see the model and `fromAttribute`. */

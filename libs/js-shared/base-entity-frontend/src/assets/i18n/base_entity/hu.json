@@ -10,6 +10,7 @@
     "isMultiValued": "Többértékű",
     "indexed": "Indexelt",
     "isLinkToDetails": "A rekord címe",
+    "autosizeColumn": "Listaoszlop a tartalomhoz igazodik",
     "linkedEntityType": "Kapcsolt entitás",
     "defaultValue": "Alapértelmezett érték",
     "enumValues": "Felsorolás értékei",

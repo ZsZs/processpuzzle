@@ -74,6 +74,7 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setDateFormat(desired.getDateFormat());
         existing.setLinkedEntityType(desired.getLinkedEntityType());
         existing.setLinkToDetails(desired.isLinkToDetails());
+        existing.setAutosizeColumn(desired.isAutosizeColumn());
         existing.setValidationRules(desired.getValidationRules());
     }
 }

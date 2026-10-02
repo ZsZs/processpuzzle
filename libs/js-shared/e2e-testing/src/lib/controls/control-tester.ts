@@ -468,8 +468,8 @@ class ForeignKeyControlTester extends ControlTester {
     await filterInput.dispatchEvent('keyup');
 
     const row = context.page
-      .locator('mat-row')
-      .filter({ has: context.page.locator('mat-cell').filter({ hasText: exactText(identificationValue) }) })
+      .locator('tr.mat-mdc-row')
+      .filter({ has: context.page.locator('td.mat-mdc-cell').filter({ hasText: exactText(identificationValue) }) })
       .first();
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
     await context.page.getByTestId(`${toTestId(linkedName)}-select`).click();

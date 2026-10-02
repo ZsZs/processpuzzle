@@ -102,6 +102,14 @@ public class BaseEntityAttribute {
     @Builder.Default
     private boolean isLinkToDetails = false;
 
+    /**
+     * The list column hugs its content instead of filling the remaining width. The column default lets
+     * {@code ddl-auto: update} add the column to a table that already has rows.
+     */
+    @Builder.Default
+    @Column(columnDefinition = "boolean not null default false")
+    private boolean autosizeColumn = false;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Object validationRules;

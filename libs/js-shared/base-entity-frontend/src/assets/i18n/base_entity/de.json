@@ -10,6 +10,7 @@
     "isMultiValued": "Mehrwertig",
     "indexed": "Indiziert",
     "isLinkToDetails": "Benennt den Datensatz",
+    "autosizeColumn": "Passt die Listenspalte an",
     "linkedEntityType": "Verknüpfte Entität",
     "defaultValue": "Standardwert",
     "enumValues": "Aufzählungswerte",

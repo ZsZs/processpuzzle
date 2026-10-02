@@ -73,6 +73,7 @@ export class EntityRegistryComponent {
         selectables: attr.getSelectables(),
         visible: attr.visible,
         hideInTable: attr.hideInTable,
+        autosizeColumn: attr.autosizeColumn,
         isHeading: attr.isHeading,
         placeholder: attr.placeholder,
         lines: attr.lines,

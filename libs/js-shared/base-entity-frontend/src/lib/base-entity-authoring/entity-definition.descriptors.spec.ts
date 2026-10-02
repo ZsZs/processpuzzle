@@ -102,6 +102,7 @@ describe('createEntityAttributeDescriptor', () => {
   // `dateStyle` and `timeStyle` are the contract's `dateFormat`, flattened for the form and folded back by the mapper.
   it('authors every field of BaseEntityAttributeInput and nothing the contract would drop', () => {
     expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual([
+      'autosizeColumn',
       'code',
       'dateStyle',
       'defaultValue',

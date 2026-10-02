@@ -38,12 +38,12 @@ export class EntityListPO {
   // ── Locators ────────────────────────────────────────────────────
 
   rows(): Locator {
-    return this.page.locator('mat-row');
+    return this.page.locator('tr.mat-mdc-row');
   }
 
   /** Anchor in the identification column (the only `<a>` Material renders per row). */
   private identificationLink(identificationValue: string): Locator {
-    return this.page.locator('mat-row a').filter({ hasText: exactText(identificationValue) });
+    return this.page.locator('tr.mat-mdc-row a').filter({ hasText: exactText(identificationValue) });
   }
 
   findRowByIdentification(identificationValue: string): Locator {
@@ -73,7 +73,7 @@ export class EntityListPO {
   async selectRowByIdentification(identificationValue: string) {
     await this.filter(identificationValue);
     const row = this.rows()
-      .filter({ has: this.page.locator('mat-cell').filter({ hasText: exactText(identificationValue) }) })
+      .filter({ has: this.page.locator('td.mat-mdc-cell').filter({ hasText: exactText(identificationValue) }) })
       .first();
     await row.locator('mat-checkbox input[type="checkbox"]').first().check();
   }

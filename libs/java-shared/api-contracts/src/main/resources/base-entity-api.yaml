@@ -660,6 +660,10 @@ components:
             hideInTable:
               type: boolean
               default: false
+            autosizeColumn:
+              type: boolean
+              default: false
+              description: The list column hugs its content (capped at 60% of the table) instead of filling the remaining width.
             isHeading:
               type: boolean
             placeholder:
@@ -760,6 +764,10 @@ components:
           type: boolean
           default: false
           description: Marks the attribute used as this entity's display title (componentIdentification).
+        autosizeColumn:
+          type: boolean
+          default: false
+          description: The list column hugs its content (capped at 60% of the table) instead of filling the remaining width.
         validationRules: { }
 
     BaseEntityAttribute:
