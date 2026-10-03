@@ -41,6 +41,15 @@ defineEntityCrudSuite({
       reason: 'a task requires at least one performing role, and this suite cannot fill a relationship control',
     },
     {
+      entityName: 'Recognition Profile',
+      // The same shape of exclusion as the state machine above. `entityName` has to name an entity type
+      // base-entity manages and is 1:1 with it — a second profile for one type is a 409 — and
+      // `identifierAttributeKey`, when filled, a TEXT attribute of that type. Generated prose satisfies
+      // neither, so the POST comes back 404 ai.profile.entity-not-found. Authoring a profile is covered by
+      // base-ai-frontend's and base-ai-backend's own tests and by the seeded `boat` profile.
+      reason: 'a recognition profile must name a real base-entity type, one profile per type, which generated fixture data cannot produce',
+    },
+    {
       entityName: 'Workflow Instance',
       // Not a fixture problem: the runtime side of base-workflow-api.yaml has no PUT at all. An instance is
       // started by POST /instances with a StartWorkflowRequest — a different schema from the instance it

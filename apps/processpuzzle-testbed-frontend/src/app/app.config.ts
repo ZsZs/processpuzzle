@@ -33,6 +33,7 @@ import {
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateMachineTab } from '@processpuzzle/base-state';
+import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
 import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE, CurrentUserContext } from '@processpuzzle/base-workflow';
 import { SessionUserContext } from './content/base-workflows/session-user.context';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
@@ -85,6 +86,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // levels below them. All thirteen or none: a task's `performedBy` resolves through the role facade
       // and a step's `toolId` through the tool facade, so half a graph is a form that throws on render.
       ...BASE_WORKFLOW_FACADE_PROVIDERS,
+      // And for base-ai: the routable `Recognition Profile`, which says how the subjects of one entity
+      // type are recognized.
+      ...BASE_AI_FACADE_PROVIDERS,
       // Closes base-workflow's session seam onto this application's real session, so the task dashboard
       // knows whose inbox it is showing. Application-wide rather than on the `base-workflow` route, for the
       // reason `provideBaseRuleEngine()` below spells out at length: who the signed-in user is cannot be a
@@ -97,6 +101,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // this one provider is what puts the tab on all of them; it also registers the `base_state`
       // transloco scope, without which the tab's label would render as its key on those screens.
       ...provideEntityStateMachineTab(),
+      // The same arrangement for base-ai: the Enrollment tab, offered to every entity type that has a
+      // recognition profile — `Boat` in this tenant, a metadata-defined entity that names base-ai nowhere.
+      ...provideEntityEnrollmentTab(),
       // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.
@@ -138,6 +145,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_WIDGET_ENTITY_FACADES,
           ...BASE_STATE_ENTITY_FACADES,
           ...BASE_WORKFLOW_ENTITY_FACADES,
+          ...BASE_AI_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
           'Embedded Detail': EmbeddedDetailFacade,
         },
@@ -146,7 +154,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // Each library declares its own entry; a scope nobody claims — a designer-authored module's, named
       // at run-time — goes to base-app, which owns ModuleDefinition. All contributions have to be here
       // rather than on route branches: a `multi` token is not merged across injectors.
-      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE, BASE_WORKFLOW_TRANSLATION_SOURCE].map(
+      ...[BASE_APP_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLATION_SOURCE, BASE_WIDGET_TRANSLATION_SOURCE, BASE_DOCUMENT_TRANSLATION_SOURCE, BASE_STATE_TRANSLATION_SOURCE, BASE_WORKFLOW_TRANSLATION_SOURCE, BASE_AI_TRANSLATION_SOURCE].map(
         (source) => ({
           provide: TRANSLATION_SOURCE_REGISTRY,
           useValue: source,

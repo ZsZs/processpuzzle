@@ -359,6 +359,50 @@ entityDefinitions:
         linkedEntityType: special-order-line
         isMultiValued: true
 
+  # 8. Boat — the subject of base-ai's sailboat recognition sample. A flat entity on purpose: what
+  # recognition needs from it is a TEXT attribute holding the identifier (`sailNumber`), which base-ai's
+  # `boat` recognition profile names. The Enrollment tab base-ai contributes onto these screens is where a
+  # boat's photos are uploaded.
+  - code: boat
+    name: Boat
+    description: >-
+      A racing sailboat, identified on the water by its sail number. Subject of the image recognition
+      sample.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: sailNumber
+        name: Sail Number
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: name
+        name: Name
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+      - code: boatClass
+        name: Class
+        displayOrder: 3
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - '49ER'
+          - '470'
+          - 'ILCA'
+          - 'NACRA_17'
+          - 'OTHER'
+      - code: skipper
+        name: Skipper
+        displayOrder: 4
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+
 entities:
   # Sample Object 1
   - entityDefinitionCode: dynamic-entity
@@ -580,3 +624,31 @@ entities:
         - productName: Brass Fitting (custom)
           quantity: 8
           unitPrice: 105
+
+  # Boats for base-ai's recognition sample. CAN 603 is the 49er on the Wikimedia Commons photo the
+  # sample's instructions use, so enrolling that photo shows a matching sail number; the others are there
+  # so that a start list has candidates to tell apart.
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: CAN 603
+      name: Maple Leaf
+      boatClass: 49ER
+      skipper: Jordan Tremblay
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: USA 1007
+      name: Liberty Breeze
+      boatClass: 49ER
+      skipper: Sam Carter
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: GER 1234
+      name: Nordwind
+      boatClass: '470'
+      skipper: Lena Hoffmann
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: HUN 77
+      name: Balaton
+      boatClass: ILCA
+      skipper: Bence Kovács

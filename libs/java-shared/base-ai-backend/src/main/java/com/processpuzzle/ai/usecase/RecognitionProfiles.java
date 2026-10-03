@@ -7,6 +7,7 @@ import com.processpuzzle.ai.domain.RecognitionProfileRepository;
 import com.processpuzzle.ai.usecase.exception.AiRequestException;
 import com.processpuzzle.ai.usecase.port.SubjectDirectory;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.beans.factory.ObjectProvider;
@@ -62,6 +63,26 @@ public class RecognitionProfiles {
         return profiles.save(profile);
     }
 
+    /**
+     * Creates a bundled default unless the entity type already has a profile; never overwrites one.
+     *
+     * <p>Trusted input, so no access check — there is no caller at startup — and no check that the entity
+     * type exists: base-entity seeds its own defaults on the same startup event, in no guaranteed order
+     * relative to this, so the type may not exist <em>yet</em>. Everything else is validated as on create.
+     *
+     * @return the created profile, or empty when one was already present
+     */
+    @Transactional
+    public Optional<RecognitionProfile> seed(String orgKey, Draft draft) {
+        validateStructure(draft.entityName(), draft);
+        if (profiles.existsByOrgKeyAndEntityName(orgKey, draft.entityName())) {
+            return Optional.empty();
+        }
+        RecognitionProfile profile = new RecognitionProfile(orgKey, draft.entityName());
+        apply(profile, draft);
+        return Optional.of(profiles.save(profile));
+    }
+
     /** Full replacement; the path's entityName is the source of truth, as the contract says. */
     @Transactional
     public RecognitionProfile update(String orgKey, String entityName, Draft draft) {
@@ -104,15 +125,7 @@ public class RecognitionProfiles {
     }
 
     private void validate(String orgKey, String entityName, Draft draft) {
-        if (entityName == null || entityName.isBlank()) {
-            throw AiRequestException.invalid(INVALID_PROFILE, "entityName is required.");
-        }
-        if (draft.name() == null || draft.name().isBlank()) {
-            throw AiRequestException.invalid(INVALID_PROFILE, "name is required.");
-        }
-        if (draft.detectorClass() == null || draft.detectorClass().isBlank()) {
-            throw AiRequestException.invalid(INVALID_PROFILE, "detectorClass is required.");
-        }
+        validateStructure(entityName, draft);
         if (!subjects.entityTypeExists(orgKey, entityName)) {
             throw AiRequestException.notFound("ai.profile.entity-not-found",
                     "'" + entityName + "' is not an entity type of this organization.");
@@ -121,6 +134,19 @@ public class RecognitionProfiles {
         if (attribute != null && !subjects.isTextAttribute(orgKey, entityName, attribute)) {
             throw AiRequestException.invalid("ai.profile.identifier-attribute-invalid",
                     "'" + attribute + "' is not a text attribute of '" + entityName + "'.");
+        }
+    }
+
+    /** What can be checked without asking another feature. */
+    private void validateStructure(String entityName, Draft draft) {
+        if (entityName == null || entityName.isBlank()) {
+            throw AiRequestException.invalid(INVALID_PROFILE, "entityName is required.");
+        }
+        if (draft.name() == null || draft.name().isBlank()) {
+            throw AiRequestException.invalid(INVALID_PROFILE, "name is required.");
+        }
+        if (draft.detectorClass() == null || draft.detectorClass().isBlank()) {
+            throw AiRequestException.invalid(INVALID_PROFILE, "detectorClass is required.");
         }
         String pattern = blankToNull(draft.identifierPattern());
         if (pattern != null) {

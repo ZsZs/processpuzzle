@@ -96,6 +96,10 @@ base-app:
   loadDefaultApps: yes
   loadDefaultTranslations: yes
 
+base-ai:
+  # The `boat` recognition profile of the testbed tenant — see default-recognition-profiles/ in base-ai-backend.
+  loadDefaultProfiles: yes
+
 base-widget:
   loadDefaultWidgets: yes
   loadDefaultTranslations: yes

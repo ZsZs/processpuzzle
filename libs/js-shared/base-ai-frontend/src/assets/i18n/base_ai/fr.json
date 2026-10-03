@@ -1,0 +1,49 @@
+{
+  "recognition_profile": {
+    "_self": "Profil de reconnaissance",
+    "entityName": "Type d'entité",
+    "name": "Nom",
+    "description": "Description",
+    "detectorClass": "Classe du détecteur",
+    "identifierAttributeKey": "Attribut identifiant",
+    "identifierPattern": "Motif de l'identifiant",
+    "identifierWeight": "Poids de l'identifiant",
+    "acceptScore": "Score minimal",
+    "acceptMargin": "Marge minimale",
+    "sampleFps": "IPS échantillonnées",
+    "version": "Version",
+    "updatedAt": "Mis à jour le"
+  },
+  "entity_enrollment": {
+    "tab": "Enrôlement",
+    "loading": "Chargement de la galerie…",
+    "noProfile": "Ce type d'entité n'a pas de profil de reconnaissance ; ses objets ne peuvent donc pas être enrôlés.",
+    "registered": "Identifiant enregistré",
+    "noIdentifier": "aucun",
+    "intro": "Ajoutez des photos de cet objet ({{ detectorClass }}) sous plusieurs angles et sous différentes lumières. Chaque photo est recadrée sur l'objet, encodée et lue pour son identifiant ; le traitement se fait en arrière-plan.",
+    "status": {
+      "NOT_ENROLLED": "Non enrôlé",
+      "PROCESSING": "En cours",
+      "READY": "Prêt",
+      "FAILED": "Échec"
+    },
+    "photoStatus": {
+      "PENDING": "En cours",
+      "ENROLLED": "Enrôlée",
+      "NO_SUBJECT": "Rien trouvé",
+      "AMBIGUOUS": "Plusieurs trouvés",
+      "FAILED": "Échec"
+    },
+    "addPhotos": "Ajouter des photos",
+    "deleteAll": "Supprimer la galerie",
+    "confirmDeleteAll": "Vraiment supprimer toutes les photos",
+    "cancel": "Annuler",
+    "uploading": "Envoi de {{ done }} sur {{ total }}…",
+    "empty": "Aucune photo pour l'instant.",
+    "photoAlt": "Photo d'enrôlement",
+    "observed": "Lu :",
+    "mismatch": "Diffère de l'identifiant enregistré",
+    "noReading": "Aucun identifiant lu",
+    "deletePhoto": "Retirer"
+  }
+}

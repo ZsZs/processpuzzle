@@ -98,24 +98,25 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(7)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(8)).create(defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
-                        "order-line", "order", "special-order-line", "special-order");
+                        "order-line", "order", "special-order-line", "special-order", "boat");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(createInstanceUseCase, times(11)).create(anyString(), codeCaptor.capture(), payloadCaptor.capture());
+        verify(createInstanceUseCase, times(15)).create(anyString(), codeCaptor.capture(), payloadCaptor.capture());
 
         // 'order-line' and 'special-order-line' are embedded, so neither contributes an instance of its own:
         // their rows travel inside the lineItems array of the four orders and two special orders below.
         assertThat(codeCaptor.getAllValues()).containsExactly(
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
-                "order", "order", "order", "order", "special-order", "special-order");
-        assertThat(payloadCaptor.getAllValues()).hasSize(11);
+                "order", "order", "order", "order", "special-order", "special-order",
+                "boat", "boat", "boat", "boat");
+        assertThat(payloadCaptor.getAllValues()).hasSize(15);
     }
 
     @Test
@@ -123,7 +124,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(7)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(8)).create(defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -149,13 +150,13 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(createInstanceUseCase, times(7)).create(anyString(), codeCaptor.capture(), any());
+        verify(createInstanceUseCase, times(11)).create(anyString(), codeCaptor.capture(), any());
 
         // The four 'order' rows are gone; nothing else is affected, 'special-order' least of all —
         // it is a different definition despite the shared prefix.
         assertThat(codeCaptor.getAllValues()).containsExactly(
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
-                "special-order", "special-order");
+                "special-order", "special-order", "boat", "boat", "boat", "boat");
     }
 
     /**
@@ -178,7 +179,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(6)).create(any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(7)).create(any(BaseEntityDefinition.class));
     }
 
     @Test

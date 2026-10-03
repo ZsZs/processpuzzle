@@ -1,0 +1,102 @@
+name: Cleanup-Caches
+
+# Keeps the repository's Actions caches inside its 10GB allowance by deleting the ones nothing can
+# restore any more. Over the allowance GitHub evicts least-recently-used caches across the whole
+# repository, which means develop's — the ones every branch actually reads — go first.
+#
+# A cache is restorable only by the ref that wrote it and by branches based on it. So:
+#   * a closed pull request's `refs/pull/<n>/merge` caches are dead the moment it closes;
+#   * a deleted branch's caches are dead with the branch (feature/**, release/**);
+#   * of several npm or Maven caches on one ref, only the most recently used is ever restored —
+#     the others are keyed on a package-lock.json / pom.xml hash that no longer exists.
+# The first two are cleaned on the event itself; the weekly sweep catches whatever an event missed
+# (a branch deleted before this workflow existed, a failed run) and prunes the superseded versions.
+#
+# Docker layer blobs (`buildkit-blob-*`) are not pruned by key: which of them an image still
+# references is unknowable from the key, so they are left to GitHub's own LRU — and since the build
+# workflows write them on develop only, they no longer accumulate per branch.
+#
+# Deleting a cache is harmless beyond time: the next run of that ref rebuilds it.
+
+on:
+  pull_request:
+    types: [ closed ]
+  delete:
+  schedule:
+    # Mondays 03:17 UTC, deliberately off the hour.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List what would be deleted without deleting it
+        type: boolean
+        default: true
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: cleanup-caches
+  cancel-in-progress: false
+
+jobs:
+  # A closed pull request, or a deleted branch: drop everything its ref wrote.
+  ref:
+    if: github.event_name == 'pull_request' || (github.event_name == 'delete' && github.event.ref_type == 'branch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete the ref's caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || format('refs/heads/{0}', github.event.ref) }}
+        run: |
+          set -euo pipefail
+          ids=$(gh cache list --ref "$REF" --limit 1000 --json id --jq '.[].id')
+          count=0
+          for id in $ids; do
+            gh cache delete "$id" && count=$((count + 1))
+          done
+          echo "Deleted ${count} cache(s) of ${REF}."
+
+  # The weekly sweep: orphaned refs, then superseded dependency caches.
+  sweep:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Delete orphaned and superseded caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          gh cache list --limit 10000 --json id,key,ref,sizeInBytes,lastAccessedAt > caches.json
+          gh api --paginate "repos/${GH_REPO}/branches?per_page=100" --jq '.[].name' | sed 's|^|refs/heads/|' > branches.txt
+          gh pr list --state open --limit 1000 --json number --jq '.[].number' | sed 's|.*|refs/pull/&/merge|' > open-prs.txt
+
+          # Dead: a ref that is neither an existing branch nor an open pull request. Superseded: on a
+          # ref, every npm / Maven cache but the most recently used one.
+          jq -r --rawfile branches branches.txt --rawfile prs open-prs.txt '
+            ($branches + $prs | split("\n") | map(select(length > 0))) as $live
+            | (map(select(.ref | IN($live[]) | not)) | map({id, key, ref, sizeInBytes, why: "orphaned ref"}))
+              + (map(select(.ref | IN($live[])))
+                 | map(select(.key | test("^(node-cache-|setup-java-)")))
+                 | group_by([.ref, (.key | sub("-[0-9a-f]{32,}$"; ""))])
+                 | map(sort_by(.lastAccessedAt) | reverse | .[1:][])
+                 | map({id, key, ref, sizeInBytes, why: "superseded"}))
+            | .[] | [.id, .why, .ref, .sizeInBytes, .key] | @tsv' caches.json > doomed.tsv
+
+          total=$(awk -F'\t' '{s += $4} END {printf "%.2f", s / 1e9}' doomed.tsv)
+          echo "### $(wc -l < doomed.tsv) cache(s), ${total} GB, to delete" >> "$GITHUB_STEP_SUMMARY"
+          awk -F'\t' '{printf "- %s · %s · %.0f MB · `%s`\n", $2, $3, $4 / 1e6, $5}' doomed.tsv | head -200 >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run: nothing deleted."
+            exit 0
+          fi
+          cut -f1 doomed.tsv | while read -r id; do gh cache delete "$id" || true; done
+          echo "Deleted $(wc -l < doomed.tsv) cache(s), ${total} GB."
