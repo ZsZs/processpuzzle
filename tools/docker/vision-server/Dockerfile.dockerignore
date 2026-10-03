@@ -1,0 +1,7 @@
+*
+!apps/vision-server/pyproject.toml
+!apps/vision-server/src
+!apps/vision-server/tests
+!libs/java-shared/api-contracts/src/main/resources/vision-server-api.yaml
+!tools/docker/vision-server/preload_models.py
+**/__pycache__

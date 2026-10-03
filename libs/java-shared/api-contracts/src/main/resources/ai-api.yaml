@@ -1,0 +1,1396 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle AI API (ai)
+  description: >-
+    Object recognition: enroll identifiable subjects from photos, then identify them in videos.
+    Sailboats at a race start are the first use case; nothing here is specific to them. See
+    docs/ai/boat-recognition-design.md for the pipeline.
+
+    ## Vocabulary
+
+    A *subject* is any base-entity object, addressed as {entityName}/{objectId} exactly like
+    base-state-api.yaml's operation layer. A *recognition profile* says how subjects of one
+    entity type are recognized — which object class the detector looks for, whether and how an
+    identifier text (a sail number) is read, and the fusion and acceptance thresholds. A
+    *recognition session* is one batch of media identified against a *candidate set* of subjects
+    (a race and its start list). The races and boats themselves are ordinary base-entity objects
+    owned by the application; this API only refers to them.
+
+    ## Layers
+
+    KNOWLEDGE LAYER (/recognition-profiles/{entityName}): one profile per entity type, 1:1,
+    addressed by entityName the way base-state addresses a state machine.
+
+    ENROLLMENT (/entities/{entityName}/{objectId}/enrollment): the gallery of one subject —
+    photos, the crops and embeddings computed from them, and the identifier text read from them.
+
+    RECOGNITION (/recognition-sessions, /recognition-jobs): a job processes one video of a
+    session and produces *tracks* — one per subject seen — each auto-matched to a candidate or
+    sent to review. Review decisions (confirm / reject) are recorded on the track.
+
+    ## Media
+
+    Photos and videos never pass through this API. The client asks for an upload slot
+    (createMediaUpload), PUTs the file straight to object storage with the returned presigned
+    URL, then hands the returned mediaKey to the enrollment or job call. Videos of a race
+    start run to gigabytes; streaming them through the backend would gain nothing.
+
+    ## Asynchronous processing
+
+    Enrollment and recognition run on the vision server (vision-server-api.yaml), on CPU, and
+    take from seconds to minutes. Every call that starts processing answers 202 with the
+    resource in a pending status; the client polls the resource. The vision server notifies
+    base-ai-backend through receiveVisionJobNotification, which is not a client endpoint. When a
+    recognition job finishes, base-ai-backend publishes RecognitionCompletedEvent post-commit, and
+    SubjectIdentifiedEvent for every track that is auto-matched or confirmed, so a workflow can
+    react without polling.
+
+    ## Identifier text
+
+    The registered identifier of a subject is an attribute of its entity, named by the
+    profile's identifierAttributeKey — the boat's sail number is data of the boat, not of its
+    gallery. The text the vision server reads from enrollment photos is kept beside it as
+    observedIdentifierText, to flag a photo whose reading disagrees with the registration.
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as the other feature APIs; see shared-api.yaml OrgKeyParam.
+    Galleries, sessions and jobs are tenant data held in the stack's own database; the vision
+    server is shared infrastructure and keeps none of it beyond a job's result retention.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  # ── Knowledge layer: recognition profiles ──────────────────────
+
+  /organizations/{orgKey}/recognition-profiles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listRecognitionProfiles
+      summary: List the organization's recognition profiles
+      tags: [ AI Recognition ]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of recognition profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_RecognitionProfile"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createRecognitionProfile
+      summary: Create the recognition profile of an entity type
+      description: >-
+        409 if entityName already has a profile. identifierAttributeKey, when given, must name
+        a TEXT attribute declared on entityName's current EntityDefinition.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionProfileInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName does not resolve to an entity definition in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/recognition-profiles/{entityName}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+    get:
+      operationId: getRecognitionProfile
+      summary: Get the recognition profile of an entity type
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The recognition profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionProfile"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateRecognitionProfile
+      summary: Replace a recognition profile
+      description: >-
+        Takes effect for jobs started afterwards; running jobs keep the profile they were
+        started with. Changing detectorClass does not invalidate existing galleries, but
+        enrollment photos are re-cropped only when re-enrolled.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionProfileInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteRecognitionProfile
+      summary: Delete a recognition profile
+      description: >-
+        409 while any subject of entityName still has an enrollment; delete the enrollments
+        first. Sessions and jobs already recorded are kept.
+      tags: [ AI Recognition ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Media ──────────────────────────────────────────────────────
+
+  /organizations/{orgKey}/media-uploads:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: createMediaUpload
+      summary: Reserve an upload slot for a photo or video
+      description: >-
+        Answers a presigned PUT URL into the stack's object storage. The client PUTs the file
+        there with the returned headers, then passes mediaKey to addEnrollmentPhotos or
+        startRecognitionJob. A slot whose mediaKey is not used before expiresAt is discarded
+        with its object.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadRequest"
+      responses:
+        "201":
+          description: Upload slot reserved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUpload"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          description: sizeBytes exceeds the limit for the purpose
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Enrollment: the gallery of one subject ─────────────────────
+
+  /organizations/{orgKey}/entities/{entityName}/{objectId}/enrollment:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+      - $ref: "#/components/parameters/ObjectIdParam"
+    get:
+      operationId: getEnrollment
+      summary: Get a subject's enrollment
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: >-
+            The enrollment. A subject never enrolled answers 200 with status NOT_ENROLLED and
+            no photos, so a UI need not tell "no gallery" from "unknown subject" by status code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName has no recognition profile, or the object does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteEnrollment
+      summary: Delete a subject's whole gallery
+      description: >-
+        Removes photos, crops and embeddings, for re-enrollment or data deletion. Tracks of
+        past jobs keep their decisions; their candidate lists keep the subject reference.
+      tags: [ AI Recognition ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/entities/{entityName}/{objectId}/enrollment/photos:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+      - $ref: "#/components/parameters/ObjectIdParam"
+    post:
+      operationId: addEnrollmentPhotos
+      summary: Add uploaded photos to a subject's gallery
+      description: >-
+        Each mediaKey must come from a createMediaUpload of purpose ENROLLMENT_PHOTO whose
+        upload has completed. Idempotent per mediaKey: a key already in the gallery is not
+        added twice, so a client retrying after a timeout does no harm. The photos are
+        PENDING until the vision server has cropped and embedded them.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentPhotosInput"
+      responses:
+        "202":
+          description: Accepted; the returned enrollment shows the new photos as PENDING
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "400":
+          description: A mediaKey is unknown, expired, of another purpose, or not uploaded yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName has no recognition profile, or the object does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/entities/{entityName}/{objectId}/enrollment/photos/{photoId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/EntityNameParam"
+      - $ref: "#/components/parameters/ObjectIdParam"
+      - $ref: "#/components/parameters/PhotoIdParam"
+    delete:
+      operationId: deleteEnrollmentPhoto
+      summary: Remove one photo from a subject's gallery
+      tags: [ AI Recognition ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Recognition: sessions, jobs, tracks ────────────────────────
+
+  /organizations/{orgKey}/recognition-sessions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listRecognitionSessions
+      summary: List recognition sessions
+      tags: [ AI Recognition ]
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_RecognitionSession"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      operationId: createRecognitionSession
+      summary: Create a recognition session
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionSessionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: entityName has no recognition profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/recognition-sessions/{sessionId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/SessionIdParam"
+    get:
+      operationId: getRecognitionSession
+      summary: Get a recognition session
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionSession"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateRecognitionSession
+      summary: Replace a session's name, context and candidate set
+      description: >-
+        entityName cannot change. A changed candidate set applies to jobs started afterwards.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionSessionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteRecognitionSession
+      summary: Delete a session with its jobs, tracks and crops
+      description: 409 while a job of the session is QUEUED or RUNNING.
+      tags: [ AI Recognition ]
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/recognition-sessions/{sessionId}/jobs:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/SessionIdParam"
+    get:
+      operationId: listRecognitionJobs
+      summary: List a session's jobs
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The session's jobs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecognitionJob"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: startRecognitionJob
+      summary: Start recognizing one uploaded video against the session's candidates
+      description: >-
+        mediaKey must come from a createMediaUpload of purpose RECOGNITION_VIDEO whose upload has
+        completed. Idempotent per mediaKey within the session: a second start answers the
+        existing job. Candidates without a READY enrollment are matched by identifier text only;
+        the job records which ones in candidatesWithoutGallery.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionJobInput"
+      responses:
+        "202":
+          description: Accepted; the job is QUEUED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionJob"
+        "400":
+          description: mediaKey is unknown, expired, of another purpose, or not uploaded yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/recognition-jobs/{jobId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: getRecognitionJob
+      summary: Get a job's status and progress
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionJob"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/recognition-jobs/{jobId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/JobIdParam"
+    post:
+      operationId: cancelRecognitionJob
+      summary: Cancel a queued or running job
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The job, now CANCELLED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionJob"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The job has already finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/recognition-jobs/{jobId}/tracks:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: listRecognitionTracks
+      summary: List the tracks of a finished job
+      description: Empty until the job is DONE.
+      tags: [ AI Recognition ]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Only tracks in this status; NEEDS_REVIEW is the review queue.
+          schema:
+            $ref: "#/components/schemas/TrackStatus"
+      responses:
+        "200":
+          description: The tracks, in order of first appearance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecognitionTrack"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/recognition-jobs/{jobId}/tracks/{trackId}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/JobIdParam"
+      - $ref: "#/components/parameters/TrackIdParam"
+    post:
+      operationId: confirmRecognitionTrack
+      summary: Record a manual identification of a track
+      description: >-
+        objectId must be one of the job's candidates. Allowed from any status, so a wrong
+        automatic match can be corrected. 409 if another track of the same job is already
+        AUTO_MATCHED or CONFIRMED to objectId — one subject per job, as the automatic
+        assignment guarantees; reject or re-confirm that track first.
+      tags: [ AI Recognition ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackConfirmation"
+      responses:
+        "200":
+          description: The track, now CONFIRMED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionTrack"
+        "400":
+          description: objectId is not a candidate of this job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/recognition-jobs/{jobId}/tracks/{trackId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/JobIdParam"
+      - $ref: "#/components/parameters/TrackIdParam"
+    post:
+      operationId: rejectRecognitionTrack
+      summary: Mark a track as not any registered subject
+      description: A spectator boat, a committee boat, a duplicate track of the same subject.
+      tags: [ AI Recognition ]
+      responses:
+        "200":
+          description: The track, now REJECTED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionTrack"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Vision server callback (not a client endpoint) ─────────────
+
+  /organizations/{orgKey}/vision-notifications:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: receiveVisionJobNotification
+      summary: Receive a job-finished notification from the vision server
+      description: >-
+        The callback vision-server-api.yaml declares. Authenticated by the per-job token
+        base-ai-backend handed the vision server when it submitted the job — not by a user token —
+        so this path is exempt from the user authentication chain and checks the
+        `X-Callback-Token` header against the job it names instead. A header of its own rather
+        than `Authorization: Bearer`, because the resource server would try to parse a bearer
+        token as a JWT and refuse the call before it reached this endpoint. The
+        notification carries no result: base-ai-backend fetches it from the vision server, which
+        keeps a lost or forged notification from ever writing data. A job whose notification
+        never arrives is found by the polling fallback.
+      tags: [ AI Vision Callback ]
+      security:
+        - callbackToken: [ ]
+      parameters:
+        - name: X-Callback-Token
+          in: header
+          required: true
+          description: >-
+            Declared as a parameter as well as a security scheme, so that the generated interface
+            hands the endpoint the token to check.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisionJobNotification"
+      responses:
+        "204":
+          description: Accepted
+        "401":
+          description: The token does not belong to the named job
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Translations ──
+
+  /organizations/{orgKey}/ai/translations/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      operationId: getAiTranslations
+      summary: The root UI message bundle of this feature for one locale
+      tags: [ AI Translations ]
+      responses:
+        "200":
+          description: The bundle; empty when the feature has no root keys for the locale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+
+  /organizations/{orgKey}/ai/translations/{scope}/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/TranslationScopeParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      operationId: getAiScopedTranslations
+      summary: A scoped UI message bundle of this feature for one locale
+      tags: [ AI Translations ]
+      responses:
+        "200":
+          description: The bundle; empty when the scope has no keys for the locale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+
+components:
+  securitySchemes:
+    callbackToken:
+      type: apiKey
+      in: header
+      name: X-Callback-Token
+      description: Per-job token base-ai-backend generated when it submitted the job to the vision server.
+
+  parameters:
+    TranslationLocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/Locale'
+
+    TranslationScopeParam:
+      name: scope
+      in: path
+      required: true
+      description: Transloco scope of the bundle to read.
+      schema:
+        $ref: '#/components/schemas/TranslationScope'
+
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/OrganizationKey"
+      description: >-
+        Tenant discriminator; see shared-api.yaml OrgKeyParam for the full contract. Must be
+        verified against the principal's `organization` claim — 403 on mismatch.
+    EntityNameParam:
+      name: entityName
+      in: path
+      required: true
+      description: Unique within the organization; same value as base-entity-api.yaml's EntityDefinition.entityName.
+      schema:
+        type: string
+    ObjectIdParam:
+      name: objectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PhotoIdParam:
+      name: photoId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SessionIdParam:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    JobIdParam:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TrackIdParam:
+      name: trackId
+      in: path
+      required: true
+      description: Unique within the job only.
+      schema:
+        type: integer
+    WhereParam:
+      name: where
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        RSQL filter expression over RecognitionSession's scalars (name, entityName,
+        contextEntityName, contextObjectId, createdAt). See shared-api.yaml WhereParam for the
+        operator reference.
+    OrderParam:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Format `property,(asc|desc)`; multiple criteria separated by comma.
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Validation error — the request payload or parameters are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The authenticated principal may not act on this organization.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    # ── Knowledge layer ────────────────────────────────────────
+
+    RecognitionProfileInput:
+      type: object
+      required: [ entityName, name, detectorClass ]
+      properties:
+        entityName:
+          type: string
+          description: >-
+            The entity type whose objects are the subjects. 1:1; the path segment is the source
+            of truth on PUT, as in base-state's StateMachineDefinitionInput.
+          example: Boat
+        name:
+          type: string
+          example: Sailboat by sail number
+        description:
+          type: string
+          nullable: true
+        detectorClass:
+          type: string
+          description: >-
+            The object class the detector looks for, from the vision server's class list
+            (getVisionModels). COCO names for the stock RT-DETR model.
+          example: boat
+        identifierAttributeKey:
+          type: string
+          nullable: true
+          description: >-
+            The TEXT attribute of entityName holding the subject's registered identifier. Absent
+            means no OCR: subjects are matched by appearance alone.
+          example: sailNumber
+        identifierPattern:
+          type: string
+          nullable: true
+          description: >-
+            Regular expression an OCR reading must match to count, applied after the vision
+            server's normalization (upper-case, whitespace collapsed). Filters out text that is
+            not an identifier — a sponsor logo, a class insignia.
+          example: '^[A-Z]{3} ?[0-9]{1,5}$'
+        matching:
+          $ref: "#/components/schemas/MatchingSettings"
+
+    MatchingSettings:
+      type: object
+      description: >-
+        Fusion and acceptance settings. Defaults are the design document's starting point and
+        are meant to be calibrated on labeled clips.
+      properties:
+        identifierWeight:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.6
+          description: Weight of the identifier score; the embedding score gets 1 minus this. Ignored without OCR.
+        acceptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.75
+          description: Minimum fused score for an automatic match.
+        acceptMargin:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.1
+          description: Minimum lead over the second-best candidate for an automatic match.
+        sampleFps:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 30
+          default: 3
+          description: Frames per second of video the detector looks at; the main CPU cost lever.
+
+    RecognitionProfile:
+      allOf:
+        - $ref: "#/components/schemas/RecognitionProfileInput"
+        - type: object
+          properties:
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_RecognitionProfile:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecognitionProfile"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    # ── Media ──────────────────────────────────────────────────
+
+    MediaPurpose:
+      type: string
+      enum: [ ENROLLMENT_PHOTO, RECOGNITION_VIDEO ]
+
+    MediaUploadRequest:
+      type: object
+      required: [ purpose, fileName, contentType, sizeBytes ]
+      properties:
+        purpose:
+          $ref: "#/components/schemas/MediaPurpose"
+        fileName:
+          type: string
+        contentType:
+          type: string
+          description: image/jpeg, image/png, image/heic for photos; video/mp4, video/quicktime for videos.
+          example: video/mp4
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 1
+
+    MediaUpload:
+      type: object
+      required: [ mediaKey, uploadUrl, expiresAt ]
+      properties:
+        mediaKey:
+          type: string
+          description: Opaque reference to pass to addEnrollmentPhotos or startRecognitionJob.
+        uploadUrl:
+          type: string
+          format: uri
+          description: Presigned PUT URL into object storage.
+        requiredHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: Headers the PUT must carry for the signature to hold, Content-Type at least.
+        expiresAt:
+          type: string
+          format: date-time
+
+    # ── Enrollment ─────────────────────────────────────────────
+
+    EnrollmentStatus:
+      type: string
+      description: >-
+        NOT_ENROLLED: no photos. PROCESSING: at least one photo PENDING. READY: at least one
+        photo ENROLLED and none PENDING. FAILED: photos exist, none could be enrolled.
+      enum: [ NOT_ENROLLED, PROCESSING, READY, FAILED ]
+
+    EnrollmentPhotoStatus:
+      type: string
+      description: >-
+        PENDING: awaiting the vision server. ENROLLED: subject found, cropped and embedded.
+        NO_SUBJECT: no object of the profile's detectorClass found. AMBIGUOUS: several found and
+        none dominant — photograph one subject per photo. FAILED: processing error.
+      enum: [ PENDING, ENROLLED, NO_SUBJECT, AMBIGUOUS, FAILED ]
+
+    EnrollmentPhotosInput:
+      type: object
+      required: [ mediaKeys ]
+      properties:
+        mediaKeys:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+
+    EnrollmentPhoto:
+      type: object
+      required: [ photoId, status, addedAt ]
+      properties:
+        photoId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/EnrollmentPhotoStatus"
+        photoUrl:
+          type: string
+          format: uri
+          description: Short-lived signed URL of the original photo.
+        cropUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Short-lived signed URL of the subject crop; present once ENROLLED.
+        observedIdentifierText:
+          type: string
+          nullable: true
+          description: What OCR read on this photo, if anything matched identifierPattern.
+        identifierMismatch:
+          type: boolean
+          description: >-
+            True when observedIdentifierText is present and differs from the registered
+            identifier — a wrong photo, or a stale registration.
+        failureReason:
+          type: string
+          nullable: true
+        addedAt:
+          type: string
+          format: date-time
+
+    Enrollment:
+      type: object
+      required: [ entityName, objectId, status, photos ]
+      properties:
+        entityName:
+          type: string
+        objectId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/EnrollmentStatus"
+        identifierText:
+          type: string
+          nullable: true
+          description: The registered identifier, read from the subject's identifierAttributeKey.
+        embeddingModel:
+          type: string
+          nullable: true
+          description: >-
+            The vision server's embedding model the gallery was computed with. When the server
+            reports a different one, the gallery is stale and is re-embedded from the stored
+            crops before the next job uses it.
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnrollmentPhoto"
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Recognition ────────────────────────────────────────────
+
+    SubjectRef:
+      type: object
+      required: [ entityName, objectId ]
+      properties:
+        entityName:
+          type: string
+        objectId:
+          type: string
+          format: uuid
+
+    RecognitionSessionInput:
+      type: object
+      required: [ name, entityName, candidateObjectIds ]
+      properties:
+        name:
+          type: string
+          example: Race 3 start, 2026-10-12
+        entityName:
+          type: string
+          description: The entity type of the candidates; must have a recognition profile.
+          example: Boat
+        context:
+          allOf:
+            - $ref: "#/components/schemas/SubjectRef"
+          nullable: true
+          description: The object the session belongs to — a race. Reference only; not interpreted.
+        candidateObjectIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: The candidate set — the start list. Objects of entityName.
+          items:
+            type: string
+            format: uuid
+
+    RecognitionSession:
+      allOf:
+        - $ref: "#/components/schemas/RecognitionSessionInput"
+        - type: object
+          properties:
+            sessionId:
+              type: string
+              format: uuid
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            version:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PageOf_RecognitionSession:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecognitionSession"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    RecognitionJobStatus:
+      type: string
+      enum: [ QUEUED, RUNNING, DONE, FAILED, CANCELLED ]
+
+    RecognitionJobInput:
+      type: object
+      required: [ mediaKey ]
+      properties:
+        mediaKey:
+          type: string
+
+    RecognitionJob:
+      type: object
+      required: [ jobId, sessionId, status, progress, createdAt ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/RecognitionJobStatus"
+        progress:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        videoUrl:
+          type: string
+          format: uri
+          description: Short-lived signed URL of the video.
+        candidatesWithoutGallery:
+          type: array
+          description: Candidates matched by identifier text only, having no READY enrollment.
+          items:
+            type: string
+            format: uuid
+        summary:
+          $ref: "#/components/schemas/TrackSummary"
+        failureReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TrackSummary:
+      type: object
+      description: Track counts per status; present once DONE.
+      properties:
+        autoMatched:
+          type: integer
+        needsReview:
+          type: integer
+        confirmed:
+          type: integer
+        rejected:
+          type: integer
+
+    TrackStatus:
+      type: string
+      enum: [ AUTO_MATCHED, NEEDS_REVIEW, CONFIRMED, REJECTED ]
+
+    TrackCandidate:
+      type: object
+      required: [ objectId, score ]
+      properties:
+        objectId:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: double
+          description: Fused score, 0..1.
+        identifierScore:
+          type: number
+          format: double
+          nullable: true
+        embeddingScore:
+          type: number
+          format: double
+          nullable: true
+
+    RecognitionTrack:
+      type: object
+      required: [ trackId, status, candidates ]
+      properties:
+        trackId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/TrackStatus"
+        objectId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The identified subject; set when AUTO_MATCHED or CONFIRMED.
+        score:
+          type: number
+          format: double
+          nullable: true
+          description: Fused score of objectId; absent when CONFIRMED to a subject the matcher ranked nowhere.
+        observedIdentifierText:
+          type: string
+          nullable: true
+          description: The identifier text voted across the track's best frames.
+        observedIdentifierConfidence:
+          type: number
+          format: double
+          nullable: true
+        bestCropUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Short-lived signed URL of the track's best crop.
+        firstSeenMs:
+          type: integer
+          format: int64
+          description: Offset into the video of the track's first frame.
+        lastSeenMs:
+          type: integer
+          format: int64
+        candidates:
+          type: array
+          description: The top 3 candidates, best first.
+          items:
+            $ref: "#/components/schemas/TrackCandidate"
+        decidedBy:
+          type: string
+          nullable: true
+          description: The user who confirmed or rejected; absent for an automatic match.
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TrackConfirmation:
+      type: object
+      required: [ objectId ]
+      properties:
+        objectId:
+          type: string
+          format: uuid
+
+    # ── Vision server callback ─────────────────────────────────
+    # Repeated from vision-server-api.yaml, where it is canonical; the shape must not drift.
+
+    VisionJobNotification:
+      type: object
+      required: [ jobId, kind, status ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          description: The id base-ai-backend gave the vision job when it submitted it.
+        kind:
+          type: string
+          enum: [ ENROLLMENT, EMBEDDING, RECOGNITION ]
+        status:
+          type: string
+          enum: [ DONE, FAILED, CANCELLED ]
+
+    # Shared shapes — kept as local duplicates because the openapi-generator swagger-parser
+    # cannot resolve cross-file $refs on Windows. schemaMappings in the pom.xml redirects the
+    # generated classes to com.processpuzzle.shared.model.
+    OrganizationKey:
+      type: string
+      description: URL-safe tenant slug; canonical definition in shared-api.yaml.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      minLength: 2
+      maxLength: 63
+      example: my-org
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+          example: ai.media.not-uploaded
+        errorText:
+          type: string
+          example: The upload for media key 'm-123' has not completed.
+
+    Locale:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical Locale — see the note on WidgetInstance there for why
+        this workspace repeats rather than $refs across files. A bare string schema generates no Java
+        class, so the repetition needs no schemaMappings entry.
+      pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+      minLength: 2
+      maxLength: 6
+      example: en
+
+    TranslationScope:
+      type: string
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationScope. Transloco scope a bundle loads under,
+        and the directory segment its asset equivalent would have had.
+      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+      minLength: 1
+      maxLength: 64
+      example: ai
+
+    TranslationBundle:
+      type: object
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationBundle, mapped onto the shared generated type.
+        One transloco bundle: the whole message map of an (organization, scope, locale) triple, in the
+        exact shape the frontend's asset file has. Keys are relative to the scope — transloco prefixes
+        them with the scope alias itself.
+      additionalProperties: true
+      nullable: true
+      example:
+        module:
+          name: Order administration
+        route:
+          orders: All orders

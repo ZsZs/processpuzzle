@@ -1,0 +1,277 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Definitions & Business Starters API
+  version: 0.1.0
+  description: >
+    Sketch of the base-app-backend API for importing and exporting definition
+    bundles (Entity, State, Rule, Document, Workflow, App) and for browsing and
+    installing Business Starters. All operations are scoped to one organisation
+    ({orgKey}); in production the orgKey may instead be derived from the
+    Keycloak token and dropped from the path.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+
+paths:
+  /starters:
+    get:
+      summary: List the Business Starter catalog
+      operationId: listStarters
+      tags: [Starters]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: q, in: query, description: Free-text search, schema: { type: string } }
+      responses:
+        "200":
+          description: Catalog entries (latest version of each starter)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StarterSummary" }
+
+  /starters/{starterId}/versions/{version}:
+    get:
+      summary: Get one starter version including its manifest
+      operationId: getStarter
+      tags: [Starters]
+      parameters:
+        - { $ref: "#/components/parameters/StarterId" }
+        - { name: version, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Starter detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StarterDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /orgs/{orgKey}/starters:
+    get:
+      summary: Starters installed for this organisation
+      operationId: listInstalledStarters
+      tags: [Starters]
+      parameters:
+        - { $ref: "#/components/parameters/OrgKey" }
+      responses:
+        "200":
+          description: Installed starters with provenance
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/InstalledStarter" }
+
+  /orgs/{orgKey}/starters/install:
+    post:
+      summary: Install a catalog starter (fetches bundle, then runs the importer)
+      operationId: installStarter
+      tags: [Starters]
+      parameters:
+        - { $ref: "#/components/parameters/OrgKey" }
+        - { $ref: "#/components/parameters/DryRun" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [starterId]
+              properties:
+                starterId: { type: string }
+                version: { type: string, description: "Defaults to latest" }
+                includeSeedData: { type: boolean, default: false }
+                conflictStrategy: { $ref: "#/components/schemas/ConflictStrategy" }
+      responses:
+        "200":
+          description: Import report (dry run or applied)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportReport" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /orgs/{orgKey}/definitions/import:
+    post:
+      summary: Import an uploaded definition bundle
+      description: >
+        Used by the Design view (file upload) and by seed provisioning. The
+        bundle is a zip with manifest.yaml at its root. Validation, dependency
+        ordering and all writes happen in one transaction.
+      operationId: importBundle
+      tags: [Definitions]
+      parameters:
+        - { $ref: "#/components/parameters/OrgKey" }
+        - { $ref: "#/components/parameters/DryRun" }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [bundle]
+              properties:
+                bundle: { type: string, format: binary }
+                includeSeedData: { type: boolean, default: false }
+                conflictStrategy: { $ref: "#/components/schemas/ConflictStrategy" }
+      responses:
+        "200":
+          description: Import report (dry run or applied)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportReport" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { description: Bundle too large }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /orgs/{orgKey}/definitions/export:
+    get:
+      summary: Export the organisation's definitions as a bundle
+      operationId: exportBundle
+      tags: [Definitions]
+      parameters:
+        - { $ref: "#/components/parameters/OrgKey" }
+        - name: starterId
+          in: query
+          description: Export only definitions that originated from this starter
+          schema: { type: string }
+        - name: types
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items: { $ref: "#/components/schemas/DefinitionType" }
+        - name: asStarterId
+          in: query
+          description: Id to write into the exported manifest (for publishing as a new starter)
+          schema: { type: string }
+      responses:
+        "200":
+          description: Zip bundle with a generated manifest.yaml
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    OrgKey:
+      name: orgKey
+      in: path
+      required: true
+      schema: { type: string }
+    StarterId:
+      name: starterId
+      in: path
+      required: true
+      schema: { type: string }
+    DryRun:
+      name: dryRun
+      in: query
+      description: Validate and report what would change, write nothing
+      schema: { type: boolean, default: false }
+
+  responses:
+    NotFound:
+      description: Not found
+    Conflict:
+      description: Conflicts with customized definitions (conflictStrategy=fail)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ImportReport" }
+    ValidationFailed:
+      description: Bundle failed schema or reference validation
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ImportReport" }
+
+  schemas:
+    DefinitionType:
+      type: string
+      enum: [entity, state, rule, document, workflow, app]
+
+    ConflictStrategy:
+      type: string
+      enum: [skip-customized, overwrite, fail]
+      default: skip-customized
+
+    StarterSummary:
+      type: object
+      required: [id, name, latestVersion]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        tags: { type: array, items: { type: string } }
+        latestVersion: { type: string }
+        locales: { type: array, items: { type: string } }
+        iconUrl: { type: string, format: uri }
+
+    StarterDetail:
+      allOf:
+        - $ref: "#/components/schemas/StarterSummary"
+        - type: object
+          properties:
+            requires:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  versionRange: { type: string }
+            contentCounts:
+              type: object
+              additionalProperties: { type: integer }
+              description: Number of definitions per type
+            manifest: { type: object, description: Full manifest.yaml as JSON }
+
+    InstalledStarter:
+      type: object
+      properties:
+        starterId: { type: string }
+        version: { type: string }
+        installedAt: { type: string, format: date-time }
+        installedBy: { type: string }
+        customizedDefinitions:
+          type: integer
+          description: Definitions modified since import (hash differs)
+
+    ImportReport:
+      type: object
+      required: [dryRun, status]
+      properties:
+        dryRun: { type: boolean }
+        status:
+          type: string
+          enum: [applied, would-apply, rejected]
+        starterId: { type: string }
+        version: { type: string }
+        summary:
+          type: object
+          properties:
+            created: { type: integer }
+            updated: { type: integer }
+            skipped: { type: integer }
+            conflicts: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { $ref: "#/components/schemas/DefinitionType" }
+              key: { type: string }
+              action: { type: string, enum: [create, update, skip, conflict] }
+              reason: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              file: { type: string }
+              path: { type: string, description: JSON pointer into the YAML }
+              message: { type: string }

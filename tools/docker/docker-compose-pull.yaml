@@ -39,3 +39,5 @@ services:
     pull_policy: missing
   minio:
     pull_policy: missing
+  vision-server:
+    pull_policy: missing

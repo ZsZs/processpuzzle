@@ -57,6 +57,7 @@ const GROUP_PATH = 'com/processpuzzle';
 const PROJECTS = new Map([
   ['processpuzzle-parent', { path: '.', versionProperty: 'revision' }],
   ...[
+    'base-ai-backend',
     'api-contracts',
     'base-app-backend',
     'base-document-backend',

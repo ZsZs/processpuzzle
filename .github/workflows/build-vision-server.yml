@@ -1,0 +1,63 @@
+name: Build-Vision-Server
+
+# Unit, contract and lint checks of apps/vision-server. Publishing its image is not this workflow's
+# job: the vision server is shared infrastructure, so Build-ProcessPuzzle-Infrastructure builds,
+# pushes and promotes it with the other infrastructure images.
+#
+# Everything runs inside the Dockerfile's `test` stage — Python 3.12 and the service dependencies, no
+# model library — so this needs neither a Python toolchain on the runner nor the 3.6GB runtime image.
+# The contract file is a trigger too: tests/test_contract.py fails when the yaml and schemas.py drift.
+
+on:
+  push:
+    branches: [ "feature/**", develop ]
+    paths:
+      - 'apps/vision-server/**'
+      - 'tools/docker/vision-server/**'
+      - 'libs/java-shared/api-contracts/src/main/resources/vision-server-api.yaml'
+      - '.github/workflows/build-vision-server.yml'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: [ develop ]
+    paths:
+      - 'apps/vision-server/**'
+      - 'tools/docker/vision-server/**'
+      - 'libs/java-shared/api-contracts/src/main/resources/vision-server-api.yaml'
+      - '.github/workflows/build-vision-server.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-vision-server-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build the test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: tools/docker/vision-server/Dockerfile
+          target: test
+          tags: processpuzzle-vision-server-test
+          load: true
+          cache-from: type=gha,scope=vision-server-test
+          cache-to: type=gha,scope=vision-server-test,mode=max
+
+      - name: Unit and contract tests
+        run: docker run --rm processpuzzle-vision-server-test python -m pytest -q
+
+      - name: Lint
+        run: |
+          docker run --rm processpuzzle-vision-server-test \
+            sh -c "pip install -q ruff && ruff check src tests && ruff format --check src tests"

@@ -116,3 +116,11 @@ tools/docker/**/pubsub-debug.log
 # values; these two are the places credentials go locally.
 /tools/docker/env/.env.local
 /tools/docker/.env
+
+# Python (apps/vision-server)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+apps/vision-server/out/

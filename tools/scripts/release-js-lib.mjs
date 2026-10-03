@@ -37,6 +37,7 @@ const NPX = process.env.NPX ?? 'npx';
 const GH = process.env.GH ?? 'gh';
 
 const PROJECTS = new Map([
+  ['base-ai-frontend', 'libs/js-shared/base-ai-frontend'],
   ['auth', 'libs/js-shared/auth'],
   ['base-app-frontend', 'libs/js-shared/base-app-frontend'],
   ['base-document-frontend', 'libs/js-shared/base-document-frontend'],

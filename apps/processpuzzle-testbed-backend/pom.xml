@@ -62,6 +62,11 @@
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
+            <artifactId>base-ai-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
             <artifactId>org-admin-backend</artifactId>
         </dependency>
 
