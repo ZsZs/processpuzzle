@@ -1,7 +1,9 @@
 package com.processpuzzle.ai.usecase.port;
 
 import com.processpuzzle.ai.domain.EnrollmentPhotoStatus;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -66,5 +68,32 @@ public interface VisionServer {
             byte[] embedding,
             String identifierText,
             String failureReason) {
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof PhotoOutcome that
+                    && Objects.equals(mediaId, that.mediaId)
+                    && status == that.status
+                    && Arrays.equals(cropJpeg, that.cropJpeg)
+                    && Objects.equals(embeddingModel, that.embeddingModel)
+                    && Arrays.equals(embedding, that.embedding)
+                    && Objects.equals(identifierText, that.identifierText)
+                    && Objects.equals(failureReason, that.failureReason);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(mediaId, status, embeddingModel, identifierText, failureReason);
+            result = 31 * result + Arrays.hashCode(cropJpeg);
+            return 31 * result + Arrays.hashCode(embedding);
+        }
+
+        @Override
+        public String toString() {
+            return "PhotoOutcome[mediaId=" + mediaId + ", status=" + status
+                    + ", cropJpeg=" + Arrays.toString(cropJpeg) + ", embeddingModel=" + embeddingModel
+                    + ", embedding=" + Arrays.toString(embedding) + ", identifierText=" + identifierText
+                    + ", failureReason=" + failureReason + "]";
+        }
     }
 }

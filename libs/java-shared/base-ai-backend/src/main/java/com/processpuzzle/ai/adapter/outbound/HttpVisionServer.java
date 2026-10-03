@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * {@link VisionServer} over HTTP, through the {@code @HttpExchange} client generated from
@@ -34,8 +35,6 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
  * {@code processpuzzle.ai.vision-server.base-url} is set.
  */
 public class HttpVisionServer implements VisionServer {
-
-    static final String NOTIFICATION_PATH = "/organizations/%s/vision-notifications";
 
     private final VisionApi api;
     private final AiProperties.VisionServer settings;
@@ -102,7 +101,13 @@ public class HttpVisionServer implements VisionServer {
         if (base == null || base.isBlank()) {
             throw new VisionServerUnavailableException("processpuzzle.ai.vision-server.callback-base-url is not set");
         }
-        return base.replaceAll("/+$", "") + NOTIFICATION_PATH.formatted(orgKey);
+        int end = base.length();
+        while (end > 0 && base.charAt(end - 1) == '/') {
+            end--;
+        }
+        return UriComponentsBuilder.fromUriString(base.substring(0, end))
+                .pathSegment("organizations", orgKey, "vision-notifications")
+                .build().encode().toUriString();
     }
 
     private static PhotoOutcome toOutcome(EnrollmentPhotoResult photo) {

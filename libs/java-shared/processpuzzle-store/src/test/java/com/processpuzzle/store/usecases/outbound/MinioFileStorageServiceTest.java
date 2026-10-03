@@ -4,11 +4,14 @@ import io.minio.*;
 import io.minio.messages.Bucket;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -131,13 +134,29 @@ class MinioFileStorageServiceTest {
     void getUploadUri_shouldPresignAPutForThePublicEndpoint() throws Exception {
         when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("http://public/put");
 
-        String url = fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", java.time.Duration.ofMinutes(30));
+        String url = fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", Duration.ofMinutes(30));
 
         assertEquals("http://public/put", url);
-        org.mockito.ArgumentCaptor<GetPresignedObjectUrlArgs> args = org.mockito.ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
+        ArgumentCaptor<GetPresignedObjectUrlArgs> args = ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
         verify(minioPresignClient).getPresignedObjectUrl(args.capture());
         assertEquals(io.minio.http.Method.PUT, args.getValue().method());
+        assertEquals("test-bucket", args.getValue().bucket());
+        assertEquals("o", args.getValue().object());
+        assertEquals(Collections.singleton("video/mp4"), args.getValue().extraHeaders().get("Content-Type"));
         assertEquals(1800, args.getValue().expiry());
+        verifyNoInteractions(minioClient);
+    }
+
+    @Test
+    void getUploadUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
+        IOException cause = new IOException("signing failed");
+        when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", Duration.ofMinutes(30)));
+
+        assertEquals("Error getting upload URL for object: o in bucket: test-bucket", exception.getMessage());
+        assertSame(cause, exception.getCause());
         verifyNoInteractions(minioClient);
     }
 
@@ -145,9 +164,28 @@ class MinioFileStorageServiceTest {
     void getInternalObjectUri_shouldPresignAGetForTheInternalEndpoint() throws Exception {
         when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("http://minio:9000/get");
 
-        String url = fileStorageService.getInternalObjectUri("test-bucket", "o", java.time.Duration.ofHours(2));
+        String url = fileStorageService.getInternalObjectUri("test-bucket", "o", Duration.ofHours(2));
 
         assertEquals("http://minio:9000/get", url);
+        ArgumentCaptor<GetPresignedObjectUrlArgs> args = ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
+        verify(minioClient).getPresignedObjectUrl(args.capture());
+        assertEquals(io.minio.http.Method.GET, args.getValue().method());
+        assertEquals("test-bucket", args.getValue().bucket());
+        assertEquals("o", args.getValue().object());
+        assertEquals(7200, args.getValue().expiry());
+        verifyNoInteractions(minioPresignClient);
+    }
+
+    @Test
+    void getInternalObjectUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
+        IOException cause = new IOException("signing failed");
+        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> fileStorageService.getInternalObjectUri("test-bucket", "o", Duration.ofHours(2)));
+
+        assertEquals("Error getting internal URL for object: o from bucket: test-bucket", exception.getMessage());
+        assertSame(cause, exception.getCause());
         verifyNoInteractions(minioPresignClient);
     }
 

@@ -67,12 +67,12 @@ public class VisionJobs {
      * because the caller's own work — the photos — is already committed and fine.
      */
     public void dispatch(UUID jobId) {
-        VisionServer.EnrollmentRequest request = transaction.execute(status -> prepare(jobId));
-        if (request == null) {
+        Optional<VisionServer.EnrollmentRequest> request = transaction.execute(status -> prepare(jobId));
+        if (request.isEmpty()) {
             return;
         }
         try {
-            visionServer.submitEnrollment(request);
+            visionServer.submitEnrollment(request.get());
         } catch (VisionServerUnavailableException e) {
             LOG.warn("vision job {} not submitted, will retry: {}", jobId, e.getMessage());
             return;
@@ -82,22 +82,22 @@ public class VisionJobs {
                 .ifPresent(ticket -> ticket.submitted(Instant.now())));
     }
 
-    /** Records the attempt and its fresh callback token, and builds the request; null if there is nothing to submit. */
-    private VisionServer.EnrollmentRequest prepare(UUID jobId) {
+    /** Records the attempt and its fresh callback token, and builds the request; empty if there is nothing to submit. */
+    private Optional<VisionServer.EnrollmentRequest> prepare(UUID jobId) {
         VisionJobTicket ticket = tickets.findById(jobId).orElse(null);
         if (ticket == null || !ticket.isOpen()) {
-            return null;
+            return Optional.empty();
         }
         List<EnrollmentPhoto> pending = photos.findByVisionJobId(jobId);
         if (pending.isEmpty()) {
             ticket.completed(Instant.now());
-            return null;
+            return Optional.empty();
         }
         if (ticket.getSubmitAttempts() >= properties.getPoller().getMaxSubmitAttempts()) {
             String reason = "the vision server could not be reached";
             pending.forEach(photo -> photo.rejected(EnrollmentPhotoStatus.FAILED, reason));
             ticket.failed(reason, Instant.now());
-            return null;
+            return Optional.empty();
         }
         EnrollmentPhoto first = pending.getFirst();
         RecognitionProfile profile = profiles.require(first.getOrgKey(), first.getEntityName());
@@ -107,8 +107,8 @@ public class VisionJobs {
                 .map(photo -> new VisionServer.Media(photo.getPhotoId().toString(),
                         stores.get().internalReadUrl(photo.getPhotoObjectName(), properties.getMedia().getVisionUrlExpiry())))
                 .toList();
-        return new VisionServer.EnrollmentRequest(jobId, ticket.getOrgKey(), token, profile.getDetectorClass(),
-                profile.readsIdentifier(), profile.getIdentifierPattern(), media);
+        return Optional.of(new VisionServer.EnrollmentRequest(jobId, ticket.getOrgKey(), token, profile.getDetectorClass(),
+                profile.readsIdentifier(), profile.getIdentifierPattern(), media));
     }
 
     // ── Completion ─────────────────────────────────────────────────
@@ -117,10 +117,7 @@ public class VisionJobs {
     public void notified(String orgKey, String callbackToken, UUID jobId, VisionServer.Status reported) {
         VisionJobTicket ticket = transaction.execute(status -> tickets.findById(jobId)
                 .filter(found -> found.getOrgKey().equals(orgKey))
-                .orElse(null));
-        if (ticket == null) {
-            throw AiRequestException.notFound("ai.vision-job.not-found", "No vision job " + jobId + ".");
-        }
+                .orElseThrow(() -> AiRequestException.notFound("ai.vision-job.not-found", "No vision job " + jobId + ".")));
         if (!ticket.accepts(callbackToken)) {
             throw new AiRequestException(AiRequestException.Kind.UNAUTHORIZED, "ai.vision-job.token-rejected",
                     "The callback token does not belong to vision job " + jobId + ".");

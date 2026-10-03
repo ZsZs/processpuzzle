@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.ai.AiProperties;
@@ -91,6 +92,38 @@ class VisionJobsTest {
         assertThat(request.getValue().readIdentifier()).isTrue();
         assertThat(ticket.accepts(request.getValue().callbackToken())).isTrue();
         assertThat(ticket.getStatus()).isEqualTo(VisionJobTicket.Status.SUBMITTED);
+    }
+
+    @Test
+    void dispatchIgnoresMissingAndCompletedTickets() {
+        jobs.dispatch(UUID.randomUUID());
+        ticket.completed(Instant.now());
+
+        jobs.dispatch(ticket.getJobId());
+
+        verifyNoInteractions(server, store, photos);
+    }
+
+    @Test
+    void dispatchCompletesATicketWithNoPhotosWithoutSubmitting() {
+        when(photos.findByVisionJobId(ticket.getJobId())).thenReturn(List.of());
+
+        jobs.dispatch(ticket.getJobId());
+
+        assertThat(ticket.getStatus()).isEqualTo(VisionJobTicket.Status.COMPLETED);
+        verifyNoInteractions(server, store);
+    }
+
+    @Test
+    void aNotificationForAnUnknownTicketIsNotFound() {
+        UUID unknown = UUID.randomUUID();
+
+        assertThatThrownBy(() -> jobs.notified(ORG, "token", unknown, VisionServer.Status.DONE))
+                .isInstanceOfSatisfying(AiRequestException.class, e -> {
+                    assertThat(e.getKind()).isEqualTo(AiRequestException.Kind.NOT_FOUND);
+                    assertThat(e.getErrorId()).isEqualTo("ai.vision-job.not-found");
+                });
+        verifyNoInteractions(server, store, photos);
     }
 
     @Test

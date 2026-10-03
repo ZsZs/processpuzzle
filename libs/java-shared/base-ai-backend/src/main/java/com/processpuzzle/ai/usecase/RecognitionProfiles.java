@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RecognitionProfiles {
 
+    private static final String INVALID_PROFILE = "ai.profile.invalid";
+
     private final RecognitionProfileRepository profiles;
     private final EnrollmentPhotoRepository photos;
     private final SubjectDirectory subjects;
@@ -103,13 +105,13 @@ public class RecognitionProfiles {
 
     private void validate(String orgKey, String entityName, Draft draft) {
         if (entityName == null || entityName.isBlank()) {
-            throw AiRequestException.invalid("ai.profile.invalid", "entityName is required.");
+            throw AiRequestException.invalid(INVALID_PROFILE, "entityName is required.");
         }
         if (draft.name() == null || draft.name().isBlank()) {
-            throw AiRequestException.invalid("ai.profile.invalid", "name is required.");
+            throw AiRequestException.invalid(INVALID_PROFILE, "name is required.");
         }
         if (draft.detectorClass() == null || draft.detectorClass().isBlank()) {
-            throw AiRequestException.invalid("ai.profile.invalid", "detectorClass is required.");
+            throw AiRequestException.invalid(INVALID_PROFILE, "detectorClass is required.");
         }
         if (!subjects.entityTypeExists(orgKey, entityName)) {
             throw AiRequestException.notFound("ai.profile.entity-not-found",
@@ -129,20 +131,23 @@ public class RecognitionProfiles {
                         "identifierPattern is not a valid regular expression: " + e.getDescription());
             }
         }
-        MatchingSettings matching = draft.matching();
+        validateMatching(draft.matching());
+    }
+
+    private static void validateMatching(MatchingSettings matching) {
         if (matching != null) {
             requireFraction("identifierWeight", matching.getIdentifierWeight());
             requireFraction("acceptScore", matching.getAcceptScore());
             requireFraction("acceptMargin", matching.getAcceptMargin());
             if (matching.getSampleFps() < 0.5 || matching.getSampleFps() > 30) {
-                throw AiRequestException.invalid("ai.profile.invalid", "sampleFps must be between 0.5 and 30.");
+                throw AiRequestException.invalid(INVALID_PROFILE, "sampleFps must be between 0.5 and 30.");
             }
         }
     }
 
     private static void requireFraction(String name, double value) {
         if (value < 0 || value > 1) {
-            throw AiRequestException.invalid("ai.profile.invalid", name + " must be between 0 and 1.");
+            throw AiRequestException.invalid(INVALID_PROFILE, name + " must be between 0 and 1.");
         }
     }
 

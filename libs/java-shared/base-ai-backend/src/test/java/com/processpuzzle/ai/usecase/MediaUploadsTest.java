@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -72,7 +71,7 @@ class MediaUploadsTest {
         assertThatThrownBy(() -> uploads.claim(ORG, key, MediaPurpose.RECOGNITION_VIDEO))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.not-uploaded");
 
-        when(store.exists(eq(video.getObjectName()))).thenReturn(true);
+        when(store.exists(video.getObjectName())).thenReturn(true);
         assertThat(uploads.claim(ORG, key, MediaPurpose.RECOGNITION_VIDEO).isUsed()).isTrue();
     }
 

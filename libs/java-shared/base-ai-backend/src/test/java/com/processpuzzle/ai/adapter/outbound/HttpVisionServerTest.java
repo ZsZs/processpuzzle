@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +56,44 @@ class HttpVisionServerTest {
                 .hasToString("http://testbed-backend:8080/organizations/my-org/vision-notifications");
         assertThat(body.getValue().getRequester().getStack()).isEqualTo("processpuzzle-testbed");
         assertThat(body.getValue().getOcr()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/", "///"})
+    void callbackUrlsPreserveTheConfiguredApiRootWithoutDuplicateSlashes(String suffix) {
+        AiProperties.VisionServer settings = new AiProperties.VisionServer();
+        settings.setCallbackBaseUrl("http://testbed-backend:8080/api/v1" + suffix);
+
+        assertThat(new HttpVisionServer(api, settings).callbackUrl("my-org"))
+                .isEqualTo("http://testbed-backend:8080/api/v1/organizations/my-org/vision-notifications");
+    }
+
+    @Test
+    void callbackUrlsTreatTheOrganizationKeyAsASinglePathSegment() {
+        assertThat(server.callbackUrl("my org/other"))
+                .isEqualTo("http://testbed-backend:8080/organizations/my%20org%2Fother/vision-notifications");
+    }
+
+    @Test
+    void callbackUrlsHandleALongRunOfTrailingSlashes() {
+        AiProperties.VisionServer settings = new AiProperties.VisionServer();
+        settings.setCallbackBaseUrl("http://testbed-backend:8080/api/v1" + "/".repeat(100_000));
+
+        assertThat(new HttpVisionServer(api, settings).callbackUrl("my-org"))
+                .isEqualTo("http://testbed-backend:8080/api/v1/organizations/my-org/vision-notifications");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" "})
+    void aMissingCallbackBaseUrlIsUnavailable(String baseUrl) {
+        AiProperties.VisionServer settings = new AiProperties.VisionServer();
+        settings.setCallbackBaseUrl(baseUrl);
+        HttpVisionServer unconfigured = new HttpVisionServer(api, settings);
+
+        assertThatThrownBy(() -> unconfigured.callbackUrl("my-org"))
+                .isInstanceOf(VisionServerUnavailableException.class)
+                .hasMessage("processpuzzle.ai.vision-server.callback-base-url is not set");
     }
 
     @Test
