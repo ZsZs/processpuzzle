@@ -1,0 +1,49 @@
+{
+  "recognition_profile": {
+    "_self": "Perfil de reconocimiento",
+    "entityName": "Tipo de entidad",
+    "name": "Nombre",
+    "description": "Descripción",
+    "detectorClass": "Clase del detector",
+    "identifierAttributeKey": "Atributo identificador",
+    "identifierPattern": "Patrón del identificador",
+    "identifierWeight": "Peso del identificador",
+    "acceptScore": "Puntuación mínima",
+    "acceptMargin": "Margen mínimo",
+    "sampleFps": "FPS muestreados",
+    "version": "Versión",
+    "updatedAt": "Actualizado"
+  },
+  "entity_enrollment": {
+    "tab": "Registro",
+    "loading": "Cargando la galería…",
+    "noProfile": "Este tipo de entidad no tiene perfil de reconocimiento, por lo que sus objetos no pueden registrarse.",
+    "registered": "Identificador registrado",
+    "noIdentifier": "ninguno",
+    "intro": "Añada fotos de este objeto ({{ detectorClass }}) desde varios lados y con distinta luz. Cada foto se recorta al objeto, se codifica y se lee su identificador; el procesamiento se realiza en segundo plano.",
+    "status": {
+      "NOT_ENROLLED": "Sin registrar",
+      "PROCESSING": "Procesando",
+      "READY": "Listo",
+      "FAILED": "Fallido"
+    },
+    "photoStatus": {
+      "PENDING": "Procesando",
+      "ENROLLED": "Registrada",
+      "NO_SUBJECT": "Nada encontrado",
+      "AMBIGUOUS": "Varios encontrados",
+      "FAILED": "Fallida"
+    },
+    "addPhotos": "Añadir fotos",
+    "deleteAll": "Eliminar galería",
+    "confirmDeleteAll": "Eliminar de verdad todas las fotos",
+    "cancel": "Cancelar",
+    "uploading": "Subiendo {{ done }} de {{ total }}…",
+    "empty": "Todavía no hay fotos.",
+    "photoAlt": "Foto de registro",
+    "observed": "Leído:",
+    "mismatch": "Difiere del identificador registrado",
+    "noReading": "No se leyó ningún identificador",
+    "deletePhoto": "Quitar"
+  }
+}

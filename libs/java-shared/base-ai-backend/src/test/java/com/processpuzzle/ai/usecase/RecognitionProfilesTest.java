@@ -89,6 +89,18 @@ class RecognitionProfilesTest {
     }
 
     @Test
+    void seedingIsCreateOnlyAndDoesNotAskBaseEntity() {
+        when(repository.existsByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(false, true);
+        when(subjects.entityTypeExists(ORG, "Boat")).thenReturn(false);
+
+        assertThat(profiles.seed(ORG, draft("sailNumber", "^[A-Z]{3}$", null))).isPresent();
+        assertThat(profiles.seed(ORG, draft("sailNumber", "^[A-Z]{3}$", null))).isEmpty();
+        assertThatThrownBy(() -> profiles.seed(ORG, draft(null, "[A-Z", null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.identifier-pattern-invalid");
+        verify(guard, org.mockito.Mockito.never()).requireDesign(ORG);
+    }
+
+    @Test
     void aProfileWithEnrolledSubjectsCannotBeDeleted() {
         when(repository.findByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(Optional.of(new RecognitionProfile(ORG, "Boat")));
         when(photos.existsByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(true);

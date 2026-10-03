@@ -1,0 +1,49 @@
+{
+  "recognition_profile": {
+    "_self": "Felismerési profil",
+    "entityName": "Entitástípus",
+    "name": "Név",
+    "description": "Leírás",
+    "detectorClass": "Detektorosztály",
+    "identifierAttributeKey": "Azonosító attribútum",
+    "identifierPattern": "Azonosító minta",
+    "identifierWeight": "Azonosító súlya",
+    "acceptScore": "Elfogadási pontszám",
+    "acceptMargin": "Elfogadási különbség",
+    "sampleFps": "Mintavételi FPS",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
+  "entity_enrollment": {
+    "tab": "Betanítás",
+    "loading": "A galéria betöltése…",
+    "noProfile": "Ehhez az entitástípushoz nincs felismerési profil, ezért objektumai nem taníthatók be.",
+    "registered": "Nyilvántartott azonosító",
+    "noIdentifier": "nincs",
+    "intro": "Adjon hozzá fényképeket erről az objektumról ({{ detectorClass }}) több oldalról és különböző fényviszonyok mellett. Minden fénykép az objektumra vágva, beágyazva és az azonosítója kiolvasásával kerül feldolgozásra; a feldolgozás a háttérben fut.",
+    "status": {
+      "NOT_ENROLLED": "Nincs betanítva",
+      "PROCESSING": "Feldolgozás alatt",
+      "READY": "Kész",
+      "FAILED": "Sikertelen"
+    },
+    "photoStatus": {
+      "PENDING": "Feldolgozás alatt",
+      "ENROLLED": "Betanítva",
+      "NO_SUBJECT": "Nincs találat",
+      "AMBIGUOUS": "Több találat",
+      "FAILED": "Sikertelen"
+    },
+    "addPhotos": "Fényképek hozzáadása",
+    "deleteAll": "Galéria törlése",
+    "confirmDeleteAll": "Valóban minden fénykép törlése",
+    "cancel": "Mégse",
+    "uploading": "{{ done }} / {{ total }} feltöltése…",
+    "empty": "Még nincs fénykép.",
+    "photoAlt": "Betanító fénykép",
+    "observed": "Kiolvasva:",
+    "mismatch": "Eltér a nyilvántartott azonosítótól",
+    "noReading": "Nem sikerült azonosítót kiolvasni",
+    "deletePhoto": "Eltávolítás"
+  }
+}
