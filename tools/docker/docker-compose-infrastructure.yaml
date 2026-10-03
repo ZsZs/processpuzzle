@@ -1,8 +1,8 @@
 # ── The shared infrastructure layer ─────────────────────────────────────────────────────────────
 #
-# PostgreSQL, Keycloak (+ its one-shot bootstrap), MinIO, json-server and pgweb: the services every
-# application stack shares — see docs/application-stacks.md. One definition serves `ci`, `stage` and
-# `prod`; what differs between them is an env file, not a second compose file. This is the
+# PostgreSQL, Keycloak (+ its one-shot bootstrap), MinIO, json-server, pgweb and the vision server: the
+# services every application stack shares — see docs/application-stacks.md. One definition serves
+# `ci`, `stage` and `prod`; what differs between them is an env file, not a second compose file. This is the
 # "Docker Compose resource" of docs/build-deploy-strategy.md §4, while each application image is its
 # own Application resource — which is why the applications live in docker-compose-apps.yaml.
 #
@@ -37,7 +37,7 @@
 #   PP_NETWORK  PP_IMAGE_TAG  PP_*_PUBLISH
 #   POSTGRES_PASSWORD  PROCESSPUZZLE_DB_PASSWORD  KEYCLOAK_ADMIN_USERNAME
 #   KEYCLOAK_ADMIN_PASSWORD  MINIO_ROOT_PASSWORD  MINIO_SERVICE_PASSWORD
-#   PLATFORM_ADMIN_CLIENT_SECRET
+#   PLATFORM_ADMIN_CLIENT_SECRET  VISION_SERVICE_TOKEN
 #
 # The asymmetry is not about importance, it is about the failure mode. A default on
 # MINIO_BUCKET_PREFIX is harmless because getting it wrong is visible immediately. A default on
@@ -558,6 +558,44 @@ services:
     networks:
       - processpuzzle
     restart: "no"
+
+  vision-server:
+    # Object recognition's compute half (apps/vision-server): detection, tracking, OCR and embeddings,
+    # CPU only. Shared by every stack's backend, like Keycloak and MinIO, because it holds no tenant
+    # data — each job carries what it needs, and results live only until the backend fetches them. See
+    # docs/ai/boat-recognition-design.md §5.
+    #
+    # Reached on this network only; the reverse proxy does not route it. The port is published for a
+    # backend run on the host during development, bound to loopback everywhere else.
+    pull_policy: always
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-vision-server:${PP_IMAGE_TAG}
+    container_name: processpuzzle-vision-server
+    ports:
+      - "${PP_VISION_SERVER_PUBLISH}"
+    # ~1.8GiB peak measured with all three models loaded (enrollment, 2026-10-03), ~150MiB idle: the
+    # models load on the first job and are dropped after VISION_IDLE_UNLOAD_SECONDS without one. The
+    # limit is the peak plus headroom for decoding a 4K video frame, and it is the LARGEST of any
+    # service here — check the host's total before raising another one. See
+    # docs/stage-deployment-runbook.md §7.6 for what an overcommitted host does.
+    mem_limit: ${PP_VISION_SERVER_MEM_LIMIT:-2304m}
+    environment:
+      # Every call except /v1/health needs it; each backend sends the same value. Bare, not defaulted:
+      # a guessable default on a shared service is the failure mode the header of this file describes.
+      VISION_SERVICE_TOKEN: ${VISION_SERVICE_TOKEN}
+      # Torch would otherwise take every core of a host it shares with all the stacks.
+      VISION_TORCH_THREADS: ${VISION_TORCH_THREADS:-2}
+      VISION_IDLE_UNLOAD_SECONDS: ${VISION_IDLE_UNLOAD_SECONDS:-600}
+      VISION_MAX_QUEUED_JOBS: ${VISION_MAX_QUEUED_JOBS:-20}
+    networks:
+      - processpuzzle
+    healthcheck:
+      # /v1/health needs no token and loads no model, so it answers within seconds of start. The budget
+      # is still written as `retries` x `interval`, since Coolify drops `start_period`.
+      test: [ "CMD", "curl", "-fs", "http://localhost:8000/v1/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
 
 volumes:
   minio-data:

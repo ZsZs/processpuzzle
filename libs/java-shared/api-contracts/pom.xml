@@ -313,6 +313,52 @@
               </configOptions>
             </configuration>
           </execution>
+          <execution>
+            <id>generate-ai-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/ai-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.ai.api</apiPackage>
+              <modelPackage>com.processpuzzle.ai.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <!-- The vision server is called, not served: base-ai-backend is its client. spring-http-interface
+               generates @HttpExchange interfaces, which a RestClient-backed HttpServiceProxyFactory
+               implements — no generated ApiClient or other supporting files. -->
+          <execution>
+            <id>generate-vision-server-client</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/vision-server-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <library>spring-http-interface</library>
+              <skipValidateSpec>true</skipValidateSpec>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <apiPackage>com.processpuzzle.ai.vision.api</apiPackage>
+              <modelPackage>com.processpuzzle.ai.vision.model</modelPackage>
+              <configOptions>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -122,6 +123,37 @@ public class MinioFileStorageService implements FileStorageService {
                             .build());
         } catch (Exception e) {
             throw new RuntimeException("Error getting signed URL for object: " + objectName + " from bucket: " + bucketName, e);
+        }
+    }
+
+    @Override
+    public String getUploadUri(String bucketName, String objectName, String contentType, Duration expiry) {
+        try {
+            return minioPresignClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.PUT)
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .extraHeaders(Map.of("Content-Type", contentType))
+                            .expiry((int) expiry.toSeconds(), TimeUnit.SECONDS)
+                            .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting upload URL for object: " + objectName + " in bucket: " + bucketName, e);
+        }
+    }
+
+    @Override
+    public String getInternalObjectUri(String bucketName, String objectName, Duration expiry) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .expiry((int) expiry.toSeconds(), TimeUnit.SECONDS)
+                            .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting internal URL for object: " + objectName + " from bucket: " + bucketName, e);
         }
     }
 

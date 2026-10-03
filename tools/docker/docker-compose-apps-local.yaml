@@ -12,6 +12,10 @@
 #   verified with `docker compose config`, v5.5.0.)
 # - The five cross-file `depends_on` entries. Without them the backend starts before PostgreSQL,
 #   MinIO and keycloak-init are ready, and the frontend before Keycloak and json-server are.
+# - The vision server behind the `ai` profile. Stage and prod always run it — they never read this
+#   file — but CI's e2e suite does not use it yet, and building or pulling a 3.6GB image on every run,
+#   or on every developer's `stack-up`, would buy nothing. Opt in with `COMPOSE_PROFILES=ai`, e.g.
+#   `COMPOSE_PROFILES=ai npm run stack-up-full`. The backend works without it: photos stay PENDING.
 #
 # Overlay it AFTER docker-compose-apps.yaml — order decides which value of `external` wins:
 #
@@ -43,6 +47,9 @@ services:
         condition: service_healthy
       json-server:
         condition: service_healthy
+
+  vision-server:
+    profiles: [ ai ]
 
   testbed-backend:
     depends_on:

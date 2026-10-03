@@ -128,6 +128,30 @@ class MinioFileStorageServiceTest {
     }
 
     @Test
+    void getUploadUri_shouldPresignAPutForThePublicEndpoint() throws Exception {
+        when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("http://public/put");
+
+        String url = fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", java.time.Duration.ofMinutes(30));
+
+        assertEquals("http://public/put", url);
+        org.mockito.ArgumentCaptor<GetPresignedObjectUrlArgs> args = org.mockito.ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
+        verify(minioPresignClient).getPresignedObjectUrl(args.capture());
+        assertEquals(io.minio.http.Method.PUT, args.getValue().method());
+        assertEquals(1800, args.getValue().expiry());
+        verifyNoInteractions(minioClient);
+    }
+
+    @Test
+    void getInternalObjectUri_shouldPresignAGetForTheInternalEndpoint() throws Exception {
+        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn("http://minio:9000/get");
+
+        String url = fileStorageService.getInternalObjectUri("test-bucket", "o", java.time.Duration.ofHours(2));
+
+        assertEquals("http://minio:9000/get", url);
+        verifyNoInteractions(minioPresignClient);
+    }
+
+    @Test
     void deleteObject_shouldRemoveObject() throws Exception {
         fileStorageService.deleteObject("test-bucket", "test-object");
 

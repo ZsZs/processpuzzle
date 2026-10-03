@@ -229,6 +229,16 @@ services:
       # stage — which is why testbed/.env.stage narrows it to the frontend's https origin.
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:9090,http://localhost:4200}
 
+      # The shared vision server of the infrastructure resource, reached over its network. The token is
+      # the one the vision server checks, so it appears in both resources; bare, because a guessable
+      # default on a shared service is exactly the quiet failure the infrastructure file's header
+      # describes. VISION_CALLBACK_BASE_URL is how the vision server reaches THIS container back —
+      # its compose name, not the public hostname. Without a vision server (the CI default, see the
+      # `ai` profile in docker-compose-apps-local.yaml) photos are accepted and stay PENDING.
+      VISION_SERVER_URL: ${VISION_SERVER_URL:-http://processpuzzle-vision-server:8000/v1}
+      VISION_SERVICE_TOKEN: ${VISION_SERVICE_TOKEN}
+      VISION_CALLBACK_BASE_URL: ${VISION_CALLBACK_BASE_URL:-http://testbed-backend:8080}
+
       # User management, which is org-admin's. This deployment does not create realms — that went
       # with platform-admin, so KEYCLOAK_ADMIN_TENANT_* is set by the private admin backend and not
       # here. The admin API is reached over the compose network, so this is the service name and not
