@@ -67,7 +67,8 @@ class EnrollmentsTest {
         subjects = mock(SubjectDirectory.class);
         guard = mock(OrganizationGuard.class);
         transactions = mock(PlatformTransactionManager.class);
-        when(transactions.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
+        TransactionStatus transactionStatus = mock(TransactionStatus.class);
+        when(transactions.getTransaction(any())).thenReturn(transactionStatus);
         profile = new RecognitionProfile(ORG, "Boat");
         when(profiles.require(ORG, "Boat")).thenReturn(profile);
         when(subjects.subjectExists(ORG, "Boat", OBJECT_ID)).thenReturn(true);

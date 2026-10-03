@@ -150,10 +150,11 @@ class MinioFileStorageServiceTest {
     @Test
     void getUploadUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
         IOException cause = new IOException("signing failed");
+        Duration expiry = Duration.ofMinutes(30);
         when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", Duration.ofMinutes(30)));
+                () -> fileStorageService.getUploadUri("test-bucket", "o", "video/mp4", expiry));
 
         assertEquals("Error getting upload URL for object: o in bucket: test-bucket", exception.getMessage());
         assertSame(cause, exception.getCause());
@@ -179,10 +180,11 @@ class MinioFileStorageServiceTest {
     @Test
     void getInternalObjectUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
         IOException cause = new IOException("signing failed");
+        Duration expiry = Duration.ofHours(2);
         when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fileStorageService.getInternalObjectUri("test-bucket", "o", Duration.ofHours(2)));
+                () -> fileStorageService.getInternalObjectUri("test-bucket", "o", expiry));
 
         assertEquals("Error getting internal URL for object: o from bucket: test-bucket", exception.getMessage());
         assertSame(cause, exception.getCause());

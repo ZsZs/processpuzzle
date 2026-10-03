@@ -15,7 +15,7 @@ class PhotoOutcomeTest {
 
         assertThat(first).isEqualTo(first).isEqualTo(second).hasSameHashCodeAs(second);
         assertThat(second).isEqualTo(first);
-        assertThat(first.toString()).isEqualTo("PhotoOutcome[mediaId=p1, status=ENROLLED, cropJpeg=[1, 2], "
+        assertThat(first).hasToString("PhotoOutcome[mediaId=p1, status=ENROLLED, cropJpeg=[1, 2], "
                 + "embeddingModel=dinov2-small, embedding=[3, 4], identifierText=GER 1234, failureReason=null]");
     }
 
@@ -55,7 +55,7 @@ class PhotoOutcomeTest {
         PhotoOutcome second = new PhotoOutcome("p1", EnrollmentPhotoStatus.NO_SUBJECT, null, null, null, null, "no boat");
 
         assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
-        assertThat(first.toString()).isEqualTo("PhotoOutcome[mediaId=p1, status=NO_SUBJECT, cropJpeg=null, "
+        assertThat(first).hasToString("PhotoOutcome[mediaId=p1, status=NO_SUBJECT, cropJpeg=null, "
                 + "embeddingModel=null, embedding=null, identifierText=null, failureReason=no boat]");
     }
 
