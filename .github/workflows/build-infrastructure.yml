@@ -114,11 +114,14 @@ jobs:
           push: ${{ github.ref == 'refs/heads/develop' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Registry cache for the large image, written only where a login exists (develop); elsewhere
-          # `type=inline`, which writes nothing anywhere for an image that is not pushed. Written with
-          # the small images' value FIRST, because `a && b || c` falls through to c whenever b is empty.
+          # Caches are WRITTEN on develop only, and read everywhere. A cache written by a feature branch
+          # or a pull request can only ever be restored by that same ref, so every one of them was dead
+          # weight in the repository's 10GB once the branch merged — and pushed develop's own caches out.
+          # Elsewhere `type=inline`, which writes nothing for an image that is not pushed. The large image
+          # caches in the registry instead (see its matrix entry). Ordered so that no branch of
+          # `a && b || c` yields an empty string, which would fall through to c.
           cache-from: ${{ !matrix.large && 'type=gha' || format('type=registry,ref=ghcr.io/zszs/{0}:buildcache', matrix.name) }}
-          cache-to: ${{ !matrix.large && 'type=gha,mode=max' || (github.ref == 'refs/heads/develop' && format('type=registry,ref=ghcr.io/zszs/{0}:buildcache,mode=max', matrix.name) || 'type=inline') }}
+          cache-to: ${{ github.ref != 'refs/heads/develop' && 'type=inline' || (!matrix.large && 'type=gha,mode=max' || format('type=registry,ref=ghcr.io/zszs/{0}:buildcache,mode=max', matrix.name)) }}
 
   # `develop` deploys to stage by PROMOTING the digest just built — passing image_tag makes
   # Deploy-Infrastructure re-tag rather than rebuild, so the bytes that reach stage are the bytes
