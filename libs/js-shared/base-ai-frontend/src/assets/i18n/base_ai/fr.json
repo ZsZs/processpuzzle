@@ -58,6 +58,7 @@
     "chosen": "choisi",
     "overrule": "Pas celui-ci",
     "whoIsIt": "Pas sûr. Qui est-ce ?",
-    "read": "Lu :"
+    "read": "Lu :",
+    "cancel": "Annuler"
   }
 }

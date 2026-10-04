@@ -1,5 +1,7 @@
 package com.processpuzzle.state.usecase.port;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,7 +17,9 @@ import java.util.UUID;
 public record EntityObjectSnapshot(UUID id, long version, Map<String, Object> payload) {
 
     public EntityObjectSnapshot {
-        payload = payload == null ? Map.of() : Map.copyOf(payload);
+        // Not Map.copyOf: a payload legitimately holds null values — an attribute a form left empty — and
+        // Map.copyOf throws on them.
+        payload = payload == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(payload));
     }
 
     /** Convenience accessor for the value the state machine's {@code stateAttributeKey} names. */

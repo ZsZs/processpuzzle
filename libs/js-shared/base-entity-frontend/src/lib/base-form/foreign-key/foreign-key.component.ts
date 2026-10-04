@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity, PersistedEntity } from '../../base-entity/base-entity';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
@@ -7,11 +7,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { NavigatorCommand } from '../../base-form-navigator/navigation-payload';
-
-interface RelatedEntityStore {
-  entities?: () => PersistedEntity<BaseEntity>[];
-  loadById?: (id: string) => PersistedEntity<BaseEntity> | undefined;
-}
+import { ForeignKeyLabels } from './foreign-key-labels';
 
 @Component({
   selector: 'base-foreign-key',
@@ -89,6 +85,7 @@ interface RelatedEntityStore {
 export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   hasFocus = signal(false);
   private readonly selectedEntity = signal<PersistedEntity<BaseEntity> | undefined>(undefined);
+  private readonly labels = inject(ForeignKeyLabels);
 
   ngOnInit(): void {
     this.addSelectedComponentFromNavigatorResponse();
@@ -135,16 +132,7 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
   }
 
   foreignKeyDisplayName(): string {
-    const relatedEntity = this.selectedEntity() ?? this.relatedEntityFromLinkedStore();
-    if (!relatedEntity) {
-      return this.foreignKeyId();
-    }
-
-    const attrName = this.linkedEntityDescriptor()?.componentIdentification() ?? '';
-    const componentName = attrName ? (relatedEntity as unknown as Record<string, unknown>)[attrName] : undefined;
-    if (typeof componentName === 'string') return componentName;
-    if (typeof componentName === 'number' || typeof componentName === 'boolean' || typeof componentName === 'bigint') return String(componentName);
-    return relatedEntity.id;
+    return this.labels.labelOf(this.config().linkedEntityType, this.foreignKeyId(), this.selectedEntity());
   }
 
   private addSelectedComponentFromNavigatorResponse(): void {
@@ -185,23 +173,5 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
     const controlValue = this.formGroup?.get(attrName)?.value;
     const value = controlValue ?? this.value();
     return value === undefined || value === null ? '' : String(value);
-  }
-
-  private relatedEntityFromLinkedStore(): PersistedEntity<BaseEntity> | undefined {
-    const id = this.foreignKeyId();
-    const linkedStore = this.descriptorRegistry.getStore<RelatedEntityStore>(this.config().linkedEntityType);
-    if (!id || !linkedStore) {
-      return undefined;
-    }
-
-    if (typeof linkedStore.loadById === 'function') {
-      return linkedStore.loadById(id);
-    }
-
-    if (typeof linkedStore.entities === 'function') {
-      return linkedStore.entities().find((entity: PersistedEntity<BaseEntity>) => entity.id === id);
-    }
-
-    return undefined;
   }
 }

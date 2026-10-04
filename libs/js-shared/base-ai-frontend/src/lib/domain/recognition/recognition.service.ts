@@ -30,37 +30,49 @@ export class RecognitionService {
    * @param entityName        the profile's key, the entity definition code — e.g. `boat`
    * @param frames            one to five shots of the same subject
    * @param candidateObjectIds the objects that may be in front of the camera
+   * @param signal             abandons the recognition: no further upload or poll, and the promise rejects
+   *                           with an `AbortError`. The job itself runs to its end on the server and is purged
+   *                           with the other recognitions; abandoning it costs nothing but its CPU seconds.
    */
-  async recognize(entityName: string, frames: readonly Blob[], candidateObjectIds: readonly string[]): Promise<Recognition> {
-    let recognition = await this.start(entityName, frames, candidateObjectIds);
-    for (let polls = 0; recognition.status === 'QUEUED'; polls++) {
-      if (polls >= RECOGNITION_MAX_POLLS) throw new Error('the recognition did not finish in time');
-      await delay(RECOGNITION_POLL_MS);
-      recognition = await lastValueFrom(this.find(recognition.recognitionId));
-    }
-    return recognition;
+  async recognize(entityName: string, frames: readonly Blob[], candidateObjectIds: readonly string[], signal?: AbortSignal): Promise<Recognition> {
+    const recognition = await this.start(entityName, frames, candidateObjectIds, signal);
+    return this.poll(recognition, RECOGNITION_MAX_POLLS, signal);
   }
 
   /** Uploads the frames one after another and starts the recognition; it answers QUEUED. */
-  async start(entityName: string, frames: readonly Blob[], candidateObjectIds: readonly string[]): Promise<Recognition> {
+  async start(entityName: string, frames: readonly Blob[], candidateObjectIds: readonly string[], signal?: AbortSignal): Promise<Recognition> {
     const accepted = frames.filter((frame) => RECOGNITION_FRAME_TYPES.includes(frame.type)).slice(0, RECOGNITION_MAX_FRAMES);
     if (accepted.length === 0) throw new Error('none of the frames is a JPEG, PNG or WebP image');
     if (candidateObjectIds.length === 0) throw new Error('there is no candidate to recognize');
 
     const mediaKeys = await lastValueFrom(
       from(accepted).pipe(
-        concatMap(async (frame, index) => (await this.upload(frame, index)).mediaKey),
+        concatMap(async (frame, index) => {
+          signal?.throwIfAborted();
+          return (await this.upload(frame, index)).mediaKey;
+        }),
         toArray(),
       ),
     );
+    signal?.throwIfAborted();
     const recognition = await lastValueFrom(
       this.http.post<Recognition>(`${this.root}/recognitions`, { entityName, mediaKeys, candidateObjectIds: [...new Set(candidateObjectIds)] }),
     );
+    signal?.throwIfAborted();
     return normalize(recognition);
   }
 
   find(recognitionId: string): Observable<Recognition> {
     return this.http.get<Recognition>(`${this.root}/recognitions/${encodeURIComponent(recognitionId)}`).pipe(map(normalize));
+  }
+
+  private async poll(recognition: Recognition, remainingPolls: number, signal?: AbortSignal): Promise<Recognition> {
+    if (recognition.status !== 'QUEUED') return recognition;
+    if (remainingPolls === 0) throw new Error('the recognition did not finish in time');
+    await delay(RECOGNITION_POLL_MS, signal);
+    const next = await lastValueFrom(this.find(recognition.recognitionId));
+    signal?.throwIfAborted();
+    return this.poll(next, remainingPolls - 1, signal);
   }
 
   private async upload(frame: Blob, index: number): Promise<MediaUploadSlot> {
@@ -82,6 +94,21 @@ function normalize(recognition: Recognition): Recognition {
   return { ...recognition, candidates: recognition?.candidates ?? [], candidatesWithoutGallery: recognition?.candidatesWithoutGallery ?? [] };
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** A pause that an abort cuts short, rejecting with the signal's reason. */
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }

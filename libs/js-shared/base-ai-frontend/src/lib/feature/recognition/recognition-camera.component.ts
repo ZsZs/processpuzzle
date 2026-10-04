@@ -39,7 +39,8 @@ type ShotState = 'ready' | 'capturing' | 'recognizing' | 'answered' | 'failed';
  *
  * A shot is {@link framesPerShot} frames grabbed {@link frameIntervalMs} apart, so that a moving subject is
  * seen from more than one angle. A certain match is reported at once; an uncertain one offers the top
- * candidates to choose from; a certain one can still be overruled. Without a camera — no secure context, no
+ * candidates to choose from; a certain one can still be overruled. Cancel abandons a shot under way, or
+ * dismisses an answer without reporting anything. Without a camera — no secure context, no
  * device, permission refused — the device's own photo picker takes its place.
  */
 @Component({
@@ -51,15 +52,23 @@ type ShotState = 'ready' | 'capturing' | 'recognizing' | 'answered' | 'failed';
       @if (camera() === 'unavailable') {
         <p class="pp-recognition__note">{{ scope + '.noCamera' | transloco }}</p>
         <input #picker type="file" hidden multiple accept="image/*" capture="environment" (change)="onPicked(picker)" data-testid="frame-picker" />
-        <button mat-flat-button type="button" [disabled]="busy() || candidates().length === 0" (click)="picker.click()" data-testid="pick-frames">
-          {{ scope + '.takePhoto' | transloco }}
-        </button>
       } @else {
         <video #preview class="pp-recognition__preview" autoplay playsinline muted></video>
-        <button mat-flat-button type="button" [disabled]="camera() !== 'live' || busy() || candidates().length === 0" (click)="shoot()" data-testid="shoot">
-          {{ scope + '.shoot' | transloco }}
-        </button>
       }
+      <div class="pp-recognition__actions">
+        @if (camera() === 'unavailable') {
+          <button mat-flat-button type="button" [disabled]="busy() || candidates().length === 0" (click)="picker()?.nativeElement?.click()" data-testid="pick-frames">
+            {{ scope + '.takePhoto' | transloco }}
+          </button>
+        } @else {
+          <button mat-flat-button type="button" [disabled]="camera() !== 'live' || busy() || candidates().length === 0" (click)="shoot()" data-testid="shoot">
+            {{ scope + '.shoot' | transloco }}
+          </button>
+        }
+        <button mat-stroked-button type="button" [disabled]="!cancellable()" (click)="cancel()" data-testid="cancel">
+          {{ scope + '.cancel' | transloco }}
+        </button>
+      </div>
 
       @if (candidates().length === 0) {
         <p class="pp-recognition__note">{{ scope + '.noCandidates' | transloco }}</p>
@@ -123,6 +132,10 @@ type ShotState = 'ready' | 'capturing' | 'recognizing' | 'answered' | 'failed';
         max-height: 60vh;
         background: #000;
         border-radius: 4px;
+      }
+      .pp-recognition__actions {
+        display: flex;
+        gap: 8px;
       }
       .pp-recognition__progress {
         display: flex;
@@ -194,21 +207,29 @@ export class RecognitionCameraComponent {
   protected readonly reviewing = signal(false);
   protected readonly error = signal<string | undefined>(undefined);
   protected readonly busy = computed(() => this.shot() === 'capturing' || this.shot() === 'recognizing');
+  /** A shot under way can be abandoned, a shown answer dismissed. */
+  protected readonly cancellable = computed(() => this.busy() || this.shot() === 'answered');
 
   private readonly preview = viewChild<ElementRef<HTMLVideoElement>>('preview');
+  protected readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
   private readonly service = inject(RecognitionService);
   private readonly labels = computed(() => new Map(this.candidates().map((candidate) => [candidate.objectId, candidate.label])));
   private stream: MediaStream | null = null;
+  private inFlight: AbortController | null = null;
 
   constructor() {
     afterNextRender(() => void this.startCamera());
-    inject(DestroyRef).onDestroy(() => this.stopCamera());
+    inject(DestroyRef).onDestroy(() => {
+      this.inFlight?.abort();
+      this.stopCamera();
+    });
   }
 
   /** Grabs the frames from the live preview and recognizes them. */
   protected async shoot(): Promise<void> {
     const video = this.preview()?.nativeElement;
     if (!video || this.busy()) return;
+    const controller = this.begin();
     this.shot.set('capturing');
     const capturedAt = new Date().toISOString();
     try {
@@ -216,12 +237,24 @@ export class RecognitionCameraComponent {
       const count = Math.max(1, Math.min(RECOGNITION_MAX_FRAMES, this.framesPerShot()));
       for (let index = 0; index < count; index++) {
         if (index > 0) await delay(this.frameIntervalMs());
+        controller.signal.throwIfAborted();
         frames.push(await grab(video));
       }
-      await this.recognize(frames, capturedAt);
+      await this.recognize(frames, capturedAt, controller);
     } catch (error) {
-      this.fail(error);
+      this.fail(error, controller);
     }
+  }
+
+  /** Abandons the shot under way — its answer, if one still arrives, is ignored — or dismisses the answer shown. */
+  protected cancel(): void {
+    this.inFlight?.abort();
+    this.inFlight = null;
+    this.recognition.set(undefined);
+    this.chosen.set(undefined);
+    this.reviewing.set(false);
+    this.error.set(undefined);
+    this.shot.set('ready');
   }
 
   /** The fallback without a live camera: the photos the device's picker returns. */
@@ -230,10 +263,11 @@ export class RecognitionCameraComponent {
     picker.value = '';
     if (frames.length === 0 || this.busy()) return;
     const capturedAt = new Date(Math.min(...frames.map((frame) => frame.lastModified || Date.now()))).toISOString();
+    const controller = this.begin();
     try {
-      await this.recognize(frames, capturedAt);
+      await this.recognize(frames, capturedAt, controller);
     } catch (error) {
-      this.fail(error);
+      this.fail(error, controller);
     }
   }
 
@@ -254,7 +288,14 @@ export class RecognitionCameraComponent {
 
   private capturedAt = '';
 
-  private async recognize(frames: Blob[], capturedAt: string): Promise<void> {
+  /** A new shot supersedes whatever was under way. */
+  private begin(): AbortController {
+    this.inFlight?.abort();
+    this.inFlight = new AbortController();
+    return this.inFlight;
+  }
+
+  private async recognize(frames: Blob[], capturedAt: string, controller: AbortController): Promise<void> {
     this.error.set(undefined);
     this.chosen.set(undefined);
     this.reviewing.set(false);
@@ -265,7 +306,10 @@ export class RecognitionCameraComponent {
       this.entityName(),
       frames,
       this.candidates().map((candidate) => candidate.objectId),
+      controller.signal,
     );
+    if (controller.signal.aborted) return;
+    this.inFlight = null;
     if (recognition.status === 'FAILED') throw new Error(recognition.failureReason ?? 'the recognition failed');
     this.recognition.set(recognition);
     this.shot.set('answered');
@@ -279,7 +323,10 @@ export class RecognitionCameraComponent {
     this.recognized.emit(hit);
   }
 
-  private fail(error: unknown): void {
+  /** An abandoned shot is no failure: {@link cancel} has already reset the widget. */
+  private fail(error: unknown, controller: AbortController): void {
+    if (controller.signal.aborted) return;
+    this.inFlight = null;
     this.error.set(messageOf(error));
     this.shot.set('failed');
   }
