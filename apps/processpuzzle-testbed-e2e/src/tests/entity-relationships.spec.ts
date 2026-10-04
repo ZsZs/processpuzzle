@@ -80,4 +80,18 @@ defineEntityRelationshipSuite({
       reason: 'a self-referential EMBEDDED_COMPONENTS attribute makes a row its own child on save (App Widget.children)',
     },
   ],
+  fixtureOverrides: [
+    {
+      // Reached through [Entity Definition] attributes. The generator would pick the first Value Kind, TEXT
+      // (NUMBER on update), and the authoring mapper drops Date Style / Time Style for any kind but DATE /
+      // DATE_TIME, so the read-back would find them empty. Both styles are pinned too: the first option of
+      // each is 'none', and the backend rejects a dateFormat whose two halves are both none.
+      // Multiplicity likewise: the first option, '0..1', would make the mapper drop the generated Max occurs,
+      // which is sent only for the 'x' forms — so both steps pin one.
+      entityName: 'Entity Attribute',
+      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x' },
+      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x' },
+      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one',
+    },
+  ],
 });

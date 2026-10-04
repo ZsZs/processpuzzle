@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import type { BaseEntityMapper } from '../base-entity.mapper';
+import type { DateFormat } from '../base-entity/date-format';
+import { isBoundedByMaxOccurs, MULTIPLICITIES, type Multiplicity } from '../base-entity/multiplicity';
 import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
@@ -11,13 +13,16 @@ interface EntityAttributeDto {
   displayOrder?: number;
   valueKind?: EntityValueKind;
   formControlType?: string;
-  isMultiValued?: boolean;
+  multiplicity?: Multiplicity;
+  maxOccurs?: number;
   required?: boolean;
   indexed?: boolean;
   defaultValue?: unknown;
   enumValues?: string[];
+  dateFormat?: DateFormat;
   linkedEntityType?: string;
   isLinkToDetails?: boolean;
+  autosizeColumn?: boolean;
 }
 
 /** `BaseEntityDefinition` on the way in, `BaseEntityDefinitionInput` on the way out. */
@@ -103,13 +108,18 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     displayOrder: dto.displayOrder,
     valueKind: dto.valueKind,
     formControlType: dto.formControlType,
-    isMultiValued: dto.isMultiValued,
+    multiplicity: dto.multiplicity,
+    maxOccurs: dto.maxOccurs,
     required: dto.required,
     indexed: dto.indexed,
     defaultValue: dto.defaultValue,
     enumValues: dto.enumValues,
+    dateFormat: dto.dateFormat,
+    dateStyle: dto.dateFormat?.dateStyle,
+    timeStyle: dto.dateFormat?.timeStyle,
     linkedEntityType: dto.linkedEntityType,
     isLinkToDetails: dto.isLinkToDetails,
+    autosizeColumn: dto.autosizeColumn,
   });
 }
 
@@ -128,13 +138,42 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     displayOrder: attribute.displayOrder,
     valueKind: attribute.valueKind,
     formControlType: attribute.formControlType,
-    isMultiValued: attribute.isMultiValued ?? false,
+    ...multiplicityOf(attribute),
     required: attribute.required ?? false,
     indexed: attribute.indexed ?? false,
     defaultValue: attribute.defaultValue,
     enumValues: attribute.enumValues,
+    dateFormat: dateFormatOf(attribute),
     linkedEntityType: attribute.linkedEntityType,
     isLinkToDetails: attribute.isLinkToDetails ?? false,
+    autosizeColumn: attribute.autosizeColumn ?? false,
   };
+}
+
+/**
+ * Explicit or absent, never a stale leftover: the PUT is a full replacement, so an absent `multiplicity` is a
+ * single value. `maxOccurs` is sent only for the `x` forms — the backend rejects it on the others — and is
+ * coerced because the number text box may hand back a string.
+ */
+function multiplicityOf(attribute: EntityAttributeDefinition): Pick<EntityAttributeDto, 'multiplicity' | 'maxOccurs'> {
+  const multiplicity = MULTIPLICITIES.includes(attribute.multiplicity as Multiplicity) ? attribute.multiplicity : undefined;
+  if (!multiplicity) return {};
+  const raw: unknown = attribute.maxOccurs;
+  const maxOccurs = raw == null || raw === '' ? NaN : Number(raw);
+  if (!isBoundedByMaxOccurs(multiplicity) || !Number.isFinite(maxOccurs)) return { multiplicity };
+  return { multiplicity, maxOccurs };
+}
+
+/**
+ * The form's `dateStyle` / `timeStyle` folded into the contract's `dateFormat`. A style that does not apply
+ * to the value kind is dropped rather than sent, so changing a DATE_TIME attribute to TEXT — or to DATE —
+ * does not turn the save into a 422 over a dropdown the user can no longer see a reason for.
+ */
+function dateFormatOf(attribute: EntityAttributeDefinition): DateFormat | undefined {
+  if (attribute.valueKind !== 'DATE' && attribute.valueKind !== 'DATE_TIME') return undefined;
+  const dateStyle = attribute.dateStyle || undefined;
+  const timeStyle = attribute.valueKind === 'DATE' ? undefined : attribute.timeStyle || undefined;
+  if (!dateStyle && !timeStyle) return undefined;
+  return { ...(dateStyle && { dateStyle }), ...(timeStyle && { timeStyle }) };
 }
 // endregion

@@ -1,0 +1,64 @@
+{
+  "recognition_profile": {
+    "_self": "Felismerési profil",
+    "entityName": "Entitástípus",
+    "name": "Név",
+    "description": "Leírás",
+    "detectorClass": "Detektorosztály",
+    "galleryAttributeKey": "Fotók attribútum",
+    "identifierAttributeKey": "Azonosító attribútum",
+    "identifierPattern": "Azonosító minta",
+    "identifierWeight": "Azonosító súlya",
+    "acceptScore": "Elfogadási pontszám",
+    "acceptMargin": "Elfogadási különbség",
+    "sampleFps": "Mintavételi FPS",
+    "version": "Verzió",
+    "updatedAt": "Módosítva"
+  },
+  "entity_enrollment": {
+    "tab": "Felismerés",
+    "loading": "A galéria betöltése…",
+    "noProfile": "Ehhez az entitástípushoz nincs felismerési profil, ezért objektumai nem taníthatók be.",
+    "registered": "Nyilvántartott azonosító",
+    "noIdentifier": "nincs",
+    "intro": "Ennek az objektumnak ({{ detectorClass }}) a fotói a(z) '{{ attribute }}' attribútumából származnak — a Részletek fülön adjon hozzá több oldalról, különböző fényviszonyok között készült fotókat. Minden mentéskor a háttérben minden fotót a tárgyra vágunk, beágyazunk és kiolvassuk az azonosítóját.",
+    "status": {
+      "NOT_ENROLLED": "Nincs betanítva",
+      "PROCESSING": "Feldolgozás alatt",
+      "READY": "Kész",
+      "FAILED": "Sikertelen"
+    },
+    "photoStatus": {
+      "PENDING": "Feldolgozás alatt",
+      "ENROLLED": "Betanítva",
+      "NO_SUBJECT": "Nincs találat",
+      "AMBIGUOUS": "Több találat",
+      "FAILED": "Sikertelen"
+    },
+    "cancel": "Mégse",
+    "empty": "Még nincs fotó. Adjon hozzá a Részletek fülön.",
+    "photoAlt": "Betanító fénykép",
+    "observed": "Kiolvasva:",
+    "mismatch": "Eltér a nyilvántartott azonosítótól",
+    "noReading": "Nem sikerült azonosítót kiolvasni",
+    "synchronize": "Szinkronizálás",
+    "rebuild": "Galéria újraépítése",
+    "confirmRebuild": "Valóban újra feldolgozza az összes fotót"
+  },
+  "recognition_camera": {
+    "noCamera": "Itt nem érhető el kamera. Készítsen vagy válasszon fotókat helyette.",
+    "takePhoto": "Fotók készítése",
+    "shoot": "Felismerés",
+    "noCandidates": "Nincs kit felismerni.",
+    "capturing": "Felvétel készül…",
+    "recognizing": "Felismerés folyamatban…",
+    "cropAlt": "Amit a kamera látott",
+    "noSubject": "Semmi felismerhető a felvételen. Próbálja újra, közelebbről.",
+    "automatic": "felismerve",
+    "chosen": "kiválasztva",
+    "overrule": "Nem ez",
+    "whoIsIt": "Nem biztos. Ki az?",
+    "read": "Kiolvasva:",
+    "cancel": "Mégse"
+  }
+}

@@ -57,6 +57,40 @@ public class EntityDefinitionValidator {
             violations.add(new Violation(attribute.getCode(),
                 "%s attributes require linkedEntityType".formatted(attribute.getFormControlType())));
         }
+        validateDateFormat(attribute, violations);
+        validateMultiplicity(attribute, violations);
+    }
+
+    private void validateMultiplicity(BaseEntityAttribute attribute, List<Violation> violations) {
+        Multiplicity multiplicity = attribute.getMultiplicity();
+        Integer maxOccurs = attribute.getMaxOccurs();
+        if (multiplicity != null && multiplicity.isBoundedByMaxOccurs()) {
+            if (maxOccurs == null || maxOccurs < 1) {
+                violations.add(new Violation(attribute.getCode(),
+                    "multiplicity %s requires maxOccurs of at least 1".formatted(multiplicity.notation())));
+            }
+        } else if (maxOccurs != null) {
+            violations.add(new Violation(attribute.getCode(),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x"));
+        }
+    }
+
+    private void validateDateFormat(BaseEntityAttribute attribute, List<Violation> violations) {
+        DateFormat dateFormat = attribute.getDateFormat();
+        if (dateFormat == null) {
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.DATE && attribute.getValueKind() != ValueKind.DATE_TIME) {
+            violations.add(new Violation(attribute.getCode(), "dateFormat requires valueKind=DATE or DATE_TIME"));
+            return;
+        }
+        boolean noTime = dateFormat.timeStyle() == null || dateFormat.timeStyle() == TimeStyle.NONE;
+        if (attribute.getValueKind() == ValueKind.DATE && !noTime) {
+            violations.add(new Violation(attribute.getCode(), "valueKind=DATE cannot declare a dateFormat timeStyle"));
+        }
+        if (dateFormat.dateStyle() == DateStyle.NONE && dateFormat.timeStyle() == TimeStyle.NONE) {
+            violations.add(new Violation(attribute.getCode(), "dateFormat dateStyle and timeStyle cannot both be none"));
+        }
     }
 
     private void validateEmbeddedComponentsUniqueness(BaseEntityDefinition definition, List<Violation> violations) {

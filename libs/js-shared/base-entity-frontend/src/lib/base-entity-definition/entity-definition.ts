@@ -1,4 +1,6 @@
 import type { BaseEntity } from '../base-entity/base-entity';
+import type { DateFormat, DateStyle, TimeStyle } from '../base-entity/date-format';
+import type { Multiplicity } from '../base-entity/multiplicity';
 
 /**
  * The knowledge layer of `base-entity-api.yaml` as the frontend reads it: what an entity *type* is,
@@ -90,12 +92,23 @@ export class EntityAttributeDefinition implements BaseEntity {
   displayOrder?: number;
   valueKind?: EntityValueKind;
   formControlType: string;
-  isMultiValued?: boolean;
+  /** How many values the attribute holds; absent means a single value — the descriptor's `multiplicity`. */
+  multiplicity?: Multiplicity;
+  /** Upper bound of the `x` multiplicities (`0..x`, `1..x`). */
+  maxOccurs?: number;
   required?: boolean;
   indexed?: boolean;
   defaultValue?: unknown;
   /** Only meaningful for `valueKind: ENUM`; becomes the dropdown's options. */
   enumValues?: string[];
+  /** Only meaningful for `valueKind: DATE / DATE_TIME`: the named style the value is shown and edited in. */
+  dateFormat?: DateFormat;
+  /**
+   * The authoring form's flat view of {@link dateFormat}: the form builder binds one control per attribute
+   * name and cannot reach into a nested object. The authoring mapper folds the two back on save.
+   */
+  dateStyle?: DateStyle;
+  timeStyle?: TimeStyle;
   /**
    * **Code** of the definition this attribute points at — a child carried inline
    * (`EMBEDDED_COMPONENTS`) or a parent referenced by key (`FOREIGN_KEY`). The descriptor's
@@ -104,6 +117,8 @@ export class EntityAttributeDefinition implements BaseEntity {
   linkedEntityType?: string;
   /** Marks the attribute that titles an instance — the descriptor's `isLinkToDetails`. */
   isLinkToDetails?: boolean;
+  /** The list column hugs its content instead of filling the remaining width — the descriptor's `autosizeColumn`. */
+  autosizeColumn?: boolean;
 
   constructor(init: Partial<EntityAttributeDefinition> = {}) {
     this.code = init.code ?? '';
@@ -114,13 +129,18 @@ export class EntityAttributeDefinition implements BaseEntity {
     // The contract requires it and the form marks it required too, but a blank row has to exist before it
     // can be filled in — hence a default rather than a throw.
     this.formControlType = init.formControlType ?? 'TEXT_BOX';
-    this.isMultiValued = init.isMultiValued;
+    this.multiplicity = init.multiplicity;
+    this.maxOccurs = init.maxOccurs;
     this.required = init.required;
     this.indexed = init.indexed;
     this.defaultValue = init.defaultValue;
     this.enumValues = init.enumValues;
+    this.dateFormat = init.dateFormat;
+    this.dateStyle = init.dateStyle;
+    this.timeStyle = init.timeStyle;
     this.linkedEntityType = init.linkedEntityType;
     this.isLinkToDetails = init.isLinkToDetails;
+    this.autosizeColumn = init.autosizeColumn;
   }
 }
 

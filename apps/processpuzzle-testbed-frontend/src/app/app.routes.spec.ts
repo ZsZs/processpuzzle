@@ -6,6 +6,7 @@ import { appRoutes } from './app.routes';
 import { TestBed } from '@angular/core/testing';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth';
+import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 
 /**
  * Guards the one thing about mounting a metadata-defined entity that fails *silently*.
@@ -52,9 +53,16 @@ describe('appRoutes — entity screen mount points', () => {
     expect(mountedEntities('base-rule', 'samples').map((mount) => mount.entityName)).toEqual(['Order', 'Special Order']);
   });
 
+  it('opens app definitions by default while preserving their authoring routes', () => {
+    expect(childrenOf('base-app', 'samples')).toEqual([
+      { path: '', pathMatch: 'full', redirectTo: 'app-definition' },
+      ...BASE_APP_ROUTES,
+    ]);
+  });
+
   it('exposes every primary feature as a titled navigation route', () => {
     expect(appRoutes.filter((route) => route.title).map((route) => route.path)).toEqual([
-      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-workflow', 'base-app', 'ci-cd',
+      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-workflow', 'base-ai', 'base-app', 'ci-cd',
     ]);
   });
 

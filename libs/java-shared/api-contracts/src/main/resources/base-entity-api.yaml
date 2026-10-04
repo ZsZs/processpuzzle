@@ -531,8 +531,18 @@ components:
       description: >
         Data type of the attribute's value. Drives JSON payload validation and
         RSQL comparison-operator casting. (TEXT_LIST intentionally omitted —
-        repetition is expressed via isMultiValued instead.)
+        repetition is expressed via the attribute's multiplicity instead.)
       enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE ]
+
+    Multiplicity:
+      type: string
+      description: >
+        How many values an attribute holds. The lower bound is 0 or 1, the upper
+        bound 1, a fixed maximum `x` (given by maxOccurs) or unbounded `n`. An
+        absent multiplicity means a single value. An attribute is multi-valued
+        when its upper bound exceeds 1. Value counts are not validated yet.
+      enum: [ '0..1', '0..x', '0..n', '1..x', '1..n' ]
+      x-enum-varnames: [ ZERO_TO_ONE, ZERO_TO_X, ZERO_TO_N, ONE_TO_X, ONE_TO_N ]
 
     FormControlType:
       type: string
@@ -570,6 +580,27 @@ components:
         Flexbox layout direction for entity form descriptors (mirrors
         libs/js-shared/base-entity-frontend FlexDirection).
       enum: [ CONTAINER, COLUMN, ROW ]
+
+    DateStyle:
+      type: string
+      description: Intl.DateTimeFormat dateStyle used to render the date part of a DATE / DATE_TIME attribute.
+      enum: [ none, short, medium, long, full ]
+
+    TimeStyle:
+      type: string
+      description: Intl.DateTimeFormat timeStyle used to render the time part of a DATE_TIME attribute.
+      enum: [ none, short, medium, long ]
+
+    AttributeDateFormat:
+      type: object
+      description: >-
+        Named display style of a DATE / DATE_TIME attribute, rendered at run time in the
+        active language. Omitted styles fall back to the value kind's default.
+      properties:
+        dateStyle:
+          $ref: '#/components/schemas/DateStyle'
+        timeStyle:
+          $ref: '#/components/schemas/TimeStyle'
 
     Selectable:
       type: object
@@ -621,6 +652,8 @@ components:
               type: string
             format:
               type: string
+            dateFormat:
+              $ref: '#/components/schemas/AttributeDateFormat'
             isLinkToDetails:
               type: boolean
               default: false
@@ -637,6 +670,10 @@ components:
             hideInTable:
               type: boolean
               default: false
+            autosizeColumn:
+              type: boolean
+              default: false
+              description: The list column hugs its content (capped at 60% of the table) instead of filling the remaining width.
             isHeading:
               type: boolean
             placeholder:
@@ -709,9 +746,12 @@ components:
           $ref: '#/components/schemas/ValueKind'
         formControlType:
           $ref: '#/components/schemas/FormControlType'
-        isMultiValued:
-          type: boolean
-          default: false
+        multiplicity:
+          $ref: '#/components/schemas/Multiplicity'
+        maxOccurs:
+          type: integer
+          minimum: 1
+          description: Upper bound of the `x` multiplicities (0..x, 1..x); must be absent for the others.
         required:
           type: boolean
           default: false
@@ -725,6 +765,8 @@ components:
           items:
             type: string
           description: Only meaningful when valueKind=ENUM.
+        dateFormat:
+          $ref: '#/components/schemas/AttributeDateFormat'
         linkedEntityType:
           type: string
           description: >
@@ -735,6 +777,10 @@ components:
           type: boolean
           default: false
           description: Marks the attribute used as this entity's display title (componentIdentification).
+        autosizeColumn:
+          type: boolean
+          default: false
+          description: The list column hugs its content (capped at 60% of the table) instead of filling the remaining width.
         validationRules: { }
 
     BaseEntityAttribute:

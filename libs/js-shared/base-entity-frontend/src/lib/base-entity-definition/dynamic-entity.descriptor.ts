@@ -1,6 +1,7 @@
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { effectiveDateFormat } from '../base-entity/date-format';
 import { toSelectables } from '../base-entity/selectables';
 import { EntityAttributeDefinition, EntityDefinition } from './entity-definition';
 
@@ -20,9 +21,9 @@ export type DefinitionLookup = (code: string) => EntityDefinition | undefined;
  * The pairs worth justifying:
  * - `NUMBER` also sets `inputType: 'number'` (see {@link optionsOf}) — a textbox is the right control,
  *   the keyboard and the spinner are what differ.
- * - `DATE_TIME` maps to `DATE`: `DatepickerComponent` is the only temporal control there is. The time of
- *   day survives the round trip untouched because the payload is stored as the string the backend sent;
- *   it is simply not editable yet.
+ * - `DATE_TIME` maps to `DATE`: `DatepickerComponent` is the only temporal control there is. What makes it
+ *   edit a time of day too is the descriptor's `dateFormat`, which {@link attrDescriptorOf} resolves with the
+ *   DATE_TIME defaults — so its `timeStyle` is `short` unless the definition says otherwise.
  * - `BOOLEAN` and `CHECKBOX` both map to `CHECKBOX` — the contract distinguishes the value kind from the
  *   widget, the frontend has one widget for it.
  * - `ENUM_SELECT` and `DROPDOWN` both map to `DROPDOWN`, fed by `enumValues`.
@@ -124,7 +125,13 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
   );
 
   attrDescriptor.required = attribute.required === true;
+  attrDescriptor.autosizeColumn = attribute.autosizeColumn === true;
+  attrDescriptor.multiplicity = attribute.multiplicity;
+  attrDescriptor.maxOccurs = attribute.maxOccurs;
   attrDescriptor.description = attribute.description;
+  // Resolved here because this is the last place that knows the value kind: the descriptor carries none,
+  // and a DATE_TIME attribute without a format of its own must still get a time field.
+  if (attribute.valueKind === 'DATE' || attribute.valueKind === 'DATE_TIME') attrDescriptor.dateFormat = effectiveDateFormat(attribute, attribute.valueKind);
 
   const linkedEntityName = attribute.linkedEntityType ? lookup(attribute.linkedEntityType)?.name : undefined;
   if (linkedEntityName) attrDescriptor.linkedEntityType = linkedEntityName;

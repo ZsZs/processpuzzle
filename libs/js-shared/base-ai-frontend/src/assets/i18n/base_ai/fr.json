@@ -1,0 +1,64 @@
+{
+  "recognition_profile": {
+    "_self": "Profil de reconnaissance",
+    "entityName": "Type d'entité",
+    "name": "Nom",
+    "description": "Description",
+    "detectorClass": "Classe du détecteur",
+    "galleryAttributeKey": "Attribut des photos",
+    "identifierAttributeKey": "Attribut identifiant",
+    "identifierPattern": "Motif de l'identifiant",
+    "identifierWeight": "Poids de l'identifiant",
+    "acceptScore": "Score minimal",
+    "acceptMargin": "Marge minimale",
+    "sampleFps": "IPS échantillonnées",
+    "version": "Version",
+    "updatedAt": "Mis à jour le"
+  },
+  "entity_enrollment": {
+    "tab": "Reconnaissance",
+    "loading": "Chargement de la galerie…",
+    "noProfile": "Ce type d'entité n'a pas de profil de reconnaissance ; ses objets ne peuvent donc pas être enrôlés.",
+    "registered": "Identifiant enregistré",
+    "noIdentifier": "aucun",
+    "intro": "Les photos de cet objet ({{ detectorClass }}) proviennent de son attribut « {{ attribute }} » : ajoutez dans l'onglet Détails des photos sous plusieurs angles et à différentes lumières. À chaque enregistrement, chaque photo est recadrée sur le sujet, encodée et lue pour son identifiant en arrière-plan.",
+    "status": {
+      "NOT_ENROLLED": "Non enrôlé",
+      "PROCESSING": "En cours",
+      "READY": "Prêt",
+      "FAILED": "Échec"
+    },
+    "photoStatus": {
+      "PENDING": "En cours",
+      "ENROLLED": "Enrôlée",
+      "NO_SUBJECT": "Rien trouvé",
+      "AMBIGUOUS": "Plusieurs trouvés",
+      "FAILED": "Échec"
+    },
+    "cancel": "Annuler",
+    "empty": "Pas encore de photos. Ajoutez-en dans l'onglet Détails.",
+    "photoAlt": "Photo d'enrôlement",
+    "observed": "Lu :",
+    "mismatch": "Diffère de l'identifiant enregistré",
+    "noReading": "Aucun identifiant lu",
+    "synchronize": "Synchroniser",
+    "rebuild": "Reconstruire la galerie",
+    "confirmRebuild": "Vraiment réenregistrer toutes les photos"
+  },
+  "recognition_camera": {
+    "noCamera": "Aucune caméra n'est disponible ici. Prenez ou choisissez des photos à la place.",
+    "takePhoto": "Prendre des photos",
+    "shoot": "Reconnaître",
+    "noCandidates": "Il n'y a personne à reconnaître.",
+    "capturing": "Prise de vue…",
+    "recognizing": "Reconnaissance…",
+    "cropAlt": "Ce que la caméra a vu",
+    "noSubject": "Rien de reconnaissable sur la prise. Réessayez de plus près.",
+    "automatic": "reconnu",
+    "chosen": "choisi",
+    "overrule": "Pas celui-ci",
+    "whoIsIt": "Pas sûr. Qui est-ce ?",
+    "read": "Lu :",
+    "cancel": "Annuler"
+  }
+}

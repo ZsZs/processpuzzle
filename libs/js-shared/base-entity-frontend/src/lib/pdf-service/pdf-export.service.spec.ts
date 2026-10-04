@@ -91,7 +91,7 @@ describe('PdfExportService', () => {
     await service.export([{ flag: true, when, iso: '2024-03-04', plain: 'hello', count: 1234, big: 10n, meta: { a: 1 }, sym: Symbol('x'), empty: null }], plainColumns);
 
     const options = autoTable.mock.calls[0][1] as { body: string[][] };
-    expect(options.body[0]).toEqual(['Yes', when.toLocaleDateString(), new Date('2024-03-04').toLocaleDateString(), 'hello', (1234).toLocaleString(), '10', '{"a":1}', '', '']);
+    expect(options.body[0]).toEqual(['Yes', when.toLocaleDateString(), new Date(2024, 2, 4).toLocaleDateString(), 'hello', (1234).toLocaleString(), '10', '{"a":1}', '', '']);
   });
 
   it('honours an explicit orientation', async () => {

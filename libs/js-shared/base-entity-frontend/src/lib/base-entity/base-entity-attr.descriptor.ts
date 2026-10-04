@@ -1,5 +1,7 @@
 import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
+import type { DateFormat } from './date-format';
+import type { Multiplicity } from './multiplicity';
 
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
@@ -9,11 +11,23 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   styleClass? = '';
   labelClass?: string = '';
   format?: string;
+  /**
+   * `DATE` only: the named style the value is shown and edited in, rendered in the active language. Absent
+   * styles fall back to the defaults of `effectiveDateFormat`; a `timeStyle` other than `none` adds a time
+   * field and makes the value an instant rather than a calendar day.
+   */
+  dateFormat?: DateFormat;
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
   visible = true;
   showThumbnail?: boolean = true;
   hideInTable?: boolean = false;
+  /**
+   * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,
+   * a status, a date. A hugging cell never grows past 60% of the table's width; longer content is cut off
+   * with an ellipsis. Columns that are not autosized fill the remaining width and wrap.
+   */
+  autosizeColumn?: boolean = false;
   isHeading?: boolean;
   placeholder?: string;
   lines?: number;
@@ -30,6 +44,20 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    */
   pattern?: string;
   referenceIdField?: string = 'id';
+  /**
+   * `EMBEDDED_COMPONENTS` only: the rows' order means something — widgets render in it, nav items are listed
+   * in it — so the list lets the user reorder them. The order is the array's, so it needs nothing from the
+   * backend beyond keeping the array as sent.
+   */
+  ordered = false;
+  /**
+   * How many values the attribute holds — see {@link Multiplicity}. Absent means a single value. Only
+   * `ARTIFACT` acts on it today: with an upper bound above 1 the value is an array and uploads append.
+   * Counts are not validated; `required` stays a separate flag.
+   */
+  multiplicity?: Multiplicity;
+  /** The upper bound of the `x` multiplicities (`0..x`, `1..x`); ignored for the others. */
+  maxOccurs?: number;
   /**
    * The control of a {@link FormControlType.CUSTOM} attribute: a `BaseFormControlComponent` subclass the form
    * builder creates like any built-in control. Typed loosely because the base class is generic over the entity

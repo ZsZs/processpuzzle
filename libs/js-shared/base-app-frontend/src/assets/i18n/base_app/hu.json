@@ -24,13 +24,41 @@
     "modules": "Modulok",
     "tabs": {
       "preview": "{{ entity }} - előnézet"
+    },
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül, és változtatás nélkül bekerül az alkalmazás URL-jébe. Rövid, kisbetűs, kötőjeles, pl. claims-app; később lehetőleg ne módosítsd. — Útmutató: Alkalmazás",
+      "name": "Az alkalmazás neve, ahogy a felhasználók látják, pl. az app-title widgetben. — Útmutató: Alkalmazás",
+      "translocoId": "Nem kötelező fordítási kulcs; ha megadod, más nyelveken a Név helyett ez jelenik meg. — Útmutató: Alkalmazás",
+      "description": "Megjegyzés neked és a tervezőtársaidnak; a felhasználók nem látják. — Útmutató: Alkalmazás",
+      "status": "DRAFT, amíg a definíció nincs közzétéve, utána PUBLISHED. A rendszer állítja be. — Útmutató: Mentés, előnézet és közzététel",
+      "version": "Minden mentéssel nő. A rendszer állítja be. — Útmutató: Mentés, előnézet és közzététel",
+      "publishedVersion": "Az a verzió, amelyet a felhasználók jelenleg kapnak. Csak akkor változik, ha megnyomod a Közzététel gombot. — Útmutató: Mentés, előnézet és közzététel",
+      "updatedAt": "A definíció utolsó mentésének ideje. A rendszer állítja be.",
+      "materialTheme": "Az egész alkalmazás színpalettája. A processpuzzle a márka megjelenése; a többi a fejlécet, az oldalsávot, a kártyákat és a gombokat is átszínezi. — Útmutató: Téma",
+      "colorScheme": "Világos, sötét vagy automatikus (a felhasználó operációs rendszerét követi). — Útmutató: Téma",
+      "logoUrl": "Az app-logo widget által megjelenített logókép címe. — Útmutató: Téma",
+      "faviconUrl": "A böngészőfülön megjelenő kis ikon címe. — Útmutató: Téma",
+      "tokenOverrides": "Finomhangolás a téma felett: egy --pp-… színtoken és értéke, pl. --pp-surface-sidenav = #0d1b2a. — Útmutató: Téma",
+      "preset": "Hol helyezkedik el a navigáció: bal vagy jobb oldali panelen, vagy a fejléc sorában (top-nav). — Útmutató: Elrendezés",
+      "sidenavMode": "side: panel az oldal mellett · over: panel az oldal felett · push: az oldal félrecsúszik, amíg a panel nyitva van. — Útmutató: Elrendezés",
+      "contentMaxWidth": "Az oldalak maximális szélessége CSS-hosszként, pl. 1280px; üresen teljes szélesség. — Útmutató: Elrendezés",
+      "sidenavCollapsible": "Bezárhatják-e a felhasználók a navigációs panelt. — Útmutató: Elrendezés",
+      "sidenavOpenByDefault": "Nyitva indul-e a navigációs panel. — Útmutató: Elrendezés",
+      "regions": "Az oldalak körüli keret: header, sidenav és footer, mindegyikből legfeljebb egy. — Útmutató: Régiók",
+      "routes": "Az alkalmazás oldalai, oldalanként egy sor. Előbb vedd fel őket, mint a rájuk mutató navigációs elemeket. — Útmutató: Útvonalak",
+      "modules": "Az alkalmazás külön elkészített részei, amelyek útvonalai egy alap útvonal alatt jelennek meg. — Útmutató: Modulok"
     }
   },
   "app_region": {
     "_self": "Régió",
     "type": "Típus",
     "navItems": "Navigációs elemek",
-    "widgets": "Widgetek"
+    "widgets": "Widgetek",
+    "_tooltips": {
+      "type": "header (fent), sidenav (navigációs panel) vagy footer (lent). Mindegyik típus egyszer használható. — Útmutató: Régiók",
+      "navItems": "A sidenav menüpontjai. Csak a sidenav régió használja. — Útmutató: Navigációs elemek",
+      "widgets": "A fejléc vagy a lábléc widgetjei, egy sorban, ebben a sorrendben. Egy spacer jobbra tolja az utána következőket. — Útmutató: Fejléc"
+    }
   },
   "app_route": {
     "_self": "Útvonal",
@@ -44,12 +72,29 @@
     "documentSlug": "Dokumentum slug",
     "entityName": "Entitás neve",
     "entityMode": "Entitás mód",
-    "rsqlFilter": "RSQL szűrő"
+    "rsqlFilter": "RSQL szűrő",
+    "_tooltips": {
+      "path": "Az oldal címe az alkalmazáshoz képest, kezdő perjel nélkül, pl. claims/open. Egy :name szakasz paramétert jelöl, pl. claims/:id. — Útmutató: Útvonalak",
+      "title": "Az oldal címe. — Útmutató: Útvonalak",
+      "translocoId": "A cím nem kötelező fordítási kulcsa; más nyelveken a cím helyett ez jelenik meg. — Útmutató: Útvonalak",
+      "icon": "Egy Material vagy FontAwesome ikon neve. — Útmutató: Útvonalak",
+      "roles": "Az oldal megnyitására jogosult szerepkörök; üresen a szervezeted bármely bejelentkezett tagja. Még nincs érvényesítve. — Útmutató: Szerepkörök",
+      "kind": "Mit mutat az oldal: WIDGETS, ENTITY (egy entitás generált listája és űrlapja) vagy DOCUMENT. Az alatta lévő mezők csak a kiválasztott fajtára vonatkoznak. — Útmutató: Útvonalak",
+      "widgets": "Csak WIDGETS: az oldal widgetjei, egymás alatt, ebben a sorrendben. — Útmutató: Widgetek",
+      "documentSlug": "Csak DOCUMENT: a megjelenítendő dokumentum slugja. Még nem jelenik meg. — Útmutató: Dokumentumok",
+      "entityName": "Csak ENTITY: az Entitások alatt definiált entitás neve; a listáját és az űrlapját a rendszer generálja. — Útmutató: Entitások",
+      "entityMode": "Csak ENTITY: a listán vagy egy rekord részletein nyíljon meg. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások",
+      "rsqlFilter": "Csak ENTITY + LIST: előszűrő, pl. status==OPEN. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások"
+    }
   },
   "app_module_mount": {
     "_self": "Modul beépítés",
     "moduleKey": "Modul kulcs",
-    "basePath": "Alap útvonal"
+    "basePath": "Alap útvonal",
+    "_tooltips": {
+      "moduleKey": "A Modulok alatt elkészített modul Kulcsa. — Útmutató: Modulok",
+      "basePath": "Az előtag, amely alatt a modul útvonalai megjelennek: a claims alap útvonal a modul open útvonalából claims/open útvonalat csinál. — Útmutató: Modulok"
+    }
   },
   "app_nav_item": {
     "_self": "Navigációs elem",
@@ -59,14 +104,29 @@
     "icon": "Ikon",
     "routePath": "Útvonal",
     "roles": "Szerepkörök",
-    "children": "Alelemek"
+    "children": "Alelemek",
+    "_tooltips": {
+      "id": "A menüpont egyedi azonosítója a menün belül, pl. nav-claims. — Útmutató: Navigációs elemek",
+      "label": "A menüpont szövege. — Útmutató: Navigációs elemek",
+      "translocoId": "A felirat nem kötelező fordítási kulcsa; más nyelveken a felirat helyett ez jelenik meg. — Útmutató: Navigációs elemek",
+      "icon": "Egy Material vagy FontAwesome ikon neve. — Útmutató: Navigációs elemek",
+      "routePath": "A menüpont által megnyitott útvonal Útvonal mezője, pontosan úgy, ahogy az útvonalon szerepel. Hagyd üresen, ha a menüpont az alelemeinek csoportja. — Útmutató: Navigációs elemek",
+      "roles": "A menüpont megtekintésére jogosult szerepkörök; üresen a szervezeted bármely bejelentkezett tagja. Még nincs érvényesítve. — Útmutató: Szerepkörök",
+      "children": "Egy csoport menüpont alá tartozó menüpontok. Csak akkor van értelme, ha az Útvonal üres. — Útmutató: Navigációs elemek"
+    }
   },
   "app_widget": {
     "_self": "Widget",
     "id": "Azonosító",
     "type": "Típus",
     "props": "Tulajdonságok",
-    "placement": "Elhelyezés"
+    "placement": "Elhelyezés",
+    "_tooltips": {
+      "id": "Egyedi az oldalán vagy régióján belül, pl. widget-claims-grid. Egy konténer widget ezzel az azonosítóval hivatkozik más widgetekre. — Útmutató: Widgetek",
+      "type": "Melyik widgetről van szó; csak az ebben a telepítésben elérhető widgetek közül választhatsz. — Útmutató: Widgetek",
+      "props": "A widget beállításai. Az űrlap a kiválasztott típushoz igazodik. — Útmutató: Widgetek",
+      "placement": "STANDALONE: ott jelenik meg, ahol a listában szerepel. REFERENCED: csak abban a konténer widgetben jelenik meg, amely felsorolja az azonosítóját. — Útmutató: Widgetek"
+    }
   },
   "module_definition": {
     "_self": "Modul",
@@ -77,10 +137,84 @@
     "translocoScope": "Transloco tartomány",
     "version": "Verzió",
     "updatedAt": "Módosítva",
-    "routes": "Útvonalak"
+    "routes": "Útvonalak",
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül; az alkalmazások ezzel a kulccsal építik be a modult. Nem változhat, amint a modul használatba került. — Útmutató: Modulok",
+      "name": "A modul neve. — Útmutató: Modulok",
+      "translocoId": "A név nem kötelező fordítási kulcsa. — Útmutató: Modulok",
+      "description": "Megjegyzés neked és a tervezőtársaidnak. — Útmutató: Modulok",
+      "translocoScope": "A tartomány, amely alatt a modul fordításai betöltődnek; üresen a Kulcs. — Útmutató: Modulok",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "updatedAt": "A modul utolsó mentésének ideje. A rendszer állítja be.",
+      "routes": "A modul oldalai. Útvonalaik ahhoz az alap útvonalhoz képest értendők, ahová a modult beépítik. — Útmutató: Modulok"
+    }
   },
   "publish": {
     "button": "Közzététel",
     "tooltip": "A mentett definíció közzététele: a verziója lesz a közzétett verzió"
+  },
+  "concepts": {
+    "title": "Hogyan épül fel egy dinamikus alkalmazás",
+    "intro": "A ProcessPuzzle-ben egy <b>Alkalmazást</b> nem programozni kell, hanem <b>leírni</b>. Minden, amit itt megadsz (a keret, a menü, az oldalak és az, hogy melyik oldal mit mutat), adatként tárolódik, és az alkalmazás-keretrendszer futás közben ebből a leírásból építi fel a működő alkalmazást. Az alkalmazás módosításához elég a definícióját szerkeszteni, majd újra közzétenni; semmit sem kell újrafordítani vagy újratelepíteni.",
+    "assembling": {
+      "title": "Az alkalmazás összeállítása lépésről lépésre",
+      "body": "<ol><li><b>Hozd létre az alkalmazást</b>: adj meg egy Azonosítót és egy Nevet.</li><li><b>Válaszd ki a megjelenését</b>: egy Material témát, egy színsémát és egy elrendezés sablont.</li><li><b>Add hozzá az oldalakat</b>: oldalanként egy <b>Útvonalat</b>, és döntsd el, mit jelenítsen meg mindegyik: widgeteket, egy entitást vagy egy dokumentumot.</li><li><b>Építsd fel a keretet</b>: add hozzá a <b>fejléc</b>, az <b>oldalsáv</b> és a <b>lábléc</b> régiót; a fejlécet és a láblécet töltsd fel widgetekkel, az oldalsávot pedig az útvonalaidra mutató navigációs elemekkel.</li><li><b>Ellenőrizd</b> az <b>Előnézet</b> fülön.</li><li><b>Tedd közzé</b>, hogy a felhasználók megkapják az új verziót.</li></ol><p>Az útvonalak szándékosan előzik meg a navigációt: egy navigációs elem az útvonalára hivatkozva mutat egy oldalra, így a legkönnyebb akkor megírni, amikor az útvonal már létezik.</p>"
+    },
+    "application": {
+      "title": "Alkalmazás",
+      "body": "<p>A legfelső szintű rekord, amely minden mást tartalmaz. Az <b>Azonosító</b> egyedi a szervezeteden belül, és változtatás nélkül bekerül az alkalmazás URL-jébe, ezért válassz rövid, kisbetűs, kötőjeles értéket, például <code>claims-app</code>, és később lehetőleg ne módosítsd. A <b>Név</b> az, amit a felhasználók látnak, például az <code>app-title</code> widgetben; a nem kötelező <b>Transloco azonosító</b> egy fordítási kulcs, amelyet a rendszer a Név helyett használ, ha az alkalmazás más nyelven jelenik meg. A <b>Leírás</b> neked és a tervezőtársaidnak szól.</p>"
+    },
+    "theme": {
+      "title": "Téma",
+      "body": "<p>Meghatározza a teljes alkalmazás színeit.</p><ul><li><b>Material téma</b>: a <code>processpuzzle</code> a márka saját megjelenése és egyben az alapértelmezés; a többi Angular Material paletta, és mindegyik átszínezi a fejlécet, az oldalsávot, a kártyákat és a gombokat is.</li><li><b>Színséma</b>: világos, sötét vagy automatikus (a felhasználó operációs rendszerét követi).</li><li><b>Logó URL</b> és <b>Favicon URL</b>: az <code>app-logo</code> widgetben és a böngészőfülön megjelenő képek.</li><li><b>Token felülbírálatok</b>: finomhangolás a téma fölött: egy <code>--pp-…</code> színtoken és az értéke, pl. <code>--pp-surface-sidenav</code> → <code>#0d1b2a</code>.</li></ul><p>Amit itt választasz, az az alkalmazás <i>alapértelmezett</i> témája. Ha egy <code>themes-button</code> widgetet helyezel a fejlécbe, minden felhasználó választhat magának saját témát, amelyet a rendszer megjegyez számára.</p>"
+    },
+    "layout": {
+      "title": "Elrendezés",
+      "body": "<p>Meghatározza, hol helyezkednek el a régiók az oldalak körül.</p><ul><li><b>Elrendezés sablon</b>: a <code>sidenav-left</code> és a <code>sidenav-right</code> egy oldalsó panelre teszi a navigációt; a <code>top-nav</code> ehelyett a fejléc sorába.</li><li><b>Oldalsáv mód</b>: a <code>side</code> az oldal mellett tartja a panelt, az <code>over</code> az oldal fölé helyezi, a <code>push</code> pedig félretolja az oldalt, amíg a panel nyitva van.</li><li><b>Összecsukható oldalsáv</b> / <b>Oldalsáv alapból nyitva</b>: be tudják-e zárni a felhasználók a panelt, és nyitva van-e induláskor.</li><li><b>Tartalom maximális szélessége</b>: egy CSS-hossz, például <code>1280px</code>, amely széles képernyőn is olvashatóan tartja az oldalakat; ha üresen hagyod, a tartalom a teljes szélességet kitölti.</li></ul>"
+    },
+    "regions": {
+      "title": "Régiók: a keret az oldalak körül",
+      "body": "<p>A régió a képernyő egy rögzített része, amely a helyén marad, miközben a felhasználók oldalról oldalra lépnek. Háromféle régió van, és egy alkalmazásban mindegyikből legfeljebb egy lehet: <b>fejléc</b> (felül), <b>oldalsáv</b> (a navigációs panel) és <b>lábléc</b> (alul). A fejléc és a lábléc <b>widgeteket</b> tartalmaz, az oldalsáv <b>navigációs elemeket</b>. A középső terület nem régió: mindig azt az <b>útvonalat</b> mutatja, amelyen a felhasználó éppen jár. Amelyik régiót kihagyod, az egyszerűen nem jelenik meg.</p>"
+    },
+    "header": {
+      "title": "Fejléc",
+      "body": "<p>Az alkalmazás tetején végighúzódó sáv. A widgetjei egy sorban, balról jobbra, a listában szereplő sorrendben jelennek meg. Jellemzően bal oldalon az <code>app-logo</code> és az <code>app-title</code> áll, utána egy <code>spacer</code>, amely mindent, ami utána következik, jobbra told, a jobb szélen pedig egy <code>themes-button</code>. A logó és a cím közönséges widgetek, amelyek az alkalmazás Logó URL-jét és Nevét olvassák ki, így te döntöd el, megjelenjenek-e, és ha igen, hol. A <code>top-nav</code> elrendezésnél a navigációs elemek is a fejléc sorában jelennek meg.</p>"
+    },
+    "footer": {
+      "title": "Lábléc",
+      "body": "<p>Az alkalmazás alján végighúzódó sáv. Pontosan úgy működik, mint a fejléc (widgetek sora a listában szereplő sorrendben, egy <code>spacer</code> segítségével széthúzva), és jó hely szerzői jogi megjegyzéseknek, elérhetőségeknek vagy hivatkozásoknak. Akkor is a képernyő alján marad, ha az oldal rövid.</p>"
+    },
+    "navigation": {
+      "title": "Navigációs elemek",
+      "body": "<p>A menü bejegyzései, amelyeket az <b>oldalsáv</b> régióhoz adsz hozzá. Mindegyiknek van <b>Felirata</b> (amelyet a <b>Transloco azonosítója</b> révén le is lehet fordítani), <b>Ikonja</b> (egy Material vagy FontAwesome ikon neve) és <b>Útvonala</b>: annak az oldalnak az <b>Útvonala</b>, amelyet megnyit, pontosan úgy leírva, ahogy az útvonalnál szerepel, pl. <code>claims/open</code>. Az útvonal nélküli elem <b>csoport</b>: az <b>Alelemek</b> közé felvett elemeket nyitja és csukja, így a menük egymásba ágyazhatók. Ha egy útvonal még egyetlen létező oldalra sem mutat, az csak figyelmeztetés: tartozhat egy olyan modulhoz, amely még nem készült el.</p>"
+    },
+    "routes": {
+      "title": "Útvonalak: az oldalak",
+      "body": "<p>Az alkalmazás minden oldala egy útvonal.</p><ul><li><b>Útvonal</b>: az oldal címe az alkalmazáshoz képest, kezdő perjel nélkül: <code>claims</code>, <code>claims/open</code>. Egy <code>:name</code> szakasz paramétert jelöl, pl. <code>claims/:id</code>.</li><li><b>Cím</b>, <b>Transloco azonosító</b> és <b>Ikon</b>: hogyan nevezzük és hogyan jelenjen meg az oldal.</li><li><b>Megjelenít</b>: mit mutat az oldal: <code>WIDGETS</code>, <code>ENTITY</code> vagy <code>DOCUMENT</code>. Az alatta lévő mezők csak a kiválasztott fajtára vonatkoznak.</li></ul><p>Az útvonalak egyszerű, lapos listát alkotnak. Kézzel soha nem kell őket egymásba ágyazni: a <code>claims</code> és a <code>claims/open</code> két külön bejegyzés, és a keretrendszer az útvonalukból magától kitalálja, hogy az egyik a másik alá tartozik.</p>"
+    },
+    "widgets": {
+      "title": "Widgetek: az építőkockák",
+      "body": "<p>A widget a felhasználói felület egy kész darabja: logó, cím, térköz, témaválasztó, entitásrács, dokumentummegjelenítő és még sok más. Widgeteket a fejlécben és a láblécben, valamint a <code>WIDGETS</code> útvonalakon használhatsz, ahol egymás alá kerülnek. A listában szereplő sorrend a képernyőn látható sorrend.</p><ul><li><b>Azonosító</b>: egyedi az adott oldalon vagy régión belül, pl. <code>widget-claims-grid</code>.</li><li><b>Típus</b>: melyik widgetről van szó; csak az ebben a telepítésben elérhető widgetek közül választhatsz.</li><li><b>Tulajdonságok</b>: a widget beállításai. Az űrlap a kiválasztott típushoz igazodik, és csak azokat a beállításokat mutatja, amelyeket az a típus ismer.</li><li><b>Elhelyezés</b>: a <code>STANDALONE</code> widgetek ott jelennek meg, ahol a listában szerepelnek. Egy tároló widget (például egy kártyarács) úgy rendez el más widgeteket, hogy a tulajdonságaiban felsorolja az azonosítóikat; ezeket jelöld <code>REFERENCED</code> értékkel, hogy a tárolón belül jelenjenek meg, és ne még egyszer, önállóan is.</li></ul>"
+    },
+    "entities": {
+      "title": "Entitások: adatoldalak tervezési munka nélkül",
+      "body": "<p>Egy <code>ENTITY</code> útvonal egyfajta üzleti adatot mutat (kárbejelentéseket, ügyfeleket, megrendeléseket) anélkül, hogy bármilyen oldalt meg kellene tervezni. Az <b>Entitás neve</b> mezőben add meg egy olyan entitás nevét, amelyet a tervező <b>Entitások</b> menüpontjában definiáltak, és a keretrendszer az entitás attribútumaiból kereshető listát és részletező űrlapot készít hozzá, a rá vonatkozó ellenőrzési szabályokkal együtt. Innen a felhasználók megnyithatják, létrehozhatják, szerkeszthetik és törölhetik a rekordokat.</p><p>Az <b>Entitás mód</b> (<code>LIST</code> vagy <code>DETAILS</code>) és az <b>RSQL szűrő</b> (egy előszűrő, például <code>status==OPEN</code>) az útvonallal együtt tárolódik, de egyelőre nem lép érvénybe: az oldal jelenleg mindig a teljes listával nyílik meg.</p>"
+    },
+    "documents": {
+      "title": "Dokumentumok",
+      "body": "<p>Egy <code>DOCUMENT</code> útvonal egy dokumentumot mutat: szövegből, képekből, adatértékekből és widgetekből összeállított tartalmat, amelyet a <b>Dokumentumok</b> tervezőben készítettek. A <b>Dokumentum slug</b> mezőben add meg a dokumentum slugját. Dokumentumot oldalként megjeleníteni egyelőre nem lehet, ezért az előnézet a helyén egy rövid tájékoztatást mutat; ha már most dokumentumtartalmat szeretnél megjeleníteni, használj egy <code>WIDGETS</code> útvonalat egy <code>document-viewer</code> widgettel.</p>"
+    },
+    "modules": {
+      "title": "Modulok",
+      "body": "<p>Egy nagyobb alkalmazás <b>modulokra</b> bontható. A modult külön, a <b>Modulok</b> menüpontban készíted el, és saját útvonalai vannak; a <b>Kulcsa</b> nem változhat, amint a modul használatba került. Az alkalmazás egy <b>Modul beépítés</b> révén veszi fel a modult: a <b>Modul kulcs</b> nevezi meg a modult, az <b>Alap útvonal</b> pedig az az előtag, amely alatt az útvonalai megjelennek; ha egy modult a <code>claims</code> alá építesz be, az <code>open</code> útvonalából <code>claims/open</code> lesz. Egy modul nem építhet be más modulokat: csak egyetlen szint létezik.</p>"
+    },
+    "roles": {
+      "title": "Szerepkörök",
+      "body": "<p>Az útvonalaknál és a navigációs elemeknél megadhatod, mely <b>Szerepkörök</b> használhatják őket. Ha üresen hagyod a listát, a szervezeted bármely bejelentkezett tagja használhatja. A szerepköröket a rendszer a definícióval együtt tárolja, de az előnézet egyelőre semmit sem korlátoz ezek alapján.</p>"
+    },
+    "lifecycle": {
+      "title": "Mentés, előnézet és közzététel",
+      "body": "<p>Egy új alkalmazás <b>Piszkozatként</b> indul. A <b>Mentés</b> eltárolja a módosításaidat; ezután az <b>Előnézet</b> fül pontosan úgy mutatja a mentett definíciót, ahogy a működő alkalmazás megjeleníti, a témával együtt; mielőtt továbblépsz, ott ellenőrizd. A <b>Közzététel</b> a mentett verziót teszi meg <b>Közzétett verzióvá</b>, vagyis azzá, amelyet a felhasználók kapnak. Utána is szerkesztheted és mentheted tovább; a felhasználók csak akkor látják a módosításokat, amikor újra közzéteszed.</p>"
+    }
   }
 }

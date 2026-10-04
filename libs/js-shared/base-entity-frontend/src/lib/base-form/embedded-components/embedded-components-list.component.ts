@@ -1,12 +1,13 @@
-import { Component, computed, effect, inject, OnInit, Signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, Signal, untracked } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
+import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { filter } from 'rxjs';
 import { BaseEntity } from '../../base-entity/base-entity';
-import { EmbeddedRow, rowId } from '../../base-entity-embedded/embedded-aggregate';
+import { EmbeddedRow, moveRow, rowId } from '../../base-entity-embedded/embedded-aggregate';
 import { EmbeddedAggregateAccessor } from '../../base-entity-embedded/embedded-aggregate.accessor';
 import { BaseEntityStoreApi } from '../../base-entity-store/base-entity.store';
 import { BaseUrlSegments } from '../../base-form-navigator/base-url-segments';
@@ -32,16 +33,26 @@ import { EmbeddedComponentRefComponent } from './embedded-component-ref.componen
 @Component({
   selector: 'app-embedded-components-list',
   standalone: true,
-  imports: [NgClass, NgStyle, EmbeddedComponentRefComponent, MatButton, MatIcon, EntityLabelPipe, TranslocoPipe],
+  imports: [NgClass, NgStyle, CdkDrag, CdkDropList, EmbeddedComponentRefComponent, MatButton, MatIcon, EntityLabelPipe, TranslocoPipe],
   template: `
     @if (config().visible) {
       <div class="row">
         <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
           <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
-          <ul [id]="config().attrName" class="base-entity-form-list">
-            @for (row of rows(); track rowKey(row); let index = $index) {
-              <li>
-                <app-embedded-component-ref [displayName]="displayName(row, index)" [disabled]="config().disabled" (openRequested)="openComponent(row)" (deleteRequested)="deleteComponent(row)" />
+          <ul [id]="config().attrName" class="base-entity-form-list" cdkDropList [cdkDropListDisabled]="!reorderable()" (cdkDropListDropped)="dropComponent($event)">
+            @for (row of rows(); track rowKey(row); let index = $index, first = $first, last = $last) {
+              <li cdkDrag cdkDragLockAxis="y">
+                <app-embedded-component-ref
+                  [displayName]="displayName(row, index)"
+                  [disabled]="config().disabled"
+                  [ordered]="reorderable()"
+                  [first]="first"
+                  [last]="last"
+                  (openRequested)="openComponent(row)"
+                  (deleteRequested)="deleteComponent(row)"
+                  (moveUpRequested)="moveComponent(row, index - 1)"
+                  (moveDownRequested)="moveComponent(row, index + 1)"
+                />
               </li>
             }
           </ul>
@@ -71,7 +82,26 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
    * The child's store holds exactly this attribute's rows: it resolves them from the containing document
    * through the route, so it is already scoped to the entity this form is editing.
    */
-  readonly rows: Signal<EmbeddedRow[]> = computed(() => this.componentStore()?.entities() ?? []);
+  private readonly storedRows: Signal<EmbeddedRow[]> = computed(() => this.componentStore()?.entities() ?? []);
+
+  /**
+   * The row keys in the order the user arranged them, until the owner is saved. `undefined` means the stored
+   * order stands.
+   *
+   * A key order rather than the rows themselves, so that a child saved or deleted in the meantime — which
+   * rewrites the stored rows — is picked up without losing the arrangement.
+   */
+  private readonly pendingOrder = signal<string[] | undefined>(undefined);
+
+  /** The rows as listed: the child store's, in the pending order if the user has rearranged them. */
+  readonly rows: Signal<EmbeddedRow[]> = computed(() => {
+    const rows = this.storedRows();
+    const order = this.pendingOrder();
+    return order ? arrangeRows(rows, order, (row) => this.rowKey(row)) : rows;
+  });
+
+  /** Only an `ordered` attribute of an editable form offers reordering, and only once there is something to order. */
+  readonly reorderable = computed(() => this.config().ordered && !this.config().disabled && this.rows().length > 1);
 
   constructor() {
     super();
@@ -151,6 +181,26 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
       .subscribe(() => void this.componentStore()?.delete(this.rowKey(row)));
   }
 
+  /**
+   * Repositions a row. Unlike adding, editing or deleting a child, which each persist the containing document
+   * at once, this is an edit *of the owner* — the order is one of its attributes — so it only dirties the
+   * owner's form, and the owner's Save carries it.
+   */
+  moveComponent(row: EmbeddedRow, toIndex: number): void {
+    if (!this.reorderable() || toIndex < 0 || toIndex >= this.rows().length) return;
+
+    const moved = moveRow(this.rows(), this.rowKey(row), toIndex, this.config().referenceIdField);
+    this.pendingOrder.set(moved.map((candidate) => this.rowKey(candidate)));
+    this.formGroup?.get(this.config().attrName)?.markAsDirty();
+  }
+
+  dropComponent(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const row = this.rows()[event.previousIndex];
+    if (row) this.moveComponent(row, event.currentIndex);
+  }
+
   // region protected, private helper methods
   /**
    * Both declarations — this attribute's control type and the child's own descriptor — are written by hand
@@ -200,9 +250,22 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
       if (!control) return;
 
       // Not `markAsDirty`: the aggregate on the server already has these rows, so this is not an edit the
-      // owner's Save still has to carry.
+      // owner's Save still has to carry — unless they are rearranged, which `moveComponent` marks itself.
       control.setValue(rows, { emitEvent: false });
     });
   }
   // endregion
+}
+
+/**
+ * `rows` in the order of `keys`. A row the order does not know — a child added since the user rearranged the
+ * list — keeps its place at the end; a key whose row has gone is skipped.
+ */
+function arrangeRows(rows: EmbeddedRow[], keys: string[], keyOf: (row: EmbeddedRow) => string): EmbeddedRow[] {
+  const byKey = new Map(rows.map((row) => [keyOf(row), row]));
+  const arranged = keys.flatMap((key): EmbeddedRow[] => {
+    const row = byKey.get(key);
+    return row ? [row] : [];
+  });
+  return [...arranged, ...rows.filter((row) => !keys.includes(keyOf(row)))];
 }

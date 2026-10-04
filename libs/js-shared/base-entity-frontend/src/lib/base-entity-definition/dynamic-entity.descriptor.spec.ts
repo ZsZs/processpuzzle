@@ -50,6 +50,13 @@ describe('descriptorOf', () => {
     expect(attrOf(ORDER_DEFINITION, 'total')?.required).toBe(false);
   });
 
+  it('carries autosizeColumn through, so the list hugs the columns the author asked it to', () => {
+    const definition = { code: 'x', name: 'X', attributes: [{ code: 'hugging', formControlType: 'TEXT', autosizeColumn: true }, { code: 'filling', formControlType: 'TEXT' }] };
+
+    expect(attrOf(definition, 'hugging')?.autosizeColumn).toBe(true);
+    expect(attrOf(definition, 'filling')?.autosizeColumn).toBe(false);
+  });
+
   it('marks the isLinkToDetails attribute, which is what the list links from and the status bar names', () => {
     const descriptor = descriptorOf(ORDER_DEFINITION, lookup);
 
@@ -205,4 +212,29 @@ describe('referenceIdFieldOf', () => {
   it('falls back to id when the attribute names no child at all', () => {
     expect(referenceIdFieldOf({ code: 'rows', formControlType: 'EMBEDDED_COMPONENTS' }, lookup)).toBe('id');
   });
+
+describe('descriptorOf dateFormat', () => {
+  const definition: EntityDefinition = {
+    code: 'person',
+    name: 'Person',
+    attributes: [
+      { code: 'born', valueKind: 'DATE', formControlType: 'DATE', dateFormat: { dateStyle: 'short' } },
+      { code: 'seen', valueKind: 'DATE_TIME', formControlType: 'DATE_TIME' },
+      { code: 'name', valueKind: 'TEXT', formControlType: 'TEXT' },
+    ],
+  };
+
+  it('resolves an authored format with the defaults of its value kind', () => {
+    expect(attrOf(definition, 'born')?.dateFormat).toEqual({ dateStyle: 'short', timeStyle: 'none' });
+  });
+
+  it('gives a DATE_TIME attribute without a format of its own a time field', () => {
+    expect(attrOf(definition, 'seen')?.formControlType).toBe(FormControlType.DATE);
+    expect(attrOf(definition, 'seen')?.dateFormat).toEqual({ dateStyle: 'medium', timeStyle: 'short' });
+  });
+
+  it('leaves a non-date attribute without a format', () => {
+    expect(attrOf(definition, 'name')?.dateFormat).toBeUndefined();
+  });
+});
 });

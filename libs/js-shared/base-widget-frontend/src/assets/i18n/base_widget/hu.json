@@ -64,6 +64,9 @@
   "share_button": {
     "name": "Megosztás gomb"
   },
+  "spacer": {
+    "name": "Térköz"
+  },
   "themes_button": {
     "name": "Témaválasztó gomb"
   },
@@ -75,6 +78,9 @@
   },
   "app_title": {
     "name": "Alkalmazás címe"
+  },
+  "nav_bar": {
+    "name": "Navigációs sáv"
   },
   "nav_menu": {
     "name": "Navigációs menü"

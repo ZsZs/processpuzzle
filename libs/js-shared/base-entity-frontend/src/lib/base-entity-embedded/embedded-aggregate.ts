@@ -114,6 +114,22 @@ export function removeRow(rows: readonly EmbeddedRow[], id: string, referenceIdF
   return rows.filter((_, candidateIndex) => candidateIndex !== index);
 }
 
+/**
+ * Moves the row identified by `id` to `toIndex`, shifting the rows in between. The array position *is* the
+ * order: every aggregate persists its embedded rows as a JSON array, and the renderers walk it in sequence.
+ * Used by an `ordered` list, which saves the result through its owner's form rather than writing it here.
+ * An unknown id leaves the rows as they are; `toIndex` is clamped to the array.
+ */
+export function moveRow(rows: readonly EmbeddedRow[], id: string, toIndex: number, referenceIdField?: string): EmbeddedRow[] {
+  const fromIndex = indexOfRow(rows, id, referenceIdField);
+  if (fromIndex < 0) return [...rows];
+
+  const target = Math.min(Math.max(toIndex, 0), rows.length - 1);
+  const updatedRows = rows.filter((_, candidateIndex) => candidateIndex !== fromIndex);
+  updatedRows.splice(target, 0, rows[fromIndex]);
+  return updatedRows;
+}
+
 /** Widens a row to the shape the store's API is written in; embedded rows always carry their key field. */
 export function asPersisted<Entity extends BaseEntity>(row: EmbeddedRow): PersistedEntity<Entity> {
   return row as PersistedEntity<Entity>;

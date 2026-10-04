@@ -1,0 +1,68 @@
+# Business Starter manifest — lives at <starter-folder>/manifest.yaml
+# Example: processpuzzle-biz/starters/sail-race-organizer/manifest.yaml
+manifestVersion: 1                  # version of THIS manifest format
+
+# --- Identity -----------------------------------------------------------
+id: sail-race-organizer             # globally unique, kebab-case, immutable
+name: Sail Race Organizer
+version: 1.2.0                      # semver of the starter itself
+description: >
+  Organise sailing regattas: entries, boats, race series, start lists,
+  results and notices of race.
+category: events                    # catalog grouping (inventory, billing, events, ...)
+tags: [sailing, regatta, sports]
+author: ProcessPuzzle
+license: proprietary                # or MIT, CC-BY-4.0, ...
+icon: icons/sail.svg                # optional, relative path inside the bundle
+
+# --- Compatibility ------------------------------------------------------
+definitionSchemaVersion: 1          # version of the Entity/State/... YAML schemas
+platform:
+  minVersion: 1.4.0                 # minimum ProcessPuzzle platform version
+locales: [en, de, hu]               # languages the starter ships labels for
+
+# --- Dependencies on other starters ------------------------------------
+requires:
+  - id: contacts-base               # e.g. shared Person/Organisation entities
+    versionRange: "^1.0.0"
+conflictsWith: []                   # starter ids that must not be co-installed
+
+# --- Contents (paths relative to the manifest) --------------------------
+# The importer always processes groups in this order:
+# entities -> states -> rules -> documents -> workflows -> apps
+contents:
+  entities:
+    - entities/regatta.yaml
+    - entities/race.yaml
+    - entities/boat.yaml
+    - entities/entry.yaml
+  states:
+    - states/entry-lifecycle.yaml
+    - states/race-lifecycle.yaml
+  rules:
+    - rules/entry-validation.yaml
+    - rules/scoring.yaml
+  documents:
+    - documents/notice-of-race.yaml
+    - documents/results-sheet.yaml
+  workflows:
+    - workflows/regatta-organisation.yaml
+  apps:
+    - apps/race-office.yaml
+
+# --- Optional sample data ----------------------------------------------
+seedData:
+  - data/sample-regatta.yaml        # imported only if the customer opts in
+
+# --- Install behaviour --------------------------------------------------
+install:
+  defaultSelected: false            # preselect in seed-creation wizard?
+  allowPartial: false               # may the customer import only some groups?
+  conflictStrategy: skip-customized # skip-customized | overwrite | fail
+
+# --- Integrity (written by CI at packaging time, never by hand) ---------
+integrity:
+  algorithm: sha256
+  files:
+    entities/regatta.yaml: "<sha256>"
+    # ... one entry per file in contents

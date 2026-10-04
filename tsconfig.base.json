@@ -22,6 +22,7 @@
       "@processpuzzle/auth": ["./libs/js-shared/auth/public-api.ts"],
       "@processpuzzle/auth/domain": ["./libs/js-shared/auth/domain/public-api.ts"],
       "@processpuzzle/auth/feature": ["./libs/js-shared/auth/feature/public-api.ts"],
+      "@processpuzzle/base-ai": ["./libs/js-shared/base-ai-frontend/src/public-api.ts"],
       "@processpuzzle/base-app": ["./libs/js-shared/base-app-frontend/src/public-api.ts"],
       "@processpuzzle/base-document": ["./libs/js-shared/base-document-frontend/src/public-api.ts"],
       "@processpuzzle/base-entity": ["./libs/js-shared/base-entity-frontend/src/public-api.ts"],

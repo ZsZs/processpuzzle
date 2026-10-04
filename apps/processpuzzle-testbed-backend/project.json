@@ -14,6 +14,7 @@
     "base-state-backend",
     "base-workflow-backend",
     "base-widget-backend",
+    "base-ai-backend",
     "org-admin-backend"
   ],
   "targets": {

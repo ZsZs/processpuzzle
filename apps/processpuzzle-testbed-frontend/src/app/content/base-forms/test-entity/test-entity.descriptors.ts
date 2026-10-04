@@ -16,6 +16,10 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   const lookupAttr = new BaseEntityAttrDescriptor('lookup', FormControlType.LOOKUP, 'Lookup', undefined, false);
   const enumAttr = new BaseEntityAttrDescriptor('enumValue', FormControlType.DROPDOWN, 'Enum', selectables);
   const artifactAttr = new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Artifact');
+  // The multi-valued variant of the same control: each upload adds a row instead of replacing the one there.
+  const attachmentsAttr = new BaseEntityAttrDescriptor('attachments', FormControlType.ARTIFACT, 'Attachments');
+  attachmentsAttr.multiplicity = '0..n';
+  attachmentsAttr.hideInTable = true;
   const tagsAttr = new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
   // Containment with the child in a table of its own: `Test Entity Component` is persisted through its own
   // endpoint and points back here through `testEntityId`, so this attribute holds ids and deleting a row
@@ -36,8 +40,10 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   relatedEntitiesAttr.linkedEntityType = 'Related Entity';
   relatedEntitiesAttr.hideInTable = true;
   additionalPropertiesAttr.hideInTable = true;
+  // Short values hug their columns, leaving the width to the name and the description.
+  [booleanAttr, numberAttr, dateAttr, enumAttr].forEach((attr) => (attr.autosizeColumn = true));
 
-  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, additionalPropertiesAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
+  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, attachmentsAttr, additionalPropertiesAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
   const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr, embeddedComponentsAttr], FlexDirection.COLUMN);
   const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
   flexBoxContainer.style = { 'column-gap': '20px' };

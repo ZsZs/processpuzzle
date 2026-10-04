@@ -6,6 +6,7 @@ import com.processpuzzle.widget.domain.WidgetDefinitionRepository;
 import com.processpuzzle.widget.model.WidgetDefinition;
 import com.processpuzzle.widget.model.WidgetDefinitionInput;
 import com.processpuzzle.widget.usecase.WidgetDefinitionCrud;
+import com.processpuzzle.widget.domain.WidgetDefinitionRepository;
 import com.processpuzzle.widget.usecase.exception.WidgetDefinitionAlreadyExistsException;
 import com.processpuzzle.widget.usecase.exception.WidgetDefinitionInvalidException;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,16 +50,18 @@ class DefaultWidgetLoaderTest {
     private static final String TESTBED_FILE = "processpuzzle-testbed-widgets.yaml";
 
     private WidgetEndpoint endpoint;
+    private WidgetDefinitionRepository repository;
     private ResourcePatternResolver resourceResolver;
     private DefaultWidgetLoader loader;
 
     @BeforeEach
     void setUp() throws IOException {
         endpoint = mock(WidgetEndpoint.class);
+        repository = mock(WidgetDefinitionRepository.class);
         resourceResolver = mock(ResourcePatternResolver.class);
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[] { bundledTestbedFile() });
         when(endpoint.createWidgetDefinition(anyString(), any())).thenAnswer(call -> created(call.getArgument(1)));
-        loader = new DefaultWidgetLoader(endpoint, resourceResolver);
+        loader = new DefaultWidgetLoader(endpoint, repository, resourceResolver);
     }
 
     @Test
@@ -68,9 +71,18 @@ class DefaultWidgetLoaderTest {
         // The catalogue holds exactly the keys base-widget-frontend's provideBaseWidgets() registers; a
         // palette entry with no component behind it only fails when an app is previewed. See the file header.
         assertThat(capturedDefinitions()).extracting(WidgetDefinitionInput::getKey)
-                .containsExactly("cards-grid", "markdown-page", "image-zoom", "photo-album", "app-logo", "app-title", "nav-menu",
-                        "navigate-back", "language-selector", "themes-button", "like-button", "share-button", "version-button",
+                .containsExactly("cards-grid", "markdown-page", "image-zoom", "photo-album", "app-logo", "app-title", "nav-bar",
+                        "nav-menu", "spacer", "navigate-back", "language-selector", "themes-button", "like-button", "share-button", "version-button",
                         "design-button", "copyright");
+    }
+
+    @Test
+    void aDefinitionAlreadyInTheRepository_neverReachesTheEndpoint() {
+        when(repository.existsByOrgKeyAndKey(anyString(), anyString())).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).createWidgetDefinition(anyString(), any());
     }
 
     @Test

@@ -63,8 +63,12 @@ public class BaseEntityAttribute {
     @Column(nullable = false)
     private FormControlType formControlType;
 
-    @Builder.Default
-    private boolean isMultiValued = false;
+    /** How many values the attribute holds; null means a single value. */
+    @Enumerated(EnumType.STRING)
+    private Multiplicity multiplicity;
+
+    /** Upper bound of the {@code x} multiplicities; null for the others. */
+    private Integer maxOccurs;
 
     @Builder.Default
     private boolean required = false;
@@ -86,6 +90,11 @@ public class BaseEntityAttribute {
     @Column(columnDefinition = "jsonb")
     private List<String> enumValues;
 
+    /** Only meaningful when valueKind = DATE or DATE_TIME. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private DateFormat dateFormat;
+
     /**
      * Entity definition code this attribute points at. Required when formControlType is
      * FOREIGN_KEY (parent reference for a non-embedded component) or EMBEDDED_COMPONENTS
@@ -97,7 +106,20 @@ public class BaseEntityAttribute {
     @Builder.Default
     private boolean isLinkToDetails = false;
 
+    /**
+     * The list column hugs its content instead of filling the remaining width. The column default lets
+     * {@code ddl-auto: update} add the column to a table that already has rows.
+     */
+    @Builder.Default
+    @Column(columnDefinition = "boolean not null default false")
+    private boolean autosizeColumn = false;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Object validationRules;
+
+    /** True when the upper bound of {@link #multiplicity} exceeds 1. */
+    public boolean isMultiValued() {
+        return Multiplicity.isMultiValued(multiplicity, maxOccurs);
+    }
 }

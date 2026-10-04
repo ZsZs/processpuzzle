@@ -5,16 +5,34 @@
     min-width: 300px;
 }
 
-.mat-table {
+/* The query container is what lets a hugging cell be capped at a share of the table's width: a percentage
+   max-width on a table cell is ignored by the table layout algorithm, but `cqi` on its content is not. */
+.base-entity-list-scroll {
     overflow: auto;
     max-height: 500px;
+    container-type: inline-size;
+}
+
+table {
+    width: 100%;
+    table-layout: auto;
 }
 
 .mat-column-select {
-    overflow: initial;
-    flex: 0 0 48px;
     width: 48px;
-    max-width: 48px;
+}
+
+/* `width: 1%` shrinks the column to its content; the columns without it share whatever is left. */
+.pp-col-autosize {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.pp-col-autosize .pp-cell-content {
+    display: block;
+    max-width: 60cqi;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .link-to-details {

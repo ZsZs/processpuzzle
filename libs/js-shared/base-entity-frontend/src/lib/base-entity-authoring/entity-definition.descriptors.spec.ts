@@ -99,21 +99,39 @@ describe('createEntityAttributeDescriptor', () => {
    * `description` is deliberately absent: it is on the model but not in `BaseEntityAttributeInput`, so a
    * value typed into a control for it would be dropped by the next save.
    */
+  // `dateStyle` and `timeStyle` are the contract's `dateFormat`, flattened for the form and folded back by the mapper.
   it('authors every field of BaseEntityAttributeInput and nothing the contract would drop', () => {
     expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual([
+      'autosizeColumn',
       'code',
+      'dateStyle',
       'defaultValue',
       'displayOrder',
       'enumValues',
       'formControlType',
       'indexed',
       'isLinkToDetails',
-      'isMultiValued',
       'linkedEntityType',
+      'maxOccurs',
+      'multiplicity',
       'name',
       'required',
+      'timeStyle',
       'valueKind',
     ]);
+  });
+
+  it('offers the contract styles for dateFormat, kept out of the table', () => {
+    expect(attrOf(attrs, 'dateStyle').getSelectables()?.map((selectable) => selectable.key)).toEqual(['none', 'short', 'medium', 'long', 'full']);
+    expect(attrOf(attrs, 'timeStyle').getSelectables()?.map((selectable) => selectable.key)).toEqual(['none', 'short', 'medium', 'long']);
+    expect(attrOf(attrs, 'dateStyle').hideInTable).toBe(true);
+    expect(attrOf(attrs, 'timeStyle').hideInTable).toBe(true);
+  });
+
+  it('offers the contract multiplicities, with a numeric maxOccurs kept out of the table', () => {
+    expect(attrOf(attrs, 'multiplicity').getSelectables()?.map((selectable) => selectable.key)).toEqual(['0..1', '0..x', '0..n', '1..x', '1..n']);
+    expect(attrOf(attrs, 'maxOccurs').options.inputType).toBe('number');
+    expect(attrOf(attrs, 'maxOccurs').hideInTable).toBe(true);
   });
 
   it('identifies a row by its code', () => {

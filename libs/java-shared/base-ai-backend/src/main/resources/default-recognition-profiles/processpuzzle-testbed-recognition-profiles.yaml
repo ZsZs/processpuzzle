@@ -1,0 +1,24 @@
+# Default recognition profiles of the 'processpuzzle-testbed' organization — the tenant behind
+# apps/processpuzzle-testbed-frontend. DefaultProfileLoader imports this file on startup when
+# `base-ai.loadDefaultProfiles` is true; a profile already present is never overwritten.
+#
+# `boat` is base-entity's seeded Boat type (processpuzzle-testbed-entities.yaml): sailboats recognised by
+# their sail number, which the detector finds under COCO's `boat` class, and by their appearance in the
+# photos attached to the boat's `photos` attribute.
+
+recognitionProfiles:
+  - entityName: boat
+    name: Sailboat by sail number
+    description: >-
+      Identifies racing sailboats in camera shots by the number on the sail, with the boat's appearance as
+      the second signal. The pattern accepts a three-letter nationality and up to five digits, which is
+      what keeps sponsor names and class insignia from being read as a sail number.
+    detectorClass: boat
+    galleryAttributeKey: photos
+    identifierAttributeKey: sailNumber
+    identifierPattern: '^[A-Z]{3} ?[0-9]{1,5}$'
+    matching:
+      identifierWeight: 0.6
+      acceptScore: 0.75
+      acceptMargin: 0.1
+      sampleFps: 3

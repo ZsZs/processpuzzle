@@ -38,6 +38,104 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_dateFormatOnDateKinds_passes() {
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.NONE))));
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT))));
+        validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.NONE, TimeStyle.SHORT))));
+    }
+
+    @Test
+    void validate_dateFormatOnNonDateKind_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.TEXT, new DateFormat(DateStyle.SHORT, null)),
+                "dateFormat requires valueKind=DATE or DATE_TIME");
+    }
+
+    @Test
+    void validate_dateFormatTimeStyleOnDate_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.SHORT)),
+                "valueKind=DATE cannot declare a dateFormat timeStyle");
+    }
+
+    @Test
+    void validate_dateFormatBothNone_throwsValidationException() {
+        assertSingleViolation(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.NONE, TimeStyle.NONE)),
+                "dateStyle and timeStyle cannot both be none");
+    }
+
+    @Test
+    void validate_multiplicityWithConsistentMaxOccurs_passes() {
+        validator.validate(definitionWith(multiplicityAttribute(null, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ZERO_TO_ONE, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ONE_TO_N, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ZERO_TO_X, 1)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ONE_TO_X, 5)));
+    }
+
+    @Test
+    void validate_boundedMultiplicityWithoutMaxOccurs_throwsValidationException() {
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ZERO_TO_X, null),
+                "multiplicity 0..x requires maxOccurs of at least 1");
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ONE_TO_X, 0),
+                "multiplicity 1..x requires maxOccurs of at least 1");
+    }
+
+    @Test
+    void validate_maxOccursOnUnboundedMultiplicity_throwsValidationException() {
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ZERO_TO_N, 3),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x");
+        assertSingleViolation(multiplicityAttribute(null, 3),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x");
+    }
+
+    @Test
+    void multiplicity_upperBoundAndMultiValued() {
+        assertThat(Multiplicity.ZERO_TO_ONE.upperBound(null)).isEqualTo(1);
+        assertThat(Multiplicity.ZERO_TO_X.upperBound(4)).isEqualTo(4);
+        assertThat(Multiplicity.ONE_TO_X.upperBound(null)).isEqualTo(1);
+        assertThat(Multiplicity.ZERO_TO_N.upperBound(null)).isEqualTo(Integer.MAX_VALUE);
+        assertThat(Multiplicity.ONE_TO_X.isMultiValued(1)).isFalse();
+        assertThat(Multiplicity.ONE_TO_X.isMultiValued(2)).isTrue();
+        assertThat(Multiplicity.isMultiValued(null, null)).isFalse();
+        assertThat(Multiplicity.isMultiValued(Multiplicity.ONE_TO_N, null)).isTrue();
+        assertThat(Multiplicity.ZERO_TO_N.notation()).isEqualTo("0..n");
+    }
+
+    private static BaseEntityAttribute multiplicityAttribute(Multiplicity multiplicity, Integer maxOccurs) {
+        return BaseEntityAttribute.builder()
+                .code("attachments")
+                .name("Attachments")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.ARTIFACT)
+                .multiplicity(multiplicity)
+                .maxOccurs(maxOccurs)
+                .build();
+    }
+
+    private static BaseEntityAttribute dateAttribute(ValueKind valueKind, DateFormat dateFormat) {
+        return BaseEntityAttribute.builder()
+                .code("born")
+                .name("Born")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.DATE)
+                .dateFormat(dateFormat)
+                .build();
+    }
+
+    private static BaseEntityDefinition definitionWith(BaseEntityAttribute attribute) {
+        return BaseEntityDefinition.builder().code("person").name("Person").attributes(List.of(attribute)).build();
+    }
+
+    private void assertSingleViolation(BaseEntityAttribute attribute, String message) {
+        assertThatThrownBy(() -> validator.validate(definitionWith(attribute)))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> {
+                    ValidationException ve = (ValidationException) ex;
+                    assertThat(ve.getViolations()).hasSize(1);
+                    assertThat(ve.getViolations().get(0).message()).contains(message);
+                });
+    }
+
+    @Test
     void validate_embeddedWithoutComponentParents_throwsValidationException() {
         BaseEntityDefinition definition = BaseEntityDefinition.builder()
                 .code("address")

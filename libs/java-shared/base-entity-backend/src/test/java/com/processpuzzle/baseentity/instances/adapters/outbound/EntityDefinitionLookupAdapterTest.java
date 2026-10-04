@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.domain.FormControlType;
+import com.processpuzzle.baseentity.definition.domain.Multiplicity;
 import com.processpuzzle.baseentity.definition.domain.ValueKind;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
@@ -47,7 +48,6 @@ class EntityDefinitionLookupAdapterTest {
                 .code("name")
                 .valueKind(ValueKind.TEXT)
                 .formControlType(FormControlType.TEXT)
-                .isMultiValued(false)
                 .required(true)
                 .linkedEntityType(null)
                 .build();
@@ -56,7 +56,7 @@ class EntityDefinitionLookupAdapterTest {
                 .code("addresses")
                 .valueKind(ValueKind.REFERENCE)
                 .formControlType(FormControlType.EMBEDDED_COMPONENTS)
-                .isMultiValued(true)
+                .multiplicity(Multiplicity.ZERO_TO_N)
                 .required(false)
                 .linkedEntityType("address")
                 .build();

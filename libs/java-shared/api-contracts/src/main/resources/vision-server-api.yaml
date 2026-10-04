@@ -1,0 +1,837 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Vision Server API
+  description: >-
+    The compute half of object recognition (apps/vision-server, Python / FastAPI): detection,
+    tracking, OCR, embeddings and matching. Its only client is base-ai-backend; ai-api.yaml is what
+    the frontend sees. See docs/ai/boat-recognition-design.md for the pipeline.
+
+    ## Stateless with respect to tenant data
+
+    The vision server is shared infrastructure — one instance serves every application stack —
+    so it owns no galleries, sessions or decisions. Everything a job needs travels with the job:
+    presigned URLs of the media, and for recognition the candidates' identifiers and gallery
+    embeddings. The result is kept only for resultRetention after the job finishes, for
+    base-ai-backend to fetch; the job queue is transient and does not survive a restart. A job lost
+    that way is resubmitted by base-ai-backend's polling fallback.
+
+    ## Job flow
+
+    1. base-ai-backend submits a job with a jobId of its own choosing, a callbackUrl and a
+       callbackToken. Submitting the same jobId again answers the existing job (idempotent).
+    2. The vision server answers 202, then processes the job on its single worker, in
+       submission order.
+    3. On finishing, it POSTs a VisionJobNotification to callbackUrl with
+       the `X-Callback-Token: <callbackToken>` header. The notification carries no result.
+    4. base-ai-backend fetches the result, stores what it keeps, then deletes the job.
+
+    ## Media and crops
+
+    Media are read from presigned GET URLs, which must be signed for a host the vision server
+    can reach on the infrastructure network (MinIO's internal name, not its public one — the
+    host is part of the signature). Crops are returned inline as base64 JPEG rather than
+    written to storage: the vision server holds no storage credentials, and a crop is tens of
+    kilobytes.
+
+    ## Embeddings
+
+    An embedding is a float32 vector, little-endian, base64-encoded — a quarter of the size of
+    a JSON number array. Every embedding is tagged with the model that produced it. A
+    recognition job whose candidate embeddings name a different model than the server's
+    current one is refused with 409, and base-ai-backend re-embeds the gallery from its stored crops
+    (submitEmbeddingJob) before retrying. Embeddings of different models are not comparable.
+
+    ## Authentication
+
+    `Authorization: Bearer <service token>` on every call, one static token per environment,
+    configured on both sides. The server is reachable on the infrastructure network only and
+    is not routed by the reverse proxy.
+
+    ## Errors
+
+    RFC 7807 problem details (application/problem+json).
+  version: 0.1.0
+
+servers:
+  - url: 'http://vision-server:8000/v1'
+    description: Infrastructure network
+  - url: 'http://localhost:8000/v1'
+    description: Local development
+
+security:
+  - serviceToken: [ ]
+
+paths:
+
+  /health:
+    get:
+      operationId: getVisionHealth
+      summary: Liveness and queue depth
+      security: [ ]
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: Alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionHealth"
+
+  /models:
+    get:
+      operationId: getVisionModels
+      summary: The models in use and the detector's class list
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: Model information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionModels"
+        "401":
+          $ref: "#/components/responses/Problem"
+
+  /enrollment-jobs:
+    post:
+      operationId: submitEnrollmentJob
+      summary: Detect, crop, embed and read the identifier on enrollment photos
+      description: >-
+        Each photo should show one subject. The dominant detection of detection.detectorClass is
+        cropped; a photo with none answers NO_SUBJECT, one with several of similar size AMBIGUOUS.
+      tags: [ Vision ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentJobRequest"
+      responses:
+        "202":
+          description: Accepted, or the existing job of the same jobId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionJob"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/QueueFull"
+      callbacks:
+        jobFinished:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/VisionJobNotification"
+              responses:
+                "204":
+                  description: Received
+
+  /enrollment-jobs/{jobId}/result:
+    parameters:
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: getEnrollmentJobResult
+      summary: The result of a finished enrollment job
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: The result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentJobResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          description: The job has not finished, or did not finish DONE
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /embedding-jobs:
+    post:
+      operationId: submitEmbeddingJob
+      summary: Re-embed stored crops with the current embedding model
+      description: >-
+        For a gallery computed with a previous model. No detection and no OCR — the crops are
+        already cut.
+      tags: [ Vision ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbeddingJobRequest"
+      responses:
+        "202":
+          description: Accepted, or the existing job of the same jobId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionJob"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/QueueFull"
+      callbacks:
+        jobFinished:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/VisionJobNotification"
+              responses:
+                "204":
+                  description: Received
+
+  /embedding-jobs/{jobId}/result:
+    parameters:
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: getEmbeddingJobResult
+      summary: The result of a finished embedding job
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: The result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbeddingJobResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          description: The job has not finished, or did not finish DONE
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /recognition-jobs:
+    post:
+      operationId: submitRecognitionJob
+      summary: Detect, read and match the subjects in one video, or the one subject of a few frames
+      description: >-
+        Exactly one of video and frames. Video pipeline: sample frames at matching.sampleFps,
+        detect and track (RT-DETR, ByteTrack), select the best crops per track, read the
+        identifier (EasyOCR) and embed (DINOv2) on them, fuse the scores per (track, candidate)
+        pair, then assign one-to-one (Hungarian). Frames pipeline: the frames are shots of one
+        subject, so the largest detection of each is taken as its crop and they form one track —
+        no tracking, and at most one track in the result. A track is AUTO_MATCHED if its assigned
+        score reaches matching.acceptScore and leads the second-best by matching.acceptMargin,
+        NEEDS_REVIEW otherwise.
+      tags: [ Vision ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecognitionJobRequest"
+      responses:
+        "202":
+          description: Accepted, or the existing job of the same jobId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionJob"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          description: A candidate embedding names another model than the server's current embedding model
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          $ref: "#/components/responses/QueueFull"
+      callbacks:
+        jobFinished:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/VisionJobNotification"
+              responses:
+                "204":
+                  description: Received
+
+  /recognition-jobs/{jobId}/result:
+    parameters:
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: getRecognitionJobResult
+      summary: The result of a finished recognition job
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: The result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecognitionJobResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          description: The job has not finished, or did not finish DONE
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /jobs/{jobId}:
+    parameters:
+      - $ref: "#/components/parameters/JobIdParam"
+    get:
+      operationId: getVisionJob
+      summary: A job's status and progress, of any kind
+      description: What base-ai-backend's polling fallback calls.
+      tags: [ Vision ]
+      responses:
+        "200":
+          description: The job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisionJob"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          description: Unknown — never submitted, expired, deleted, or lost in a restart
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      operationId: deleteVisionJob
+      summary: Cancel a queued or running job, or discard a finished one's result
+      tags: [ Vision ]
+      responses:
+        "204":
+          description: Cancelled or discarded
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+
+components:
+  securitySchemes:
+    serviceToken:
+      type: http
+      scheme: bearer
+      description: Static per-environment token shared by base-ai-backend and the vision server.
+
+  parameters:
+    JobIdParam:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Problem:
+      description: RFC 7807 problem details
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    QueueFull:
+      description: The queue is at capacity; retry after the Retry-After header's delay
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+
+    # ── Common ─────────────────────────────────────────────────
+
+    Requester:
+      type: object
+      required: [ stack, orgKey ]
+      description: >-
+        Who the job is for. Logged and used for fair queuing between stacks; never used to
+        look anything up, since the server holds no tenant data.
+      properties:
+        stack:
+          type: string
+          example: processpuzzle-testbed
+        orgKey:
+          type: string
+          example: my-org
+
+    JobSubmission:
+      type: object
+      required: [ jobId, requester, callbackUrl, callbackToken ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          description: Chosen by base-ai-backend; submitting it again is idempotent.
+        requester:
+          $ref: "#/components/schemas/Requester"
+        callbackUrl:
+          type: string
+          format: uri
+          example: http://testbed-backend:8080/api/v1/organizations/my-org/vision-notifications
+        callbackToken:
+          type: string
+          description: Sent back in the notification's X-Callback-Token header; random, per job.
+
+    DetectionSettings:
+      type: object
+      required: [ detectorClass ]
+      properties:
+        detectorClass:
+          type: string
+          description: A class of getVisionModels' detector.classes.
+          example: boat
+        minConfidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.4
+
+    OcrSettings:
+      type: object
+      description: Absent means no OCR.
+      properties:
+        identifierPattern:
+          type: string
+          nullable: true
+          description: >-
+            A reading counts only if it matches, after normalization (upper-case, whitespace
+            collapsed to one space). Absent means every reading counts.
+          example: '^[A-Z]{3} ?[0-9]{1,5}$'
+
+    Embedding:
+      type: object
+      required: [ model, vector ]
+      properties:
+        model:
+          type: string
+          description: Model id, from getVisionModels' embedding.model.
+          example: facebook/dinov2-small
+        vector:
+          type: string
+          format: byte
+          description: float32 little-endian, base64.
+
+    Crop:
+      type: object
+      required: [ contentType, data, width, height ]
+      properties:
+        contentType:
+          type: string
+          example: image/jpeg
+        data:
+          type: string
+          format: byte
+        width:
+          type: integer
+        height:
+          type: integer
+
+    IdentifierReading:
+      type: object
+      required: [ text, confidence ]
+      properties:
+        text:
+          type: string
+          description: Normalized reading.
+          example: GER 1234
+        confidence:
+          type: number
+          format: double
+
+    VisionJobKind:
+      type: string
+      enum: [ ENROLLMENT, EMBEDDING, RECOGNITION ]
+
+    VisionJobStatus:
+      type: string
+      enum: [ QUEUED, RUNNING, DONE, FAILED, CANCELLED ]
+
+    VisionJob:
+      type: object
+      required: [ jobId, kind, status, progress, submittedAt ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/VisionJobKind"
+        status:
+          $ref: "#/components/schemas/VisionJobStatus"
+        progress:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        queuePosition:
+          type: integer
+          nullable: true
+          description: Jobs ahead of this one; present while QUEUED.
+        failureReason:
+          type: string
+          nullable: true
+        submittedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resultExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    VisionJobNotification:
+      type: object
+      required: [ jobId, kind, status ]
+      description: Canonical here; repeated in ai-api.yaml, whose receiveVisionJobNotification accepts it.
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [ ENROLLMENT, EMBEDDING, RECOGNITION ]
+        status:
+          type: string
+          enum: [ DONE, FAILED, CANCELLED ]
+
+    # ── Enrollment ─────────────────────────────────────────────
+
+    EnrollmentJobRequest:
+      allOf:
+        - $ref: "#/components/schemas/JobSubmission"
+        - type: object
+          required: [ detection, photos ]
+          properties:
+            detection:
+              $ref: "#/components/schemas/DetectionSettings"
+            ocr:
+              $ref: "#/components/schemas/OcrSettings"
+            photos:
+              type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                $ref: "#/components/schemas/MediaRef"
+
+    MediaRef:
+      type: object
+      required: [ mediaId, url ]
+      properties:
+        mediaId:
+          type: string
+          description: The caller's id for the item, echoed in the result.
+        url:
+          type: string
+          format: uri
+          description: Presigned GET URL, valid for at least the expected queue wait plus processing.
+
+    EnrollmentPhotoResult:
+      type: object
+      required: [ mediaId, status ]
+      properties:
+        mediaId:
+          type: string
+        status:
+          type: string
+          enum: [ ENROLLED, NO_SUBJECT, AMBIGUOUS, FAILED ]
+        crop:
+          $ref: "#/components/schemas/Crop"
+        embedding:
+          $ref: "#/components/schemas/Embedding"
+        identifier:
+          $ref: "#/components/schemas/IdentifierReading"
+        failureReason:
+          type: string
+          nullable: true
+
+    EnrollmentJobResult:
+      type: object
+      required: [ jobId, photos ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnrollmentPhotoResult"
+
+    # ── Embedding ──────────────────────────────────────────────
+
+    EmbeddingJobRequest:
+      allOf:
+        - $ref: "#/components/schemas/JobSubmission"
+        - type: object
+          required: [ crops ]
+          properties:
+            crops:
+              type: array
+              minItems: 1
+              maxItems: 1000
+              items:
+                $ref: "#/components/schemas/MediaRef"
+
+    EmbeddingResult:
+      type: object
+      required: [ mediaId ]
+      properties:
+        mediaId:
+          type: string
+        embedding:
+          $ref: "#/components/schemas/Embedding"
+        failureReason:
+          type: string
+          nullable: true
+
+    EmbeddingJobResult:
+      type: object
+      required: [ jobId, embeddings ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        embeddings:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmbeddingResult"
+
+    # ── Recognition ────────────────────────────────────────────
+
+    MatchingSettings:
+      type: object
+      description: Same fields and defaults as ai-api.yaml MatchingSettings, which is canonical.
+      properties:
+        identifierWeight:
+          type: number
+          format: double
+          default: 0.6
+        acceptScore:
+          type: number
+          format: double
+          default: 0.75
+        acceptMargin:
+          type: number
+          format: double
+          default: 0.1
+        sampleFps:
+          type: number
+          format: double
+          default: 3
+
+    Candidate:
+      type: object
+      required: [ candidateId ]
+      properties:
+        candidateId:
+          type: string
+          description: The caller's id for the subject, echoed in the result.
+        identifierText:
+          type: string
+          nullable: true
+          description: Registered identifier; absent means appearance-only for this candidate.
+        gallery:
+          type: array
+          description: Enrollment embeddings, all of the server's current embedding model. Empty means identifier-only.
+          items:
+            $ref: "#/components/schemas/Embedding"
+
+    RecognitionJobRequest:
+      allOf:
+        - $ref: "#/components/schemas/JobSubmission"
+        - type: object
+          required: [ detection, candidates ]
+          properties:
+            detection:
+              $ref: "#/components/schemas/DetectionSettings"
+            ocr:
+              $ref: "#/components/schemas/OcrSettings"
+            matching:
+              $ref: "#/components/schemas/MatchingSettings"
+            video:
+              $ref: "#/components/schemas/MediaRef"
+            frames:
+              type: array
+              minItems: 1
+              maxItems: 5
+              description: Still images of one subject; firstSeenMs and lastSeenMs of the result are 0.
+              items:
+                $ref: "#/components/schemas/MediaRef"
+            candidates:
+              type: array
+              minItems: 1
+              items:
+                $ref: "#/components/schemas/Candidate"
+
+    CandidateScore:
+      type: object
+      required: [ candidateId, score ]
+      properties:
+        candidateId:
+          type: string
+        score:
+          type: number
+          format: double
+        identifierScore:
+          type: number
+          format: double
+          nullable: true
+        embeddingScore:
+          type: number
+          format: double
+          nullable: true
+
+    TrackResult:
+      type: object
+      required: [ trackId, status, firstSeenMs, lastSeenMs, candidates ]
+      properties:
+        trackId:
+          type: integer
+        status:
+          type: string
+          enum: [ AUTO_MATCHED, NEEDS_REVIEW ]
+        candidateId:
+          type: string
+          nullable: true
+          description: The assigned candidate; set when AUTO_MATCHED.
+        score:
+          type: number
+          format: double
+          nullable: true
+        identifier:
+          $ref: "#/components/schemas/IdentifierReading"
+        bestCrop:
+          $ref: "#/components/schemas/Crop"
+        embedding:
+          $ref: "#/components/schemas/Embedding"
+        firstSeenMs:
+          type: integer
+          format: int64
+        lastSeenMs:
+          type: integer
+          format: int64
+        candidates:
+          type: array
+          description: The top 3, best first.
+          items:
+            $ref: "#/components/schemas/CandidateScore"
+
+    RecognitionJobResult:
+      type: object
+      required: [ jobId, tracks ]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        framesProcessed:
+          type: integer
+        processingSeconds:
+          type: number
+          format: double
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackResult"
+
+    # ── Server ─────────────────────────────────────────────────
+
+    VisionHealth:
+      type: object
+      required: [ status ]
+      properties:
+        status:
+          type: string
+          enum: [ UP ]
+        queued:
+          type: integer
+        running:
+          type: integer
+
+    VisionModels:
+      type: object
+      required: [ detector, embedding, device ]
+      properties:
+        detector:
+          type: object
+          required: [ model, classes ]
+          properties:
+            model:
+              type: string
+              example: PekingU/rtdetr_r18vd_coco_o365
+            classes:
+              type: array
+              items:
+                type: string
+        embedding:
+          type: object
+          required: [ model, dimension ]
+          properties:
+            model:
+              type: string
+              example: facebook/dinov2-small
+            dimension:
+              type: integer
+              example: 384
+        ocr:
+          type: object
+          properties:
+            model:
+              type: string
+              example: PaddleOCR PP-OCRv4
+        device:
+          type: string
+          description: cpu, or cuda once deployed on a GPU host.
+          example: cpu
+
+    Problem:
+      type: object
+      description: RFC 7807 problem details.
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string

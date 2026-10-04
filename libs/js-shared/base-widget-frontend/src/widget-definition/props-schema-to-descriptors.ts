@@ -14,7 +14,7 @@ import { PropsSchema, PropsSchemaProperty } from './widget-definition';
  *
  * Only the keywords that map onto a form control are read: `type`, `enum`, `format` (including the
  * {@link ARTIFACT_FORMAT} extension), `maxLength`,
- * `title`, `description`, `required`, and `items.type` for arrays. Everything else — `oneOf`,
+ * `title`, `description`, `required`, and `items.type`, `items.format` and `maxItems` for arrays. Everything else — `oneOf`,
  * `$ref`, `patternProperties`, nested object schemas, tuple `items` — is *not* interpreted, and the
  * property falls back to {@link FormControlType.ADDITIONAL_PROPERTIES}, the same open editor used
  * when there is no schema at all.
@@ -51,6 +51,11 @@ function toDescriptor(name: string, property: PropsSchemaProperty, isRequired: b
   const descriptor = new BaseEntityAttrDescriptor(name, controlType(property), property.title ?? name, selectables(property), false, inputOptions(property));
 
   descriptor.required = isRequired;
+  if (isArtifactArray(property)) {
+    // Several artifacts: unbounded, or capped by `maxItems`.
+    descriptor.multiplicity = property.maxItems === undefined ? '0..n' : '0..x';
+    descriptor.maxOccurs = property.maxItems;
+  }
   if (property.description) {
     descriptor.placeholder = property.description;
   } else if (property.default !== undefined) {
@@ -67,8 +72,12 @@ function toDescriptor(name: string, property: PropsSchemaProperty, isRequired: b
  */
 export const ARTIFACT_FORMAT = 'artifact';
 
+function isArtifactArray(property: PropsSchemaProperty): boolean {
+  return property.type === 'array' && property.items?.format === ARTIFACT_FORMAT;
+}
+
 function controlType(property: PropsSchemaProperty): FormControlType {
-  if (property.format === ARTIFACT_FORMAT) {
+  if (property.format === ARTIFACT_FORMAT || isArtifactArray(property)) {
     return FormControlType.ARTIFACT;
   }
   if (property.enum?.length) {

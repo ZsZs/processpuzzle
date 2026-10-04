@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BaseFormControlComponent } from '../base-form-control.component';
@@ -13,6 +13,17 @@ import { MatDialog } from '@angular/material/dialog';
 import { filter, switchMap } from 'rxjs';
 import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../../dialogs/delete-confirmation.dialog';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
+import { isMultiValued, upperBound } from '../../base-entity/multiplicity';
+
+/**
+ * The control value as a list, whatever shape it arrived in: `null` is none, a lone object (a value saved
+ * before the attribute became multi-valued) is one, and anything that is not an artifact object is dropped.
+ */
+function toArtifactList(value: unknown): ArtifactAttr[] {
+  if (value == null) return [];
+  const values = Array.isArray(value) ? value : [value];
+  return values.filter((item): item is ArtifactAttr => typeof item === 'object' && item !== null);
+}
 
 const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
   ['application/pdf', 'picture_as_pdf'],
@@ -39,23 +50,23 @@ const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
           <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
             <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
             <ul [id]="config().attrName" class="base-entity-form-list">
-              @if (artifact(); as artifact) {
+              @for (artifact of artifacts(); track artifact.objectId) {
                 <li>
-                  @if (thumbnailUrl(); as thumbUri) {
+                  @if (thumbnailUrlOf(artifact); as thumbUri) {
                     <img class="artifact-thumbnail" [src]="thumbUri" [alt]="artifact.name" />
                   } @else {
                     <mat-icon class="artifact-icon">{{ mimeIcon(artifact.mimeType) }}</mat-icon>
                   }
                   <a href="" (click)="openArtifact($event, artifact)">{{ artifact.name }}</a>
                   @if (!config().disabled) {
-                    <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete artifact reference" (click)="deleteArtifact()">
+                    <button type="button" mat-icon-button class="base-entity-form-delete-button" aria-label="Delete artifact reference" (click)="deleteArtifact(artifact)">
                       <mat-icon>cancel</mat-icon>
                     </button>
                   }
                 </li>
               }
             </ul>
-            @if (!config().disabled) {
+            @if (!config().disabled && canAdd()) {
               <app-artifact-selector (artifactUploaded)="onArtifactUploaded($event)" />
             }
           </fieldset>
@@ -92,34 +103,62 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
   private readonly objectStoreService = inject(ObjectStoreService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly artifactSignal = signal<ArtifactAttr | null>(null);
-  readonly artifact = this.artifactSignal.asReadonly();
-  private readonly thumbnailUrlSignal = signal<string | null>(null);
-  readonly thumbnailUrl = this.thumbnailUrlSignal.asReadonly();
+  private readonly valueSignal = signal<unknown>(null);
+  /**
+   * With an upper bound above 1 (see `multiplicity`) the value is an `ArtifactAttr[]`, an upload appends and
+   * a delete removes one; otherwise it is a single `ArtifactAttr` and an upload replaces it.
+   */
+  readonly multiValued = computed(() => isMultiValued(this.config()));
+  /** The artifacts shown, one row each — at most one when single-valued. */
+  readonly artifacts = computed(() => {
+    const artifacts = toArtifactList(this.valueSignal());
+    return this.multiValued() ? artifacts : artifacts.slice(0, 1);
+  });
+  /** The single-valued view: the one artifact, or null. */
+  readonly artifact = computed(() => this.artifacts()[0] ?? null);
+  /** A single-valued control can always take an upload (it replaces); a multi-valued one until it is full. */
+  readonly canAdd = computed(() => !this.multiValued() || this.artifacts().length < upperBound(this.config()));
+  /** Signed thumbnail URIs by `objectId`; null where the store has none. */
+  private readonly thumbnailUrls = signal<Readonly<Record<string, string | null>>>({});
 
   ngOnInit(): void {
     const control = this.formGroup.get(this.config().attrName);
     if (control) {
-      this.artifactSignal.set(control.value ?? null);
+      this.valueSignal.set(control.value ?? null);
       control.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-        this.artifactSignal.set(value ?? null);
-        this.refreshThumbnail();
+        this.valueSignal.set(value ?? null);
+        this.refreshThumbnails();
       });
     }
-    this.refreshThumbnail();
+    this.refreshThumbnails();
   }
 
-  private refreshThumbnail(): void {
-    const art = this.artifact();
-    const cfg = this.config();
-    if (!art || cfg.showThumbnail === false || !art.mimeType?.startsWith('image/')) {
-      this.thumbnailUrlSignal.set(null);
-      return;
+  thumbnailUrlOf(artifact: ArtifactAttr): string | null {
+    return this.thumbnailUrls()[artifact.objectId] ?? null;
+  }
+
+  /** Fetches a thumbnail once per image artifact and forgets those of artifacts no longer in the value. */
+  private refreshThumbnails(): void {
+    const known = this.thumbnailUrls();
+    const kept: Record<string, string | null> = {};
+    const missing: ArtifactAttr[] = [];
+    for (const art of this.artifacts()) {
+      if (this.config().showThumbnail === false || !art.mimeType?.startsWith('image/')) continue;
+      if (art.objectId in known) kept[art.objectId] = known[art.objectId];
+      else missing.push(art);
     }
-    this.objectStoreService.getThumbnailUriByID(art.bucket, art.objectId).subscribe({
-      next: (response) => this.thumbnailUrlSignal.set(response?.uri ?? null),
-      error: () => this.thumbnailUrlSignal.set(null),
-    });
+    this.thumbnailUrls.set(kept);
+    for (const art of missing) {
+      this.objectStoreService.getThumbnailUriByID(art.bucket, art.objectId).subscribe({
+        next: (response) => this.setThumbnailUrl(art.objectId, response?.uri ?? null),
+        error: () => this.setThumbnailUrl(art.objectId, null),
+      });
+    }
+  }
+
+  private setThumbnailUrl(objectId: string, uri: string | null): void {
+    if (!this.artifacts().some((art) => art.objectId === objectId)) return;
+    this.thumbnailUrls.update((urls) => ({ ...urls, [objectId]: uri }));
   }
 
   mimeIcon(mimeType: string | undefined): string {
@@ -147,18 +186,15 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
       return;
     }
 
-    const control = this.formGroup.get(this.config().attrName);
-    control?.setValue(artifact);
-    control?.markAsDirty();
-    control?.markAsTouched();
+    this.writeValue(this.multiValued() ? [...this.artifacts(), artifact] : artifact);
   }
 
-  deleteArtifact(): void {
+  /** Deletes `artifact` — the single one when omitted — after the user confirms. */
+  deleteArtifact(artifact: ArtifactAttr | null = this.artifact()): void {
     if (this.config().disabled) {
       return;
     }
 
-    const artifact = this.artifact();
     if (!artifact) {
       return;
     }
@@ -179,13 +215,17 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
         switchMap(() => this.objectStoreService.deleteObjectByID(artifact.bucket, artifact.objectId)),
       )
       .subscribe({
-        next: () => this.clearArtifact(),
+        next: () => this.removeArtifact(artifact),
       });
   }
 
-  private clearArtifact(): void {
+  private removeArtifact(artifact: ArtifactAttr): void {
+    this.writeValue(this.multiValued() ? this.artifacts().filter((art) => art.objectId !== artifact.objectId) : null);
+  }
+
+  private writeValue(value: ArtifactAttr | ArtifactAttr[] | null): void {
     const control = this.formGroup.get(this.config().attrName);
-    control?.setValue(null);
+    control?.setValue(value);
     control?.markAsDirty();
     control?.markAsTouched();
   }

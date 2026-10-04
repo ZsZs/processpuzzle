@@ -20,6 +20,8 @@ import { type NavigationPayload, NavigatorCommand } from '../base-form-navigator
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { EntityLabelPipe } from '../i18n/entity-label.pipe';
+import { DateFormatPipe } from '../i18n/date-format.pipe';
+import { ForeignKeyLabels } from '../base-form/foreign-key/foreign-key-labels';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -45,6 +47,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     SlicePipe,
     MatButton,
     EntityLabelPipe,
+    DateFormatPipe,
   ],
   templateUrl: 'base-entity-list.component.html',
   styleUrl: 'base-entity-list.component.css',
@@ -56,6 +59,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   private readonly logger = inject(NGXLogger);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly objectStoreService = inject(ObjectStoreService);
+  private readonly foreignKeyLabels = inject(ForeignKeyLabels);
   columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => {
     return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
   });
@@ -119,6 +123,17 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   onRowClick(entity: PersistedEntity<Entity>) {
     this.selection.toggle(entity);
     this.onChangeSelection(entity);
+  }
+
+  /** A FOREIGN_KEY cell shows the linked object's identifying attribute, as the form does, not its id. */
+  foreignKeyLabel(config: BaseEntityAttrDescriptor, entity: PersistedEntity<Entity>): string {
+    return this.foreignKeyLabels.labelOf(config.linkedEntityType, this.getPropertyValue(entity, config.attrName));
+  }
+
+  /** An ARTIFACT cell's value as a list: a multi-valued attribute holds an array, a single-valued one an object. */
+  artifactsOf(value: unknown): ArtifactAttr[] {
+    if (value == null) return [];
+    return (Array.isArray(value) ? value : [value]).filter((item): item is ArtifactAttr => typeof item === 'object' && item !== null);
   }
 
   onDownloadObject(artifact: ArtifactAttr, event?: MouseEvent): void {

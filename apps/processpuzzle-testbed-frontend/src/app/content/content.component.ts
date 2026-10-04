@@ -96,6 +96,15 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'center_focus_strong',
+      title: 'base-ai_card_title',
+      subtitle: 'base-ai_card_subtitle',
+      content: ['base-ai_card_content', 'base-ai_card_content_1', 'base-ai_card_content_2', 'base-ai_card_content_3'],
+      actions: [{ link: '/base-ai', caption: 'base-ai_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-ai_card_button', link: '/base-ai' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'web',
       title: 'base-app_card_title',
       subtitle: 'base-app_card_subtitle',

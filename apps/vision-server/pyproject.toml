@@ -1,0 +1,64 @@
+[project]
+name = "processpuzzle-vision-server"
+version = "0.1.0"
+description = "ProcessPuzzle vision server: enrolls identifiable subjects from photos and identifies them in videos"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+# The service half: HTTP, the job queue and the pure matching logic. Importable and testable
+# without any model library, which is what keeps the test image small.
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.32",
+  "httpx>=0.27",
+  "pydantic>=2.9",
+  "numpy>=1.26",
+  "scipy>=1.14",
+  "rapidfuzz>=3.10",
+]
+
+[project.optional-dependencies]
+# The models. torch and torchvision are installed from the CPU wheel index first (see the
+# Dockerfile); listing them here only pins the floor. Every package below is Apache-2.0, MIT or
+# BSD — no Ultralytics, whose whole package is AGPL-3.0.
+ml = [
+  "torch>=2.5",
+  "torchvision>=0.20",
+  "transformers>=4.46",
+  "supervision>=0.25",
+  "easyocr>=1.7.2",
+  "opencv-python-headless>=4.10",
+  "pillow>=11",
+]
+test = [
+  "pytest>=8.3",
+  "pyyaml>=6",
+]
+dev = [
+  "ruff>=0.8",
+]
+
+[project.scripts]
+vision-server = "vision_server.__main__:main"
+vision-baseline = "vision_server.cli:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency injection is declared in argument defaults.
+extend-immutable-calls = ["fastapi.Depends"]

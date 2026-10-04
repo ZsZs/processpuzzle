@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { toDateValue } from '../base-entity/date-format';
 import type { PdfColumnDefinition, PdfExportOptions, PdfExportResult } from './pdf-export.types';
 
 /**
@@ -107,7 +108,7 @@ export class PdfExportService {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(150);
-    doc.text(`Exported ${new Date().toLocaleString()}`, margin, cursorY);
+    doc.text(`Exported ${new Date().toLocaleString(options.locale)}`, margin, cursorY);
     doc.setTextColor(0);
     cursorY += 4;
 
@@ -119,7 +120,7 @@ export class PdfExportService {
         const value = entity[col.field];
         return col.formatter
           ? col.formatter(value, entity)
-          : this.formatValue(value);
+          : this.formatValue(value, options.locale);
       })
     );
 
@@ -175,23 +176,21 @@ export class PdfExportService {
    * Formats a raw entity field value as a readable string for the PDF cell.
    * Handles the common cases; override per-column with a custom `formatter`.
    */
-  private formatValue(value: unknown): string {
+  private formatValue(value: unknown, locale: string | undefined): string {
     if (value === null || value === undefined) return '';
-    if (value instanceof Date) return value.toLocaleDateString();
+    if (value instanceof Date) return value.toLocaleDateString(locale);
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    if (typeof value === 'number') return value.toLocaleString();
+    if (typeof value === 'number') return value.toLocaleString(locale);
     if (typeof value === 'bigint') return value.toString();
-    if (typeof value === 'string') return this.formatString(value);
+    if (typeof value === 'string') return this.formatString(value, locale);
     if (typeof value === 'object') return JSON.stringify(value);
     return ''; // symbol / function — not meaningful in a table cell
   }
 
   /** Renders ISO date strings as locale dates, leaving all other strings untouched. */
-  private formatString(value: string): string {
-    const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
-    if (!isoDatePattern.test(value)) return value;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+  private formatString(value: string, locale: string | undefined): string {
+    const date = toDateValue(value);
+    return date ? date.toLocaleDateString(locale) : value;
   }
 
   private drawFooter(

@@ -80,7 +80,8 @@ class DomainModelsTest {
                 .displayOrder(2)
                 .valueKind(ValueKind.ENUM)
                 .formControlType(FormControlType.ENUM_SELECT)
-                .isMultiValued(true)
+                .multiplicity(Multiplicity.ONE_TO_X)
+                .maxOccurs(3)
                 .required(true)
                 .indexed(true)
                 .defaultValue("ACTIVE")
@@ -97,6 +98,8 @@ class DomainModelsTest {
         assertThat(attr.getDisplayOrder()).isEqualTo(2);
         assertThat(attr.getValueKind()).isEqualTo(ValueKind.ENUM);
         assertThat(attr.getFormControlType()).isEqualTo(FormControlType.ENUM_SELECT);
+        assertThat(attr.getMultiplicity()).isEqualTo(Multiplicity.ONE_TO_X);
+        assertThat(attr.getMaxOccurs()).isEqualTo(3);
         assertThat(attr.isMultiValued()).isTrue();
         assertThat(attr.isRequired()).isTrue();
         assertThat(attr.isIndexed()).isTrue();

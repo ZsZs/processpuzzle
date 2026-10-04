@@ -1,0 +1,64 @@
+{
+  "recognition_profile": {
+    "_self": "Erkennungsprofil",
+    "entityName": "Entitätstyp",
+    "name": "Name",
+    "description": "Beschreibung",
+    "detectorClass": "Detektorklasse",
+    "galleryAttributeKey": "Foto-Attribut",
+    "identifierAttributeKey": "Kennungsattribut",
+    "identifierPattern": "Kennungsmuster",
+    "identifierWeight": "Gewicht der Kennung",
+    "acceptScore": "Mindestwert",
+    "acceptMargin": "Mindestabstand",
+    "sampleFps": "Abgetastete FPS",
+    "version": "Version",
+    "updatedAt": "Geändert am"
+  },
+  "entity_enrollment": {
+    "tab": "Erkennung",
+    "loading": "Galerie wird geladen…",
+    "noProfile": "Für diesen Entitätstyp gibt es kein Erkennungsprofil, daher können seine Objekte nicht angelernt werden.",
+    "registered": "Registrierte Kennung",
+    "noIdentifier": "keine",
+    "intro": "Die Fotos dieses Objekts ({{ detectorClass }}) stammen aus seinem Attribut '{{ attribute }}' — fügen Sie im Reiter Details Fotos von mehreren Seiten und bei unterschiedlichem Licht hinzu. Jedes Foto wird bei jedem Speichern im Hintergrund auf das Objekt zugeschnitten, eingebettet und auf seine Kennung gelesen.",
+    "status": {
+      "NOT_ENROLLED": "Nicht angelernt",
+      "PROCESSING": "In Bearbeitung",
+      "READY": "Bereit",
+      "FAILED": "Fehlgeschlagen"
+    },
+    "photoStatus": {
+      "PENDING": "In Bearbeitung",
+      "ENROLLED": "Angelernt",
+      "NO_SUBJECT": "Nichts gefunden",
+      "AMBIGUOUS": "Mehrere gefunden",
+      "FAILED": "Fehlgeschlagen"
+    },
+    "cancel": "Abbrechen",
+    "empty": "Noch keine Fotos. Fügen Sie im Reiter Details welche hinzu.",
+    "photoAlt": "Anlernfoto",
+    "observed": "Gelesen:",
+    "mismatch": "Weicht von der registrierten Kennung ab",
+    "noReading": "Keine Kennung gelesen",
+    "synchronize": "Synchronisieren",
+    "rebuild": "Galerie neu aufbauen",
+    "confirmRebuild": "Wirklich alle Fotos neu erfassen"
+  },
+  "recognition_camera": {
+    "noCamera": "Hier ist keine Kamera verfügbar. Nehmen oder wählen Sie stattdessen Fotos.",
+    "takePhoto": "Fotos aufnehmen",
+    "shoot": "Erkennen",
+    "noCandidates": "Es gibt niemanden zu erkennen.",
+    "capturing": "Aufnahme läuft…",
+    "recognizing": "Erkennung läuft…",
+    "cropAlt": "Was die Kamera gesehen hat",
+    "noSubject": "Nichts Erkennbares in der Aufnahme. Versuchen Sie es näher noch einmal.",
+    "automatic": "erkannt",
+    "chosen": "gewählt",
+    "overrule": "Nicht dieser",
+    "whoIsIt": "Nicht sicher. Wer ist es?",
+    "read": "Gelesen:",
+    "cancel": "Abbrechen"
+  }
+}

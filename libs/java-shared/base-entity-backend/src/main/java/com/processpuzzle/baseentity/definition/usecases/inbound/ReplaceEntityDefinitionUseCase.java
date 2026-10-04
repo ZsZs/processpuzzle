@@ -66,13 +66,16 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setDisplayOrder(desired.getDisplayOrder());
         existing.setValueKind(desired.getValueKind());
         existing.setFormControlType(desired.getFormControlType());
-        existing.setMultiValued(desired.isMultiValued());
+        existing.setMultiplicity(desired.getMultiplicity());
+        existing.setMaxOccurs(desired.getMaxOccurs());
         existing.setRequired(desired.isRequired());
         existing.setIndexed(desired.isIndexed());
         existing.setDefaultValue(desired.getDefaultValue());
         existing.setEnumValues(desired.getEnumValues());
+        existing.setDateFormat(desired.getDateFormat());
         existing.setLinkedEntityType(desired.getLinkedEntityType());
         existing.setLinkToDetails(desired.isLinkToDetails());
+        existing.setAutosizeColumn(desired.isAutosizeColumn());
         existing.setValidationRules(desired.getValidationRules());
     }
 }

@@ -15,6 +15,19 @@ import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
+import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
+import { BOAT_NAME, BOAT_PATH, boatScreenRoutes, RECOGNIZE_PATH } from './content/base-ai/boat-sample.routes';
+import {
+  OBSERVATION_NAME,
+  OBSERVATION_PATH,
+  observationScreenRoutes,
+  RACE_NAME,
+  RACE_PATH,
+  raceScreenRoutes,
+  REGISTRATION_NAME,
+  REGISTRATION_PATH,
+  registrationScreenRoutes,
+} from './content/base-ai/race-sample.routes';
 import { MarkdownPageComponent } from '@processpuzzle/widgets';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
@@ -287,6 +300,48 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'base-ai',
+    title: 'ProcessPuzzle Testbed - Base AI',
+    data: { icon: 'center_focus_strong', menuTitle: 'base-ai' },
+    loadComponent: () => import('./content/base-ai/base-ai.component').then((comp) => comp.BaseAiComponent),
+    // `base_entity` for the Boat screens' generic tab labels, as on the base-rule branch: `Boat` is
+    // resolved at run-time and brings no scope of its own. The profile branch registers its own.
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'overview',
+      },
+      {
+        path: 'overview',
+        loadComponent: () => import('./content/base-ai/overview.component').then((comp) => comp.OverviewComponent),
+      },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-ai/samples.component').then((comp) => comp.SamplesComponent),
+        // The samples, in the order a user meets them. `BASE_AI_ROUTES` brings the `recognition-profile`
+        // branch and declares its own transloco scopes. `Boat` is metadata, resolved at run-time like the
+        // rule samples' `Order` — and `entityName` sits on the route contributing its segment, for the
+        // reason given there. Its Enrollment tab comes from `provideEntityEnrollmentTab()` in app.config.ts,
+        // not from anything on this route. `Race`, `Registration` and `Race Observation` are the race application
+        // around it, also metadata; `recognize` is that application's checkpoint screen, hosting base-ai's camera.
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'recognition-profile' },
+          ...BASE_AI_ROUTES,
+          { path: BOAT_PATH, data: { entityName: BOAT_NAME }, loadChildren: boatScreenRoutes },
+          { path: RACE_PATH, data: { entityName: RACE_NAME }, loadChildren: raceScreenRoutes },
+          { path: REGISTRATION_PATH, data: { entityName: REGISTRATION_NAME }, loadChildren: registrationScreenRoutes },
+          { path: OBSERVATION_PATH, data: { entityName: OBSERVATION_NAME }, loadChildren: observationScreenRoutes },
+          {
+            path: RECOGNIZE_PATH,
+            loadComponent: () => import('./content/base-ai/recognize-sample.component').then((comp) => comp.RecognizeSampleComponent),
+          },
+        ],
+      },
+    ],
+  },
+  {
     path: 'base-app',
     title: 'ProcessPuzzle Testbed - Base App',
     data: { icon: 'web', menuTitle: 'base-app' },
@@ -309,7 +364,7 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./content/base-apps/samples.component').then((comp) => comp.SamplesComponent),
         // `BASE_APP_ROUTES` brings the whole `app-definition` branch — the routable definition plus the
         // four embedded levels below it — and declares its own transloco scopes, so nothing is added here.
-        children: BASE_APP_ROUTES,
+        children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES],
       },
     ],
   },

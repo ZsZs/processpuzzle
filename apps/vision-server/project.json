@@ -1,0 +1,40 @@
+{
+  "name": "vision-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/vision-server/src",
+  "tags": ["backend", "python", "infrastructure"],
+  "implicitDependencies": ["api-contracts"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "docker build -q -f tools/docker/vision-server/Dockerfile --target test -t processpuzzle-vision-server-test .",
+          "docker run --rm processpuzzle-vision-server-test"
+        ],
+        "parallel": false
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "docker build -q -f tools/docker/vision-server/Dockerfile --target test -t processpuzzle-vision-server-test .",
+          "docker run --rm processpuzzle-vision-server-test sh -c \"pip install -q ruff && ruff check src tests && ruff format --check src tests\""
+        ],
+        "parallel": false
+      },
+      "configurations": {
+        "ci": {},
+        "dev": {}
+      }
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -f tools/docker/vision-server/Dockerfile --target runtime -t processpuzzle-vision-server:local ."
+      }
+    }
+  }
+}

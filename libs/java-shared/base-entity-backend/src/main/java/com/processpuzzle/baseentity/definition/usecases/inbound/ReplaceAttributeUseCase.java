@@ -31,13 +31,16 @@ public class ReplaceAttributeUseCase {
         existing.setDisplayOrder(desiredState.getDisplayOrder());
         existing.setValueKind(desiredState.getValueKind());
         existing.setFormControlType(desiredState.getFormControlType());
-        existing.setMultiValued(desiredState.isMultiValued());
+        existing.setMultiplicity(desiredState.getMultiplicity());
+        existing.setMaxOccurs(desiredState.getMaxOccurs());
         existing.setRequired(desiredState.isRequired());
         existing.setIndexed(desiredState.isIndexed());
         existing.setDefaultValue(desiredState.getDefaultValue());
         existing.setEnumValues(desiredState.getEnumValues());
+        existing.setDateFormat(desiredState.getDateFormat());
         existing.setLinkedEntityType(desiredState.getLinkedEntityType());
         existing.setLinkToDetails(desiredState.isLinkToDetails());
+        existing.setAutosizeColumn(desiredState.isAutosizeColumn());
         existing.setValidationRules(desiredState.getValidationRules());
 
         validator.validate(definition);

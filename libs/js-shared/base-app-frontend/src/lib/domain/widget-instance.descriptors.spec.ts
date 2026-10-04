@@ -1,8 +1,8 @@
-import { WidgetPropsAttrDescriptor } from '@processpuzzle/widgets';
+import { WidgetPropsAttrDescriptor, WidgetRegistration } from '@processpuzzle/widgets';
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
-import { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor } from './widget-instance.descriptors';
+import { APP_WIDGET_ENTITY_NAME, createWidgetInstanceDescriptor, widgetTypeSelectables } from './widget-instance.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -38,10 +38,16 @@ describe('createWidgetInstanceDescriptor', () => {
     expect(descriptor.componentIdentification()).toBe('id');
   });
 
-  it('leaves the registry key open, so a new widget type needs no schema change', () => {
-    expect(byName('type')?.formControlType).toBe(FormControlType.TEXT_BOX);
+  it('picks the registry key from a dropdown, offering nothing when no widget types are given', () => {
+    expect(byName('type')?.formControlType).toBe(FormControlType.DROPDOWN);
     expect(byName('type')?.required).toBe(true);
-    expect(byName('type')?.getSelectables()).toBeUndefined();
+    expect(byName('type')?.getSelectables()).toEqual([]);
+  });
+
+  it('offers the widget types it is given', () => {
+    const typeAttr = flatten(createWidgetInstanceDescriptor([{ key: 'entity-grid', value: 'entity-grid' }]).attrDescriptors).find((attr) => attr.attrName === 'type');
+
+    expect(typeAttr?.getSelectables()).toEqual([{ key: 'entity-grid', value: 'entity-grid' }]);
   });
 
   it('edits the per-type props through a form generated from the type', () => {
@@ -63,5 +69,32 @@ describe('createWidgetInstanceDescriptor', () => {
     const tableColumns = attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName);
 
     expect(tableColumns).toEqual(['id', 'type']);
+  });
+});
+
+describe('widgetTypeSelectables', () => {
+  const registration = (type: string) => ({ type, component: class {}, definition: { name: `${type} name` } }) as WidgetRegistration;
+
+  it('lists the registry keys, sorted, storing and showing the key rather than the display name', () => {
+    const registry = new Map([['markdown', registration('markdown')], ['entity-grid', registration('entity-grid')]]);
+
+    expect(widgetTypeSelectables(registry)).toEqual([
+      { key: 'entity-grid', value: 'entity-grid' },
+      { key: 'markdown', value: 'markdown' },
+    ]);
+  });
+
+  it('sorts mixed-case keys alphabetically without changing the registry order', () => {
+    const registry = new Map([['Markdown', registration('Markdown')], ['entity-grid', registration('entity-grid')]]);
+
+    expect(widgetTypeSelectables(registry)).toEqual([
+      { key: 'entity-grid', value: 'entity-grid' },
+      { key: 'Markdown', value: 'Markdown' },
+    ]);
+    expect([...registry.keys()]).toEqual(['Markdown', 'entity-grid']);
+  });
+
+  it('is empty for an empty registry', () => {
+    expect(widgetTypeSelectables(new Map())).toEqual([]);
   });
 });

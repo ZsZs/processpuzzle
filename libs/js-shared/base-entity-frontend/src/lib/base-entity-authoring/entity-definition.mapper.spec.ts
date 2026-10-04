@@ -27,6 +27,7 @@ describe('EntityDefinitionMapper', () => {
         required: true,
         indexed: true,
         isLinkToDetails: true,
+        autosizeColumn: true,
       },
     ],
   };
@@ -66,7 +67,7 @@ describe('EntityDefinitionMapper', () => {
 
       expect(attributes).toHaveLength(1);
       expect(attributes[0]).toBeInstanceOf(EntityAttributeDefinition);
-      expect(attributes[0]).toMatchObject({ code: 'orderNumber', name: 'Order #', displayOrder: 1, valueKind: 'TEXT', formControlType: 'TEXT_BOX', required: true, indexed: true, isLinkToDetails: true });
+      expect(attributes[0]).toMatchObject({ code: 'orderNumber', name: 'Order #', displayOrder: 1, valueKind: 'TEXT', formControlType: 'TEXT_BOX', required: true, indexed: true, isLinkToDetails: true, autosizeColumn: true });
     });
 
     it('falls back to the id when a response names no code', () => {
@@ -133,7 +134,25 @@ describe('EntityDefinitionMapper', () => {
     it('sends every attribute flag explicitly, false included', () => {
       const dto = mapper.toDto(definition);
 
-      expect(dto.attributes?.[0]).toMatchObject({ required: true, isMultiValued: false, indexed: false, isLinkToDetails: false });
+      expect(dto.attributes?.[0]).toMatchObject({ required: true, indexed: false, isLinkToDetails: false, autosizeColumn: false });
+    });
+
+    it('sends multiplicity explicitly or not at all, and maxOccurs only for the x forms', () => {
+      const attributeDto = (init: Partial<EntityAttributeDefinition>) =>
+        mapper.toDto(new EntityDefinition({ code: 'order', attributes: [new EntityAttributeDefinition({ code: 'files', ...init })] })).attributes?.[0];
+
+      expect(attributeDto({})).not.toHaveProperty('multiplicity');
+      expect(attributeDto({ multiplicity: '' as never })).not.toHaveProperty('multiplicity');
+      expect(attributeDto({ multiplicity: '0..n', maxOccurs: 3 })).toMatchObject({ multiplicity: '0..n' });
+      expect(attributeDto({ multiplicity: '0..n', maxOccurs: 3 })).not.toHaveProperty('maxOccurs');
+      expect(attributeDto({ multiplicity: '1..x', maxOccurs: '4' as never })).toMatchObject({ multiplicity: '1..x', maxOccurs: 4 });
+      expect(attributeDto({ multiplicity: '0..x', maxOccurs: '' as never })).not.toHaveProperty('maxOccurs');
+    });
+
+    it('reads multiplicity and maxOccurs back', () => {
+      const definition = mapper.fromDto({ code: 'order', attributes: [{ code: 'files', multiplicity: '0..x', maxOccurs: 2 }] });
+
+      expect(definition.attributes?.[0]).toMatchObject({ multiplicity: '0..x', maxOccurs: 2 });
     });
 
     /** Neither is part of `BaseEntityAttributeInput` — see the model and `fromAttribute`. */
@@ -150,5 +169,32 @@ describe('EntityDefinitionMapper', () => {
 
     expect(roundTripped.code).toBe('order');
     expect(roundTripped.attributes?.[0].code).toBe('orderNumber');
+  });
+
+  describe('dateFormat', () => {
+    const definitionWith = (attribute: Partial<EntityAttributeDefinition>) =>
+      new EntityDefinition({ code: 'person', name: 'Person', attributes: [new EntityAttributeDefinition({ code: 'born', formControlType: 'DATE', ...attribute })] });
+
+    it('unfolds a received dateFormat into the flat fields the form edits', () => {
+      const definition = mapper.fromDto({ code: 'person', attributes: [{ code: 'born', valueKind: 'DATE_TIME', formControlType: 'DATE_TIME', dateFormat: { dateStyle: 'short', timeStyle: 'medium' } }] });
+
+      expect(definition.attributes?.[0]).toMatchObject({ dateFormat: { dateStyle: 'short', timeStyle: 'medium' }, dateStyle: 'short', timeStyle: 'medium' });
+    });
+
+    it('folds the edited styles back into dateFormat, the stale nested value notwithstanding', () => {
+      const dto = mapper.toDto(definitionWith({ valueKind: 'DATE_TIME', dateFormat: { dateStyle: 'short' }, dateStyle: 'long', timeStyle: 'short' }));
+
+      expect(dto.attributes?.[0].dateFormat).toEqual({ dateStyle: 'long', timeStyle: 'short' });
+      expect(dto.attributes?.[0]).not.toHaveProperty('dateStyle');
+    });
+
+    it('drops the time style of a DATE attribute and the whole format of a non-date one', () => {
+      expect(mapper.toDto(definitionWith({ valueKind: 'DATE', dateStyle: 'short', timeStyle: 'short' })).attributes?.[0].dateFormat).toEqual({ dateStyle: 'short' });
+      expect(mapper.toDto(definitionWith({ valueKind: 'TEXT', dateStyle: 'short' })).attributes?.[0].dateFormat).toBeUndefined();
+    });
+
+    it('sends no dateFormat when neither style is picked, so the value kind default applies', () => {
+      expect(mapper.toDto(definitionWith({ valueKind: 'DATE_TIME' })).attributes?.[0].dateFormat).toBeUndefined();
+    });
   });
 });

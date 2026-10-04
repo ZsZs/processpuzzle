@@ -240,6 +240,47 @@ widgetDefinitions:
       type: STRING
       required: false
       description: The text of the heading.
+  - key: nav-bar
+    name: Navigation bar
+    translocoId: base_widget.nav_bar.name
+    description: >-
+      The application's navigation as a row of links, a group opening a drop-down. Hidden on small screens, where the
+      navigation menu takes over.
+    category: Navigation
+    icon: more_horiz
+    propsSchema:
+      type: object
+      properties:
+        visibility:
+          type: string
+          title: Visibility
+          enum:
+          - large-screens
+          - always
+          description: Defaults to large screens; on a small one the navigation menu takes over.
+        items:
+          type: array
+          title: Items
+          description: Overrides the application's navigation.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              translocoId:
+                type: string
+              icon:
+                type: string
+              routePath:
+                type: string
+              children:
+                type: array
+            required:
+            - id
+            - label
+      additionalProperties: false
   - key: nav-menu
     name: Navigation menu
     translocoId: base_widget.nav_menu.name
@@ -279,6 +320,18 @@ widgetDefinitions:
             required:
             - id
             - label
+      additionalProperties: false
+  - key: spacer
+    name: Spacer
+    translocoId: base_widget.spacer.name
+    description: >-
+      Empty space that fills the row, pushing the widgets after it to the far end. Two spacers centre the widgets
+      between them.
+    category: Layout
+    icon: space_bar
+    propsSchema:
+      type: object
+      properties: {}
       additionalProperties: false
   - key: navigate-back
     name: Navigate back

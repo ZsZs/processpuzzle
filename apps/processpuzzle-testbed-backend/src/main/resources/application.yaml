@@ -96,6 +96,10 @@ base-app:
   loadDefaultApps: yes
   loadDefaultTranslations: yes
 
+base-ai:
+  # The `boat` recognition profile of the testbed tenant — see default-recognition-profiles/ in base-ai-backend.
+  loadDefaultProfiles: yes
+
 base-widget:
   loadDefaultWidgets: yes
   loadDefaultTranslations: yes
@@ -149,6 +153,16 @@ processpuzzle:
     # Which authority may reach /platform/**. A separate concept from stack-realm, and unaffected by
     # the realm renames: platform-admin is a realm ROLE name.
     platform-admin-authority: platform-admin
+  ai:
+    vision-server:
+      # Unset means no vision server: photos are accepted and stay PENDING. The compose topology sets
+      # all three — see docker-compose-apps.yaml.
+      base-url: ${VISION_SERVER_URL:}
+      service-token: ${VISION_SERVICE_TOKEN:}
+      # How the vision server reaches THIS backend on the infrastructure network; the notification path
+      # is appended. Not the public hostname: the vision server is not on the internet.
+      callback-base-url: ${VISION_CALLBACK_BASE_URL:http://localhost:8080}
+      stack: ${PROCESSPUZZLE_SECURITY_STACK_REALM:processpuzzle-testbed}
 
 keycloak:
   admin:

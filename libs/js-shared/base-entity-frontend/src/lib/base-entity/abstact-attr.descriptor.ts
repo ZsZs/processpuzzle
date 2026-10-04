@@ -52,4 +52,15 @@ export abstract class AbstractAttrDescriptor {
     if (!this._scopeRoot) return undefined;
     return `${this._scopeRoot}.${this.labelKey ?? this.attrName}`;
   }
+
+  /**
+   * Transloco key of the tooltip the generated form shows on this attribute's control:
+   * `<scopeRoot>._tooltips.<labelKey|attrName>`. Under a `_tooltips` node of its own — the `_` prefix
+   * like `_self` — so it can never collide with an attribute that happens to be called `tooltips`.
+   * `undefined` for the same reason as {@link i18nKey}.
+   */
+  tooltipI18nKey(): string | undefined {
+    if (!this._scopeRoot) return undefined;
+    return `${this._scopeRoot}._tooltips.${this.labelKey ?? this.attrName}`;
+  }
 }

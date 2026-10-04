@@ -171,6 +171,24 @@ describe('TAGS fixture values', () => {
   });
 });
 
+describe('DATE fixture values', () => {
+  const noContext = {} as never;
+
+  it('generates a calendar day for a date-only format, the default included', () => {
+    const tester = createControlTester(attr({ attrName: 'born', formControlType: 'DATE' }));
+
+    expect(tester.createValue(noContext)).toBe('2026-01-15');
+    expect(tester.updateValue(noContext, { born: '2026-01-15' })).toBe('2026-02-20');
+  });
+
+  it('generates a local wall-clock time when the serialized format has a timeStyle', () => {
+    const tester = createControlTester(attr({ attrName: 'seen', formControlType: 'DATE', dateFormat: { dateStyle: 'medium', timeStyle: 'short' } }));
+
+    expect(tester.createValue(noContext)).toBe('2026-01-15T09:30');
+    expect(tester.updateValue(noContext, { seen: '2026-01-15T09:30' })).toBe('2026-02-20T14:15');
+  });
+});
+
 describe('DROPDOWN option values', () => {
   const dropdown = (fixture: Record<string, unknown>) => createControlTester(attr({ attrName: 'status', formControlType: 'DROPDOWN', ...fixture }));
   const noContext = {} as never;
@@ -231,7 +249,7 @@ describe('ArtifactControlTester', () => {
     expect(createControlTester(artifactAttr).isInput).toBe(false);
   });
 
-  it('addresses the single-row list inside the fieldset', () => {
+  it('addresses the row list inside the fieldset', () => {
     expect(new ArtifactControlTester(artifactAttr).innerLocator()).toBe('ul');
   });
 
@@ -245,6 +263,24 @@ describe('ArtifactControlTester', () => {
 
   it('asserts no value: what the control holds is a reference, not something readable off the form', async () => {
     await expect(new ArtifactControlTester(artifactAttr).assertValue()).resolves.toBeUndefined();
+  });
+
+  describe('multiValued', () => {
+    const withMultiplicity = (multiplicity?: string, maxOccurs?: number) => new ArtifactControlTester(attr({ attrName: 'artifact', formControlType: 'ARTIFACT', multiplicity, maxOccurs }));
+
+    it('is single-valued without a multiplicity, or with an upper bound of 1', () => {
+      expect(new ArtifactControlTester(artifactAttr).multiValued).toBe(false);
+      expect(withMultiplicity('0..1').multiValued).toBe(false);
+      expect(withMultiplicity('1..x', 1).multiValued).toBe(false);
+    });
+
+    it('is multi-valued when the upper bound exceeds 1', () => {
+      expect(withMultiplicity('0..n').multiValued).toBe(true);
+      expect(withMultiplicity('1..n').upperBound).toBe(Infinity);
+      expect(withMultiplicity('0..x', 3).upperBound).toBe(3);
+      expect(withMultiplicity('0..x', 3).multiValued).toBe(true);
+      expect(withMultiplicity('0..x').upperBound).toBe(1);
+    });
   });
 
   describe('showsThumbnailFor', () => {

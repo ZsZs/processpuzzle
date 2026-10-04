@@ -37,6 +37,16 @@ describe('EntityListComponent', () => {
       expect(tableHeader).toBeTruthy();
     });
 
+    it('autosize class on the header and the cells of an autosized column only', async () => {
+      const autosizedConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
+      autosizedConfig.autosizeColumn = true;
+      const { fixture } = await setupListComponentTest([autosizedConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      const autosized = (column: string) => fixture.debugElement.queryAll(By.css(`.mat-column-${column}`)).map((cell) => cell.nativeElement.classList.contains('pp-col-autosize'));
+
+      expect(autosized('name')).toEqual([true, true, true]);
+      expect(autosized('description')).toEqual([false, false, false]);
+    });
+
     it('paginator element', async () => {
       const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
       const matPaginator = fixture.debugElement.query(By.css('mat-paginator')).nativeElement;
@@ -113,6 +123,16 @@ describe('EntityListComponent', () => {
       component.onNavigateToRelated(labelConfig, testEntity_2);
 
       expect(formNavigator.navigateToRelated).toHaveBeenCalledWith('TestEntityComponent', testEntity_2.number);
+    });
+
+    it('artifactsOf() reads an ARTIFACT cell as a list, single object or array', async () => {
+      const { component } = await setupListComponentTest([textboxConfig], MOCK_STORE_RESPONSE);
+      const one = { bucket: 'b', objectId: 'o1', name: 'one.pdf', mimeType: 'application/pdf' };
+      const two = { ...one, objectId: 'o2', name: 'two.pdf' };
+
+      expect(component.artifactsOf(null)).toEqual([]);
+      expect(component.artifactsOf(one)).toEqual([one]);
+      expect(component.artifactsOf([one, null, two])).toEqual([one, two]);
     });
 
     it('onRowClick() ', async () => {

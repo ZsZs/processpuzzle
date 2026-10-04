@@ -1,12 +1,12 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
-import { createWidgetPropsAttrDescriptor } from '@processpuzzle/widgets';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, Selectable, SelectablesInput, toSelectables } from '@processpuzzle/base-entity';
+import { createWidgetPropsAttrDescriptor, type WidgetRegistration } from '@processpuzzle/widgets';
 import { APP_WIDGET_I18N_SCOPE } from '../base-app.i18n';
 import { WIDGET_PLACEMENTS } from './app-definition';
 import { APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME } from './app-entity-names';
 
 export { APP_WIDGET_ENTITY_NAME };
 
-function createWidgetInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
+function createWidgetInstanceAttrDescriptors(widgetTypes: SelectablesInput): AbstractAttrDescriptor[] {
   // `id` rather than `type` identifies the widget: it is unique within its page or region, while a
   // page with two `entity-grid`s would otherwise show the same label twice.
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
@@ -14,11 +14,11 @@ function createWidgetInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   idAttr.isHeading = true;
   idAttr.placeholder = 'Unique within the page or region, e.g. widget-claims-grid';
 
-  // Deliberately a free-text box and not a dropdown: `WidgetInstance.type` is a key into the frontend
-  // widget registry, which the contract keeps open so new widget types need no schema change.
-  const typeAttr = new BaseEntityAttrDescriptor('type', FormControlType.TEXT_BOX, 'Type');
+  // `WidgetInstance.type` is a key into the frontend widget registry. The contract keeps it an open string,
+  // so a new widget type needs no schema change; the form still offers only the keys that can render —
+  // the ones registered in this build, passed in by the facade.
+  const typeAttr = new BaseEntityAttrDescriptor('type', FormControlType.DROPDOWN, 'Type', widgetTypes);
   typeAttr.required = true;
-  typeAttr.placeholder = 'Widget registry key, e.g. entity-grid';
 
   // Generated from the chosen type's `propsSchema`, as registered in the WIDGET_REGISTRY: one typed control per
   // prop, rebuilt when `type` changes. A type nobody registered or described gets the open key/value editor.
@@ -39,14 +39,26 @@ function createWidgetInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-export function createWidgetInstanceDescriptor(): BaseEntityDescriptor {
+/**
+ * @param widgetTypes the options of the `type` dropdown — see {@link widgetTypeSelectables}. Without them the
+ * dropdown is empty, as it should be where no widget is registered: none could render.
+ */
+export function createWidgetInstanceDescriptor(widgetTypes: SelectablesInput = []): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: APP_WIDGET_ENTITY_NAME,
-    attrDescriptors: createWidgetInstanceAttrDescriptors(),
+    attrDescriptors: createWidgetInstanceAttrDescriptors(widgetTypes),
     i18nScope: APP_WIDGET_I18N_SCOPE,
     // A widget sits in a header/footer region or on a page — and only there, since it cannot be nested
     // in another widget.
     componentParent: [APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME],
     isEmbedded: true,
   });
+}
+
+/**
+ * The registered widget types as dropdown options, sorted alphabetically using the current locale. `key` and `value` are both the registry key,
+ * because the dropdown stores and displays `value` — a display name there would be saved as the type.
+ */
+export function widgetTypeSelectables(registry: ReadonlyMap<string, WidgetRegistration>): Selectable[] {
+  return toSelectables([...registry.keys()].sort((left, right) => left.localeCompare(right)));
 }

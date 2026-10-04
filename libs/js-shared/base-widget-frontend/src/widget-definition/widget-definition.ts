@@ -80,6 +80,7 @@ export interface PropsSchemaProperty {
   enum?: string[];
   format?: string;
   maxLength?: number;
+  maxItems?: number;
   default?: unknown;
   items?: PropsSchemaProperty;
   [key: string]: unknown;

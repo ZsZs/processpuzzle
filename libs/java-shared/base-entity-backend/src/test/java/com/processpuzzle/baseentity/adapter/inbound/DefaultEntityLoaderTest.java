@@ -3,7 +3,11 @@ package com.processpuzzle.baseentity.adapter.inbound;
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
+import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.DateFormat;
+import com.processpuzzle.baseentity.definition.domain.DateStyle;
+import com.processpuzzle.baseentity.definition.domain.TimeStyle;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
@@ -94,24 +98,45 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(7)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(11)).create(defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
-                        "order-line", "order", "special-order-line", "special-order");
+                        "order-line", "order", "special-order-line", "special-order", "boat",
+                        "race", "race-registration", "race-observation");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(createInstanceUseCase, times(11)).create(anyString(), codeCaptor.capture(), payloadCaptor.capture());
+        verify(createInstanceUseCase, times(17)).create(anyString(), codeCaptor.capture(), payloadCaptor.capture());
 
         // 'order-line' and 'special-order-line' are embedded, so neither contributes an instance of its own:
         // their rows travel inside the lineItems array of the four orders and two special orders below.
         assertThat(codeCaptor.getAllValues()).containsExactly(
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
-                "order", "order", "order", "order", "special-order", "special-order");
-        assertThat(payloadCaptor.getAllValues()).hasSize(11);
+                "order", "order", "order", "order", "special-order", "special-order",
+                "boat", "boat", "boat", "boat", "race", "race");
+        assertThat(payloadCaptor.getAllValues()).hasSize(17);
+    }
+
+    @Test
+    void seedsTheTestbedDateFormats() {
+        loader.loadDefaults();
+
+        ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
+        verify(createDefinitionUseCase, times(11)).create(defCaptor.capture());
+        BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
+                .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
+
+        assertThat(attribute(dynamicEntity, "dateAttr").getDateFormat())
+                .isEqualTo(new DateFormat(DateStyle.SHORT, null));
+        assertThat(attribute(dynamicEntity, "dateTimeAttr").getDateFormat())
+                .isEqualTo(new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT));
+    }
+
+    private static BaseEntityAttribute attribute(BaseEntityDefinition definition, String code) {
+        return definition.getAttributes().stream().filter(a -> a.getCode().equals(code)).findFirst().orElseThrow();
     }
 
     /**
@@ -126,13 +151,13 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(createInstanceUseCase, times(7)).create(anyString(), codeCaptor.capture(), any());
+        verify(createInstanceUseCase, times(13)).create(anyString(), codeCaptor.capture(), any());
 
         // The four 'order' rows are gone; nothing else is affected, 'special-order' least of all —
         // it is a different definition despite the shared prefix.
         assertThat(codeCaptor.getAllValues()).containsExactly(
                 "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity", "dynamic-entity",
-                "special-order", "special-order");
+                "special-order", "special-order", "boat", "boat", "boat", "boat", "race", "race");
     }
 
     /**
@@ -155,7 +180,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(6)).create(any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(10)).create(any(BaseEntityDefinition.class));
     }
 
     @Test

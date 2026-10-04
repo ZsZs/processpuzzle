@@ -17,6 +17,24 @@ describe('propsSchemaToDescriptors', () => {
     expect((logo as BaseEntityAttrDescriptor).label).toBe('Logo');
   });
 
+  it('edits an array of artifacts as a multi-valued ARTIFACT control, capped by maxItems', () => {
+    const [gallery, slides, logo] = propsSchemaToDescriptors({
+      type: 'object',
+      properties: {
+        gallery: { type: 'array', items: { type: 'object', format: 'artifact' } },
+        slides: { type: 'array', items: { type: 'object', format: 'artifact' }, maxItems: 5 },
+        logo: { type: 'object', format: 'artifact' },
+      },
+    }) as BaseEntityAttrDescriptor[];
+
+    expect(gallery.formControlType).toBe(FormControlType.ARTIFACT);
+    expect(gallery.multiplicity).toBe('0..n');
+    expect(gallery.maxOccurs).toBeUndefined();
+    expect(slides.multiplicity).toBe('0..x');
+    expect(slides.maxOccurs).toBe(5);
+    expect(logo.multiplicity).toBeUndefined();
+  });
+
   const descriptorFor = (schema: PropsSchema, name: string) => propsSchemaToDescriptors(schema).find((d) => d.attrName === name) as BaseEntityAttrDescriptor;
 
   describe('the entity-grid props documented in base-app-api.yaml', () => {

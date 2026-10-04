@@ -76,6 +76,16 @@ public class SecurityConfig {
             "/organizations/*/admin/**",
     };
 
+    /**
+     * The vision server's job notifications. Never a user call: each is authenticated by its own
+     * per-job {@code X-Callback-Token}, which base-ai-backend checks against the job it names. The token is
+     * not a bearer token on purpose — the resource server below would try to parse one as a JWT.
+     */
+    private static final String[] VISION_CALLBACK_PATHS = {
+            "/api/organizations/*/vision-notifications",
+            "/organizations/*/vision-notifications",
+    };
+
     /** Operational and documentation endpoints, deliberately reachable without a token. */
     private static final String[] PUBLIC_PATHS = {
             "/actuator/health", "/actuator/health/**", "/actuator/info",
@@ -130,6 +140,7 @@ public class SecurityConfig {
                     // frontend sees HTTP status 0 with nothing to explain it.
                     requests.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     requests.requestMatchers(PUBLIC_PATHS).permitAll();
+                    requests.requestMatchers(HttpMethod.POST, VISION_CALLBACK_PATHS).permitAll();
                     requests.requestMatchers("/api/platform/**", "/platform/**")
                             .hasAuthority(properties.getPlatformAdminAuthority());
                     requests.requestMatchers(ORG_ADMIN_PATHS).authenticated();

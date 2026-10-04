@@ -2,6 +2,10 @@ package com.processpuzzle.baseentity.definition.adapters.inbound;
 
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
+import com.processpuzzle.baseentity.definition.domain.DateFormat;
+import com.processpuzzle.baseentity.model.AttributeDateFormat;
+import com.processpuzzle.baseentity.model.DateStyle;
+import com.processpuzzle.baseentity.model.TimeStyle;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxContainer;
 import com.processpuzzle.baseentity.definition.domain.FlexBoxDescriptor;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
@@ -55,6 +59,86 @@ class EntityDefinitionMapperTest {
         assertThat(model.getCode()).isEqualTo("partner");
         assertThat(model.getAttributes()).hasSize(1);
         assertThat(model.getAttributes().get(0).getCode()).isEqualTo("name");
+    }
+
+    @Test
+    void dateFormat_roundTripsThroughAttributeAndDescriptor() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("born");
+        attrInput.setName("Born");
+        attrInput.setValueKind(ValueKind.DATE_TIME);
+        attrInput.setFormControlType(FormControlType.DATE_TIME);
+        attrInput.setDateFormat(new AttributeDateFormat().dateStyle(DateStyle.SHORT).timeStyle(TimeStyle.MEDIUM));
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.getDateFormat()).isEqualTo(new DateFormat(
+                com.processpuzzle.baseentity.definition.domain.DateStyle.SHORT,
+                com.processpuzzle.baseentity.definition.domain.TimeStyle.MEDIUM));
+
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getDateFormat().getDateStyle()).isEqualTo(DateStyle.SHORT);
+        assertThat(model.getDateFormat().getTimeStyle()).isEqualTo(TimeStyle.MEDIUM);
+
+        com.processpuzzle.baseentity.definition.domain.AttributeDescriptor descriptor = mapper.toAttributeDescriptor(domain);
+        assertThat(descriptor.getDateFormat()).isEqualTo(domain.getDateFormat());
+
+        com.processpuzzle.baseentity.model.AttributeDescriptor descriptorModel = mapper.toModel(descriptor);
+        assertThat(descriptorModel.getDateFormat().getDateStyle()).isEqualTo(DateStyle.SHORT);
+        assertThat(mapper.toDomain(descriptorModel).getDateFormat()).isEqualTo(domain.getDateFormat());
+    }
+
+    @Test
+    void autosizeColumn_roundTripsFromInputToModelAndDescriptor() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("status");
+        attrInput.setValueKind(ValueKind.TEXT);
+        attrInput.setFormControlType(FormControlType.TEXT);
+        attrInput.setAutosizeColumn(true);
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.isAutosizeColumn()).isTrue();
+        assertThat(mapper.toModel(domain).getAutosizeColumn()).isTrue();
+        assertThat(mapper.toAttributeDescriptor(domain).isAutosizeColumn()).isTrue();
+
+        attrInput.setAutosizeColumn(null);
+        assertThat(mapper.toDomain(attrInput).isAutosizeColumn()).isFalse();
+    }
+
+    @Test
+    void multiplicity_roundTripsFromInputToModel() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("attachments");
+        attrInput.setValueKind(ValueKind.REFERENCE);
+        attrInput.setFormControlType(FormControlType.ARTIFACT);
+        attrInput.setMultiplicity(com.processpuzzle.baseentity.model.Multiplicity.ZERO_TO_X);
+        attrInput.setMaxOccurs(4);
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.getMultiplicity()).isEqualTo(com.processpuzzle.baseentity.definition.domain.Multiplicity.ZERO_TO_X);
+        assertThat(domain.getMaxOccurs()).isEqualTo(4);
+        assertThat(domain.isMultiValued()).isTrue();
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getMultiplicity()).isEqualTo(com.processpuzzle.baseentity.model.Multiplicity.ZERO_TO_X);
+        assertThat(model.getMultiplicity().getValue()).isEqualTo("0..x");
+        assertThat(model.getMaxOccurs()).isEqualTo(4);
+
+        attrInput.setMultiplicity(null);
+        attrInput.setMaxOccurs(null);
+        BaseEntityAttribute single = mapper.toDomain(attrInput);
+        assertThat(single.getMultiplicity()).isNull();
+        assertThat(single.isMultiValued()).isFalse();
+        assertThat(mapper.toModel(single).getMultiplicity()).isNull();
+    }
+
+    @Test
+    void dateFormat_partialAndAbsent_mapToNulls() {
+        assertThat(mapper.toDomain((AttributeDateFormat) null)).isNull();
+        assertThat(mapper.toModel((DateFormat) null)).isNull();
+        DateFormat dateOnly = mapper.toDomain(new AttributeDateFormat().dateStyle(DateStyle.LONG));
+        assertThat(dateOnly.timeStyle()).isNull();
+        AttributeDateFormat timeOnly = mapper.toModel(new DateFormat(null, com.processpuzzle.baseentity.definition.domain.TimeStyle.SHORT));
+        assertThat(timeOnly.getDateStyle()).isNull();
+        assertThat(timeOnly.getTimeStyle()).isEqualTo(TimeStyle.SHORT);
     }
 
     @Test
@@ -164,6 +248,7 @@ class EntityDefinitionMapperTest {
                 .formControlType(com.processpuzzle.baseentity.definition.domain.FormControlType.TEXT_BOX)
                 .required(true)
                 .isLinkToDetails(true)
+                .autosizeColumn(true)
                 .build();
 
         BaseEntityDefinition def = BaseEntityDefinition.builder()
@@ -182,6 +267,7 @@ class EntityDefinitionMapperTest {
         assertThat(attrDesc.getLabel()).isEqualTo("Title");
         assertThat(attrDesc.isRequired()).isTrue();
         assertThat(attrDesc.isLinkToDetails()).isTrue();
+        assertThat(attrDesc.isAutosizeColumn()).isTrue();
     }
 
     @Test
@@ -301,6 +387,7 @@ class EntityDefinitionMapperTest {
         modelAttr.setVisible(true);
         modelAttr.setShowThumbnail(false);
         modelAttr.setHideInTable(true);
+        modelAttr.setAutosizeColumn(true);
         modelAttr.setIsHeading(false);
         modelAttr.setPlaceholder("Enter...");
         modelAttr.setLines(3);
@@ -314,11 +401,13 @@ class EntityDefinitionMapperTest {
         assertThat(domainAttr.getAttrName()).isEqualTo("custom");
         assertThat(domainAttr.getSelectables()).hasSize(1);
         assertThat(domainAttr.getSelectables().get(0).getKey()).isEqualTo("k1");
+        assertThat(domainAttr.isAutosizeColumn()).isTrue();
 
         com.processpuzzle.baseentity.model.AttributeDescriptor mappedBack = mapper.toModel(domainAttr);
         assertThat(mappedBack.getAttrName()).isEqualTo("custom");
         assertThat(mappedBack.getSelectables()).hasSize(1);
         assertThat(mappedBack.getSelectables().get(0).getKey()).isEqualTo("k1");
+        assertThat(mappedBack.getAutosizeColumn()).isTrue();
     }
 
     @Test

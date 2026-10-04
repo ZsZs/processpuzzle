@@ -17,9 +17,11 @@ import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescript
 import { setupMockService } from '../../test-setup';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { provideLogger } from 'ngx-logging-kit';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideLocaleDateAdapter } from './datepicker/locale-date.adapter';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { BaseFormControlComponent } from './base-form-control.component';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TranslocoService } from '@jsverse/transloco';
 
 @Component({ selector: 'test-custom-control', template: `<span class="test-custom-control">custom</span>` })
 class TestCustomControlComponent extends BaseFormControlComponent<TestEntity> {}
@@ -115,7 +117,7 @@ describe('BaseEntityFormBuilder', () => {
         BaseEntityFormBuilder,
         provideHttpClient(),
         provideLogger({ level: 7 }),
-        provideNativeDateAdapter(),
+        provideLocaleDateAdapter(),
         provideRouter([]),
         provideTranslocoTesting({ translations: {} }),
         TestEntityStore,
@@ -211,6 +213,34 @@ describe('BaseEntityFormBuilder', () => {
     expect(form.controls['optionalSlug'].valid).toBe(true);
     form.controls['mandatorySlug'].setValue('');
     expect(form.controls['mandatorySlug'].hasError('required')).toBe(true);
+  });
+
+  describe('tooltips', () => {
+    function tooltipOf(attr: BaseEntityAttrDescriptor): MatTooltip | null {
+      formBuilder.buildForm(component.formHost.viewContainerRef, new FormGroup({}), store, [attr], testEntity, 'Test Entity');
+      fixture.detectChanges();
+      return fixture.debugElement.query(By.css('base-textbox')).injector.get(MatTooltip, null);
+    }
+
+    it('shows the description of an attribute that has no translated tooltip', () => {
+      const attr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX);
+      attr.description = 'What the user sees';
+
+      expect(tooltipOf(attr)?.message).toBe('What the user sees');
+    });
+
+    it('prefers the translation under the _tooltips node of the attribute scope', () => {
+      TestBed.inject(TranslocoService).setTranslation({ test_entity: { _tooltips: { name: 'Translated hint' } } }, 'en', { merge: true });
+      const attr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX);
+      attr.setI18nContext('test_entity');
+      attr.description = 'Untranslated hint';
+
+      expect(tooltipOf(attr)?.message).toBe('Translated hint');
+    });
+
+    it('attaches no tooltip to an attribute with neither a key nor a description', () => {
+      expect(tooltipOf(new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX))).toBeNull();
+    });
   });
 
   it('buildForm() throws Error if a descriptor class is unknown.', () => {

@@ -1,7 +1,9 @@
 import { FormControlType, type AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
+import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
@@ -43,19 +45,32 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // `integer` needs nothing more than the numeric keyboard the input type brings.
   const displayOrderAttr = new BaseEntityAttrDescriptor('displayOrder', FormControlType.TEXT_BOX, 'Display Order', undefined, undefined, { inputType: 'number' });
 
+  // region how many values
+  // Left empty, the attribute holds a single value. `maxOccurs` only applies to the `x` forms; the mapper
+  // drops it for the others, which the backend would reject.
+  const multiplicityAttr = new BaseEntityAttrDescriptor('multiplicity', FormControlType.DROPDOWN, 'Multiplicity', toSelectables(MULTIPLICITIES));
+  multiplicityAttr.autosizeColumn = true;
+  const maxOccursAttr = new BaseEntityAttrDescriptor('maxOccurs', FormControlType.TEXT_BOX, 'Max occurs', undefined, undefined, { inputType: 'number' });
+  maxOccursAttr.hideInTable = true;
+  // endregion
+
   // region flags
   const requiredAttr = new BaseEntityAttrDescriptor('required', FormControlType.CHECKBOX, 'Required');
-  const isMultiValuedAttr = new BaseEntityAttrDescriptor('isMultiValued', FormControlType.CHECKBOX, 'Multi-valued');
   // Worth a column: which attributes are indexed is what decides whether an RSQL range query over this
   // entity is cheap, and reading that off the list beats opening every attribute form.
   const indexedAttr = new BaseEntityAttrDescriptor('indexed', FormControlType.CHECKBOX, 'Indexed');
   // At most one attribute of a definition may set it; the backend is what enforces that, since a form
   // editing one row cannot see its siblings.
   const isLinkToDetailsAttr = new BaseEntityAttrDescriptor('isLinkToDetails', FormControlType.CHECKBOX, 'Titles the record');
+  // How the attribute's column sits in the generated list — a layout choice, so not a column of this list.
+  const autosizeColumnAttr = new BaseEntityAttrDescriptor('autosizeColumn', FormControlType.CHECKBOX, 'Hugs its list column');
+  autosizeColumnAttr.hideInTable = true;
+  // The flag columns hold a single word each; letting them hug leaves the width to the code and the name.
+  [requiredAttr, indexedAttr, isLinkToDetailsAttr].forEach((flagAttr) => (flagAttr.autosizeColumn = true));
   // endregion
 
   // region conditional fields
-  // Each is meaningful only for some `valueKind` / `formControlType` combinations, and all three are
+  // Each is meaningful only for some `valueKind` / `formControlType` combinations, and all of them are
   // shown unconditionally: the form builder has no notion of a control whose visibility depends on
   // another control's value, and the backend ignores a field that does not apply to the kind.
   //
@@ -76,18 +91,30 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // acceptable for the same reason: every default a seed file has ever carried is a scalar.
   const defaultValueAttr = new BaseEntityAttrDescriptor('defaultValue', FormControlType.TEXT_BOX, 'Default Value');
   defaultValueAttr.hideInTable = true;
+
+  // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
+  // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
+  const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
+  dateStyleAttr.hideInTable = true;
+  const timeStyleAttr = new BaseEntityAttrDescriptor('timeStyle', FormControlType.DROPDOWN, 'Time Style', toSelectables(TIME_STYLES));
+  timeStyleAttr.hideInTable = true;
   // endregion
 
   const identityRow = new FlexboxDescriptor([codeAttr, nameAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const kindRow = new FlexboxDescriptor([valueKindAttr, formControlTypeAttr, displayOrderAttr], FlexDirection.ROW);
   kindRow.style = { 'column-gap': '10px' };
-  const flagRow = new FlexboxDescriptor([requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr], FlexDirection.ROW);
+  const flagRow = new FlexboxDescriptor([requiredAttr, indexedAttr, isLinkToDetailsAttr, autosizeColumnAttr], FlexDirection.ROW);
   flagRow.style = { 'column-gap': '10px' };
+  const multiplicityRow = new FlexboxDescriptor([multiplicityAttr, maxOccursAttr], FlexDirection.ROW);
+  multiplicityRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, flagRow, referenceRow, enumValuesAttr], FlexDirection.COLUMN);
+  const formatRow = new FlexboxDescriptor([dateStyleAttr, timeStyleAttr], FlexDirection.ROW);
+  formatRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, enumValuesAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

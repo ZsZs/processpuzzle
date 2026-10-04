@@ -1,0 +1,64 @@
+{
+  "recognition_profile": {
+    "_self": "Recognition Profile",
+    "entityName": "Entity Type",
+    "name": "Name",
+    "description": "Description",
+    "detectorClass": "Detector Class",
+    "galleryAttributeKey": "Photos Attribute",
+    "identifierAttributeKey": "Identifier Attribute",
+    "identifierPattern": "Identifier Pattern",
+    "identifierWeight": "Identifier Weight",
+    "acceptScore": "Accept Score",
+    "acceptMargin": "Accept Margin",
+    "sampleFps": "Sampled FPS",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "entity_enrollment": {
+    "tab": "Recognition",
+    "loading": "Loading the gallery…",
+    "noProfile": "This entity type has no recognition profile, so its objects cannot be enrolled.",
+    "registered": "Registered identifier",
+    "noIdentifier": "none",
+    "intro": "This {{ detectorClass }}'s photos are taken from its '{{ attribute }}' attribute — add photos from several sides and in different light on the Details tab. Each photo is cropped to the subject, embedded and read for its identifier in the background, whenever the object is saved.",
+    "status": {
+      "NOT_ENROLLED": "Not enrolled",
+      "PROCESSING": "Processing",
+      "READY": "Ready",
+      "FAILED": "Failed"
+    },
+    "photoStatus": {
+      "PENDING": "Processing",
+      "ENROLLED": "Enrolled",
+      "NO_SUBJECT": "Nothing found",
+      "AMBIGUOUS": "Several found",
+      "FAILED": "Failed"
+    },
+    "cancel": "Cancel",
+    "empty": "No photos yet. Add some to the object on its Details tab.",
+    "photoAlt": "Enrollment photo",
+    "observed": "Read:",
+    "mismatch": "Differs from the registered identifier",
+    "noReading": "No identifier read",
+    "synchronize": "Synchronize",
+    "rebuild": "Rebuild gallery",
+    "confirmRebuild": "Really re-enroll all photos"
+  },
+  "recognition_camera": {
+    "noCamera": "No camera is available here. Take or choose photos instead.",
+    "takePhoto": "Take photos",
+    "shoot": "Recognize",
+    "noCandidates": "There is no one to recognize.",
+    "capturing": "Taking the shot…",
+    "recognizing": "Recognizing…",
+    "cropAlt": "What the camera saw",
+    "noSubject": "Nothing recognizable in the shot. Try again, closer.",
+    "automatic": "recognized",
+    "chosen": "chosen",
+    "overrule": "Not this one",
+    "whoIsIt": "Not sure. Who is it?",
+    "read": "Read:",
+    "cancel": "Cancel"
+  }
+}

@@ -8,6 +8,7 @@
   "lookup": "Lookup",
   "enumValue": "Enum",
   "artifact": "Artifact",
+  "attachments": "Attachments",
   "tags": "Tags",
   "components": "Components",
   "embeddedComponents": "Embedded Components",

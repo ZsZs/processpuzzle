@@ -110,11 +110,16 @@ entityDefinitions:
         displayOrder: 5
         valueKind: DATE
         formControlType: DATE
+        dateFormat:
+          dateStyle: short
       - code: dateTimeAttr
         name: Date Time
         displayOrder: 6
         valueKind: DATE_TIME
         formControlType: DATE_TIME
+        dateFormat:
+          dateStyle: medium
+          timeStyle: short
       - code: enumAttr
         name: Status
         displayOrder: 7
@@ -131,7 +136,7 @@ entityDefinitions:
         displayOrder: 8
         valueKind: TEXT
         formControlType: TEXT
-        isMultiValued: true
+        multiplicity: '0..n'
       - code: artifact
         name: Artifact
         displayOrder: 9
@@ -151,14 +156,20 @@ entityDefinitions:
         linkedEntityType: dynamic-embedded-address
         # A single-valued EMBEDDED_COMPONENTS attribute has no frontend today — `readRows` reads a
         # collection, so a lone object would render as an empty list. One address, declared as a list.
-        isMultiValued: true
+        multiplicity: '0..n'
       - code: embeddedDetails
         name: Embedded Details
         displayOrder: 12
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: dynamic-embedded-detail
-        isMultiValued: true
+        multiplicity: '0..n'
+      - code: attachments
+        name: Attachments
+        displayOrder: 13
+        valueKind: REFERENCE
+        formControlType: ARTIFACT
+        multiplicity: '0..n'
 
   # 4. Embedded component definition: order-line
   #
@@ -247,7 +258,7 @@ entityDefinitions:
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: order-line
-        isMultiValued: true
+        multiplicity: '0..n'
 
   # 6. Embedded component definition: special-order-line
   #
@@ -352,7 +363,205 @@ entityDefinitions:
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: special-order-line
-        isMultiValued: true
+        multiplicity: '0..n'
+
+  # 8. Boat — the subject of base-ai's sailboat recognition sample. A flat entity on purpose: what
+  # recognition needs from it is a TEXT attribute holding the identifier (`sailNumber`) and an ARTIFACT
+  # attribute holding reference photos (`photos`), both named by base-ai's `boat` recognition profile.
+  # The photos are edited on the boat's own form; the Enrollment tab base-ai contributes onto these
+  # screens shows what recognition made of them.
+  - code: boat
+    name: Boat
+    description: >-
+      A racing sailboat, identified on the water by its sail number. Subject of the image recognition
+      sample.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: sailNumber
+        name: Sail Number
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: name
+        name: Name
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+      - code: boatClass
+        name: Class
+        displayOrder: 3
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - '49ER'
+          - '470'
+          - 'ILCA'
+          - 'NACRA_17'
+          - 'OTHER'
+      - code: skipper
+        name: Skipper
+        displayOrder: 4
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+      - code: photos
+        name: Photos
+        displayOrder: 5
+        valueKind: REFERENCE
+        formControlType: ARTIFACT
+        multiplicity: '0..n'
+
+  # 9-11. A sail race organisation around the recognition sample — the application side, of which base-ai
+  # knows nothing. A Race has rounds; boats enter it through Registrations (the constraint: only the race's
+  # entries are recognition candidates); every sighting at a checkpoint of a round is a Race Observation,
+  # whether the camera recognized the boat or the race office ticked it by hand. Registrations are not
+  # seeded: seeded objects get generated ids, so a seed cannot point at a seeded boat.
+  - code: race
+    name: Race
+    description: A regatta of one or more rounds, each with a pre-start, a start and a finish.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: venue
+        name: Venue
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+      - code: startDate
+        name: Start Date
+        displayOrder: 3
+        valueKind: DATE
+        formControlType: DATE
+        dateFormat:
+          dateStyle: short
+      - code: rounds
+        name: Rounds
+        displayOrder: 4
+        valueKind: NUMBER
+        formControlType: NUMBER
+        required: true
+        defaultValue: 3
+
+  - code: race-registration
+    name: Registration
+    description: A boat entered in a race. The race's registrations are who may be on the water.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: helm
+        name: Helm
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        isLinkToDetails: true
+      - code: race
+        name: Race
+        displayOrder: 2
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: race
+        required: true
+        indexed: true
+      - code: boat
+        name: Boat
+        displayOrder: 3
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: boat
+        required: true
+      - code: status
+        name: Status
+        displayOrder: 4
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - ENTERED
+          - WITHDRAWN
+        defaultValue: ENTERED
+
+  - code: race-observation
+    name: Race Observation
+    description: A boat seen at a checkpoint of a round — by the camera, or ticked by hand.
+    status: ACTIVE
+    isEmbedded: false
+    componentParents: [ ]
+    attributes:
+      - code: capturedAt
+        name: Captured At
+        displayOrder: 1
+        valueKind: DATE_TIME
+        formControlType: DATE_TIME
+        required: true
+        isLinkToDetails: true
+        dateFormat:
+          dateStyle: short
+          timeStyle: medium
+      - code: race
+        name: Race
+        displayOrder: 2
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: race
+        required: true
+        indexed: true
+      - code: round
+        name: Round
+        displayOrder: 3
+        valueKind: NUMBER
+        formControlType: NUMBER
+        required: true
+        indexed: true
+      - code: checkpoint
+        name: Checkpoint
+        displayOrder: 4
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        required: true
+        indexed: true
+        enumValues:
+          - PRE_START
+          - START
+          - FINISH
+      - code: boat
+        name: Boat
+        displayOrder: 5
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: boat
+        required: true
+      - code: source
+        name: Source
+        displayOrder: 6
+        valueKind: ENUM
+        formControlType: DROPDOWN
+        enumValues:
+          - AUTOMATIC
+          - MANUAL
+      - code: score
+        name: Score
+        displayOrder: 7
+        valueKind: NUMBER
+        formControlType: NUMBER
+      - code: recognitionId
+        name: Recognition
+        displayOrder: 8
+        valueKind: TEXT
+        formControlType: TEXT_BOX
 
 entities:
   # Sample Object 1
@@ -575,3 +784,46 @@ entities:
         - productName: Brass Fitting (custom)
           quantity: 8
           unitPrice: 105
+
+  # Boats for base-ai's recognition sample. CAN 603 is the 49er on the Wikimedia Commons photo the
+  # sample's instructions use, so enrolling that photo shows a matching sail number; the others are there
+  # so that a start list has candidates to tell apart.
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: CAN 603
+      name: Maple Leaf
+      boatClass: 49ER
+      skipper: Jordan Tremblay
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: USA 1007
+      name: Liberty Breeze
+      boatClass: 49ER
+      skipper: Sam Carter
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: GER 1234
+      name: Nordwind
+      boatClass: '470'
+      skipper: Lena Hoffmann
+  - entityDefinitionCode: boat
+    payload:
+      sailNumber: HUN 77
+      name: Balaton
+      boatClass: ILCA
+      skipper: Bence Kovács
+
+  # Races of the recognition sample: two of them, so that entering different boats in each shows the
+  # candidate list following the race.
+  - entityDefinitionCode: race
+    payload:
+      name: Autumn Regatta 2026
+      venue: Lake Balaton
+      startDate: "2026-10-10"
+      rounds: 3
+  - entityDefinitionCode: race
+    payload:
+      name: Club Championship 2026
+      venue: Kiel
+      startDate: "2026-10-17"
+      rounds: 2

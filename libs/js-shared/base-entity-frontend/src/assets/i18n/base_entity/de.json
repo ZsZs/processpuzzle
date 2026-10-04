@@ -7,12 +7,16 @@
     "formControlType": "Steuerelementtyp",
     "displayOrder": "Anzeigereihenfolge",
     "required": "Erforderlich",
-    "isMultiValued": "Mehrwertig",
+    "multiplicity": "Multiplizität",
+    "maxOccurs": "Max. Anzahl",
     "indexed": "Indiziert",
     "isLinkToDetails": "Benennt den Datensatz",
+    "autosizeColumn": "Passt die Listenspalte an",
     "linkedEntityType": "Verknüpfte Entität",
     "defaultValue": "Standardwert",
-    "enumValues": "Aufzählungswerte"
+    "enumValues": "Aufzählungswerte",
+    "dateStyle": "Datumsstil",
+    "timeStyle": "Zeitstil"
   },
   "entity_definition": {
     "_self": "Entitätsdefinition",
@@ -27,7 +31,21 @@
     "updatedAt": "Aktualisiert am"
   },
   "artifact": {
-    "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen."
+    "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen.",
+    "camera_capture": "Foto oder Video aufnehmen"
+  },
+  "camera_capture": {
+    "title": "Kamera",
+    "mode": "Aufnahmemodus",
+    "photo": "Foto",
+    "video": "Video",
+    "take_photo": "Foto aufnehmen",
+    "start_recording": "Aufnahme starten",
+    "stop_recording": "Aufnahme beenden",
+    "retake": "Wiederholen",
+    "use": "Übernehmen",
+    "cancel": "Abbrechen",
+    "unavailable": "Die Kamera konnte nicht gestartet werden. Prüfen Sie, ob der Kamerazugriff für diese Seite erlaubt ist."
   },
   "delete_artifact_confirmation_dialog": {
     "title": "Artefakt löschen?",
@@ -78,6 +96,8 @@
     "apply_button": "Übernehmen"
   },
   "embedded_components": {
-    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert."
+    "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert.",
+    "move_up": "Nach oben",
+    "move_down": "Nach unten"
   }
 }

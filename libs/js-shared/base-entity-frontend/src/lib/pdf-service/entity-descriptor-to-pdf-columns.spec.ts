@@ -45,16 +45,25 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.('maybe', {})).toBe('');
   });
 
-  it('formats DATE values as locale dates', () => {
+  it('formats DATE values in the default style of the given locale', () => {
     const date = new BaseEntityAttrDescriptor('createdAt', FormControlType.DATE, 'Created');
     const value = new Date('2024-01-18T20:02:27.000Z');
 
-    const [column] = entityDescriptorToPdfColumns([date]);
+    const [column] = entityDescriptorToPdfColumns([date], 'de');
 
-    expect(column.formatter?.(value, {})).toBe(value.toLocaleDateString());
-    expect(column.formatter?.('2024-03-04', {})).toBe(new Date('2024-03-04').toLocaleDateString());
+    expect(column.formatter?.(value, {})).toBe(new Intl.DateTimeFormat('de', { dateStyle: 'medium' }).format(value));
+    expect(column.formatter?.('2024-03-04', {})).toBe('04.03.2024');
     expect(column.formatter?.(undefined, {})).toBe('');
     expect(column.formatter?.('not-a-date', {})).toBe('not-a-date');
+  });
+
+  it("formats DATE values in the attribute's dateFormat", () => {
+    const date = new BaseEntityAttrDescriptor('born', FormControlType.DATE, 'Born');
+    date.dateFormat = { dateStyle: 'short' };
+
+    const [column] = entityDescriptorToPdfColumns([date], 'hu');
+
+    expect(column.formatter?.('1960-12-09', {})).toBe('1960. 12. 09.');
   });
 
   it('joins TAGS arrays and coerces non-array values without default object stringification', () => {
@@ -79,6 +88,7 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.({ name: 'report.pdf' }, {})).toBe('report.pdf');
     expect(column.formatter?.({ objectId: 'obj-1' }, {})).toBe('obj-1');
     expect(column.formatter?.(null, {})).toBe('');
+    expect(column.formatter?.([{ name: 'a.pdf' }, { objectId: 'obj-2' }, null], {})).toBe('a.pdf, obj-2');
   });
 
   it('leaves plain text columns without a formatter', () => {

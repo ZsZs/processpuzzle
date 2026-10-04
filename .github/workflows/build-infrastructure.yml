@@ -7,7 +7,7 @@ name: Build-ProcessPuzzle-Infrastructure
 # what proves the Dockerfiles still build; `develop` is the branch that publishes. Pushing a
 # feature branch's bytes to a tag a deployment watches would defeat the point of watching it.
 #
-# The five images are the ProcessPuzzle half of tools/docker/docker-compose-infrastructure.yaml —
+# The six images are the ProcessPuzzle half of tools/docker/docker-compose-infrastructure.yaml —
 # the services that file names but no longer builds, since it is pull-only so that Coolify pulls what
 # this workflow published (their `build:` sections live in docker-compose-build.yaml). pgweb is
 # absent on purpose: it is referenced as a pinned upstream tag, because the Dockerfile it used to
@@ -18,11 +18,13 @@ on:
     branches: [ "feature/**", develop ]
     paths:
       # Deliberately the whole directory rather than the four image folders. It over-triggers a
-      # little — an app Dockerfile or a compose comment rebuilds all five — but `type=gha` caching
+      # little — an app Dockerfile or a compose comment rebuilds all six — but `type=gha` caching
       # makes an unaffected image nearly free, and the alternative is a path list that silently rots
       # every time a Dockerfile gains a COPY.
       - 'tools/docker/**'
       - 'tools/mock-backend/**'
+      # The vision server's image is built from its source, not only from tools/docker/.
+      - 'apps/vision-server/**'
       - '.github/workflows/build-infrastructure.yml'
       - '.github/workflows/deploy-infrastructure.yml'
   pull_request:
@@ -31,6 +33,7 @@ on:
     paths:
       - 'tools/docker/**'
       - 'tools/mock-backend/**'
+      - 'apps/vision-server/**'
       - '.github/workflows/build-infrastructure.yml'
       - '.github/workflows/deploy-infrastructure.yml'
 
@@ -45,7 +48,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The vision server's first build installs torch and downloads its models; later ones reuse the
+    # registry cache.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -60,9 +65,20 @@ jobs:
             dockerfile: tools/docker/minio/Dockerfile
           - name: processpuzzle-json-server
             dockerfile: tools/docker/json-server/Dockerfile
+          # 3.6GB with its models baked in, so it caches in the registry rather than in the 10GB GHA
+          # cache the five small images share — one build would otherwise evict all of theirs.
+          - name: processpuzzle-vision-server
+            dockerfile: tools/docker/vision-server/Dockerfile
+            target: runtime
+            large: true
     steps:
       - name: Checkout source code
         uses: actions/checkout@v5
+
+      # A hosted runner has ~14GB free; torch, the models and the exported layers need most of it.
+      - name: Free disk space
+        if: matrix.large
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -94,11 +110,18 @@ jobs:
           # The repository root: every infrastructure Dockerfile COPYs with a tools/docker/… path.
           context: .
           file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
           push: ${{ github.ref == 'refs/heads/develop' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Caches are WRITTEN on develop only, and read everywhere. A cache written by a feature branch
+          # or a pull request can only ever be restored by that same ref, so every one of them was dead
+          # weight in the repository's 10GB once the branch merged — and pushed develop's own caches out.
+          # Elsewhere `type=inline`, which writes nothing for an image that is not pushed. The large image
+          # caches in the registry instead (see its matrix entry). Ordered so that no branch of
+          # `a && b || c` yields an empty string, which would fall through to c.
+          cache-from: ${{ !matrix.large && 'type=gha' || format('type=registry,ref=ghcr.io/zszs/{0}:buildcache', matrix.name) }}
+          cache-to: ${{ github.ref != 'refs/heads/develop' && 'type=inline' || (!matrix.large && 'type=gha,mode=max' || format('type=registry,ref=ghcr.io/zszs/{0}:buildcache,mode=max', matrix.name)) }}
 
   # `develop` deploys to stage by PROMOTING the digest just built — passing image_tag makes
   # Deploy-Infrastructure re-tag rather than rebuild, so the bytes that reach stage are the bytes

@@ -99,13 +99,15 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
     const dialogResult = await firstValueFrom(this.dialog.open<PdfExportOptionsDialog, unknown, PdfExportDialogResult | undefined>(PdfExportOptionsDialog, { width: '360px', autoFocus: false }).afterClosed());
     if (!dialogResult) return; // user cancelled
 
-    const columns = entityDescriptorToPdfColumns(this.entityDescriptor().attrDescriptors);
+    const locale = this.translocoService.getActiveLang();
+    const columns = entityDescriptorToPdfColumns(this.entityDescriptor().attrDescriptors, locale);
     const entities = this.store.entities() as Record<string, unknown>[];
     const result = await this.pdfExportService.export(entities, columns, {
       ...dialogResult,
       title: this.resolveTitle(),
       subtitle: this.translocoService.translate('base_entity.pdf_export.subtitle', { count: entities.length }),
       filename: this.entityDescriptor().entityName.toLowerCase() + '-export',
+      locale,
     });
     this.notifyExportResult(result);
   }
