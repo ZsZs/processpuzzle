@@ -58,6 +58,7 @@
     "chosen": "elegido",
     "overrule": "No es este",
     "whoIsIt": "No es seguro. ¿Quién es?",
-    "read": "Leído:"
+    "read": "Leído:",
+    "cancel": "Cancelar"
   }
 }

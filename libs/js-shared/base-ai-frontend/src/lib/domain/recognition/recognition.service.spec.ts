@@ -169,6 +169,30 @@ describe('RecognitionService', () => {
     http.expectNone(`${ROOT}/recognitions/r-1`);
   });
 
+  it('stops polling and rejects once abandoned', async () => {
+    vi.useFakeTimers();
+    const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });
+    const controller = new AbortController();
+    const done = service.recognize('boat', [frame], ['o-1'], controller.signal);
+    const rejected = expect(done).rejects.toMatchObject({ name: 'AbortError' });
+    await uploadFrame(0, frame, 'shot.jpg');
+    (await waitFor(() => http.match(`${ROOT}/recognitions`)[0])).flush(recognition('QUEUED'));
+
+    controller.abort();
+    await rejected;
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS * 3);
+    http.expectNone(`${ROOT}/recognitions/r-1`);
+  });
+
+  it('starts nothing when abandoned before the first upload', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(service.recognize('boat', [new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' })], ['o-1'], controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    http.expectNone(`${ROOT}/media-uploads`);
+  });
+
   it('gives up after the maximum number of polls', async () => {
     vi.useFakeTimers();
     const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });

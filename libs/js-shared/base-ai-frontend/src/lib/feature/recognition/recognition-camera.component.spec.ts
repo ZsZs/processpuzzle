@@ -106,7 +106,7 @@ describe('RecognitionCameraComponent', () => {
     const picker = pick(element);
 
     await settle(() => expect(element.querySelector('[data-testid="recognition-hit"]')).not.toBeNull());
-    expect(recognize).toHaveBeenCalledWith('boat', [expect.any(File)], ['o-1', 'o-2', 'o-3']);
+    expect(recognize).toHaveBeenCalledWith('boat', [expect.any(File)], ['o-1', 'o-2', 'o-3'], expect.any(AbortSignal));
     expect(picker.value).toBe('');
     expect(hits).toEqual([{ recognitionId: 'r-1', objectId: 'o-2', score: 0.91, automatic: true, capturedAt: new Date(SHOT_AT).toISOString() }]);
     const hit = element.querySelector('[data-testid="recognition-hit"]')?.textContent;
@@ -289,6 +289,58 @@ describe('RecognitionCameraComponent', () => {
       await settle(() => expect(element.querySelector('[role="alert"]')).not.toBeNull());
       expect(recognize).not.toHaveBeenCalled();
     });
+  });
+
+  it('offers Cancel only while a shot is under way or an answer is shown', async () => {
+    const element = await render();
+    expect(element.querySelector<HTMLButtonElement>('[data-testid="cancel"]')?.disabled).toBe(true);
+  });
+
+  it('abandons a recognition under way: the late answer is ignored and the next shot is possible', async () => {
+    let finish: (answer: Recognition) => void = () => undefined;
+    let signal: AbortSignal | undefined;
+    recognize.mockImplementation((_entity, _frames, _candidates, abort) => {
+      signal = abort;
+      return new Promise<Recognition>((resolve) => (finish = resolve));
+    });
+    const element = await render();
+    pick(element);
+    await settle(() => expect(element.querySelector<HTMLButtonElement>('[data-testid="cancel"]')?.disabled).toBe(false));
+
+    click(element, '[data-testid="cancel"]');
+    expect(signal?.aborted).toBe(true);
+    expect(element.querySelector('mat-progress-bar')).toBeNull();
+    expect(element.querySelector<HTMLButtonElement>('[data-testid="pick-frames"]')?.disabled).toBe(false);
+
+    finish(answer({ outcome: 'MATCHED', objectId: 'o-1', score: 0.9 }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(hits).toEqual([]);
+    expect(element.querySelector('[data-testid="recognition-answer"]')).toBeNull();
+    expect(element.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('shows no error for a shot abandoned while it was failing', async () => {
+    recognize.mockImplementation((_entity, _frames, _candidates, abort) => new Promise<Recognition>((_resolve, reject) => abort?.addEventListener('abort', () => reject(abort.reason))));
+    const element = await render();
+    pick(element);
+    await settle(() => expect(element.querySelector<HTMLButtonElement>('[data-testid="cancel"]')?.disabled).toBe(false));
+    click(element, '[data-testid="cancel"]');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('dismisses an answer without reporting anything', async () => {
+    recognize.mockResolvedValue(answer({ outcome: 'NEEDS_REVIEW', candidates: [{ objectId: 'o-1', score: 0.5 }] }));
+    const element = await render();
+    pick(element);
+    await settle(() => expect(choices(element)).toHaveLength(1));
+
+    click(element, '[data-testid="cancel"]');
+    expect(element.querySelector('[data-testid="recognition-answer"]')).toBeNull();
+    expect(hits).toEqual([]);
+    expect(element.querySelector<HTMLButtonElement>('[data-testid="cancel"]')?.disabled).toBe(true);
   });
 
   it('ignores a cancelled selection and sends at most five frames', async () => {

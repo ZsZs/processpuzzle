@@ -145,7 +145,8 @@ The gallery's own status sums it up: *Not enrolled*, *Processing*, *Ready* (at l
 in front of the camera, a race's entry list say. A shot is three frames a quarter of a second apart. A certain
 match is reported at once (`automatic: true`); an uncertain one offers the top three to choose from
 (`automatic: false`); a certain one can still be overruled, which reports a second hit with the same
-`recognitionId`. Every hit carries `capturedAt`, the time of the shot on the device. Without a camera, the
+`recognitionId`. **Cancel** abandons a shot under way — an answer that still arrives is ignored — or dismisses
+the answer shown. Every hit carries `capturedAt`, the time of the shot on the device. Without a camera, the
 device's photo picker takes its place.
 
 ## REST resources used

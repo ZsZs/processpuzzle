@@ -58,6 +58,7 @@
     "chosen": "chosen",
     "overrule": "Not this one",
     "whoIsIt": "Not sure. Who is it?",
-    "read": "Read:"
+    "read": "Read:",
+    "cancel": "Cancel"
   }
 }
