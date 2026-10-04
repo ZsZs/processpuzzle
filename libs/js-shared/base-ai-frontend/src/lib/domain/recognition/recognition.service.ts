@@ -35,14 +35,8 @@ export class RecognitionService {
    *                           with the other recognitions; abandoning it costs nothing but its CPU seconds.
    */
   async recognize(entityName: string, frames: readonly Blob[], candidateObjectIds: readonly string[], signal?: AbortSignal): Promise<Recognition> {
-    let recognition = await this.start(entityName, frames, candidateObjectIds, signal);
-    for (let polls = 0; recognition.status === 'QUEUED'; polls++) {
-      if (polls >= RECOGNITION_MAX_POLLS) throw new Error('the recognition did not finish in time');
-      await delay(RECOGNITION_POLL_MS, signal);
-      recognition = await lastValueFrom(this.find(recognition.recognitionId));
-      signal?.throwIfAborted();
-    }
-    return recognition;
+    const recognition = await this.start(entityName, frames, candidateObjectIds, signal);
+    return this.poll(recognition, RECOGNITION_MAX_POLLS, signal);
   }
 
   /** Uploads the frames one after another and starts the recognition; it answers QUEUED. */
@@ -70,6 +64,15 @@ export class RecognitionService {
 
   find(recognitionId: string): Observable<Recognition> {
     return this.http.get<Recognition>(`${this.root}/recognitions/${encodeURIComponent(recognitionId)}`).pipe(map(normalize));
+  }
+
+  private async poll(recognition: Recognition, remainingPolls: number, signal?: AbortSignal): Promise<Recognition> {
+    if (recognition.status !== 'QUEUED') return recognition;
+    if (remainingPolls === 0) throw new Error('the recognition did not finish in time');
+    await delay(RECOGNITION_POLL_MS, signal);
+    const next = await lastValueFrom(this.find(recognition.recognitionId));
+    signal?.throwIfAborted();
+    return this.poll(next, remainingPolls - 1, signal);
   }
 
   private async upload(frame: Blob, index: number): Promise<MediaUploadSlot> {

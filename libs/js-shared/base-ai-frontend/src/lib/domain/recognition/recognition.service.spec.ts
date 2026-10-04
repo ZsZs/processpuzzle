@@ -193,6 +193,58 @@ describe('RecognitionService', () => {
     http.expectNone(`${ROOT}/media-uploads`);
   });
 
+  it('rejects an answer received after cancellation without polling again', async () => {
+    vi.useFakeTimers();
+    const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });
+    const controller = new AbortController();
+    const done = service.recognize('boat', [frame], ['o-1'], controller.signal);
+    const rejected = expect(done).rejects.toMatchObject({ name: 'AbortError' });
+    await uploadFrame(0, frame, 'shot.jpg');
+    (await waitFor(() => http.match(`${ROOT}/recognitions`)[0])).flush(recognition('QUEUED'));
+
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+    const poll = http.expectOne(`${ROOT}/recognitions/r-1`);
+    controller.abort();
+    poll.flush(recognition('DONE', { outcome: 'NO_SUBJECT' }));
+
+    await rejected;
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+    http.expectNone(`${ROOT}/recognitions/r-1`);
+  });
+
+  it('propagates a polling failure without polling again', async () => {
+    vi.useFakeTimers();
+    const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });
+    const done = service.recognize('boat', [frame], ['o-1']);
+    const rejected = expect(done).rejects.toMatchObject({ status: 503 });
+    await uploadFrame(0, frame, 'shot.jpg');
+    (await waitFor(() => http.match(`${ROOT}/recognitions`)[0])).flush(recognition('QUEUED'));
+
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+    http.expectOne(`${ROOT}/recognitions/r-1`).flush('unavailable', { status: 503, statusText: 'Service Unavailable' });
+
+    await rejected;
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+    http.expectNone(`${ROOT}/recognitions/r-1`);
+  });
+
+  it('accepts a recognition completed on the last allowed poll', async () => {
+    vi.useFakeTimers();
+    const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });
+    const done = service.recognize('boat', [frame], ['o-1']);
+    await uploadFrame(0, frame, 'shot.jpg');
+    (await waitFor(() => http.match(`${ROOT}/recognitions`)[0])).flush(recognition('QUEUED'));
+
+    for (let poll = 0; poll < RECOGNITION_MAX_POLLS; poll++) {
+      await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+      http.expectOne(`${ROOT}/recognitions/r-1`).flush(recognition(poll === RECOGNITION_MAX_POLLS - 1 ? 'DONE' : 'QUEUED'));
+    }
+
+    expect(await done).toMatchObject({ status: 'DONE' });
+    await vi.advanceTimersByTimeAsync(RECOGNITION_POLL_MS);
+    http.expectNone(`${ROOT}/recognitions/r-1`);
+  });
+
   it('gives up after the maximum number of polls', async () => {
     vi.useFakeTimers();
     const frame = new File(['jpeg'], 'shot.jpg', { type: 'image/jpeg' });

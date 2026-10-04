@@ -25,31 +25,50 @@ class EntityObjectEventPayloadTest {
     }
 
     @Test
-    void theCreatedEventKeepsNullValuesAndIsUnmodifiable() {
-        var event = new EntityObjectCreatedEvent("org", "race-registration", UUID.randomUUID(), payloadWithAnEmptyAttribute(), 0, Instant.now());
+    void theCreatedEventKeepsNullValuesAndCopiesDefensivelyAndIsUnmodifiable() {
+        Map<String, Object> source = payloadWithAnEmptyAttribute();
+        var event = new EntityObjectCreatedEvent("org", "race-registration", UUID.randomUUID(), source, 0, Instant.now());
+        source.put("race", "r-2");
+        Map<String, Object> payload = event.payload();
 
-        assertThat(event.payload()).containsEntry("race", "r-1").containsEntry("helm", null);
-        assertThatThrownBy(() -> event.payload().put("x", 1)).isInstanceOf(UnsupportedOperationException.class);
+        assertThat(payload).containsEntry("race", "r-1").containsEntry("helm", null);
+        assertThatThrownBy(() -> payload.put("x", 1)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void theUpdatedEventKeepsNullValues() {
-        var event = new EntityObjectUpdatedEvent("org", "race-registration", UUID.randomUUID(), payloadWithAnEmptyAttribute(), 1, Instant.now());
+    void theUpdatedEventKeepsNullValuesAndCopiesDefensivelyAndIsUnmodifiable() {
+        Map<String, Object> source = payloadWithAnEmptyAttribute();
+        var event = new EntityObjectUpdatedEvent("org", "race-registration", UUID.randomUUID(), source, 1, Instant.now());
+        source.put("race", "r-2");
+        Map<String, Object> payload = event.payload();
 
-        assertThat(event.payload()).containsEntry("helm", null);
+        assertThat(payload).containsEntry("race", "r-1").containsEntry("helm", null);
+        assertThatThrownBy(() -> payload.put("x", 1)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void theViewKeepsNullValuesAndCopiesDefensively() {
+    void theViewKeepsNullValuesAndCopiesDefensivelyAndIsUnmodifiable() {
         Map<String, Object> source = payloadWithAnEmptyAttribute();
         var view = new EntityObjectView(UUID.randomUUID(), 0, source);
         source.put("race", "r-2");
+        Map<String, Object> payload = view.payload();
 
-        assertThat(view.payload()).containsEntry("race", "r-1").containsEntry("helm", null);
+        assertThat(payload).containsEntry("race", "r-1").containsEntry("helm", null);
+        assertThatThrownBy(() -> payload.put("x", 1)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void aMissingPayloadIsEmpty() {
+    void aMissingCreatedEventPayloadIsEmpty() {
         assertThat(new EntityObjectCreatedEvent("org", "x", UUID.randomUUID(), null, 0, Instant.now()).payload()).isEmpty();
+    }
+
+    @Test
+    void aMissingUpdatedEventPayloadIsEmpty() {
+        assertThat(new EntityObjectUpdatedEvent("org", "x", UUID.randomUUID(), null, 1, Instant.now()).payload()).isEmpty();
+    }
+
+    @Test
+    void aMissingViewPayloadIsEmpty() {
+        assertThat(new EntityObjectView(UUID.randomUUID(), 0, null).payload()).isEmpty();
     }
 }
