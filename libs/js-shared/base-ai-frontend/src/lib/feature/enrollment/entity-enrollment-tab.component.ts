@@ -1,12 +1,11 @@
 import { Component, computed, DestroyRef, effect, inject, input, signal, Signal } from '@angular/core';
 import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { MatButton } from '@angular/material/button';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { firstValueFrom } from 'rxjs';
 import { ENTITY_ENROLLMENT_I18N_SCOPE } from '../../base-ai.i18n';
-import { Enrollment, ENROLLMENT_PHOTO_TYPES, EnrollmentPhoto } from '../../domain/enrollment/enrollment';
+import { Enrollment } from '../../domain/enrollment/enrollment';
 import { EnrollmentService } from '../../domain/enrollment/enrollment.service';
 import { RecognitionProfile } from '../../domain/profile/recognition-profile';
 import { ProfiledEntityRegistry } from '../../domain/profile/profiled-entity.registry';
@@ -17,7 +16,7 @@ export const ENROLLMENT_POLL_MS = 3000;
 /**
  * Re-reads before polling gives up — ten minutes. Without a vision server (a CI stack, a stopped container)
  * a photo stays PENDING indefinitely, and the backend's own poller resumes it when the server is back; the
- * tab need not keep asking. Reopening the tab, or adding a photo, starts again.
+ * tab need not keep asking. Reopening the tab, or synchronizing, starts again.
  */
 export const ENROLLMENT_MAX_POLLS = 200;
 
@@ -26,9 +25,11 @@ export const ENROLLMENT_MAX_POLLS = 200;
  * entity's Details form, and contributed onto it by {@link EntityEnrollmentTabContributor} for every entity
  * type that has a recognition profile.
  *
- * It is the whole enrollment workflow of one subject: add photos, watch them being processed, see what came
- * out of each — the crop the detector cut, the identifier OCR read on it, and whether that reading agrees
- * with the identifier registered on the subject — and remove the photos that are no use.
+ * It shows what recognition made of the subject's photos: watch them being processed, and see what came out
+ * of each — the crop the detector cut, the identifier OCR read on it, and whether that reading agrees with
+ * the identifier registered on the subject. The photos themselves are the subject's, in the attribute the
+ * profile's `galleryAttributeKey` names, and are added or removed on its Details form; the gallery follows
+ * them on every save. Synchronize asks for that now; Rebuild discards the gallery and enrolls them afresh.
  *
  * While any photo is PENDING the gallery is re-read every {@link ENROLLMENT_POLL_MS}; processing happens on
  * the vision server and the backend learns of it by callback, so polling the backend is all this needs.
@@ -36,7 +37,7 @@ export const ENROLLMENT_MAX_POLLS = 200;
 @Component({
   selector: 'pp-entity-enrollment-tab',
   standalone: true,
-  imports: [MatButton, MatProgressBar, TranslocoPipe],
+  imports: [MatButton, TranslocoPipe],
   template: `
     <div class="pp-enrollment">
       @if (isLoading()) {
@@ -50,28 +51,22 @@ export const ENROLLMENT_MAX_POLLS = 200;
             <span class="pp-enrollment__identifier" data-testid="registered-identifier">{{ enrollment()?.identifierText || (scope + '.noIdentifier' | transloco) }}</span>
             <span class="pp-enrollment__chip" [attr.data-status]="status()" data-testid="enrollment-status">{{ scope + '.status.' + status() | transloco }}</span>
           </div>
-          <p class="pp-enrollment__note">{{ scope + '.intro' | transloco: { detectorClass: profile()?.detectorClass } }}</p>
+          <p class="pp-enrollment__note">
+            {{ scope + '.intro' | transloco: { detectorClass: profile()?.detectorClass, attribute: profile()?.galleryAttributeKey } }}
+          </p>
         </header>
 
         <div class="pp-enrollment__actions">
-          <input #picker type="file" hidden multiple [accept]="acceptedTypes" (change)="onFilesPicked(picker)" data-testid="photo-picker" />
-          <button mat-flat-button type="button" [disabled]="isUploading()" (click)="picker.click()" data-testid="add-photos">{{ scope + '.addPhotos' | transloco }}</button>
+          <button mat-flat-button type="button" [disabled]="isWorking()" (click)="synchronize()" data-testid="synchronize">{{ scope + '.synchronize' | transloco }}</button>
           @if (photos().length > 0) {
-            @if (confirmingDeleteAll()) {
-              <button mat-flat-button type="button" class="pp-enrollment__danger" (click)="deleteAll()" data-testid="confirm-delete-all">{{ scope + '.confirmDeleteAll' | transloco }}</button>
-              <button mat-stroked-button type="button" (click)="confirmingDeleteAll.set(false)">{{ scope + '.cancel' | transloco }}</button>
+            @if (confirmingRebuild()) {
+              <button mat-flat-button type="button" class="pp-enrollment__danger" (click)="rebuild()" data-testid="confirm-rebuild">{{ scope + '.confirmRebuild' | transloco }}</button>
+              <button mat-stroked-button type="button" (click)="confirmingRebuild.set(false)">{{ scope + '.cancel' | transloco }}</button>
             } @else {
-              <button mat-stroked-button type="button" [disabled]="isUploading()" (click)="confirmingDeleteAll.set(true)" data-testid="delete-all">{{ scope + '.deleteAll' | transloco }}</button>
+              <button mat-stroked-button type="button" [disabled]="isWorking()" (click)="confirmingRebuild.set(true)" data-testid="rebuild">{{ scope + '.rebuild' | transloco }}</button>
             }
           }
         </div>
-
-        @if (isUploading()) {
-          <div class="pp-enrollment__upload">
-            <span>{{ scope + '.uploading' | transloco: { done: uploaded(), total: uploadTotal() } }}</span>
-            <mat-progress-bar mode="determinate" [value]="uploadTotal() ? (uploaded() / uploadTotal()) * 100 : 0" />
-          </div>
-        }
         @if (error(); as message) {
           <p class="pp-enrollment__error" role="alert">{{ message }}</p>
         }
@@ -98,7 +93,6 @@ export const ENROLLMENT_MAX_POLLS = 200;
                   @if (photo.failureReason) {
                     <span class="pp-enrollment__note">{{ photo.failureReason }}</span>
                   }
-                  <button mat-stroked-button type="button" [disabled]="photo.status === 'PENDING'" (click)="deletePhoto(photo)">{{ scope + '.deletePhoto' | transloco }}</button>
                 </div>
               </li>
             }
@@ -157,12 +151,6 @@ export const ENROLLMENT_MAX_POLLS = 200;
       .pp-enrollment__danger {
         --mat-button-filled-container-color: #d9534f;
       }
-      .pp-enrollment__upload {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 12px;
-      }
       .pp-enrollment__grid {
         list-style: none;
         margin: 0;
@@ -213,7 +201,6 @@ export class EntityEnrollmentTabComponent {
   readonly entityId = input.required<string>();
 
   protected readonly scope = ENTITY_ENROLLMENT_I18N_SCOPE;
-  protected readonly acceptedTypes = ENROLLMENT_PHOTO_TYPES.join(',');
 
   /** The subject's descriptor, handed down by `BaseEntityTabsComponent`'s outlet — see base-state's tab. */
   private readonly outletData = inject(ROUTER_OUTLET_DATA, { optional: true }) as Signal<BaseEntityDescriptor | undefined> | null;
@@ -223,8 +210,7 @@ export class EntityEnrollmentTabComponent {
   private readonly profileSignal = signal<RecognitionProfile | undefined>(undefined);
   private readonly enrollmentSignal = signal<Enrollment | undefined>(undefined);
   private readonly loadingSignal = signal(true);
-  private readonly uploadedSignal = signal(0);
-  private readonly uploadTotalSignal = signal(0);
+  private readonly workingSignal = signal(false);
   private readonly errorSignal = signal<string | undefined>(undefined);
   private pollTimer?: ReturnType<typeof setTimeout>;
   private polls = 0;
@@ -232,13 +218,11 @@ export class EntityEnrollmentTabComponent {
   protected readonly isLoading = this.loadingSignal.asReadonly();
   protected readonly profile = this.profileSignal.asReadonly();
   protected readonly enrollment = this.enrollmentSignal.asReadonly();
-  protected readonly uploaded = this.uploadedSignal.asReadonly();
-  protected readonly uploadTotal = this.uploadTotalSignal.asReadonly();
   protected readonly error = this.errorSignal.asReadonly();
-  protected readonly isUploading = computed(() => this.uploadTotalSignal() > 0);
+  protected readonly isWorking = this.workingSignal.asReadonly();
   protected readonly photos = computed(() => this.enrollmentSignal()?.photos ?? []);
   protected readonly status = computed(() => this.enrollmentSignal()?.status ?? 'NOT_ENROLLED');
-  protected readonly confirmingDeleteAll = signal(false);
+  protected readonly confirmingRebuild = signal(false);
 
   constructor() {
     // An effect, as on the State Machine tab: the router reuses this component when only `:entityId`
@@ -251,39 +235,34 @@ export class EntityEnrollmentTabComponent {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.pollTimer));
   }
 
-  protected async onFilesPicked(picker: HTMLInputElement): Promise<void> {
-    const files = Array.from(picker.files ?? []);
-    picker.value = '';
-    const profile = this.profileSignal();
-    if (!profile || files.length === 0) return;
+  /** Enrolls the photos new on the subject and drops the gone ones — normally already done on its save. */
+  protected async synchronize(): Promise<void> {
+    await this.work((profile) => firstValueFrom(this.service.synchronize(profile.entityName, this.entityId())));
+  }
 
+  /** Discards the gallery and enrolls the subject's photos afresh, after a change of detector, say. */
+  protected async rebuild(): Promise<void> {
+    this.confirmingRebuild.set(false);
+    await this.work(async (profile) => {
+      await firstValueFrom(this.service.deleteAll(profile.entityName, this.entityId()));
+      return firstValueFrom(this.service.synchronize(profile.entityName, this.entityId()));
+    });
+  }
+
+  private async work(action: (profile: RecognitionProfile) => Promise<Enrollment>): Promise<void> {
+    const profile = this.profileSignal();
+    if (!profile) return;
     this.errorSignal.set(undefined);
-    this.uploadedSignal.set(0);
-    this.uploadTotalSignal.set(files.length);
+    this.workingSignal.set(true);
     try {
-      const enrollment = await this.service.addPhotos(profile.entityName, this.entityId(), files, (done) => this.uploadedSignal.set(done));
+      const enrollment = await action(profile);
       this.polls = 0;
       this.show(enrollment);
     } catch (error) {
       this.errorSignal.set(messageOf(error));
     } finally {
-      this.uploadTotalSignal.set(0);
+      this.workingSignal.set(false);
     }
-  }
-
-  protected async deletePhoto(photo: EnrollmentPhoto): Promise<void> {
-    const profile = this.profileSignal();
-    if (!profile) return;
-    await firstValueFrom(this.service.deletePhoto(profile.entityName, this.entityId(), photo.photoId)).catch((error) => this.errorSignal.set(messageOf(error)));
-    await this.refresh();
-  }
-
-  protected async deleteAll(): Promise<void> {
-    this.confirmingDeleteAll.set(false);
-    const profile = this.profileSignal();
-    if (!profile) return;
-    await firstValueFrom(this.service.deleteAll(profile.entityName, this.entityId())).catch((error) => this.errorSignal.set(messageOf(error)));
-    await this.refresh();
   }
 
   private async load(entityName: string | undefined, objectId: string | undefined): Promise<void> {

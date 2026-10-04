@@ -9,11 +9,15 @@ import { entityScreenRoute, EntityScreenResolver } from '@processpuzzle/base-ent
  * screens are resolved at run-time.
  *
  * What makes it a recognition sample is not anything on this route: it is the seeded `boat` recognition
- * profile. `EntityScreenResolver` asks the registered tab contributors while resolving these screens, and
- * base-ai's contributor answers with the Enrollment tab because that profile exists.
+ * profile, which names the boat's `photos` attribute as the source of its reference photos.
+ * `EntityScreenResolver` asks the registered tab contributors while resolving these screens, and base-ai's
+ * contributor answers with the Recognition tab because that profile exists.
  */
 export const BOAT_NAME = 'Boat';
 export const BOAT_PATH = 'boat';
+
+/** The checkpoint screen of the race sample, hosting the camera widget. */
+export const RECOGNIZE_PATH = 'recognize';
 
 export async function boatScreenRoutes(): Promise<Routes> {
   const screens = await inject(EntityScreenResolver).resolve(BOAT_NAME);

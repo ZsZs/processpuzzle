@@ -10,17 +10,25 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.ai.AiProperties;
 import com.processpuzzle.ai.domain.EnrollmentPhotoStatus;
 import com.processpuzzle.ai.usecase.port.VisionServer;
+import com.processpuzzle.ai.usecase.port.VisionJobRefusedException;
 import com.processpuzzle.ai.usecase.port.VisionServerUnavailableException;
 import com.processpuzzle.ai.vision.api.VisionApi;
+import com.processpuzzle.ai.vision.model.CandidateScore;
 import com.processpuzzle.ai.vision.model.Crop;
 import com.processpuzzle.ai.vision.model.EnrollmentJobRequest;
 import com.processpuzzle.ai.vision.model.EnrollmentJobResult;
 import com.processpuzzle.ai.vision.model.EnrollmentPhotoResult;
+import com.processpuzzle.ai.vision.model.IdentifierReading;
+import com.processpuzzle.ai.vision.model.RecognitionJobRequest;
+import com.processpuzzle.ai.vision.model.RecognitionJobResult;
+import com.processpuzzle.ai.vision.model.TrackResult;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -120,5 +128,131 @@ class HttpVisionServerTest {
         assertThat(photos).extracting(VisionServer.PhotoOutcome::status)
                 .containsExactly(EnrollmentPhotoStatus.ENROLLED, EnrollmentPhotoStatus.NO_SUBJECT);
         assertThat(photos.getFirst().cropJpeg()).containsExactly(9);
+    }
+
+    @Test
+    void aRecognitionCarriesFramesCandidatesGalleriesAndMatchingSettings() {
+        when(api.submitRecognitionJob(any())).thenReturn(ResponseEntity.accepted().build());
+        UUID jobId = UUID.randomUUID();
+
+        server.submitRecognition(new VisionServer.RecognitionRequest(jobId, "my-org", "t", "boat", true, "^[A-Z]+$",
+                0.6, 0.75, 0.1, List.of(new VisionServer.Media("f1", "http://minio:9000/f1")),
+                List.of(new VisionServer.Candidate("c1", "GER 1", List.of(new VisionServer.GalleryEmbedding("dino", new byte[] {1, 2}))),
+                        new VisionServer.Candidate("c2", null, List.of()))));
+
+        ArgumentCaptor<RecognitionJobRequest> body = ArgumentCaptor.forClass(RecognitionJobRequest.class);
+        verify(api).submitRecognitionJob(body.capture());
+        RecognitionJobRequest sent = body.getValue();
+        assertThat(sent.getJobId()).isEqualTo(jobId);
+        assertThat(sent.getCallbackUrl()).hasToString("http://testbed-backend:8080/organizations/my-org/vision-notifications");
+        assertThat(sent.getCallbackToken()).isEqualTo("t");
+        assertThat(sent.getRequester().getStack()).isEqualTo("processpuzzle-testbed");
+        assertThat(sent.getRequester().getOrgKey()).isEqualTo("my-org");
+        assertThat(sent.getDetection().getDetectorClass()).isEqualTo("boat");
+        assertThat(sent.getOcr().getIdentifierPattern()).isEqualTo("^[A-Z]+$");
+        assertThat(sent.getMatching().getIdentifierWeight()).isEqualTo(0.6);
+        assertThat(sent.getMatching().getAcceptScore()).isEqualTo(0.75);
+        assertThat(sent.getMatching().getAcceptMargin()).isEqualTo(0.1);
+        assertThat(sent.getFrames()).singleElement().satisfies(frame -> {
+            assertThat(frame.getMediaId()).isEqualTo("f1");
+            assertThat(frame.getUrl()).hasToString("http://minio:9000/f1");
+        });
+        assertThat(sent.getCandidates()).hasSize(2);
+        assertThat(sent.getCandidates().getFirst().getCandidateId()).isEqualTo("c1");
+        assertThat(sent.getCandidates().getFirst().getIdentifierText()).isEqualTo("GER 1");
+        assertThat(sent.getCandidates().getFirst().getGallery()).singleElement().satisfies(embedding -> {
+            assertThat(embedding.getModel()).isEqualTo("dino");
+            assertThat(embedding.getVector()).containsExactly(1, 2);
+        });
+        assertThat(sent.getCandidates().getLast().getIdentifierText()).isNull();
+        assertThat(sent.getCandidates().getLast().getGallery()).isEmpty();
+    }
+
+    @Test
+    void aRecognitionWithoutIdentifierTurnsOcrOff() {
+        when(api.submitRecognitionJob(any())).thenReturn(ResponseEntity.accepted().build());
+
+        server.submitRecognition(new VisionServer.RecognitionRequest(UUID.randomUUID(), "my-org", "t", "boat", false, null,
+                0.6, 0.75, 0.1, List.of(new VisionServer.Media("f1", "http://minio:9000/f1")), List.of()));
+
+        ArgumentCaptor<RecognitionJobRequest> body = ArgumentCaptor.forClass(RecognitionJobRequest.class);
+        verify(api).submitRecognitionJob(body.capture());
+        assertThat(body.getValue().getOcr()).isNull();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = HttpStatus.class, names = {"BAD_REQUEST", "CONFLICT"})
+    void aRejectedSubmissionIsARefusalNotAnOutage(HttpStatus status) {
+        when(api.submitRecognitionJob(any())).thenThrow(
+                HttpClientErrorException.create(status, "no", null, "too many frames".getBytes(StandardCharsets.UTF_8), null));
+        var request = new VisionServer.RecognitionRequest(UUID.randomUUID(), "my-org", "t", "boat", false, null,
+                0.6, 0.75, 0.1, List.of(), List.of());
+
+        assertThatThrownBy(() -> server.submitRecognition(request))
+                .isInstanceOf(VisionJobRefusedException.class)
+                .hasMessageContaining("too many frames");
+    }
+
+    @Test
+    void anotherClientErrorIsUnavailable() {
+        when(api.submitEnrollmentJob(any())).thenThrow(HttpClientErrorException.create(HttpStatus.UNAUTHORIZED, "no", null, null, null));
+        var request = new VisionServer.EnrollmentRequest(UUID.randomUUID(), "my-org", "t", "boat", false, null, List.of());
+
+        assertThatThrownBy(() -> server.submitEnrollment(request)).isInstanceOf(VisionServerUnavailableException.class);
+    }
+
+    @Test
+    void anAutoMatchedTrackIsACertainSighting() {
+        UUID jobId = UUID.randomUUID();
+        RecognitionJobResult result = new RecognitionJobResult().jobId(jobId).tracks(List.of(
+                new TrackResult().trackId(1).status(TrackResult.StatusEnum.AUTO_MATCHED).candidateId("c1").score(0.9)
+                        .identifier(new IdentifierReading("GER 1", 0.8))
+                        .bestCrop(new Crop().contentType("image/jpeg").data(new byte[] {5}).width(1).height(1))
+                        .candidates(List.of(new CandidateScore().candidateId("c1").score(0.9).identifierScore(1.0).embeddingScore(0.7),
+                                new CandidateScore().candidateId("c2").score(null))),
+                new TrackResult().trackId(2).status(TrackResult.StatusEnum.NEEDS_REVIEW)));
+        when(api.getRecognitionJobResult(jobId)).thenReturn(ResponseEntity.ok(result));
+
+        VisionServer.SubjectSighting sighting = server.recognitionResult(jobId).subject().orElseThrow();
+
+        assertThat(sighting).isEqualTo(new VisionServer.SubjectSighting("c1", 0.9, "GER 1", 0.8, new byte[] {5}, List.of(
+                new VisionServer.CandidateScore("c1", 0.9, 1.0, 0.7),
+                new VisionServer.CandidateScore("c2", 0, null, null))));
+    }
+
+    @Test
+    void aTrackNeedingReviewNamesNoCandidate() {
+        UUID jobId = UUID.randomUUID();
+        when(api.getRecognitionJobResult(jobId)).thenReturn(ResponseEntity.ok(new RecognitionJobResult().jobId(jobId).tracks(List.of(
+                new TrackResult().trackId(1).status(TrackResult.StatusEnum.NEEDS_REVIEW).candidateId("c1").score(0.5)))));
+
+        VisionServer.SubjectSighting sighting = server.recognitionResult(jobId).subject().orElseThrow();
+
+        assertThat(sighting.candidateId()).isNull();
+        assertThat(sighting.score()).isEqualTo(0.5);
+        assertThat(sighting.identifierText()).isNull();
+        assertThat(sighting.cropJpeg()).isNull();
+        assertThat(sighting.ranking()).isEmpty();
+    }
+
+    @Test
+    void noTrackMeansNoSubject() {
+        UUID jobId = UUID.randomUUID();
+        when(api.getRecognitionJobResult(jobId)).thenReturn(ResponseEntity.ok(new RecognitionJobResult().jobId(jobId).tracks(List.of())));
+
+        assertThat(server.recognitionResult(jobId).subject()).isEmpty();
+    }
+
+    @Test
+    void aMissingOrEmptyRecognitionResultIsUnavailable() {
+        UUID gone = UUID.randomUUID();
+        when(api.getRecognitionJobResult(gone)).thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "nf", null, null, null));
+        assertThatThrownBy(() -> server.recognitionResult(gone))
+                .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("is gone");
+
+        UUID empty = UUID.randomUUID();
+        when(api.getRecognitionJobResult(empty)).thenReturn(ResponseEntity.ok(new RecognitionJobResult().jobId(empty).tracks(null)));
+        assertThatThrownBy(() -> server.recognitionResult(empty))
+                .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("no result");
     }
 }

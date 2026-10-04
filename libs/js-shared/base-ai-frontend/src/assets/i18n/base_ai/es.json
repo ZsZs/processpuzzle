@@ -5,6 +5,7 @@
     "name": "Nombre",
     "description": "Descripción",
     "detectorClass": "Clase del detector",
+    "galleryAttributeKey": "Atributo de fotos",
     "identifierAttributeKey": "Atributo identificador",
     "identifierPattern": "Patrón del identificador",
     "identifierWeight": "Peso del identificador",
@@ -15,12 +16,12 @@
     "updatedAt": "Actualizado"
   },
   "entity_enrollment": {
-    "tab": "Registro",
+    "tab": "Reconocimiento",
     "loading": "Cargando la galería…",
     "noProfile": "Este tipo de entidad no tiene perfil de reconocimiento, por lo que sus objetos no pueden registrarse.",
     "registered": "Identificador registrado",
     "noIdentifier": "ninguno",
-    "intro": "Añada fotos de este objeto ({{ detectorClass }}) desde varios lados y con distinta luz. Cada foto se recorta al objeto, se codifica y se lee su identificador; el procesamiento se realiza en segundo plano.",
+    "intro": "Las fotos de este objeto ({{ detectorClass }}) se toman de su atributo '{{ attribute }}': añada en la pestaña Detalles fotos desde varios lados y con distinta luz. Cada vez que se guarda el objeto, cada foto se recorta al sujeto, se incrusta y se lee su identificador en segundo plano.",
     "status": {
       "NOT_ENROLLED": "Sin registrar",
       "PROCESSING": "Procesando",
@@ -34,16 +35,29 @@
       "AMBIGUOUS": "Varios encontrados",
       "FAILED": "Fallida"
     },
-    "addPhotos": "Añadir fotos",
-    "deleteAll": "Eliminar galería",
-    "confirmDeleteAll": "Eliminar de verdad todas las fotos",
     "cancel": "Cancelar",
-    "uploading": "Subiendo {{ done }} de {{ total }}…",
-    "empty": "Todavía no hay fotos.",
+    "empty": "Aún no hay fotos. Añádalas en la pestaña Detalles.",
     "photoAlt": "Foto de registro",
     "observed": "Leído:",
     "mismatch": "Difiere del identificador registrado",
     "noReading": "No se leyó ningún identificador",
-    "deletePhoto": "Quitar"
+    "synchronize": "Sincronizar",
+    "rebuild": "Reconstruir galería",
+    "confirmRebuild": "Volver a registrar todas las fotos"
+  },
+  "recognition_camera": {
+    "noCamera": "Aquí no hay cámara disponible. Tome o elija fotos en su lugar.",
+    "takePhoto": "Tomar fotos",
+    "shoot": "Reconocer",
+    "noCandidates": "No hay nadie a quien reconocer.",
+    "capturing": "Tomando la foto…",
+    "recognizing": "Reconociendo…",
+    "cropAlt": "Lo que vio la cámara",
+    "noSubject": "Nada reconocible en la toma. Inténtelo de nuevo, más cerca.",
+    "automatic": "reconocido",
+    "chosen": "elegido",
+    "overrule": "No es este",
+    "whoIsIt": "No es seguro. ¿Quién es?",
+    "read": "Leído:"
   }
 }

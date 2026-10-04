@@ -19,6 +19,7 @@ public record EnrollmentView(
 
     public record Photo(
             UUID photoId,
+            String photoRef,
             EnrollmentPhotoStatus status,
             String photoUrl,
             String cropUrl,

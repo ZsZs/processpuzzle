@@ -34,6 +34,12 @@ class AiConfigurationTest {
                 .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("No vision server is configured");
         assertThatThrownBy(() -> server.enrollmentResult(jobId))
                 .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("No vision server is configured");
+        var recognition = new VisionServer.RecognitionRequest(jobId, "my-org", "token", "boat", false, null, 0.6, 0.75, 0.1,
+                List.of(), List.of());
+        assertThatThrownBy(() -> server.submitRecognition(recognition))
+                .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("No vision server is configured");
+        assertThatThrownBy(() -> server.recognitionResult(jobId))
+                .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("No vision server is configured");
         assertThatThrownBy(() -> server.discard(jobId))
                 .isInstanceOf(VisionServerUnavailableException.class).hasMessageContaining("No vision server is configured");
     }

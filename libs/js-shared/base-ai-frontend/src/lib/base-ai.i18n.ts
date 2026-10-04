@@ -31,6 +31,9 @@ export const ENTITY_ENROLLMENT_I18N_SCOPE = `${BASE_AI_TRANSLOCO_SCOPE}.entity_e
 /** Label of the Enrollment tab, resolved with `{ entity }` like every other tab label. */
 export const ENTITY_ENROLLMENT_I18N_KEY = `${ENTITY_ENROLLMENT_I18N_SCOPE}.tab`;
 
+/** The keys of the recognition camera widget. */
+export const RECOGNITION_CAMERA_I18N_SCOPE = `${BASE_AI_TRANSLOCO_SCOPE}.recognition_camera`;
+
 /**
  * Where this library's bundles come from when the application ships without its assets: base-ai-backend's
  * own translations resource, `/organizations/{orgKey}/ai/translations/...`.

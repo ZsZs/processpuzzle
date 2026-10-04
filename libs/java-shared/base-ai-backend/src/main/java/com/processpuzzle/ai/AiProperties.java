@@ -14,6 +14,7 @@ public class AiProperties {
     private Media media = new Media();
     private VisionServer visionServer = new VisionServer();
     private Poller poller = new Poller();
+    private Recognition recognition = new Recognition();
 
     @Getter
     @Setter
@@ -24,14 +25,23 @@ public class AiProperties {
         private Duration readUrlExpiry = Duration.ofHours(1);
         /** Validity of the signed URLs handed to the vision server: queue wait plus processing. */
         private Duration visionUrlExpiry = Duration.ofHours(6);
-        private long maxPhotoBytes = 40L * 1024 * 1024;
-        private long maxVideoBytes = 4L * 1024 * 1024 * 1024;
+        /** Largest camera frame accepted for upload. */
+        private long maxFrameBytes = 20L * 1024 * 1024;
+    }
+
+    @Getter
+    @Setter
+    public static class Recognition {
+        /** How long a recognition, its frames and its crop are kept for the caller to read. */
+        private Duration retention = Duration.ofDays(1);
+        private int maxFrames = 5;
+        private int maxCandidates = 1000;
     }
 
     @Getter
     @Setter
     public static class VisionServer {
-        /** e.g. {@code http://vision-server:8000/v1}. Unset means no vision server: enrollment stays PENDING. */
+        /** e.g. {@code http://vision-server:8000/v1}. Unset means no vision server: enrollments and recognitions stay pending. */
         private String baseUrl;
         private String serviceToken;
         /**

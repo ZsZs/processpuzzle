@@ -3,16 +3,19 @@ package com.processpuzzle.ai.adapter.inbound;
 import com.processpuzzle.ai.api.AiRecognitionApi;
 import com.processpuzzle.ai.domain.MediaPurpose;
 import com.processpuzzle.ai.model.Enrollment;
-import com.processpuzzle.ai.model.EnrollmentPhotosInput;
 import com.processpuzzle.ai.model.MediaUpload;
 import com.processpuzzle.ai.model.MediaUploadRequest;
 import com.processpuzzle.ai.model.PageOfRecognitionProfile;
+import com.processpuzzle.ai.model.Recognition;
+import com.processpuzzle.ai.model.RecognitionInput;
 import com.processpuzzle.ai.model.RecognitionProfile;
 import com.processpuzzle.ai.model.RecognitionProfileInput;
 import com.processpuzzle.ai.usecase.Enrollments;
 import com.processpuzzle.ai.usecase.MediaUploads;
 import com.processpuzzle.ai.usecase.RecognitionProfiles;
+import com.processpuzzle.ai.usecase.Recognitions;
 import com.processpuzzle.core.logging.LogClass;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,12 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST adapter for the profile, media and enrollment use cases. Thin by intent, like base-widget's
- * endpoint: it converts, delegates and maps, and refusals become status codes in
+ * REST adapter for the profile, media, enrollment and recognition use cases. Thin by intent, like
+ * base-widget's endpoint: it converts, delegates and maps, and refusals become status codes in
  * {@link AiApiExceptionHandler}.
- *
- * <p>Sessions, jobs and tracks are not implemented yet; their operations keep the generated
- * defaults, which answer 501.
  */
 @RestController
 @LogClass
@@ -35,12 +35,15 @@ public class AiRecognitionEndpoint implements AiRecognitionApi {
     private final RecognitionProfiles profiles;
     private final MediaUploads uploads;
     private final Enrollments enrollments;
+    private final Recognitions recognitions;
     private final AiMapper mapper;
 
-    public AiRecognitionEndpoint(RecognitionProfiles profiles, MediaUploads uploads, Enrollments enrollments, AiMapper mapper) {
+    public AiRecognitionEndpoint(RecognitionProfiles profiles, MediaUploads uploads, Enrollments enrollments,
+                                 Recognitions recognitions, AiMapper mapper) {
         this.profiles = profiles;
         this.uploads = uploads;
         this.enrollments = enrollments;
+        this.recognitions = recognitions;
         this.mapper = mapper;
     }
 
@@ -99,20 +102,29 @@ public class AiRecognitionEndpoint implements AiRecognitionApi {
     }
 
     @Override
-    public ResponseEntity<Enrollment> addEnrollmentPhotos(String orgKey, String entityName, UUID objectId, EnrollmentPhotosInput input) {
-        var view = enrollments.addPhotos(orgKey, entityName, objectId, input.getMediaKeys());
+    public ResponseEntity<Enrollment> synchronizeEnrollment(String orgKey, String entityName, UUID objectId) {
+        var view = enrollments.synchronize(orgKey, entityName, objectId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(mapper.toModel(view));
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteEnrollmentPhoto(String orgKey, String entityName, UUID objectId, UUID photoId) {
-        enrollments.deletePhoto(orgKey, entityName, objectId, photoId);
-        return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> deleteEnrollment(String orgKey, String entityName, UUID objectId) {
         enrollments.delete(orgKey, entityName, objectId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Recognition ────────────────────────────────────────────────
+
+    @Override
+    public ResponseEntity<Recognition> startRecognition(String orgKey, RecognitionInput input) {
+        var view = recognitions.start(orgKey, input.getEntityName(),
+                input.getMediaKeys() == null ? List.of() : List.copyOf(input.getMediaKeys()),
+                input.getCandidateObjectIds() == null ? List.of() : List.copyOf(input.getCandidateObjectIds()));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(mapper.toModel(view));
+    }
+
+    @Override
+    public ResponseEntity<Recognition> getRecognition(String orgKey, UUID recognitionId) {
+        return ResponseEntity.ok(mapper.toModel(recognitions.find(orgKey, recognitionId)));
     }
 }

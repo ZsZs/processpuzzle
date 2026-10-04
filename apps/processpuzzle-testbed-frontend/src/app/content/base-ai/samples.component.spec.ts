@@ -5,7 +5,8 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { SAMPLE_PHOTO_URL, SamplesComponent } from './samples.component';
-import { BOAT_PATH } from './boat-sample.routes';
+import { BOAT_PATH, RECOGNIZE_PATH } from './boat-sample.routes';
+import { OBSERVATION_PATH, RACE_PATH, REGISTRATION_PATH } from './race-sample.routes';
 
 describe('base-ai SamplesComponent', () => {
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe('base-ai SamplesComponent', () => {
     return { component, element: harness.routeNativeElement as HTMLElement };
   };
 
-  it.each([['recognition-profile'], [BOAT_PATH]])('highlights the toggle of the sample being shown: %s', async (sample) => {
+  it.each([['recognition-profile'], [BOAT_PATH], [RACE_PATH], [REGISTRATION_PATH], [RECOGNIZE_PATH], [OBSERVATION_PATH]])('highlights the toggle of the sample being shown: %s', async (sample) => {
     expect((await render(sample)).component.selectedButton()).toBe(sample);
   });
 
@@ -30,7 +31,7 @@ describe('base-ai SamplesComponent', () => {
 
   it('walks the user through the sample, linking the photo to try', async () => {
     const { element } = await render(BOAT_PATH);
-    expect(element.querySelectorAll('ol li')).toHaveLength(5);
+    expect(element.querySelectorAll('ol li')).toHaveLength(7);
     expect(element.querySelector(`a[href="${SAMPLE_PHOTO_URL}"]`)).not.toBeNull();
   });
 });

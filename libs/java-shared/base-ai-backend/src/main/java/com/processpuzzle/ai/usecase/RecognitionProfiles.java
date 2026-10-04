@@ -119,6 +119,7 @@ public class RecognitionProfiles {
         profile.setName(draft.name());
         profile.setDescription(draft.description());
         profile.setDetectorClass(draft.detectorClass());
+        profile.setGalleryAttributeKey(draft.galleryAttributeKey());
         profile.setIdentifierAttributeKey(blankToNull(draft.identifierAttributeKey()));
         profile.setIdentifierPattern(blankToNull(draft.identifierPattern()));
         profile.setMatching(draft.matching() == null ? MatchingSettings.defaults() : draft.matching());
@@ -129,6 +130,10 @@ public class RecognitionProfiles {
         if (!subjects.entityTypeExists(orgKey, entityName)) {
             throw AiRequestException.notFound("ai.profile.entity-not-found",
                     "'" + entityName + "' is not an entity type of this organization.");
+        }
+        if (!subjects.isPhotoAttribute(orgKey, entityName, draft.galleryAttributeKey())) {
+            throw AiRequestException.invalid("ai.profile.gallery-attribute-invalid",
+                    "'" + draft.galleryAttributeKey() + "' is not an artifact attribute of '" + entityName + "'.");
         }
         String attribute = blankToNull(draft.identifierAttributeKey());
         if (attribute != null && !subjects.isTextAttribute(orgKey, entityName, attribute)) {
@@ -147,6 +152,9 @@ public class RecognitionProfiles {
         }
         if (draft.detectorClass() == null || draft.detectorClass().isBlank()) {
             throw AiRequestException.invalid(INVALID_PROFILE, "detectorClass is required.");
+        }
+        if (draft.galleryAttributeKey() == null || draft.galleryAttributeKey().isBlank()) {
+            throw AiRequestException.invalid(INVALID_PROFILE, "galleryAttributeKey is required.");
         }
         String pattern = blankToNull(draft.identifierPattern());
         if (pattern != null) {
@@ -187,6 +195,7 @@ public class RecognitionProfiles {
             String name,
             String description,
             String detectorClass,
+            String galleryAttributeKey,
             String identifierAttributeKey,
             String identifierPattern,
             MatchingSettings matching) {

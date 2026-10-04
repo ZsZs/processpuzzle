@@ -15,6 +15,7 @@ export interface RecognitionProfileDto {
   name?: string;
   description?: string;
   detectorClass?: string;
+  galleryAttributeKey?: string;
   identifierAttributeKey?: string;
   identifierPattern?: string;
   matching?: MatchingSettingsDto;
@@ -45,6 +46,7 @@ export class RecognitionProfileMapper implements BaseEntityMapper<RecognitionPro
       name: source.name,
       description: source.description,
       detectorClass: source.detectorClass,
+      galleryAttributeKey: source.galleryAttributeKey,
       identifierAttributeKey: source.identifierAttributeKey,
       identifierPattern: source.identifierPattern,
       identifierWeight: source.matching?.identifierWeight,
@@ -66,6 +68,7 @@ export class RecognitionProfileMapper implements BaseEntityMapper<RecognitionPro
       name: entity.name,
       description: blankToUndefined(entity.description),
       detectorClass: entity.detectorClass,
+      galleryAttributeKey: entity.galleryAttributeKey,
       identifierAttributeKey: blankToUndefined(entity.identifierAttributeKey),
       identifierPattern: blankToUndefined(entity.identifierPattern),
       matching: {

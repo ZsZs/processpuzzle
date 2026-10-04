@@ -23,6 +23,8 @@ export class RecognitionProfile implements BaseEntity {
   description: string | undefined;
   /** The object class the detector looks for, e.g. `boat`, `person`, `car` (COCO names). */
   detectorClass: string;
+  /** The ARTIFACT attribute of the subject holding its reference photos, e.g. `photos`. */
+  galleryAttributeKey: string;
   /** The TEXT attribute of the subject holding its registered identifier. Empty: appearance only. */
   identifierAttributeKey: string | undefined;
   /** Regular expression an OCR reading must match to count, e.g. `^[A-Z]{3} ?[0-9]{1,5}$`. */
@@ -46,6 +48,7 @@ export class RecognitionProfile implements BaseEntity {
     this.name = init.name ?? '';
     this.description = init.description;
     this.detectorClass = init.detectorClass ?? '';
+    this.galleryAttributeKey = init.galleryAttributeKey ?? '';
     this.identifierAttributeKey = init.identifierAttributeKey;
     this.identifierPattern = init.identifierPattern;
     this.identifierWeight = init.identifierWeight ?? MATCHING_DEFAULTS.identifierWeight;
