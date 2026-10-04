@@ -95,7 +95,7 @@
          tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
          flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
     <base-ai-backend.version>0.0.1</base-ai-backend.version>
-    <api-contracts.version>1.1.2</api-contracts.version>
+    <api-contracts.version>1.2.0</api-contracts.version>
     <base-app-backend.version>1.1.1</base-app-backend.version>
     <base-document-backend.version>1.0.0</base-document-backend.version>
     <base-entity-backend.version>1.0.0</base-entity-backend.version>
