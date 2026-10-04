@@ -1,7 +1,7 @@
 package com.processpuzzle.ai.domain;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,10 +9,9 @@ public interface EnrollmentPhotoRepository extends JpaRepository<EnrollmentPhoto
 
     List<EnrollmentPhoto> findByOrgKeyAndEntityNameAndObjectIdOrderByAddedAt(String orgKey, String entityName, UUID objectId);
 
-    Optional<EnrollmentPhoto> findByOrgKeyAndEntityNameAndObjectIdAndPhotoId(
-            String orgKey, String entityName, UUID objectId, UUID photoId);
-
-    boolean existsByOrgKeyAndMediaKey(String orgKey, UUID mediaKey);
+    /** The galleries of a candidate list, for a recognition. */
+    List<EnrollmentPhoto> findByOrgKeyAndEntityNameAndObjectIdInAndStatus(
+            String orgKey, String entityName, Collection<UUID> objectIds, EnrollmentPhotoStatus status);
 
     boolean existsByOrgKeyAndEntityName(String orgKey, String entityName);
 

@@ -18,13 +18,17 @@ import lombok.NoArgsConstructor;
  * One photo of a subject's gallery, and what the vision server made of it: the crop of the subject,
  * its embedding and the identifier text read on it.
  *
+ * <p>The photo itself is not this module's. It is an artifact of the subject, held in the attribute
+ * the profile's {@code galleryAttributeKey} names; {@code photoRef} says which one, opaquely, as
+ * {@code SubjectDirectory} reported it. Only the crop is stored here.
+ *
  * <p>The embedding lives on the photo rather than in a table of its own because it is 1:1 with the
  * crop, and a re-embedding with a newer model replaces it in place. {@code embeddingModel} records
  * which model produced it; vectors of different models are not comparable.
  */
 @Entity
 @Table(name = "ai_enrollment_photos",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"org_key", "media_key"}),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"org_key", "entity_name", "object_id", "photo_ref"}),
         indexes = @Index(columnList = "org_key, entity_name, object_id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,11 +50,8 @@ public class EnrollmentPhoto {
     @Column(name = "object_id", nullable = false)
     private UUID objectId;
 
-    @Column(name = "media_key", nullable = false)
-    private UUID mediaKey;
-
-    @Column(name = "photo_object_name", nullable = false, length = 300)
-    private String photoObjectName;
+    @Column(name = "photo_ref", nullable = false, length = 500)
+    private String photoRef;
 
     @Column(name = "crop_object_name", length = 300)
     private String cropObjectName;
@@ -78,13 +79,12 @@ public class EnrollmentPhoto {
     @Column(name = "added_at", nullable = false)
     private Instant addedAt;
 
-    public EnrollmentPhoto(MediaUpload upload, String entityName, UUID objectId, Instant now) {
+    public EnrollmentPhoto(String orgKey, String entityName, UUID objectId, String photoRef, Instant now) {
         this.photoId = UUID.randomUUID();
-        this.orgKey = upload.getOrgKey();
+        this.orgKey = orgKey;
         this.entityName = entityName;
         this.objectId = objectId;
-        this.mediaKey = upload.getMediaKey();
-        this.photoObjectName = upload.getObjectName();
+        this.photoRef = photoRef;
         this.status = EnrollmentPhotoStatus.PENDING;
         this.addedAt = now;
     }

@@ -46,12 +46,13 @@ class RecognitionProfilesTest {
         when(provider.getIfUnique(any())).thenReturn(subjects);
         when(subjects.entityTypeExists(ORG, "Boat")).thenReturn(true);
         when(subjects.isTextAttribute(ORG, "Boat", "sailNumber")).thenReturn(true);
+        when(subjects.isPhotoAttribute(ORG, "Boat", "photos")).thenReturn(true);
         when(repository.save(any(RecognitionProfile.class))).thenAnswer(call -> call.getArgument(0));
         profiles = new RecognitionProfiles(repository, photos, provider, guard);
     }
 
     private static RecognitionProfiles.Draft draft(String attribute, String pattern, MatchingSettings matching) {
-        return new RecognitionProfiles.Draft("Boat", "Sailboat", null, "boat", attribute, pattern, matching);
+        return new RecognitionProfiles.Draft("Boat", "Sailboat", null, "boat", "photos", attribute, pattern, matching);
     }
 
     @Test
@@ -59,8 +60,34 @@ class RecognitionProfilesTest {
         RecognitionProfile created = profiles.create(ORG, draft("sailNumber", "^[A-Z]{3} ?[0-9]+$", null));
 
         assertThat(created.getEntityName()).isEqualTo("Boat");
+        assertThat(created.getGalleryAttributeKey()).isEqualTo("photos");
         assertThat(created.getMatching().getAcceptScore()).isEqualTo(MatchingSettings.DEFAULT_ACCEPT_SCORE);
         verify(guard).requireDesign(ORG);
+        verify(subjects).isPhotoAttribute(ORG, "Boat", "photos");
+    }
+
+    @Test
+    void theGalleryAttributeMustBeAnArtifactAttribute() {
+        RecognitionProfiles.Draft notPhotos = new RecognitionProfiles.Draft("Boat", "Sailboat", null, "boat", "sailNumber",
+                null, null, null);
+
+        assertThatThrownBy(() -> profiles.create(ORG, notPhotos))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.gallery-attribute-invalid");
+        when(repository.findByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(Optional.of(new RecognitionProfile(ORG, "Boat")));
+        assertThatThrownBy(() -> profiles.update(ORG, "Boat", notPhotos))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.gallery-attribute-invalid");
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void anUpdateReplacesTheGalleryAttribute() {
+        RecognitionProfile existing = new RecognitionProfile(ORG, "Boat");
+        existing.setGalleryAttributeKey("oldPhotos");
+        when(repository.findByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(Optional.of(existing));
+
+        RecognitionProfile updated = profiles.update(ORG, "Boat", draft(null, null, null));
+
+        assertThat(updated.getGalleryAttributeKey()).isEqualTo("photos");
     }
 
     @Test
@@ -111,15 +138,18 @@ class RecognitionProfilesTest {
     @NullAndEmptySource
     @ValueSource(strings = {" \t "})
     void seedingRejectsMissingRequiredFieldsBeforeAccessingTheRepository(String missing) {
-        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft(missing, "Sailboat", null, "boat", null, null, null)))
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft(missing, "Sailboat", null, "boat", "photos", null, null, null)))
                 .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
                 .hasMessage("entityName is required.");
-        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", missing, null, "boat", null, null, null)))
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", missing, null, "boat", "photos", null, null, null)))
                 .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
                 .hasMessage("name is required.");
-        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", "Sailboat", null, missing, null, null, null)))
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", "Sailboat", null, missing, "photos", null, null, null)))
                 .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
                 .hasMessage("detectorClass is required.");
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", "Sailboat", null, "boat", missing, null, null, null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
+                .hasMessage("galleryAttributeKey is required.");
         verifyNoInteractions(repository, subjects, guard);
     }
 
@@ -148,7 +178,7 @@ class RecognitionProfilesTest {
     void seedingAcceptsMatchingBoundaryValuesAndPreservesTheWholeDraft(double weight, double score, double margin, double fps) {
         MatchingSettings matching = new MatchingSettings(weight, score, margin, fps);
         RecognitionProfiles.Draft input = new RecognitionProfiles.Draft(
-                "Boat", "Sailboat", "Identify sailing boats", "boat", "sailNumber", "^[A-Z]{3}$", matching);
+                "Boat", "Sailboat", "Identify sailing boats", "boat", "photos", "sailNumber", "^[A-Z]{3}$", matching);
 
         RecognitionProfile created = profiles.seed(ORG, input).orElseThrow();
 
@@ -157,6 +187,7 @@ class RecognitionProfilesTest {
         assertThat(created.getName()).isEqualTo("Sailboat");
         assertThat(created.getDescription()).isEqualTo("Identify sailing boats");
         assertThat(created.getDetectorClass()).isEqualTo("boat");
+        assertThat(created.getGalleryAttributeKey()).isEqualTo("photos");
         assertThat(created.getIdentifierAttributeKey()).isEqualTo("sailNumber");
         assertThat(created.getIdentifierPattern()).isEqualTo("^[A-Z]{3}$");
         assertThat(created.getMatching()).isSameAs(matching);

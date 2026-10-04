@@ -17,8 +17,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * How subjects of one entity type are recognized: which object class the detector looks for, which
- * attribute holds the registered identifier, and the matching thresholds. One per
+ * How subjects of one entity type are recognized: which attribute holds their reference photos, which
+ * object class the detector looks for, which attribute holds the registered identifier, and the
+ * matching thresholds. One per
  * ({@code orgKey}, {@code entityName}), addressed by entityName like base-state's state machines.
  */
 @Entity
@@ -49,6 +50,13 @@ public class RecognitionProfile {
 
     @Column(name = "detector_class", nullable = false, length = 100)
     private String detectorClass;
+
+    /**
+     * The ARTIFACT attribute holding the subjects' reference photos. Nullable in the schema only because
+     * {@code ddl-auto} cannot add a NOT NULL column to a populated table; every write path requires it.
+     */
+    @Column(name = "gallery_attribute_key", length = 200)
+    private String galleryAttributeKey;
 
     @Column(name = "identifier_attribute_key", length = 200)
     private String identifierAttributeKey;

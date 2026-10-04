@@ -227,13 +227,16 @@ paths:
   /recognition-jobs:
     post:
       operationId: submitRecognitionJob
-      summary: Detect, track, read and match the subjects in one video
+      summary: Detect, read and match the subjects in one video, or the one subject of a few frames
       description: >-
-        Pipeline: sample frames at detection.sampleFps, detect and track (RT-DETR, ByteTrack),
-        select the best crops per track, read the identifier (PaddleOCR) and embed (DINOv2) on
-        them, fuse the scores per (track, candidate) pair, then assign one-to-one (Hungarian).
-        A track is AUTO_MATCHED if its assigned score reaches matching.acceptScore and leads the
-        second-best by matching.acceptMargin, NEEDS_REVIEW otherwise.
+        Exactly one of video and frames. Video pipeline: sample frames at matching.sampleFps,
+        detect and track (RT-DETR, ByteTrack), select the best crops per track, read the
+        identifier (EasyOCR) and embed (DINOv2) on them, fuse the scores per (track, candidate)
+        pair, then assign one-to-one (Hungarian). Frames pipeline: the frames are shots of one
+        subject, so the largest detection of each is taken as its crop and they form one track —
+        no tracking, and at most one track in the result. A track is AUTO_MATCHED if its assigned
+        score reaches matching.acceptScore and leads the second-best by matching.acceptMargin,
+        NEEDS_REVIEW otherwise.
       tags: [ Vision ]
       requestBody:
         required: true
@@ -674,7 +677,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/JobSubmission"
         - type: object
-          required: [ detection, video, candidates ]
+          required: [ detection, candidates ]
           properties:
             detection:
               $ref: "#/components/schemas/DetectionSettings"
@@ -684,6 +687,13 @@ components:
               $ref: "#/components/schemas/MatchingSettings"
             video:
               $ref: "#/components/schemas/MediaRef"
+            frames:
+              type: array
+              minItems: 1
+              maxItems: 5
+              description: Still images of one subject; firstSeenMs and lastSeenMs of the result are 0.
+              items:
+                $ref: "#/components/schemas/MediaRef"
             candidates:
               type: array
               minItems: 1

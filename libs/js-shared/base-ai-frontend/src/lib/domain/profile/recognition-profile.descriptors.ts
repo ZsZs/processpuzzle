@@ -39,7 +39,12 @@ function createRecognitionProfileAttrDescriptors(): AbstractAttrDescriptor[] {
   detectorClassAttr.required = true;
 
   // Text, not a dropdown of the subject's attributes: those belong to another feature's definition, which
-  // this form cannot see. The backend checks on save that it names a TEXT attribute of entityName.
+  // this form cannot see. The backend checks on save that it names an ARTIFACT attribute of entityName.
+  const galleryAttributeKeyAttr = new BaseEntityAttrDescriptor('galleryAttributeKey', FormControlType.TEXT_BOX, 'Photos Attribute');
+  galleryAttributeKeyAttr.placeholder = 'ARTIFACT attribute holding reference photos, e.g. photos';
+  galleryAttributeKeyAttr.required = true;
+
+  // Likewise text; the backend checks on save that it names a TEXT attribute of entityName.
   const identifierAttributeKeyAttr = new BaseEntityAttrDescriptor('identifierAttributeKey', FormControlType.TEXT_BOX, 'Identifier Attribute');
   identifierAttributeKeyAttr.placeholder = 'TEXT attribute holding the identifier, e.g. sailNumber';
 
@@ -63,7 +68,8 @@ function createRecognitionProfileAttrDescriptors(): AbstractAttrDescriptor[] {
   const container = new FlexboxDescriptor(
     [
       row([entityNameAttr, nameAttr]),
-      row([detectorClassAttr, identifierAttributeKeyAttr, identifierPatternAttr]),
+      row([detectorClassAttr, galleryAttributeKeyAttr]),
+      row([identifierAttributeKeyAttr, identifierPatternAttr]),
       row([numberAttr('identifierWeight', 'Identifier Weight'), numberAttr('acceptScore', 'Accept Score'), numberAttr('acceptMargin', 'Accept Margin'), numberAttr('sampleFps', 'Sampled FPS')]),
       row([versionAttr, updatedAtAttr]),
       descriptionAttr,

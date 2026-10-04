@@ -214,6 +214,22 @@ def test_recognition_refuses_a_gallery_of_another_model(env):
     assert client.post("/v1/recognition-jobs", json=recognition(), headers=AUTH).status_code == 202
 
 
+def test_recognition_takes_a_video_or_frames_but_not_both(env):
+    client, _, _ = env
+    frames = recognition()
+    del frames["video"]
+    frames["frames"] = [{"mediaId": "f1", "url": "http://minio/f1.jpg"}]
+    assert client.post("/v1/recognition-jobs", json=frames, headers=AUTH).status_code == 202
+    both = recognition()
+    both["frames"] = frames["frames"]
+    assert client.post("/v1/recognition-jobs", json=both, headers=AUTH).status_code == 400
+    neither = recognition()
+    del neither["video"]
+    assert client.post("/v1/recognition-jobs", json=neither, headers=AUTH).status_code == 400
+    too_many = dict(frames, frames=frames["frames"] * 6)
+    assert client.post("/v1/recognition-jobs", json=too_many, headers=AUTH).status_code == 400
+
+
 def test_an_invalid_body_is_a_400_problem(env):
     client, _, _ = env
     body = enrollment()

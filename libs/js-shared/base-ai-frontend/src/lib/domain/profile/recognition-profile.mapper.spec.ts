@@ -10,12 +10,14 @@ describe('RecognitionProfileMapper', () => {
       entityName: 'boat',
       name: 'Sailboat by sail number',
       detectorClass: 'boat',
+      galleryAttributeKey: 'photos',
       identifierAttributeKey: 'sailNumber',
       matching: { identifierWeight: 0.7, acceptScore: 0.8, acceptMargin: 0.15, sampleFps: 2 },
       version: 3,
     });
 
     expect(profile.id).toBe('boat');
+    expect(profile.galleryAttributeKey).toBe('photos');
     expect(profile.identifierWeight).toBe(0.7);
     expect(profile.sampleFps).toBe(2);
     expect(profile.version).toBe(3);
@@ -35,6 +37,7 @@ describe('RecognitionProfileMapper', () => {
     const dto = mapper.toDto(profile);
 
     expect(dto.id).toBe('boat');
+    expect(dto.galleryAttributeKey).toBe('');
     expect(dto.matching).toEqual({ identifierWeight: 0.6, acceptScore: 0.9, acceptMargin: 0.1, sampleFps: MATCHING_DEFAULTS.sampleFps });
     expect(dto.identifierPattern).toBeUndefined();
   });
@@ -55,6 +58,7 @@ describe('RecognitionProfileMapper', () => {
       name: 'Sailboats',
       description: ' Identify sailboats ',
       detectorClass: 'boat',
+      galleryAttributeKey: 'photos',
       identifierAttributeKey: 'sailNumber',
       identifierPattern: '^[A-Z]{3}[0-9]+$',
       matching: { identifierWeight: 0, acceptScore: 0.8, acceptMargin: 0.2, sampleFps: 1 },

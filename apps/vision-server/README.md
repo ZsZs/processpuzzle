@@ -3,7 +3,7 @@
 The compute half of ProcessPuzzle's **image recognition**: a Python 3.12 / FastAPI service that runs the models.
 Given photos, it finds the subject in each, crops it, computes its appearance embedding and reads its
 identifier. Given a video, it follows every subject through it and matches each one against a list of
-candidates. It runs on CPU; a GPU is a deployment setting, not a code change.
+candidates; given a few frames of one subject, it matches that subject. It runs on CPU; a GPU is a deployment setting, not a code change.
 
 ## Where it sits
 
@@ -53,7 +53,7 @@ except `/health` carries `Authorization: Bearer <VISION_SERVICE_TOKEN>`.
 |---|---|
 | `POST /enrollment-jobs` | detect, crop, embed and read the identifier on enrollment photos |
 | `POST /embedding-jobs` | re-embed stored crops with the current embedding model |
-| `POST /recognition-jobs` | detect, track, read and match the subjects in a video |
+| `POST /recognition-jobs` | detect, track, read and match the subjects in a video — or the one subject of 1-5 frames |
 | `GET /{kind}-jobs/{jobId}/result` | the result of a finished job |
 | `GET /jobs/{jobId}`, `DELETE /jobs/{jobId}` | status and progress; cancel, or discard a result |
 | `GET /models` | the detector's classes, the embedding model and its dimension, the device |

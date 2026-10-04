@@ -48,6 +48,8 @@ TRACK_KEPT_CROPS = 5
 TRACK_KEPT_CROP_SIDE = 1280
 TRACK_BEST_CROP_SIDE = 640
 MIN_TRACK_SIGHTINGS = 2
+# The one track a frames recognition yields.
+FRAMES_TRACK_ID = 1
 # Fraction of a recognition job's progress spent on the video pass; the rest is per-track OCR and embedding.
 VIDEO_PASS_SHARE = 0.7
 
@@ -108,10 +110,16 @@ class VisionPipeline:
 
     def recognize(self, request: RecognitionJobRequest, ctx: JobContext) -> RecognitionJobResult:
         started = time.monotonic()
-        path = str(ctx.fetch(request.video.url, self._settings.max_video_bytes))
-        tracks, frames = self._track_video(path, request, ctx)
-        kept = [t for t in tracks.values() if t.sightings >= MIN_TRACK_SIGHTINGS]
-        log.info("video pass: %d frames, %d tracks (%d kept)", frames, len(tracks), len(kept))
+        if request.frames is not None:
+            subject = self._frames_track(request, ctx)
+            frames = len(request.frames)
+            kept = [subject] if subject.sightings else []
+            log.info("frames pass: %d frames, subject %s", frames, "seen" if kept else "not seen")
+        else:
+            path = str(ctx.fetch(request.video.url, self._settings.max_video_bytes))
+            tracks, frames = self._track_video(path, request, ctx)
+            kept = [t for t in tracks.values() if t.sightings >= MIN_TRACK_SIGHTINGS]
+            log.info("video pass: %d frames, %d tracks (%d kept)", frames, len(tracks), len(kept))
 
         evidence, extras = [], {}
         for done, track in enumerate(kept):
@@ -196,6 +204,24 @@ class VisionPipeline:
             processed += 1
             ctx.progress(VIDEO_PASS_SHARE * min(1.0, processed / expected))
         return tracks, processed
+
+    def _frames_track(self, request: RecognitionJobRequest, ctx: JobContext) -> fr.TrackCrops:
+        """Shots of one subject: the largest detection of each frame is a crop of it. No tracking needed."""
+        detector = self._models.detector()
+        class_id = detector.class_id(request.detection.detector_class)
+        track = fr.TrackCrops(FRAMES_TRACK_ID, TRACK_KEPT_CROPS)
+        for done, ref in enumerate(request.frames):
+            ctx.progress(VIDEO_PASS_SHARE * done / len(request.frames))
+            try:
+                image = fr.decode_image(ctx.fetch(ref.url, self._settings.max_photo_bytes).read_bytes())
+            except ValueError as error:
+                log.warning("frame %s skipped: %s", ref.media_id, error)
+                continue
+            detections = detector.detect(image, class_id, request.detection.min_confidence)
+            if detections:
+                largest = max(detections, key=lambda d: _area(d.box))
+                track.offer(image, largest.box, 0, TRACK_KEPT_CROP_SIDE)
+        return track
 
     def _enroll_photo(
         self, media_id: str, image: np.ndarray, detections: list[Detection], ocr: OcrSettings | None

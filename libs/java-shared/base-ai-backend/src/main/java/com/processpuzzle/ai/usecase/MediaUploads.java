@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Upload slots: the client asks for one, PUTs its file straight to storage, then hands the media key
- * to the call that uses it. Photos and videos never pass through this backend.
+ * to the call that uses it. Frames never pass through this backend.
  */
 @Service
 public class MediaUploads {
@@ -26,8 +26,7 @@ public class MediaUploads {
     private static final Logger LOG = LoggerFactory.getLogger(MediaUploads.class);
 
     private static final Map<MediaPurpose, Set<String>> CONTENT_TYPES = Map.of(
-            MediaPurpose.ENROLLMENT_PHOTO, Set.of("image/jpeg", "image/png", "image/webp"),
-            MediaPurpose.RECOGNITION_VIDEO, Set.of("video/mp4", "video/quicktime"));
+            MediaPurpose.RECOGNITION_FRAME, Set.of("image/jpeg", "image/png", "image/webp"));
 
     private final MediaUploadRepository uploads;
     private final MediaStores stores;
@@ -52,7 +51,7 @@ public class MediaUploads {
             throw AiRequestException.invalid("ai.media.content-type-unsupported",
                     "'" + contentType + "' is not accepted for " + purpose + "; use one of " + CONTENT_TYPES.get(purpose) + ".");
         }
-        long limit = purpose == MediaPurpose.ENROLLMENT_PHOTO ? settings.getMaxPhotoBytes() : settings.getMaxVideoBytes();
+        long limit = settings.getMaxFrameBytes();
         if (sizeBytes <= 0) {
             throw AiRequestException.invalid("ai.media.invalid", "sizeBytes must be positive.");
         }
@@ -68,7 +67,7 @@ public class MediaUploads {
 
     /**
      * Takes the slot for its one use, from within the caller's transaction: it must be this
-     * organization's, of the expected purpose, unexpired, and its object must have been uploaded.
+     * organization's, of the expected purpose, unexpired, unused, and its object must have been uploaded.
      */
     @Transactional
     public MediaUpload claim(String orgKey, String mediaKey, MediaPurpose purpose) {
@@ -86,9 +85,10 @@ public class MediaUploads {
         if (!stores.get().exists(upload.getObjectName())) {
             throw AiRequestException.invalid("ai.media.not-uploaded", "The upload for media key '" + mediaKey + "' has not completed.");
         }
-        if (!upload.isUsed()) {
-            upload.markUsed(now);
+        if (upload.isUsed()) {
+            throw AiRequestException.invalid("ai.media.already-used", "Media key '" + mediaKey + "' has already been used.");
         }
+        upload.markUsed(now);
         return upload;
     }
 

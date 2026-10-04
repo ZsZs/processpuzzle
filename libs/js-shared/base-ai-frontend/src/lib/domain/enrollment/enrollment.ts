@@ -1,6 +1,8 @@
 /**
  * The enrollment of one subject — its gallery — as `ai-api.yaml` returns it. Plain interfaces: an
- * enrollment is read and acted on, never edited through a generic form.
+ * enrollment is read and acted on, never edited through a generic form. Its photos are the subject's own,
+ * held in the attribute the profile's `galleryAttributeKey` names; the gallery is what recognition made of
+ * them.
  */
 
 /** NOT_ENROLLED: no photos. PROCESSING: a photo is PENDING. READY: one is ENROLLED, none PENDING. FAILED: none usable. */
@@ -11,6 +13,8 @@ export type EnrollmentPhotoStatus = 'PENDING' | 'ENROLLED' | 'NO_SUBJECT' | 'AMB
 
 export interface EnrollmentPhoto {
   photoId: string;
+  /** Which of the subject's photos this entry was derived from; opaque. */
+  photoRef: string;
   status: EnrollmentPhotoStatus;
   /** Short-lived signed URL of the original. */
   photoUrl?: string;
@@ -34,14 +38,3 @@ export interface Enrollment {
   photos: EnrollmentPhoto[];
   updatedAt?: string;
 }
-
-/** An upload slot: where to PUT the file, and the key that names it afterwards. */
-export interface MediaUploadSlot {
-  mediaKey: string;
-  uploadUrl: string;
-  requiredHeaders: Record<string, string>;
-  expiresAt: string;
-}
-
-/** The content types the backend accepts for an enrollment photo. */
-export const ENROLLMENT_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

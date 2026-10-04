@@ -12,7 +12,7 @@ from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidator
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidator, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -181,8 +181,15 @@ class RecognitionJobRequest(JobSubmission):
     detection: DetectionSettings
     ocr: OcrSettings | None = None
     matching: MatchingSettings = Field(default_factory=MatchingSettings)
-    video: MediaRef
+    video: MediaRef | None = None
+    frames: list[MediaRef] | None = Field(default=None, min_length=1, max_length=5)
     candidates: list[Candidate] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _one_source(self) -> RecognitionJobRequest:
+        if (self.video is None) == (self.frames is None):
+            raise ValueError("exactly one of video and frames is required")
+        return self
 
 
 class CandidateScore(WireModel):

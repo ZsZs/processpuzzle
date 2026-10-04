@@ -42,47 +42,63 @@ class MediaUploadsTest {
 
     @Test
     void reservesASlotUnderTheOrganizationsPrefix() {
-        MediaUploads.Slot slot = uploads.create(ORG, MediaPurpose.RECOGNITION_VIDEO, "Video/MP4", 1_000_000);
+        MediaUploads.Slot slot = uploads.create(ORG, MediaPurpose.RECOGNITION_FRAME, "Image/JPEG", 1_000_000);
 
         assertThat(slot.uploadUrl()).isEqualTo("http://minio/put");
-        assertThat(slot.requiredHeaders()).containsEntry("Content-Type", "video/mp4");
+        assertThat(slot.requiredHeaders()).containsEntry("Content-Type", "image/jpeg");
         assertThat(slot.upload().getObjectName()).startsWith(ORG + "/uploads/");
     }
 
     @Test
-    void refusesAnUnsupportedTypeAndAnOversizedFile() {
-        assertThatThrownBy(() -> uploads.create(ORG, MediaPurpose.ENROLLMENT_PHOTO, "image/heic", 10))
+    void refusesAMissingPurposeAnUnsupportedTypeAndABadSize() {
+        assertThatThrownBy(() -> uploads.create(ORG, null, "image/jpeg", 10))
+                .hasFieldOrPropertyWithValue("errorId", "ai.media.invalid");
+        assertThatThrownBy(() -> uploads.create(ORG, MediaPurpose.RECOGNITION_FRAME, "video/mp4", 10))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.content-type-unsupported");
-        assertThatThrownBy(() -> uploads.create(ORG, MediaPurpose.ENROLLMENT_PHOTO, "image/jpeg", 41L * 1024 * 1024))
+        assertThatThrownBy(() -> uploads.create(ORG, MediaPurpose.RECOGNITION_FRAME, "image/jpeg", 0))
+                .hasFieldOrPropertyWithValue("errorId", "ai.media.invalid");
+        assertThatThrownBy(() -> uploads.create(ORG, MediaPurpose.RECOGNITION_FRAME, "image/jpeg", 21L * 1024 * 1024))
                 .isInstanceOfSatisfying(AiRequestException.class,
                         e -> assertThat(e.getKind()).isEqualTo(AiRequestException.Kind.TOO_LARGE));
     }
 
     @Test
     void aClaimNeedsTheRightPurposeAFinishedUploadAndALiveSlot() {
-        MediaUpload video = new MediaUpload(ORG, MediaPurpose.RECOGNITION_VIDEO, "video/mp4", 1, Instant.now().plusSeconds(60));
-        String key = video.getMediaKey().toString();
-        when(repository.findByOrgKeyAndMediaKey(ORG, video.getMediaKey())).thenReturn(Optional.of(video));
+        MediaUpload frame = new MediaUpload(ORG, MediaPurpose.RECOGNITION_FRAME, "image/jpeg", 1, Instant.now().plusSeconds(60));
+        String key = frame.getMediaKey().toString();
+        when(repository.findByOrgKeyAndMediaKey(ORG, frame.getMediaKey())).thenReturn(Optional.of(frame));
 
-        assertThatThrownBy(() -> uploads.claim(ORG, key, MediaPurpose.ENROLLMENT_PHOTO))
+        assertThatThrownBy(() -> uploads.claim(ORG, key, null))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.wrong-purpose");
 
-        when(store.exists(video.getObjectName())).thenReturn(false);
-        assertThatThrownBy(() -> uploads.claim(ORG, key, MediaPurpose.RECOGNITION_VIDEO))
+        when(store.exists(frame.getObjectName())).thenReturn(false);
+        assertThatThrownBy(() -> uploads.claim(ORG, key, MediaPurpose.RECOGNITION_FRAME))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.not-uploaded");
 
-        when(store.exists(video.getObjectName())).thenReturn(true);
-        assertThat(uploads.claim(ORG, key, MediaPurpose.RECOGNITION_VIDEO).isUsed()).isTrue();
+        when(store.exists(frame.getObjectName())).thenReturn(true);
+        assertThat(uploads.claim(ORG, key, MediaPurpose.RECOGNITION_FRAME).isUsed()).isTrue();
+    }
+
+    @Test
+    void aSlotCanBeClaimedOnlyOnce() {
+        MediaUpload frame = new MediaUpload(ORG, MediaPurpose.RECOGNITION_FRAME, "image/jpeg", 1, Instant.now().plusSeconds(60));
+        String key = frame.getMediaKey().toString();
+        when(repository.findByOrgKeyAndMediaKey(ORG, frame.getMediaKey())).thenReturn(Optional.of(frame));
+        when(store.exists(frame.getObjectName())).thenReturn(true);
+        uploads.claim(ORG, key, MediaPurpose.RECOGNITION_FRAME);
+
+        assertThatThrownBy(() -> uploads.claim(ORG, key, MediaPurpose.RECOGNITION_FRAME))
+                .hasFieldOrPropertyWithValue("errorId", "ai.media.already-used");
     }
 
     @Test
     void anExpiredOrUnknownSlotCannotBeClaimed() {
-        MediaUpload stale = new MediaUpload(ORG, MediaPurpose.ENROLLMENT_PHOTO, "image/jpeg", 1, Instant.now().minusSeconds(1));
+        MediaUpload stale = new MediaUpload(ORG, MediaPurpose.RECOGNITION_FRAME, "image/jpeg", 1, Instant.now().minusSeconds(1));
         when(repository.findByOrgKeyAndMediaKey(ORG, stale.getMediaKey())).thenReturn(Optional.of(stale));
 
-        assertThatThrownBy(() -> uploads.claim(ORG, stale.getMediaKey().toString(), MediaPurpose.ENROLLMENT_PHOTO))
+        assertThatThrownBy(() -> uploads.claim(ORG, stale.getMediaKey().toString(), MediaPurpose.RECOGNITION_FRAME))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.expired");
-        assertThatThrownBy(() -> uploads.claim(ORG, "not-a-uuid", MediaPurpose.ENROLLMENT_PHOTO))
+        assertThatThrownBy(() -> uploads.claim(ORG, "not-a-uuid", MediaPurpose.RECOGNITION_FRAME))
                 .hasFieldOrPropertyWithValue("errorId", "ai.media.unknown");
     }
 }

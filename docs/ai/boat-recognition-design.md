@@ -1,9 +1,20 @@
 # Sailboat Recognition: Design Strategy
 
 ## 1. Goal and scope
-Identify each full-size sailboat in a race-start video, using photos taken before the race (enrollment). Processing happens after the race start on a backend; the phone only records and uploads. Output: one confirmed boat identity per visible boat, with a manual review step for low-confidence cases.
+Tell which of a given list of objects is the one in front of the camera, using photos of those objects taken
+beforehand. That is the whole job of the AI feature. The list is the only constraint, and the caller supplies it;
+what the answer is used for is the caller's business. The sail race is the first example: before the start, at the
+start and at the finish of every round, the race office points a phone at a boat, the AI answers which of the
+enrolled boats it is, and the race application records that as an observation of its own.
 
-**Out of scope (first version):** live on-device overlay, RC models, finish-line timing.
+**What the AI does not know.** Races, rounds, checkpoints, entry lists, observation records, time stamps and
+locations are application data — ordinary base-entity definitions of the sailing application — and never appear
+in `ai-api.yaml`. A race application builds its checkpoint screen from its own entities and hosts base-ai's camera
+widget in it, handing in the candidates (the race's entry list) and recording the hits it reports.
+
+**First version:** snapshot recognition — one to five frames from the camera, answered in seconds on CPU. Batch
+recognition of a whole start video is the next step and reuses the same pipeline (§3.2); live on-device overlay and
+RC models are out of scope.
 
 **Generic by design.** Sailboats are the first use case of a reusable recognition feature (`base-ai-frontend` /
 `base-ai-backend`, Modulith module `ai`). The vocabulary used in the library:
@@ -13,23 +24,34 @@ Identify each full-size sailboat in a race-start video, using photos taken befor
 | *Subject*: any base-entity object (`entityName` + `objectId`) | a boat |
 | *Identifier text*: OCR-readable label, optional | the sail number |
 | *Recognition profile*: per entity type, holds the detector class, OCR on/off, identifier pattern, fusion weights, thresholds | "Boat" profile: class `boat`, pattern like `[A-Z]{3} ?\d{1,5}` |
-| *Recognition session*: one batch of media to identify against | a race start |
-| *Candidate set*: the subjects allowed in a session | the start list |
+| *Gallery*: the subject's reference photos, an ARTIFACT attribute of its own entity, named by the profile | the boat's `photos` |
+| *Recognition*: one shot — a few frames — identified against a candidate list | a boat crossing the finish line |
+| *Candidate list*: the subjects that may be in front of the camera, supplied by the caller | the race's entry list |
 
-Boats and races are not part of `ai`; they are base-entity definitions seeded by the sailing application.
+Boats, races and entry lists are not part of `ai`; they are base-entity definitions of the sailing application.
 
 ## 2. Approach in one paragraph
-Enrollment plus matching, not classification. Each boat is registered once with photos; no model is retrained when a boat is added. At recognition time the system detects and tracks boats, selects the best frames per boat, reads the sail number with OCR, computes an appearance embedding, fuses both scores and assigns identities one-to-one against the race start list.
+Enrollment plus matching, not classification. Each boat is registered once with photos; no model is retrained when a boat is added. At recognition time the system detects and tracks boats, selects the best frames per boat, reads the sail number with OCR, computes an appearance embedding, fuses both scores and assigns identities one-to-one against the candidate list the caller supplied — the race entry list, in the example.
 
 ## 3. Pipeline
 
 ### 3.1 Enrollment
-1. Photograph each boat with sails up: both sides, bow, stern, 10-20 photos, varied light.
-2. Detect the boat, crop it, compute a DINOv2 embedding per crop.
-3. Read the sail number with OCR and store it as text.
-4. Store crops, embeddings and the number per boat. Re-enroll when sails change.
+1. Photograph each boat with sails up: both sides, bow, stern, 10-20 photos, varied light. The photos are attached
+   to the boat itself, in the ARTIFACT attribute the profile's `galleryAttributeKey` names, and edited on the boat's
+   own form.
+2. Whenever the boat is saved, `base-ai-backend` synchronizes its gallery: photos new since the last time are
+   enrolled, gallery entries of removed photos are dropped. It also synchronizes the candidates' galleries before a
+   recognition, and on request.
+3. Enrolling a photo: detect the boat, crop it, compute a DINOv2 embedding per crop, read the sail number with OCR.
+4. `base-ai-backend` stores the crops, embeddings and readings per photo; never the photos, which stay the boat's.
+   Re-enroll when sails change by replacing the photos.
 
-### 3.2 Recognition (per uploaded video)
+### 3.2 Recognition
+**Frames (implemented).** One to five shots of one subject. The largest detection of the profile's class in each
+frame is a crop of it; the crops form one track, and steps 3-7 below apply to it. No tracking is needed, and at
+most one subject is reported.
+
+**Video (next).** Steps 1-7, per uploaded video:
 1. **Detect and track**: Ultralytics YOLO (or RT-DETR) plus ByteTrack; one track ID per boat.
 2. **Best-frame selection** per track: score by crop size, sharpness (Laplacian variance) and how visible the sail is; keep the top 5-10 crops.
 3. **Sail number OCR**: EasyOCR on the selected crops (at most 1280 px), and on their mirror image when that finds
@@ -37,14 +59,14 @@ Enrollment plus matching, not classification. Each boat is registered once with 
 4. **Embedding**: DINOv2 on the same crops; average per track.
 5. **Fusion**: combine OCR and embedding scores per (track, boat) pair.
 6. **Assignment**: Hungarian algorithm (`scipy.optimize.linear_sum_assignment`) over the start list so each boat is claimed once.
-7. **Review**: tracks below the confidence threshold go to a manual confirmation screen with the best crop and the top 3 candidates.
+7. **Review**: a track below the confidence threshold is answered NEEDS_REVIEW with the best crop and the top 3 candidates; the camera widget lets a person choose.
 
 ### 3.3 Scoring and fusion (starting point, tune on real data)
 - `ocr_score`: fuzzy string similarity (e.g. `rapidfuzz`) between the voted number and the boat's registered number, 0..1.
 - `emb_score`: cosine similarity between the track embedding and the boat's gallery (max or mean of top-k).
 - `score = 0.6 * ocr_score + 0.4 * emb_score` (weights are a guess; calibrate on labeled clips).
 - Assignment cost is `1 - score`. Accept a match if `score >= 0.75` and the margin to the second-best candidate is at least 0.1; otherwise send it to review.
-- Restrict candidates to the boats registered for that race (and class, if known).
+- Candidates are exactly the list the caller supplied — the boats entered in that race, and that class if known.
 
 ## 4. Components and libraries
 | Concern | Choice | License note |
@@ -61,22 +83,26 @@ Enrollment plus matching, not classification. Each boat is registered once with 
 package is AGPL-3.0. Every component above is Apache-2.0, MIT or BSD.
 
 ## 5. Architecture
-- The main application (Spring Boot backend) owns races, boats and start lists, as base-entity objects.
-- `base-ai-backend` owns recognition profiles, galleries (embeddings, identifier text), sessions, jobs, tracks and
-  review decisions, in the stack's own database. It reaches the vision service only through an outbound port.
+- The main application (Spring Boot backend) owns races, boats, entry lists and observations, as base-entity
+  objects. The boats' reference photos are their own ARTIFACT attribute.
+- `base-ai-backend` owns recognition profiles, galleries (crops, embeddings, identifier text) derived from the
+  subjects' photos, and transient recognitions, in the stack's own database. It reaches the vision service only
+  through an outbound port, and hears of subject changes from the composition root, which relays base-entity's
+  object events onto its `SubjectGalleries` interface.
 - The Python **vision server** (`apps/vision-server`, FastAPI) owns the models and the compute. It is
   **stateless with respect to tenant data**: it is called with media URLs and, for matching, the candidate
   gallery, and returns embeddings, tracks, OCR readings and scores. Its job queue is transient.
 - Because it holds no tenant data, the vision server is **shared infrastructure**: one instance in
   `docker-compose-infrastructure.yaml`, used by every stack's backend, like Keycloak and MinIO.
-- Media (photos, videos, crops) goes to MinIO; the phone uploads with presigned URLs, never through the backend.
-- Video processing is asynchronous: upload, queue, worker, result via webhook callback to `base-ai-backend`, which
-  publishes a domain event (`RecognitionCompleted`) for workflows to react to.
+- Media goes to MinIO: reference photos through processpuzzle-store like every artifact, camera frames with
+  presigned URLs straight from the phone, never through the backend.
+- Processing is asynchronous: upload, queue, worker, result via webhook callback to `base-ai-backend`; the client
+  polls the recognition. No domain event is published — recording the answer is the caller's business.
 
 ### 5.1 Compute: CPU only
-There is no GPU on the stage and prod hosts, and no cloud service is used for now. All models run on CPU. That is
-acceptable because processing is post-race and asynchronous; it is not acceptable for live use, which stays out of
-scope.
+There is no GPU on the stage and prod hosts, and no cloud service is used for now. All models run on CPU. A snapshot
+of a few frames takes seconds — acceptable at a checkpoint, where the shot's time is taken on the phone, not when
+the answer arrives. A whole video takes minutes, which is why it is a batch job; live overlay stays out of scope.
 - **Throughput.** Sample the video at 2-5 fps rather than processing every frame, detect at reduced resolution, and
   run OCR and embeddings only on the selected best crops at full resolution. Expect minutes per start video, not
   seconds.
@@ -94,27 +120,25 @@ Two contracts in `libs/java-shared/api-contracts/src/main/resources`, both OpenA
 | `vision-server-api.yaml` | `base-ai-backend` and the vision server | `@HttpExchange` client interfaces, `com.processpuzzle.ai.vision.api` / `.model`; Pydantic models on the Python side |
 
 ### 6.1 `ai-api.yaml` (under `/organizations/{orgKey}`)
-- **Profiles** `/recognition-profiles/{entityName}`: CRUD, one per entity type.
-- **Media** `POST /media-uploads`: returns a presigned PUT URL and a `mediaKey`. The file goes straight to MinIO.
-- **Enrollment** `/entities/{entityName}/{objectId}/enrollment`: `GET`, `DELETE`; `POST .../photos` with
-  `mediaKeys` (202, idempotent per key); `DELETE .../photos/{photoId}`.
-- **Sessions** `/recognition-sessions`: CRUD; a session names the entity type, an optional context object (the
-  race) and the candidate object ids (the start list).
-- **Jobs** `POST /recognition-sessions/{sessionId}/jobs` with a `mediaKey` (202); `GET /recognition-jobs/{jobId}`;
-  `POST .../cancel`.
-- **Tracks** `GET /recognition-jobs/{jobId}/tracks?status=NEEDS_REVIEW` is the review queue;
-  `POST .../tracks/{trackId}/confirm` with an `objectId`, `POST .../reject`.
+- **Profiles** `/recognition-profiles/{entityName}`: CRUD, one per entity type. `galleryAttributeKey` names the
+  ARTIFACT attribute holding the reference photos.
+- **Media** `POST /media-uploads` (purpose `RECOGNITION_FRAME`): returns a presigned PUT URL and a `mediaKey`. The
+  frame goes straight to MinIO.
+- **Enrollment** `/entities/{entityName}/{objectId}/enrollment`: `GET` reads the gallery, `POST` synchronizes it
+  with the subject's photos (202, idempotent), `DELETE` discards it so that the next synchronization rebuilds it.
+- **Recognitions** `POST /recognitions` with `entityName`, 1-5 `mediaKeys` and the `candidateObjectIds` (202);
+  `GET /recognitions/{recognitionId}`, polled until `DONE` or `FAILED`. Outcome `MATCHED` (with `objectId`),
+  `NEEDS_REVIEW` (a person chooses among the top three `candidates`) or `NO_SUBJECT`. Kept for a day.
 - **Callback** `POST /vision-notifications`: called by the vision server only, authenticated by a per-job token.
 
-Track status: `AUTO_MATCHED`, `NEEDS_REVIEW`, `CONFIRMED`, `REJECTED`. The registered identifier is read from the
-entity attribute named by the profile's `identifierAttributeKey`; the OCR reading of each enrollment photo is kept
-beside it to flag mismatches.
+The registered identifier is read from the entity attribute named by the profile's `identifierAttributeKey`; the
+OCR reading of each enrollment photo is kept beside it to flag mismatches.
 
 ### 6.2 `vision-server-api.yaml` (`/v1`, infrastructure network only)
 - `POST /enrollment-jobs`, `/embedding-jobs`, `/recognition-jobs`: submit with a caller-chosen `jobId`
   (idempotent), presigned media URLs, a `callbackUrl` and `callbackToken` (sent back in an `X-Callback-Token`
   header, not as a bearer token, which the resource server would try to parse as a JWT). Recognition jobs carry the candidates'
-  identifiers and gallery embeddings.
+  identifiers and gallery embeddings, and either a `video` or 1-5 `frames`.
 - `GET /{kind}-jobs/{jobId}/result`, `GET /jobs/{jobId}`, `DELETE /jobs/{jobId}`.
 - `GET /models` (detector classes, embedding model and dimension, device), `GET /health`.
 
@@ -124,19 +148,14 @@ base64 float32, each tagged with its model; a gallery of an older embedding mode
 crops (`/embedding-jobs`) before use. Errors are RFC 7807 problem details.
 
 ### 6.3 Events
-Published by `base-ai-backend` post-commit, in `com.processpuzzle.shared.event`:
-- `RecognitionCompletedEvent`: a job reached `DONE`.
-- `SubjectIdentifiedEvent`: a track was auto-matched or confirmed; carries session, context, subject and score.
+None published. The answer of a recognition is the caller's; a race application that wants an event publishes its
+own when it records an observation.
 
 ## 7. Data model (essentials)
 In `base-ai-backend`, per stack database, every table scoped by `org_key`:
 - `recognition_profile(entity_name, detector_class, identifier_attribute_key, identifier_pattern, matching settings)`
-- `enrollment_photo(photo_id, entity_name, object_id, media_key, crop_key, status, observed_identifier, added_at)`
-- `gallery_embedding(photo_id, model, vector)`
-- `recognition_session(session_id, entity_name, context_entity_name, context_object_id, candidate_object_ids)`
-- `recognition_job(job_id, session_id, media_key, status, progress, callback_token_hash, created_at, finished_at)`
-- `track(job_id, track_id, status, object_id?, score, observed_identifier, best_crop_key, first_seen_ms, last_seen_ms, decided_by, decided_at)`
-- `track_candidate(job_id, track_id, object_id, score, identifier_score, embedding_score)`
+- `enrollment_photo(photo_id, entity_name, object_id, photo_ref, crop_key, status, observed_identifier, embedding, added_at)` — `photo_ref` names the subject's artifact
+- `recognition(recognition_id, entity_name, status, frame media keys, candidate object ids, outcome, object_id?, score, observed_identifier, crop_key, ranking, vision_job_id, created_at, finished_at)`, purged after `processpuzzle.ai.recognition.retention`
 
 The vision server keeps only transient jobs and their results until fetched.
 
@@ -144,7 +163,11 @@ The vision server keeps only transient jobs and their results until fetched.
 `base-ai-backend` has no compile dependency on another feature; adapters live in the composition root.
 - `VisionServer`: the vision server client.
 - `MediaStore`: presigned upload and download URLs, crop storage, through `processpuzzle-store`.
-- `SubjectDirectory`: whether an object exists and the value of its identifier attribute, through base-entity.
+- `SubjectDirectory`: whether an object exists, the value of its identifier attribute, and its photos with signed
+  URLs, through base-entity and processpuzzle-store.
+
+Inbound, `ai :: galleries` exposes `SubjectGalleries` (`subjectChanged`, `subjectDeleted`), which the composition
+root calls from base-entity's object events.
 
 ## 8. Quality and evaluation
 - Build a small labeled test set from real start videos (track to boat ID).
@@ -173,26 +196,36 @@ Decided (2026-10-03):
 - Detector: RT-DETR; no paid or copyleft components.
 - Vision server: `apps/vision-server`, shared infrastructure, stateless with respect to tenant data.
 - Compute: CPU only on the stage and prod hosts; no cloud service until a customer pays for it.
-- Vocabulary: subject, identifier text, recognition profile, recognition session, candidate set.
+- Vocabulary: subject, identifier text, recognition profile, recognition session, candidate set (sessions superseded by recognitions on 2026-10-04).
 - Stage runs the vision server within the host's current RAM, with small model variants (RT-DETR-R18,
   DINOv2-small) and a hard memory limit.
 
+Decided (2026-10-04):
+- The AI knows nothing of its usage: frames and a candidate list in, ranked candidates out. Races, checkpoints and
+  observations are application data.
+- Reference photos are the subject's own ARTIFACT attribute; base-ai's own photo upload is gone.
+- Snapshot recognition (1-5 frames) first; video batch next, on the same pipeline.
+
 Open:
 - Which classes or fleet sizes need to be supported?
-- Is the start list always known in advance, and is class information available?
+- Is class information available to narrow the candidate list?
 - Prod sizing of the vision server (RAM, a dedicated host, a GPU): decided later, from traffic and customer count.
 
-## 12. Implementation status (2026-10-03)
+## 12. Implementation status (2026-10-04)
 | Part | State |
 |---|---|
-| `vision-server-api.yaml`, `ai-api.yaml` | written; Java types generated in `api-contracts` |
-| `apps/vision-server` | service, job queue, enrollment / embedding / recognition pipelines, `vision-baseline` CLI; 56 unit and contract tests; runtime image with models baked in |
-| `base-ai-backend` | profiles, media uploads, enrollment, vision job submission / callback / polling fallback; sessions, jobs and tracks answer 501 |
-| Composition root | `MediaStore` over processpuzzle-store (bucket `<prefix>-ai-media`), `SubjectDirectory` over base-entity, callback path open in the security chain |
-| `base-ai-frontend` | Recognition Profile screens; Enrollment tab contributed onto every profiled entity (upload, gallery, readings, mismatch flags) |
-| Testbed | `base-ai` section: Overview (the three READMEs) and Samples (the seeded `boat` profile and `Boat` entity with four boats, CAN 603 matching the Wikimedia sample photo) |
+| `vision-server-api.yaml`, `ai-api.yaml` | written; Java types generated in `api-contracts`; recognition takes frames or a video |
+| `apps/vision-server` | service, job queue, enrollment / embedding / recognition pipelines (video and frames), `vision-baseline` CLI; unit and contract tests; runtime image with models baked in |
+| `base-ai-backend` | profiles, frame uploads, galleries synchronized from the subjects' ARTIFACT photos, recognitions against a candidate list, vision job submission / callback / polling fallback; video recognition not offered yet |
+| Composition root | `MediaStore` over processpuzzle-store (bucket `<prefix>-ai-media`), `SubjectDirectory` over base-entity and the store, base-entity object events relayed to `SubjectGalleries`, callback path open in the security chain |
+| `base-ai-frontend` | Recognition Profile screens; read-only Recognition tab (the enrollment) contributed onto every profiled entity (gallery, readings, mismatch flags, synchronize, rebuild); `pp-recognition-camera` widget |
+| Testbed | `base-ai` section: Overview and Samples — the seeded `boat` profile, the `Boat` entity with its `photos` attribute and four boats (CAN 603 matching the Wikimedia sample photo), and the race application around it as plain base-entity metadata — `Race` (rounds), `Registration` (race ↔ boat, the candidate constraint) and `Race Observation` (race, round, checkpoint, boat, capturedAt, source) — with a Recognize page that picks the context, hands the race's entries to the camera widget and saves every hit, or hand tick, as an observation |
 | Compose | `vision-server` in `docker-compose-infrastructure.yaml` (always on for stage/prod, `mem_limit` 2304m, loopback port 8190); behind the `ai` profile in the local/CI overlay, so `COMPOSE_PROFILES=ai` opts in |
 | CI | `build-vision-server.yml` runs the tests and lint; Build/Deploy-Infrastructure build, push and promote the image with the other infrastructure images, cached in the registry |
+
+Databases from before 2026-10-04 have to be dropped and reseeded: the schema changed, and seeded definitions are
+create-only, so an existing `boat` definition would lack the `photos` attribute and the `boat` profile its
+`galleryAttributeKey`. There is no migration before Flyway is introduced.
 
 Measured on a development machine (8 cores, Docker), CPU only, on two Wikimedia Commons photos:
 - Enrollment: ~12 s per photo warm, ~15 s cold, OCR dominating. The 49er photo read `CAN603` at 0.91 with the
@@ -200,10 +233,6 @@ Measured on a development machine (8 cores, Docker), CPU only, on two Wikimedia 
 - Peak memory ~1.8 GB with all three models loaded. The stage host has about 3.8 GB for every container, so the
   vision server does not fit there beside the current stacks without either more RAM or a host of its own;
   `VISION_IDLE_UNLOAD_SECONDS` only returns the memory between jobs.
-
-End to end on the local compose stack (2026-10-03): a profile, a presigned PUT straight to MinIO, enrollment, the
-vision server's callback, the result fetch and the crop store all worked; the 49er photo came back ENROLLED with
-`CAN603` in 28.8 s from a cold start. The vision server used ~320 MiB idle and ~630 MiB after the job.
 
 ### 12.1 Before the first stage deployment
 - Enter `VISION_SERVICE_TOKEN` (one random value) in **both** Coolify resources and both GitHub Environments, and

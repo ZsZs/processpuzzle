@@ -16,7 +16,18 @@ import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
-import { BOAT_NAME, BOAT_PATH, boatScreenRoutes } from './content/base-ai/boat-sample.routes';
+import { BOAT_NAME, BOAT_PATH, boatScreenRoutes, RECOGNIZE_PATH } from './content/base-ai/boat-sample.routes';
+import {
+  OBSERVATION_NAME,
+  OBSERVATION_PATH,
+  observationScreenRoutes,
+  RACE_NAME,
+  RACE_PATH,
+  raceScreenRoutes,
+  REGISTRATION_NAME,
+  REGISTRATION_PATH,
+  registrationScreenRoutes,
+} from './content/base-ai/race-sample.routes';
 import { MarkdownPageComponent } from '@processpuzzle/widgets';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE, authMatcher } from '@processpuzzle/auth';
@@ -309,15 +320,23 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-ai/samples.component').then((comp) => comp.SamplesComponent),
-        // Two samples, in the order a user meets them. `BASE_AI_ROUTES` brings the `recognition-profile`
+        // The samples, in the order a user meets them. `BASE_AI_ROUTES` brings the `recognition-profile`
         // branch and declares its own transloco scopes. `Boat` is metadata, resolved at run-time like the
         // rule samples' `Order` — and `entityName` sits on the route contributing its segment, for the
         // reason given there. Its Enrollment tab comes from `provideEntityEnrollmentTab()` in app.config.ts,
-        // not from anything on this route.
+        // not from anything on this route. `Race`, `Registration` and `Race Observation` are the race application
+        // around it, also metadata; `recognize` is that application's checkpoint screen, hosting base-ai's camera.
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'recognition-profile' },
           ...BASE_AI_ROUTES,
           { path: BOAT_PATH, data: { entityName: BOAT_NAME }, loadChildren: boatScreenRoutes },
+          { path: RACE_PATH, data: { entityName: RACE_NAME }, loadChildren: raceScreenRoutes },
+          { path: REGISTRATION_PATH, data: { entityName: REGISTRATION_NAME }, loadChildren: registrationScreenRoutes },
+          { path: OBSERVATION_PATH, data: { entityName: OBSERVATION_NAME }, loadChildren: observationScreenRoutes },
+          {
+            path: RECOGNIZE_PATH,
+            loadComponent: () => import('./content/base-ai/recognize-sample.component').then((comp) => comp.RecognizeSampleComponent),
+          },
         ],
       },
     ],

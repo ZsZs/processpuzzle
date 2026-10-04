@@ -7,10 +7,15 @@ import com.processpuzzle.ai.model.EnrollmentPhoto;
 import com.processpuzzle.ai.model.EnrollmentPhotoStatus;
 import com.processpuzzle.ai.model.EnrollmentStatus;
 import com.processpuzzle.ai.model.MediaUpload;
+import com.processpuzzle.ai.model.Recognition;
+import com.processpuzzle.ai.model.RecognitionCandidate;
+import com.processpuzzle.ai.model.RecognitionOutcome;
+import com.processpuzzle.ai.model.RecognitionStatus;
 import com.processpuzzle.ai.model.RecognitionProfileInput;
 import com.processpuzzle.ai.usecase.EnrollmentView;
 import com.processpuzzle.ai.usecase.MediaUploads;
 import com.processpuzzle.ai.usecase.RecognitionProfiles;
+import com.processpuzzle.ai.usecase.RecognitionView;
 import java.net.URI;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -27,6 +32,7 @@ public class AiMapper {
                 input.getName(),
                 input.getDescription(),
                 input.getDetectorClass(),
+                input.getGalleryAttributeKey(),
                 input.getIdentifierAttributeKey(),
                 input.getIdentifierPattern(),
                 input.getMatching() == null ? null : toDomain(input.getMatching()));
@@ -39,6 +45,7 @@ public class AiMapper {
         model.setName(profile.getName());
         model.setDescription(profile.getDescription());
         model.setDetectorClass(profile.getDetectorClass());
+        model.setGalleryAttributeKey(profile.getGalleryAttributeKey());
         model.setIdentifierAttributeKey(profile.getIdentifierAttributeKey());
         model.setIdentifierPattern(profile.getIdentifierPattern());
         model.setMatching(new com.processpuzzle.ai.model.MatchingSettings()
@@ -76,6 +83,7 @@ public class AiMapper {
     private EnrollmentPhoto toModel(EnrollmentView.Photo photo) {
         return new EnrollmentPhoto()
                 .photoId(photo.photoId())
+                .photoRef(photo.photoRef())
                 .status(EnrollmentPhotoStatus.valueOf(photo.status().name()))
                 .photoUrl(photo.photoUrl() == null ? null : URI.create(photo.photoUrl()))
                 .cropUrl(photo.cropUrl() == null ? null : URI.create(photo.cropUrl()))
@@ -83,6 +91,31 @@ public class AiMapper {
                 .identifierMismatch(photo.identifierMismatch())
                 .failureReason(photo.failureReason())
                 .addedAt(offset(photo.addedAt()));
+    }
+
+    public Recognition toModel(RecognitionView view) {
+        Recognition model = new Recognition()
+                .recognitionId(view.recognitionId())
+                .entityName(view.entityName())
+                .status(RecognitionStatus.valueOf(view.status().name()))
+                .outcome(view.outcome() == null ? null : RecognitionOutcome.valueOf(view.outcome().name()))
+                .objectId(view.objectId())
+                .score(view.score())
+                .observedIdentifierText(view.observedIdentifierText())
+                .observedIdentifierConfidence(view.observedIdentifierConfidence())
+                .cropUrl(view.cropUrl() == null ? null : URI.create(view.cropUrl()))
+                .failureReason(view.failureReason())
+                .createdAt(offset(view.createdAt()))
+                .finishedAt(offset(view.finishedAt()));
+        model.setCandidates(view.candidates().stream()
+                .map(candidate -> new RecognitionCandidate()
+                        .objectId(candidate.getObjectId())
+                        .score(candidate.getScore())
+                        .identifierScore(candidate.getIdentifierScore())
+                        .embeddingScore(candidate.getEmbeddingScore()))
+                .toList());
+        model.setCandidatesWithoutGallery(view.candidatesWithoutGallery());
+        return model;
     }
 
     /**

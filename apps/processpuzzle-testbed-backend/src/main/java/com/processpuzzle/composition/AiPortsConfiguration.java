@@ -9,6 +9,9 @@ import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.store.usecases.outbound.FileStorageService;
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,9 +45,12 @@ public class AiPortsConfiguration {
      * Subjects are base-entity objects. {@code entityName} is base-entity's entity definition code, the
      * same mapping base-state's gateway makes. {@code orgKey} is accepted and not used: an
      * {@code EntityObject} has no organization column yet, as that gateway notes too.
+     *
+     * <p>Photos are the subject's ARTIFACT values: {@code {bucket, objectId, name, mimeType}} objects,
+     * one or a list, stored by processpuzzle-store. A photo's reference is {@code bucket/objectId}.
      */
     @Bean
-    public SubjectDirectory aiSubjectDirectory(EntityAttributeQuery attributes, EntityObjectAccess objects) {
+    public SubjectDirectory aiSubjectDirectory(EntityAttributeQuery attributes, EntityObjectAccess objects, FileStorageService storage) {
         return new SubjectDirectory() {
             @Override
             public boolean entityTypeExists(String orgKey, String entityName) {
@@ -55,6 +61,17 @@ public class AiPortsConfiguration {
             public boolean isTextAttribute(String orgKey, String entityName, String attributeKey) {
                 return attributes.attributeKind(entityName, attributeKey)
                         .map(kind -> kind == EntityAttributeKind.TEXT)
+                        .orElse(false);
+            }
+
+            /**
+             * base-entity reports an ARTIFACT attribute's value kind as REFERENCE, which a FOREIGN_KEY
+             * shares; values that are not artifacts are ignored when the photos are read.
+             */
+            @Override
+            public boolean isPhotoAttribute(String orgKey, String entityName, String attributeKey) {
+                return attributes.attributeKind(entityName, attributeKey)
+                        .map(kind -> kind == EntityAttributeKind.REFERENCE)
                         .orElse(false);
             }
 
@@ -77,7 +94,51 @@ public class AiPortsConfiguration {
                     return Optional.empty();
                 }
             }
+
+            @Override
+            public List<SubjectPhoto> photos(String orgKey, String entityName, UUID objectId, String attributeKey) {
+                try {
+                    return artifactPhotos(objects.find(entityName, objectId).payload().get(attributeKey));
+                } catch (EntityObjectAccessException.NotFound e) {
+                    return List.of();
+                }
+            }
+
+            @Override
+            public String photoUrl(String photoRef, Duration expiry) {
+                String[] location = location(photoRef);
+                return storage.getObjectUri(location[0], location[1]);
+            }
+
+            @Override
+            public String internalPhotoUrl(String photoRef, Duration expiry) {
+                String[] location = location(photoRef);
+                return storage.getInternalObjectUri(location[0], location[1], expiry);
+            }
         };
+    }
+
+    /** The image artifacts of an ARTIFACT value — one object or a list of them; anything else is skipped. */
+    static List<SubjectDirectory.SubjectPhoto> artifactPhotos(Object value) {
+        Collection<?> items = value instanceof Collection<?> list ? list : value == null ? List.of() : List.of(value);
+        List<SubjectDirectory.SubjectPhoto> photos = new ArrayList<>();
+        for (Object item : items) {
+            if (item instanceof Map<?, ?> artifact
+                    && artifact.get("bucket") instanceof String bucket && !bucket.isBlank()
+                    && artifact.get("objectId") instanceof String objectId && !objectId.isBlank()
+                    && artifact.get("mimeType") instanceof String mimeType && mimeType.startsWith("image/")) {
+                photos.add(new SubjectDirectory.SubjectPhoto(bucket + "/" + objectId, mimeType));
+            }
+        }
+        return photos;
+    }
+
+    private static String[] location(String photoRef) {
+        int slash = photoRef.indexOf('/');
+        if (slash <= 0 || slash == photoRef.length() - 1) {
+            throw new IllegalArgumentException("not a photo reference: " + photoRef);
+        }
+        return new String[] {photoRef.substring(0, slash), photoRef.substring(slash + 1)};
     }
 
     static final class FileStorageMediaStore implements MediaStore {

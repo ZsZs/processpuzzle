@@ -12,6 +12,16 @@ public class UnavailableVisionServer implements VisionServer {
     }
 
     @Override
+    public void submitRecognition(RecognitionRequest request) {
+        throw unavailable();
+    }
+
+    @Override
+    public RecognitionOutcome recognitionResult(UUID jobId) {
+        throw unavailable();
+    }
+
+    @Override
     public Optional<JobState> job(UUID jobId) {
         throw unavailable();
     }

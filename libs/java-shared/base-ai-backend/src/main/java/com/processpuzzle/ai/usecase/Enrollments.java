@@ -1,12 +1,12 @@
 package com.processpuzzle.ai.usecase;
 
 import com.processpuzzle.ai.AiProperties;
+import com.processpuzzle.ai.galleries.SubjectGalleries;
 import com.processpuzzle.ai.domain.EnrollmentPhoto;
 import com.processpuzzle.ai.domain.EnrollmentPhotoRepository;
 import com.processpuzzle.ai.domain.EnrollmentPhotoStatus;
-import com.processpuzzle.ai.domain.MediaPurpose;
-import com.processpuzzle.ai.domain.MediaUpload;
 import com.processpuzzle.ai.domain.RecognitionProfile;
+import com.processpuzzle.ai.domain.RecognitionProfileRepository;
 import com.processpuzzle.ai.domain.VisionJobTicket;
 import com.processpuzzle.ai.domain.VisionJobTicketRepository;
 import com.processpuzzle.ai.usecase.exception.AiRequestException;
@@ -15,30 +15,45 @@ import com.processpuzzle.core.tenancy.OrganizationGuard;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * The gallery of one subject: adding photos, reading the enrollment, removing photos.
+ * The gallery of one subject, derived from the photos in its profile's {@code galleryAttributeKey}.
+ * Synchronizing compares the photos the subject has with the ones already in its gallery: new ones are
+ * enrolled, gone ones are dropped with their crops. The photos themselves are the subject's and are
+ * never written or deleted here.
  *
- * <p>Adding photos is two steps on purpose. The photos and their vision job ticket are committed first;
- * only then is the job submitted, outside that transaction, by {@link VisionJobs#dispatch}. A vision
- * server that is down therefore costs nothing but latency — the photos stay PENDING and the poller
- * submits the ticket later — and a notification that arrives before the submission call returns still
- * finds its ticket.
+ * <p>Synchronizing is two steps on purpose. The new photos and their vision job ticket are committed
+ * first; only then is the job submitted, outside that transaction, by {@link VisionJobs#dispatch}. A
+ * vision server that is down therefore costs nothing but latency — the photos stay PENDING and the
+ * poller submits the ticket later — and a notification that arrives before the submission call returns
+ * still finds its ticket.
+ *
+ * <p>Transactions are {@code REQUIRES_NEW}: {@link SubjectGalleries} is called from after-commit
+ * listeners, where the finished transaction is still bound to the thread and a joining write would
+ * silently never commit.
  */
 @Service
-public class Enrollments {
+public class Enrollments implements SubjectGalleries {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Enrollments.class);
 
     private final RecognitionProfiles profiles;
-    private final MediaUploads uploads;
+    private final RecognitionProfileRepository profileRepository;
     private final EnrollmentPhotoRepository photos;
     private final VisionJobTicketRepository tickets;
     private final VisionJobs visionJobs;
@@ -48,12 +63,12 @@ public class Enrollments {
     private final TransactionTemplate transaction;
     private final AiProperties.Media settings;
 
-    public Enrollments(RecognitionProfiles profiles, MediaUploads uploads, EnrollmentPhotoRepository photos,
-                       VisionJobTicketRepository tickets, VisionJobs visionJobs, MediaStores stores,
-                       ObjectProvider<SubjectDirectory> subjects, OrganizationGuard guard,
+    public Enrollments(RecognitionProfiles profiles, RecognitionProfileRepository profileRepository,
+                       EnrollmentPhotoRepository photos, VisionJobTicketRepository tickets, VisionJobs visionJobs,
+                       MediaStores stores, ObjectProvider<SubjectDirectory> subjects, OrganizationGuard guard,
                        PlatformTransactionManager transactionManager, AiProperties properties) {
         this.profiles = profiles;
-        this.uploads = uploads;
+        this.profileRepository = profileRepository;
         this.photos = photos;
         this.tickets = tickets;
         this.visionJobs = visionJobs;
@@ -61,6 +76,7 @@ public class Enrollments {
         this.subjects = subjects.getIfUnique(() -> SubjectDirectory.PERMISSIVE);
         this.guard = guard;
         this.transaction = new TransactionTemplate(transactionManager);
+        this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.settings = properties.getMedia();
     }
 
@@ -69,30 +85,15 @@ public class Enrollments {
         return transaction.execute(status -> view(requireSubject(orgKey, entityName, objectId), objectId));
     }
 
-    /** Adds the uploaded photos and starts their enrollment; idempotent per media key. */
-    public EnrollmentView addPhotos(String orgKey, String entityName, UUID objectId, List<String> mediaKeys) {
+    /** Brings the gallery in line with the subject's photos and starts enrolling the new ones. */
+    public EnrollmentView synchronize(String orgKey, String entityName, UUID objectId) {
         guard.requireAccess(orgKey);
-        if (mediaKeys == null || mediaKeys.isEmpty()) {
-            throw AiRequestException.invalid("ai.enrollment.invalid", "mediaKeys must not be empty.");
-        }
-        UUID ticketId = transaction.execute(status -> register(orgKey, entityName, objectId, mediaKeys));
-        if (ticketId != null) {
-            visionJobs.dispatch(ticketId);
-        }
+        Sync sync = transaction.execute(status -> reconcile(requireSubject(orgKey, entityName, objectId), objectId));
+        finish(sync);
         return find(orgKey, entityName, objectId);
     }
 
-    public void deletePhoto(String orgKey, String entityName, UUID objectId, UUID photoId) {
-        guard.requireAccess(orgKey);
-        EnrollmentPhoto photo = transaction.execute(status -> {
-            EnrollmentPhoto found = photos.findByOrgKeyAndEntityNameAndObjectIdAndPhotoId(orgKey, entityName, objectId, photoId)
-                    .orElseThrow(() -> AiRequestException.notFound("ai.enrollment.photo-not-found", "No photo " + photoId + "."));
-            photos.delete(found);
-            return found;
-        });
-        discardObjects(List.of(photo));
-    }
-
+    /** Discards what was derived from the subject's photos; the next synchronization enrolls them afresh. */
     public void delete(String orgKey, String entityName, UUID objectId) {
         guard.requireAccess(orgKey);
         List<EnrollmentPhoto> removed = transaction.execute(status -> {
@@ -103,26 +104,83 @@ public class Enrollments {
             photos.deleteAll(gallery);
             return gallery;
         });
-        discardObjects(removed);
+        discardCrops(removed);
     }
 
-    private UUID register(String orgKey, String entityName, UUID objectId, List<String> mediaKeys) {
-        requireSubject(orgKey, entityName, objectId);
+    // ── SubjectGalleries: trusted, no caller to check ──────────────
+
+    /** Subjects of a type without a profile are not recognized, so their changes are ignored. */
+    @Override
+    public void subjectChanged(String orgKey, String entityName, UUID objectId) {
+        Sync sync = transaction.execute(status -> profileRepository.findByOrgKeyAndEntityName(orgKey, entityName)
+                .map(profile -> reconcile(profile, objectId))
+                .orElse(Sync.NONE));
+        visionJobs.dispatchLater(sync.ticketId());
+        discardCrops(sync.dropped());
+    }
+
+    @Override
+    public void subjectDeleted(String orgKey, String entityName, UUID objectId) {
+        List<EnrollmentPhoto> removed = transaction.execute(status -> {
+            List<EnrollmentPhoto> gallery = photos.findByOrgKeyAndEntityNameAndObjectIdOrderByAddedAt(orgKey, entityName, objectId);
+            photos.deleteAll(gallery);
+            return gallery;
+        });
+        discardCrops(removed);
+    }
+
+    /**
+     * Synchronizes the galleries of a recognition's candidates, which must be up to date before their
+     * embeddings are read. Photos new to a gallery are still PENDING afterwards — the recognition does
+     * not wait for them.
+     */
+    void synchronizeAll(RecognitionProfile profile, List<UUID> objectIds) {
+        for (UUID objectId : objectIds) {
+            try {
+                Sync sync = transaction.execute(status -> reconcile(profile, objectId));
+                finish(sync);
+            } catch (RuntimeException e) {
+                LOG.warn("gallery of {}/{} not synchronized: {}", profile.getEntityName(), objectId, e.getMessage());
+            }
+        }
+    }
+
+    // ── Reconciliation ─────────────────────────────────────────────
+
+    private Sync reconcile(RecognitionProfile profile, UUID objectId) {
+        String orgKey = profile.getOrgKey();
+        String entityName = profile.getEntityName();
+        Map<String, SubjectDirectory.SubjectPhoto> current = new LinkedHashMap<>();
+        if (profile.getGalleryAttributeKey() != null) {
+            subjects.photos(orgKey, entityName, objectId, profile.getGalleryAttributeKey())
+                    .forEach(photo -> current.putIfAbsent(photo.photoRef(), photo));
+        }
+        List<EnrollmentPhoto> gallery = photos.findByOrgKeyAndEntityNameAndObjectIdOrderByAddedAt(orgKey, entityName, objectId);
+        Set<String> known = gallery.stream().map(EnrollmentPhoto::getPhotoRef).collect(Collectors.toSet());
+        List<EnrollmentPhoto> dropped = gallery.stream().filter(photo -> !current.containsKey(photo.getPhotoRef())).toList();
+        photos.deleteAll(dropped);
+
         Instant now = Instant.now();
         List<EnrollmentPhoto> added = new ArrayList<>();
-        for (String mediaKey : new LinkedHashSet<>(mediaKeys)) {
-            MediaUpload upload = uploads.claim(orgKey, mediaKey, MediaPurpose.ENROLLMENT_PHOTO);
-            if (!photos.existsByOrgKeyAndMediaKey(orgKey, upload.getMediaKey())) {
-                added.add(new EnrollmentPhoto(upload, entityName, objectId, now));
+        for (String photoRef : current.keySet()) {
+            if (!known.contains(photoRef)) {
+                added.add(new EnrollmentPhoto(orgKey, entityName, objectId, photoRef, now));
             }
         }
         if (added.isEmpty()) {
-            return null;
+            return new Sync(null, dropped);
         }
         VisionJobTicket ticket = tickets.save(VisionJobTicket.open(orgKey, VisionJobTicket.Kind.ENROLLMENT, now));
         added.forEach(photo -> photo.assignTo(ticket.getJobId()));
         photos.saveAll(added);
-        return ticket.getJobId();
+        return new Sync(ticket.getJobId(), dropped);
+    }
+
+    private void finish(Sync sync) {
+        if (sync.ticketId() != null) {
+            visionJobs.dispatch(sync.ticketId());
+        }
+        discardCrops(sync.dropped());
     }
 
     private RecognitionProfile requireSubject(String orgKey, String entityName, UUID objectId) {
@@ -144,8 +202,9 @@ public class Enrollments {
         List<EnrollmentView.Photo> views = gallery.stream()
                 .map(photo -> new EnrollmentView.Photo(
                         photo.getPhotoId(),
+                        photo.getPhotoRef(),
                         photo.getStatus(),
-                        stores.get().readUrl(photo.getPhotoObjectName(), settings.getReadUrlExpiry()),
+                        photoUrl(photo.getPhotoRef()),
                         photo.getCropObjectName() == null ? null
                                 : stores.get().readUrl(photo.getCropObjectName(), settings.getReadUrlExpiry()),
                         photo.getObservedIdentifier(),
@@ -159,6 +218,15 @@ public class Enrollments {
                 .findFirst().orElse(null);
         Instant updated = gallery.stream().map(EnrollmentPhoto::getAddedAt).max(Comparator.naturalOrder()).orElse(null);
         return new EnrollmentView(entityName, objectId, status(gallery), registered.orElse(null), model, views, updated);
+    }
+
+    /** A photo URL the directory cannot sign leaves the entry without one rather than failing the view. */
+    private String photoUrl(String photoRef) {
+        try {
+            return subjects.photoUrl(photoRef, settings.getReadUrlExpiry());
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     static EnrollmentView.Status status(List<EnrollmentPhoto> gallery) {
@@ -186,12 +254,21 @@ public class Enrollments {
         return identifier.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
     }
 
-    private void discardObjects(List<EnrollmentPhoto> removed) {
+    /** Only the crops are this module's; the photos stay with the subject. */
+    private void discardCrops(List<EnrollmentPhoto> removed) {
         for (EnrollmentPhoto photo : removed) {
-            stores.get().delete(photo.getPhotoObjectName());
             if (photo.getCropObjectName() != null) {
-                stores.get().delete(photo.getCropObjectName());
+                try {
+                    stores.get().delete(photo.getCropObjectName());
+                } catch (RuntimeException e) {
+                    LOG.warn("crop {} not deleted: {}", photo.getCropObjectName(), e.getMessage());
+                }
             }
         }
+    }
+
+    /** What a reconciliation left to do outside its transaction. */
+    private record Sync(UUID ticketId, List<EnrollmentPhoto> dropped) {
+        static final Sync NONE = new Sync(null, List.of());
     }
 }
