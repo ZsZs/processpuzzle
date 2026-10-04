@@ -24,7 +24,7 @@
                   colDescriptor.formControlType === 'DATE' ? (element[colDescriptor.attrName] | ppDate: colDescriptor.dateFormat) : element[colDescriptor.attrName]
                 }}</a>
               } @else if (colDescriptor.linkedEntityType !== undefined) {
-                <a (click)="onNavigateToRelated(colDescriptor, element)">{{ element[colDescriptor.attrName] }}</a>
+                <a (click)="onNavigateToRelated(colDescriptor, element)">{{ foreignKeyLabel(colDescriptor, element) }}</a>
               } @else if (colDescriptor.formControlType === 'ARTIFACT' && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null) {
                 @for (artifact of artifactsOf(element[colDescriptor.attrName]); track $index; let last = $last) {
                   <a (click)="onDownloadObject(artifact, $event)">{{
