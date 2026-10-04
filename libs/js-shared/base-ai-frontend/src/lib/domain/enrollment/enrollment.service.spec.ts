@@ -64,6 +64,84 @@ describe('EnrollmentService', () => {
 
   it('refuses a batch with no image in it before reserving anything', async () => {
     await expect(service.addPhotos('boat', 'o-1', [new File(['x'], 'a.txt', { type: 'text/plain' })])).rejects.toThrow(/JPEG/);
+    http.expectNone(`${ROOT}/media-uploads`);
+  });
+
+  it('normalizes missing photos and preserves explicit mismatch flags', async () => {
+    const empty = firstValueFrom(service.find('boat', 'o-1'));
+    http.expectOne(`${ROOT}/entities/boat/o-1/enrollment`).flush({ status: 'NOT_ENROLLED' });
+    expect((await empty)?.photos).toEqual([]);
+
+    const populated = firstValueFrom(service.find('boat', 'o-1'));
+    http.expectOne(`${ROOT}/entities/boat/o-1/enrollment`).flush({
+      photos: [{ identifierMismatch: true }, { identifierMismatch: false }, {}],
+    });
+    expect((await populated)?.photos.map((photo) => photo.identifierMismatch)).toEqual([true, false, false]);
+  });
+
+  it('propagates backend errors other than a missing profile', async () => {
+    const result = firstValueFrom(service.find('boat', 'o-1'));
+    const rejected = expect(result).rejects.toMatchObject({ status: 503 });
+    http.expectOne(`${ROOT}/entities/boat/o-1/enrollment`).flush('unavailable', { status: 503, statusText: 'Service Unavailable' });
+    await rejected;
+  });
+
+  it('encodes each URL segment when reading or deleting photos and galleries', async () => {
+    const url = `${ROOT}/entities/sail%20boat/object%2F1/enrollment`;
+    const read = firstValueFrom(service.find('sail boat', 'object/1'));
+    http.expectOne(url).flush({ photos: [] });
+    await read;
+
+    const deletedPhoto = firstValueFrom(service.deletePhoto('sail boat', 'object/1', 'photo/1'));
+    const photoRequest = http.expectOne(`${url}/photos/photo%2F1`);
+    expect(photoRequest.request.method).toBe('DELETE');
+    photoRequest.flush(null);
+    await deletedPhoto;
+
+    const deletedGallery = firstValueFrom(service.deleteAll('sail boat', 'object/1'));
+    const galleryRequest = http.expectOne(url);
+    expect(galleryRequest.request.method).toBe('DELETE');
+    galleryRequest.flush(null);
+    await deletedGallery;
+  });
+
+  it('uploads multiple images sequentially without requiring a progress callback or slot headers', async () => {
+    const files = [new File(['png'], 'one.png', { type: 'image/png' }), new File(['webp'], 'two.webp', { type: 'image/webp' })];
+    const done = service.addPhotos('boat', 'o-1', files);
+
+    for (const [index, file] of files.entries()) {
+      const slot = await waitFor(() => http.match(`${ROOT}/media-uploads`)[0]);
+      expect(slot.request.body.fileName).toBe(file.name);
+      slot.flush({ mediaKey: `m-${index}`, uploadUrl: `http://minio/${index}` });
+      const put = await waitFor(() => http.match(`http://minio/${index}`)[0]);
+      expect(put.request.body).toBe(file);
+      expect(put.request.headers.get('Content-Type')).toBe(file.type);
+      http.expectNone(`${ROOT}/media-uploads`);
+      http.expectNone(`${ROOT}/entities/boat/o-1/enrollment/photos`);
+      put.flush('');
+    }
+
+    const enroll = await waitFor(() => http.match(`${ROOT}/entities/boat/o-1/enrollment/photos`)[0]);
+    expect(enroll.request.body).toEqual({ mediaKeys: ['m-0', 'm-1'] });
+    enroll.flush({ status: 'PROCESSING' });
+    expect((await done).photos).toEqual([]);
+  });
+
+  it('stops the batch and propagates a storage failure without enrolling incomplete uploads', async () => {
+    const photo = new File(['jpeg'], 'boat.jpg', { type: 'image/jpeg' });
+    const progress: number[] = [];
+    const done = service.addPhotos('boat', 'o-1', [photo, photo], (count) => progress.push(count));
+    const rejected = expect(done).rejects.toMatchObject({ status: 403 });
+    const slot = await waitFor(() => http.match(`${ROOT}/media-uploads`)[0]);
+    slot.flush({ mediaKey: 'm-1', uploadUrl: 'http://minio/denied', requiredHeaders: { 'x-amz-meta-purpose': 'enrollment' } });
+    const put = await waitFor(() => http.match('http://minio/denied')[0]);
+    expect(put.request.headers.get('x-amz-meta-purpose')).toBe('enrollment');
+    put.flush('expired', { status: 403, statusText: 'Forbidden' });
+
+    await rejected;
+    expect(progress).toEqual([]);
+    http.expectNone(`${ROOT}/media-uploads`);
+    http.expectNone(`${ROOT}/entities/boat/o-1/enrollment/photos`);
   });
 });
 

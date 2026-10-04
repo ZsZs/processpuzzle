@@ -80,6 +80,10 @@ public class DefaultProfileLoader {
             LOG.warn("Failed to read default recognition profiles from {}", fileName, e);
             return;
         }
+        if (document == null) {
+            LOG.warn("Skipping default recognition profiles from {}: the YAML contains no document.", fileName);
+            return;
+        }
 
         int created = 0;
         int present = 0;

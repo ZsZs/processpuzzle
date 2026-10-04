@@ -76,7 +76,7 @@ export class EnrollmentService {
         sizeBytes: file.size,
       }),
     );
-    const headers = new HttpHeaders({ 'Content-Type': file.type, ...(slot.requiredHeaders ?? {}) });
+    const headers = new HttpHeaders({ 'Content-Type': file.type, ...slot.requiredHeaders });
     await lastValueFrom(this.storage.put(slot.uploadUrl, file, { headers, responseType: 'text' }));
     return slot;
   }

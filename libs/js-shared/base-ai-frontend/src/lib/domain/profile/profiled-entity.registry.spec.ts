@@ -44,4 +44,35 @@ describe('ProfiledEntityRegistry', () => {
     expect(await registry.profileFor('Boat')).toBeUndefined();
     expect(await registry.profileFor('Boat')).toBeDefined();
   });
+
+  it.each([undefined, ''])('does not load definitions or profiles for an empty name (%s)', async (name) => {
+    expect(await registry.profileFor(name)).toBeUndefined();
+    expect(byName).not.toHaveBeenCalled();
+    expect(findAll).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the descriptor name when the definition lookup fails', async () => {
+    byName.mockRejectedValue(new Error('unavailable'));
+    expect(await registry.keyOf('Special Order')).toBe('special-order');
+  });
+
+  it.each([null, undefined, { content: null }, { content: [] }])('handles an empty response (%j)', async (response) => {
+    byName.mockResolvedValue({ code: 'boat' });
+    findAll.mockReturnValue(of(response));
+    expect(await registry.profileFor('Boat')).toBeUndefined();
+  });
+
+  it('reads a single-record mock response and reloads after reset', async () => {
+    const original = new RecognitionProfile({ entityName: 'boat', name: 'Original' });
+    const updated = new RecognitionProfile({ entityName: 'boat', name: 'Updated' });
+    byName.mockResolvedValue({ code: 'boat' });
+    findAll.mockReturnValueOnce(of(original)).mockReturnValueOnce(of([updated]));
+
+    expect(await registry.profileFor('Boat')).toBe(original);
+    expect(await registry.profileFor('Boat')).toBe(original);
+    expect(findAll).toHaveBeenCalledTimes(1);
+    registry.reset();
+    expect(await registry.profileFor('Boat')).toBe(updated);
+    expect(findAll).toHaveBeenCalledTimes(2);
+  });
 });

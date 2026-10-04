@@ -30,7 +30,7 @@ export interface RecognitionProfileDto {
  * `id` mirrors `entityName` both ways, as `StateMachineDefinitionMapper` does and for the same reason: the
  * contract addresses a profile by `entityName`, the generic screens by `id`. The matching settings are
  * flattened on the way in and nested on the way out; a number the form hands back as text is converted
- * here, and an empty one falls back to the contract's default.
+ * here; empty, nonnumeric or non-finite values fall back to the contract's default.
  *
  * `PUT /recognition-profiles/{entityName}` is a full replacement, so `toDto` emits every field.
  */
@@ -83,8 +83,8 @@ export class RecognitionProfileMapper implements BaseEntityMapper<RecognitionPro
 }
 
 function toNumber(value: unknown, fallback: number): number {
-  if (value === null || value === undefined || value === '') return fallback;
-  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
+  if ((typeof value !== 'number' && typeof value !== 'string') || value === '') return fallback;
+  const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 

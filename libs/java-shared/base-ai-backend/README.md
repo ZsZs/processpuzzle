@@ -132,6 +132,8 @@ requests.requestMatchers(HttpMethod.POST, "/organizations/*/vision-notifications
 `classpath*:default-recognition-profiles/<orgKey>-recognition-profiles.yaml` on startup. Each file lists
 `recognitionProfiles` in the API's `RecognitionProfileInput` shape. The import is create-only: a profile
 already present is never overwritten, so a tuned threshold survives restarts.
+Unreadable or null YAML documents and invalid profile entries are logged and skipped; later files and
+entries are still processed.
 
 ## Data
 

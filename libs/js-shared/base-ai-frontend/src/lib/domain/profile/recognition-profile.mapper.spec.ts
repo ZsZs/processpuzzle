@@ -38,4 +38,52 @@ describe('RecognitionProfileMapper', () => {
     expect(dto.matching).toEqual({ identifierWeight: 0.6, acceptScore: 0.9, acceptMargin: 0.1, sampleFps: MATCHING_DEFAULTS.sampleFps });
     expect(dto.identifierPattern).toBeUndefined();
   });
+
+  it('uses the legacy id when entityName is missing, and defaults an empty DTO', () => {
+    expect(mapper.fromDto({ id: 'boat' })).toMatchObject({ id: 'boat', entityName: 'boat' });
+    expect(mapper.fromDto({})).toEqual(new RecognitionProfile());
+    expect(mapper.toDto(new RecognitionProfile({ id: 'boat' }))).toMatchObject({ id: 'boat', entityName: 'boat' });
+    const profile = new RecognitionProfile();
+    Object.assign(profile, { id: undefined });
+    expect(mapper.toDto(profile)).toMatchObject({ id: '', entityName: '' });
+  });
+
+  it('preserves all editable fields and server metadata through a round trip', () => {
+    const dto = {
+      id: 'boat',
+      entityName: 'boat',
+      name: 'Sailboats',
+      description: ' Identify sailboats ',
+      detectorClass: 'boat',
+      identifierAttributeKey: 'sailNumber',
+      identifierPattern: '^[A-Z]{3}[0-9]+$',
+      matching: { identifierWeight: 0, acceptScore: 0.8, acceptMargin: 0.2, sampleFps: 1 },
+      orgKey: 'testbed',
+      version: 4,
+      createdAt: '2026-10-01T12:00:00Z',
+      updatedAt: '2026-10-02T12:00:00Z',
+    };
+
+    expect(mapper.toDto(mapper.fromDto(dto))).toEqual(dto);
+  });
+
+  it.each([null, undefined, '', 'invalid', Number.NaN, Number.POSITIVE_INFINITY, 'Infinity', {}, [], true])('defaults invalid matching input %j without coercing objects or booleans', (value) => {
+    const profile = new RecognitionProfile();
+    Object.assign(profile, { identifierWeight: value, acceptScore: value, acceptMargin: value, sampleFps: value });
+
+    expect(mapper.toDto(profile).matching).toEqual(MATCHING_DEFAULTS);
+  });
+
+  it('does not stringify an arbitrary object supplied by a form', () => {
+    const profile = new RecognitionProfile();
+    Object.assign(profile, {
+      sampleFps: {
+        toString() {
+          throw new Error('must not stringify');
+        },
+      },
+    });
+
+    expect(mapper.toDto(profile).matching?.sampleFps).toBe(MATCHING_DEFAULTS.sampleFps);
+  });
 });
