@@ -51,8 +51,9 @@ jobs:
           target: test
           tags: processpuzzle-vision-server-test
           load: true
+          # Written on develop only; a branch's own cache could never be restored by any other ref.
           cache-from: type=gha,scope=vision-server-test
-          cache-to: type=gha,scope=vision-server-test,mode=max
+          cache-to: ${{ github.ref == 'refs/heads/develop' && 'type=gha,scope=vision-server-test,mode=max' || 'type=inline' }}
 
       - name: Unit and contract tests
         run: docker run --rm processpuzzle-vision-server-test python -m pytest -q

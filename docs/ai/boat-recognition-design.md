@@ -189,7 +189,8 @@ Open:
 | `apps/vision-server` | service, job queue, enrollment / embedding / recognition pipelines, `vision-baseline` CLI; 56 unit and contract tests; runtime image with models baked in |
 | `base-ai-backend` | profiles, media uploads, enrollment, vision job submission / callback / polling fallback; sessions, jobs and tracks answer 501 |
 | Composition root | `MediaStore` over processpuzzle-store (bucket `<prefix>-ai-media`), `SubjectDirectory` over base-entity, callback path open in the security chain |
-| `base-ai-frontend` | scaffold |
+| `base-ai-frontend` | Recognition Profile screens; Enrollment tab contributed onto every profiled entity (upload, gallery, readings, mismatch flags) |
+| Testbed | `base-ai` section: Overview (the three READMEs) and Samples (the seeded `boat` profile and `Boat` entity with four boats, CAN 603 matching the Wikimedia sample photo) |
 | Compose | `vision-server` in `docker-compose-infrastructure.yaml` (always on for stage/prod, `mem_limit` 2304m, loopback port 8190); behind the `ai` profile in the local/CI overlay, so `COMPOSE_PROFILES=ai` opts in |
 | CI | `build-vision-server.yml` runs the tests and lint; Build/Deploy-Infrastructure build, push and promote the image with the other infrastructure images, cached in the registry |
 

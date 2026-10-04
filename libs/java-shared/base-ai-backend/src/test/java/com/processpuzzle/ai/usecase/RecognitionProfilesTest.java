@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.ai.domain.EnrollmentPhotoRepository;
@@ -17,6 +19,10 @@ import com.processpuzzle.core.tenancy.OrganizationGuard;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.ObjectProvider;
 
 class RecognitionProfilesTest {
@@ -86,6 +92,97 @@ class RecognitionProfilesTest {
                 .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid");
         assertThatThrownBy(() -> profiles.create(ORG, draft(null, null, new MatchingSettings(0.6, 0.75, 0.1, 60))))
                 .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid");
+    }
+
+    @Test
+    void seedingIsCreateOnlyAndDoesNotAskBaseEntity() {
+        when(repository.existsByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(false, true);
+        when(subjects.entityTypeExists(ORG, "Boat")).thenReturn(false);
+
+        assertThat(profiles.seed(ORG, draft("sailNumber", "^[A-Z]{3}$", null))).isPresent();
+        assertThat(profiles.seed(ORG, draft("sailNumber", "^[A-Z]{3}$", null))).isEmpty();
+        assertThatThrownBy(() -> profiles.seed(ORG, draft(null, "[A-Z", null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.identifier-pattern-invalid");
+        verify(guard, never()).requireDesign(ORG);
+        verifyNoInteractions(subjects);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" \t "})
+    void seedingRejectsMissingRequiredFieldsBeforeAccessingTheRepository(String missing) {
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft(missing, "Sailboat", null, "boat", null, null, null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
+                .hasMessage("entityName is required.");
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", missing, null, "boat", null, null, null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
+                .hasMessage("name is required.");
+        assertThatThrownBy(() -> profiles.seed(ORG, new RecognitionProfiles.Draft("Boat", "Sailboat", null, missing, null, null, null)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
+                .hasMessage("detectorClass is required.");
+        verifyNoInteractions(repository, subjects, guard);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-0.1, 0.75, 0.1, 3, identifierWeight",
+            "1.1, 0.75, 0.1, 3, identifierWeight",
+            "0.6, -0.1, 0.1, 3, acceptScore",
+            "0.6, 1.1, 0.1, 3, acceptScore",
+            "0.6, 0.75, -0.1, 3, acceptMargin",
+            "0.6, 0.75, 1.1, 3, acceptMargin",
+            "0.6, 0.75, 0.1, 0.49, sampleFps",
+            "0.6, 0.75, 0.1, 30.1, sampleFps"
+    })
+    void seedingRejectsOutOfRangeMatchingSettings(double weight, double score, double margin, double fps, String field) {
+        MatchingSettings matching = new MatchingSettings(weight, score, margin, fps);
+
+        assertThatThrownBy(() -> profiles.seed(ORG, draft(null, null, matching)))
+                .hasFieldOrPropertyWithValue("errorId", "ai.profile.invalid")
+                .hasMessageContaining(field);
+        verifyNoInteractions(repository, subjects, guard);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0, 0, 0, 0.5", "1, 1, 1, 30"})
+    void seedingAcceptsMatchingBoundaryValuesAndPreservesTheWholeDraft(double weight, double score, double margin, double fps) {
+        MatchingSettings matching = new MatchingSettings(weight, score, margin, fps);
+        RecognitionProfiles.Draft input = new RecognitionProfiles.Draft(
+                "Boat", "Sailboat", "Identify sailing boats", "boat", "sailNumber", "^[A-Z]{3}$", matching);
+
+        RecognitionProfile created = profiles.seed(ORG, input).orElseThrow();
+
+        assertThat(created.getOrgKey()).isEqualTo(ORG);
+        assertThat(created.getEntityName()).isEqualTo("Boat");
+        assertThat(created.getName()).isEqualTo("Sailboat");
+        assertThat(created.getDescription()).isEqualTo("Identify sailing boats");
+        assertThat(created.getDetectorClass()).isEqualTo("boat");
+        assertThat(created.getIdentifierAttributeKey()).isEqualTo("sailNumber");
+        assertThat(created.getIdentifierPattern()).isEqualTo("^[A-Z]{3}$");
+        assertThat(created.getMatching()).isSameAs(matching);
+        verify(repository).save(created);
+        verifyNoInteractions(subjects, guard);
+    }
+
+    @Test
+    void seedingDefaultsMatchingAndClearsBlankOptionalIdentifierFields() {
+        RecognitionProfile created = profiles.seed(ORG, draft("  ", "\t", null)).orElseThrow();
+
+        assertThat(created.getIdentifierAttributeKey()).isNull();
+        assertThat(created.getIdentifierPattern()).isNull();
+        assertThat(created.getMatching()).usingRecursiveComparison().isEqualTo(MatchingSettings.defaults());
+        verifyNoInteractions(subjects, guard);
+    }
+
+    @Test
+    void anExistingSeedIsNeverSavedOrLoadedForModification() {
+        when(repository.existsByOrgKeyAndEntityName(ORG, "Boat")).thenReturn(true);
+
+        assertThat(profiles.seed(ORG, draft(null, null, null))).isEmpty();
+
+        verify(repository, never()).save(any());
+        verify(repository, never()).findByOrgKeyAndEntityName(ORG, "Boat");
+        verifyNoInteractions(subjects, guard);
     }
 
     @Test

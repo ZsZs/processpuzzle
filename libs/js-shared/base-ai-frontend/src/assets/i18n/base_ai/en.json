@@ -1,0 +1,49 @@
+{
+  "recognition_profile": {
+    "_self": "Recognition Profile",
+    "entityName": "Entity Type",
+    "name": "Name",
+    "description": "Description",
+    "detectorClass": "Detector Class",
+    "identifierAttributeKey": "Identifier Attribute",
+    "identifierPattern": "Identifier Pattern",
+    "identifierWeight": "Identifier Weight",
+    "acceptScore": "Accept Score",
+    "acceptMargin": "Accept Margin",
+    "sampleFps": "Sampled FPS",
+    "version": "Version",
+    "updatedAt": "Updated At"
+  },
+  "entity_enrollment": {
+    "tab": "Enrollment",
+    "loading": "Loading the gallery…",
+    "noProfile": "This entity type has no recognition profile, so its objects cannot be enrolled.",
+    "registered": "Registered identifier",
+    "noIdentifier": "none",
+    "intro": "Add photos of this {{ detectorClass }} from several sides and in different light. Each photo is cropped to the subject, embedded and read for its identifier; photos are processed in the background.",
+    "status": {
+      "NOT_ENROLLED": "Not enrolled",
+      "PROCESSING": "Processing",
+      "READY": "Ready",
+      "FAILED": "Failed"
+    },
+    "photoStatus": {
+      "PENDING": "Processing",
+      "ENROLLED": "Enrolled",
+      "NO_SUBJECT": "Nothing found",
+      "AMBIGUOUS": "Several found",
+      "FAILED": "Failed"
+    },
+    "addPhotos": "Add photos",
+    "deleteAll": "Delete gallery",
+    "confirmDeleteAll": "Really delete all photos",
+    "cancel": "Cancel",
+    "uploading": "Uploading {{ done }} of {{ total }}…",
+    "empty": "No photos yet.",
+    "photoAlt": "Enrollment photo",
+    "observed": "Read:",
+    "mismatch": "Differs from the registered identifier",
+    "noReading": "No identifier read",
+    "deletePhoto": "Remove"
+  }
+}
