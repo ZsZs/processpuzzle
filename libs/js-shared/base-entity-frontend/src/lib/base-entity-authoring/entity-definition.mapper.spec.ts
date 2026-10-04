@@ -134,7 +134,25 @@ describe('EntityDefinitionMapper', () => {
     it('sends every attribute flag explicitly, false included', () => {
       const dto = mapper.toDto(definition);
 
-      expect(dto.attributes?.[0]).toMatchObject({ required: true, isMultiValued: false, indexed: false, isLinkToDetails: false, autosizeColumn: false });
+      expect(dto.attributes?.[0]).toMatchObject({ required: true, indexed: false, isLinkToDetails: false, autosizeColumn: false });
+    });
+
+    it('sends multiplicity explicitly or not at all, and maxOccurs only for the x forms', () => {
+      const attributeDto = (init: Partial<EntityAttributeDefinition>) =>
+        mapper.toDto(new EntityDefinition({ code: 'order', attributes: [new EntityAttributeDefinition({ code: 'files', ...init })] })).attributes?.[0];
+
+      expect(attributeDto({})).not.toHaveProperty('multiplicity');
+      expect(attributeDto({ multiplicity: '' as never })).not.toHaveProperty('multiplicity');
+      expect(attributeDto({ multiplicity: '0..n', maxOccurs: 3 })).toMatchObject({ multiplicity: '0..n' });
+      expect(attributeDto({ multiplicity: '0..n', maxOccurs: 3 })).not.toHaveProperty('maxOccurs');
+      expect(attributeDto({ multiplicity: '1..x', maxOccurs: '4' as never })).toMatchObject({ multiplicity: '1..x', maxOccurs: 4 });
+      expect(attributeDto({ multiplicity: '0..x', maxOccurs: '' as never })).not.toHaveProperty('maxOccurs');
+    });
+
+    it('reads multiplicity and maxOccurs back', () => {
+      const definition = mapper.fromDto({ code: 'order', attributes: [{ code: 'files', multiplicity: '0..x', maxOccurs: 2 }] });
+
+      expect(definition.attributes?.[0]).toMatchObject({ multiplicity: '0..x', maxOccurs: 2 });
     });
 
     /** Neither is part of `BaseEntityAttributeInput` — see the model and `fromAttribute`. */

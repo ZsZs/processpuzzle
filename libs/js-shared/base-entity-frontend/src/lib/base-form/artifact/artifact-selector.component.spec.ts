@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslocoService } from '@jsverse/transloco';
 import { Subject, of, throwError } from 'rxjs';
@@ -6,10 +8,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, type MockProxy } from 'vitest-mock-extended';
 import { ObjectStoreService, type UploadObjectResponse } from '../../object-store/object-store.service';
 import { ArtifactSelectorComponent } from './artifact-selector.component';
+import { CameraCaptureDialog } from './camera-capture.dialog';
+import { CameraSupportService } from './camera-support.service';
 
 interface InitialState {
   isSelectorVisible?: boolean;
   isUploading?: boolean;
+  cameraAvailable?: boolean;
 }
 
 function createFile(name: string, type: string): File {
@@ -26,6 +31,8 @@ function emptyFileEvent(): Event {
 }
 
 let snackBar: { open: ReturnType<typeof vi.fn> };
+let dialog: { open: ReturnType<typeof vi.fn> };
+let capturedFile: Subject<File | undefined>;
 
 async function setupSelector(objectStore: MockProxy<ObjectStoreService>, initialState?: InitialState) {
   await TestBed.configureTestingModule({
@@ -33,6 +40,8 @@ async function setupSelector(objectStore: MockProxy<ObjectStoreService>, initial
     providers: [
       { provide: ObjectStoreService, useValue: objectStore },
       { provide: MatSnackBar, useValue: snackBar },
+      { provide: MatDialog, useValue: dialog },
+      { provide: CameraSupportService, useValue: { available: signal(initialState?.cameraAvailable ?? false).asReadonly() } },
       { provide: TranslocoService, useValue: { translate: vi.fn((key: string) => key) } },
     ],
   }).compileComponents();
@@ -52,6 +61,8 @@ describe('ArtifactSelectorComponent', () => {
     TestBed.resetTestingModule();
     objectStore = mock<ObjectStoreService>();
     snackBar = { open: vi.fn() };
+    capturedFile = new Subject<File | undefined>();
+    dialog = { open: vi.fn(() => ({ afterClosed: () => capturedFile.asObservable() })) };
   });
 
   it('renders the upload trigger while the selector is hidden', async () => {
@@ -223,5 +234,50 @@ describe('ArtifactSelectorComponent', () => {
     expect(component.artifactName).toBe('');
     expect(component.mimeType).toBe('');
     expect(objectStore.uploadObject).not.toHaveBeenCalled();
+  });
+
+  it('offers no camera option on a device without a camera', async () => {
+    const { fixture } = await setupSelector(objectStore);
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="artifact-camera-capture"]')).toBeNull();
+  });
+
+  it('offers the camera option next to the upload trigger when a camera is available', async () => {
+    const { fixture } = await setupSelector(objectStore, { cameraAvailable: true });
+    const cameraButton = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="artifact-camera-capture"]');
+
+    expect(cameraButton?.textContent?.trim()).toBe('base_entity.artifact.camera_capture');
+  });
+
+  it('feeds a capture into the upload step, with its name and MIME type filled in', async () => {
+    const { fixture, component } = await setupSelector(objectStore, { cameraAvailable: true });
+    ((fixture.nativeElement as HTMLElement).querySelector('[data-testid="artifact-camera-capture"]') as HTMLButtonElement).click();
+    expect(dialog.open).toHaveBeenCalledWith(CameraCaptureDialog, expect.anything());
+
+    capturedFile.next(createFile('photo-1.jpg', 'image/jpeg'));
+
+    expect(component.isSelectorVisible()).toBe(true);
+    expect(component.artifactName).toBe('photo-1.jpg');
+    expect(component.mimeType).toBe('image/jpeg');
+    expect(component.canUpload()).toBe(true);
+    expect(objectStore.uploadObject).not.toHaveBeenCalled();
+  });
+
+  it('stays in display mode when the camera dialog is cancelled', async () => {
+    const { component } = await setupSelector(objectStore, { cameraAvailable: true });
+    component.openCamera();
+
+    capturedFile.next(undefined);
+
+    expect(component.isSelectorVisible()).toBe(false);
+    expect(component.canUpload()).toBe(false);
+  });
+
+  it('derives the MIME type of a video file the browser left untyped', async () => {
+    const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
+
+    component.onFileSelected(fileSelectEvent(createFile('clip.webm', '')));
+
+    expect(component.mimeType).toBe('video/webm');
   });
 });

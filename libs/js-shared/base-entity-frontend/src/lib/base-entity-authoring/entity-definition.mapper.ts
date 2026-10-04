@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import type { BaseEntityMapper } from '../base-entity.mapper';
 import type { DateFormat } from '../base-entity/date-format';
+import { isBoundedByMaxOccurs, MULTIPLICITIES, type Multiplicity } from '../base-entity/multiplicity';
 import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
@@ -12,7 +13,8 @@ interface EntityAttributeDto {
   displayOrder?: number;
   valueKind?: EntityValueKind;
   formControlType?: string;
-  isMultiValued?: boolean;
+  multiplicity?: Multiplicity;
+  maxOccurs?: number;
   required?: boolean;
   indexed?: boolean;
   defaultValue?: unknown;
@@ -106,7 +108,8 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     displayOrder: dto.displayOrder,
     valueKind: dto.valueKind,
     formControlType: dto.formControlType,
-    isMultiValued: dto.isMultiValued,
+    multiplicity: dto.multiplicity,
+    maxOccurs: dto.maxOccurs,
     required: dto.required,
     indexed: dto.indexed,
     defaultValue: dto.defaultValue,
@@ -121,7 +124,7 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
 }
 
 /**
- * The five flags are written explicitly rather than left off when false, because the enclosing PUT is a
+ * The four flags are written explicitly rather than left off when false, because the enclosing PUT is a
  * full replacement: an absent flag is an unset one, and the form's unticked checkbox has to say so.
  *
  * `id` is not emitted — `BaseEntityAttributeInput` has no such field, and `code` is what identifies the
@@ -135,7 +138,7 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     displayOrder: attribute.displayOrder,
     valueKind: attribute.valueKind,
     formControlType: attribute.formControlType,
-    isMultiValued: attribute.isMultiValued ?? false,
+    ...multiplicityOf(attribute),
     required: attribute.required ?? false,
     indexed: attribute.indexed ?? false,
     defaultValue: attribute.defaultValue,
@@ -145,6 +148,20 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     isLinkToDetails: attribute.isLinkToDetails ?? false,
     autosizeColumn: attribute.autosizeColumn ?? false,
   };
+}
+
+/**
+ * Explicit or absent, never a stale leftover: the PUT is a full replacement, so an absent `multiplicity` is a
+ * single value. `maxOccurs` is sent only for the `x` forms — the backend rejects it on the others — and is
+ * coerced because the number text box may hand back a string.
+ */
+function multiplicityOf(attribute: EntityAttributeDefinition): Pick<EntityAttributeDto, 'multiplicity' | 'maxOccurs'> {
+  const multiplicity = MULTIPLICITIES.includes(attribute.multiplicity as Multiplicity) ? attribute.multiplicity : undefined;
+  if (!multiplicity) return {};
+  const raw: unknown = attribute.maxOccurs;
+  const maxOccurs = raw == null || raw === '' ? NaN : Number(raw);
+  if (!isBoundedByMaxOccurs(multiplicity) || !Number.isFinite(maxOccurs)) return { multiplicity };
+  return { multiplicity, maxOccurs };
 }
 
 /**

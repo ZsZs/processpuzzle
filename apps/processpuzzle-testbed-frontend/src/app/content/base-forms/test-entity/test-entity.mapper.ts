@@ -15,6 +15,7 @@ interface TestEntityDto {
   lookup?: string;
   enumValue?: number;
   artifact?: ArtifactAttr;
+  attachments?: ArtifactAttr[];
   tags?: string[];
   components?: Array<string | { id?: string }>;
   embeddedComponents?: unknown[];
@@ -39,6 +40,7 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
       lookup: source.lookup,
       enumValue: source.enumValue === undefined ? undefined : getEnumKeyByValue<TestEnum>(TestEnum, source.enumValue),
       artifact: source.artifact,
+      attachments: source.attachments,
       tags: source.tags,
       // Components are referenced by id: their payload belongs to the `test-entity-component` endpoint.
       components: source.components?.map((component) => (typeof component === 'string' ? component : component.id)).filter((id): id is string => id !== undefined),

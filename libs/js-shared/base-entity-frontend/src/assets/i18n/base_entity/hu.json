@@ -7,7 +7,8 @@
     "formControlType": "Vezérlő típusa",
     "displayOrder": "Megjelenítési sorrend",
     "required": "Kötelező",
-    "isMultiValued": "Többértékű",
+    "multiplicity": "Multiplicitás",
+    "maxOccurs": "Max. előfordulás",
     "indexed": "Indexelt",
     "isLinkToDetails": "A rekord címe",
     "autosizeColumn": "Listaoszlop a tartalomhoz igazodik",
@@ -30,7 +31,21 @@
     "updatedAt": "Módosítva"
   },
   "artifact": {
-    "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra."
+    "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra.",
+    "camera_capture": "Fotó vagy videó készítése"
+  },
+  "camera_capture": {
+    "title": "Kamera",
+    "mode": "Rögzítési mód",
+    "photo": "Fotó",
+    "video": "Videó",
+    "take_photo": "Fotó készítése",
+    "start_recording": "Felvétel indítása",
+    "stop_recording": "Felvétel leállítása",
+    "retake": "Újra",
+    "use": "Felhasználás",
+    "cancel": "Mégse",
+    "unavailable": "A kamera nem indítható el. Ellenőrizze, hogy a kamerahozzáférés engedélyezett-e ehhez az oldalhoz."
   },
   "delete_artifact_confirmation_dialog": {
     "title": "Elem törlése?",

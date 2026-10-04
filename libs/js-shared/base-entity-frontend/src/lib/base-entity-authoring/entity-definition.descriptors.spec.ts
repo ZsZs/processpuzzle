@@ -111,8 +111,9 @@ describe('createEntityAttributeDescriptor', () => {
       'formControlType',
       'indexed',
       'isLinkToDetails',
-      'isMultiValued',
       'linkedEntityType',
+      'maxOccurs',
+      'multiplicity',
       'name',
       'required',
       'timeStyle',
@@ -125,6 +126,12 @@ describe('createEntityAttributeDescriptor', () => {
     expect(attrOf(attrs, 'timeStyle').getSelectables()?.map((selectable) => selectable.key)).toEqual(['none', 'short', 'medium', 'long']);
     expect(attrOf(attrs, 'dateStyle').hideInTable).toBe(true);
     expect(attrOf(attrs, 'timeStyle').hideInTable).toBe(true);
+  });
+
+  it('offers the contract multiplicities, with a numeric maxOccurs kept out of the table', () => {
+    expect(attrOf(attrs, 'multiplicity').getSelectables()?.map((selectable) => selectable.key)).toEqual(['0..1', '0..x', '0..n', '1..x', '1..n']);
+    expect(attrOf(attrs, 'maxOccurs').options.inputType).toBe('number');
+    expect(attrOf(attrs, 'maxOccurs').hideInTable).toBe(true);
   });
 
   it('identifies a row by its code', () => {

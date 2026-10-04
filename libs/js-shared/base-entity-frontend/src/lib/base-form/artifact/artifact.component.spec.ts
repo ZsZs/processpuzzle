@@ -20,12 +20,7 @@ function makeConfig(): BaseEntityAttrDescriptor {
   return new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT, 'Attachment');
 }
 
-async function setupArtifactComponent(
-  config: BaseEntityAttrDescriptor,
-  entityArtifact: ArtifactAttr | null,
-  dialog: MockProxy<MatDialog>,
-  objectStore: MockProxy<ObjectStoreService>,
-) {
+async function setupArtifactComponent(config: BaseEntityAttrDescriptor, entityArtifact: ArtifactAttr | null, dialog: MockProxy<MatDialog>, objectStore: MockProxy<ObjectStoreService>) {
   const entity = new TestEntity('1', 'name');
   Reflect.set(entity, 'artifact', entityArtifact);
 
@@ -238,6 +233,91 @@ describe('ArtifactComponent', () => {
 
       expect(component.mimeIcon('application/x-unknown-format')).toBe('insert_drive_file');
       expect(component.mimeIcon(undefined)).toBe('insert_drive_file');
+    });
+  });
+
+  describe('multi-valued', () => {
+    function makeMultiConfig(multiplicity: BaseEntityAttrDescriptor['multiplicity'] = '0..n', maxOccurs?: number): BaseEntityAttrDescriptor {
+      const config = makeConfig();
+      config.multiplicity = multiplicity;
+      config.maxOccurs = maxOccurs;
+      return config;
+    }
+
+    const first = makeArtifact({ objectId: 'oid-1', name: 'one.pdf' });
+    const second = makeArtifact({ objectId: 'oid-2', name: 'two.png', mimeType: 'image/png' });
+
+    async function setupMulti(config: BaseEntityAttrDescriptor, value: unknown) {
+      return setupArtifactComponent(config, value as ArtifactAttr | null, dialog, objectStore);
+    }
+
+    it('reads null as no artifacts', async () => {
+      expect((await setupMulti(makeMultiConfig(), null)).component.artifacts()).toEqual([]);
+    });
+
+    it('reads a legacy single object as one artifact', async () => {
+      expect((await setupMulti(makeMultiConfig(), first)).component.artifacts()).toEqual([first]);
+    });
+
+    it('renders one row per artifact', async () => {
+      const { fixture } = await setupMulti(makeMultiConfig(), [first, second]);
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(Array.from(host.querySelectorAll('li a')).map((link) => link.textContent?.trim())).toEqual(['one.pdf', 'two.png']);
+      expect(host.querySelectorAll('button[aria-label="Delete artifact reference"]')).toHaveLength(2);
+    });
+
+    it('fetches a thumbnail per image artifact, keyed by objectId', async () => {
+      objectStore.getThumbnailUriByID.mockReturnValue(of({ uri: 'https://cdn.example/two-thumb.jpg' }));
+      const { component } = await setupMulti(makeMultiConfig(), [first, second]);
+
+      expect(objectStore.getThumbnailUriByID).toHaveBeenCalledTimes(1);
+      expect(objectStore.getThumbnailUriByID).toHaveBeenCalledWith('bucket-1', 'oid-2');
+      expect(component.thumbnailUrlOf(second)).toBe('https://cdn.example/two-thumb.jpg');
+      expect(component.thumbnailUrlOf(first)).toBeNull();
+    });
+
+    it('appends an upload instead of replacing', async () => {
+      const { component } = await setupMulti(makeMultiConfig(), [first]);
+
+      component.onArtifactUploaded(second);
+
+      const control = component.formGroup.get('artifact');
+      expect(control?.value).toEqual([first, second]);
+      expect(control?.dirty).toBe(true);
+    });
+
+    it('deletes only the chosen artifact after confirmation', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of(true) } as never);
+      objectStore.deleteObjectByID.mockReturnValue(of(undefined));
+      const { component } = await setupMulti(makeMultiConfig(), [first, second]);
+
+      component.deleteArtifact(second);
+
+      expect(objectStore.deleteObjectByID).toHaveBeenCalledWith('bucket-1', 'oid-2');
+      expect(component.formGroup.get('artifact')?.value).toEqual([first]);
+    });
+
+    it('hides the selector once the count reaches the upper bound', async () => {
+      const { component, fixture } = await setupMulti(makeMultiConfig('0..x', 2), [first]);
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('app-artifact-selector')).not.toBeNull();
+
+      component.onArtifactUploaded(second);
+      fixture.detectChanges();
+
+      expect(component.canAdd()).toBe(false);
+      expect(host.querySelector('app-artifact-selector')).toBeNull();
+    });
+
+    it('treats 1..x with maxOccurs 1 as single-valued', async () => {
+      const { component } = await setupMulti(makeMultiConfig('1..x', 1), first);
+
+      component.onArtifactUploaded(second);
+
+      expect(component.multiValued()).toBe(false);
+      expect(component.canAdd()).toBe(true);
+      expect(component.formGroup.get('artifact')?.value).toEqual(second);
     });
   });
 

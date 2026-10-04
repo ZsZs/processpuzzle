@@ -69,8 +69,10 @@ function formatTags(value: unknown): string {
   return toText(value);
 }
 
+/** A multi-valued attribute holds an array; its names are joined. */
 function formatArtifact(value: unknown): string {
   if (value == null) return '';
+  if (Array.isArray(value)) return value.map(formatArtifact).filter(Boolean).join(', ');
   const artifact = value as { name?: string; objectId?: string };
   return artifact.name ?? artifact.objectId ?? '';
 }

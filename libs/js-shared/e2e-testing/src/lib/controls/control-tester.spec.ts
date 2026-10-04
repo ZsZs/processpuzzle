@@ -249,7 +249,7 @@ describe('ArtifactControlTester', () => {
     expect(createControlTester(artifactAttr).isInput).toBe(false);
   });
 
-  it('addresses the single-row list inside the fieldset', () => {
+  it('addresses the row list inside the fieldset', () => {
     expect(new ArtifactControlTester(artifactAttr).innerLocator()).toBe('ul');
   });
 
@@ -263,6 +263,24 @@ describe('ArtifactControlTester', () => {
 
   it('asserts no value: what the control holds is a reference, not something readable off the form', async () => {
     await expect(new ArtifactControlTester(artifactAttr).assertValue()).resolves.toBeUndefined();
+  });
+
+  describe('multiValued', () => {
+    const withMultiplicity = (multiplicity?: string, maxOccurs?: number) => new ArtifactControlTester(attr({ attrName: 'artifact', formControlType: 'ARTIFACT', multiplicity, maxOccurs }));
+
+    it('is single-valued without a multiplicity, or with an upper bound of 1', () => {
+      expect(new ArtifactControlTester(artifactAttr).multiValued).toBe(false);
+      expect(withMultiplicity('0..1').multiValued).toBe(false);
+      expect(withMultiplicity('1..x', 1).multiValued).toBe(false);
+    });
+
+    it('is multi-valued when the upper bound exceeds 1', () => {
+      expect(withMultiplicity('0..n').multiValued).toBe(true);
+      expect(withMultiplicity('1..n').upperBound).toBe(Infinity);
+      expect(withMultiplicity('0..x', 3).upperBound).toBe(3);
+      expect(withMultiplicity('0..x', 3).multiValued).toBe(true);
+      expect(withMultiplicity('0..x').upperBound).toBe(1);
+    });
   });
 
   describe('showsThumbnailFor', () => {

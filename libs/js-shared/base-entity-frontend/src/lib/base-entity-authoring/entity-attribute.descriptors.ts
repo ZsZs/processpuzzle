@@ -3,6 +3,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
+import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
@@ -44,9 +45,17 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   // `integer` needs nothing more than the numeric keyboard the input type brings.
   const displayOrderAttr = new BaseEntityAttrDescriptor('displayOrder', FormControlType.TEXT_BOX, 'Display Order', undefined, undefined, { inputType: 'number' });
 
+  // region how many values
+  // Left empty, the attribute holds a single value. `maxOccurs` only applies to the `x` forms; the mapper
+  // drops it for the others, which the backend would reject.
+  const multiplicityAttr = new BaseEntityAttrDescriptor('multiplicity', FormControlType.DROPDOWN, 'Multiplicity', toSelectables(MULTIPLICITIES));
+  multiplicityAttr.autosizeColumn = true;
+  const maxOccursAttr = new BaseEntityAttrDescriptor('maxOccurs', FormControlType.TEXT_BOX, 'Max occurs', undefined, undefined, { inputType: 'number' });
+  maxOccursAttr.hideInTable = true;
+  // endregion
+
   // region flags
   const requiredAttr = new BaseEntityAttrDescriptor('required', FormControlType.CHECKBOX, 'Required');
-  const isMultiValuedAttr = new BaseEntityAttrDescriptor('isMultiValued', FormControlType.CHECKBOX, 'Multi-valued');
   // Worth a column: which attributes are indexed is what decides whether an RSQL range query over this
   // entity is cheap, and reading that off the list beats opening every attribute form.
   const indexedAttr = new BaseEntityAttrDescriptor('indexed', FormControlType.CHECKBOX, 'Indexed');
@@ -57,7 +66,7 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   const autosizeColumnAttr = new BaseEntityAttrDescriptor('autosizeColumn', FormControlType.CHECKBOX, 'Hugs its list column');
   autosizeColumnAttr.hideInTable = true;
   // The flag columns hold a single word each; letting them hug leaves the width to the code and the name.
-  [requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr].forEach((flagAttr) => (flagAttr.autosizeColumn = true));
+  [requiredAttr, indexedAttr, isLinkToDetailsAttr].forEach((flagAttr) => (flagAttr.autosizeColumn = true));
   // endregion
 
   // region conditional fields
@@ -95,15 +104,17 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const kindRow = new FlexboxDescriptor([valueKindAttr, formControlTypeAttr, displayOrderAttr], FlexDirection.ROW);
   kindRow.style = { 'column-gap': '10px' };
-  const flagRow = new FlexboxDescriptor([requiredAttr, isMultiValuedAttr, indexedAttr, isLinkToDetailsAttr, autosizeColumnAttr], FlexDirection.ROW);
+  const flagRow = new FlexboxDescriptor([requiredAttr, indexedAttr, isLinkToDetailsAttr, autosizeColumnAttr], FlexDirection.ROW);
   flagRow.style = { 'column-gap': '10px' };
+  const multiplicityRow = new FlexboxDescriptor([multiplicityAttr, maxOccursAttr], FlexDirection.ROW);
+  multiplicityRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
 
   const formatRow = new FlexboxDescriptor([dateStyleAttr, timeStyleAttr], FlexDirection.ROW);
   formatRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, flagRow, referenceRow, formatRow, enumValuesAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, enumValuesAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

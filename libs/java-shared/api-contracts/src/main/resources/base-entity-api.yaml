@@ -531,8 +531,18 @@ components:
       description: >
         Data type of the attribute's value. Drives JSON payload validation and
         RSQL comparison-operator casting. (TEXT_LIST intentionally omitted —
-        repetition is expressed via isMultiValued instead.)
+        repetition is expressed via the attribute's multiplicity instead.)
       enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE ]
+
+    Multiplicity:
+      type: string
+      description: >
+        How many values an attribute holds. The lower bound is 0 or 1, the upper
+        bound 1, a fixed maximum `x` (given by maxOccurs) or unbounded `n`. An
+        absent multiplicity means a single value. An attribute is multi-valued
+        when its upper bound exceeds 1. Value counts are not validated yet.
+      enum: [ '0..1', '0..x', '0..n', '1..x', '1..n' ]
+      x-enum-varnames: [ ZERO_TO_ONE, ZERO_TO_X, ZERO_TO_N, ONE_TO_X, ONE_TO_N ]
 
     FormControlType:
       type: string
@@ -736,9 +746,12 @@ components:
           $ref: '#/components/schemas/ValueKind'
         formControlType:
           $ref: '#/components/schemas/FormControlType'
-        isMultiValued:
-          type: boolean
-          default: false
+        multiplicity:
+          $ref: '#/components/schemas/Multiplicity'
+        maxOccurs:
+          type: integer
+          minimum: 1
+          description: Upper bound of the `x` multiplicities (0..x, 1..x); must be absent for the others.
         required:
           type: boolean
           default: false

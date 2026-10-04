@@ -62,6 +62,55 @@ class EntityDefinitionValidatorTest {
                 "dateStyle and timeStyle cannot both be none");
     }
 
+    @Test
+    void validate_multiplicityWithConsistentMaxOccurs_passes() {
+        validator.validate(definitionWith(multiplicityAttribute(null, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ZERO_TO_ONE, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ONE_TO_N, null)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ZERO_TO_X, 1)));
+        validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ONE_TO_X, 5)));
+    }
+
+    @Test
+    void validate_boundedMultiplicityWithoutMaxOccurs_throwsValidationException() {
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ZERO_TO_X, null),
+                "multiplicity 0..x requires maxOccurs of at least 1");
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ONE_TO_X, 0),
+                "multiplicity 1..x requires maxOccurs of at least 1");
+    }
+
+    @Test
+    void validate_maxOccursOnUnboundedMultiplicity_throwsValidationException() {
+        assertSingleViolation(multiplicityAttribute(Multiplicity.ZERO_TO_N, 3),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x");
+        assertSingleViolation(multiplicityAttribute(null, 3),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x");
+    }
+
+    @Test
+    void multiplicity_upperBoundAndMultiValued() {
+        assertThat(Multiplicity.ZERO_TO_ONE.upperBound(null)).isEqualTo(1);
+        assertThat(Multiplicity.ZERO_TO_X.upperBound(4)).isEqualTo(4);
+        assertThat(Multiplicity.ONE_TO_X.upperBound(null)).isEqualTo(1);
+        assertThat(Multiplicity.ZERO_TO_N.upperBound(null)).isEqualTo(Integer.MAX_VALUE);
+        assertThat(Multiplicity.ONE_TO_X.isMultiValued(1)).isFalse();
+        assertThat(Multiplicity.ONE_TO_X.isMultiValued(2)).isTrue();
+        assertThat(Multiplicity.isMultiValued(null, null)).isFalse();
+        assertThat(Multiplicity.isMultiValued(Multiplicity.ONE_TO_N, null)).isTrue();
+        assertThat(Multiplicity.ZERO_TO_N.notation()).isEqualTo("0..n");
+    }
+
+    private static BaseEntityAttribute multiplicityAttribute(Multiplicity multiplicity, Integer maxOccurs) {
+        return BaseEntityAttribute.builder()
+                .code("attachments")
+                .name("Attachments")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.ARTIFACT)
+                .multiplicity(multiplicity)
+                .maxOccurs(maxOccurs)
+                .build();
+    }
+
     private static BaseEntityAttribute dateAttribute(ValueKind valueKind, DateFormat dateFormat) {
         return BaseEntityAttribute.builder()
                 .code("born")

@@ -125,6 +125,16 @@ describe('EntityListComponent', () => {
       expect(formNavigator.navigateToRelated).toHaveBeenCalledWith('TestEntityComponent', testEntity_2.number);
     });
 
+    it('artifactsOf() reads an ARTIFACT cell as a list, single object or array', async () => {
+      const { component } = await setupListComponentTest([textboxConfig], MOCK_STORE_RESPONSE);
+      const one = { bucket: 'b', objectId: 'o1', name: 'one.pdf', mimeType: 'application/pdf' };
+      const two = { ...one, objectId: 'o2', name: 'two.pdf' };
+
+      expect(component.artifactsOf(null)).toEqual([]);
+      expect(component.artifactsOf(one)).toEqual([one]);
+      expect(component.artifactsOf([one, null, two])).toEqual([one, two]);
+    });
+
     it('onRowClick() ', async () => {
       const { component } = await setupListComponentTest([textboxConfig, textareaConfig, labelConfig], MOCK_STORE_RESPONSE);
       vi.spyOn(component, 'onChangeSelection');

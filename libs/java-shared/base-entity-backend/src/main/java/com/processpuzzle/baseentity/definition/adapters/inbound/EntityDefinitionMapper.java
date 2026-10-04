@@ -52,7 +52,8 @@ public class EntityDefinitionMapper {
             .displayOrder(input.getDisplayOrder() != null ? input.getDisplayOrder() : 0)
             .valueKind(toDomainValueKind(input.getValueKind()))
             .formControlType(toDomainFormControlType(input.getFormControlType()))
-            .isMultiValued(Boolean.TRUE.equals(input.getIsMultiValued()))
+            .multiplicity(toDomainMultiplicity(input.getMultiplicity()))
+            .maxOccurs(input.getMaxOccurs())
             .required(Boolean.TRUE.equals(input.getRequired()))
             .indexed(Boolean.TRUE.equals(input.getIndexed()))
             .defaultValue(input.getDefaultValue())
@@ -100,7 +101,8 @@ public class EntityDefinitionMapper {
         model.setDisplayOrder(attribute.getDisplayOrder());
         model.setValueKind(toModelValueKind(attribute.getValueKind()));
         model.setFormControlType(toModelFormControlType(attribute.getFormControlType()));
-        model.setIsMultiValued(attribute.isMultiValued());
+        model.setMultiplicity(toModelMultiplicity(attribute.getMultiplicity()));
+        model.setMaxOccurs(attribute.getMaxOccurs());
         model.setRequired(attribute.isRequired());
         model.setIndexed(attribute.isIndexed());
         model.setDefaultValue(attribute.getDefaultValue());
@@ -140,6 +142,14 @@ public class EntityDefinitionMapper {
 
     public com.processpuzzle.baseentity.model.ValueKind toModelValueKind(com.processpuzzle.baseentity.definition.domain.ValueKind valueKind) {
         return valueKind == null ? null : com.processpuzzle.baseentity.model.ValueKind.fromValue(valueKind.name());
+    }
+
+    public com.processpuzzle.baseentity.definition.domain.Multiplicity toDomainMultiplicity(com.processpuzzle.baseentity.model.Multiplicity multiplicity) {
+        return multiplicity == null ? null : com.processpuzzle.baseentity.definition.domain.Multiplicity.valueOf(multiplicity.name());
+    }
+
+    public com.processpuzzle.baseentity.model.Multiplicity toModelMultiplicity(com.processpuzzle.baseentity.definition.domain.Multiplicity multiplicity) {
+        return multiplicity == null ? null : com.processpuzzle.baseentity.model.Multiplicity.valueOf(multiplicity.name());
     }
 
     public com.processpuzzle.baseentity.definition.domain.FormControlType toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType formControlType) {

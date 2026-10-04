@@ -66,7 +66,8 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setDisplayOrder(desired.getDisplayOrder());
         existing.setValueKind(desired.getValueKind());
         existing.setFormControlType(desired.getFormControlType());
-        existing.setMultiValued(desired.isMultiValued());
+        existing.setMultiplicity(desired.getMultiplicity());
+        existing.setMaxOccurs(desired.getMaxOccurs());
         existing.setRequired(desired.isRequired());
         existing.setIndexed(desired.isIndexed());
         existing.setDefaultValue(desired.getDefaultValue());

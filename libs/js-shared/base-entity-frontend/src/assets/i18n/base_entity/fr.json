@@ -7,7 +7,8 @@
     "formControlType": "Type de contrôle",
     "displayOrder": "Ordre d'affichage",
     "required": "Obligatoire",
-    "isMultiValued": "Multivaleur",
+    "multiplicity": "Multiplicité",
+    "maxOccurs": "Occurrences max.",
     "indexed": "Indexé",
     "isLinkToDetails": "Titre de l'enregistrement",
     "autosizeColumn": "Ajuste sa colonne de liste",
@@ -30,7 +31,21 @@
     "updatedAt": "Mis à jour le"
   },
   "artifact": {
-    "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer."
+    "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer.",
+    "camera_capture": "Prendre une photo ou une vidéo"
+  },
+  "camera_capture": {
+    "title": "Caméra",
+    "mode": "Mode de capture",
+    "photo": "Photo",
+    "video": "Vidéo",
+    "take_photo": "Prendre une photo",
+    "start_recording": "Démarrer l'enregistrement",
+    "stop_recording": "Arrêter l'enregistrement",
+    "retake": "Reprendre",
+    "use": "Utiliser",
+    "cancel": "Annuler",
+    "unavailable": "Impossible de démarrer la caméra. Vérifiez que l'accès à la caméra est autorisé pour ce site."
   },
   "delete_artifact_confirmation_dialog": {
     "title": "Supprimer l'artefact ?",

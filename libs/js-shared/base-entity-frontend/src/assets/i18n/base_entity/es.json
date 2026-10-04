@@ -7,7 +7,8 @@
     "formControlType": "Tipo de control",
     "displayOrder": "Orden de visualización",
     "required": "Obligatorio",
-    "isMultiValued": "Multivalor",
+    "multiplicity": "Multiplicidad",
+    "maxOccurs": "Máx. ocurrencias",
     "indexed": "Indexado",
     "isLinkToDetails": "Titula el registro",
     "autosizeColumn": "Ajusta su columna de la lista",
@@ -30,7 +31,21 @@
     "updatedAt": "Actualizado el"
   },
   "artifact": {
-    "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo."
+    "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo.",
+    "camera_capture": "Tomar foto o vídeo"
+  },
+  "camera_capture": {
+    "title": "Cámara",
+    "mode": "Modo de captura",
+    "photo": "Foto",
+    "video": "Vídeo",
+    "take_photo": "Tomar foto",
+    "start_recording": "Iniciar grabación",
+    "stop_recording": "Detener grabación",
+    "retake": "Repetir",
+    "use": "Usar",
+    "cancel": "Cancelar",
+    "unavailable": "No se pudo iniciar la cámara. Compruebe que el acceso a la cámara esté permitido para este sitio."
   },
   "delete_artifact_confirmation_dialog": {
     "title": "¿Eliminar artefacto?",

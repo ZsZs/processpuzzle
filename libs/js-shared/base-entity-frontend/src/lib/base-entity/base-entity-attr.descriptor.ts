@@ -1,6 +1,7 @@
 import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 import type { DateFormat } from './date-format';
+import type { Multiplicity } from './multiplicity';
 
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
@@ -49,6 +50,14 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    * backend beyond keeping the array as sent.
    */
   ordered = false;
+  /**
+   * How many values the attribute holds — see {@link Multiplicity}. Absent means a single value. Only
+   * `ARTIFACT` acts on it today: with an upper bound above 1 the value is an array and uploads append.
+   * Counts are not validated; `required` stays a separate flag.
+   */
+  multiplicity?: Multiplicity;
+  /** The upper bound of the `x` multiplicities (`0..x`, `1..x`); ignored for the others. */
+  maxOccurs?: number;
   /**
    * The control of a {@link FormControlType.CUSTOM} attribute: a `BaseFormControlComponent` subclass the form
    * builder creates like any built-in control. Typed loosely because the base class is generic over the entity

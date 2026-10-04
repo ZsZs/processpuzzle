@@ -58,6 +58,21 @@ public class EntityDefinitionValidator {
                 "%s attributes require linkedEntityType".formatted(attribute.getFormControlType())));
         }
         validateDateFormat(attribute, violations);
+        validateMultiplicity(attribute, violations);
+    }
+
+    private void validateMultiplicity(BaseEntityAttribute attribute, List<Violation> violations) {
+        Multiplicity multiplicity = attribute.getMultiplicity();
+        Integer maxOccurs = attribute.getMaxOccurs();
+        if (multiplicity != null && multiplicity.isBoundedByMaxOccurs()) {
+            if (maxOccurs == null || maxOccurs < 1) {
+                violations.add(new Violation(attribute.getCode(),
+                    "multiplicity %s requires maxOccurs of at least 1".formatted(multiplicity.notation())));
+            }
+        } else if (maxOccurs != null) {
+            violations.add(new Violation(attribute.getCode(),
+                "maxOccurs is only meaningful for multiplicity 0..x or 1..x"));
+        }
     }
 
     private void validateDateFormat(BaseEntityAttribute attribute, List<Violation> violations) {

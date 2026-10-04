@@ -43,7 +43,7 @@ export const ORDER_DEFINITION: EntityDefinition = {
     },
     { code: 'total', name: 'Total', displayOrder: 4, valueKind: 'NUMBER', formControlType: 'TEXT_BOX' },
     { code: 'shippingAddress', name: 'Shipping Address', displayOrder: 5, valueKind: 'TEXT', formControlType: 'TEXTAREA' },
-    { code: 'lineItems', name: 'Line Items', displayOrder: 6, valueKind: 'REFERENCE', formControlType: 'EMBEDDED_COMPONENTS', linkedEntityType: 'order-line', isMultiValued: true },
+    { code: 'lineItems', name: 'Line Items', displayOrder: 6, valueKind: 'REFERENCE', formControlType: 'EMBEDDED_COMPONENTS', linkedEntityType: 'order-line', multiplicity: '0..n' },
   ],
 };
 

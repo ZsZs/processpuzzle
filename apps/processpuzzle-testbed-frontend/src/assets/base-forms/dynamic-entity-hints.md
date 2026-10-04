@@ -18,9 +18,10 @@ GET /organizations/{orgKey}/entities/dynamic-entity  the rows
 
 #### 2. Two layers, not one
 
-- **Knowledge layer** — `BaseEntityDefinition` + `BaseEntityAttribute`: what the type *is*. Twelve
-  attributes here — text, textarea, number, boolean, date, date-time, enum, multi-valued tags, artifact, a
-  self-referencing lookup, and two embedded levels.
+- **Knowledge layer** — `BaseEntityDefinition` + `BaseEntityAttribute`: what the type *is*. Thirteen
+  attributes here — text, textarea, number, boolean, date, date-time, enum, multi-valued tags, a single and a
+  multi-valued artifact, a self-referencing lookup, and two embedded levels. *Multi-valued* is an attribute's
+  `multiplicity` (`0..1`, `0..x`, `0..n`, `1..x`, `1..n`) having an upper bound above 1.
 - **Operation layer** — `EntityObject`, a JSONB payload keyed by attribute code: the rows themselves,
   Alpha…Epsilon.
 

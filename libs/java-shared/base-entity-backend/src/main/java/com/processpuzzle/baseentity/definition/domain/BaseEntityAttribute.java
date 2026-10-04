@@ -63,8 +63,12 @@ public class BaseEntityAttribute {
     @Column(nullable = false)
     private FormControlType formControlType;
 
-    @Builder.Default
-    private boolean isMultiValued = false;
+    /** How many values the attribute holds; null means a single value. */
+    @Enumerated(EnumType.STRING)
+    private Multiplicity multiplicity;
+
+    /** Upper bound of the {@code x} multiplicities; null for the others. */
+    private Integer maxOccurs;
 
     @Builder.Default
     private boolean required = false;
@@ -113,4 +117,9 @@ public class BaseEntityAttribute {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Object validationRules;
+
+    /** True when the upper bound of {@link #multiplicity} exceeds 1. */
+    public boolean isMultiValued() {
+        return Multiplicity.isMultiValued(multiplicity, maxOccurs);
+    }
 }

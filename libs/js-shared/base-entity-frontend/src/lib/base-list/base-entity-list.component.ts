@@ -123,6 +123,12 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.onChangeSelection(entity);
   }
 
+  /** An ARTIFACT cell's value as a list: a multi-valued attribute holds an array, a single-valued one an object. */
+  artifactsOf(value: unknown): ArtifactAttr[] {
+    if (value == null) return [];
+    return (Array.isArray(value) ? value : [value]).filter((item): item is ArtifactAttr => typeof item === 'object' && item !== null);
+  }
+
   onDownloadObject(artifact: ArtifactAttr, event?: MouseEvent): void {
     event?.stopPropagation();
     event?.preventDefault();
