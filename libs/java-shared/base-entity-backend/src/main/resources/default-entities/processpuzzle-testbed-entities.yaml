@@ -136,7 +136,7 @@ entityDefinitions:
         displayOrder: 8
         valueKind: TEXT
         formControlType: TEXT
-        isMultiValued: true
+        multiplicity: '0..n'
       - code: artifact
         name: Artifact
         displayOrder: 9
@@ -156,14 +156,20 @@ entityDefinitions:
         linkedEntityType: dynamic-embedded-address
         # A single-valued EMBEDDED_COMPONENTS attribute has no frontend today — `readRows` reads a
         # collection, so a lone object would render as an empty list. One address, declared as a list.
-        isMultiValued: true
+        multiplicity: '0..n'
       - code: embeddedDetails
         name: Embedded Details
         displayOrder: 12
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: dynamic-embedded-detail
-        isMultiValued: true
+        multiplicity: '0..n'
+      - code: attachments
+        name: Attachments
+        displayOrder: 13
+        valueKind: REFERENCE
+        formControlType: ARTIFACT
+        multiplicity: '0..n'
 
   # 4. Embedded component definition: order-line
   #
@@ -252,7 +258,7 @@ entityDefinitions:
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: order-line
-        isMultiValued: true
+        multiplicity: '0..n'
 
   # 6. Embedded component definition: special-order-line
   #
@@ -357,7 +363,7 @@ entityDefinitions:
         valueKind: REFERENCE
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: special-order-line
-        isMultiValued: true
+        multiplicity: '0..n'
 
   # 8. Boat — the subject of base-ai's sailboat recognition sample. A flat entity on purpose: what
   # recognition needs from it is a TEXT attribute holding the identifier (`sailNumber`), which base-ai's

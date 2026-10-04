@@ -88,6 +88,7 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.({ name: 'report.pdf' }, {})).toBe('report.pdf');
     expect(column.formatter?.({ objectId: 'obj-1' }, {})).toBe('obj-1');
     expect(column.formatter?.(null, {})).toBe('');
+    expect(column.formatter?.([{ name: 'a.pdf' }, { objectId: 'obj-2' }, null], {})).toBe('a.pdf, obj-2');
   });
 
   it('leaves plain text columns without a formatter', () => {

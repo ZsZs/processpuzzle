@@ -31,7 +31,8 @@ public class ReplaceAttributeUseCase {
         existing.setDisplayOrder(desiredState.getDisplayOrder());
         existing.setValueKind(desiredState.getValueKind());
         existing.setFormControlType(desiredState.getFormControlType());
-        existing.setMultiValued(desiredState.isMultiValued());
+        existing.setMultiplicity(desiredState.getMultiplicity());
+        existing.setMaxOccurs(desiredState.getMaxOccurs());
         existing.setRequired(desiredState.isRequired());
         existing.setIndexed(desiredState.isIndexed());
         existing.setDefaultValue(desiredState.getDefaultValue());

@@ -10,6 +10,14 @@ export { BaseEntityRestService } from './lib/base-entity-service/base-entity-res
 export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
 export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
 export { toSelectables } from './lib/base-entity/selectables';
+export {
+  isBoundedByMaxOccurs,
+  isMultiValued,
+  MULTIPLICITIES,
+  type Multiplicity,
+  type MultiplicityHolder,
+  upperBound,
+} from './lib/base-entity/multiplicity';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
 export type { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';

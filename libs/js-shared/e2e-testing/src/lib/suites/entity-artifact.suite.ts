@@ -48,6 +48,8 @@ const TEXT_MIME_ICON = 'article';
  * - **Delete reaches the store**, not just the form: the URI stops serving.
  * - **A raster image gets a thumbnail** and anything else a MIME icon, which is the one place the control
  *   depends on the store having derived something rather than merely kept what it was given.
+ * - **A multi-valued attribute accumulates**: two uploads give two rows that survive Save and reload, and
+ *   deleting one leaves the other.
  *
  * Every one of those holds for both object-store adapters — `processpuzzle-store` over MinIO and the
  * `objectStore` Cloud Function over Firebase Storage — so the same suite is what keeps the two interchangeable.
@@ -99,6 +101,7 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
           await fieldset.assertUploadFailureIsReported({ name: `${suffix}-rejected.txt`, mimeType: 'text/plain', buffer: createTextBuffer(`rejected fixture ${suffix}`) });
           await exerciseImageArtifact(page, form, fieldset, tester, owner.id, suffix);
           await exerciseNonImageArtifact(form, fieldset, suffix);
+          if (tester.multiValued) await exerciseSeveralArtifacts(form, fieldset, owner.id, suffix);
         });
       });
     }
@@ -119,14 +122,14 @@ async function exerciseImageArtifact(
   const image: ArtifactUpload = { name: `${suffix}.png`, mimeType: 'image/png', buffer: createPngBuffer() };
 
   await fieldset.uploadFile(image);
-  if (tester.showsThumbnailFor(image.mimeType)) await fieldset.assertThumbnail();
+  if (tester.showsThumbnailFor(image.mimeType)) await fieldset.assertThumbnail(image.name);
 
   // The reference is part of the owner's payload, so it takes the owner's Save to persist — and the reload is
   // what proves the row came back from the entity rather than from the component's own state.
   await form.save();
   await form.navigateToDetail(ownerId);
   await fieldset.assertArtifact(image.name);
-  if (tester.showsThumbnailFor(image.mimeType)) await fieldset.assertThumbnail();
+  if (tester.showsThumbnailFor(image.mimeType)) await fieldset.assertThumbnail(image.name);
 
   // The link resolves through the store to the object it named: the URI serves back the bytes uploaded.
   const uri = await fieldset.openArtifact(image.name);
@@ -152,9 +155,37 @@ async function exerciseNonImageArtifact(form: EntityFormPO, fieldset: ArtifactFi
   const document: ArtifactUpload = { name: `${suffix}.txt`, mimeType: 'text/plain', buffer: createTextBuffer(`artifact fixture ${suffix}`) };
 
   await fieldset.uploadFile(document);
-  await fieldset.assertMimeIcon(TEXT_MIME_ICON);
+  await fieldset.assertMimeIcon(document.name, TEXT_MIME_ICON);
 
   await fieldset.removeArtifact(document.name);
+  await fieldset.assertNoArtifact();
+  // Saved so the entity is left clean for the teardown that deletes it.
+  await form.save();
+}
+
+/**
+ * Multi-valued attributes only: an upload appends rather than replaces, both references persist through the
+ * owner's Save, and deleting one leaves the other in place.
+ */
+async function exerciseSeveralArtifacts(form: EntityFormPO, fieldset: ArtifactFieldsetPO, ownerId: string, suffix: string): Promise<void> {
+  const first: ArtifactUpload = { name: `${suffix}-first.txt`, mimeType: 'text/plain', buffer: createTextBuffer(`first fixture ${suffix}`) };
+  const second: ArtifactUpload = { name: `${suffix}-second.txt`, mimeType: 'text/plain', buffer: createTextBuffer(`second fixture ${suffix}`) };
+
+  await fieldset.uploadFile(first);
+  await fieldset.uploadFile(second);
+  await fieldset.assertArtifacts([first.name, second.name]);
+
+  await form.save();
+  await form.navigateToDetail(ownerId);
+  await fieldset.assertArtifacts([first.name, second.name]);
+
+  await fieldset.removeArtifact(first.name);
+  await fieldset.assertArtifacts([second.name]);
+  await form.save();
+  await form.navigateToDetail(ownerId);
+  await fieldset.assertArtifacts([second.name]);
+
+  await fieldset.removeArtifact(second.name);
   await fieldset.assertNoArtifact();
   // Saved so the entity is left clean for the teardown that deletes it.
   await form.save();

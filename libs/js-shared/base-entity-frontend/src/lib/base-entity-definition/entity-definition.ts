@@ -1,5 +1,6 @@
 import type { BaseEntity } from '../base-entity/base-entity';
 import type { DateFormat, DateStyle, TimeStyle } from '../base-entity/date-format';
+import type { Multiplicity } from '../base-entity/multiplicity';
 
 /**
  * The knowledge layer of `base-entity-api.yaml` as the frontend reads it: what an entity *type* is,
@@ -91,7 +92,10 @@ export class EntityAttributeDefinition implements BaseEntity {
   displayOrder?: number;
   valueKind?: EntityValueKind;
   formControlType: string;
-  isMultiValued?: boolean;
+  /** How many values the attribute holds; absent means a single value — the descriptor's `multiplicity`. */
+  multiplicity?: Multiplicity;
+  /** Upper bound of the `x` multiplicities (`0..x`, `1..x`). */
+  maxOccurs?: number;
   required?: boolean;
   indexed?: boolean;
   defaultValue?: unknown;
@@ -125,7 +129,8 @@ export class EntityAttributeDefinition implements BaseEntity {
     // The contract requires it and the form marks it required too, but a blank row has to exist before it
     // can be filled in — hence a default rather than a throw.
     this.formControlType = init.formControlType ?? 'TEXT_BOX';
-    this.isMultiValued = init.isMultiValued;
+    this.multiplicity = init.multiplicity;
+    this.maxOccurs = init.maxOccurs;
     this.required = init.required;
     this.indexed = init.indexed;
     this.defaultValue = init.defaultValue;

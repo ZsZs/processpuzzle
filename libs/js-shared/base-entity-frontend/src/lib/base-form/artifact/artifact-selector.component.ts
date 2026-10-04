@@ -1,9 +1,12 @@
 import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideTranslocoScope, TranslocoService } from '@jsverse/transloco';
 import { ObjectStoreService } from '../../object-store/object-store.service';
 import { ArtifactAttr } from './artifact-attr';
+import { CameraCaptureDialog } from './camera-capture.dialog';
+import { CameraSupportService } from './camera-support.service';
 
 @Component({
   selector: 'app-artifact-selector',
@@ -13,6 +16,11 @@ import { ArtifactAttr } from './artifact-attr';
     <div class="artifact-selector">
       @if (!isSelectorVisible()) {
         <button type="button" class="base-entity-form-focus-action" (click)="showSelector()">Upload file</button>
+        @if (isCameraAvailable()) {
+          <button type="button" class="base-entity-form-focus-action" data-testid="artifact-camera-capture" (click)="openCamera()">
+            {{ cameraButtonLabel() }}
+          </button>
+        }
       } @else {
         <div class="artifact-selector__inputs">
           <input type="file" (change)="onFileSelected($event)" [disabled]="isUploading()" />
@@ -42,6 +50,8 @@ export class ArtifactSelectorComponent {
   private readonly objectStoreService = inject(ObjectStoreService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly translocoService = inject(TranslocoService);
+  private readonly dialog = inject(MatDialog);
+  readonly isCameraAvailable = inject(CameraSupportService).available;
 
   @Output() artifactUploaded = new EventEmitter<ArtifactAttr>();
 
@@ -56,6 +66,22 @@ export class ArtifactSelectorComponent {
     this.isSelectorVisible.set(true);
   }
 
+  cameraButtonLabel(): string {
+    return this.translocoService.translate<string>('base_entity.artifact.camera_capture');
+  }
+
+  /** A capture lands in the same name / MIME type / Upload step as a picked file, so both are uploaded alike. */
+  openCamera(): void {
+    this.dialog
+      .open<CameraCaptureDialog, void, File | undefined>(CameraCaptureDialog, { width: '720px', maxWidth: '95vw' })
+      .afterClosed()
+      .subscribe((file) => {
+        if (!file) return;
+        this.selectFile(file);
+        this.isSelectorVisible.set(true);
+      });
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.item(0);
@@ -64,6 +90,10 @@ export class ArtifactSelectorComponent {
       return;
     }
 
+    this.selectFile(file);
+  }
+
+  private selectFile(file: File): void {
     this.selectedFile = file;
     this.artifactName = file.name;
     this.mimeType = file.type || this.deriveMimeType(file.name);
@@ -126,10 +156,13 @@ export class ArtifactSelectorComponent {
       jpeg: 'image/jpeg',
       jpg: 'image/jpeg',
       json: 'application/json',
+      mov: 'video/quicktime',
+      mp4: 'video/mp4',
       pdf: 'application/pdf',
       png: 'image/png',
       svg: 'image/svg+xml',
       txt: 'text/plain',
+      webm: 'video/webm',
       xml: 'application/xml',
       zip: 'application/zip',
     };

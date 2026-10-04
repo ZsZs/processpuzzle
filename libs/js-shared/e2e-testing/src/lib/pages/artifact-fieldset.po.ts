@@ -71,11 +71,11 @@ function annotate(error: unknown, diagnosis: string): unknown {
 }
 
 /**
- * The `fieldset` an `ARTIFACT` attribute renders: at most one row naming the stored file, and the selector that
- * uploads a new one.
+ * The `fieldset` an `ARTIFACT` attribute renders: a row per stored file — at most one unless the attribute is
+ * multi-valued — and the selector that uploads a new one.
  *
  * Shaped after {@link RelationshipFieldsetPO}, whose control it resembles — a fieldset, a `<ul>`, an action
- * revealed by focus — and differs from in the two ways that matter here: the list holds one row rather than
+ * revealed by focus — and differs from in the two ways that matter here: the list usually holds one row rather
  * many, and the row's content lives in the object store rather than in the entity, so a row appearing means an
  * upload completed and a row disappearing means an object was deleted.
  */
@@ -105,12 +105,13 @@ export class ArtifactFieldsetPO {
       .first();
   }
 
-  thumbnail(): Locator {
-    return this.fieldset().locator('img.artifact-thumbnail');
+  /** Scoped to the row naming `fileName`, so a multi-valued control's other rows cannot make it ambiguous. */
+  thumbnail(fileName: string): Locator {
+    return this.row(fileName).locator('img.artifact-thumbnail');
   }
 
-  mimeIcon(): Locator {
-    return this.fieldset().locator('mat-icon.artifact-icon');
+  mimeIcon(fileName: string): Locator {
+    return this.row(fileName).locator('mat-icon.artifact-icon');
   }
 
   /**
@@ -393,8 +394,8 @@ export class ArtifactFieldsetPO {
   }
 
   /** A raster image is shown as a downscaled preview, which is the object store's thumbnail being served. */
-  async assertThumbnail(): Promise<void> {
-    const thumbnail = this.thumbnail();
+  async assertThumbnail(fileName: string): Promise<void> {
+    const thumbnail = this.thumbnail(fileName);
     await expect(thumbnail).toBeVisible(this.expectOptions());
     // `src` bound to a resolved URI rather than left empty is what tells a rendered thumbnail from the
     // control merely having reserved the element.
@@ -402,9 +403,14 @@ export class ArtifactFieldsetPO {
   }
 
   /** Anything else falls back to an icon standing for its MIME type. */
-  async assertMimeIcon(icon: string): Promise<void> {
-    await expect(this.mimeIcon()).toHaveText(icon, this.expectOptions());
-    await expect(this.thumbnail()).toHaveCount(0, this.expectOptions());
+  async assertMimeIcon(fileName: string, icon: string): Promise<void> {
+    await expect(this.mimeIcon(fileName)).toHaveText(icon, this.expectOptions());
+    await expect(this.thumbnail(fileName)).toHaveCount(0, this.expectOptions());
+  }
+
+  /** Exactly these rows, in this order — a multi-valued control keeps the order artifacts were added in. */
+  async assertArtifacts(fileNames: string[]): Promise<void> {
+    await expect(this.rows().locator('a')).toHaveText(fileNames, this.expectOptions());
   }
 
   /** With the fieldset unfocused the action is hidden on every control, so focus first or this proves nothing. */

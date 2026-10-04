@@ -7,7 +7,8 @@
     "formControlType": "Control Type",
     "displayOrder": "Display Order",
     "required": "Required",
-    "isMultiValued": "Multi-valued",
+    "multiplicity": "Multiplicity",
+    "maxOccurs": "Max occurs",
     "indexed": "Indexed",
     "isLinkToDetails": "Titles the record",
     "autosizeColumn": "Hugs its list column",
@@ -30,7 +31,21 @@
     "updatedAt": "Updated At"
   },
   "artifact": {
-    "upload_failure": "Artifact upload failed. Please try again."
+    "upload_failure": "Artifact upload failed. Please try again.",
+    "camera_capture": "Take photo or video"
+  },
+  "camera_capture": {
+    "title": "Camera",
+    "mode": "Capture mode",
+    "photo": "Photo",
+    "video": "Video",
+    "take_photo": "Take photo",
+    "start_recording": "Start recording",
+    "stop_recording": "Stop recording",
+    "retake": "Retake",
+    "use": "Use",
+    "cancel": "Cancel",
+    "unavailable": "The camera could not be started. Check that camera access is allowed for this site."
   },
   "delete_artifact_confirmation_dialog": {
     "title": "Delete artifact?",

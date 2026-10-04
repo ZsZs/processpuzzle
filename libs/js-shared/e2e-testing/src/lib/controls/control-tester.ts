@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType, Selectable } from '@processpuzzle/base-entity';
+import type { BaseEntityAttrDescriptor, BaseEntityDescriptor, FormControlType, Multiplicity, Selectable } from '@processpuzzle/base-entity';
 import { RouteResolver } from '../routing/route.resolver';
 import { formControlTestId, toTestId } from '../selectors/test-id';
 import { exactText } from '../selectors/text-match';
@@ -605,8 +605,8 @@ class EmbeddedComponentsControlTester extends RelationshipControlTester {
 }
 
 /**
- * A single stored file attached to an entity: a fieldset holding at most one row, and the selector that puts
- * one there.
+ * Stored files attached to an entity: a fieldset holding one row per artifact — at most one unless the
+ * attribute's `multiplicity` is multi-valued — and the selector that puts one there.
  *
  * `isInput` stays false for the same reason it does on the relationship controls, and with the same
  * consequence — the control is out of `fillForm`, `assertFieldValues` and `buildCreateData`. An artifact is not
@@ -625,7 +625,24 @@ export class ArtifactControlTester extends ControlTester {
   /** Label of the button that performs the upload, once the selector is open. */
   readonly uploadButtonName = 'Upload';
 
-  /** The single-row list; the fieldset around it is what {@link ControlTester.control} addresses. */
+  /**
+   * Whether the attribute holds several artifacts, by the rule of base-entity's `isMultiValued`: its
+   * multiplicity's upper bound exceeds 1. Mirrored rather than imported because this library takes only types
+   * from `@processpuzzle/base-entity` — its runtime is Angular, which a Playwright process must not load.
+   */
+  get multiValued(): boolean {
+    return this.upperBound > 1;
+  }
+
+  /** The upper bound of the attribute's multiplicity — base-entity's `upperBound`, mirrored for the same reason. */
+  get upperBound(): number {
+    const { multiplicity, maxOccurs } = this.attr as { multiplicity?: Multiplicity; maxOccurs?: number };
+    if (multiplicity === '0..n' || multiplicity === '1..n') return Infinity;
+    if (multiplicity === '0..x' || multiplicity === '1..x') return maxOccurs ?? 1;
+    return 1;
+  }
+
+  /** The list of rows; the fieldset around it is what {@link ControlTester.control} addresses. */
   innerLocator(): string {
     return 'ul';
   }

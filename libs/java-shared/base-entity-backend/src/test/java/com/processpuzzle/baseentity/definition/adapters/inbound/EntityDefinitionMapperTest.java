@@ -105,6 +105,32 @@ class EntityDefinitionMapperTest {
     }
 
     @Test
+    void multiplicity_roundTripsFromInputToModel() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("attachments");
+        attrInput.setValueKind(ValueKind.REFERENCE);
+        attrInput.setFormControlType(FormControlType.ARTIFACT);
+        attrInput.setMultiplicity(com.processpuzzle.baseentity.model.Multiplicity.ZERO_TO_X);
+        attrInput.setMaxOccurs(4);
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.getMultiplicity()).isEqualTo(com.processpuzzle.baseentity.definition.domain.Multiplicity.ZERO_TO_X);
+        assertThat(domain.getMaxOccurs()).isEqualTo(4);
+        assertThat(domain.isMultiValued()).isTrue();
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getMultiplicity()).isEqualTo(com.processpuzzle.baseentity.model.Multiplicity.ZERO_TO_X);
+        assertThat(model.getMultiplicity().getValue()).isEqualTo("0..x");
+        assertThat(model.getMaxOccurs()).isEqualTo(4);
+
+        attrInput.setMultiplicity(null);
+        attrInput.setMaxOccurs(null);
+        BaseEntityAttribute single = mapper.toDomain(attrInput);
+        assertThat(single.getMultiplicity()).isNull();
+        assertThat(single.isMultiValued()).isFalse();
+        assertThat(mapper.toModel(single).getMultiplicity()).isNull();
+    }
+
+    @Test
     void dateFormat_partialAndAbsent_mapToNulls() {
         assertThat(mapper.toDomain((AttributeDateFormat) null)).isNull();
         assertThat(mapper.toModel((DateFormat) null)).isNull();

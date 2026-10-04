@@ -22,6 +22,7 @@ export interface TestEntityOptions {
   lookup?: string;
   enumValue?: TestEnum;
   artifact?: ArtifactAttr;
+  attachments?: ArtifactAttr[];
   tags?: string[];
   components?: string[];
   embeddedComponents?: EmbeddedComponent[];
@@ -39,6 +40,8 @@ export class TestEntity implements BaseEntity {
   lookup: string;
   enumValue: TestEnum;
   artifact?: ArtifactAttr;
+  /** Multi-valued (`0..n`): uploads append, where `artifact` replaces its single value. */
+  attachments?: ArtifactAttr[];
   tags: Array<string> | undefined;
   /** Ids of the `Test Entity Component`s owned by this entity; the components themselves live in their own table. */
   components: Array<string> | undefined;
@@ -57,6 +60,7 @@ export class TestEntity implements BaseEntity {
     this.lookup = options.lookup ?? '';
     this.enumValue = options.enumValue ?? TestEnum.VALUE_ONE;
     this.artifact = options.artifact;
+    this.attachments = options.attachments;
     this.tags = options.tags;
     this.components = options.components;
     this.embeddedComponents = options.embeddedComponents;
