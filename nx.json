@@ -107,6 +107,7 @@
   "release": {
     "projects": [
       "base-ai-frontend",
+      "base-starter-frontend",
       "auth",
       "base-app-frontend",
       "base-document-frontend",

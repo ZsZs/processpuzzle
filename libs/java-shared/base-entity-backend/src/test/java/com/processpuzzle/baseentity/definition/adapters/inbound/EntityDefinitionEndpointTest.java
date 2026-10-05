@@ -100,7 +100,7 @@ class EntityDefinitionEndpointTest {
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
-        when(findAllUseCase.findAll(any(), any(), any(Pageable.class))).thenReturn(page);
+        when(findAllUseCase.findAll(eq("test-org"), any(), any(), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions"))
                 .andExpect(status().isOk())
@@ -116,7 +116,7 @@ class EntityDefinitionEndpointTest {
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
-        when(findAllUseCase.findAll(eq(EntityDefinitionStatus.ACTIVE), eq(false), any(Pageable.class))).thenReturn(page);
+        when(findAllUseCase.findAll(eq("test-org"), eq(EntityDefinitionStatus.ACTIVE), eq(false), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions")
                         .param("status", "ACTIVE")
@@ -134,7 +134,7 @@ class EntityDefinitionEndpointTest {
                 .name("Partner")
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
-        when(findByCodeUseCase.findByCode("partner")).thenReturn(def);
+        when(findByCodeUseCase.findByCode("test-org", "partner")).thenReturn(def);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isOk())
@@ -149,7 +149,7 @@ class EntityDefinitionEndpointTest {
                 .name("Partner")
                 .status(EntityDefinitionStatus.DRAFT)
                 .build();
-        when(createUseCase.create(any())).thenReturn(def);
+        when(createUseCase.create(eq("test-org"), any())).thenReturn(def);
 
         BaseEntityDefinitionInput input = new BaseEntityDefinitionInput();
         input.setCode("partner");
@@ -169,7 +169,7 @@ class EntityDefinitionEndpointTest {
                 .name("Updated Partner")
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
-        when(replaceUseCase.replace(eq("partner"), any())).thenReturn(def);
+        when(replaceUseCase.replace(eq("test-org"), eq("partner"), any())).thenReturn(def);
 
         BaseEntityDefinitionInput input = new BaseEntityDefinitionInput();
         input.setCode("partner");
@@ -187,7 +187,7 @@ class EntityDefinitionEndpointTest {
         mockMvc.perform(delete("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete("partner");
+        verify(deleteUseCase).delete("test-org", "partner");
     }
 
     @Test
@@ -198,7 +198,7 @@ class EntityDefinitionEndpointTest {
                 .valueKind(ValueKind.TEXT)
                 .formControlType(FormControlType.TEXT)
                 .build();
-        when(addAttributeUseCase.addAttribute(eq("partner"), any())).thenReturn(attr);
+        when(addAttributeUseCase.addAttribute(eq("test-org"), eq("partner"), any())).thenReturn(attr);
 
         BaseEntityAttributeInput input = new BaseEntityAttributeInput();
         input.setCode("email");
@@ -221,7 +221,7 @@ class EntityDefinitionEndpointTest {
                 .valueKind(ValueKind.TEXT)
                 .formControlType(FormControlType.TEXT)
                 .build();
-        when(replaceAttributeUseCase.replaceAttribute(eq("partner"), eq("email"), any())).thenReturn(attr);
+        when(replaceAttributeUseCase.replaceAttribute(eq("test-org"), eq("partner"), eq("email"), any())).thenReturn(attr);
 
         BaseEntityAttributeInput input = new BaseEntityAttributeInput();
         input.setCode("email");
@@ -241,6 +241,6 @@ class EntityDefinitionEndpointTest {
         mockMvc.perform(delete("/organizations/test-org/entity-definitions/partner/attributes/email"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteAttributeUseCase).deleteAttribute("partner", "email");
+        verify(deleteAttributeUseCase).deleteAttribute("test-org", "partner", "email");
     }
 }

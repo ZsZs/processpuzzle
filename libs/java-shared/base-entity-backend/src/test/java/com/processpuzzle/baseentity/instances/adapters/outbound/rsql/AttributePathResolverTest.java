@@ -36,9 +36,9 @@ class AttributePathResolverTest {
                 false,
                 List.of(new EntityAttributeView("name", ValueKindView.TEXT, false, false, null, false))
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(def));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(def));
 
-        ResolvedAttributePath path = resolver.resolve("partner", "name");
+        ResolvedAttributePath path = resolver.resolve("acme", "partner", "name");
 
         assertThat(path.valueKind()).isEqualTo(ValueKindView.TEXT);
         assertThat(path.segments()).hasSize(1);
@@ -60,10 +60,10 @@ class AttributePathResolverTest {
                 List.of(new EntityAttributeView("billingAddress", ValueKindView.REFERENCE, false, true, "address", false))
         );
 
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
-        when(lookupPort.findByCode("address")).thenReturn(Optional.of(addressDef));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(partnerDef));
+        when(lookupPort.findByCode("acme", "address")).thenReturn(Optional.of(addressDef));
 
-        ResolvedAttributePath path = resolver.resolve("partner", "billingAddress.city");
+        ResolvedAttributePath path = resolver.resolve("acme", "partner", "billingAddress.city");
 
         assertThat(path.valueKind()).isEqualTo(ValueKindView.TEXT);
         assertThat(path.segments()).hasSize(2);
@@ -74,17 +74,17 @@ class AttributePathResolverTest {
     @Test
     void resolve_unknownAttribute_throwsIllegalArgument() {
         EntityDefinitionView def = new EntityDefinitionView("partner", false, List.of());
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(def));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(def));
 
-        assertThatThrownBy(() -> resolver.resolve("partner", "unknown"))
+        assertThatThrownBy(() -> resolver.resolve("acme", "partner", "unknown"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void resolve_unknownDefinition_throwsIllegalArgument() {
-        when(lookupPort.findByCode("unknown")).thenReturn(Optional.empty());
+        when(lookupPort.findByCode("acme", "unknown")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> resolver.resolve("unknown", "name"))
+        assertThatThrownBy(() -> resolver.resolve("acme", "unknown", "name"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unknown entity definition 'unknown' while resolving 'name'");
     }
@@ -96,9 +96,9 @@ class AttributePathResolverTest {
                 false,
                 List.of(new EntityAttributeView("name", ValueKindView.TEXT, false, false, null, false))
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(partnerDef));
 
-        assertThatThrownBy(() -> resolver.resolve("partner", "name.length"))
+        assertThatThrownBy(() -> resolver.resolve("acme", "partner", "name.length"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("is not an embedded-component attribute");
     }
@@ -110,9 +110,9 @@ class AttributePathResolverTest {
                 false,
                 List.of(new EntityAttributeView("brokenAddress", ValueKindView.REFERENCE, false, true, null, false))
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(partnerDef));
 
-        assertThatThrownBy(() -> resolver.resolve("partner", "brokenAddress.city"))
+        assertThatThrownBy(() -> resolver.resolve("acme", "partner", "brokenAddress.city"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("is not an embedded-component attribute");
     }
@@ -124,9 +124,9 @@ class AttributePathResolverTest {
                 false,
                 List.of(new EntityAttributeView("contacts", ValueKindView.REFERENCE, true, true, "contact", false))
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(partnerDef));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(partnerDef));
 
-        ResolvedAttributePath path = resolver.resolve("partner", "contacts");
+        ResolvedAttributePath path = resolver.resolve("acme", "partner", "contacts");
 
         assertThat(path.segments()).hasSize(1);
         assertThat(path.segments().get(0).array()).isTrue();

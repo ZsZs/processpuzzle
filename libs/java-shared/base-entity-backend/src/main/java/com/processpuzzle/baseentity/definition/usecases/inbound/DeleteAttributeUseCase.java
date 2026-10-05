@@ -15,8 +15,8 @@ public class DeleteAttributeUseCase {
 
     private final EntityDefinitionRepository repository;
 
-    public void deleteAttribute(String definitionCode, String attributeCode) {
-        BaseEntityDefinition definition = repository.findByCode(definitionCode)
+    public void deleteAttribute(String orgKey, String definitionCode, String attributeCode) {
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, definitionCode)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(definitionCode)));
 
         BaseEntityAttribute attribute = definition.getAttributes().stream()

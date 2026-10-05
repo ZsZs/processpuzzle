@@ -22,8 +22,8 @@ public class ReplaceEntityDefinitionUseCase {
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
 
-    public BaseEntityDefinition replace(String code, BaseEntityDefinition desiredState) {
-        BaseEntityDefinition existing = repository.findByCode(code)
+    public BaseEntityDefinition replace(String orgKey, String code, BaseEntityDefinition desiredState) {
+        BaseEntityDefinition existing = repository.findByOrgKeyAndCode(orgKey, code)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(code)));
 
         if (!code.equals(desiredState.getCode())) {

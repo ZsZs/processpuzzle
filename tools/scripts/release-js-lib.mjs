@@ -38,6 +38,7 @@ const GH = process.env.GH ?? 'gh';
 
 const PROJECTS = new Map([
   ['base-ai-frontend', 'libs/js-shared/base-ai-frontend'],
+  ['base-starter-frontend', 'libs/js-shared/base-starter-frontend'],
   ['auth', 'libs/js-shared/auth'],
   ['base-app-frontend', 'libs/js-shared/base-app-frontend'],
   ['base-document-frontend', 'libs/js-shared/base-document-frontend'],

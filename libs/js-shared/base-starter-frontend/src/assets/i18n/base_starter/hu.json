@@ -1,0 +1,43 @@
+{
+  "import": {
+    "title": "Üzleti kezdőcsomagok",
+    "hint": "Kezdőcsomag (.zip) importálása ebbe a szervezetbe. Előbb nézze meg az előnézetet: lefuttatja a teljes importot, de semmit nem ír.",
+    "preview": "Előnézet",
+    "apply": "Importálás",
+    "status": {
+      "applied": "Importálva",
+      "would-apply": "Importálható",
+      "rejected": "Elutasítva"
+    },
+    "summary": "{{created}} új, {{updated}} frissítendő",
+    "column": {
+      "kind": "Fajta",
+      "key": "Kulcs",
+      "action": "Művelet"
+    },
+    "action": {
+      "create": "új",
+      "update": "frissítés"
+    },
+    "kind": {
+      "entity": "Entitás",
+      "state": "Állapotgép",
+      "rule": "Szabály",
+      "widget": "Widget",
+      "document": "Dokumentum",
+      "workflow": "Munkafolyamat",
+      "app": "Alkalmazás"
+    }
+  },
+  "installed": {
+    "title": "Telepített kezdőcsomagok",
+    "empty": "Ebben a szervezetben még nincs telepített kezdőcsomag.",
+    "column": {
+      "starter": "Kezdőcsomag",
+      "version": "Verzió",
+      "installedAt": "Telepítve",
+      "installedBy": "Telepítette",
+      "customized": "Módosított definíciók"
+    }
+  }
+}

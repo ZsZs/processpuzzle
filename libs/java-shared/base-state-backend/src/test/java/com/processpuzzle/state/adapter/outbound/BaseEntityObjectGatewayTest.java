@@ -38,7 +38,7 @@ class BaseEntityObjectGatewayTest {
 
     @Test
     void findObject_returnsASnapshotOfTheEntityObject() {
-        when(entityObjectAccess.find(ENTITY, OBJECT_ID))
+        when(entityObjectAccess.find(ORG, ENTITY, OBJECT_ID))
                 .thenReturn(new EntityObjectView(OBJECT_ID, 7L, Map.of("status", "DRAFT")));
 
         EntityObjectSnapshot snapshot = gateway.findObject(ORG, ENTITY, OBJECT_ID);
@@ -50,7 +50,7 @@ class BaseEntityObjectGatewayTest {
 
     @Test
     void findObject_translatesNotFoundIntoThePortsOwnException() {
-        when(entityObjectAccess.find(ENTITY, OBJECT_ID))
+        when(entityObjectAccess.find(ORG, ENTITY, OBJECT_ID))
                 .thenThrow(new EntityObjectAccessException.NotFound(ENTITY, OBJECT_ID));
 
         assertThatThrownBy(() -> gateway.findObject(ORG, ENTITY, OBJECT_ID))
@@ -59,7 +59,7 @@ class BaseEntityObjectGatewayTest {
 
     @Test
     void updateStateAttribute_returnsThePostWriteVersion() {
-        when(entityObjectAccess.updateAttribute(ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
+        when(entityObjectAccess.updateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
                 .thenReturn(8L);
 
         assertThat(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
@@ -68,7 +68,7 @@ class BaseEntityObjectGatewayTest {
 
     @Test
     void updateStateAttribute_translatesNotFoundIntoThePortsOwnException() {
-        when(entityObjectAccess.updateAttribute(ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
+        when(entityObjectAccess.updateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
                 .thenThrow(new EntityObjectAccessException.NotFound(ENTITY, OBJECT_ID));
 
         assertThatThrownBy(() -> gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
@@ -83,7 +83,7 @@ class BaseEntityObjectGatewayTest {
      */
     @Test
     void updateStateAttribute_translatesAVersionConflictIntoAStaleVersionException() {
-        when(entityObjectAccess.updateAttribute(ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
+        when(entityObjectAccess.updateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
                 .thenThrow(new EntityObjectAccessException.VersionConflict(OBJECT_ID, 7L, 9L));
 
         assertThatThrownBy(() -> gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, "status", "CONFIRMED", 7L))
@@ -92,7 +92,7 @@ class BaseEntityObjectGatewayTest {
     @Test
     void findObjects_mapsEveryObjectOfTheTypeOntoASnapshot() {
         UUID otherId = UUID.randomUUID();
-        when(entityObjectAccess.findAll(ENTITY)).thenReturn(List.of(
+        when(entityObjectAccess.findAll(ORG, ENTITY)).thenReturn(List.of(
                 new EntityObjectView(OBJECT_ID, 7L, Map.of("status", "DRAFT")),
                 new EntityObjectView(otherId, 2L, Map.of("status", "SHIPPED"))));
 
@@ -105,7 +105,7 @@ class BaseEntityObjectGatewayTest {
 
     @Test
     void findObjects_returnsEmptyWhenTheTypeHasNoInstances() {
-        when(entityObjectAccess.findAll(ENTITY)).thenReturn(List.of());
+        when(entityObjectAccess.findAll(ORG, ENTITY)).thenReturn(List.of());
 
         assertThat(gateway.findObjects(ORG, ENTITY)).isEmpty();
     }

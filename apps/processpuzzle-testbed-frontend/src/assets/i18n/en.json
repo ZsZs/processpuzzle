@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Testbed - Base State",
     "base-workflow": "ProcessPuzzle Testbed - Base Workflow",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Business Starters",
     "base-app": "ProcessPuzzle Testbed - Base App",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
@@ -201,6 +202,17 @@
     "recognize_tick": "Seen",
     "recognize_automatic": "camera",
     "recognize_manual": "by hand"
+  },
+  "base-starter": {
+    "overview_tab_label": "Overview",
+    "import_tab_label": "Import",
+    "intro_heading": "ProcessPuzzle Business Starters",
+    "intro_paragraph_1": "A Business Starter is a prepared solution to one business problem — inventory, billing, organising a sail race — shipped as a bundle of definitions: entities, state machines, rules and, later, documents, workflows and applications.",
+    "intro_paragraph_2": "Importing a starter writes its definitions into this organization in one transaction, and remembers which starter each came from, so a definition changed since can be told from one that was not. Try it on the Import tab: preview a bundle first, then import it.",
+    "intro_frontend_desc": "the import screen: pick a bundle, preview it as a dry run, import it, and see the starters already installed.",
+    "intro_backend_desc": "Spring Boot module that reads a bundle safely, runs every feature's importer in order inside one transaction, and records provenance.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Overview",

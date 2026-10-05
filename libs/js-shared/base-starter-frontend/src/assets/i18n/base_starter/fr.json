@@ -1,0 +1,43 @@
+{
+  "import": {
+    "title": "Business Starters",
+    "hint": "Importer un paquet de démarrage (.zip) dans cette organisation. D'abord l'aperçu : il exécute tout l'import sans rien écrire.",
+    "preview": "Aperçu",
+    "apply": "Importer",
+    "status": {
+      "applied": "Importé",
+      "would-apply": "Serait importé",
+      "rejected": "Refusé"
+    },
+    "summary": "{{created}} à créer, {{updated}} à mettre à jour",
+    "column": {
+      "kind": "Type",
+      "key": "Clé",
+      "action": "Action"
+    },
+    "action": {
+      "create": "créer",
+      "update": "mettre à jour"
+    },
+    "kind": {
+      "entity": "Entité",
+      "state": "Machine à états",
+      "rule": "Règle",
+      "widget": "Widget",
+      "document": "Document",
+      "workflow": "Workflow",
+      "app": "Application"
+    }
+  },
+  "installed": {
+    "title": "Starters installés",
+    "empty": "Aucun starter n'est encore installé dans cette organisation.",
+    "column": {
+      "starter": "Starter",
+      "version": "Version",
+      "installedAt": "Installé",
+      "installedBy": "Par",
+      "customized": "Définitions modifiées"
+    }
+  }
+}

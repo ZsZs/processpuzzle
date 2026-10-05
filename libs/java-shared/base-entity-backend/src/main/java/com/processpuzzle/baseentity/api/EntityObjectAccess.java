@@ -7,6 +7,9 @@ import java.util.UUID;
  * Read and single-attribute write access to one {@code EntityObject}, for a module that owns an
  * attribute of it without owning the object.
  *
+ * <p>Every method is scoped to the organization {@code orgKey}: an object another organization owns is
+ * not found, exactly like one that does not exist.
+ *
  * <p>base-state is the caller, through its {@code EntityObjectGateway} adapter: it is the only
  * legitimate writer of the attribute a state machine's {@code stateAttributeKey} names, and this is
  * the channel it writes through.
@@ -18,7 +21,7 @@ public interface EntityObjectAccess {
      *         it exists but is not of type {@code entityDefinitionCode} — an id from the wrong type
      *         is a caller error, not an empty result
      */
-    EntityObjectView find(String entityDefinitionCode, UUID objectId);
+    EntityObjectView find(String orgKey, String entityDefinitionCode, UUID objectId);
 
     /**
      * Every object of one type, for a caller that has to reason about the whole population rather
@@ -33,7 +36,7 @@ public interface EntityObjectAccess {
      *         known definition code — an unknown type has no objects, which is not a caller error
      *         the way an id of the wrong type is
      */
-    List<EntityObjectView> findAll(String entityDefinitionCode);
+    List<EntityObjectView> findAll(String orgKey, String entityDefinitionCode);
 
     /**
      * Writes {@code value} at {@code attributeCode} and leaves every other key of the payload
@@ -53,6 +56,6 @@ public interface EntityObjectAccess {
      * @throws EntityObjectAccessException.VersionConflict  if {@code expectedVersion} does not match
      *         the object's current version
      */
-    long updateAttribute(String entityDefinitionCode, UUID objectId, String attributeCode,
+    long updateAttribute(String orgKey, String entityDefinitionCode, UUID objectId, String attributeCode,
                          String value, long expectedVersion);
 }

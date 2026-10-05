@@ -6,6 +6,8 @@ import com.processpuzzle.rule.usecase.engine.RuleEngine;
 import com.processpuzzle.rule.usecase.engine.RuleKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -30,6 +32,41 @@ class RuleEngineSyncTest {
 
         verify(ruleEngine).registerRule(RuleKey.of("demo", "max-quantity"), "entity.quantity <= 5");
         verify(ruleEngine, never()).unregisterRule(any(RuleKey.class));
+    }
+
+    @Test
+    void registersAfterCommitImmediatelyWhenNoTransactionIsActive() {
+        ruleEngineSync.registerAfterCommit(rule(true));
+
+        verify(ruleEngine).registerRule(RuleKey.of("demo", "max-quantity"), "entity.quantity <= 5");
+    }
+
+    @Test
+    void defersRegistrationUntilTheTransactionCommits() {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            ruleEngineSync.registerAfterCommit(rule(true));
+            verifyNoInteractions(ruleEngine);
+
+            TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+            verify(ruleEngine).registerRule(RuleKey.of("demo", "max-quantity"), "entity.quantity <= 5");
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void neverRegistersWhenTheTransactionRollsBack() {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            ruleEngineSync.registerAfterCommit(rule(true));
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        verifyNoInteractions(ruleEngine);
     }
 
     @Test

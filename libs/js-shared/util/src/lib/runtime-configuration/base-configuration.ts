@@ -56,6 +56,7 @@ export interface BaseConfiguration {
   readonly STATE_SERVICE_ROOT?: string;
   readonly WORKFLOW_SERVICE_ROOT?: string;
   readonly AI_SERVICE_ROOT?: string;
+  readonly STARTER_SERVICE_ROOT?: string;
   /**
    * Roots of the two administration surfaces.
    *

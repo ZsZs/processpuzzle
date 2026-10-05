@@ -18,8 +18,8 @@ public class AddAttributeUseCase {
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
 
-    public BaseEntityAttribute addAttribute(String definitionCode, BaseEntityAttribute attribute) {
-        BaseEntityDefinition definition = repository.findByCode(definitionCode)
+    public BaseEntityAttribute addAttribute(String orgKey, String definitionCode, BaseEntityAttribute attribute) {
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, definitionCode)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(definitionCode)));
 
         boolean alreadyExists = definition.getAttributes().stream()

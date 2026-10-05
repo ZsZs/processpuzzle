@@ -34,13 +34,20 @@ import java.util.UUID;
 @Entity
 @Table(
     name = "entity_object",
-    indexes = @jakarta.persistence.Index(name = "idx_entity_object_definition_code", columnList = "entity_definition_code")
+    indexes = @jakarta.persistence.Index(name = "idx_entity_object_definition_code", columnList = "org_key, entity_definition_code")
 )
 public class EntityObject extends Auditable {
 
     @Id
     @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.UUID)
     private UUID id;
+
+    /**
+     * The organization the object belongs to. Entity definition codes are unique per organization
+     * only, so the code alone does not tell two organizations' objects apart.
+     */
+    @Column(name = "org_key", nullable = false, updatable = false)
+    private String orgKey;
 
     @Column(name = "entity_definition_code", nullable = false, updatable = false)
     private String entityDefinitionCode;

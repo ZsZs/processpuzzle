@@ -63,6 +63,7 @@ const PROJECTS = new Map([
     'base-document-backend',
     'base-entity-backend',
     'base-rule-backend',
+    'base-starter-backend',
     'base-state-backend',
     'base-widget-backend',
     'base-workflow-backend',

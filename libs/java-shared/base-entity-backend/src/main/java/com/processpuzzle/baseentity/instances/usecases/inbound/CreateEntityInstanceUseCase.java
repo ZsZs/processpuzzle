@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectCreatedEvent;
@@ -21,19 +22,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateEntityInstanceUseCase {
 
     private final EntityObjectRepository repository;
+    private final EntityObjectScope scope;
     private final EntityDefinitionLookupPort definitionLookupPort;
     private final PayloadValidatorPort payloadValidatorPort;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * @param orgKey the organization the request was addressed to. Not persisted — {@code
-     *               EntityObject} has no organization column — but carried into {@link
-     *               EntityObjectCreatedEvent}, because an observer resolving its own metadata for
-     *               this object (base-state resolving a state machine) needs the tenant and the
-     *               request path is the only place it is known.
+     * @param orgKey the organization the request was addressed to. Persisted on the object, and
+     *               carried into {@link EntityObjectCreatedEvent}, because an observer resolving its
+     *               own metadata for this object (base-state resolving a state machine) needs the
+     *               tenant.
      */
     public EntityObject create(String orgKey, String entityDefinitionCode, Map<String, Object> payload) {
-        EntityDefinitionView definition = definitionLookupPort.findByCode(entityDefinitionCode)
+        EntityDefinitionView definition = definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(entityDefinitionCode)));
 
         if (definition.embedded()) {
@@ -42,9 +43,10 @@ public class CreateEntityInstanceUseCase {
                     .formatted(entityDefinitionCode));
         }
 
-        payloadValidatorPort.validate(definition, payload);
+        payloadValidatorPort.validate(orgKey, definition, payload);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
+            .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
             .entityDefinitionCode(entityDefinitionCode)
             .payload(payload)
             .build());

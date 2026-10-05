@@ -17,8 +17,8 @@ public class ReplaceAttributeUseCase {
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
 
-    public BaseEntityAttribute replaceAttribute(String definitionCode, String attributeCode, BaseEntityAttribute desiredState) {
-        BaseEntityDefinition definition = repository.findByCode(definitionCode)
+    public BaseEntityAttribute replaceAttribute(String orgKey, String definitionCode, String attributeCode, BaseEntityAttribute desiredState) {
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, definitionCode)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(definitionCode)));
 
         BaseEntityAttribute existing = definition.getAttributes().stream()

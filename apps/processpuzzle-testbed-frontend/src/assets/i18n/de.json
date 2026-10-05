@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Testbed - Basiszustand",
     "base-workflow": "ProcessPuzzle Testbed - Basisworkflow",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Business Starter",
     "base-app": "ProcessPuzzle Testbed - Basisanwendung",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
@@ -201,6 +202,17 @@
     "recognize_tick": "Gesehen",
     "recognize_automatic": "Kamera",
     "recognize_manual": "von Hand"
+  },
+  "base-starter": {
+    "overview_tab_label": "Überblick",
+    "import_tab_label": "Import",
+    "intro_heading": "ProcessPuzzle Business Starter",
+    "intro_paragraph_1": "Ein Business Starter ist eine vorbereitete Lösung für ein Geschäftsproblem — Lagerverwaltung, Abrechnung, Organisation einer Segelregatta — geliefert als Paket von Definitionen: Entitäten, Zustandsautomaten, Regeln und später Dokumente, Workflows und Anwendungen.",
+    "intro_paragraph_2": "Der Import schreibt die Definitionen eines Starters in einer Transaktion in diese Organisation und merkt sich, aus welchem Starter jede stammt, damit eine seither geänderte Definition von einer unveränderten unterschieden werden kann. Probieren Sie es im Reiter Import aus: zuerst die Vorschau, dann der Import.",
+    "intro_frontend_desc": "der Import-Bildschirm: Paket wählen, als Probelauf voransehen, importieren und die bereits installierten Starter sehen.",
+    "intro_backend_desc": "Spring-Boot-Modul, das ein Paket sicher liest, den Importer jedes Features der Reihe nach in einer Transaktion ausführt und die Herkunft festhält.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Übersicht",

@@ -1,0 +1,43 @@
+{
+  "import": {
+    "title": "Business Starters",
+    "hint": "Import a starter bundle (.zip) into this organization. Preview it first: the preview runs the whole import and writes nothing.",
+    "preview": "Preview",
+    "apply": "Import",
+    "status": {
+      "applied": "Imported",
+      "would-apply": "Would import",
+      "rejected": "Rejected"
+    },
+    "summary": "{{created}} to create, {{updated}} to update",
+    "column": {
+      "kind": "Kind",
+      "key": "Key",
+      "action": "Action"
+    },
+    "action": {
+      "create": "create",
+      "update": "update"
+    },
+    "kind": {
+      "entity": "Entity",
+      "state": "State machine",
+      "rule": "Rule",
+      "widget": "Widget",
+      "document": "Document",
+      "workflow": "Workflow",
+      "app": "Application"
+    }
+  },
+  "installed": {
+    "title": "Installed starters",
+    "empty": "No starter is installed in this organization yet.",
+    "column": {
+      "starter": "Starter",
+      "version": "Version",
+      "installedAt": "Installed",
+      "installedBy": "By",
+      "customized": "Customized definitions"
+    }
+  }
+}

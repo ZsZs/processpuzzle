@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.definition.adapters.outbound;
 
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,26 +22,26 @@ class EntityInstanceExistenceCheckAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new EntityInstanceExistenceCheckAdapter(entityObjectRepository);
+        adapter = new EntityInstanceExistenceCheckAdapter(new EntityObjectScope(entityObjectRepository));
     }
 
     @Test
     void existsAnyInstanceOf_returnsTrue_whenRepositoryReturnsTrue() {
-        when(entityObjectRepository.existsByEntityDefinitionCode("partner")).thenReturn(true);
+        when(entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode("acme", "partner")).thenReturn(true);
 
-        boolean result = adapter.existsAnyInstanceOf("partner");
+        boolean result = adapter.existsAnyInstanceOf("acme", "partner");
 
         assertThat(result).isTrue();
-        verify(entityObjectRepository).existsByEntityDefinitionCode("partner");
+        verify(entityObjectRepository).existsByOrgKeyAndEntityDefinitionCode("acme", "partner");
     }
 
     @Test
     void existsAnyInstanceOf_returnsFalse_whenRepositoryReturnsFalse() {
-        when(entityObjectRepository.existsByEntityDefinitionCode("unknown")).thenReturn(false);
+        when(entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode("acme", "unknown")).thenReturn(false);
 
-        boolean result = adapter.existsAnyInstanceOf("unknown");
+        boolean result = adapter.existsAnyInstanceOf("acme", "unknown");
 
         assertThat(result).isFalse();
-        verify(entityObjectRepository).existsByEntityDefinitionCode("unknown");
+        verify(entityObjectRepository).existsByOrgKeyAndEntityDefinitionCode("acme", "unknown");
     }
 }

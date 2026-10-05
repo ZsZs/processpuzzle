@@ -14,8 +14,8 @@ public class FindEntityDefinitionByCodeUseCase {
     private final EntityDefinitionRepository repository;
 
     @Transactional(readOnly = true)
-    public BaseEntityDefinition findByCode(String code) {
-        return repository.findByCode(code)
+    public BaseEntityDefinition findByCode(String orgKey, String code) {
+        return repository.findByOrgKeyAndCode(orgKey, code)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(code)));
     }
 }

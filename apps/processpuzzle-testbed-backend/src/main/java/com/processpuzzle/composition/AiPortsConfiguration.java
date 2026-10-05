@@ -54,12 +54,12 @@ public class AiPortsConfiguration {
         return new SubjectDirectory() {
             @Override
             public boolean entityTypeExists(String orgKey, String entityName) {
-                return attributes.entityTypeExists(entityName);
+                return attributes.entityTypeExists(orgKey, entityName);
             }
 
             @Override
             public boolean isTextAttribute(String orgKey, String entityName, String attributeKey) {
-                return attributes.attributeKind(entityName, attributeKey)
+                return attributes.attributeKind(orgKey, entityName, attributeKey)
                         .map(kind -> kind == EntityAttributeKind.TEXT)
                         .orElse(false);
             }
@@ -70,7 +70,7 @@ public class AiPortsConfiguration {
              */
             @Override
             public boolean isPhotoAttribute(String orgKey, String entityName, String attributeKey) {
-                return attributes.attributeKind(entityName, attributeKey)
+                return attributes.attributeKind(orgKey, entityName, attributeKey)
                         .map(kind -> kind == EntityAttributeKind.REFERENCE)
                         .orElse(false);
             }
@@ -78,7 +78,7 @@ public class AiPortsConfiguration {
             @Override
             public boolean subjectExists(String orgKey, String entityName, UUID objectId) {
                 try {
-                    objects.find(entityName, objectId);
+                    objects.find(orgKey, entityName, objectId);
                     return true;
                 } catch (EntityObjectAccessException.NotFound e) {
                     return false;
@@ -88,7 +88,7 @@ public class AiPortsConfiguration {
             @Override
             public Optional<String> identifier(String orgKey, String entityName, UUID objectId, String attributeKey) {
                 try {
-                    Object value = objects.find(entityName, objectId).payload().get(attributeKey);
+                    Object value = objects.find(orgKey, entityName, objectId).payload().get(attributeKey);
                     return value == null || value.toString().isBlank() ? Optional.empty() : Optional.of(value.toString());
                 } catch (EntityObjectAccessException.NotFound e) {
                     return Optional.empty();
@@ -98,7 +98,7 @@ public class AiPortsConfiguration {
             @Override
             public List<SubjectPhoto> photos(String orgKey, String entityName, UUID objectId, String attributeKey) {
                 try {
-                    return artifactPhotos(objects.find(entityName, objectId).payload().get(attributeKey));
+                    return artifactPhotos(objects.find(orgKey, entityName, objectId).payload().get(attributeKey));
                 } catch (EntityObjectAccessException.NotFound e) {
                     return List.of();
                 }

@@ -34,12 +34,12 @@ public class RsqlToInstanceSpecificationAdapter implements RsqlToInstanceSpecifi
     private final AttributePathResolver pathResolver;
 
     @Override
-    public Specification<EntityObject> toSpecification(String rsql, String rootEntityDefinitionCode) {
+    public Specification<EntityObject> toSpecification(String orgKey, String rsql, String rootEntityDefinitionCode) {
         if (rsql == null || rsql.isBlank()) {
             return (root, query, cb) -> cb.conjunction();
         }
         Node rootNode = new RSQLParser().parse(rsql);
-        return (root, query, cb) -> rootNode.accept(new PredicateVisitor(root, cb, rootEntityDefinitionCode), null);
+        return (root, query, cb) -> rootNode.accept(new PredicateVisitor(root, cb, orgKey, rootEntityDefinitionCode), null);
     }
 
     @RequiredArgsConstructor
@@ -47,6 +47,7 @@ public class RsqlToInstanceSpecificationAdapter implements RsqlToInstanceSpecifi
 
         private final Root<EntityObject> root;
         private final CriteriaBuilder cb;
+        private final String orgKey;
         private final String rootEntityDefinitionCode;
 
         @Override
@@ -61,7 +62,7 @@ public class RsqlToInstanceSpecificationAdapter implements RsqlToInstanceSpecifi
 
         @Override
         public Predicate visit(ComparisonNode node, Void ctx) {
-            ResolvedAttributePath path = pathResolver.resolve(rootEntityDefinitionCode, node.getSelector());
+            ResolvedAttributePath path = pathResolver.resolve(orgKey, rootEntityDefinitionCode, node.getSelector());
 
             String jsonPath = JsonPathExpressionBuilder.buildPath(path, node.getOperator(), node.getArguments());
             Expression<Object> vars = JsonPathExpressionBuilder.buildVars(cb, path.valueKind(), node.getArguments());

@@ -59,7 +59,7 @@ class ImportRulesTest {
         assertThat(saved.isEnabled()).isTrue();
         assertThat(saved.isOverride()).isFalse();
         assertThat(saved.getFields()).containsExactly("quantity");
-        verify(ruleEngineSync).register(saved);
+        verify(ruleEngineSync).registerAfterCommit(saved);
     }
 
     @Test

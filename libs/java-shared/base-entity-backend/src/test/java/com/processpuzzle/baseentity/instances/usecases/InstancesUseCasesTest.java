@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectCreatedEvent;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectDeletedEvent;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectUpdatedEvent;
@@ -36,6 +37,7 @@ import org.springframework.data.jpa.domain.Specification;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -69,31 +71,33 @@ class InstancesUseCasesTest {
 
     @BeforeEach
     void setUp() {
-        createUseCase = new CreateEntityInstanceUseCase(repository, definitionLookupPort, payloadValidatorPort, eventPublisher);
-        updateUseCase = new UpdateEntityInstanceUseCase(repository, definitionLookupPort, payloadValidatorPort, eventPublisher);
-        deleteUseCase = new DeleteEntityInstanceUseCase(repository, eventPublisher);
-        findByIdUseCase = new FindEntityInstanceByIdUseCase(repository);
-        searchUseCase = new SearchEntityInstancesUseCase(repository, rsqlAdapter);
+        EntityObjectScope scope = new EntityObjectScope(repository);
+        createUseCase = new CreateEntityInstanceUseCase(repository, scope, definitionLookupPort, payloadValidatorPort, eventPublisher);
+        updateUseCase = new UpdateEntityInstanceUseCase(repository, scope, definitionLookupPort, payloadValidatorPort, eventPublisher);
+        deleteUseCase = new DeleteEntityInstanceUseCase(repository, scope, eventPublisher);
+        findByIdUseCase = new FindEntityInstanceByIdUseCase(scope);
+        searchUseCase = new SearchEntityInstancesUseCase(repository, scope, rsqlAdapter);
     }
 
     @Test
     void createEntityInstance_success() {
         EntityDefinitionView defView = new EntityDefinitionView("partner", false, List.of());
-        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.of(defView));
+        when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.of(defView));
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         Map<String, Object> payload = Map.of("name", "ACME Corp");
         EntityObject result = createUseCase.create(ORG, "partner", payload);
 
+        assertThat(result.getOrgKey()).isEqualTo(ORG);
         assertThat(result.getEntityDefinitionCode()).isEqualTo("partner");
         assertThat(result.getPayload()).isEqualTo(payload);
-        verify(payloadValidatorPort).validate(defView, payload);
+        verify(payloadValidatorPort).validate(ORG, defView, payload);
         verify(repository).saveAndFlush(any(EntityObject.class));
     }
 
     @Test
     void createEntityInstance_definitionNotFound_throwsNotFound() {
-        when(definitionLookupPort.findByCode("unknown")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "unknown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> createUseCase.create(ORG, "unknown", Map.of()))
                 .isInstanceOf(NotFoundException.class);
@@ -102,7 +106,7 @@ class InstancesUseCasesTest {
     @Test
     void createEntityInstance_embeddedDefinition_throwsConflict() {
         EntityDefinitionView embeddedDef = new EntityDefinitionView("address", true, List.of());
-        when(definitionLookupPort.findByCode("address")).thenReturn(Optional.of(embeddedDef));
+        when(definitionLookupPort.findByCode(ORG, "address")).thenReturn(Optional.of(embeddedDef));
 
         assertThatThrownBy(() -> createUseCase.create(ORG, "address", Map.of()))
                 .isInstanceOf(ConflictException.class);
@@ -119,15 +123,15 @@ class InstancesUseCasesTest {
                 .build();
         EntityDefinitionView defView = new EntityDefinitionView("partner", false, List.of());
 
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
-        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.of(defView));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.of(defView));
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         Map<String, Object> newPayload = Map.of("name", "New");
-        EntityObject result = updateUseCase.update(ORG, id, 1L, newPayload);
+        EntityObject result = updateUseCase.update(ORG, "partner", id, 1L, newPayload);
 
         assertThat(result.getPayload()).isEqualTo(newPayload);
-        verify(payloadValidatorPort).validate(defView, newPayload);
+        verify(payloadValidatorPort).validate(ORG, defView, newPayload);
         verify(repository).saveAndFlush(existing);
     }
 
@@ -140,19 +144,19 @@ class InstancesUseCasesTest {
                 .version(2L)
                 .build();
 
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> updateUseCase.update(ORG, id, 1L, Map.of()))
+        assertThatThrownBy(() -> updateUseCase.update(ORG, "partner", id, 1L, Map.of()))
                 .isInstanceOf(ConflictException.class);
     }
 
     @Test
     void deleteEntityInstance_success() {
         UUID id = UUID.randomUUID();
-        EntityObject existing = EntityObject.builder().id(id).build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
 
-        deleteUseCase.delete(ORG, id, false);
+        deleteUseCase.delete(ORG, "partner", id, false);
 
         verify(repository).delete(existing);
     }
@@ -160,9 +164,9 @@ class InstancesUseCasesTest {
     @Test
     void findEntityInstanceById_notFound_throwsNotFound() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findByIdUseCase.findById(id))
+        assertThatThrownBy(() -> findByIdUseCase.findById(ORG, "partner", id))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -170,19 +174,30 @@ class InstancesUseCasesTest {
     void findEntityInstanceById_success() {
         UUID id = UUID.randomUUID();
         EntityObject entity = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
-        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(entity));
 
-        EntityObject result = findByIdUseCase.findById(id);
+        EntityObject result = findByIdUseCase.findById(ORG, "partner", id);
 
         assertThat(result).isSameAs(entity);
     }
 
     @Test
+    void anotherOrganizationsObjectIsNotFoundByIdForUpdateOrDelete() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByIdAndOrgKey(id, "other-org")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> findByIdUseCase.findById("other-org", "partner", id)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> updateUseCase.update("other-org", "partner", id, 1L, Map.of())).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> deleteUseCase.delete("other-org", "partner", id, true)).isInstanceOf(NotFoundException.class);
+        verify(repository, never()).delete(any(EntityObject.class));
+    }
+
+    @Test
     void updateEntityInstance_notFound_throwsNotFound() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> updateUseCase.update(ORG, id, 1L, Map.of()))
+        assertThatThrownBy(() -> updateUseCase.update(ORG, "partner", id, 1L, Map.of()))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -194,30 +209,30 @@ class InstancesUseCasesTest {
                 .entityDefinitionCode("partner")
                 .version(1L)
                 .build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
-        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.empty());
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> updateUseCase.update(ORG, id, 1L, Map.of()))
+        assertThatThrownBy(() -> updateUseCase.update(ORG, "partner", id, 1L, Map.of()))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void deleteEntityInstance_notFound_throwsNotFound() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> deleteUseCase.delete(ORG, id, false))
+        assertThatThrownBy(() -> deleteUseCase.delete(ORG, "partner", id, false))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void deleteEntityInstance_hasReferencesAndCascadeFalse_throwsConflict() {
         UUID id = UUID.randomUUID();
-        EntityObject existing = EntityObject.builder().id(id).build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
         when(repository.existsAnyReferenceTo(id.toString())).thenReturn(true);
 
-        assertThatThrownBy(() -> deleteUseCase.delete(ORG, id, false))
+        assertThatThrownBy(() -> deleteUseCase.delete(ORG, "partner", id, false))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("is still referenced by other entities — pass cascade=true to delete anyway");
     }
@@ -225,10 +240,10 @@ class InstancesUseCasesTest {
     @Test
     void deleteEntityInstance_hasReferencesAndCascadeTrue_deletes() {
         UUID id = UUID.randomUUID();
-        EntityObject existing = EntityObject.builder().id(id).build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
 
-        deleteUseCase.delete(ORG, id, true);
+        deleteUseCase.delete(ORG, "partner", id, true);
 
         verify(repository).delete(existing);
     }
@@ -237,7 +252,7 @@ class InstancesUseCasesTest {
     void createEntityInstance_publishesCreatedEvent() {
         UUID id = UUID.randomUUID();
         EntityDefinitionView defView = new EntityDefinitionView("partner", false, List.of());
-        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.of(defView));
+        when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.of(defView));
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
             EntityObject argument = invocation.getArgument(0);
             argument.setId(id);
@@ -260,7 +275,7 @@ class InstancesUseCasesTest {
 
     @Test
     void createEntityInstance_definitionNotFound_publishesNothing() {
-        when(definitionLookupPort.findByCode("unknown")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "unknown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> createUseCase.create(ORG, "unknown", Map.of()))
                 .isInstanceOf(NotFoundException.class);
@@ -278,11 +293,11 @@ class InstancesUseCasesTest {
                 .payload(Map.of("name", "Old"))
                 .build();
         EntityDefinitionView defView = new EntityDefinitionView("partner", false, List.of());
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
-        when(definitionLookupPort.findByCode("partner")).thenReturn(Optional.of(defView));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.of(defView));
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        updateUseCase.update(ORG, id, 1L, Map.of("name", "New"));
+        updateUseCase.update(ORG, "partner", id, 1L, Map.of("name", "New"));
 
         ArgumentCaptor<EntityObjectUpdatedEvent> captor = ArgumentCaptor.forClass(EntityObjectUpdatedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
@@ -297,9 +312,9 @@ class InstancesUseCasesTest {
     void updateEntityInstance_versionMismatch_publishesNothing() {
         UUID id = UUID.randomUUID();
         EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").version(2L).build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> updateUseCase.update(ORG, id, 1L, Map.of()))
+        assertThatThrownBy(() -> updateUseCase.update(ORG, "partner", id, 1L, Map.of()))
                 .isInstanceOf(ConflictException.class);
 
         verifyNoInteractions(eventPublisher);
@@ -309,9 +324,9 @@ class InstancesUseCasesTest {
     void deleteEntityInstance_publishesDeletedEvent() {
         UUID id = UUID.randomUUID();
         EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
 
-        deleteUseCase.delete(ORG, id, false);
+        deleteUseCase.delete(ORG, "partner", id, false);
 
         ArgumentCaptor<EntityObjectDeletedEvent> captor = ArgumentCaptor.forClass(EntityObjectDeletedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
@@ -326,14 +341,28 @@ class InstancesUseCasesTest {
     @SuppressWarnings("unchecked")
     void searchEntityInstances_success() {
         Specification<EntityObject> spec = (root, query, cb) -> null;
-        when(rsqlAdapter.toSpecification("name==ACME", "partner")).thenReturn(spec);
+        when(rsqlAdapter.toSpecification(ORG, "name==ACME", "partner")).thenReturn(spec);
 
         Pageable pageable = PageRequest.of(0, 10);
         Page<EntityObject> page = new PageImpl<>(List.of(EntityObject.builder().entityDefinitionCode("partner").build()));
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        Page<EntityObject> result = searchUseCase.search("partner", "name==ACME", pageable);
+        Page<EntityObject> result = searchUseCase.search(ORG, "partner", "name==ACME", pageable);
 
         assertThat(result.getContent()).hasSize(1);
+    }
+
+    /** An id of another type's object is not found, whichever verb carries it. */
+    @Test
+    void anObjectOfAnotherTypeIsNotFoundByIdForFindUpdateOrDelete() {
+        UUID id = UUID.randomUUID();
+        EntityObject order = EntityObject.builder().id(id).orgKey(ORG).entityDefinitionCode("order").version(1L).build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> findByIdUseCase.findById(ORG, "partner", id)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> updateUseCase.update(ORG, "partner", id, 1L, Map.of())).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> deleteUseCase.delete(ORG, "partner", id, true)).isInstanceOf(NotFoundException.class);
+        verify(repository, never()).saveAndFlush(any());
+        verify(repository, never()).delete(any(EntityObject.class));
     }
 }

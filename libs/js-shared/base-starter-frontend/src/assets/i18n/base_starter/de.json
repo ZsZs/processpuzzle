@@ -1,0 +1,43 @@
+{
+  "import": {
+    "title": "Business Starter",
+    "hint": "Ein Starter-Paket (.zip) in diese Organisation importieren. Zuerst die Vorschau: Sie führt den ganzen Import aus und schreibt nichts.",
+    "preview": "Vorschau",
+    "apply": "Importieren",
+    "status": {
+      "applied": "Importiert",
+      "would-apply": "Würde importieren",
+      "rejected": "Abgelehnt"
+    },
+    "summary": "{{created}} neu, {{updated}} aktualisiert",
+    "column": {
+      "kind": "Art",
+      "key": "Schlüssel",
+      "action": "Aktion"
+    },
+    "action": {
+      "create": "neu",
+      "update": "aktualisieren"
+    },
+    "kind": {
+      "entity": "Entität",
+      "state": "Zustandsautomat",
+      "rule": "Regel",
+      "widget": "Widget",
+      "document": "Dokument",
+      "workflow": "Workflow",
+      "app": "Anwendung"
+    }
+  },
+  "installed": {
+    "title": "Installierte Starter",
+    "empty": "In dieser Organisation ist noch kein Starter installiert.",
+    "column": {
+      "starter": "Starter",
+      "version": "Version",
+      "installedAt": "Installiert",
+      "installedBy": "Von",
+      "customized": "Angepasste Definitionen"
+    }
+  }
+}

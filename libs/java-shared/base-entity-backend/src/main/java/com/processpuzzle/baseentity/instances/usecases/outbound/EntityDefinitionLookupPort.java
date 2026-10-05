@@ -9,5 +9,5 @@ import java.util.Optional;
  */
 public interface EntityDefinitionLookupPort {
 
-    Optional<EntityDefinitionView> findByCode(String code);
+    Optional<EntityDefinitionView> findByCode(String orgKey, String code);
 }

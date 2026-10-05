@@ -1,0 +1,44 @@
+entityDefinitions:
+  - code: stock-location
+    name: Stock Location
+    description: A place items are stored at.
+    status: ACTIVE
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+        isLinkToDetails: true
+
+  - code: inventory-item
+    name: Inventory Item
+    description: One kind of stocked item.
+    status: ACTIVE
+    attributes:
+      - code: sku
+        name: SKU
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT
+        required: true
+        isLinkToDetails: true
+      - code: quantity
+        name: Quantity
+        displayOrder: 2
+        valueKind: NUMBER
+        formControlType: NUMBER
+      - code: location
+        name: Location
+        displayOrder: 3
+        valueKind: REFERENCE
+        formControlType: FOREIGN_KEY
+        linkedEntityType: stock-location
+      - code: status
+        name: Status
+        displayOrder: 4
+        valueKind: ENUM
+        formControlType: ENUM_SELECT
+        enumValues: [IN_STOCK, DEPLETED, DISCONTINUED]
+        defaultValue: IN_STOCK

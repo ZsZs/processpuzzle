@@ -1,0 +1,17 @@
+# context is the entity *name*, not its code; see sample-rules/ in base-rule-backend.
+rules:
+  - id: non-negative-quantity
+    name: Quantity is not negative
+    context: Inventory Item
+    severity: ERROR
+    fields: [quantity]
+    expression: "entity.quantity == null || Number(entity.quantity) >= 0"
+    message: Quantity cannot be negative.
+
+  - id: sku-format
+    name: SKU is upper case
+    context: Inventory Item
+    severity: WARNING
+    fields: [sku]
+    expression: "!entity.sku || entity.sku === entity.sku.toUpperCase()"
+    message: SKUs are written in upper case.
