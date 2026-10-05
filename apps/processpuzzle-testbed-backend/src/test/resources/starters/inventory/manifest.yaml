@@ -1,0 +1,19 @@
+# Pilot Business Starter: a minimal stock register. Zipped by StarterImportIntegrationTest.
+manifestVersion: 1
+id: inventory
+name: Inventory
+version: 1.0.0
+description: Items, the locations they are stored at, and their lifecycle.
+category: inventory
+tags: [stock, warehouse]
+definitionSchemaVersion: 1
+locales: [en]
+contents:
+  entities:
+    - entities/inventory-entities.yaml
+  states:
+    - states/inventory-item-lifecycle.yaml
+  rules:
+    - rules/inventory-rules.yaml
+install:
+  conflictStrategy: skip-customized

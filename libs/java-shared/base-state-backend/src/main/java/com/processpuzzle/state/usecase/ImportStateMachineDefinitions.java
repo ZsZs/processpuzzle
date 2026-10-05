@@ -44,7 +44,7 @@ public class ImportStateMachineDefinitions {
 
         List<String> errors = new ArrayList<>();
         Map<String, StateMachineYamlEntry> byEntityName = collectEntriesByEntity(entries, errors);
-        validateTopologies(byEntityName, errors);
+        validateTopologies(orgKey, byEntityName, errors);
 
         if (!errors.isEmpty()) {
             return new ImportOutcome(0, 0, errors);
@@ -74,10 +74,10 @@ public class ImportStateMachineDefinitions {
         return byEntityName;
     }
 
-    private void validateTopologies(Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
+    private void validateTopologies(String orgKey, Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
         for (StateMachineYamlEntry entry : byEntityName.values()) {
             try {
-                validator.validate(entry.entityName(), entry.stateAttributeKey(),
+                validator.validate(orgKey, entry.entityName(), entry.stateAttributeKey(),
                         entry.initialStateKey(), entry.states(), entry.transitions());
             } catch (IllegalArgumentException e) {
                 errors.add("'" + entry.entityName() + "': " + e.getMessage());

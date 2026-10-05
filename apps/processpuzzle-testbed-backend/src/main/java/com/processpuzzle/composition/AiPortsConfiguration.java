@@ -54,12 +54,12 @@ public class AiPortsConfiguration {
         return new SubjectDirectory() {
             @Override
             public boolean entityTypeExists(String orgKey, String entityName) {
-                return attributes.entityTypeExists(entityName);
+                return attributes.entityTypeExists(orgKey, entityName);
             }
 
             @Override
             public boolean isTextAttribute(String orgKey, String entityName, String attributeKey) {
-                return attributes.attributeKind(entityName, attributeKey)
+                return attributes.attributeKind(orgKey, entityName, attributeKey)
                         .map(kind -> kind == EntityAttributeKind.TEXT)
                         .orElse(false);
             }
@@ -70,7 +70,7 @@ public class AiPortsConfiguration {
              */
             @Override
             public boolean isPhotoAttribute(String orgKey, String entityName, String attributeKey) {
-                return attributes.attributeKind(entityName, attributeKey)
+                return attributes.attributeKind(orgKey, entityName, attributeKey)
                         .map(kind -> kind == EntityAttributeKind.REFERENCE)
                         .orElse(false);
             }

@@ -44,12 +44,12 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     public ResponseEntity<Page> listEntityDefinitions(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20);
         var domainStatus = mapper.toDomainStatus(status);
-        return ResponseEntity.ok(mapper.toPage(findAllUseCase.findAll(domainStatus, isEmbedded, pageable)));
+        return ResponseEntity.ok(mapper.toPage(findAllUseCase.findAll(orgKey, domainStatus, isEmbedded, pageable)));
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> createEntityDefinition(String orgKey, BaseEntityDefinitionInput input) {
-        BaseEntityDefinition created = createUseCase.create(mapper.toDomain(input));
+        BaseEntityDefinition created = createUseCase.create(orgKey, mapper.toDomain(input));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{code}")
             .buildAndExpand(created.getCode())
@@ -59,34 +59,34 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> getEntityDefinition(String orgKey, String code) {
-        return ResponseEntity.ok(mapper.toModel(findByCodeUseCase.findByCode(code)));
+        return ResponseEntity.ok(mapper.toModel(findByCodeUseCase.findByCode(orgKey, code)));
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> replaceEntityDefinition(String orgKey, String code, BaseEntityDefinitionInput input) {
-        return ResponseEntity.ok(mapper.toModel(replaceUseCase.replace(code, mapper.toDomain(input))));
+        return ResponseEntity.ok(mapper.toModel(replaceUseCase.replace(orgKey, code, mapper.toDomain(input))));
     }
 
     @Override
     public ResponseEntity<Void> deleteEntityDefinition(String orgKey, String code) {
-        deleteUseCase.delete(code);
+        deleteUseCase.delete(orgKey, code);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityAttribute> addAttribute(String orgKey, String code, BaseEntityAttributeInput input) {
-        BaseEntityAttribute created = addAttributeUseCase.addAttribute(code, mapper.toDomain(input));
+        BaseEntityAttribute created = addAttributeUseCase.addAttribute(orgKey, code, mapper.toDomain(input));
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toModel(created));
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityAttribute> replaceAttribute(String orgKey, String code, String attributeCode, BaseEntityAttributeInput input) {
-        return ResponseEntity.ok(mapper.toModel(replaceAttributeUseCase.replaceAttribute(code, attributeCode, mapper.toDomain(input))));
+        return ResponseEntity.ok(mapper.toModel(replaceAttributeUseCase.replaceAttribute(orgKey, code, attributeCode, mapper.toDomain(input))));
     }
 
     @Override
     public ResponseEntity<Void> deleteAttribute(String orgKey, String code, String attributeCode) {
-        deleteAttributeUseCase.deleteAttribute(code, attributeCode);
+        deleteAttributeUseCase.deleteAttribute(orgKey, code, attributeCode);
         return ResponseEntity.noContent().build();
     }
 }

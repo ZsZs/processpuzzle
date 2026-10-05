@@ -58,8 +58,8 @@ class AiPortsConfigurationTest {
         EntityObjectAccess objects = mock(EntityObjectAccess.class);
         UUID boat = UUID.randomUUID();
         UUID missing = UUID.randomUUID();
-        when(attributes.attributeKind("boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
-        when(attributes.attributeKind("boat", "length")).thenReturn(Optional.of(EntityAttributeKind.NUMBER));
+        when(attributes.attributeKind("my-org", "boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
+        when(attributes.attributeKind("my-org", "boat", "length")).thenReturn(Optional.of(EntityAttributeKind.NUMBER));
         when(objects.find("boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("sailNumber", "GER 1234")));
         when(objects.find("boat", missing)).thenThrow(new EntityObjectAccessException.NotFound("boat", missing));
 
@@ -67,6 +67,7 @@ class AiPortsConfigurationTest {
 
         assertThat(subjects.isTextAttribute("my-org", "boat", "sailNumber")).isTrue();
         assertThat(subjects.isTextAttribute("my-org", "boat", "length")).isFalse();
+        assertThat(subjects.isTextAttribute("other-org", "boat", "sailNumber")).isFalse();
         assertThat(subjects.subjectExists("my-org", "boat", boat)).isTrue();
         assertThat(subjects.subjectExists("my-org", "boat", missing)).isFalse();
         assertThat(subjects.identifier("my-org", "boat", boat, "sailNumber")).hasValue("GER 1234");
@@ -79,8 +80,8 @@ class AiPortsConfigurationTest {
         EntityObjectAccess objects = mock(EntityObjectAccess.class);
         UUID boat = UUID.randomUUID();
         UUID missing = UUID.randomUUID();
-        when(attributes.attributeKind("boat", "photos")).thenReturn(Optional.of(EntityAttributeKind.REFERENCE));
-        when(attributes.attributeKind("boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
+        when(attributes.attributeKind("my-org", "boat", "photos")).thenReturn(Optional.of(EntityAttributeKind.REFERENCE));
+        when(attributes.attributeKind("my-org", "boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
         when(objects.find("boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("photos", List.of(
                 Map.of("bucket", "artifacts", "objectId", "a.jpg", "name", "a.jpg", "mimeType", "image/jpeg"),
                 Map.of("bucket", "artifacts", "objectId", "b.pdf", "name", "b.pdf", "mimeType", "application/pdf")))));

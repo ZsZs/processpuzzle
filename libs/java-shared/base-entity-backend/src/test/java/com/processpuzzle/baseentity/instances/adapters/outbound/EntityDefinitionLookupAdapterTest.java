@@ -35,9 +35,9 @@ class EntityDefinitionLookupAdapterTest {
 
     @Test
     void findByCode_returnsEmpty_whenNotFound() {
-        when(repository.findByCode("unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCode("acme", "unknown")).thenReturn(Optional.empty());
 
-        Optional<EntityDefinitionView> result = adapter.findByCode("unknown");
+        Optional<EntityDefinitionView> result = adapter.findByCode("acme", "unknown");
 
         assertThat(result).isEmpty();
     }
@@ -67,9 +67,9 @@ class EntityDefinitionLookupAdapterTest {
                 .attributes(List.of(nameAttr, addressAttr))
                 .build();
 
-        when(repository.findByCode("partner")).thenReturn(Optional.of(definition));
+        when(repository.findByOrgKeyAndCode("acme", "partner")).thenReturn(Optional.of(definition));
 
-        Optional<EntityDefinitionView> result = adapter.findByCode("partner");
+        Optional<EntityDefinitionView> result = adapter.findByCode("acme", "partner");
 
         assertThat(result).isPresent();
         EntityDefinitionView view = result.get();

@@ -14,13 +14,15 @@ Requirements:
 
 ## 2. Decision
 
-**Git is the source of truth. A generic import API in `base-app-backend` does the importing. MinIO (S3) is the optional distribution store in between.**
+**Git is the source of truth. A generic import API in a new `base-starter-backend` library does the importing. MinIO (S3) is the optional distribution store in between.**
 
 | Layer | Responsibility | Where |
 |---|---|---|
 | Authoring | Write, review and version starters | Git, `processpuzzle-biz/starters/<id>/` |
 | Distribution | Validated, versioned bundles + catalog index | CI, then MinIO bucket `starters/` (or baked into the backend image for a small catalog) |
-| Import / Export | Validate, order, write definitions for one org | `base-app-backend`, orgKey-scoped |
+| Import / Export | Validate, order, write definitions for one org | `base-starter-backend` + `base-starter-frontend`, orgKey-scoped |
+| Catalog | Browse, select and install starters | `processpuzzle-biz` (UI and catalog endpoints) |
+| Billing | Payments and bills for starters | Admin (no install-time payment check for now) |
 
 ## 3. Authoring layout
 
@@ -39,18 +41,18 @@ CI steps per release: validate every YAML against the definition schemas, check 
 
 The full manifest sketch is in `starter-manifest.example.yaml`.
 
-## 4. Import API (base-app-backend)
+## 4. Import API (base-starter-backend)
 
 The importer takes **bytes, not a storage location**. That keeps it independent of MinIO, Git or the file system. Full contract: `definitions-import-api.yaml`.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /starters` | Browse the catalog (reads `catalog.json`) |
-| `GET /starters/{id}/versions/{v}` | Starter detail and manifest |
-| `GET /orgs/{orgKey}/starters` | Installed starters with provenance |
-| `POST /orgs/{orgKey}/starters/install` | Install a catalog starter |
-| `POST /orgs/{orgKey}/definitions/import` | Import an uploaded bundle (`dryRun` supported) |
-| `GET /orgs/{orgKey}/definitions/export` | Export definitions as a bundle |
+| `GET /organizations/{orgKey}/starters` | Installed starters with provenance |
+| `POST /organizations/{orgKey}/definitions/import` | Import an uploaded bundle (`dryRun` supported) |
+| `GET /organizations/{orgKey}/definitions/export` | Export definitions as a bundle |
+
+The catalog endpoints (`GET /starters`, `GET /starters/{id}/versions/{v}`) and *install from catalog* belong to
+`processpuzzle-biz`: install there means fetching the bundle bytes and calling `definitions/import`.
 
 One importer, three callers:
 
@@ -78,16 +80,30 @@ Export is the reverse operation, so exporting a customized or custom-developed s
 - **Exports:** plain downloads. For org-private backup or sharing later, use a separate `orgs/{orgKey}/` prefix, never the official bucket.
 - **Customer-contributed marketplace (later):** separate, reviewed pipeline.
 
-## 7. Open question
+## 7. Decisions (2026-10-05)
 
-Who serves the catalog: the **Biz/Admin** app, or each customer app?
-
-Recommendation: Biz owns the catalog (it already owns subscription and provisioning). Customer apps only consume bundles, via upload or via an install call that Biz or Admin brokers.
+1. **Catalog in Biz, billing in Admin.** The catalog UI and catalog endpoints live in `processpuzzle-biz`;
+   administering payments and bills stays in Admin. No upfront payment check at install time for now.
+2. **New library pair.** Orchestration lives in `base-starter-backend`, the import/export UI in
+   `base-starter-frontend`. Existing feature libraries stay focused.
+3. **No compile edges.** `base-starter-backend` depends on no feature library. `processpuzzle-core` declares a
+   `DefinitionImportParticipant` SPI; each feature implements it for its own definitions; the orchestrator
+   collects the participants as beans and runs them in order.
+4. **Bundle files use the existing seed YAML formats** (`DefaultEntitiesDocument` and its siblings). The
+   classpath seed loaders become one more caller of the importer.
+5. **One transaction** across participants — valid while all modules share one DataSource. Revisit when a
+   feature really becomes a microservice.
+6. **Provenance in one importer-owned table**, keyed by `(orgKey, kind, key)`, holding `starterId`,
+   `starterVersion` and the content hash. Feature tables are not changed; "customized" means the
+   participant's canonical export no longer hashes to the stored value.
+7. **Definition kinds and order:** Entity, State, Rule, Widget, Document, Workflow, App; translations travel
+   with their kind.
 
 ## 8. Suggested next steps
 
-1. Define the JSON Schemas for the six definition types plus the manifest.
-2. Build the importer as a Spring Modulith module in `base-app-backend` with the dry-run report first.
+1. Write the contract in `api-contracts` (OpenAPI 3.0.3); validation reuses the existing `*Input` schemas.
+2. Build the SPI in `processpuzzle-core` and the orchestrator in `base-starter-backend`, dry-run report first;
+   entity and rule participants first, the other kinds after.
 3. Create one small pilot starter (e.g. inventory) and run it end to end through CI, bucket and import.
 4. Add the Design view import/export UI.
 5. Hook the importer into the customer-seed provisioning flow.

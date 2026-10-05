@@ -18,9 +18,10 @@ public class SearchEntityInstancesUseCase {
     private final RsqlToInstanceSpecificationPort rsqlSpecificationPort;
 
     @Transactional(readOnly = true)
-    public Page<EntityObject> search(String entityDefinitionCode, String rsql, Pageable pageable) {
+    public Page<EntityObject> search(String orgKey, String entityDefinitionCode, String rsql, Pageable pageable) {
         Specification<EntityObject> specification = rsqlSpecificationPort
-            .toSpecification(rsql, entityDefinitionCode)
+            .toSpecification(orgKey, rsql, entityDefinitionCode)
+            .and((root, query, cb) -> cb.equal(root.get("orgKey"), orgKey))
             .and((root, query, cb) -> cb.equal(root.get("entityDefinitionCode"), entityDefinitionCode));
         return repository.findAll(specification, pageable);
     }

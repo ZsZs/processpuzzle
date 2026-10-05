@@ -98,7 +98,7 @@ public class ImportRules {
                 created++;
             }
             repository.save(rule);
-            ruleEngineSync.register(rule);
+            ruleEngineSync.registerAfterCommit(rule);
         }
 
         return new ImportOutcome(created, updated, errors);

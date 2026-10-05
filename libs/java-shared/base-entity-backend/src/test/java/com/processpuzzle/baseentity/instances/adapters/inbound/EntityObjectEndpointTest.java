@@ -89,7 +89,7 @@ class EntityObjectEndpointTest {
                 .version(1L)
                 .payload(Map.of("name", "ACME"))
                 .build();
-        when(findByIdUseCase.findById(id)).thenReturn(entity);
+        when(findByIdUseCase.findById(ORG, id)).thenReturn(entity);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
                 .andExpect(status().isOk())
@@ -187,7 +187,7 @@ class EntityObjectEndpointTest {
                 .build();
         Page<EntityObject> page = new PageImpl<>(List.of(entity));
 
-        when(searchUseCase.search(eq("partner"), eq("name==ACME"), any(Pageable.class)))
+        when(searchUseCase.search(eq("test-org"), eq("partner"), eq("name==ACME"), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}", "partner")

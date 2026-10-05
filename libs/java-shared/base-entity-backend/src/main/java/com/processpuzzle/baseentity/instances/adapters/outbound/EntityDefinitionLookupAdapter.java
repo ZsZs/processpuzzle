@@ -24,8 +24,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
     private final EntityDefinitionRepository entityDefinitionRepository;
 
     @Override
-    public Optional<EntityDefinitionView> findByCode(String code) {
-        return entityDefinitionRepository.findByCode(code).map(this::toView);
+    public Optional<EntityDefinitionView> findByCode(String orgKey, String code) {
+        return entityDefinitionRepository.findByOrgKeyAndCode(orgKey, code).map(this::toView);
     }
 
     private EntityDefinitionView toView(BaseEntityDefinition definition) {

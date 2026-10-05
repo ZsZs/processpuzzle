@@ -1,0 +1,34 @@
+stateMachines:
+  - entityName: inventory-item
+    name: Inventory Item Lifecycle
+    stateAttributeKey: status
+    initialStateKey: IN_STOCK
+    states:
+      - key: IN_STOCK
+        name: In stock
+        isFinal: false
+        isLocked: false
+      - key: DEPLETED
+        name: Depleted
+        isFinal: false
+        isLocked: false
+      - key: DISCONTINUED
+        name: Discontinued
+        isFinal: true
+        isLocked: true
+    transitions:
+      - key: deplete
+        name: Deplete
+        sourceStateKey: IN_STOCK
+        targetStateKey: DEPLETED
+        triggerKey: deplete
+      - key: restock
+        name: Restock
+        sourceStateKey: DEPLETED
+        targetStateKey: IN_STOCK
+        triggerKey: restock
+      - key: discontinue
+        name: Discontinue
+        sourceStateKey: IN_STOCK
+        targetStateKey: DISCONTINUED
+        triggerKey: discontinue

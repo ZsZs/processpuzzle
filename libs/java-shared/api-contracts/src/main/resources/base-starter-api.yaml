@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Base Starter API (base-starter)
+  description: >-
+    Imports Business Starter bundles into one organization, and lists the starters an organization
+    has installed. A bundle is a zip with manifest.yaml at its root and the definition files it
+    lists, each in the seed YAML format of its own feature. See
+    docs/business-starters/business-starters-design.md.
+
+    ## Import
+
+    Every definition kind is imported by the feature that owns it, in a fixed order (entity, state,
+    rule, ...), and all of them in one transaction: a bundle is applied completely or not at all.
+    A dry run performs the same import and rolls it back, so it validates exactly what an apply
+    would — including references from a later kind to definitions created by an earlier one.
+
+    ## Error bodies
+
+    A refused import answers with the same ImportReport as a successful one, status `rejected` and
+    the reasons in `errors`, so a client reads one shape. The catalog of starters, and installing
+    from it, are not part of this API; they belong to processpuzzle-biz.
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as the other feature APIs; see shared-api.yaml OrgKeyParam.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /organizations/{orgKey}/definitions/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: importBundle
+      summary: Import a Business Starter bundle into the organization
+      description: >-
+        Requires design rights on the organization. With dryRun the import is validated and
+        reported, and nothing is written.
+      tags: [ Base Starter ]
+      parameters:
+        - name: dryRun
+          in: query
+          required: false
+          description: Validate and report what would change, write nothing.
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ bundle ]
+              properties:
+                bundle:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import report, of a dry run or of an applied import
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "413":
+          description: The bundle exceeds a size or entry-count limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "422":
+          description: The bundle or one of its definitions failed validation; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+
+  /organizations/{orgKey}/starters:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listInstalledStarters
+      summary: The starters installed in the organization
+      tags: [ Base Starter ]
+      responses:
+        "200":
+          description: Installed starters, with how many of their definitions were changed since
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InstalledStarter"
+        "403":
+          description: The authenticated principal may not act on this organization.
+
+components:
+
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      description: >-
+        Tenant discriminator; see shared-api.yaml OrgKeyParam for the full contract. Must be
+        verified against the principal's `organization` claim — 403 on mismatch.
+
+  schemas:
+
+    DefinitionKind:
+      type: string
+      description: The kinds the importer knows; a bundle naming any other is rejected.
+      enum: [ entity, state, rule, widget, document, workflow, app ]
+
+    ImportReport:
+      type: object
+      required: [ dryRun, status ]
+      properties:
+        dryRun:
+          type: boolean
+        status:
+          type: string
+          enum: [ applied, would-apply, rejected ]
+        starterId:
+          type: string
+        version:
+          type: string
+        summary:
+          $ref: "#/components/schemas/ImportSummary"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportReportItem"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
+
+    ImportSummary:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+
+    ImportReportItem:
+      type: object
+      required: [ kind, key, action ]
+      properties:
+        kind:
+          $ref: "#/components/schemas/DefinitionKind"
+        key:
+          type: string
+          description: The definition's key within its kind — an entity code, a state machine's entity name, a rule id.
+        action:
+          type: string
+          enum: [ create, update ]
+
+    ImportError:
+      type: object
+      required: [ message ]
+      properties:
+        file:
+          type: string
+          description: Path of the offending file inside the bundle, when the problem is in one.
+        message:
+          type: string
+
+    InstalledStarter:
+      type: object
+      required: [ starterId, version, installedAt ]
+      properties:
+        starterId:
+          type: string
+        version:
+          type: string
+        installedAt:
+          type: string
+          format: date-time
+        installedBy:
+          type: string
+        customizedDefinitions:
+          type: integer
+          description: Definitions of this starter whose current content no longer matches what was imported.

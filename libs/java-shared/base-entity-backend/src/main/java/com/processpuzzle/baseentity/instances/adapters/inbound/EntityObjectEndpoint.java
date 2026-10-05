@@ -48,7 +48,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     ) {
         Sort sortObj = SortParser.parse(sort);
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20, sortObj);
-        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(entityDefinitionCode, rsql, pageable)));
+        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(orgKey, entityDefinitionCode, rsql, pageable)));
     }
 
     @Override
@@ -69,7 +69,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> getEntity(String orgKey, String entityDefinitionCode, UUID id) {
-        return ResponseEntity.ok(mapper.toModel(findByIdUseCase.findById(id)));
+        return ResponseEntity.ok(mapper.toModel(findByIdUseCase.findById(orgKey, id)));
     }
 
     @Override

@@ -26,14 +26,13 @@ public class CreateEntityInstanceUseCase {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * @param orgKey the organization the request was addressed to. Not persisted — {@code
-     *               EntityObject} has no organization column — but carried into {@link
-     *               EntityObjectCreatedEvent}, because an observer resolving its own metadata for
-     *               this object (base-state resolving a state machine) needs the tenant and the
-     *               request path is the only place it is known.
+     * @param orgKey the organization the request was addressed to. Persisted on the object, and
+     *               carried into {@link EntityObjectCreatedEvent}, because an observer resolving its
+     *               own metadata for this object (base-state resolving a state machine) needs the
+     *               tenant.
      */
     public EntityObject create(String orgKey, String entityDefinitionCode, Map<String, Object> payload) {
-        EntityDefinitionView definition = definitionLookupPort.findByCode(entityDefinitionCode)
+        EntityDefinitionView definition = definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(entityDefinitionCode)));
 
         if (definition.embedded()) {
@@ -42,9 +41,10 @@ public class CreateEntityInstanceUseCase {
                     .formatted(entityDefinitionCode));
         }
 
-        payloadValidatorPort.validate(definition, payload);
+        payloadValidatorPort.validate(orgKey, definition, payload);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
+            .orgKey(orgKey)
             .entityDefinitionCode(entityDefinitionCode)
             .payload(payload)
             .build());

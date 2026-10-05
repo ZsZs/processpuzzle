@@ -21,7 +21,7 @@ public class AttributePathResolver {
 
     private final EntityDefinitionLookupPort definitionLookupPort;
 
-    public ResolvedAttributePath resolve(String rootEntityDefinitionCode, String dottedSelector) {
+    public ResolvedAttributePath resolve(String orgKey, String rootEntityDefinitionCode, String dottedSelector) {
         String[] parts = dottedSelector.split("\\.");
         String currentDefinitionCode = rootEntityDefinitionCode;
         List<PathSegment> segments = new ArrayList<>();
@@ -32,7 +32,7 @@ public class AttributePathResolver {
             boolean lastSegment = i == parts.length - 1;
             String definitionCode = currentDefinitionCode;
 
-            EntityDefinitionView definition = definitionLookupPort.findByCode(definitionCode)
+            EntityDefinitionView definition = definitionLookupPort.findByCode(orgKey, definitionCode)
                 .orElseThrow(() -> new IllegalArgumentException(
                     "Unknown entity definition '%s' while resolving '%s'".formatted(definitionCode, dottedSelector)));
 

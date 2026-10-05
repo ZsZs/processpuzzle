@@ -26,19 +26,19 @@ public class UpdateEntityInstanceUseCase {
     private final PayloadValidatorPort payloadValidatorPort;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** @param orgKey see {@code CreateEntityInstanceUseCase.create} — carried into the event only. */
+    /** @param orgKey see {@code CreateEntityInstanceUseCase.create}; an object of another organization is not found. */
     public EntityObject update(String orgKey, UUID id, Long expectedVersion, Map<String, Object> payload) {
-        EntityObject entityObject = repository.findById(id)
+        EntityObject entityObject = repository.findByIdAndOrgKey(id, orgKey)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 
         if (!entityObject.getVersion().equals(expectedVersion)) {
             throw new ConflictException("version conflict on entity '%s'".formatted(id));
         }
 
-        EntityDefinitionView definition = definitionLookupPort.findByCode(entityObject.getEntityDefinitionCode())
+        EntityDefinitionView definition = definitionLookupPort.findByCode(orgKey, entityObject.getEntityDefinitionCode())
             .orElseThrow(() -> new NotFoundException(
                 "No entity definition with code '%s'".formatted(entityObject.getEntityDefinitionCode())));
-        payloadValidatorPort.validate(definition, payload);
+        payloadValidatorPort.validate(orgKey, definition, payload);
 
         entityObject.setPayload(payload);
         EntityObject updated = repository.saveAndFlush(entityObject);

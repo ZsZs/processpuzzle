@@ -67,6 +67,11 @@
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
+            <artifactId>base-starter-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
             <artifactId>org-admin-backend</artifactId>
         </dependency>
 

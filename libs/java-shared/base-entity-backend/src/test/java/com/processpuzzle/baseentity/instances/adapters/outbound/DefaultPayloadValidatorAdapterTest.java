@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DefaultPayloadValidatorAdapterTest {
 
+    private static final String ORG = "acme";
+
     @Mock
     private EntityDefinitionLookupPort definitionLookupPort;
 
@@ -44,7 +46,7 @@ class DefaultPayloadValidatorAdapterTest {
 
         Map<String, Object> payload = Map.of("name", "ACME Corp");
 
-        validator.validate(def, payload);
+        validator.validate(ORG, def, payload);
     }
 
     @Test
@@ -59,7 +61,7 @@ class DefaultPayloadValidatorAdapterTest {
 
         Map<String, Object> payload = Map.of("name", "  ");
 
-        assertThatThrownBy(() -> validator.validate(def, payload))
+        assertThatThrownBy(() -> validator.validate(ORG, def, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> {
                     ValidationException ve = (ValidationException) ex;
@@ -86,14 +88,14 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("address")).thenReturn(Optional.of(addressDef));
+        when(definitionLookupPort.findByCode(ORG, "address")).thenReturn(Optional.of(addressDef));
 
         Map<String, Object> payload = Map.of(
                 "name", "ACME",
                 "billingAddress", Map.of("city", "Berlin")
         );
 
-        validator.validate(partnerDef, payload);
+        validator.validate(ORG, partnerDef, payload);
     }
 
     @Test
@@ -115,14 +117,14 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("address")).thenReturn(Optional.of(addressDef));
+        when(definitionLookupPort.findByCode(ORG, "address")).thenReturn(Optional.of(addressDef));
 
         Map<String, Object> payload = Map.of(
                 "name", "ACME",
                 "billingAddress", Map.of("city", "")
         );
 
-        assertThatThrownBy(() -> validator.validate(partnerDef, payload))
+        assertThatThrownBy(() -> validator.validate(ORG, partnerDef, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> {
                     ValidationException ve = (ValidationException) ex;
@@ -140,13 +142,13 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("deleted_address")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "deleted_address")).thenReturn(Optional.empty());
 
         Map<String, Object> payload = Map.of(
                 "billingAddress", Map.of("city", "Berlin")
         );
 
-        assertThatThrownBy(() -> validator.validate(partnerDef, payload))
+        assertThatThrownBy(() -> validator.validate(ORG, partnerDef, payload))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Embedded definition 'deleted_address' referenced by 'partner.billingAddress' no longer exists");
     }
@@ -169,7 +171,7 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("contact")).thenReturn(Optional.of(contactDef));
+        when(definitionLookupPort.findByCode(ORG, "contact")).thenReturn(Optional.of(contactDef));
 
         Map<String, Object> payload = Map.of(
                 "contacts", List.of(
@@ -178,7 +180,7 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        validator.validate(partnerDef, payload);
+        validator.validate(ORG, partnerDef, payload);
     }
 
     @Test
@@ -199,13 +201,13 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("contact")).thenReturn(Optional.of(contactDef));
+        when(definitionLookupPort.findByCode(ORG, "contact")).thenReturn(Optional.of(contactDef));
 
         Map<String, Object> payload = Map.of(
                 "contacts", "not-a-list"
         );
 
-        assertThatThrownBy(() -> validator.validate(partnerDef, payload))
+        assertThatThrownBy(() -> validator.validate(ORG, partnerDef, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> {
                     ValidationException ve = (ValidationException) ex;
@@ -232,13 +234,13 @@ class DefaultPayloadValidatorAdapterTest {
                 )
         );
 
-        when(definitionLookupPort.findByCode("contact")).thenReturn(Optional.of(contactDef));
+        when(definitionLookupPort.findByCode(ORG, "contact")).thenReturn(Optional.of(contactDef));
 
         Map<String, Object> payload = Map.of(
                 "contact", "not-a-map"
         );
 
-        validator.validate(partnerDef, payload);
+        validator.validate(ORG, partnerDef, payload);
     }
 
     @Test
@@ -255,6 +257,6 @@ class DefaultPayloadValidatorAdapterTest {
                 "employeeCount", 42
         );
 
-        validator.validate(partnerDef, payload);
+        validator.validate(ORG, partnerDef, payload);
     }
 }

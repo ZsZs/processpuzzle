@@ -20,9 +20,9 @@ public class DeleteEntityInstanceUseCase {
     private final EntityObjectRepository repository;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** @param orgKey see {@code CreateEntityInstanceUseCase.create} — carried into the event only. */
+    /** @param orgKey see {@code CreateEntityInstanceUseCase.create}; an object of another organization is not found. */
     public void delete(String orgKey, UUID id, boolean cascade) {
-        EntityObject entityObject = repository.findById(id)
+        EntityObject entityObject = repository.findByIdAndOrgKey(id, orgKey)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 
         if (!cascade && repository.existsAnyReferenceTo(id.toString())) {

@@ -15,7 +15,7 @@ public class EntityInstanceExistenceCheckAdapter implements EntityInstanceExiste
     private final EntityObjectRepository entityObjectRepository;
 
     @Override
-    public boolean existsAnyInstanceOf(String entityDefinitionCode) {
-        return entityObjectRepository.existsByEntityDefinitionCode(entityDefinitionCode);
+    public boolean existsAnyInstanceOf(String orgKey, String entityDefinitionCode) {
+        return entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode(orgKey, entityDefinitionCode);
     }
 }

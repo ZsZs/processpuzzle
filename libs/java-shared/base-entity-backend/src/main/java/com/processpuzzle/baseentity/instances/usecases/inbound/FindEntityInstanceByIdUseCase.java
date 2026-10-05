@@ -15,8 +15,8 @@ public class FindEntityInstanceByIdUseCase {
     private final EntityObjectRepository repository;
 
     @Transactional(readOnly = true)
-    public EntityObject findById(UUID id) {
-        return repository.findById(id)
+    public EntityObject findById(String orgKey, UUID id) {
+        return repository.findByIdAndOrgKey(id, orgKey)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
     }
 }

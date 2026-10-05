@@ -26,21 +26,21 @@ class EntityInstanceExistenceCheckAdapterTest {
 
     @Test
     void existsAnyInstanceOf_returnsTrue_whenRepositoryReturnsTrue() {
-        when(entityObjectRepository.existsByEntityDefinitionCode("partner")).thenReturn(true);
+        when(entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode("acme", "partner")).thenReturn(true);
 
-        boolean result = adapter.existsAnyInstanceOf("partner");
+        boolean result = adapter.existsAnyInstanceOf("acme", "partner");
 
         assertThat(result).isTrue();
-        verify(entityObjectRepository).existsByEntityDefinitionCode("partner");
+        verify(entityObjectRepository).existsByOrgKeyAndEntityDefinitionCode("acme", "partner");
     }
 
     @Test
     void existsAnyInstanceOf_returnsFalse_whenRepositoryReturnsFalse() {
-        when(entityObjectRepository.existsByEntityDefinitionCode("unknown")).thenReturn(false);
+        when(entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode("acme", "unknown")).thenReturn(false);
 
-        boolean result = adapter.existsAnyInstanceOf("unknown");
+        boolean result = adapter.existsAnyInstanceOf("acme", "unknown");
 
         assertThat(result).isFalse();
-        verify(entityObjectRepository).existsByEntityDefinitionCode("unknown");
+        verify(entityObjectRepository).existsByOrgKeyAndEntityDefinitionCode("acme", "unknown");
     }
 }

@@ -17,8 +17,8 @@ public class FindAllEntityDefinitionsUseCase {
     private final EntityDefinitionRepository repository;
 
     @Transactional(readOnly = true)
-    public Page<BaseEntityDefinition> findAll(EntityDefinitionStatus status, Boolean isEmbedded, Pageable pageable) {
-        Specification<BaseEntityDefinition> specification = (root, query, cb) -> cb.conjunction();
+    public Page<BaseEntityDefinition> findAll(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, Pageable pageable) {
+        Specification<BaseEntityDefinition> specification = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
         if (status != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("status"), status));
         }

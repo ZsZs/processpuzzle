@@ -10,5 +10,5 @@ import java.util.Map;
  */
 public interface PayloadValidatorPort {
 
-    void validate(EntityDefinitionView definition, Map<String, Object> payload);
+    void validate(String orgKey, EntityDefinitionView definition, Map<String, Object> payload);
 }

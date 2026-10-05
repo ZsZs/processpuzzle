@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
  * full set of sample instances. On the stage host, which was restarting in an OOM loop, that had
  * grown the seeded rows to 856 — see {@code GovernedStateConsistencyCheck}, which reads all of them
  * at every boot. {@code EntityObjectRepository.existsByEntityDefinitionCode} had been declared for
- * this and never wired up.
+ * this and never wired up (now {@code existsByOrgKeyAndEntityDefinitionCode}).
  *
  * <p>Nothing here can fail startup: every problem is logged and the next file, definition, or instance
  * is attempted.
@@ -136,13 +136,13 @@ public class DefaultEntityLoader {
 
         Tally definitionTally = new Tally();
         for (BaseEntityDefinitionInput definition : document.entityDefinitions()) {
-            definitionTally.add(createDefinition(definition, fileName));
+            definitionTally.add(createDefinition(orgKey, definition, fileName));
         }
 
         // SNAPSHOT BEFORE THE LOOP, and that ordering is the whole correctness of this guard. Asking
         // the repository per instance would answer "no" for the first 'order' and "yes" for the three
         // that follow it, so a fresh database would seed one of each rather than all of them.
-        Set<String> alreadySeeded = definitionsWithInstances(document);
+        Set<String> alreadySeeded = definitionsWithInstances(orgKey, document);
         alreadySeeded.forEach(code -> LOG.info(
                 "Default entity instances for definition '{}' already exist; left untouched.", code));
 
@@ -157,20 +157,20 @@ public class DefaultEntityLoader {
                 instanceTally.created, instanceTally.skipped, instanceTally.rejected);
     }
 
-    private Outcome createDefinition(BaseEntityDefinitionInput input, String fileName) {
+    private Outcome createDefinition(String orgKey, BaseEntityDefinitionInput input, String fileName) {
         if (input == null || isBlank(input.getCode())) {
             LOG.warn("Skipping an entity definition in {}: the entry is null or has no code.", fileName);
             return Outcome.REJECTED;
         }
 
-        if (definitionRepository.existsByCode(input.getCode())) {
+        if (definitionRepository.existsByOrgKeyAndCode(orgKey, input.getCode())) {
             LOG.info("Default entity definition '{}' already exists; left untouched.", input.getCode());
             return Outcome.SKIPPED;
         }
 
         try {
             BaseEntityDefinition domain = definitionMapper.toDomain(input);
-            BaseEntityDefinition created = createDefinitionUseCase.create(domain);
+            BaseEntityDefinition created = createDefinitionUseCase.create(orgKey, domain);
             LOG.info("Created default entity definition '{}' as revision {}.",
                     created.getCode(), created.getVersion() == null ? 0 : created.getVersion());
             return Outcome.CREATED;
@@ -236,16 +236,14 @@ public class DefaultEntityLoader {
      * and it is the one that matters — the alternative was asking nothing, which is what this method
      * exists to fix.
      *
-     * <p>Codes are global: {@code CreateEntityDefinition} rejects a duplicate code outright, so a
-     * code identifies one definition across every organization and the org-agnostic repository
-     * lookup is exact rather than approximate.
+     * <p>Codes are unique per organization only, so the lookup is scoped to the file's {@code orgKey}.
      */
-    private Set<String> definitionsWithInstances(DefaultEntitiesDocument document) {
+    private Set<String> definitionsWithInstances(String orgKey, DefaultEntitiesDocument document) {
         return document.entities().stream()
                 .filter(entity -> entity != null && !isBlank(entity.getEntityDefinitionCode()))
                 .map(EntityObjectInput::getEntityDefinitionCode)
                 .distinct()
-                .filter(objectRepository::existsByEntityDefinitionCode)
+                .filter(code -> objectRepository.existsByOrgKeyAndEntityDefinitionCode(orgKey, code))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
