@@ -245,7 +245,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/user-event": "^14.6.7",
     "@tiptap/core": "^3.31.3",
-    "@tiptap/pm": "^3.31.3",
+    "@tiptap/pm": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.3",
     "@types/json-server": "^0.14.8",
     "@types/node": "26.6.2",
