@@ -24,6 +24,7 @@
     "@processpuzzle/base-app": "^0.3.0",
     "@processpuzzle/base-document": "^0.3.0",
     "@processpuzzle/base-rule": "^0.2.0",
+    "@processpuzzle/base-starter": "^0.0.1",
     "@processpuzzle/base-state": "^0.2.0",
     "@processpuzzle/widgets": "^1.0.0",
     "@processpuzzle/base-workflow": "^0.1.1",

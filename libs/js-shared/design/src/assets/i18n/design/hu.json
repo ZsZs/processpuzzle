@@ -42,6 +42,13 @@
   "base-app_card_content_2": "Entitás-, szabály-, állapot- és munkafolyamat-modulok beillesztése az alkalmazás-shellbe",
   "base-app_card_content_3": "Az alkalmazás felépítése és közzététele az /appRoute/orgKey útvonalon",
   "base-app_card_button": "Alkalmazások meghatározása...",
+  "base-starter_card_title": "Kezdőcsomag-kezelő",
+  "base-starter_card_subtitle": "Előkészített megoldások importálása a szervezetbe",
+  "base-starter_card_content": "Az üzleti kezdőcsomag egy üzleti probléma megoldásához szükséges definíciókat — entitásokat, állapotgépeket és szabályokat — csomagolja, így egy teljes megoldás egy lépésben érkezik.",
+  "base-starter_card_content_1": "Csomag kiválasztása és előnézete próbafuttatással importálás előtt",
+  "base-starter_card_content_2": "Importálás egyetlen tranzakcióban, megjegyezve minden definíció származási csomagját",
+  "base-starter_card_content_3": "A szervezetben már telepített csomagok megtekintése",
+  "base-starter_card_button": "Kezdőcsomagok importálása...",
   "designer-home": "Tervező kezdőlap",
   "entities": "Entitások",
   "documents": "Dokumentumok",
@@ -58,6 +65,7 @@
   "applications": "Alkalmazások",
   "modules": "Modulok",
   "widgets": "Widgetek",
+  "starters": "Kezdőcsomagok",
   "under-construction_title": "Fejlesztés alatt",
   "under-construction_message": "Ez az oldal még nem érhető el. Térjen vissza később."
 }

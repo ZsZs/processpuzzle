@@ -105,6 +105,15 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'inventory_2',
+      title: 'base-starter_card_title',
+      subtitle: 'base-starter_card_subtitle',
+      content: ['base-starter_card_content', 'base-starter_card_content_1', 'base-starter_card_content_2', 'base-starter_card_content_3'],
+      actions: [{ link: '/base-starter', caption: 'base-starter_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-starter_card_button', link: '/base-starter' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'web',
       title: 'base-app_card_title',
       subtitle: 'base-app_card_subtitle',

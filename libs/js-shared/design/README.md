@@ -8,12 +8,12 @@
 
 `@processpuzzle/design` is the **Design-time module** of the ProcessPuzzle Low-Code platform. It provides the Angular entry point through which end-users author the artifacts that make up a business application: **entities**, **rules**, **states**, **workflows**, and **desktops**. The library ships a routable landing page, child routes for each building block, and a route-awareness service that lets host applications react to the user entering or leaving the `/design` area.
 
-It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `base-rule-frontend`, `base-state-frontend`, `base-app-frontend`, `base-workflow-frontend`) and composes their routes into a single design experience.
+It sits alongside the corresponding runtime libraries (`base-entity-frontend`, `base-rule-frontend`, `base-state-frontend`, `base-app-frontend`, `base-workflow-frontend`, `base-starter-frontend`) and composes their routes into a single design experience.
 
 ## Features
 
 - **Design landing page** (`DesignContentComponent`) — a card grid, powered by `MatCardsGridComponent` from `@processpuzzle/widgets`, that links to each design building block.
-- **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; pulls in the child routes exposed by sibling design libraries (`BASE_DOCUMENT_ROUTES`, `BASE_RULE_ROUTES`, `BASE_APP_ROUTES`, `BASE_WIDGET_ROUTES`).
+- **Aggregated routing** (`DESIGN_ROUTES`) — a `Routes` array to be mounted under `/design` in the host application; pulls in the child routes exposed by sibling design libraries (`BASE_DOCUMENT_ROUTES`, `BASE_RULE_ROUTES`, `BASE_APP_ROUTES`, `BASE_WIDGET_ROUTES`, `BASE_STARTER_ROUTES`).
 - **Application section** (`ApplicationDesignerComponent`) — one page at `/design/application` whose tabs switch between the entities that describe an application: its definition, the modules it mounts and the widget types those place. The tabs are child routes, so each one deep-links and the tab bar stays put while the user drills into a form. Their order, icons and labels are `APPLICATION_DESIGNER_TABS`.
 - **Route awareness** (`DesignRouteService`) — a root-provided Angular service exposing an `isDesignRoute` signal so surrounding UI (menus, breadcrumbs, toolbars) can adapt when the user is inside `/design`.
 - **i18n scoped translations** — the landing page registers a Transloco scope (`design`), so card titles, subtitles, content, and action captions are fully localizable.
