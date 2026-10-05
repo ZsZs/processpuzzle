@@ -42,6 +42,13 @@
   "base-app_card_content_2": "Ensamblar los módulos de entidad, regla, estado y flujo en el shell de la aplicación",
   "base-app_card_content_3": "Construir y publicar la aplicación bajo /appRoute/orgKey",
   "base-app_card_button": "Definir aplicaciones...",
+  "base-starter_card_title": "Starter Manager",
+  "base-starter_card_subtitle": "Importar soluciones preparadas en su organización",
+  "base-starter_card_content": "Un Business Starter agrupa las definiciones que resuelven un problema de negocio — entidades, máquinas de estados y reglas — para que una solución completa llegue en un solo paso.",
+  "base-starter_card_content_1": "Elegir un paquete y verlo como ensayo antes de importarlo",
+  "base-starter_card_content_2": "Importar en una sola transacción, registrando de qué starter proviene cada definición",
+  "base-starter_card_content_3": "Ver los starters ya instalados en esta organización",
+  "base-starter_card_button": "Importar starters...",
   "designer-home": "Inicio del diseñador",
   "entities": "Entidades",
   "documents": "Documentos",
@@ -58,6 +65,7 @@
   "applications": "Aplicaciones",
   "modules": "Módulos",
   "widgets": "Widgets",
+  "starters": "Starters",
   "under-construction_title": "En construcción",
   "under-construction_message": "Esta página aún no está disponible. Vuelva más tarde."
 }

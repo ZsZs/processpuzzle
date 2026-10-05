@@ -42,6 +42,13 @@
   "base-app_card_content_2": "Assemble entity, rule, state and workflow modules into the application shell",
   "base-app_card_content_3": "Build and promote the application under /appRoute/orgKey",
   "base-app_card_button": "Define applications...",
+  "base-starter_card_title": "Starter Manager",
+  "base-starter_card_subtitle": "Import prepared solutions into your organization",
+  "base-starter_card_content": "A Business Starter bundles the definitions that solve one business problem — entities, state machines and rules — so a whole solution arrives in one step.",
+  "base-starter_card_content_1": "Pick a bundle and preview it as a dry run before importing",
+  "base-starter_card_content_2": "Import in one transaction, keeping track of which starter each definition came from",
+  "base-starter_card_content_3": "See the starters already installed in this organization",
+  "base-starter_card_button": "Import starters...",
   "designer-home": "Designer Home",
   "entities": "Entities",
   "documents": "Documents",
@@ -58,6 +65,7 @@
   "applications": "Applications",
   "modules": "Modules",
   "widgets": "Widgets",
+  "starters": "Starters",
   "under-construction_title": "Under construction",
   "under-construction_message": "This page is not available yet. Come back later."
 }

@@ -42,6 +42,13 @@
   "base-app_card_content_2": "Entitäts-, Regel-, Zustands- und Workflow-Module in die Anwendungs-Shell einfügen",
   "base-app_card_content_3": "Die Anwendung unter /appRoute/orgKey bauen und veröffentlichen",
   "base-app_card_button": "Anwendungen definieren...",
+  "base-starter_card_title": "Starter Manager",
+  "base-starter_card_subtitle": "Vorbereitete Lösungen in Ihre Organisation importieren",
+  "base-starter_card_content": "Ein Business Starter bündelt die Definitionen, die ein Geschäftsproblem lösen — Entitäten, Zustandsautomaten und Regeln — sodass eine ganze Lösung in einem Schritt ankommt.",
+  "base-starter_card_content_1": "Paket wählen und vor dem Import als Probelauf voransehen",
+  "base-starter_card_content_2": "Import in einer Transaktion, mit der Herkunft jeder Definition",
+  "base-starter_card_content_3": "Die bereits in dieser Organisation installierten Starter sehen",
+  "base-starter_card_button": "Starter importieren...",
   "designer-home": "Designer-Startseite",
   "entities": "Entitäten",
   "documents": "Dokumente",
@@ -58,6 +65,7 @@
   "applications": "Anwendungen",
   "modules": "Module",
   "widgets": "Widgets",
+  "starters": "Starter",
   "under-construction_title": "Im Aufbau",
   "under-construction_message": "Diese Seite ist noch nicht verfügbar. Bitte später wiederkommen."
 }
