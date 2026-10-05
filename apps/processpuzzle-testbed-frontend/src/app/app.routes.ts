@@ -16,6 +16,7 @@ import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
+import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
 import { BOAT_NAME, BOAT_PATH, boatScreenRoutes, RECOGNIZE_PATH } from './content/base-ai/boat-sample.routes';
 import {
   OBSERVATION_NAME,
@@ -339,6 +340,18 @@ export const appRoutes: Route[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    path: 'base-starter',
+    title: 'ProcessPuzzle Testbed - Business Starters',
+    data: { icon: 'inventory_2', menuTitle: 'base-starter' },
+    loadComponent: () => import('./content/base-starter/base-starter.component').then((comp) => comp.BaseStarterComponent),
+    // `BASE_STARTER_ROUTES` brings the `starters` import screen and registers its own transloco scope.
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-starter/overview.component').then((comp) => comp.OverviewComponent) },
+      ...BASE_STARTER_ROUTES,
     ],
   },
   {

@@ -1,0 +1,43 @@
+{
+  "import": {
+    "title": "Business Starters",
+    "hint": "Importe un paquete de inicio (.zip) en esta organización. Primero la vista previa: ejecuta toda la importación sin escribir nada.",
+    "preview": "Vista previa",
+    "apply": "Importar",
+    "status": {
+      "applied": "Importado",
+      "would-apply": "Se importaría",
+      "rejected": "Rechazado"
+    },
+    "summary": "{{created}} por crear, {{updated}} por actualizar",
+    "column": {
+      "kind": "Tipo",
+      "key": "Clave",
+      "action": "Acción"
+    },
+    "action": {
+      "create": "crear",
+      "update": "actualizar"
+    },
+    "kind": {
+      "entity": "Entidad",
+      "state": "Máquina de estados",
+      "rule": "Regla",
+      "widget": "Widget",
+      "document": "Documento",
+      "workflow": "Flujo de trabajo",
+      "app": "Aplicación"
+    }
+  },
+  "installed": {
+    "title": "Starters instalados",
+    "empty": "Todavía no hay ningún starter instalado en esta organización.",
+    "column": {
+      "starter": "Starter",
+      "version": "Versión",
+      "installedAt": "Instalado",
+      "installedBy": "Por",
+      "customized": "Definiciones modificadas"
+    }
+  }
+}

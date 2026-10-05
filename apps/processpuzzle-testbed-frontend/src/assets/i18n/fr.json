@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Testbed - État de Base",
     "base-workflow": "ProcessPuzzle Testbed - Workflow de Base",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Business Starters",
     "base-app": "ProcessPuzzle Testbed - Application de Base",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
@@ -201,6 +202,17 @@
     "recognize_tick": "Vu",
     "recognize_automatic": "caméra",
     "recognize_manual": "à la main"
+  },
+  "base-starter": {
+    "overview_tab_label": "Aperçu",
+    "import_tab_label": "Importer",
+    "intro_heading": "ProcessPuzzle Business Starters",
+    "intro_paragraph_1": "Un Business Starter est une solution préparée à un problème métier — inventaire, facturation, organisation d'une régate — livrée sous forme de paquet de définitions : entités, machines à états, règles et, plus tard, documents, workflows et applications.",
+    "intro_paragraph_2": "L'import écrit les définitions d'un starter dans cette organisation en une seule transaction et retient de quel starter provient chacune, pour distinguer une définition modifiée depuis d'une définition intacte. Essayez-le dans l'onglet Importer : d'abord l'aperçu, puis l'import.",
+    "intro_frontend_desc": "l'écran d'import : choisir un paquet, le prévisualiser à blanc, l'importer et voir les starters déjà installés.",
+    "intro_backend_desc": "Module Spring Boot qui lit un paquet en sécurité, exécute dans l'ordre l'importeur de chaque fonctionnalité en une transaction et enregistre la provenance.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Aperçu",
