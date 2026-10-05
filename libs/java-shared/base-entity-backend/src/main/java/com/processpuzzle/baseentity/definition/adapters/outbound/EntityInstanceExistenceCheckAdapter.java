@@ -1,7 +1,7 @@
 package com.processpuzzle.baseentity.definition.adapters.outbound;
 
 import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceExistenceCheckPort;
-import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EntityInstanceExistenceCheckAdapter implements EntityInstanceExistenceCheckPort {
 
-    private final EntityObjectRepository entityObjectRepository;
+    private final EntityObjectScope entityObjectScope;
 
     @Override
     public boolean existsAnyInstanceOf(String orgKey, String entityDefinitionCode) {
-        return entityObjectRepository.existsByOrgKeyAndEntityDefinitionCode(orgKey, entityDefinitionCode);
+        return entityObjectScope.existsAny(orgKey, entityDefinitionCode);
     }
 }

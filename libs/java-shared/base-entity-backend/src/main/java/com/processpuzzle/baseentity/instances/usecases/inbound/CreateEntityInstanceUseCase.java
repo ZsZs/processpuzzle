@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectCreatedEvent;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateEntityInstanceUseCase {
 
     private final EntityObjectRepository repository;
+    private final EntityObjectScope scope;
     private final EntityDefinitionLookupPort definitionLookupPort;
     private final PayloadValidatorPort payloadValidatorPort;
     private final ApplicationEventPublisher eventPublisher;
@@ -44,7 +46,7 @@ public class CreateEntityInstanceUseCase {
         payloadValidatorPort.validate(orgKey, definition, payload);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
-            .orgKey(orgKey)
+            .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
             .entityDefinitionCode(entityDefinitionCode)
             .payload(payload)
             .build());

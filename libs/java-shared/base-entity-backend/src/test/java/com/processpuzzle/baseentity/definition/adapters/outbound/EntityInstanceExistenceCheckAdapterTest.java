@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.definition.adapters.outbound;
 
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +22,7 @@ class EntityInstanceExistenceCheckAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new EntityInstanceExistenceCheckAdapter(entityObjectRepository);
+        adapter = new EntityInstanceExistenceCheckAdapter(new EntityObjectScope(entityObjectRepository));
     }
 
     @Test

@@ -69,7 +69,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
 
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> getEntity(String orgKey, String entityDefinitionCode, UUID id) {
-        return ResponseEntity.ok(mapper.toModel(findByIdUseCase.findById(orgKey, id)));
+        return ResponseEntity.ok(mapper.toModel(findByIdUseCase.findById(orgKey, entityDefinitionCode, id)));
     }
 
     @Override
@@ -77,12 +77,12 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) request.getPayload();
         Long version = request.getVersion() != null ? request.getVersion().longValue() : null;
-        return ResponseEntity.ok(mapper.toModel(updateUseCase.update(orgKey, id, version, payload)));
+        return ResponseEntity.ok(mapper.toModel(updateUseCase.update(orgKey, entityDefinitionCode, id, version, payload)));
     }
 
     @Override
     public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
-        deleteUseCase.delete(orgKey, id, Boolean.TRUE.equals(cascade));
+        deleteUseCase.delete(orgKey, entityDefinitionCode, id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
     }
 }

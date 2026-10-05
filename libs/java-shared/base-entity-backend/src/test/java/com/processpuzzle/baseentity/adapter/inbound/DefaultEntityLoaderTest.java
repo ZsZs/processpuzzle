@@ -12,6 +12,7 @@ import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -92,7 +93,7 @@ class DefaultEntityLoaderTest {
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
-                objectRepository,
+                new EntityObjectScope(objectRepository),
                 resourceResolver
         );
     }

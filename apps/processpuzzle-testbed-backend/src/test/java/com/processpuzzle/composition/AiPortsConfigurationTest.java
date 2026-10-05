@@ -60,8 +60,9 @@ class AiPortsConfigurationTest {
         UUID missing = UUID.randomUUID();
         when(attributes.attributeKind("my-org", "boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
         when(attributes.attributeKind("my-org", "boat", "length")).thenReturn(Optional.of(EntityAttributeKind.NUMBER));
-        when(objects.find("boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("sailNumber", "GER 1234")));
-        when(objects.find("boat", missing)).thenThrow(new EntityObjectAccessException.NotFound("boat", missing));
+        when(objects.find("my-org", "boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("sailNumber", "GER 1234")));
+        when(objects.find("my-org", "boat", missing)).thenThrow(new EntityObjectAccessException.NotFound("boat", missing));
+        when(objects.find("other-org", "boat", boat)).thenThrow(new EntityObjectAccessException.NotFound("boat", boat));
 
         SubjectDirectory subjects = configuration.aiSubjectDirectory(attributes, objects, mock(FileStorageService.class));
 
@@ -72,6 +73,9 @@ class AiPortsConfigurationTest {
         assertThat(subjects.subjectExists("my-org", "boat", missing)).isFalse();
         assertThat(subjects.identifier("my-org", "boat", boat, "sailNumber")).hasValue("GER 1234");
         assertThat(subjects.identifier("my-org", "boat", missing, "sailNumber")).isEmpty();
+        // the request's organization reaches base-entity: another org's boat is not a subject
+        assertThat(subjects.subjectExists("other-org", "boat", boat)).isFalse();
+        assertThat(subjects.identifier("other-org", "boat", boat, "sailNumber")).isEmpty();
     }
 
     @Test
@@ -82,10 +86,10 @@ class AiPortsConfigurationTest {
         UUID missing = UUID.randomUUID();
         when(attributes.attributeKind("my-org", "boat", "photos")).thenReturn(Optional.of(EntityAttributeKind.REFERENCE));
         when(attributes.attributeKind("my-org", "boat", "sailNumber")).thenReturn(Optional.of(EntityAttributeKind.TEXT));
-        when(objects.find("boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("photos", List.of(
+        when(objects.find("my-org", "boat", boat)).thenReturn(new EntityObjectView(boat, 1, Map.of("photos", List.of(
                 Map.of("bucket", "artifacts", "objectId", "a.jpg", "name", "a.jpg", "mimeType", "image/jpeg"),
                 Map.of("bucket", "artifacts", "objectId", "b.pdf", "name", "b.pdf", "mimeType", "application/pdf")))));
-        when(objects.find("boat", missing)).thenThrow(new EntityObjectAccessException.NotFound("boat", missing));
+        when(objects.find("my-org", "boat", missing)).thenThrow(new EntityObjectAccessException.NotFound("boat", missing));
 
         SubjectDirectory subjects = configuration.aiSubjectDirectory(attributes, objects, mock(FileStorageService.class));
 

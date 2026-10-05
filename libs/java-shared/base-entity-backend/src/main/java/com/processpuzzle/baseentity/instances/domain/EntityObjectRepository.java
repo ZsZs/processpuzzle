@@ -13,9 +13,9 @@ public interface EntityObjectRepository
 
     boolean existsByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 
-    List<EntityObject> findAllByEntityDefinitionCode(String entityDefinitionCode);
+    List<EntityObject> findAllByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 
-    /** By id within one organization: an id of another organization's object is not found. */
+    /** By id within one organization; callers go through {@link EntityObjectScope}, which picks the organization. */
     Optional<EntityObject> findByIdAndOrgKey(UUID id, String orgKey);
 
     /**

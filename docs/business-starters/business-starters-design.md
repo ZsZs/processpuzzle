@@ -98,6 +98,13 @@ Export is the reverse operation, so exporting a customized or custom-developed s
    participant's canonical export no longer hashes to the stored value.
 7. **Definition kinds and order:** Entity, State, Rule, Widget, Document, Workflow, App; translations travel
    with their kind.
+8. **Entity definitions and objects are organization-scoped**, so one starter can be installed into many
+   organizations. A later flag on the entity definition will mark *global* types: shared reference data
+   (currencies, countries) whose definition and objects every tenant reads alike. They will be stored under
+   the reserved organization key `_global`, which keeps `org_key` not-null and `(org_key, code)` unique.
+   Every object query already goes through one resolver, `EntityObjectScope`, so adding the flag changes
+   that class rather than every query. Still open: who may write a global type, and whether a starter may
+   ship one.
 
 ## 8. Suggested next steps
 

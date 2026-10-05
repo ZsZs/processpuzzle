@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectUpdatedEvent;
@@ -22,13 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateEntityInstanceUseCase {
 
     private final EntityObjectRepository repository;
+    private final EntityObjectScope scope;
     private final EntityDefinitionLookupPort definitionLookupPort;
     private final PayloadValidatorPort payloadValidatorPort;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** @param orgKey see {@code CreateEntityInstanceUseCase.create}; an object of another organization is not found. */
-    public EntityObject update(String orgKey, UUID id, Long expectedVersion, Map<String, Object> payload) {
-        EntityObject entityObject = repository.findByIdAndOrgKey(id, orgKey)
+    /**
+     * @param orgKey see {@code CreateEntityInstanceUseCase.create}; an object another organization owns, or
+     *               one of another type than {@code entityDefinitionCode}, is not found
+     */
+    public EntityObject update(String orgKey, String entityDefinitionCode, UUID id, Long expectedVersion, Map<String, Object> payload) {
+        EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 
         if (!entityObject.getVersion().equals(expectedVersion)) {
