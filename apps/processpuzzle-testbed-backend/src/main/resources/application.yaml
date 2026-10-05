@@ -30,6 +30,11 @@ spring:
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+  level:
+    # HV000271/HV000272: openapi-generator puts @Valid on List/Map fields rather than their type
+    # arguments, which Hibernate Validator 9 reports as deprecated once per DTO. Validation still
+    # cascades; the warning is about the generated code's style, not something this app can fix.
+    org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder: ERROR
 
 server:
   port: 8080

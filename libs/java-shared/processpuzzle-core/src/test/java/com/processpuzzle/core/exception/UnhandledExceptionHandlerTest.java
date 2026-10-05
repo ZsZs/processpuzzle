@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -110,6 +112,18 @@ class UnhandledExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(appender.list).anyMatch(event -> event.getLevel() == Level.ERROR);
+    }
+
+    /** A client that hung up mid-response is not a server fault, whether Spring or Jackson noticed first. */
+    @Test
+    void aClientDisconnectIsNeitherAnsweredNorLoggedAsAnError() {
+        var direct = new AsyncRequestNotUsableException("ServletResponse failed to flushBuffer: Broken pipe");
+        var duringSerialization = new HttpMessageNotWritableException("Could not write JSON",
+                new RuntimeException(new AsyncRequestNotUsableException("ServletOutputStream failed to write")));
+
+        assertThat(handler.handleUnexpected(direct)).isNull();
+        assertThat(handler.handleUnexpected(duringSerialization)).isNull();
+        assertThat(appender.list).noneMatch(event -> event.getLevel() == Level.ERROR);
     }
 
     /**
