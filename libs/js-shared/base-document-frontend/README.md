@@ -12,6 +12,14 @@ The library provides the descriptors, mapper, service, store and container compo
 
 Unrelated to `base-entity`'s `FormControlType.ARTIFACT` control, which handles file and blob attachments through the object store.
 
+## Tiptap dependencies
+
+Keep `@tiptap/core`, `@tiptap/pm` and `@tiptap/starter-kit` on the same exact version in the workspace's
+root `package.json` and regenerate `package-lock.json` when upgrading them. StarterKit pins its own
+Tiptap dependencies; upgrading core independently installs a second copy, splitting command type
+augmentations and making the editor's extension types incompatible. Dependabot groups these updates.
+Consumers should likewise install matching versions of these three peer dependencies.
+
 ## Status
 
 This library is under construction. The public API will grow as document management takes shape; nothing in the workspace consumes it yet.
