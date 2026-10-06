@@ -366,6 +366,22 @@ class ImportRulesTest {
         return saved.getValue();
     }
 
+    @Test
+    void removeAllDeletesEveryRuleOfTheOrganizationAndForgetsThemAfterCommit() {
+        RuleDefinition first = mock(RuleDefinition.class);
+        RuleDefinition second = mock(RuleDefinition.class);
+        when(first.getId()).thenReturn("max-quantity");
+        when(second.getId()).thenReturn("sku-format");
+        when(repository.findByOrgKey("demo")).thenReturn(List.of(first, second));
+
+        assertThat(importRules.removeAll("demo")).containsExactly("max-quantity", "sku-format");
+
+        verify(repository).deleteAll(List.of(first, second));
+        verify(repository).flush();
+        verify(ruleEngineSync).unregisterAfterCommit("demo", "max-quantity");
+        verify(ruleEngineSync).unregisterAfterCommit("demo", "sku-format");
+    }
+
     private static ByteArrayInputStream yaml(String content) {
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
     }

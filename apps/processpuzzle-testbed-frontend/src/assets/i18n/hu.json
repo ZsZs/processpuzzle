@@ -212,12 +212,12 @@
   },
   "base-starter": {
     "overview_tab_label": "Áttekintés",
-    "import_tab_label": "Importálás",
+    "import_tab_label": "Telepítés",
     "intro_heading": "ProcessPuzzle üzleti kezdőcsomagok",
     "intro_paragraph_1": "Az üzleti kezdőcsomag egy üzleti probléma — készletnyilvántartás, számlázás, vitorlásverseny szervezése — előkészített megoldása, definíciók csomagjaként: entitások, állapotgépek, szabályok, később dokumentumok, munkafolyamatok és alkalmazások.",
-    "intro_paragraph_2": "Az importálás egyetlen tranzakcióban írja a csomag definícióit ebbe a szervezetbe, és megjegyzi, melyik csomagból származik mindegyik, így az azóta módosított definíció megkülönböztethető a változatlantól. Próbálja ki az Importálás fülön: előbb az előnézet, aztán az importálás.",
-    "intro_frontend_desc": "az importáló képernyő: csomag kiválasztása, előnézet próbafuttatással, importálás, és a már telepített csomagok listája.",
-    "intro_backend_desc": "Spring Boot modul, amely biztonságosan beolvassa a csomagot, egy tranzakcióban sorban lefuttatja minden funkció importálóját, és rögzíti a származást.",
+    "intro_paragraph_2": "A CI minden kiadott startert közzétesz a nyilvános starter-regisztrációban. Telepítéskor a starter egyetlen tranzakcióban lecseréli a szervezet definícióit — ezért csak addig lehetséges, amíg a szervezetben nincs entitásobjektum vagy workflow-példány —, és megjegyzi, melyik starterből származik az egyes definíció. Próbálja ki a Telepítés fülön: válasszon startert, nézze meg az előnézetet, majd telepítse.",
+    "intro_frontend_desc": "a telepítő képernyő: starter kiválasztása a katalógusból, előnézet próbafuttatással, telepítés, és a már telepített starter megtekintése.",
+    "intro_backend_desc": "Spring Boot modul, amely beolvassa a starter-katalógust a regisztrációból, letölti és ellenőrzi a csomagot, egy tranzakcióban minden funkció importálójával lecseréli a szervezet definícióit, és rögzíti a származást.",
     "frontend_heading": "Frontend — @processpuzzle/base-starter",
     "backend_heading": "Backend — base-starter-backend"
   },

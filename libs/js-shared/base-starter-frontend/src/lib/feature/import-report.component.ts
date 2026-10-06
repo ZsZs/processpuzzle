@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { STARTER_IMPORT_I18N_SCOPE } from '../base-starter.i18n';
-import { ImportReport } from '../domain/starter';
+import { ImportAction, ImportReport } from '../domain/starter';
 
 /** One `ImportReport`: its outcome, the definitions it touched, or why it was refused. Presentational. */
 @Component({
@@ -18,7 +18,7 @@ import { ImportReport } from '../domain/starter';
           <span class="report__starter">{{ r.starterId }} {{ r.version }}</span>
         }
         @if (r.status !== 'rejected') {
-          <span data-testid="import-report-summary">{{ scope + '.summary' | transloco: { created: created(), updated: updated() } }}</span>
+          <span data-testid="import-report-summary">{{ scope + '.summary' | transloco: { created: count('create'), updated: count('update'), deleted: count('delete') } }}</span>
         }
       </header>
 
@@ -103,6 +103,9 @@ import { ImportReport } from '../domain/starter';
     .action--update {
       color: #ef6c00;
     }
+    .action--delete {
+      color: #c62828;
+    }
   `,
 })
 export class ImportReportComponent {
@@ -110,6 +113,7 @@ export class ImportReportComponent {
   protected readonly scope = STARTER_IMPORT_I18N_SCOPE;
 
   /** From the items rather than `summary`, which the contract leaves optional. */
-  protected readonly created = computed(() => (this.report().items ?? []).filter((item) => item.action === 'create').length);
-  protected readonly updated = computed(() => (this.report().items ?? []).filter((item) => item.action === 'update').length);
+  protected count(action: ImportAction): number {
+    return (this.report().items ?? []).filter((item) => item.action === action).length;
+  }
 }

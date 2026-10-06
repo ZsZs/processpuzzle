@@ -79,6 +79,23 @@ public class ImportEntityDefinitions {
         return new Outcome(created, updated, List.of());
     }
 
+    /**
+     * Deletes every entity definition of {@code orgKey}, for a Business Starter install that replaces
+     * them. Unlike {@link DeleteEntityDefinitionUseCase} it checks neither instances nor component
+     * parents: the installer has already refused an organization that holds entity objects, and the
+     * definitions go all together.
+     *
+     * @return the codes deleted
+     */
+    public List<String> removeAll(String orgKey) {
+        List<BaseEntityDefinition> definitions = repository.findAllByOrgKey(orgKey);
+        repository.deleteAll(definitions);
+        // Flushed now: Hibernate orders inserts before deletes, so a definition the starter
+        // re-creates under the same code would otherwise collide with its own not-yet-deleted row.
+        repository.flush();
+        return definitions.stream().map(BaseEntityDefinition::getCode).toList();
+    }
+
     private Map<String, BaseEntityDefinition> collectByCode(List<BaseEntityDefinitionInput> entries, List<String> errors) {
         Map<String, BaseEntityDefinition> byCode = new LinkedHashMap<>();
         for (BaseEntityDefinitionInput entry : entries) {

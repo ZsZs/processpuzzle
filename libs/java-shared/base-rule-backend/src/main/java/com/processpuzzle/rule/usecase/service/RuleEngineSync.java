@@ -60,4 +60,18 @@ public class RuleEngineSync {
     public void unregister(String orgKey, String ruleId) {
         ruleEngine.unregisterRule(RuleKey.of(orgKey, ruleId));
     }
+
+    /** {@link #unregister} once the surrounding transaction commits; see {@link #registerAfterCommit}. */
+    public void unregisterAfterCommit(String orgKey, String ruleId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unregister(orgKey, ruleId);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                unregister(orgKey, ruleId);
+            }
+        });
+    }
 }

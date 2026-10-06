@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import static org.mockito.Mockito.mock;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -30,6 +31,19 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class ImportEntityDefinitionsTest {
+
+    @Test
+    void removeAllDeletesEveryDefinitionOfTheOrganization() {
+        BaseEntityDefinition partner = mock(BaseEntityDefinition.class);
+        when(partner.getCode()).thenReturn("partner");
+        when(repository.findAllByOrgKey(ORG)).thenReturn(java.util.List.of(partner));
+
+        assertThat(importer.removeAll(ORG)).containsExactly("partner");
+
+        verify(repository).deleteAll(java.util.List.of(partner));
+        verify(repository).flush();
+        verifyNoInteractions(createUseCase, replaceUseCase);
+    }
 
     private static final String ORG = "acme";
 

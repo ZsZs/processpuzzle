@@ -212,12 +212,12 @@
   },
   "base-starter": {
     "overview_tab_label": "Überblick",
-    "import_tab_label": "Import",
+    "import_tab_label": "Installieren",
     "intro_heading": "ProcessPuzzle Business Starter",
     "intro_paragraph_1": "Ein Business Starter ist eine vorbereitete Lösung für ein Geschäftsproblem — Lagerverwaltung, Abrechnung, Organisation einer Segelregatta — geliefert als Paket von Definitionen: Entitäten, Zustandsautomaten, Regeln und später Dokumente, Workflows und Anwendungen.",
-    "intro_paragraph_2": "Der Import schreibt die Definitionen eines Starters in einer Transaktion in diese Organisation und merkt sich, aus welchem Starter jede stammt, damit eine seither geänderte Definition von einer unveränderten unterschieden werden kann. Probieren Sie es im Reiter Import aus: zuerst die Vorschau, dann der Import.",
-    "intro_frontend_desc": "der Import-Bildschirm: Paket wählen, als Probelauf voransehen, importieren und die bereits installierten Starter sehen.",
-    "intro_backend_desc": "Spring-Boot-Modul, das ein Paket sicher liest, den Importer jedes Features der Reihe nach in einer Transaktion ausführt und die Herkunft festhält.",
+    "intro_paragraph_2": "CI veröffentlicht jeden freigegebenen Starter in der öffentlichen Starter-Registry. Die Installation ersetzt die Definitionen dieser Organisation in einer Transaktion — daher nur, solange die Organisation keine Entitätsobjekte oder Workflow-Instanzen enthält — und merkt sich, aus welchem Starter jede Definition stammt. Probieren Sie es im Reiter Installieren aus: Starter wählen, Vorschau ansehen, installieren.",
+    "intro_frontend_desc": "der Installations-Bildschirm: Starter aus dem Katalog wählen, als Probelauf voransehen, installieren und den bereits installierten Starter sehen.",
+    "intro_backend_desc": "Spring-Boot-Modul, das den Starter-Katalog aus der Registry liest, ein Paket lädt und prüft, die Definitionen der Organisation über den Importer jedes Features in einer Transaktion ersetzt und die Herkunft festhält.",
     "frontend_heading": "Frontend — @processpuzzle/base-starter",
     "backend_heading": "Backend — base-starter-backend"
   },

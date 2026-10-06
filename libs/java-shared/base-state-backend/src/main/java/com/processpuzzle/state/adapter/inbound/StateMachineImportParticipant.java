@@ -76,6 +76,11 @@ public class StateMachineImportParticipant implements DefinitionImportParticipan
     }
 
     @Override
+    public List<String> removeAll(String orgKey) {
+        return importDefinitions.removeAll(orgKey);
+    }
+
+    @Override
     public Map<String, String> fingerprints(String orgKey, Set<String> keys) {
         Map<String, String> fingerprints = new LinkedHashMap<>();
         currentMachines(orgKey).forEach((entityName, entry) -> {

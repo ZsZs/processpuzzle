@@ -1,5 +1,6 @@
 package com.processpuzzle.core.definition;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,6 +32,17 @@ public interface DefinitionImportParticipant {
      * @param fileName the file's path inside the bundle, for error messages
      */
     ParticipantResult apply(String orgKey, String fileName, byte[] yaml);
+
+    /**
+     * Deletes every definition of this kind in the organization, the first step of installing a
+     * starter: a starter replaces what the organization had rather than merging into it. Called in
+     * reverse {@link #order()}, inside the same transaction as {@link #apply}, and only once the
+     * importer has made sure no {@link InstanceDataProbe} reports data that could still refer to a
+     * definition.
+     *
+     * @return the keys deleted
+     */
+    List<String> removeAll(String orgKey);
 
     /**
      * The canonical JSON of each key's current state in the database, for telling an untouched

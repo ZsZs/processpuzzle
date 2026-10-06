@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.processpuzzle.starter.StarterProperties;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +34,15 @@ class BundleReaderTest {
         assertThat(bundle.manifest().contents()).containsOnlyKeys("entities", "rules");
         assertThat(new String(bundle.file("entities/item.yaml"), StandardCharsets.UTF_8)).isEqualTo("entityDefinitions: []\n");
         assertThat(bundle.files()).containsOnlyKeys("entities/item.yaml", "rules/item-rules.yaml");
+    }
+
+    @Test
+    void readsAManifestWithoutDefinitionContentsAsAnEmptyBundle() {
+        StarterBundle bundle = read(Map.of("manifest.yaml",
+                "id: inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n"));
+
+        assertThat(bundle.manifest().contents()).isEmpty();
+        assertThat(bundle.files()).isEmpty();
     }
 
     @Test
@@ -92,6 +103,32 @@ class BundleReaderTest {
         files.put("icons/box.svg", "<svg/>");
 
         assertThat(read(files).files()).containsKey("icons/box.svg");
+    }
+
+    /** Built by tools/business-starters/package-starters.mjs, the packager CI runs: what the registry serves. */
+    @Test
+    void readsABundleThePackagerBuilt() throws IOException {
+        try (InputStream packaged = getClass().getResourceAsStream("/bundles/packaged-inventory-1.0.0.zip")) {
+            StarterBundle bundle = reader.read(packaged);
+
+            assertThat(bundle.manifest().id()).isEqualTo("inventory");
+            assertThat(bundle.manifest().integrity().files()).containsOnlyKeys("entities/item.yaml", "rules/item-rules.yaml");
+            assertThat(bundle.files()).containsOnlyKeys("entities/item.yaml", "rules/item-rules.yaml");
+        }
+    }
+
+    @Test
+    void carriesAuthorLicenseAndTheMigrationScript() {
+        Map<String, String> files = TestBundles.inventory();
+        files.put("manifest.yaml", TestBundles.MANIFEST
+                + "author: ProcessPuzzle\nlicense: Apache-2.0\nmigration: migrations/1.0.0.yaml\n");
+        files.put("migrations/1.0.0.yaml", "steps: []\n");
+
+        StarterBundle bundle = read(files);
+
+        assertThat(bundle.manifest().author()).isEqualTo("ProcessPuzzle");
+        assertThat(bundle.manifest().license()).isEqualTo("Apache-2.0");
+        assertThat(bundle.files()).containsKey("migrations/1.0.0.yaml");
     }
 
     @Test

@@ -1,5 +1,5 @@
 # Business Starter manifest — lives at <starter-folder>/manifest.yaml
-# Example: processpuzzle-biz/starters/sail-race-organizer/manifest.yaml
+# Example: processpuzzle-biz/business-starters/sail-race-organizer/manifest.yaml
 manifestVersion: 1                  # version of THIS manifest format
 
 # --- Identity -----------------------------------------------------------
@@ -12,7 +12,7 @@ description: >
 category: events                    # catalog grouping (inventory, billing, events, ...)
 tags: [sailing, regatta, sports]
 author: ProcessPuzzle
-license: proprietary                # or MIT, CC-BY-4.0, ...
+license: proprietary                # SPDX identifier (MIT, CC-BY-4.0, ...) or proprietary
 icon: icons/sail.svg                # optional, relative path inside the bundle
 
 # --- Compatibility ------------------------------------------------------
@@ -21,15 +21,9 @@ platform:
   minVersion: 1.4.0                 # minimum ProcessPuzzle platform version
 locales: [en, de, hu]               # languages the starter ships labels for
 
-# --- Dependencies on other starters ------------------------------------
-requires:
-  - id: contacts-base               # e.g. shared Person/Organisation entities
-    versionRange: "^1.0.0"
-conflictsWith: []                   # starter ids that must not be co-installed
-
 # --- Contents (paths relative to the manifest) --------------------------
 # The importer always processes groups in this order:
-# entities -> states -> rules -> documents -> workflows -> apps
+# entities -> states -> rules -> widgets -> documents -> workflows -> apps
 contents:
   entities:
     - entities/regatta.yaml
@@ -50,15 +44,8 @@ contents:
   apps:
     - apps/race-office.yaml
 
-# --- Optional sample data ----------------------------------------------
-seedData:
-  - data/sample-regatta.yaml        # imported only if the customer opts in
-
-# --- Install behaviour --------------------------------------------------
-install:
-  defaultSelected: false            # preselect in seed-creation wizard?
-  allowPartial: false               # may the customer import only some groups?
-  conflictStrategy: skip-customized # skip-customized | overwrite | fail
+# --- Migration (placeholder; format decided together with upgrades) ----
+migration: null
 
 # --- Integrity (written by CI at packaging time, never by hand) ---------
 integrity:

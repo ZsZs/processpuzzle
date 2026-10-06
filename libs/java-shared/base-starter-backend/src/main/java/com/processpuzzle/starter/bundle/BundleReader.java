@@ -139,7 +139,7 @@ public class BundleReader {
         manifest.contents().values().forEach(paths -> paths.forEach(this::requireSafePath));
     }
 
-    /** Listed means: a contents file, the icon, or a seed data file. Nothing else may ride along. */
+    /** Listed means: a contents file, the icon, or the migration script. Nothing else may ride along. */
     private void validateFileList(StarterManifest manifest, Map<String, byte[]> entries) {
         Set<String> contentFiles = new LinkedHashSet<>();
         manifest.contents().values().forEach(contentFiles::addAll);
@@ -151,9 +151,11 @@ public class BundleReader {
         }
 
         Set<String> listed = new LinkedHashSet<>(contentFiles);
-        listed.addAll(manifest.seedData());
         if (manifest.icon() != null) {
             listed.add(manifest.icon());
+        }
+        if (manifest.migration() != null) {
+            listed.add(manifest.migration());
         }
         for (String path : entries.keySet()) {
             if (!listed.contains(path)) {

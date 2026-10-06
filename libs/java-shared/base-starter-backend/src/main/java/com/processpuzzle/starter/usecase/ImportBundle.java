@@ -1,6 +1,8 @@
 package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.ImportedItem;
+import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
@@ -31,7 +33,12 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Imports one Business Starter bundle into one organization.
+ * Installs one Business Starter bundle into one organization, replacing the definitions it had.
+ *
+ * <p>A starter is all or nothing, so it is not merged into what the organization holds: every
+ * participant first removes its kind's definitions, in reverse import order, and then the bundle is
+ * applied. That is only safe while nothing refers to a definition, so an organization for which any
+ * {@link InstanceDataProbe} counts instance data is refused before anything is touched.
  *
  * <p>Every definition kind is written by the feature that owns it, through its
  * {@link DefinitionImportParticipant}, in the participants' {@code order()} and inside one
@@ -69,10 +76,20 @@ public class ImportBundle {
 
     /**
      * @param importedBy who is importing, recorded in provenance; may be null
-     * @throws ImportRejectedException if the bundle or any of its definitions is refused; nothing is
-     *                                 written then
+     * @throws ImportRejectedException if the bundle or any of its definitions is refused, or the
+     *                                 organization holds instance data; nothing is written then
      */
     public ImportReport execute(String orgKey, InputStream input, boolean dryRun, String importedBy) {
+        return execute(orgKey, input, dryRun, importedBy, null);
+    }
+
+    /**
+     * As {@link #execute(String, InputStream, boolean, String)}, refusing a bundle whose manifest is
+     * not the starter the caller asked for — a catalog entry that names the wrong bundle.
+     *
+     * @param expected the starter id and version the bundle must declare; null to accept any
+     */
+    public ImportReport execute(String orgKey, InputStream input, boolean dryRun, String importedBy, Expected expected) {
         guard.requireDesign(orgKey);
 
         StarterBundle bundle;
@@ -81,21 +98,27 @@ public class ImportBundle {
         } catch (BundleRejectedException e) {
             throw new ImportRejectedException(
                     ImportReport.rejected(dryRun, null, null, List.of(new ImportReport.Error(e.getFile(), e.getMessage()))),
-                    e.getReason() == BundleRejectedException.Reason.TOO_LARGE);
+                    e.getReason() == BundleRejectedException.Reason.TOO_LARGE
+                            ? ImportRejectedException.Reason.TOO_LARGE
+                            : ImportRejectedException.Reason.INVALID);
         }
         StarterManifest manifest = bundle.manifest();
 
         List<ImportReport.Error> errors = new ArrayList<>();
+        checkExpected(manifest, expected, errors);
         Map<DefinitionImportParticipant, List<String>> plan = plan(manifest, errors);
-        checkRequirements(orgKey, manifest, errors);
         if (!errors.isEmpty()) {
-            throw rejected(dryRun, manifest, errors);
+            throw rejected(dryRun, manifest, errors, ImportRejectedException.Reason.INVALID);
+        }
+        List<ImportReport.Error> instanceData = instanceData(orgKey);
+        if (!instanceData.isEmpty()) {
+            throw rejected(dryRun, manifest, instanceData, ImportRejectedException.Reason.HOLDS_INSTANCE_DATA);
         }
 
         ImportReport report = transactionTemplate.execute(status ->
                 apply(orgKey, bundle, plan, dryRun, importedBy, status));
         if (report.status() == ImportReport.Status.REJECTED) {
-            throw new ImportRejectedException(report, false);
+            throw new ImportRejectedException(report, ImportRejectedException.Reason.INVALID);
         }
         return report;
     }
@@ -103,9 +126,12 @@ public class ImportBundle {
     private ImportReport apply(String orgKey, StarterBundle bundle, Map<DefinitionImportParticipant, List<String>> plan,
                                boolean dryRun, String importedBy, TransactionStatus status) {
         StarterManifest manifest = bundle.manifest();
+        Map<String, Set<String>> removed = removeAll(orgKey);
+
         List<ImportReport.Item> items = new ArrayList<>();
         for (Map.Entry<DefinitionImportParticipant, List<String>> step : plan.entrySet()) {
             DefinitionImportParticipant participant = step.getKey();
+            Set<String> removedOfKind = removed.computeIfAbsent(participant.kind(), kind -> new LinkedHashSet<>());
             for (String file : step.getValue()) {
                 ParticipantResult result = participant.apply(orgKey, file, bundle.file(file));
                 if (result.isRejected()) {
@@ -117,9 +143,14 @@ public class ImportBundle {
                             .toList();
                     return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), errors);
                 }
-                result.items().forEach(item -> items.add(new ImportReport.Item(participant.kind(), item.key(), item.action())));
+                for (ImportedItem item : result.items()) {
+                    boolean existed = removedOfKind.remove(item.key()) || item.action() == ImportedItem.Action.UPDATE;
+                    items.add(new ImportReport.Item(participant.kind(), item.key(),
+                            existed ? ImportReport.Action.UPDATE : ImportReport.Action.CREATE));
+                }
             }
         }
+        removed.forEach((kind, keys) -> keys.forEach(key -> items.add(new ImportReport.Item(kind, key, ImportReport.Action.DELETE))));
 
         if (dryRun) {
             status.setRollbackOnly();
@@ -127,6 +158,37 @@ public class ImportBundle {
         }
         recordProvenance(orgKey, manifest, items, importedBy);
         return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of());
+    }
+
+    /** Every participant's definitions, dependents first; by kind, the keys that were removed. */
+    private Map<String, Set<String>> removeAll(String orgKey) {
+        Map<String, Set<String>> removed = new LinkedHashMap<>();
+        for (DefinitionImportParticipant participant : participants.inRemovalOrder()) {
+            removed.put(participant.kind(), new LinkedHashSet<>(participant.removeAll(orgKey)));
+        }
+        return removed;
+    }
+
+    private List<ImportReport.Error> instanceData(String orgKey) {
+        List<String> held = new ArrayList<>();
+        for (InstanceDataProbe probe : participants.probes()) {
+            long count = probe.count(orgKey);
+            if (count > 0) {
+                held.add(count + " " + probe.label());
+            }
+        }
+        if (held.isEmpty()) {
+            return List.of();
+        }
+        return List.of(new ImportReport.Error(null, "A starter replaces the organization's definitions, so it can only "
+                + "be installed while the organization holds no instance data; it holds " + String.join(", ", held) + "."));
+    }
+
+    private void checkExpected(StarterManifest manifest, Expected expected, List<ImportReport.Error> errors) {
+        if (expected != null && (!expected.starterId().equals(manifest.id()) || !expected.version().equals(manifest.version()))) {
+            errors.add(new ImportReport.Error(BundleReader.MANIFEST, "The bundle is starter '" + manifest.id() + "' "
+                    + manifest.version() + ", not '" + expected.starterId() + "' " + expected.version() + "."));
+        }
     }
 
     /** Participants in import order, each with the bundle files of its kind. */
@@ -151,27 +213,24 @@ public class ImportBundle {
         return plan;
     }
 
-    /** Resolving and installing required starters is not implemented yet; they must already be installed. */
-    private void checkRequirements(String orgKey, StarterManifest manifest, List<ImportReport.Error> errors) {
-        for (StarterManifest.Requirement requirement : manifest.requires()) {
-            if (requirement.id() == null
-                    || installedStarterRepository.findByOrgKeyAndStarterId(orgKey, requirement.id()).isEmpty()) {
-                errors.add(new ImportReport.Error(BundleReader.MANIFEST,
-                        "Requires starter '" + requirement.id() + "', which is not installed in this organization."));
-            }
-        }
-    }
-
     /**
-     * Hashes each definition's fingerprint taken <em>after</em> the write, so the stored hash describes
-     * what the database holds rather than the bundle's text — two spellings of one definition are the
-     * same definition.
+     * Replaces the organization's provenance with this starter's: the definitions an earlier starter
+     * brought are gone. Hashes each definition's fingerprint taken <em>after</em> the write, so the
+     * stored hash describes what the database holds rather than the bundle's text — two spellings of
+     * one definition are the same definition.
      */
     private void recordProvenance(String orgKey, StarterManifest manifest, List<ImportReport.Item> items, String importedBy) {
+        provenanceRepository.deleteByOrgKey(orgKey);
+        installedStarterRepository.deleteByOrgKey(orgKey);
+        // Flushed now: Hibernate orders inserts before deletes, and the rows below reuse the keys.
+        provenanceRepository.flush();
+
         Instant now = clock.instant();
-        Map<String, Set<String>> keysByKind = items.stream().collect(Collectors.groupingBy(
-                ImportReport.Item::kind, LinkedHashMap::new,
-                Collectors.mapping(ImportReport.Item::key, Collectors.toCollection(LinkedHashSet::new))));
+        Map<String, Set<String>> keysByKind = items.stream()
+                .filter(item -> item.action() != ImportReport.Action.DELETE)
+                .collect(Collectors.groupingBy(
+                        ImportReport.Item::kind, LinkedHashMap::new,
+                        Collectors.mapping(ImportReport.Item::key, Collectors.toCollection(LinkedHashSet::new))));
 
         keysByKind.forEach((kind, keys) -> {
             Map<String, String> fingerprints = participants.forKind(kind).orElseThrow().fingerprints(orgKey, keys);
@@ -181,15 +240,13 @@ public class ImportBundle {
                     throw new IllegalStateException(
                             "The " + kind + " participant imported '" + key + "' but reports no fingerprint for it.");
                 }
-                DefinitionProvenance provenance = provenanceRepository.findByOrgKeyAndKindAndKey(orgKey, kind, key)
-                        .orElseGet(() -> new DefinitionProvenance(orgKey, kind, key));
+                DefinitionProvenance provenance = new DefinitionProvenance(orgKey, kind, key);
                 provenance.recordImport(manifest.id(), manifest.version(), hash(fingerprint), now, importedBy);
                 provenanceRepository.save(provenance);
             }
         });
 
-        InstalledStarter installed = installedStarterRepository.findByOrgKeyAndStarterId(orgKey, manifest.id())
-                .orElseGet(() -> new InstalledStarter(orgKey, manifest.id()));
+        InstalledStarter installed = new InstalledStarter(orgKey, manifest.id());
         installed.recordInstall(manifest.version(), now, importedBy);
         installedStarterRepository.save(installed);
     }
@@ -198,8 +255,12 @@ public class ImportBundle {
         return BundleReader.sha256(fingerprint.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static ImportRejectedException rejected(boolean dryRun, StarterManifest manifest, List<ImportReport.Error> errors) {
-        return new ImportRejectedException(ImportReport.rejected(dryRun, manifest.id(), manifest.version(), errors), false);
+    private static ImportRejectedException rejected(boolean dryRun, StarterManifest manifest, List<ImportReport.Error> errors,
+                                                    ImportRejectedException.Reason reason) {
+        return new ImportRejectedException(ImportReport.rejected(dryRun, manifest.id(), manifest.version(), errors), reason);
     }
 
+    /** The starter a caller asked for, which the bundle's manifest must declare. */
+    public record Expected(String starterId, String version) {
+    }
 }

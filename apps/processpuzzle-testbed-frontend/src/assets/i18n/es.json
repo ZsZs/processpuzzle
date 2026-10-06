@@ -212,12 +212,12 @@
   },
   "base-starter": {
     "overview_tab_label": "Resumen",
-    "import_tab_label": "Importar",
+    "import_tab_label": "Instalar",
     "intro_heading": "ProcessPuzzle Business Starters",
     "intro_paragraph_1": "Un Business Starter es una solución preparada para un problema de negocio — inventario, facturación, organizar una regata — entregada como un paquete de definiciones: entidades, máquinas de estados, reglas y, más adelante, documentos, flujos de trabajo y aplicaciones.",
-    "intro_paragraph_2": "Importar un starter escribe sus definiciones en esta organización en una sola transacción y recuerda de qué starter proviene cada una, para distinguir una definición modificada de otra intacta. Pruébelo en la pestaña Importar: primero la vista previa, luego la importación.",
-    "intro_frontend_desc": "la pantalla de importación: elegir un paquete, verlo como ensayo, importarlo y ver los starters ya instalados.",
-    "intro_backend_desc": "Módulo Spring Boot que lee un paquete de forma segura, ejecuta el importador de cada funcionalidad en orden dentro de una transacción y registra la procedencia.",
+    "intro_paragraph_2": "La CI publica cada starter liberado en el registro público de starters. Instalar uno sustituye las definiciones de esta organización en una transacción — por eso solo es posible mientras la organización no contenga objetos de entidad ni instancias de workflow — y recuerda de qué starter procede cada definición. Pruébelo en la pestaña Instalar: elija un starter, previsualícelo e instálelo.",
+    "intro_frontend_desc": "la pantalla de instalación: elegir un starter del catálogo, previsualizarlo como prueba, instalarlo y ver el starter ya instalado.",
+    "intro_backend_desc": "Módulo Spring Boot que lee el catálogo de starters del registro, descarga y verifica un paquete, sustituye las definiciones de la organización mediante el importador de cada funcionalidad en una transacción y registra la procedencia.",
     "frontend_heading": "Frontend — @processpuzzle/base-starter",
     "backend_heading": "Backend — base-starter-backend"
   },

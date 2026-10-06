@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface EntityObjectRepository
     extends JpaRepository<EntityObject, UUID>, JpaSpecificationExecutor<EntityObject> {
 
+    long countByOrgKey(String orgKey);
+
     boolean existsByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 
     List<EntityObject> findAllByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);

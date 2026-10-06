@@ -1,23 +1,28 @@
 {
   "import": {
     "title": "Üzleti kezdőcsomagok",
-    "hint": "Kezdőcsomag (.zip) importálása ebbe a szervezetbe. Előbb nézze meg az előnézetet: lefuttatja a teljes importot, de semmit nem ír.",
+    "hint": "Telepítsen egy Business Startert a katalógusból. A szervezet összes definícióját lecseréli, ezért csak addig telepíthető, amíg a szervezet nem tartalmaz adatot. Először nézze meg az előnézetet: az előnézet a teljes telepítést lefuttatja, de semmit sem ír.",
     "preview": "Előnézet",
-    "apply": "Importálás",
+    "apply": "Telepítés",
     "status": {
-      "applied": "Importálva",
-      "would-apply": "Importálható",
+      "applied": "Telepítve",
+      "would-apply": "Telepítené",
       "rejected": "Elutasítva"
     },
-    "summary": "{{created}} új, {{updated}} frissítendő",
+    "summary": "{{created}} létrehozandó, {{updated}} frissítendő, {{deleted}} törlendő",
     "column": {
       "kind": "Fajta",
       "key": "Kulcs",
-      "action": "Művelet"
+      "action": "Művelet",
+      "starter": "Starter",
+      "description": "Leírás",
+      "author": "Szerző",
+      "license": "Licenc"
     },
     "action": {
       "create": "új",
-      "update": "frissítés"
+      "update": "frissítés",
+      "delete": "törlés"
     },
     "kind": {
       "entity": "Entitás",
@@ -27,7 +32,10 @@
       "document": "Dokumentum",
       "workflow": "Munkafolyamat",
       "app": "Alkalmazás"
-    }
+    },
+    "catalogEmpty": "A katalógusban még nincs starter.",
+    "version": "Verzió",
+    "deprecated": "elavult"
   },
   "installed": {
     "title": "Telepített kezdőcsomagok",
