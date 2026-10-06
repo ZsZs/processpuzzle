@@ -98,10 +98,28 @@ public class ImportRules {
                 created++;
             }
             repository.save(rule);
-            ruleEngineSync.register(rule);
+            ruleEngineSync.registerAfterCommit(rule);
         }
 
         return new ImportOutcome(created, updated, errors);
+    }
+
+    /**
+     * Deletes every rule of {@code orgKey}, for a Business Starter install that replaces them. The
+     * engine forgets them after commit only, so a dry run leaves it as it was; a rule the starter
+     * re-creates is registered again after that, in the order the synchronizations were added.
+     *
+     * @return the ids deleted
+     */
+    @Transactional
+    public List<String> removeAll(String orgKey) {
+        List<RuleDefinition> rules = repository.findByOrgKey(orgKey);
+        repository.deleteAll(rules);
+        // Flushed now: Hibernate orders inserts before deletes, so a rule the starter re-creates
+        // under the same id would otherwise collide with its own not-yet-deleted row.
+        repository.flush();
+        rules.forEach(rule -> ruleEngineSync.unregisterAfterCommit(orgKey, rule.getId()));
+        return rules.stream().map(RuleDefinition::getId).toList();
     }
 
     private void applyEntry(RuleDefinition rule, RuleYamlEntry entry) {

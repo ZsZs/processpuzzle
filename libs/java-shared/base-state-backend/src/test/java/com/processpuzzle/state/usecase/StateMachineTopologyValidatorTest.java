@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 class StateMachineTopologyValidatorTest {
 
+    private static final String ORG = "acme";
     private static final String ENTITY = "order";
     private static final String ATTR = "status";
     private static final List<State> ONE_STATE = List.of(new State("draft", "Draft", null, false, false, null));
@@ -36,15 +37,15 @@ class StateMachineTopologyValidatorTest {
         when(guardActionResolver.isKnownAction("knownAction")).thenReturn(true);
 
         entityAttributeQuery = mock(EntityAttributeQuery.class);
-        when(entityAttributeQuery.entityTypeExists(ENTITY)).thenReturn(true);
-        when(entityAttributeQuery.attributeKind(ENTITY, ATTR))
+        when(entityAttributeQuery.entityTypeExists(ORG, ENTITY)).thenReturn(true);
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR))
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
 
         validator = new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);
     }
 
     private void validate(String initialStateKey, List<State> states, List<Transition> transitions) {
-        validator.validate(ENTITY, ATTR, initialStateKey, states, transitions);
+        validator.validate(ORG, ENTITY, ATTR, initialStateKey, states, transitions);
     }
 
     @Test
@@ -189,30 +190,39 @@ class StateMachineTopologyValidatorTest {
 
     @Test
     void rejectsBlankEntityName() {
-        assertThatThrownBy(() -> validator.validate("  ", ATTR, "draft", ONE_STATE, List.of()))
+        assertThatThrownBy(() -> validator.validate(ORG, "  ", ATTR, "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("entityName is required");
     }
 
     @Test
     void rejectsBlankStateAttributeKey() {
-        assertThatThrownBy(() -> validator.validate(ENTITY, null, "draft", ONE_STATE, List.of()))
+        assertThatThrownBy(() -> validator.validate(ORG, ENTITY, null, "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("stateAttributeKey is required");
     }
 
     @Test
     void rejectsAnEntityTypeBaseEntityDoesNotManage() {
-        assertThatThrownBy(() -> validator.validate("unmanaged", ATTR, "draft", ONE_STATE, List.of()))
+        assertThatThrownBy(() -> validator.validate(ORG, "unmanaged", ATTR, "draft", ONE_STATE, List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("is not an entity type base-entity manages");
+    }
+
+    @Test
+    void rejectsAnEntityTypeThatOnlyAnotherOrganizationManages() {
+        when(entityAttributeQuery.entityTypeExists("globex", ENTITY)).thenReturn(false);
+
+        assertThatThrownBy(() -> validator.validate("globex", ENTITY, ATTR, "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("is not an entity type base-entity manages");
     }
 
     @Test
     void rejectsAnAttributeTheEntityDoesNotDeclare() {
-        when(entityAttributeQuery.attributeKind(ENTITY, "noSuchAttr")).thenReturn(Optional.empty());
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, "noSuchAttr")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> validator.validate(ENTITY, "noSuchAttr", "draft", ONE_STATE, List.of()))
+        assertThatThrownBy(() -> validator.validate(ORG, ENTITY, "noSuchAttr", "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("is not an attribute of 'order'");
     }
@@ -224,7 +234,7 @@ class StateMachineTopologyValidatorTest {
     @ParameterizedTest
     @EnumSource(value = EntityAttributeKind.class, names = {"TEXT", "ENUM"})
     void acceptsTextAndEnumStateAttributes(EntityAttributeKind kind) {
-        when(entityAttributeQuery.attributeKind(ENTITY, ATTR)).thenReturn(Optional.of(kind));
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR)).thenReturn(Optional.of(kind));
 
         assertThatCode(() -> validate("draft", ONE_STATE, List.of())).doesNotThrowAnyException();
     }
@@ -232,7 +242,7 @@ class StateMachineTopologyValidatorTest {
     @ParameterizedTest
     @EnumSource(value = EntityAttributeKind.class, names = {"TEXT", "ENUM"}, mode = EnumSource.Mode.EXCLUDE)
     void rejectsEveryOtherStateAttributeKind(EntityAttributeKind kind) {
-        when(entityAttributeQuery.attributeKind(ENTITY, ATTR)).thenReturn(Optional.of(kind));
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR)).thenReturn(Optional.of(kind));
 
         assertThatThrownBy(() -> validate("draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)

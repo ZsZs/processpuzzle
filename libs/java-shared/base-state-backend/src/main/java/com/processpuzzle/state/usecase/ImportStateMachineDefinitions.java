@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.state.adapter.inbound.dto.StateMachineYamlDocument;
 import com.processpuzzle.state.adapter.inbound.dto.StateMachineYamlEntry;
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import java.io.IOException;
@@ -25,13 +26,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class ImportStateMachineDefinitions {
 
     private final StateMachineDefinitionRepository repository;
+    private final DiagramDefinitionRepository diagramRepository;
     private final StateMachineTopologyValidator validator;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     public ImportStateMachineDefinitions(StateMachineDefinitionRepository repository,
+                                         DiagramDefinitionRepository diagramRepository,
                                          StateMachineTopologyValidator validator) {
         this.repository = repository;
+        this.diagramRepository = diagramRepository;
         this.validator = validator;
     }
 
@@ -44,13 +48,30 @@ public class ImportStateMachineDefinitions {
 
         List<String> errors = new ArrayList<>();
         Map<String, StateMachineYamlEntry> byEntityName = collectEntriesByEntity(entries, errors);
-        validateTopologies(byEntityName, errors);
+        validateTopologies(orgKey, byEntityName, errors);
 
         if (!errors.isEmpty()) {
             return new ImportOutcome(0, 0, errors);
         }
 
         return persistEntries(orgKey, byEntityName.values());
+    }
+
+    /**
+     * Deletes every state machine of {@code orgKey}, and the diagram layouts drawn for them, for a
+     * Business Starter install that replaces them.
+     *
+     * @return the entity names whose machines were deleted
+     */
+    @Transactional
+    public List<String> removeAll(String orgKey) {
+        List<StateMachineDefinition> machines = repository.findByOrgKey(orgKey);
+        diagramRepository.deleteByOrgKey(orgKey);
+        repository.deleteAll(machines);
+        // Flushed now: Hibernate orders inserts before deletes, so a machine the starter re-creates
+        // for the same entity would otherwise collide with its own not-yet-deleted row.
+        repository.flush();
+        return machines.stream().map(StateMachineDefinition::getEntityName).toList();
     }
 
     private List<StateMachineYamlEntry> parseEntries(InputStream input) throws IOException {
@@ -74,10 +95,10 @@ public class ImportStateMachineDefinitions {
         return byEntityName;
     }
 
-    private void validateTopologies(Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
+    private void validateTopologies(String orgKey, Map<String, StateMachineYamlEntry> byEntityName, List<String> errors) {
         for (StateMachineYamlEntry entry : byEntityName.values()) {
             try {
-                validator.validate(entry.entityName(), entry.stateAttributeKey(),
+                validator.validate(orgKey, entry.entityName(), entry.stateAttributeKey(),
                         entry.initialStateKey(), entry.states(), entry.transitions());
             } catch (IllegalArgumentException e) {
                 errors.add("'" + entry.entityName() + "': " + e.getMessage());

@@ -27,6 +27,10 @@ One instance of each, serving all four apps:
 - **PostgreSQL** — one instance, isolated database per app.
 - **Keycloak** — one instance, a distinct realm per app; Custom's realm is shared across all customer orgs, differentiated via Keycloak's native **Organizations** feature.
 - **MinIO** — one instance, bucket prefix per app.
+  Plus one bucket shared by all apps: **`processpuzzle-starters`**, the Business Starter registry. CI writes
+  it at release; it is publicly readable. Testbed and Custom read it through `base-starter-backend`; the Biz
+  frontend reads its `catalog.json` directly, so Biz still needs no persistence. See
+  [Business Starters](business-starters/business-starters-design.md).
 
 ## 4. Backend Module Composition
 
@@ -43,8 +47,8 @@ App-specific modules layer on top:
 
 **Cross-service edges** (the only two — everything else is in-process module composition within a single deployable):
 
-- **Biz → Admin** (REST) — record a new subscription/org.
-- **Admin → Custom** (REST) — Admin calls the new customer's `processpuzzle-custom-backend` internal API to seed domain data. Provisioning creates that backend deployment before the call, keeping `PROCESSPUZZLE_CUSTOM` owned by Custom rather than giving Admin a secondary datasource.
+- **Biz → Admin** (REST) — record a new subscription/org, including the chosen Business Starter (`starterId@version`, zero or one).
+- **Admin → Custom** (REST) — Admin calls the new customer's `processpuzzle-custom-backend` internal API to seed domain data, passing the starter reference on; Custom installs the starter from the bucket itself, and a failed install leaves the org seeded without one. Provisioning creates that backend deployment before the call, keeping `PROCESSPUZZLE_CUSTOM` owned by Custom rather than giving Admin a secondary datasource.
 
 ## 5. Keycloak Multi-Tenancy (Custom)
 
@@ -85,6 +89,7 @@ Shared UI libs (`base-entity-frontend` incl. `WIDGET_REGISTRY`, workflow/state U
 ## 8. Open Items / Not Yet Decided
 
 - Whether Biz genuinely needs a MinIO bucket prefix, given it has no real persistence.
+- Business Starter upgrades (intended: regular, automatic), the migration-script format, and the third-party marketplace.
 - Detailed schema for `platform-admin` (Organisation, Administrator, Subscription, Billing entities) and its migration strategy once in production.
 - Concrete implementation of the RLS session-variable mechanism (interceptor placement, connection pooling implications).
 - Per-org theming/branding for the Custom frontend (not required yet, but the runtime-resolved config model leaves room for it).

@@ -8,5 +8,5 @@ import org.springframework.data.jpa.domain.Specification;
  */
 public interface RsqlToInstanceSpecificationPort {
 
-    Specification<EntityObject> toSpecification(String rsql, String rootEntityDefinitionCode);
+    Specification<EntityObject> toSpecification(String orgKey, String rsql, String rootEntityDefinitionCode);
 }

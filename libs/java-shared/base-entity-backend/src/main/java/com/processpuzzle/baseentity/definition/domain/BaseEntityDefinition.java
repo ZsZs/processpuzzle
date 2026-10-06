@@ -33,12 +33,19 @@ import java.util.UUID;
 @lombok.EqualsAndHashCode(callSuper = false, of = "id")
 @lombok.ToString(exclude = "attributes")
 @Entity
-@Table(name = "base_entity_definition", uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = "code"))
+@Table(name = "base_entity_definition", uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = {"org_key", "code"}))
 public class BaseEntityDefinition extends Auditable {
 
     @Id
     @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.UUID)
     private UUID id;
+
+    /**
+     * The organization this definition belongs to. Codes are unique per organization, not globally,
+     * so the same starter can be installed into two organizations side by side.
+     */
+    @Column(name = "org_key", nullable = false, updatable = false)
+    private String orgKey;
 
     /** Stable, immutable-after-creation identifier used across the API and as the FK target from EntityObject in the instances module. */
     @Column(nullable = false, updatable = false)

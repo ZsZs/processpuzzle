@@ -1,0 +1,55 @@
+{
+  "name": "base-starter-backend",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "tags": ["backend", "java", "springboot", "library"],
+  "sourceRoot": "libs/java-shared/base-starter-backend/src",
+  "implicitDependencies": ["api-contracts", "processpuzzle-core"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "mvn -pl libs/java-shared/base-starter-backend clean install"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -f {projectRoot}/pom.xml clean validate"
+      },
+      "configurations": {
+        "ci": {},
+        "dev": {}
+      }
+    },
+    "test": {
+      "outputs": ["{projectRoot}/reports/coverage"],
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "mvn -pl libs/java-shared/base-starter-backend test"
+      },
+      "configurations": {
+        "ci": {}
+      }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/release-java-lib.mjs prepare --project {projectName} --increment patch"
+      },
+      "configurations": {
+        "major": {
+          "command": "node tools/scripts/release-java-lib.mjs prepare --project {projectName} --increment major"
+        },
+        "minor": {
+          "command": "node tools/scripts/release-java-lib.mjs prepare --project {projectName} --increment minor"
+        },
+        "patch": {
+          "command": "node tools/scripts/release-java-lib.mjs prepare --project {projectName} --increment patch"
+        }
+      }
+    }
+  }
+}

@@ -17,14 +17,14 @@ public class DeleteEntityDefinitionUseCase {
     private final EntityDefinitionRepository repository;
     private final EntityInstanceExistenceCheckPort instanceExistenceCheckPort;
 
-    public void delete(String code) {
-        BaseEntityDefinition definition = repository.findByCode(code)
+    public void delete(String orgKey, String code) {
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, code)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(code)));
 
-        if (instanceExistenceCheckPort.existsAnyInstanceOf(code)) {
+        if (instanceExistenceCheckPort.existsAnyInstanceOf(orgKey, code)) {
             throw new ConflictException("'%s' still has instances — delete them first".formatted(code));
         }
-        boolean isComponentParent = repository.findAll().stream()
+        boolean isComponentParent = repository.findAllByOrgKey(orgKey).stream()
             .anyMatch(candidate -> candidate.getComponentParents().contains(code));
         if (isComponentParent) {
             throw new ConflictException("'%s' is still declared as a componentParent by another definition".formatted(code));

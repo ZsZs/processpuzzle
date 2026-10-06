@@ -70,6 +70,44 @@ for BUCKET in ${BUCKETS}; do
   fi
 done
 
+# ── Business Starter registry ─────────────────────────────────────────────────
+# One bucket shared by every stack, unlike the per-stack buckets above: the registry belongs to no
+# stack. Anonymous *read* is the design — the Biz frontend reads catalog.json straight from it and
+# every backend fetches bundles over plain HTTP — and only CI writes. See
+# docs/business-starters/business-starters-design.md §5.
+STARTERS_BUCKET="processpuzzle-starters"
+if ! mc ls "${MINIO_ALIAS}/${STARTERS_BUCKET}" > /dev/null 2>&1; then
+  echo "Creating bucket '${STARTERS_BUCKET}'..."
+  mc mb "${MINIO_ALIAS}/${STARTERS_BUCKET}"
+fi
+# Reapplied on every start, so a bucket created by hand still ends up public-read.
+mc anonymous set download "${MINIO_ALIAS}/${STARTERS_BUCKET}"
+echo "Bucket '${STARTERS_BUCKET}' is public-read."
+
+# The CI publisher may write the registry bucket and nothing else. Optional: an environment
+# that does not publish starters (local, ci) simply leaves the password unset.
+if [ -n "${MINIO_STARTER_PUBLISHER_PASSWORD}" ]; then
+  PUBLISHER_USER="${MINIO_STARTER_PUBLISHER_USER:-starter-publisher}"
+  cat > /tmp/starter-publisher-policy.json <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": ["arn:aws:s3:::${STARTERS_BUCKET}"] },
+    { "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": ["arn:aws:s3:::${STARTERS_BUCKET}/*"] }
+  ]
+}
+POLICY
+  mc admin policy create "${MINIO_ALIAS}" starter-publisher /tmp/starter-publisher-policy.json
+  if mc admin user info "${MINIO_ALIAS}" "${PUBLISHER_USER}" > /dev/null 2>&1; then
+    mc admin user remove "${MINIO_ALIAS}" "${PUBLISHER_USER}"
+  fi
+  mc admin user add "${MINIO_ALIAS}" "${PUBLISHER_USER}" "${MINIO_STARTER_PUBLISHER_PASSWORD}"
+  mc admin policy attach "${MINIO_ALIAS}" starter-publisher --user "${PUBLISHER_USER}"
+  echo "Starter publisher account '${PUBLISHER_USER}' reconciled."
+fi
+
 # ── Reconcile the dedicated Spring Boot service account ───────────────────────
 # `mc admin user add` refuses an existing access key, which left a persisted user on
 # its old password after MINIO_SERVICE_PASSWORD was rotated. Recreate it so this

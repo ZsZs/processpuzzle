@@ -75,5 +75,13 @@ export class DesignContentComponent {
       actions: [{ link: `${this.prefix}/design/application`, caption: 'base-app_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
+    {
+      icon: 'inventory_2',
+      title: 'base-starter_card_title',
+      subtitle: 'base-starter_card_subtitle',
+      content: ['base-starter_card_content', 'base-starter_card_content_1', 'base-starter_card_content_2', 'base-starter_card_content_3'],
+      actions: [{ link: `${this.prefix}/design/starters`, caption: 'base-starter_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
   ];
 }

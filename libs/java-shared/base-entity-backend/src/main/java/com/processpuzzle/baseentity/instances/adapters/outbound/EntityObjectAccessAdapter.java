@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,18 +29,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntityObjectAccessAdapter implements EntityObjectAccess {
 
     private final EntityObjectRepository repository;
+    private final EntityObjectScope scope;
 
     @Override
     @Transactional(readOnly = true)
-    public EntityObjectView find(String entityDefinitionCode, UUID objectId) {
-        EntityObject entityObject = load(entityDefinitionCode, objectId);
+    public EntityObjectView find(String orgKey, String entityDefinitionCode, UUID objectId) {
+        EntityObject entityObject = load(orgKey, entityDefinitionCode, objectId);
         return new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EntityObjectView> findAll(String entityDefinitionCode) {
-        return repository.findAllByEntityDefinitionCode(entityDefinitionCode).stream()
+    public List<EntityObjectView> findAll(String orgKey, String entityDefinitionCode) {
+        return scope.findAll(orgKey, entityDefinitionCode).stream()
             .map(entityObject -> new EntityObjectView(
                 entityObject.getId(), version(entityObject), entityObject.getPayload()))
             .toList();
@@ -47,9 +49,9 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
 
     @Override
     @Transactional
-    public long updateAttribute(String entityDefinitionCode, UUID objectId, String attributeCode,
+    public long updateAttribute(String orgKey, String entityDefinitionCode, UUID objectId, String attributeCode,
                                 String value, long expectedVersion) {
-        EntityObject entityObject = load(entityDefinitionCode, objectId);
+        EntityObject entityObject = load(orgKey, entityDefinitionCode, objectId);
         if (version(entityObject) != expectedVersion) {
             throw new EntityObjectAccessException.VersionConflict(
                 objectId, expectedVersion, version(entityObject));
@@ -65,14 +67,10 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
         return version(repository.saveAndFlush(entityObject));
     }
 
-    private EntityObject load(String entityDefinitionCode, UUID objectId) {
-        EntityObject entityObject = repository.findById(objectId)
+    /** Another organization's object, or one of another type, is not found — see {@link EntityObjectScope#find}. */
+    private EntityObject load(String orgKey, String entityDefinitionCode, UUID objectId) {
+        return scope.find(orgKey, entityDefinitionCode, objectId)
             .orElseThrow(() -> new EntityObjectAccessException.NotFound(entityDefinitionCode, objectId));
-
-        if (!entityObject.getEntityDefinitionCode().equals(entityDefinitionCode)) {
-            throw new EntityObjectAccessException.NotFound(entityDefinitionCode, objectId);
-        }
-        return entityObject;
     }
 
     /** A never-persisted object has a null version; nothing loaded here can, but the type allows it. */

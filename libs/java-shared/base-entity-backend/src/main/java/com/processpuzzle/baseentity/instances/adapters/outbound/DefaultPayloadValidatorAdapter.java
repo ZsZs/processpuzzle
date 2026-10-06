@@ -28,22 +28,22 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
     private final EntityDefinitionLookupPort definitionLookupPort;
 
     @Override
-    public void validate(EntityDefinitionView definition, Map<String, Object> payload) {
+    public void validate(String orgKey, EntityDefinitionView definition, Map<String, Object> payload) {
         List<Violation> violations = new ArrayList<>();
-        validateInto(definition, payload, violations);
+        validateInto(orgKey, definition, payload, violations);
         if (!violations.isEmpty()) {
             throw new ValidationException(violations);
         }
     }
 
-    private void validateInto(EntityDefinitionView definition, Map<String, Object> payload, List<Violation> violations) {
+    private void validateInto(String orgKey, EntityDefinitionView definition, Map<String, Object> payload, List<Violation> violations) {
         for (EntityAttributeView attribute : definition.attributes()) {
             Object value = payload.get(attribute.code());
-            validateAttributePayload(definition, attribute, value, violations);
+            validateAttributePayload(orgKey, definition, attribute, value, violations);
         }
     }
 
-    private void validateAttributePayload(EntityDefinitionView definition, EntityAttributeView attribute, Object value, List<Violation> violations) {
+    private void validateAttributePayload(String orgKey, EntityDefinitionView definition, EntityAttributeView attribute, Object value, List<Violation> violations) {
         if (attribute.required() && isBlank(value)) {
             violations.add(new Violation(attribute.code(), "required"));
             return;
@@ -52,33 +52,33 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             return;
         }
 
-        EntityDefinitionView childDefinition = definitionLookupPort.findByCode(attribute.linkedEntityType())
+        EntityDefinitionView childDefinition = definitionLookupPort.findByCode(orgKey, attribute.linkedEntityType())
             .orElseThrow(() -> new IllegalStateException(
                 "Embedded definition '%s' referenced by '%s.%s' no longer exists"
                     .formatted(attribute.linkedEntityType(), definition.code(), attribute.code())));
 
         if (attribute.multiValued()) {
-            validateMultiValuedEmbedded(attribute, value, childDefinition, violations);
+            validateMultiValuedEmbedded(orgKey, attribute, value, childDefinition, violations);
         } else {
-            validateSingleEmbedded(childDefinition, value, violations);
+            validateSingleEmbedded(orgKey, childDefinition, value, violations);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void validateMultiValuedEmbedded(EntityAttributeView attribute, Object value, EntityDefinitionView childDefinition, List<Violation> violations) {
+    private void validateMultiValuedEmbedded(String orgKey, EntityAttributeView attribute, Object value, EntityDefinitionView childDefinition, List<Violation> violations) {
         if (!(value instanceof List<?> rows)) {
             violations.add(new Violation(attribute.code(), "expected an array of embedded components"));
             return;
         }
         for (Object row : rows) {
-            validateInto(childDefinition, (Map<String, Object>) row, violations);
+            validateInto(orgKey, childDefinition, (Map<String, Object>) row, violations);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void validateSingleEmbedded(EntityDefinitionView childDefinition, Object value, List<Violation> violations) {
+    private void validateSingleEmbedded(String orgKey, EntityDefinitionView childDefinition, Object value, List<Violation> violations) {
         if (value instanceof Map<?, ?> mapValue) {
-            validateInto(childDefinition, (Map<String, Object>) mapValue, violations);
+            validateInto(orgKey, childDefinition, (Map<String, Object>) mapValue, violations);
         }
     }
 

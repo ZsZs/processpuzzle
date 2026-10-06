@@ -16,8 +16,9 @@ public class CreateEntityDefinitionUseCase {
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
 
-    public BaseEntityDefinition create(BaseEntityDefinition definition) {
-        if (repository.existsByCode(definition.getCode())) {
+    public BaseEntityDefinition create(String orgKey, BaseEntityDefinition definition) {
+        definition.setOrgKey(orgKey);
+        if (repository.existsByOrgKeyAndCode(orgKey, definition.getCode())) {
             throw new ConflictException("Entity definition '%s' already exists".formatted(definition.getCode()));
         }
         validator.validate(definition);

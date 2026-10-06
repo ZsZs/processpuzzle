@@ -21,8 +21,8 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
     private final EntityDefinitionLookupPort definitionLookupPort;
 
     @Override
-    public Optional<EntityAttributeKind> attributeKind(String entityDefinitionCode, String attributeCode) {
-        return definitionLookupPort.findByCode(entityDefinitionCode)
+    public Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode) {
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
             .map(definition -> definition.attribute(attributeCode))
             .map(EntityAttributeView::valueKind)
             // valueOf, not a switch: the two enums are kept in step by name, so a kind added to one
@@ -31,7 +31,7 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
     }
 
     @Override
-    public boolean entityTypeExists(String entityDefinitionCode) {
-        return definitionLookupPort.findByCode(entityDefinitionCode).isPresent();
+    public boolean entityTypeExists(String orgKey, String entityDefinitionCode) {
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isPresent();
     }
 }

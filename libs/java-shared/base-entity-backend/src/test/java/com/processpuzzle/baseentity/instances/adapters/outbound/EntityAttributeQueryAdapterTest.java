@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class EntityAttributeQueryAdapterTest {
 
+    private static final String ORG = "acme";
+
     @Mock
     private EntityDefinitionLookupPort definitionLookupPort;
 
@@ -33,25 +35,25 @@ class EntityAttributeQueryAdapterTest {
 
     @Test
     void attributeKind_declaredAttribute_isMapped() {
-        when(definitionLookupPort.findByCode("order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("status", ValueKindView.ENUM)))));
 
-        assertThat(adapter.attributeKind("order", "status")).contains(EntityAttributeKind.ENUM);
+        assertThat(adapter.attributeKind(ORG, "order", "status")).contains(EntityAttributeKind.ENUM);
     }
 
     @Test
     void attributeKind_unknownAttribute_isEmpty() {
-        when(definitionLookupPort.findByCode("order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("status", ValueKindView.ENUM)))));
 
-        assertThat(adapter.attributeKind("order", "stauts")).isEmpty();
+        assertThat(adapter.attributeKind(ORG, "order", "stauts")).isEmpty();
     }
 
     @Test
     void attributeKind_unknownEntityType_isEmpty() {
-        when(definitionLookupPort.findByCode("nope")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
 
-        assertThat(adapter.attributeKind("nope", "status")).isEmpty();
+        assertThat(adapter.attributeKind(ORG, "nope", "status")).isEmpty();
     }
 
     /**
@@ -61,20 +63,20 @@ class EntityAttributeQueryAdapterTest {
     @ParameterizedTest
     @EnumSource(ValueKindView.class)
     void attributeKind_everyValueKind_hasACounterpart(ValueKindView kind) {
-        when(definitionLookupPort.findByCode("order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("a", kind)))));
 
-        assertThat(adapter.attributeKind("order", "a"))
+        assertThat(adapter.attributeKind(ORG, "order", "a"))
             .contains(EntityAttributeKind.valueOf(kind.name()));
     }
 
     @Test
     void entityTypeExists_reflectsTheLookup() {
-        when(definitionLookupPort.findByCode("order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of())));
-        when(definitionLookupPort.findByCode("nope")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
 
-        assertThat(adapter.entityTypeExists("order")).isTrue();
-        assertThat(adapter.entityTypeExists("nope")).isFalse();
+        assertThat(adapter.entityTypeExists(ORG, "order")).isTrue();
+        assertThat(adapter.entityTypeExists(ORG, "nope")).isFalse();
     }
 }

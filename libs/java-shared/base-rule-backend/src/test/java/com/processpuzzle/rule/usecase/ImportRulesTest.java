@@ -59,7 +59,7 @@ class ImportRulesTest {
         assertThat(saved.isEnabled()).isTrue();
         assertThat(saved.isOverride()).isFalse();
         assertThat(saved.getFields()).containsExactly("quantity");
-        verify(ruleEngineSync).register(saved);
+        verify(ruleEngineSync).registerAfterCommit(saved);
     }
 
     @Test
@@ -364,6 +364,22 @@ class ImportRulesTest {
         ArgumentCaptor<RuleDefinition> saved = ArgumentCaptor.forClass(RuleDefinition.class);
         verify(repository).save(saved.capture());
         return saved.getValue();
+    }
+
+    @Test
+    void removeAllDeletesEveryRuleOfTheOrganizationAndForgetsThemAfterCommit() {
+        RuleDefinition first = mock(RuleDefinition.class);
+        RuleDefinition second = mock(RuleDefinition.class);
+        when(first.getId()).thenReturn("max-quantity");
+        when(second.getId()).thenReturn("sku-format");
+        when(repository.findByOrgKey("demo")).thenReturn(List.of(first, second));
+
+        assertThat(importRules.removeAll("demo")).containsExactly("max-quantity", "sku-format");
+
+        verify(repository).deleteAll(List.of(first, second));
+        verify(repository).flush();
+        verify(ruleEngineSync).unregisterAfterCommit("demo", "max-quantity");
+        verify(ruleEngineSync).unregisterAfterCommit("demo", "sku-format");
     }
 
     private static ByteArrayInputStream yaml(String content) {

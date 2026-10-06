@@ -4,6 +4,8 @@ import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
 import com.processpuzzle.rule.usecase.engine.RuleKey;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Keeps the in-memory {@link RuleEngine} in sync with persisted {@link RuleDefinition}
@@ -35,7 +37,41 @@ public class RuleEngineSync {
         }
     }
 
+    /**
+     * {@link #register} once the surrounding transaction commits, or right away when there is none.
+     *
+     * <p>For a write that may still be rolled back: a Business Starter dry run applies the import in
+     * a transaction that is then rolled back, and an engine registered mid-transaction would keep
+     * rules the database never stored.
+     */
+    public void registerAfterCommit(RuleDefinition rule) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            register(rule);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                register(rule);
+            }
+        });
+    }
+
     public void unregister(String orgKey, String ruleId) {
         ruleEngine.unregisterRule(RuleKey.of(orgKey, ruleId));
+    }
+
+    /** {@link #unregister} once the surrounding transaction commits; see {@link #registerAfterCommit}. */
+    public void unregisterAfterCommit(String orgKey, String ruleId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unregister(orgKey, ruleId);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                unregister(orgKey, ruleId);
+            }
+        });
     }
 }

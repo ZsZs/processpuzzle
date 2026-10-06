@@ -1,0 +1,51 @@
+{
+  "import": {
+    "title": "Business Starters",
+    "hint": "Installez un Business Starter depuis le catalogue. Il remplace toutes les définitions de cette organisation et ne peut donc être installé que tant que l'organisation ne contient aucune donnée. Prévisualisez-le d'abord : l'aperçu exécute toute l'installation et n'écrit rien.",
+    "preview": "Aperçu",
+    "apply": "Installer",
+    "status": {
+      "applied": "Installé",
+      "would-apply": "Serait installé",
+      "rejected": "Refusé"
+    },
+    "summary": "{{created}} à créer, {{updated}} à mettre à jour, {{deleted}} à supprimer",
+    "column": {
+      "kind": "Type",
+      "key": "Clé",
+      "action": "Action",
+      "starter": "Starter",
+      "description": "Description",
+      "author": "Auteur",
+      "license": "Licence"
+    },
+    "action": {
+      "create": "créer",
+      "update": "mettre à jour",
+      "delete": "supprimer"
+    },
+    "kind": {
+      "entity": "Entité",
+      "state": "Machine à états",
+      "rule": "Règle",
+      "widget": "Widget",
+      "document": "Document",
+      "workflow": "Workflow",
+      "app": "Application"
+    },
+    "catalogEmpty": "Le catalogue ne contient encore aucun starter.",
+    "version": "Version",
+    "deprecated": "obsolète"
+  },
+  "installed": {
+    "title": "Starters installés",
+    "empty": "Aucun starter n'est encore installé dans cette organisation.",
+    "column": {
+      "starter": "Starter",
+      "version": "Version",
+      "installedAt": "Installé",
+      "installedBy": "Par",
+      "customized": "Définitions modifiées"
+    }
+  }
+}

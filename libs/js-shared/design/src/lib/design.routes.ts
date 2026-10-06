@@ -3,6 +3,7 @@ import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_RULE_ROUTES } from '@processpuzzle/base-rule';
+import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
@@ -114,4 +115,9 @@ export const DESIGN_ROUTES: Routes = [
     // `base_entity` and `base_app` — each tab's route declares for itself.
     children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES, ...BASE_WIDGET_ROUTES],
   },
+  // The Business Starters section: import a bundle of definitions into the organization. Spread at this
+  // level like BASE_RULE_ROUTES — one screen, mounted at `starters`, with a `design.*` menu title — and it
+  // registers its own `base_starter` scope, whose translations the hosting application has to copy to
+  // `assets/i18n/base_starter`. Last because it acts on everything the sections above it define.
+  ...BASE_STARTER_ROUTES,
 ];

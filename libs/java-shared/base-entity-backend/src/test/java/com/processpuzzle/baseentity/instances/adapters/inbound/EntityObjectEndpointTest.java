@@ -89,7 +89,7 @@ class EntityObjectEndpointTest {
                 .version(1L)
                 .payload(Map.of("name", "ACME"))
                 .build();
-        when(findByIdUseCase.findById(id)).thenReturn(entity);
+        when(findByIdUseCase.findById(ORG, "partner", id)).thenReturn(entity);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
                 .andExpect(status().isOk())
@@ -130,7 +130,7 @@ class EntityObjectEndpointTest {
                 .version(2L)
                 .payload(Map.of("name", "ACME Updated"))
                 .build();
-        when(updateUseCase.update(eq(ORG), eq(id), eq(1L), any())).thenReturn(entity);
+        when(updateUseCase.update(eq(ORG), eq("partner"), eq(id), eq(1L), any())).thenReturn(entity);
 
         EntityObjectUpdate updateRequest = new EntityObjectUpdate();
         updateRequest.setVersion(1);
@@ -152,7 +152,7 @@ class EntityObjectEndpointTest {
                         .param("cascade", "false"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(ORG, id, false);
+        verify(deleteUseCase).delete(ORG, "partner", id, false);
     }
 
     @Test
@@ -163,7 +163,7 @@ class EntityObjectEndpointTest {
                         .param("cascade", "true"))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(ORG, id, true);
+        verify(deleteUseCase).delete(ORG, "partner", id, true);
     }
 
     @Test
@@ -173,7 +173,7 @@ class EntityObjectEndpointTest {
         mockMvc.perform(delete("/organizations/test-org/entities/{entityDefinitionCode}/{id}", "partner", id))
                 .andExpect(status().isNoContent());
 
-        verify(deleteUseCase).delete(ORG, id, false);
+        verify(deleteUseCase).delete(ORG, "partner", id, false);
     }
 
     @Test
@@ -187,7 +187,7 @@ class EntityObjectEndpointTest {
                 .build();
         Page<EntityObject> page = new PageImpl<>(List.of(entity));
 
-        when(searchUseCase.search(eq("partner"), eq("name==ACME"), any(Pageable.class)))
+        when(searchUseCase.search(eq("test-org"), eq("partner"), eq("name==ACME"), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}", "partner")

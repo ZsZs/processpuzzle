@@ -51,7 +51,7 @@ class RsqlToInstanceSpecificationAdapterTest {
 
     @Test
     void toSpecification_nullOrBlankRsql_returnsConjunctionSpecification() {
-        Specification<EntityObject> specNull = adapter.toSpecification(null, "partner");
+        Specification<EntityObject> specNull = adapter.toSpecification("acme", null, "partner");
         assertThat(specNull).isNotNull();
 
         Predicate conjunctionMock = mock(Predicate.class);
@@ -59,7 +59,7 @@ class RsqlToInstanceSpecificationAdapterTest {
         Predicate pred = specNull.toPredicate(root, query, cb);
         assertThat(pred).isSameAs(conjunctionMock);
 
-        Specification<EntityObject> specBlank = adapter.toSpecification("   ", "partner");
+        Specification<EntityObject> specBlank = adapter.toSpecification("acme", "   ", "partner");
         assertThat(specBlank).isNotNull();
         Predicate predBlank = specBlank.toPredicate(root, query, cb);
         assertThat(predBlank).isSameAs(conjunctionMock);
@@ -73,7 +73,7 @@ class RsqlToInstanceSpecificationAdapterTest {
                 false,
                 List.of(new EntityAttributeView("name", ValueKindView.TEXT, false, false, null, false))
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(def));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(def));
 
         Path<Object> payloadPath = mock(Path.class);
         when(root.get("payload")).thenReturn(payloadPath);
@@ -91,7 +91,7 @@ class RsqlToInstanceSpecificationAdapterTest {
         Predicate isTruePredicate = mock(Predicate.class);
         when(cb.isTrue(pathExistsExpr)).thenReturn(isTruePredicate);
 
-        Specification<EntityObject> spec = adapter.toSpecification("name==ACME", "partner");
+        Specification<EntityObject> spec = adapter.toSpecification("acme", "name==ACME", "partner");
         assertThat(spec).isNotNull();
 
         Predicate result = spec.toPredicate(root, query, cb);
@@ -109,7 +109,7 @@ class RsqlToInstanceSpecificationAdapterTest {
                         new EntityAttributeView("status", ValueKindView.TEXT, false, false, null, false)
                 )
         );
-        when(lookupPort.findByCode("partner")).thenReturn(Optional.of(def));
+        when(lookupPort.findByCode("acme", "partner")).thenReturn(Optional.of(def));
 
         Path<Object> payloadPath = mock(Path.class);
         when(root.get("payload")).thenReturn(payloadPath);
@@ -130,14 +130,14 @@ class RsqlToInstanceSpecificationAdapterTest {
         Predicate andPredicate = mock(Predicate.class);
         when(cb.and(any(Predicate[].class))).thenReturn(andPredicate);
 
-        Specification<EntityObject> andSpec = adapter.toSpecification("name==ACME;status==ACTIVE", "partner");
+        Specification<EntityObject> andSpec = adapter.toSpecification("acme", "name==ACME;status==ACTIVE", "partner");
         Predicate andResult = andSpec.toPredicate(root, query, cb);
         assertThat(andResult).isSameAs(andPredicate);
 
         Predicate orPredicate = mock(Predicate.class);
         when(cb.or(any(Predicate[].class))).thenReturn(orPredicate);
 
-        Specification<EntityObject> orSpec = adapter.toSpecification("name==ACME,status==ACTIVE", "partner");
+        Specification<EntityObject> orSpec = adapter.toSpecification("acme", "name==ACME,status==ACTIVE", "partner");
         Predicate orResult = orSpec.toPredicate(root, query, cb);
         assertThat(orResult).isSameAs(orPredicate);
     }

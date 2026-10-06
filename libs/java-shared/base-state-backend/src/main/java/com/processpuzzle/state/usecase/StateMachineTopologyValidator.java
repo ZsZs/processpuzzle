@@ -48,28 +48,28 @@ public class StateMachineTopologyValidator {
         this.entityAttributeQuery = entityAttributeQuery;
     }
 
-    public void validate(String entityName, String stateAttributeKey, String initialStateKey,
+    public void validate(String orgKey, String entityName, String stateAttributeKey, String initialStateKey,
                          List<State> states, List<Transition> transitions) {
-        validateStateAttribute(entityName, stateAttributeKey);
+        validateStateAttribute(orgKey, entityName, stateAttributeKey);
         Set<String> stateKeys = uniqueStateKeys(states);
         requireKnownState(initialStateKey, stateKeys, "initialStateKey");
         validateTransitions(states, stateKeys, transitions);
     }
 
-    private void validateStateAttribute(String entityName, String stateAttributeKey) {
+    private void validateStateAttribute(String orgKey, String entityName, String stateAttributeKey) {
         if (entityName == null || entityName.isBlank()) {
             throw new IllegalArgumentException("entityName is required");
         }
         if (stateAttributeKey == null || stateAttributeKey.isBlank()) {
             throw new IllegalArgumentException("stateAttributeKey is required");
         }
-        if (!entityAttributeQuery.entityTypeExists(entityName)) {
+        if (!entityAttributeQuery.entityTypeExists(orgKey, entityName)) {
             throw new IllegalArgumentException(
                     "entityName '" + entityName + "' is not an entity type base-entity manages, so it cannot "
                             + "have a state machine");
         }
 
-        EntityAttributeKind kind = entityAttributeQuery.attributeKind(entityName, stateAttributeKey)
+        EntityAttributeKind kind = entityAttributeQuery.attributeKind(orgKey, entityName, stateAttributeKey)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "stateAttributeKey '" + stateAttributeKey + "' is not an attribute of '" + entityName + "'"));
 

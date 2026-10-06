@@ -1,0 +1,51 @@
+{
+  "import": {
+    "title": "Business Starter",
+    "hint": "Installieren Sie einen Business Starter aus dem Katalog. Er ersetzt alle Definitionen dieser Organisation und kann daher nur installiert werden, solange die Organisation keine Daten enthält. Sehen Sie ihn zuerst in der Vorschau an: Die Vorschau führt die gesamte Installation aus und schreibt nichts.",
+    "preview": "Vorschau",
+    "apply": "Installieren",
+    "status": {
+      "applied": "Installiert",
+      "would-apply": "Würde installieren",
+      "rejected": "Abgelehnt"
+    },
+    "summary": "{{created}} zu erstellen, {{updated}} zu aktualisieren, {{deleted}} zu löschen",
+    "column": {
+      "kind": "Art",
+      "key": "Schlüssel",
+      "action": "Aktion",
+      "starter": "Starter",
+      "description": "Beschreibung",
+      "author": "Autor",
+      "license": "Lizenz"
+    },
+    "action": {
+      "create": "neu",
+      "update": "aktualisieren",
+      "delete": "löschen"
+    },
+    "kind": {
+      "entity": "Entität",
+      "state": "Zustandsautomat",
+      "rule": "Regel",
+      "widget": "Widget",
+      "document": "Dokument",
+      "workflow": "Workflow",
+      "app": "Anwendung"
+    },
+    "catalogEmpty": "Der Katalog enthält noch keine Starter.",
+    "version": "Version",
+    "deprecated": "veraltet"
+  },
+  "installed": {
+    "title": "Installierte Starter",
+    "empty": "In dieser Organisation ist noch kein Starter installiert.",
+    "column": {
+      "starter": "Starter",
+      "version": "Version",
+      "installedAt": "Installiert",
+      "installedBy": "Von",
+      "customized": "Angepasste Definitionen"
+    }
+  }
+}

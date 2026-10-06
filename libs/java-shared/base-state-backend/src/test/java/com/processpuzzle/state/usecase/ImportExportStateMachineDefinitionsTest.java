@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -32,7 +33,7 @@ class ImportExportStateMachineDefinitionsTest {
     void setUp() {
         repository = mock(StateMachineDefinitionRepository.class);
         validator = mock(StateMachineTopologyValidator.class);
-        importUseCase = new ImportStateMachineDefinitions(repository, validator);
+        importUseCase = new ImportStateMachineDefinitions(repository, mock(DiagramDefinitionRepository.class), validator);
         exportUseCase = new ExportStateMachineDefinitions(repository);
     }
 
@@ -196,7 +197,7 @@ class ImportExportStateMachineDefinitionsTest {
                     transitions: []
                 """;
         doThrow(new IllegalArgumentException("invalid initialStateKey"))
-                .when(validator).validate(any(), any(), any(), any(), any());
+                .when(validator).validate(any(), any(), any(), any(), any(), any());
 
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 

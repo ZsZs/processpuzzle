@@ -28,7 +28,7 @@ public class CreateStateMachineDefinition {
         if (repository.existsByOrgKeyAndEntityName(definition.getOrgKey(), definition.getEntityName())) {
             throw new StateMachineAlreadyExistsException(definition.getOrgKey(), definition.getEntityName());
         }
-        validator.validate(definition.getEntityName(), definition.getStateAttributeKey(),
+        validator.validate(definition.getOrgKey(), definition.getEntityName(), definition.getStateAttributeKey(),
                 definition.getInitialStateKey(), definition.getStates(), definition.getTransitions());
 
         return repository.save(definition);

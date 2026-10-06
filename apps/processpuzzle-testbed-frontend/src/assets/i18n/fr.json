@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Testbed - État de Base",
     "base-workflow": "ProcessPuzzle Testbed - Workflow de Base",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Business Starters",
     "base-app": "ProcessPuzzle Testbed - Application de Base",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
@@ -83,6 +84,13 @@
     "base-ai_card_content_2": "Enrôler des objets avec une galerie de photos, lue et vérifiée par rapport à leur identifiant",
     "base-ai_card_content_3": "Détection, OCR et comparaison d'apparence sur un serveur de vision partagé",
     "base-ai_card_button": "Voir la bibliothèque Base AI...",
+    "base-starter_card_title": "Base Starter",
+    "base-starter_card_subtitle": "Installer une solution préparée à un problème métier",
+    "base-starter_card_content": "Un Business Starter regroupe les définitions qui résolvent un problème métier — inventaire, facturation, une régate — prêtes à être importées dans votre organisation.",
+    "base-starter_card_content_1": "Regroupe entités, machines à états et règles, plus tard documents, workflows et applications",
+    "base-starter_card_content_2": "Prévisualiser un paquet à blanc avant de l'importer",
+    "base-starter_card_content_3": "Importe en une seule transaction et retient le starter d'origine de chaque définition",
+    "base-starter_card_button": "Voir la bibliothèque Base Starter...",
     "base-app_card_title": "Base App",
     "base-app_card_subtitle": "Composer entités, règles, états et workflows en une application exécutable",
     "base-app_card_content": "Décrit une application entière sous forme de métadonnées — espace de travail, navigation et disposition des panneaux — puis la construit et la publie pour que les utilisateurs y accèdent sous sa propre route.",
@@ -201,6 +209,17 @@
     "recognize_tick": "Vu",
     "recognize_automatic": "caméra",
     "recognize_manual": "à la main"
+  },
+  "base-starter": {
+    "overview_tab_label": "Aperçu",
+    "import_tab_label": "Installer",
+    "intro_heading": "ProcessPuzzle Business Starters",
+    "intro_paragraph_1": "Un Business Starter est une solution préparée à un problème métier — inventaire, facturation, organisation d'une régate — livrée sous forme de paquet de définitions : entités, machines à états, règles et, plus tard, documents, workflows et applications.",
+    "intro_paragraph_2": "La CI publie chaque starter livré dans le registre public des starters. En installer un remplace les définitions de cette organisation en une transaction — ce n'est donc possible que tant que l'organisation ne contient ni objets d'entité ni instances de workflow — et retient de quel starter provient chaque définition. Essayez-le dans l'onglet Installer : choisissez un starter, prévisualisez-le, puis installez-le.",
+    "intro_frontend_desc": "l'écran d'installation : choisir un starter dans le catalogue, le prévisualiser à blanc, l'installer et voir le starter déjà installé.",
+    "intro_backend_desc": "Module Spring Boot qui lit le catalogue des starters depuis le registre, télécharge et vérifie un paquet, remplace les définitions de l'organisation via l'importateur de chaque fonctionnalité en une transaction et enregistre la provenance.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Aperçu",

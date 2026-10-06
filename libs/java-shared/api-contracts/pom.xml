@@ -336,6 +336,29 @@
               </configOptions>
             </configuration>
           </execution>
+          <execution>
+            <id>generate-starter-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-starter-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.starter.api</apiPackage>
+              <modelPackage>com.processpuzzle.starter.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
           <!-- The vision server is called, not served: base-ai-backend is its client. spring-http-interface
                generates @HttpExchange interfaces, which a RestClient-backed HttpServiceProxyFactory
                implements — no generated ApiClient or other supporting files. -->

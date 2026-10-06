@@ -12,6 +12,7 @@ import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -41,6 +43,7 @@ import static org.mockito.Mockito.when;
 class DefaultEntityLoaderTest {
 
     private static final String TESTBED_FILE = "processpuzzle-testbed-entities.yaml";
+    private static final String ORG = "processpuzzle-testbed";
 
     private CreateEntityDefinitionUseCase createDefinitionUseCase;
     private EntityDefinitionRepository definitionRepository;
@@ -60,12 +63,12 @@ class DefaultEntityLoaderTest {
         resourceResolver = mock(ResourcePatternResolver.class);
 
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{bundledTestbedFile()});
-        when(definitionRepository.existsByCode(anyString())).thenReturn(false);
-        when(objectRepository.existsByEntityDefinitionCode(anyString())).thenReturn(false);
+        when(definitionRepository.existsByOrgKeyAndCode(anyString(), anyString())).thenReturn(false);
+        when(objectRepository.existsByOrgKeyAndEntityDefinitionCode(anyString(), anyString())).thenReturn(false);
 
-        when(createDefinitionUseCase.create(any(BaseEntityDefinition.class)))
+        when(createDefinitionUseCase.create(anyString(), any(BaseEntityDefinition.class)))
                 .thenAnswer(call -> {
-                    BaseEntityDefinition def = call.getArgument(0);
+                    BaseEntityDefinition def = call.getArgument(1);
                     def.setId(UUID.randomUUID());
                     def.setVersion(0L);
                     return def;
@@ -73,11 +76,13 @@ class DefaultEntityLoaderTest {
 
         when(createInstanceUseCase.create(anyString(), anyString(), any()))
                 .thenAnswer(call -> {
-                    String code = call.getArgument(0);
+                    String orgKey = call.getArgument(0);
+                    String code = call.getArgument(1);
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> payload = call.getArgument(1);
+                    Map<String, Object> payload = call.getArgument(2);
                     return EntityObject.builder()
                             .id(UUID.randomUUID())
+                            .orgKey(orgKey)
                             .entityDefinitionCode(code)
                             .payload(payload)
                             .build();
@@ -88,7 +93,7 @@ class DefaultEntityLoaderTest {
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
-                objectRepository,
+                new EntityObjectScope(objectRepository),
                 resourceResolver
         );
     }
@@ -98,7 +103,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(11)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(11)).create(eq(ORG), defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
@@ -125,7 +130,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(11)).create(defCaptor.capture());
+        verify(createDefinitionUseCase, times(11)).create(eq(ORG), defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -146,7 +151,7 @@ class DefaultEntityLoaderTest {
      */
     @Test
     void createsNoInstanceForADefinitionThatAlreadyHasOne() {
-        when(objectRepository.existsByEntityDefinitionCode("order")).thenReturn(true);
+        when(objectRepository.existsByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(true);
 
         loader.loadDefaults();
 
@@ -169,24 +174,24 @@ class DefaultEntityLoaderTest {
     void createsEveryInstanceOfADefinitionWhenTheFirstOneIsNew() {
         loader.loadDefaults();
 
-        verify(objectRepository, times(1)).existsByEntityDefinitionCode("order");
+        verify(objectRepository, times(1)).existsByOrgKeyAndEntityDefinitionCode(ORG, "order");
         verify(createInstanceUseCase, times(4))
                 .create(anyString(), argThat("order"::equals), any());
     }
 
     @Test
     void leavesAnAlreadyPresentDefinitionUntouched() {
-        when(definitionRepository.existsByCode("dynamic-embedded-address")).thenReturn(true);
+        when(definitionRepository.existsByOrgKeyAndCode(ORG, "dynamic-embedded-address")).thenReturn(true);
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(10)).create(any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(10)).create(anyString(), any(BaseEntityDefinition.class));
     }
 
     @Test
     void survivesConflictExceptionWhenCreatingDefinition() {
         doThrow(new ConflictException("already exists"))
-                .when(createDefinitionUseCase).create(argThat(def -> "dynamic-entity".equals(def.getCode())));
+                .when(createDefinitionUseCase).create(anyString(), argThat(def -> "dynamic-entity".equals(def.getCode())));
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
@@ -194,7 +199,7 @@ class DefaultEntityLoaderTest {
     @Test
     void survivesValidationExceptionWhenCreatingDefinition() {
         doThrow(new ValidationException(List.of(new ValidationException.Violation("name", "required"))))
-                .when(createDefinitionUseCase).create(argThat(def -> "dynamic-entity".equals(def.getCode())));
+                .when(createDefinitionUseCase).create(anyString(), argThat(def -> "dynamic-entity".equals(def.getCode())));
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
@@ -302,7 +307,7 @@ class DefaultEntityLoaderTest {
     @Test
     void survivesRuntimeExceptionWhenCreatingDefinition() {
         doThrow(new RuntimeException("unexpected db error"))
-                .when(createDefinitionUseCase).create(argThat(def -> "dynamic-entity".equals(def.getCode())));
+                .when(createDefinitionUseCase).create(anyString(), argThat(def -> "dynamic-entity".equals(def.getCode())));
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }

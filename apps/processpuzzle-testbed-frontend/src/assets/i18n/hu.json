@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Tesztpad - Alap Állapot",
     "base-workflow": "ProcessPuzzle Tesztpad - Alap Munkafolyamat",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Üzleti kezdőcsomagok",
     "base-app": "ProcessPuzzle Tesztpad - Alap Alkalmazás",
     "ci-cd": "ProcessPuzzle Tesztpad - CI/CD"
   },
@@ -83,6 +84,13 @@
     "base-ai_card_content_2": "Objektumok betanítása fényképgalériával, amelyet a rendszer kiolvas és az azonosítóval egyeztet",
     "base-ai_card_content_3": "Észlelés, OCR és megjelenés-egyeztetés egy közös vision szerveren",
     "base-ai_card_button": "Tovább a Base AI könyvtárhoz...",
+    "base-starter_card_title": "Base Starter",
+    "base-starter_card_subtitle": "Üzleti probléma előkészített megoldásának telepítése",
+    "base-starter_card_content": "Az üzleti kezdőcsomag egy üzleti probléma — készletnyilvántartás, számlázás, vitorlásverseny — megoldásához szükséges definíciókat csomagolja, importálásra készen a szervezetébe.",
+    "base-starter_card_content_1": "Entitások, állapotgépek és szabályok, később dokumentumok, munkafolyamatok és alkalmazások",
+    "base-starter_card_content_2": "A csomag előnézete próbafuttatással importálás előtt",
+    "base-starter_card_content_3": "Egyetlen tranzakcióban importál, és megjegyzi, melyik csomagból származik minden definíció",
+    "base-starter_card_button": "Tovább a Base Starter könyvtárhoz...",
     "base-app_card_title": "Base App",
     "base-app_card_subtitle": "Entitások, szabályok, állapotok és munkafolyamatok összeállítása működő alkalmazássá",
     "base-app_card_content": "A teljes alkalmazást metaadatként írja le – munkaterület, navigáció és panelelrendezés –, majd felépíti és közzéteszi, hogy a felhasználók saját útvonalán érhessék el.",
@@ -201,6 +209,17 @@
     "recognize_tick": "Látva",
     "recognize_automatic": "kamera",
     "recognize_manual": "kézzel"
+  },
+  "base-starter": {
+    "overview_tab_label": "Áttekintés",
+    "import_tab_label": "Telepítés",
+    "intro_heading": "ProcessPuzzle üzleti kezdőcsomagok",
+    "intro_paragraph_1": "Az üzleti kezdőcsomag egy üzleti probléma — készletnyilvántartás, számlázás, vitorlásverseny szervezése — előkészített megoldása, definíciók csomagjaként: entitások, állapotgépek, szabályok, később dokumentumok, munkafolyamatok és alkalmazások.",
+    "intro_paragraph_2": "A CI minden kiadott startert közzétesz a nyilvános starter-regisztrációban. Telepítéskor a starter egyetlen tranzakcióban lecseréli a szervezet definícióit — ezért csak addig lehetséges, amíg a szervezetben nincs entitásobjektum vagy workflow-példány —, és megjegyzi, melyik starterből származik az egyes definíció. Próbálja ki a Telepítés fülön: válasszon startert, nézze meg az előnézetet, majd telepítse.",
+    "intro_frontend_desc": "a telepítő képernyő: starter kiválasztása a katalógusból, előnézet próbafuttatással, telepítés, és a már telepített starter megtekintése.",
+    "intro_backend_desc": "Spring Boot modul, amely beolvassa a starter-katalógust a regisztrációból, letölti és ellenőrzi a csomagot, egy tranzakcióban minden funkció importálójával lecseréli a szervezet definícióit, és rögzíti a származást.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Áttekintés",

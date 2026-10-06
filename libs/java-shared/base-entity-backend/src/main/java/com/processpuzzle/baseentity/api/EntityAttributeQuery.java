@@ -13,14 +13,15 @@ import java.util.Optional;
 public interface EntityAttributeQuery {
 
     /**
-     * The kind of {@code attributeCode} on the entity type {@code entityDefinitionCode}.
+     * The kind of {@code attributeCode} on the entity type {@code entityDefinitionCode} of the
+     * organization {@code orgKey} — entity definitions are scoped per organization.
      *
      * <p>Empty for both "no such entity type" and "no such attribute on it" — a caller validating a
      * reference wants the same answer either way, and distinguishing them would only invite a
      * message that leaks which of the two the deployment is missing.
      */
-    Optional<EntityAttributeKind> attributeKind(String entityDefinitionCode, String attributeCode);
+    Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode);
 
-    /** Whether {@code entityDefinitionCode} resolves to an entity type at all. */
-    boolean entityTypeExists(String entityDefinitionCode);
+    /** Whether {@code entityDefinitionCode} resolves to an entity type of {@code orgKey} at all. */
+    boolean entityTypeExists(String orgKey, String entityDefinitionCode);
 }

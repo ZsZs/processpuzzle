@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 /**
  * The last advice: anything no other advice claimed, so a 500 carries the same shape as every other
@@ -58,11 +59,31 @@ public class UnhandledExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpected(Exception ex) {
+        if (isClientDisconnect(ex)) {
+            LOG.debug("Client went away before the response was written: {}", ex.getMessage());
+            return null;
+        }
         if (ex instanceof ErrorResponse errorResponse) {
             return declaredStatus(ex, errorResponse);
         }
         LOG.error("Unhandled exception while serving a request", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError("internal-error", "Unexpected server error."));
+    }
+
+    /**
+     * The client closed the connection — navigated away, or cancelled a superseded request — while the
+     * response was being written. Spring reports that as {@link AsyncRequestNotUsableException}, either
+     * directly or as the cause of the {@code HttpMessageNotWritableException} Jackson was in the middle of.
+     * Nothing failed on this side and there is nobody left to answer, so it gets neither a stack trace at
+     * {@code ERROR} nor a body: {@code null} tells Spring the request is handled.
+     */
+    private static boolean isClientDisconnect(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof AsyncRequestNotUsableException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

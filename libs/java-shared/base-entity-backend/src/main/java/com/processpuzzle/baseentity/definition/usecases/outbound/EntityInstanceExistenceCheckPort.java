@@ -8,5 +8,5 @@ package com.processpuzzle.baseentity.definition.usecases.outbound;
  */
 public interface EntityInstanceExistenceCheckPort {
 
-    boolean existsAnyInstanceOf(String entityDefinitionCode);
+    boolean existsAnyInstanceOf(String orgKey, String entityDefinitionCode);
 }

@@ -43,7 +43,7 @@ public class BaseEntityObjectGateway implements EntityObjectGateway {
     @Override
     public EntityObjectSnapshot findObject(String orgKey, String entityName, UUID objectId) {
         try {
-            EntityObjectView view = entityObjectAccess.find(entityName, objectId);
+            EntityObjectView view = entityObjectAccess.find(orgKey, entityName, objectId);
             return new EntityObjectSnapshot(view.id(), view.version(), view.payload());
         } catch (EntityObjectAccessException.NotFound e) {
             throw new EntityObjectNotFoundException(orgKey, entityName, objectId);
@@ -52,7 +52,7 @@ public class BaseEntityObjectGateway implements EntityObjectGateway {
 
     @Override
     public List<EntityObjectSnapshot> findObjects(String orgKey, String entityName) {
-        return entityObjectAccess.findAll(entityName).stream()
+        return entityObjectAccess.findAll(orgKey, entityName).stream()
             .map(view -> new EntityObjectSnapshot(view.id(), view.version(), view.payload()))
             .toList();
     }
@@ -61,7 +61,7 @@ public class BaseEntityObjectGateway implements EntityObjectGateway {
     public long updateStateAttribute(String orgKey, String entityName, UUID objectId,
                                      String attributeKey, String newValue, long expectedVersion) {
         try {
-            return entityObjectAccess.updateAttribute(entityName, objectId, attributeKey, newValue, expectedVersion);
+            return entityObjectAccess.updateAttribute(orgKey, entityName, objectId, attributeKey, newValue, expectedVersion);
         } catch (EntityObjectAccessException.NotFound e) {
             throw new EntityObjectNotFoundException(orgKey, entityName, objectId);
         } catch (EntityObjectAccessException.VersionConflict e) {

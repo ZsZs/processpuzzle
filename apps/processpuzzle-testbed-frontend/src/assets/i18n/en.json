@@ -11,6 +11,7 @@
     "base-state": "ProcessPuzzle Testbed - Base State",
     "base-workflow": "ProcessPuzzle Testbed - Base Workflow",
     "base-ai": "ProcessPuzzle Testbed - Base AI",
+    "base-starter": "ProcessPuzzle Testbed - Business Starters",
     "base-app": "ProcessPuzzle Testbed - Base App",
     "ci-cd": "ProcessPuzzle Testbed - CI/CD"
   },
@@ -83,6 +84,13 @@
     "base-ai_card_content_2": "Enroll objects with a gallery of photos, read and checked against their identifier",
     "base-ai_card_content_3": "Runs detection, OCR and appearance matching on a shared vision server",
     "base-ai_card_button": "See Base AI Library...",
+    "base-starter_card_title": "Base Starter",
+    "base-starter_card_subtitle": "Install a prepared solution to a business problem",
+    "base-starter_card_content": "A Business Starter bundles the definitions that solve one business problem — inventory, billing, a sail race — ready to import into your organization.",
+    "base-starter_card_content_1": "Bundles entities, state machines and rules, later documents, workflows and applications",
+    "base-starter_card_content_2": "Preview a bundle as a dry run before importing it",
+    "base-starter_card_content_3": "Imports in one transaction and remembers which starter each definition came from",
+    "base-starter_card_button": "See Base Starter Library...",
     "base-app_card_title": "Base App",
     "base-app_card_subtitle": "Compose entities, rules, states and workflows into a running application",
     "base-app_card_content": "Describes a whole application as metadata — its workspace, navigation and panel layout — then builds it and promotes it so users can reach it under its own route.",
@@ -201,6 +209,17 @@
     "recognize_tick": "Seen",
     "recognize_automatic": "camera",
     "recognize_manual": "by hand"
+  },
+  "base-starter": {
+    "overview_tab_label": "Overview",
+    "import_tab_label": "Install",
+    "intro_heading": "ProcessPuzzle Business Starters",
+    "intro_paragraph_1": "A Business Starter is a prepared solution to one business problem — inventory, billing, organising a sail race — shipped as a bundle of definitions: entities, state machines, rules and, later, documents, workflows and applications.",
+    "intro_paragraph_2": "CI publishes every released starter to the public starter registry. Installing one replaces this organization's definitions in one transaction — so it is only possible while the organization holds no entity objects or workflow instances — and remembers which starter each definition came from. Try it on the Install tab: pick a starter, preview it, then install it.",
+    "intro_frontend_desc": "the install screen: pick a starter from the catalog, preview it as a dry run, install it, and see the starter already installed.",
+    "intro_backend_desc": "Spring Boot module that reads the starter catalog from the registry, fetches and verifies a bundle, replaces the organization's definitions through every feature's importer in one transaction, and records provenance.",
+    "frontend_heading": "Frontend — @processpuzzle/base-starter",
+    "backend_heading": "Backend — base-starter-backend"
   },
   "base-apps": {
     "overview_tab_label": "Overview",

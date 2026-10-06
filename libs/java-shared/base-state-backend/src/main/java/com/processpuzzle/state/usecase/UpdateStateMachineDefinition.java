@@ -27,7 +27,7 @@ public class UpdateStateMachineDefinition {
     public StateMachineDefinition execute(String orgKey, String entityName, StateMachineDefinition updated) {
         StateMachineDefinition definition = repository.findByOrgKeyAndEntityName(orgKey, entityName)
                 .orElseThrow(() -> new StateMachineNotFoundException(orgKey, entityName));
-        validator.validate(entityName, updated.getStateAttributeKey(),
+        validator.validate(orgKey, entityName, updated.getStateAttributeKey(),
                 updated.getInitialStateKey(), updated.getStates(), updated.getTransitions());
 
         definition.replaceTopology(

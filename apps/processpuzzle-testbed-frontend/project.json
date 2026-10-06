@@ -69,6 +69,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/base-starter-frontend/src/assets/i18n/base_starter",
+            "output": "assets/i18n/base_starter"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/base-workflow-frontend/src/assets/modeler",
             "output": "assets/modeler"
           },

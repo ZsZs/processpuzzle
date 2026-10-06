@@ -1,0 +1,349 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Base Starter API (base-starter)
+  description: >-
+    The Business Starter catalog, installing a starter from it into one organization, and the
+    starters an organization has installed. A starter is a bundle - a zip with manifest.yaml at its
+    root and the definition files it lists, each in the seed YAML format of its own feature -
+    published by CI to the public processpuzzle-starters bucket, whose catalog.json is the registry.
+    See docs/business-starters/business-starters-design.md.
+
+    ## Catalog
+
+    Tenant-free: a starter belongs to no organization. Yanked versions are not listed, and neither
+    are versions this platform cannot import.
+
+    ## Install
+
+    By reference - starter id and version - never by upload: the backend fetches the bundle from
+    the registry and verifies it against the catalog's sha256. A starter is all or nothing and
+    replaces the organization's definitions, so an organization that holds entity objects or
+    workflow instances is refused (409). Every definition kind is written by the feature that owns
+    it, in a fixed order (entity, state, rule, ...), all in one transaction. A dry run performs the
+    same install and rolls it back.
+
+    ## Error bodies
+
+    A refused install answers with the same ImportReport as a successful one, status `rejected` and
+    the reasons in `errors`, so a client reads one shape.
+
+    ## Multi-tenancy
+
+    The organization-scoped paths are scoped by {orgKey} exactly as the other feature APIs; see
+    shared-api.yaml OrgKeyParam.
+  version: 0.2.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /starters:
+    get:
+      operationId: listStarters
+      summary: The Business Starter catalog
+      tags: [ Base Starter ]
+      responses:
+        "200":
+          description: Every starter with at least one installable version, sorted by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatalogStarter"
+        "503":
+          description: The registry could not be read.
+
+  /starters/{starterId}:
+    parameters:
+      - $ref: "#/components/parameters/StarterIdParam"
+    get:
+      operationId: getStarter
+      summary: One starter of the catalog, with its installable versions
+      tags: [ Base Starter ]
+      responses:
+        "200":
+          description: The starter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogStarter"
+        "404":
+          description: No such starter in the catalog.
+        "503":
+          description: The registry could not be read.
+
+  /organizations/{orgKey}/starters/install:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: installStarter
+      summary: Install a catalog starter into the organization, replacing its definitions
+      description: >-
+        Requires design rights on the organization. Refused while the organization holds entity
+        objects or workflow instances. With dryRun the install is validated and reported, and
+        nothing is written.
+      tags: [ Base Starter ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstallStarterRequest"
+      responses:
+        "200":
+          description: Install report, of a dry run or of an applied install
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "404":
+          description: No such starter or version in the catalog.
+        "409":
+          description: The organization holds instance data the install would orphan; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "422":
+          description: The bundle or one of its definitions failed validation; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "503":
+          description: The registry could not be read.
+
+  /organizations/{orgKey}/definitions/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: importBundle
+      summary: Import an uploaded bundle into the organization
+      description: >-
+        The byte-level entry point installStarter runs on. Not offered to users: a starter is
+        installed from the catalog, and importing local files is a separate feature still to be
+        designed. Requires design rights on the organization. With dryRun the import is validated
+        and reported, and nothing is written.
+      tags: [ Base Starter ]
+      parameters:
+        - name: dryRun
+          in: query
+          required: false
+          description: Validate and report what would change, write nothing.
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ bundle ]
+              properties:
+                bundle:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import report, of a dry run or of an applied import
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "413":
+          description: The bundle exceeds a size or entry-count limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "422":
+          description: The bundle or one of its definitions failed validation; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+
+  /organizations/{orgKey}/starters:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listInstalledStarters
+      summary: The starters installed in the organization
+      tags: [ Base Starter ]
+      responses:
+        "200":
+          description: Installed starters, with how many of their definitions were changed since
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InstalledStarter"
+        "403":
+          description: The authenticated principal may not act on this organization.
+
+components:
+
+  parameters:
+    StarterIdParam:
+      name: starterId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      description: >-
+        Tenant discriminator; see shared-api.yaml OrgKeyParam for the full contract. Must be
+        verified against the principal's `organization` claim — 403 on mismatch.
+
+  schemas:
+
+    DefinitionKind:
+      type: string
+      description: The kinds the importer knows; a bundle naming any other is rejected.
+      enum: [ entity, state, rule, widget, document, workflow, app ]
+
+    ImportReport:
+      type: object
+      required: [ dryRun, status ]
+      properties:
+        dryRun:
+          type: boolean
+        status:
+          type: string
+          enum: [ applied, would-apply, rejected ]
+        starterId:
+          type: string
+        version:
+          type: string
+        summary:
+          $ref: "#/components/schemas/ImportSummary"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportReportItem"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
+
+    ImportSummary:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        deleted:
+          type: integer
+
+    ImportReportItem:
+      type: object
+      required: [ kind, key, action ]
+      properties:
+        kind:
+          $ref: "#/components/schemas/DefinitionKind"
+        key:
+          type: string
+          description: The definition's key within its kind — an entity code, a state machine's entity name, a rule id.
+        action:
+          type: string
+          description: >-
+            create - new; update - existed before and the starter brings it again; delete - existed
+            before and the starter does not bring it.
+          enum: [ create, update, delete ]
+
+    ImportError:
+      type: object
+      required: [ message ]
+      properties:
+        file:
+          type: string
+          description: Path of the offending file inside the bundle, when the problem is in one.
+        message:
+          type: string
+
+    InstalledStarter:
+      type: object
+      required: [ starterId, version, installedAt ]
+      properties:
+        starterId:
+          type: string
+        version:
+          type: string
+        installedAt:
+          type: string
+          format: date-time
+        installedBy:
+          type: string
+        customizedDefinitions:
+          type: integer
+          description: Definitions of this starter whose current content no longer matches what was imported.
+
+    CatalogStarter:
+      type: object
+      required: [ id, name, versions ]
+      properties:
+        id:
+          type: string
+          description: Immutable kebab-case slug.
+        name:
+          type: string
+        description:
+          type: string
+        author:
+          type: string
+        license:
+          type: string
+          description: SPDX identifier, or `proprietary`.
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        versions:
+          type: array
+          description: Installable versions, newest first.
+          items:
+            $ref: "#/components/schemas/CatalogStarterVersion"
+
+    CatalogStarterVersion:
+      type: object
+      required: [ version, status ]
+      properties:
+        version:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ published, deprecated ]
+
+    InstallStarterRequest:
+      type: object
+      required: [ starterId, version ]
+      properties:
+        starterId:
+          type: string
+        version:
+          type: string
+        dryRun:
+          type: boolean
+          default: false

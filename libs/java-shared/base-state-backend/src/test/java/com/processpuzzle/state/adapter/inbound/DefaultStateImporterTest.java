@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -64,12 +65,12 @@ class DefaultStateImporterTest {
         StateMachineDefinitionRepository repository = mock(StateMachineDefinitionRepository.class);
         GuardActionResolver guardActionResolver = mock(GuardActionResolver.class);
         EntityAttributeQuery entityAttributeQuery = mock(EntityAttributeQuery.class);
-        when(entityAttributeQuery.entityTypeExists(anyString())).thenReturn(true);
-        when(entityAttributeQuery.attributeKind(anyString(), anyString()))
+        when(entityAttributeQuery.entityTypeExists(eq("processpuzzle-testbed"), anyString())).thenReturn(true);
+        when(entityAttributeQuery.attributeKind(eq("processpuzzle-testbed"), anyString(), anyString()))
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
         StateMachineTopologyValidator validator =
                 new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);
-        ImportStateMachineDefinitions realImportUseCase = new ImportStateMachineDefinitions(repository, validator);
+        ImportStateMachineDefinitions realImportUseCase = new ImportStateMachineDefinitions(repository, mock(DiagramDefinitionRepository.class), validator);
 
         when(repository.findByOrgKeyAndEntityName("processpuzzle-testbed", "dynamic-entity"))
                 .thenReturn(Optional.empty());

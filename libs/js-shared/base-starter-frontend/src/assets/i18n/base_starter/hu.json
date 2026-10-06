@@ -1,0 +1,51 @@
+{
+  "import": {
+    "title": "Üzleti kezdőcsomagok",
+    "hint": "Telepítsen egy Business Startert a katalógusból. A szervezet összes definícióját lecseréli, ezért csak addig telepíthető, amíg a szervezet nem tartalmaz adatot. Először nézze meg az előnézetet: az előnézet a teljes telepítést lefuttatja, de semmit sem ír.",
+    "preview": "Előnézet",
+    "apply": "Telepítés",
+    "status": {
+      "applied": "Telepítve",
+      "would-apply": "Telepítené",
+      "rejected": "Elutasítva"
+    },
+    "summary": "{{created}} létrehozandó, {{updated}} frissítendő, {{deleted}} törlendő",
+    "column": {
+      "kind": "Fajta",
+      "key": "Kulcs",
+      "action": "Művelet",
+      "starter": "Starter",
+      "description": "Leírás",
+      "author": "Szerző",
+      "license": "Licenc"
+    },
+    "action": {
+      "create": "új",
+      "update": "frissítés",
+      "delete": "törlés"
+    },
+    "kind": {
+      "entity": "Entitás",
+      "state": "Állapotgép",
+      "rule": "Szabály",
+      "widget": "Widget",
+      "document": "Dokumentum",
+      "workflow": "Munkafolyamat",
+      "app": "Alkalmazás"
+    },
+    "catalogEmpty": "A katalógusban még nincs starter.",
+    "version": "Verzió",
+    "deprecated": "elavult"
+  },
+  "installed": {
+    "title": "Telepített kezdőcsomagok",
+    "empty": "Ebben a szervezetben még nincs telepített kezdőcsomag.",
+    "column": {
+      "starter": "Kezdőcsomag",
+      "version": "Verzió",
+      "installedAt": "Telepítve",
+      "installedBy": "Telepítette",
+      "customized": "Módosított definíciók"
+    }
+  }
+}
