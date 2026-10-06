@@ -37,6 +37,10 @@ inputs:
     description: Java version to use
     required: false
     default: '25.x'
+  maven-version:
+    description: Maven version to publish with (3.10.0 breaks the Central bundle)
+    required: false
+    default: '3.9.16'
 runs:
   using: composite
   steps:
@@ -57,10 +61,40 @@ runs:
         distribution: 'temurin'
         cache: 'maven'
 
+    # Releases pin Maven instead of using the runner's preinstalled one: Maven 3.10.0
+    # makes central-publishing-maven-plugin bundle maven-metadata-local.xml and
+    # _remote.repositories, which the Central Portal rejects with "Bundle has content
+    # that does NOT have a .pom file" (mavenplugins/central-publishing-maven-plugin#78).
+    # The tarball comes from archive.apache.org and is cached, avoiding the Maven
+    # Central HTTP 429s that made us drop stCarolas/setup-maven (see the note in
+    # .github/actions/lint-test-build/action.yml).
+    - name: Cache Maven ${{ inputs.maven-version }}
+      id: maven-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.maven-dist/apache-maven-${{ inputs.maven-version }}
+        key: apache-maven-${{ inputs.maven-version }}
+
+    - name: Download Maven ${{ inputs.maven-version }}
+      if: steps.maven-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE="https://archive.apache.org/dist/maven/maven-3/${{ inputs.maven-version }}/binaries"
+        TARBALL="apache-maven-${{ inputs.maven-version }}-bin.tar.gz"
+        cd "$RUNNER_TEMP"
+        curl -fsSL --retry 5 --retry-all-errors -o "$TARBALL" "$BASE/$TARBALL"
+        curl -fsSL --retry 5 --retry-all-errors -o "$TARBALL.sha512" "$BASE/$TARBALL.sha512"
+        echo "$(cut -d' ' -f1 "$TARBALL.sha512")  $TARBALL" | sha512sum -c -
+        mkdir -p ~/.maven-dist
+        tar -xzf "$TARBALL" -C ~/.maven-dist
+
+    - name: Use Maven ${{ inputs.maven-version }}
+      shell: bash
+      run: |
+        echo "$HOME/.maven-dist/apache-maven-${{ inputs.maven-version }}/bin" >> "$GITHUB_PATH"
+
     - name: Report Maven version
-      # See the note in .github/actions/lint-test-build/action.yml: the runner's
-      # preinstalled Maven replaces stCarolas/setup-maven, whose uncached tarball
-      # download from Maven Central intermittently failed with HTTP 429.
       run: mvn -v
       shell: bash
 
