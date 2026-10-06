@@ -19,6 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
@@ -47,7 +50,7 @@ class HttpStarterRegistryTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/processpuzzle-starters/", exchange -> {
             String path = exchange.getRequestURI().getPath().substring("/processpuzzle-starters/".length());
-            if (path.equals(HttpStarterRegistry.CATALOG)) {
+            if (path.equals(HttpStarterRegistry.CATALOG_FILE)) {
                 catalogReads.incrementAndGet();
             }
             byte[] body = files.get(path);
@@ -109,32 +112,35 @@ class HttpStarterRegistryTest {
 
     @Test
     void anHttpErrorOrUnparseableCatalogIsUnavailable() {
-        assertThatThrownBy(() -> registry().bundle("inventory/9.9.9/bundle.zip"))
+        HttpStarterRegistry registry = registry();
+        assertThatThrownBy(() -> registry.bundle("inventory/9.9.9/bundle.zip"))
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("answered 404");
 
         files.put("catalog.json", "not json".getBytes(StandardCharsets.UTF_8));
-        assertThatThrownBy(() -> registry().catalog())
+        assertThatThrownBy(registry::catalog)
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("not valid");
     }
 
     @Test
     void refusesUnsafePathsAndOversizedDownloads() {
-        assertThatThrownBy(() -> registry().bundle("../secrets"))
+        HttpStarterRegistry registry = registry();
+        assertThatThrownBy(() -> registry.bundle("../secrets"))
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("unsafe path");
-        assertThatThrownBy(() -> registry().bundle("http://elsewhere/x.zip"))
+        assertThatThrownBy(() -> registry.bundle("http://elsewhere/x.zip"))
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("unsafe path");
 
         properties.getRegistry().setMaxDownloadBytes(2);
-        assertThatThrownBy(() -> registry().bundle("inventory/1.0.0/bundle.zip"))
+        assertThatThrownBy(() -> registry.bundle("inventory/1.0.0/bundle.zip"))
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("larger than 2 bytes");
     }
 
     @Test
     void withoutABaseUrlTheCatalogIsEmptyAndNothingCanBeDownloaded() {
         properties.getRegistry().setBaseUrl(" ");
+        HttpStarterRegistry registry = registry();
 
-        assertThat(registry().catalog().starters()).isEmpty();
-        assertThatThrownBy(() -> registry().bundle("inventory/1.0.0/bundle.zip"))
+        assertThat(registry.catalog().starters()).isEmpty();
+        assertThatThrownBy(() -> registry.bundle("inventory/1.0.0/bundle.zip"))
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("No registry is configured");
     }
 
@@ -142,9 +148,73 @@ class HttpStarterRegistryTest {
     void anUnreachableRegistryIsUnavailable() {
         properties.getRegistry().setBaseUrl("http://127.0.0.1:1");
         properties.getRegistry().setConnectTimeout(Duration.ofMillis(500));
+        HttpStarterRegistry registry = registry();
 
-        assertThatThrownBy(() -> registry().catalog())
+        assertThatThrownBy(registry::catalog)
                 .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("unreachable");
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "/bundle.zip", "x//bundle.zip", "x/./bundle.zip", "x/../bundle.zip",
+            "x/a..b.zip", "x\\bundle.zip", "x/%2e%2e/bundle.zip", "x/bundle.zip?secret", "x/"})
+    void rejectsUnsafeBundlePaths(String path) {
+        HttpStarterRegistry registry = registry();
+
+        assertThatThrownBy(() -> registry.bundle(path))
+                .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("unsafe path");
+    }
+
+    @Test
+    void validatesLongPathsWithoutExhaustingTheStack() {
+        HttpStarterRegistry registry = registry();
+        String path = "x/".repeat(5000) + "bundle.zip";
+        files.put(path, new byte[] {4, 5});
+
+        assertThat(registry.bundle(path)).containsExactly(4, 5);
+
+        String unsafePath = path + "..";
+        assertThatThrownBy(() -> registry.bundle(unsafePath))
+                .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("unsafe path");
+    }
+
+    @Test
+    void aNullBaseUrlDisablesTheRegistry() {
+        properties.getRegistry().setBaseUrl(null);
+        HttpStarterRegistry registry = registry();
+
+        assertThat(registry.catalog()).isEqualTo(StarterCatalog.EMPTY);
+        assertThatThrownBy(() -> registry.bundle("inventory/1.0.0/bundle.zip"))
+                .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("No registry is configured");
+    }
+
+    @Test
+    void readsANullCatalogAsEmpty() {
+        files.put("catalog.json", "null".getBytes(StandardCharsets.UTF_8));
+
+        assertThat(registry().catalog()).isEqualTo(StarterCatalog.EMPTY);
+    }
+
+    @Test
+    void readsFromABaseUrlWithoutATrailingSlash() {
+        String baseUrl = properties.getRegistry().getBaseUrl();
+        properties.getRegistry().setBaseUrl(baseUrl.substring(0, baseUrl.length() - 1));
+
+        assertThat(registry().bundle("inventory/1.0.0/bundle.zip")).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void preservesInterruptionWhenADownloadIsInterrupted() {
+        HttpStarterRegistry registry = registry();
+        Thread.currentThread().interrupt();
+        try {
+            assertThatThrownBy(() -> registry.bundle("inventory/1.0.0/bundle.zip"))
+                    .isInstanceOf(RegistryUnavailableException.class)
+                    .hasCauseInstanceOf(InterruptedException.class);
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     private static final class MutableClock extends Clock {

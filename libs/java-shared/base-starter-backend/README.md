@@ -53,6 +53,13 @@ its current fingerprint no longer hashes to the stored value.
 registry 503. `POST /organizations/{orgKey}/definitions/import` is the byte-level entry point the install runs
 on; it is not offered to users.
 
+## Tests
+
+Run `npx nx run base-starter-backend:test`. The suite covers registry downloads and caching, long and
+unsafe paths, catalog filtering and version ordering, REST response mapping and error statuses, and
+transactional imports. JaCoCo writes the coverage report to `reports/coverage/index.html` and
+`reports/coverage/jacoco.xml` in this library.
+
 ## Not yet
 
 Upgrades and the migration script (the manifest carries `migration`, nothing runs it), export, and participants

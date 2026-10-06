@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
@@ -87,7 +88,12 @@ class ImportBundleTest {
             }
         };
         // Deliberately registered out of order: the importer must sort.
-        ImportParticipants participants = ImportParticipants.of(List.of(rules, entities), List.of(objects));
+        StaticListableBeanFactory factory = new StaticListableBeanFactory();
+        factory.addBean("rules", rules);
+        factory.addBean("entities", entities);
+        factory.addBean("objects", objects);
+        ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
+                factory.getBeanProvider(InstanceDataProbe.class));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
                 provenanceRepository, installedStarterRepository, transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants);
@@ -216,6 +222,53 @@ class ImportBundleTest {
                 new ImportBundle.Expected("inventory", "2.0.0")))
                 .isInstanceOfSatisfying(ImportRejectedException.class, e ->
                         assertThat(e.getMessage()).isEqualTo("The bundle is starter 'inventory' 1.0.0, not 'inventory' 2.0.0."));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void acceptsABundleMatchingTheRequestedStarterAndVersion() {
+        ImportReport report = importBundle.execute("acme", bundle("item\n", ""), false, "alice",
+                new ImportBundle.Expected("inventory", "1.0.0"));
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(report.starterId()).isEqualTo("inventory");
+        assertThat(report.version()).isEqualTo("1.0.0");
+        assertThat(report.created()).isEqualTo(1);
+    }
+
+    @Test
+    void refusesABundleWithTheWrongStarterIdEvenWhenTheVersionMatches() {
+        ByteArrayInputStream input = bundle("item\n", "");
+        ImportBundle.Expected expected = new ImportBundle.Expected("warehouse", "1.0.0");
+
+        assertThatThrownBy(() -> importBundle.execute("acme", input, false, null, expected))
+                .isInstanceOf(ImportRejectedException.class)
+                .hasMessage("The bundle is starter 'inventory' 1.0.0, not 'warehouse' 1.0.0.");
+        assertThat(calls).isEmpty();
+        assertThat(installedStarterRepository.count()).isZero();
+    }
+
+    @Test
+    void preservesUpdatesReportedByAParticipantDuringTheSameImport() {
+        ImportReport report = importBundle.execute("acme", bundle("item\nitem\n", ""), false, null);
+
+        assertThat(report.items()).extracting(ImportReport.Item::action)
+                .containsExactly(ImportReport.Action.CREATE, ImportReport.Action.UPDATE);
+        assertThat(provenanceRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void anUnreadableBundleIsInvalidRatherThanTooLarge() {
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+
+        assertThatThrownBy(() -> importBundle.execute("acme", input, true, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> {
+                    assertThat(e.getReason()).isEqualTo(ImportRejectedException.Reason.INVALID);
+                    assertThat(e.getReport().dryRun()).isTrue();
+                    assertThat(e.getReport().starterId()).isNull();
+                    assertThat(e.getReport().version()).isNull();
+                    assertThat(e.getMessage()).contains("empty or not a zip");
+                });
         assertThat(calls).isEmpty();
     }
 

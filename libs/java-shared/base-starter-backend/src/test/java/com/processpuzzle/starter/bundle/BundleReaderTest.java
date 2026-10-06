@@ -37,6 +37,15 @@ class BundleReaderTest {
     }
 
     @Test
+    void readsAManifestWithoutDefinitionContentsAsAnEmptyBundle() {
+        StarterBundle bundle = read(Map.of("manifest.yaml",
+                "id: inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n"));
+
+        assertThat(bundle.manifest().contents()).isEmpty();
+        assertThat(bundle.files()).isEmpty();
+    }
+
+    @Test
     void ignoresCatalogFieldsItDoesNotActOn() {
         Map<String, String> files = TestBundles.inventory();
         files.put("manifest.yaml", TestBundles.MANIFEST + "category: inventory\ntags: [stock]\nlocales: [en]\n");

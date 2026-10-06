@@ -26,11 +26,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class HttpStarterRegistry implements StarterRegistry {
 
-    public static final String CATALOG = "catalog.json";
+    public static final String CATALOG_FILE = "catalog.json";
 
     /** Relative, no traversal: the catalog is CI's, but the bucket it sits in is world-readable. */
     private static final Pattern SAFE_PATH =
-            Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*");
+            Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9._-]*+(?:/[A-Za-z0-9_-][A-Za-z0-9._-]*+)*+");
 
     private final StarterProperties.Registry settings;
     private final HttpClient client;
@@ -56,12 +56,12 @@ public class HttpStarterRegistry implements StarterRegistry {
         }
         Instant now = clock.instant();
         if (cached == null || now.isAfter(cachedUntil)) {
-            byte[] content = get(CATALOG);
+            byte[] content = get(CATALOG_FILE);
             try {
                 StarterCatalog catalog = json.readValue(content, StarterCatalog.class);
                 cached = catalog == null ? StarterCatalog.EMPTY : catalog;
             } catch (IOException e) {
-                throw new RegistryUnavailableException("The registry's " + CATALOG + " is not valid: " + e.getMessage(), e);
+                throw new RegistryUnavailableException("The registry's " + CATALOG_FILE + " is not valid: " + e.getMessage(), e);
             }
             cachedUntil = now.plus(settings.getCatalogTtl());
         }

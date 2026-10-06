@@ -57,6 +57,18 @@ class BrowseCatalogTest {
     }
 
     @Test
+    void handlesLegacyNamesAndSchemasButOmitsMissingIdentifiers() {
+        BrowseCatalog browse = browse(
+                starter(null, "Unnamed", version("1.0.0", null, 1)),
+                starter("inventory", null, version(null, null, 1), version("1.0.0", null, null)),
+                starter("sail", "Sail", version("1.0.0", null, 1)));
+
+        assertThat(browse.list()).extracting(StarterCatalog.Starter::id).containsExactly("sail", "inventory");
+        assertThat(browse.get("inventory").orElseThrow().versions()).extracting(StarterCatalog.Version::version)
+                .containsExactly("1.0.0");
+    }
+
+    @Test
     void findsAnInstallableVersionOrSaysWhatIsMissing() {
         BrowseCatalog browse = browse(starter("sail", "Sail", version("1.0.0", null, 1), version("0.9.0", "yanked", 1)));
 
