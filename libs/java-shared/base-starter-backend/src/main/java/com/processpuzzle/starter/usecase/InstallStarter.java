@@ -38,7 +38,25 @@ public class InstallStarter {
     public ImportReport execute(String orgKey, String starterId, String version, boolean dryRun, String installedBy) {
         // Checked before the registry is touched, so an unauthorized caller learns nothing from it.
         guard.requireDesign(orgKey);
+        return install(orgKey, starterId, version, dryRun, installedBy);
+    }
 
+    /**
+     * Installs a starter into an organization that is being provisioned, with no principal's design
+     * rights to check: the application's seed call, which arrives with the platform's client
+     * credentials rather than a member's token, and whose endpoint is what authorizes it. Never a dry
+     * run, and offered to no client — only to server-side code that has authorized its caller itself.
+     *
+     * @param installedBy recorded in provenance as who installed it, e.g. the seeding service
+     * @throws StarterNotFoundException  if the catalog has no installable such version
+     * @throws ImportRejectedException   if the bundle, or the organization's state, is refused
+     * @throws com.processpuzzle.starter.registry.RegistryUnavailableException if the registry cannot be read
+     */
+    public ImportReport provision(String orgKey, String starterId, String version, String installedBy) {
+        return install(orgKey, starterId, version, false, installedBy);
+    }
+
+    private ImportReport install(String orgKey, String starterId, String version, boolean dryRun, String installedBy) {
         StarterCatalog.Version entry = catalog.version(starterId, version);
         byte[] bundle = registry.bundle(entry.bundle());
         String actual = BundleReader.sha256(bundle);
@@ -47,7 +65,7 @@ public class InstallStarter {
                     new ImportReport.Error(entry.bundle(), "The downloaded bundle does not match the catalog's sha256."))),
                     ImportRejectedException.Reason.INVALID);
         }
-        return importBundle.execute(orgKey, new ByteArrayInputStream(bundle), dryRun, installedBy,
+        return importBundle.importAuthorized(orgKey, new ByteArrayInputStream(bundle), dryRun, installedBy,
                 new ImportBundle.Expected(starterId, version));
     }
 }
