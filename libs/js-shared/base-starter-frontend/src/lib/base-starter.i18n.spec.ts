@@ -26,8 +26,9 @@ describe('base-starter translations', () => {
     const kinds: DefinitionKind[] = ['entity', 'state', 'rule', 'widget', 'document', 'workflow', 'app'];
     for (const kind of kinds) expect(english).toContain(`import.kind.${kind}`);
     for (const status of ['applied', 'would-apply', 'rejected']) expect(english).toContain(`import.status.${status}`);
-    for (const action of ['create', 'update']) expect(english).toContain(`import.action.${action}`);
+    for (const action of ['create', 'update', 'delete']) expect(english).toContain(`import.action.${action}`);
     expect(en.import.summary).toContain('{{created}}');
     expect(en.import.summary).toContain('{{updated}}');
+    expect(en.import.summary).toContain('{{deleted}}');
   });
 });

@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -69,7 +70,7 @@ class DefaultStateImporterTest {
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
         StateMachineTopologyValidator validator =
                 new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);
-        ImportStateMachineDefinitions realImportUseCase = new ImportStateMachineDefinitions(repository, validator);
+        ImportStateMachineDefinitions realImportUseCase = new ImportStateMachineDefinitions(repository, mock(DiagramDefinitionRepository.class), validator);
 
         when(repository.findByOrgKeyAndEntityName("processpuzzle-testbed", "dynamic-entity"))
                 .thenReturn(Optional.empty());

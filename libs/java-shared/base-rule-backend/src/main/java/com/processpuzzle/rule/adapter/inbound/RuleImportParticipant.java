@@ -82,6 +82,11 @@ public class RuleImportParticipant implements DefinitionImportParticipant {
     }
 
     @Override
+    public List<String> removeAll(String orgKey) {
+        return importRules.removeAll(orgKey);
+    }
+
+    @Override
     public Map<String, String> fingerprints(String orgKey, Set<String> keys) {
         Map<String, String> fingerprints = new LinkedHashMap<>();
         currentRules(orgKey).forEach((id, entry) -> {

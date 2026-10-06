@@ -1,6 +1,5 @@
 package com.processpuzzle.starter.usecase;
 
-import com.processpuzzle.core.definition.ImportedItem;
 import java.util.List;
 
 /**
@@ -15,7 +14,16 @@ public record ImportReport(boolean dryRun, Status status, String starterId, Stri
         APPLIED, WOULD_APPLY, REJECTED
     }
 
-    public record Item(String kind, String key, ImportedItem.Action action) {
+    /**
+     * CREATE — new; UPDATE — existed before and the starter brings it again; DELETE — existed before
+     * and the starter does not bring it. A starter replaces what the organization had, so an UPDATE
+     * is a delete and a create underneath.
+     */
+    public enum Action {
+        CREATE, UPDATE, DELETE
+    }
+
+    public record Item(String kind, String key, Action action) {
     }
 
     /** @param file the offending path inside the bundle, or null */
@@ -32,10 +40,18 @@ public record ImportReport(boolean dryRun, Status status, String starterId, Stri
     }
 
     public long created() {
-        return items.stream().filter(item -> item.action() == ImportedItem.Action.CREATE).count();
+        return count(Action.CREATE);
     }
 
     public long updated() {
-        return items.stream().filter(item -> item.action() == ImportedItem.Action.UPDATE).count();
+        return count(Action.UPDATE);
+    }
+
+    public long deleted() {
+        return count(Action.DELETE);
+    }
+
+    private long count(Action action) {
+        return items.stream().filter(item -> item.action() == action).count();
     }
 }

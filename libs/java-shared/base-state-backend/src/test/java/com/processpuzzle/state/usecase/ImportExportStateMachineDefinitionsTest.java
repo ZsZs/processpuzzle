@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -32,7 +33,7 @@ class ImportExportStateMachineDefinitionsTest {
     void setUp() {
         repository = mock(StateMachineDefinitionRepository.class);
         validator = mock(StateMachineTopologyValidator.class);
-        importUseCase = new ImportStateMachineDefinitions(repository, validator);
+        importUseCase = new ImportStateMachineDefinitions(repository, mock(DiagramDefinitionRepository.class), validator);
         exportUseCase = new ExportStateMachineDefinitions(repository);
     }
 

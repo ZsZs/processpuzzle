@@ -70,6 +70,11 @@ public class EntityDefinitionImportParticipant implements DefinitionImportPartic
     }
 
     @Override
+    public List<String> removeAll(String orgKey) {
+        return importDefinitions.removeAll(orgKey);
+    }
+
+    @Override
     public Map<String, String> fingerprints(String orgKey, Set<String> keys) {
         Map<String, String> fingerprints = new LinkedHashMap<>();
         findByCodes.find(orgKey, keys).forEach(definition ->

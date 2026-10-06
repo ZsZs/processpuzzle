@@ -208,4 +208,11 @@ class StateMachineImportParticipantTest {
     private static byte[] bytes(String content) {
         return content.getBytes(StandardCharsets.UTF_8);
     }
+
+    @Test
+    void removeAllDelegatesToTheUseCase() {
+        when(importDefinitions.removeAll(ORG)).thenReturn(java.util.List.of("Order"));
+
+        assertThat(participant.removeAll(ORG)).containsExactly("Order");
+    }
 }

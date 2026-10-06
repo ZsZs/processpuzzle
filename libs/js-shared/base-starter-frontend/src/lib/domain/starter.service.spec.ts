@@ -5,12 +5,12 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ImportReport } from './starter';
-import { StarterService } from './starter.service';
+import { catalogRootOf, StarterService } from './starter.service';
 
 const ROOT = 'http://backend/organizations/processpuzzle-testbed';
-const IMPORT_URL = `${ROOT}/definitions/import`;
+const INSTALL_URL = `${ROOT}/starters/install`;
 
-const rejected: ImportReport = { dryRun: true, status: 'rejected', errors: [{ file: '../evil.yaml', message: 'Unsafe path' }] };
+const rejected: ImportReport = { dryRun: true, status: 'rejected', errors: [{ message: 'it holds 3 entity objects' }] };
 
 describe('StarterService', () => {
   let service: StarterService;
@@ -26,38 +26,41 @@ describe('StarterService', () => {
 
   afterEach(() => http.verify());
 
-  it('uploads the bundle as multipart with the dryRun flag', async () => {
-    const bundle = new File(['zip'], 'inventory.zip', { type: 'application/zip' });
+  it('reads the catalog from the root without its organization segment', async () => {
+    const result = firstValueFrom(service.listCatalog());
+    http.expectOne('http://backend/starters').flush([{ id: 'inventory', name: 'Inventory', versions: [{ version: '1.0.0', status: 'published' }] }]);
+
+    await expect(result).resolves.toEqual([expect.objectContaining({ id: 'inventory' })]);
+  });
+
+  it('installs by reference, with the dryRun flag in the body', async () => {
     const report: ImportReport = { dryRun: true, status: 'would-apply', items: [{ kind: 'entity', key: 'item', action: 'create' }] };
 
-    const result = firstValueFrom(service.importBundle(bundle, true));
-    const request = http.expectOne((r) => r.url === IMPORT_URL);
+    const result = firstValueFrom(service.install({ starterId: 'inventory', version: '1.0.0' }, true));
+    const request = http.expectOne(INSTALL_URL);
     expect(request.request.method).toBe('POST');
-    expect(request.request.params.get('dryRun')).toBe('true');
-    const body = request.request.body as FormData;
-    expect((body.get('bundle') as File).name).toBe('inventory.zip');
+    expect(request.request.body).toEqual({ starterId: 'inventory', version: '1.0.0', dryRun: true });
     request.flush(report);
 
     await expect(result).resolves.toEqual(report);
   });
 
   it.each([
-    [422, 'Unprocessable Entity'],
+    [409, 'Conflict'],
     [413, 'Payload Too Large'],
+    [422, 'Unprocessable Entity'],
   ])('emits the report a %s carries instead of failing', async (status, statusText) => {
-    const result = firstValueFrom(service.importBundle(new Blob(['zip']), false));
-    const request = http.expectOne((r) => r.url === IMPORT_URL);
-    expect(request.request.params.get('dryRun')).toBe('false');
-    request.flush(rejected, { status, statusText });
+    const result = firstValueFrom(service.install({ starterId: 'inventory', version: '1.0.0' }, false));
+    http.expectOne(INSTALL_URL).flush(rejected, { status, statusText });
 
     await expect(result).resolves.toEqual(rejected);
   });
 
   it('fails on an error without a report', async () => {
-    const result = firstValueFrom(service.importBundle(new Blob(['zip']), true));
-    http.expectOne((r) => r.url === IMPORT_URL).flush({ errorId: 'forbidden' }, { status: 403, statusText: 'Forbidden' });
+    const result = firstValueFrom(service.install({ starterId: 'inventory', version: '9.9.9' }, true));
+    http.expectOne(INSTALL_URL).flush({ errorId: 'starter.not-found' }, { status: 404, statusText: 'Not Found' });
 
-    await expect(result).rejects.toMatchObject({ status: 403 });
+    await expect(result).rejects.toMatchObject({ status: 404 });
   });
 
   it('lists the installed starters', async () => {
@@ -82,5 +85,15 @@ describe('StarterService', () => {
 
     await expect(result).resolves.toEqual([]);
     own.verify();
+  });
+});
+
+describe('catalogRootOf', () => {
+  it.each([
+    ['http://localhost:8080/organizations/acme', 'http://localhost:8080'],
+    ['/api/organizations/acme/', '/api'],
+    ['/api', '/api'],
+  ])('%s → %s', (root, expected) => {
+    expect(catalogRootOf(root)).toBe(expected);
   });
 });

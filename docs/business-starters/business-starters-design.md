@@ -1,116 +1,192 @@
-# ProcessPuzzle Business Starters — Design Sketch
+# ProcessPuzzle Business Starters — Design
 
 ## 1. Goal
 
-A **Business Starter** is a prepared solution to one business problem (inventory, billing, organising a sail race, ...). It is a bundle of YAML definitions: Entity, State, Rule, Document, Workflow and App.
+A **Business Starter** is an official, tested and complete configuration of the platform for one business
+problem (inventory, billing, organising a sail race, ...). It is a bundle of YAML definitions: Entity, State,
+Rule, Widget, Document, Workflow and App.
 
-Requirements:
+- A business developer starts from a starter instead of an empty organization.
+- Later, independent developers offer their own starters in a **Business Starter Marketplace**, in the spirit
+  of the IntelliJ plugin marketplace. This document covers the **official route** only.
+- All starters are free for now.
 
-- Starters are authored and stored in the `processpuzzle-biz` repo.
-- A customer can import one or more starters.
-- When an application seed is created, the chosen starter(s) are already imported.
-- Import target is the customer's DB, keyed by `{orgKey}`.
-- The **Design** view can import a starter and ideally export a modified or custom-developed one.
+A starter is **not** the same as exporting and importing an organization's definitions through a local file.
+That is a separate, later feature with its own trust rules (§9).
 
-## 2. Decision
+## 2. Properties of a starter
 
-**Git is the source of truth. A generic import API in a new `base-starter-backend` library does the importing. MinIO (S3) is the optional distribution store in between.**
+| Property | Manifest field | Notes |
+|---|---|---|
+| Unique id | `id` | kebab-case slug, immutable. Provenance and the catalog key on it. |
+| Name | `name` | Display name; may change and be translated. |
+| Description | `description` | |
+| Version | `version` | semver. A published version is immutable. |
+| Author | `author` | `ProcessPuzzle` for official starters. |
+| License | `license` | SPDX identifier, or `proprietary`. |
+| Definition YAMLs | `contents` | Existing seed YAML formats, see decision 7.4. |
+| Migration script | `migration` | Placeholder; form to be decided together with upgrades (§8). |
+
+Compatibility fields: `definitionSchemaVersion` and `platform.minVersion`. Catalog fields: `category`, `tags`,
+`icon`, `locales`. Full sketch: `starter-manifest.example.yaml`.
+
+A starter is **all or nothing**: no dependencies between starters, no partial install, no sample data.
+Sample data that demonstrates a starter lives in the Testbed instead.
+
+## 3. Layers
 
 | Layer | Responsibility | Where |
 |---|---|---|
-| Authoring | Write, review and version starters | Git, `processpuzzle-biz/starters/<id>/` |
-| Distribution | Validated, versioned bundles + catalog index | CI, then MinIO bucket `starters/` (or baked into the backend image for a small catalog) |
-| Import / Export | Validate, order, write definitions for one org | `base-starter-backend` + `base-starter-frontend`, orgKey-scoped |
-| Catalog | Browse, select and install starters | `processpuzzle-biz` (UI and catalog endpoints) |
-| Billing | Payments and bills for starters | Admin (no install-time payment check for now) |
+| Authoring | Write, review and version starters | Git, `processpuzzle-biz/business-starters/<id>/` |
+| Distribution | Validated, immutable bundles + catalog index | CI → MinIO bucket `processpuzzle-starters` |
+| Catalog read API | List starters and versions; tenant-free | `base-starter-backend` (`GET /starters...`) |
+| Catalog UI (marketing) | Browse starters | `processpuzzle-biz-frontend`, reads `catalog.json` directly |
+| Install | Fetch a bundle by reference, replace one org's definitions | `base-starter-backend` + `base-starter-frontend`, orgKey-scoped |
+| Applied-starter record | Which starter an org started from | Subscription in `PROCESSPUZZLE_ADMIN`; `starter_installed` in the org's backend |
 
-## 3. Authoring layout
+## 4. Authoring and release
 
 ```
 processpuzzle-biz/
-  starters/
+  business-starters/
     sail-race-organizer/
       manifest.yaml
-      entities/   states/   rules/
-      documents/  workflows/  apps/
-      data/       (optional seed data)
+      entities/  states/  rules/  widgets/  documents/  workflows/  apps/
       icons/
+      migrations/   (placeholder)
 ```
 
-CI steps per release: validate every YAML against the definition schemas, check cross-references, compute the integrity hashes, zip into `<id>-<version>.zip`, upload to MinIO, regenerate `catalog.json`.
+One folder per starter; the version lives in `manifest.yaml`, and old versions live in git history and in the
+bucket. Starters follow the **same release process as the source code** (conventional commits, release
+branches, CI → stage → prod). Per released starter version CI:
 
-The full manifest sketch is in `starter-manifest.example.yaml`.
+1. runs `tools/business-starters/package-starters.mjs` against the bucket's current `catalog.json`. It checks
+   each manifest and the files it lists, writes the integrity hashes into the packaged manifest, zips
+   `bundle.zip` deterministically, and merges `catalog.json`. A version already in the catalog is skipped when
+   its bundle is byte-identical and refused when it is not (immutability: changed content needs a new version);
+2. **dry-run installs every new bundle into an empty organization** of a running backend — a starter that
+   cannot be imported never reaches the bucket;
+3. uploads the new `<id>/<version>/` folders, then `catalog.json` last, so the index never names a missing zip.
 
-## 4. Import API (base-starter-backend)
+## 5. Bucket layout — the registry
 
-The importer takes **bytes, not a storage location**. That keeps it independent of MinIO, Git or the file system. Full contract: `definitions-import-api.yaml`.
+The registry **is** the bucket. There is no registry table.
+
+```
+processpuzzle-starters/
+  catalog.json                       # generated by CI: every starter, every version
+  <id>/<version>/bundle.zip
+  <id>/<version>/entry.json          # manifest summary + sha256 of bundle.zip + publishedAt + status
+  <id>/icon.svg
+```
+
+`catalog.json` is `{ catalogVersion: 1, starters: [{ id, name, description, author, license, category, tags,
+icon, versions: [{ version, publishedAt, status, definitionSchemaVersion, sha256, bundle }] }] }` — a superset
+of what the Biz frontend's `starter-catalog.ts` reads. `status` is `published`, `deprecated` or `yanked`. A yanked version disappears from the catalog but stays in
+the bucket, so organizations that applied it are not broken. Status changes are commits, published by CI.
+
+Why a bucket rather than a database table:
+
+- MinIO is the one store every stack already shares. Every candidate database misfits: Biz has no
+  persistence, Admin is VPN-restricted, Testbed is reset daily, and a table per stack would make CI publish
+  into every backend of every environment.
+- CI writes once and needs no running backend and no service account per backend.
+- The bundle and its registry entry are uploaded together, so the index cannot announce a missing zip.
+- Trade-offs: queries run in memory (fine for dozens of starters), and edits go through CI, not a UI.
+  When the marketplace needs third-party uploads, reviews or payments, a database is introduced then and
+  filled from the bucket.
+
+Access: the bucket is **publicly readable, writable only by CI**. The Biz frontend reads `catalog.json` and
+the icons through its NgInx (`/starters/` → MinIO), so Biz needs no backend code for the catalog. Every
+environment's MinIO has its own bucket, filled by that environment's release.
+
+## 6. API (base-starter-backend)
+
+Tenant-free catalog, served from the bucket index:
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /organizations/{orgKey}/starters` | Installed starters with provenance |
-| `POST /organizations/{orgKey}/definitions/import` | Import an uploaded bundle (`dryRun` supported) |
-| `GET /organizations/{orgKey}/definitions/export` | Export definitions as a bundle |
+| `GET /starters` | Catalog: published and deprecated starters, filtered to those this platform can import |
+| `GET /starters/{starterId}` | One starter with its installable versions, newest first |
 
-The catalog endpoints (`GET /starters`, `GET /starters/{id}/versions/{v}`) and *install from catalog* belong to
-`processpuzzle-biz`: install there means fetching the bundle bytes and calling `definitions/import`.
+Organization-scoped install:
 
-One importer, three callers:
+| Endpoint | Purpose |
+|---|---|
+| `GET /organizations/{orgKey}/starters` | The starter applied to this org, with provenance |
+| `POST /organizations/{orgKey}/starters/install` | Body `{ starterId, version, dryRun }`. The backend fetches the bundle from the bucket and verifies its sha256 — bytes never pass through a client. |
 
-1. **Design view** — "install from catalog" or file upload, with a dry-run preview first.
-2. **Seed provisioning** — fetch the chosen bundle(s), call the importer for the new `{orgKey}`.
-3. **AI definition generator (future)** — its output is just another bundle.
+The existing byte-based `POST /organizations/{orgKey}/definitions/import` stays as the internal entry point
+the install calls. It is no longer exposed to users until local file import exists (§9).
 
-Export is the reverse operation, so exporting a customized or custom-developed starter comes almost for free.
+Two callers, one per stack that installs:
 
-## 5. Importer rules
+1. **Subscription** (Custom). Biz sends `starterId@version` with the subscription to Admin, which stores it
+   on the Subscription. Admin's seed call to the customer's Custom backend passes the reference on, and Custom
+   installs it. **Zero or one starter per subscription.** If the install fails the organization is seeded
+   without a starter and the failure is recorded on the Subscription.
+2. **Designer** (Custom, Testbed). "Install starter" from the catalog, dry-run preview first.
 
-- **Order:** Entity, State, Rule, Document, Workflow, App.
-- **Atomic:** validation of schema and cross-references happens before any write; all writes in one transaction.
-- **Idempotent with provenance:** every imported definition is tagged with `starterId`, `starterVersion` and a content hash. Re-import is safe, and "untouched" can be told apart from "customized".
-- **Upgrades:** newer starter version overwrites untouched definitions and flags customized ones as conflicts. Strategy: `skip-customized` (default), `overwrite`, `fail`.
-- **Schema versioning:** `definitionSchemaVersion` in the manifest lets the importer migrate or reject old bundles.
-- **Dependencies:** `requires` lets starters share base entities (e.g. a contacts starter); the importer resolves and installs them first.
-- **Trust:** treat every uploaded bundle as untrusted input — schema-validate, size-limit, and make sure rule and expression definitions cannot execute anything unsafe.
-- **Dry run:** always available, returns an `ImportReport` listing create/update/skip/conflict per definition.
+## 7. Importer rules
 
-## 6. Where things live
+- **Order:** Entity, State, Rule, Widget, Document, Workflow, App.
+- **Atomic:** schema and cross-reference validation before any write; all writes in one transaction.
+- **Replace, all or nothing:** installing a starter deletes the organization's existing definitions and
+  imports the starter's. This is allowed **only while the organization holds no entity objects and no
+  workflow instances**; otherwise the install is refused (409). The dry-run report lists what would be
+  deleted as well as what would be created.
+- **Provenance:** every imported definition is tagged with `starterId`, `starterVersion` and a content hash,
+  so "untouched" can later be told apart from "customized" — the basis for upgrades (§8).
+- **Schema versioning:** `definitionSchemaVersion` lets the importer migrate or reject old bundles.
+- **Trust:** the bundle's sha256 must match its registry entry; size limits and path checks still apply.
+- **Dry run:** the same transaction, rolled back.
 
-- **Live, customer-modified definitions:** the customer's DB (keyed by `{orgKey}`). This is the working copy.
-- **Official starters:** public/read-only `starters/` bucket (or image).
-- **Exports:** plain downloads. For org-private backup or sharing later, use a separate `orgs/{orgKey}/` prefix, never the official bucket.
-- **Customer-contributed marketplace (later):** separate, reviewed pipeline.
+## 8. Decisions
 
-## 7. Decisions (2026-10-05)
+1. **Catalog API in `base-starter-backend`, catalog data in MinIO** (2026-10-06, replaces the 2026-10-05
+   decision that put the catalog endpoints in Biz). The catalog is tenant-free; the library stays in the
+   `processpuzzle` repo because Testbed and Custom both need it. Biz reads `catalog.json` directly.
+2. **New library pair.** Orchestration in `base-starter-backend`, install UI in `base-starter-frontend`.
+3. **No compile edges.** `base-starter-backend` depends on no feature library. `processpuzzle-core` declares
+   the `DefinitionImportParticipant` SPI; each feature implements it for its own definitions.
+4. **Bundle files use the existing seed YAML formats** (`DefaultEntitiesDocument` and its siblings).
+5. **One transaction** across participants — valid while all modules share one DataSource.
+6. **Provenance in one importer-owned table**, keyed by `(orgKey, kind, key)`. Feature tables are unchanged.
+7. **Entity definitions and objects are organization-scoped.** Global types (`_global`) remain open, including
+   whether a starter may ship one.
+8. **All or nothing** (2026-10-06): no `requires`, no partial install, no conflict strategies, no sample data.
+9. **Replace only into an empty organization** (2026-10-06): see §7.
 
-1. **Catalog in Biz, billing in Admin.** The catalog UI and catalog endpoints live in `processpuzzle-biz`;
-   administering payments and bills stays in Admin. No upfront payment check at install time for now.
-2. **New library pair.** Orchestration lives in `base-starter-backend`, the import/export UI in
-   `base-starter-frontend`. Existing feature libraries stay focused.
-3. **No compile edges.** `base-starter-backend` depends on no feature library. `processpuzzle-core` declares a
-   `DefinitionImportParticipant` SPI; each feature implements it for its own definitions; the orchestrator
-   collects the participants as beans and runs them in order.
-4. **Bundle files use the existing seed YAML formats** (`DefaultEntitiesDocument` and its siblings). The
-   classpath seed loaders become one more caller of the importer.
-5. **One transaction** across participants — valid while all modules share one DataSource. Revisit when a
-   feature really becomes a microservice.
-6. **Provenance in one importer-owned table**, keyed by `(orgKey, kind, key)`, holding `starterId`,
-   `starterVersion` and the content hash. Feature tables are not changed; "customized" means the
-   participant's canonical export no longer hashes to the stored value.
-7. **Definition kinds and order:** Entity, State, Rule, Widget, Document, Workflow, App; translations travel
-   with their kind.
-8. **Entity definitions and objects are organization-scoped**, so one starter can be installed into many
-   organizations. A later flag on the entity definition will mark *global* types: shared reference data
-   (currencies, countries) whose definition and objects every tenant reads alike. They will be stored under
-   the reserved organization key `_global`, which keeps `org_key` not-null and `(org_key, code)` unique.
-   Every object query already goes through one resolver, `EntityObjectScope`, so adding the flag changes
-   that class rather than every query. Still open: who may write a global type, and whether a starter may
-   ship one.
+Postponed:
 
-## 8. Suggested next steps
+- **Upgrades.** The intent is regular automatic upgrades. Needs the migration-script format and a policy for
+  customized definitions; provenance already records what is needed.
+- **Install counts.** Derived from the Subscriptions in Admin.
+- **Third-party starters**, signing, reviews, paid starters.
 
-1. Write the contract in `api-contracts` (OpenAPI 3.0.3); validation reuses the existing `*Input` schemas.
-2. Build the SPI in `processpuzzle-core` and the orchestrator in `base-starter-backend`, dry-run report first;
-   entity and rule participants first, the other kinds after.
-3. Create one small pilot starter (e.g. inventory) and run it end to end through CI, bucket and import.
-4. Add the Design view import/export UI.
-5. Hook the importer into the customer-seed provisioning flow.
+## 9. Not starters: local export/import
+
+Exporting an organization's definitions to a file and importing such a file is useful but separate: the
+content is not official, not tested and fully untrusted. It reuses the byte-based importer later, under its own
+design. Exports never go into the `processpuzzle-starters` bucket.
+
+## 10. Status and next steps
+
+Done (2026-10-06), in `processpuzzle`:
+
+- Manifest: `author`, `license`, `migration`; `requires`, `conflictsWith`, `seedData` and `install` removed.
+- Importer: replace-only. The SPI gained `DefinitionImportParticipant.removeAll` and `InstanceDataProbe`
+  (base-entity: entity objects, base-workflow: workflow instances); the additive path is gone.
+- Catalog read model over the bucket (`HttpStarterRegistry`), `GET /starters…` and `POST …/starters/install`.
+- Designer screen installs from the catalog instead of uploading a file.
+- `processpuzzle-starters` bucket in the infrastructure compose: public-read, plus an optional
+  `starter-publisher` MinIO account (`MINIO_STARTER_PUBLISHER_PASSWORD`) that may write only that bucket.
+- The packager, `tools/business-starters/package-starters.mjs`.
+
+Next:
+
+1. CI publishing in `processpuzzle-biz`: run the packager, the dry-run gate, the upload; set the publisher
+   password in the stage and prod infrastructure env files; NgInx `/starters/` route for the Biz frontend.
+2. One pilot starter (e.g. inventory) end to end: commit → CI → bucket → Designer install.
+3. Subscription: starter choice in Biz, field on Admin's Subscription, reference passed in the seed call,
+   Custom installs it and reports the outcome.

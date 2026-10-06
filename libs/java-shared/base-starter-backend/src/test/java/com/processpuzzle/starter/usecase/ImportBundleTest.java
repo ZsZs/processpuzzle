@@ -6,7 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.processpuzzle.core.definition.DefinitionKinds;
-import com.processpuzzle.core.definition.ImportedItem;
+import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -62,6 +62,7 @@ class ImportBundleTest {
     private OrganizationAccessPolicy policy;
     private FakeParticipant entities;
     private FakeParticipant rules;
+    private long entityObjects;
     private ImportBundle importBundle;
     private ListInstalledStarters listInstalledStarters;
 
@@ -73,8 +74,20 @@ class ImportBundleTest {
         OrganizationGuard guard = new OrganizationGuard(provider(policy));
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         rules = new FakeParticipant(DefinitionKinds.RULE, DefinitionKinds.RULE_ORDER, calls);
+        entityObjects = 0;
+        InstanceDataProbe objects = new InstanceDataProbe() {
+            @Override
+            public String label() {
+                return "entity objects";
+            }
+
+            @Override
+            public long count(String orgKey) {
+                return entityObjects;
+            }
+        };
         // Deliberately registered out of order: the importer must sort.
-        ImportParticipants participants = ImportParticipants.of(List.of(rules, entities));
+        ImportParticipants participants = ImportParticipants.of(List.of(rules, entities), List.of(objects));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
                 provenanceRepository, installedStarterRepository, transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants);
@@ -86,7 +99,8 @@ class ImportBundleTest {
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
         assertThat(report.created()).isEqualTo(3);
-        assertThat(calls).containsExactly("entity:entities/item.yaml", "rule:rules/item-rules.yaml");
+        assertThat(calls).containsExactly(
+                "rule:removeAll", "entity:removeAll", "entity:entities/item.yaml", "rule:rules/item-rules.yaml");
         assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key)
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("entity", "item"),
@@ -118,7 +132,7 @@ class ImportBundleTest {
 
         ImportReport report = importBundle.execute("acme", bundle("item\n", "positive-qty\n"), false, null);
 
-        assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportedItem.Action.UPDATE);
+        assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
         assertThat(provenanceRepository.count()).isEqualTo(2);
         assertThat(installedStarterRepository.count()).isEqualTo(1);
     }
@@ -127,7 +141,7 @@ class ImportBundleTest {
     void aRefusingParticipantStopsTheImportAndRecordsNothing() {
         assertThatThrownBy(() -> importBundle.execute("acme", bundle("item\n", "!bad expression\n"), false, null))
                 .isInstanceOfSatisfying(ImportRejectedException.class, e -> {
-                    assertThat(e.isTooLarge()).isFalse();
+                    assertThat(e.getReason()).isEqualTo(ImportRejectedException.Reason.INVALID);
                     assertThat(e.getReport().status()).isEqualTo(ImportReport.Status.REJECTED);
                     assertThat(e.getReport().errors()).containsExactly(
                             new ImportReport.Error("rules/item-rules.yaml", "bad expression"));
@@ -160,25 +174,49 @@ class ImportBundleTest {
     }
 
     @Test
-    void rejectsARequiredStarterThatIsNotInstalled() {
-        Map<String, String> files = TestBundles.inventory();
-        files.put("manifest.yaml", TestBundles.MANIFEST + "requires:\n  - id: contacts-base\n    versionRange: \"^1.0.0\"\n");
+    void replacesWhatTheOrganizationHad() {
+        importBundle.execute("acme", bundle("item\nlocation\n", "positive-qty\n"), false, null);
+        Map<String, String> other = TestBundles.inventory();
+        other.put("manifest.yaml", TestBundles.MANIFEST.replace("id: inventory", "id: warehouse"));
+        other.put("entities/item.yaml", "item\nshelf\n");
+        other.put("rules/item-rules.yaml", "");
 
-        assertThatThrownBy(() -> importBundle.execute("acme", zip(files), false, null))
-                .isInstanceOf(ImportRejectedException.class)
-                .hasMessageContaining("Requires starter 'contacts-base'");
+        ImportReport report = importBundle.execute("acme", zip(other), false, "bob");
+
+        assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key, ImportReport.Item::action)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("entity", "item", ImportReport.Action.UPDATE),
+                        org.assertj.core.groups.Tuple.tuple("entity", "shelf", ImportReport.Action.CREATE),
+                        org.assertj.core.groups.Tuple.tuple("rule", "positive-qty", ImportReport.Action.DELETE),
+                        org.assertj.core.groups.Tuple.tuple("entity", "location", ImportReport.Action.DELETE));
+        assertThat(report.deleted()).isEqualTo(2);
+        assertThat(entities.store.get("acme")).containsOnlyKeys("item", "shelf");
+        assertThat(rules.store.get("acme")).isEmpty();
+        assertThat(installedStarterRepository.findAll()).singleElement()
+                .satisfies(installed -> assertThat(installed.getStarterId()).isEqualTo("warehouse"));
+        assertThat(provenanceRepository.findAll()).extracting(DefinitionProvenance::getKey).containsExactlyInAnyOrder("item", "shelf");
+        assertThat(provenanceRepository.findAll()).extracting(DefinitionProvenance::getStarterId).containsOnly("warehouse");
     }
 
     @Test
-    void acceptsARequiredStarterThatIsInstalled() {
-        Map<String, String> contacts = TestBundles.inventory();
-        contacts.put("manifest.yaml", TestBundles.MANIFEST.replace("id: inventory", "id: contacts-base"));
-        importBundle.execute("acme", zip(contacts), false, null);
+    void refusesAnOrganizationThatHoldsInstanceData() {
+        entityObjects = 3;
 
-        Map<String, String> files = TestBundles.inventory();
-        files.put("manifest.yaml", TestBundles.MANIFEST + "requires:\n  - id: contacts-base\n");
+        assertThatThrownBy(() -> importBundle.execute("acme", bundle("item\n", ""), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> {
+                    assertThat(e.getReason()).isEqualTo(ImportRejectedException.Reason.HOLDS_INSTANCE_DATA);
+                    assertThat(e.getMessage()).contains("it holds 3 entity objects");
+                });
+        assertThat(calls).isEmpty();
+    }
 
-        assertThat(importBundle.execute("acme", zip(files), false, null).status()).isEqualTo(ImportReport.Status.APPLIED);
+    @Test
+    void refusesABundleThatIsNotTheExpectedStarter() {
+        assertThatThrownBy(() -> importBundle.execute("acme", bundle("item\n", ""), false, null,
+                new ImportBundle.Expected("inventory", "2.0.0")))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e ->
+                        assertThat(e.getMessage()).isEqualTo("The bundle is starter 'inventory' 1.0.0, not 'inventory' 2.0.0."));
+        assertThat(calls).isEmpty();
     }
 
     @Test
@@ -190,7 +228,8 @@ class ImportBundleTest {
                 transactionManager, provider(null));
 
         assertThatThrownBy(() -> strict.execute("acme", bundle("item\n", ""), false, null))
-                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.isTooLarge()).isTrue());
+                .isInstanceOfSatisfying(ImportRejectedException.class,
+                        e -> assertThat(e.getReason()).isEqualTo(ImportRejectedException.Reason.TOO_LARGE));
     }
 
     @Test

@@ -1,25 +1,30 @@
 package com.processpuzzle.starter.usecase;
 
 /**
- * An import that wrote nothing, carrying the report that says why. {@code tooLarge} separates a bundle
- * over a size limit (413) from one that is invalid (422).
+ * An import that wrote nothing, carrying the report that says why. The {@link Reason} picks the HTTP
+ * status: a bundle over a size limit (413), an organization whose instance data the import would
+ * orphan (409), and everything else (422).
  */
 public class ImportRejectedException extends RuntimeException {
 
-    private final transient ImportReport report;
-    private final boolean tooLarge;
+    public enum Reason {
+        INVALID, TOO_LARGE, HOLDS_INSTANCE_DATA
+    }
 
-    public ImportRejectedException(ImportReport report, boolean tooLarge) {
+    private final transient ImportReport report;
+    private final Reason reason;
+
+    public ImportRejectedException(ImportReport report, Reason reason) {
         super(report.errors().isEmpty() ? "Import rejected" : report.errors().getFirst().message());
         this.report = report;
-        this.tooLarge = tooLarge;
+        this.reason = reason;
     }
 
     public ImportReport getReport() {
         return report;
     }
 
-    public boolean isTooLarge() {
-        return tooLarge;
+    public Reason getReason() {
+        return reason;
     }
 }

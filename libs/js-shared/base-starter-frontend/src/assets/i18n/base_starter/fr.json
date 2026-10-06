@@ -1,23 +1,28 @@
 {
   "import": {
     "title": "Business Starters",
-    "hint": "Importer un paquet de démarrage (.zip) dans cette organisation. D'abord l'aperçu : il exécute tout l'import sans rien écrire.",
+    "hint": "Installez un Business Starter depuis le catalogue. Il remplace toutes les définitions de cette organisation et ne peut donc être installé que tant que l'organisation ne contient aucune donnée. Prévisualisez-le d'abord : l'aperçu exécute toute l'installation et n'écrit rien.",
     "preview": "Aperçu",
-    "apply": "Importer",
+    "apply": "Installer",
     "status": {
-      "applied": "Importé",
-      "would-apply": "Serait importé",
+      "applied": "Installé",
+      "would-apply": "Serait installé",
       "rejected": "Refusé"
     },
-    "summary": "{{created}} à créer, {{updated}} à mettre à jour",
+    "summary": "{{created}} à créer, {{updated}} à mettre à jour, {{deleted}} à supprimer",
     "column": {
       "kind": "Type",
       "key": "Clé",
-      "action": "Action"
+      "action": "Action",
+      "starter": "Starter",
+      "description": "Description",
+      "author": "Auteur",
+      "license": "Licence"
     },
     "action": {
       "create": "créer",
-      "update": "mettre à jour"
+      "update": "mettre à jour",
+      "delete": "supprimer"
     },
     "kind": {
       "entity": "Entité",
@@ -27,7 +32,10 @@
       "document": "Document",
       "workflow": "Workflow",
       "app": "Application"
-    }
+    },
+    "catalogEmpty": "Le catalogue ne contient encore aucun starter.",
+    "version": "Version",
+    "deprecated": "obsolète"
   },
   "installed": {
     "title": "Starters installés",

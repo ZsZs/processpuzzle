@@ -355,6 +355,11 @@ services:
       # Spring Boot service account credentials
       MINIO_SERVICE_USER: ${MINIO_SERVICE_USER:-springboot}
       MINIO_SERVICE_PASSWORD: ${MINIO_SERVICE_PASSWORD}
+
+      # Business Starter publisher (CI), write access to processpuzzle-starters only. Optional:
+      # unset means no publisher account, as in local and ci, which never publish starters.
+      MINIO_STARTER_PUBLISHER_USER: ${MINIO_STARTER_PUBLISHER_USER:-starter-publisher}
+      MINIO_STARTER_PUBLISHER_PASSWORD: ${MINIO_STARTER_PUBLISHER_PASSWORD:-}
     volumes:
       - minio-data:/data
     networks:

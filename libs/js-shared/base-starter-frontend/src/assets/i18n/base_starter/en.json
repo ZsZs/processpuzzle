@@ -1,23 +1,28 @@
 {
   "import": {
     "title": "Business Starters",
-    "hint": "Import a starter bundle (.zip) into this organization. Preview it first: the preview runs the whole import and writes nothing.",
+    "hint": "Install a Business Starter from the catalog. It replaces every definition of this organization, so it can only be installed while the organization holds no data. Preview it first: the preview runs the whole install and writes nothing.",
     "preview": "Preview",
-    "apply": "Import",
+    "apply": "Install",
     "status": {
-      "applied": "Imported",
-      "would-apply": "Would import",
+      "applied": "Installed",
+      "would-apply": "Would install",
       "rejected": "Rejected"
     },
-    "summary": "{{created}} to create, {{updated}} to update",
+    "summary": "{{created}} to create, {{updated}} to update, {{deleted}} to delete",
     "column": {
       "kind": "Kind",
       "key": "Key",
-      "action": "Action"
+      "action": "Action",
+      "starter": "Starter",
+      "description": "Description",
+      "author": "Author",
+      "license": "License"
     },
     "action": {
       "create": "create",
-      "update": "update"
+      "update": "update",
+      "delete": "delete"
     },
     "kind": {
       "entity": "Entity",
@@ -27,7 +32,10 @@
       "document": "Document",
       "workflow": "Workflow",
       "app": "Application"
-    }
+    },
+    "catalogEmpty": "The catalog has no starters yet.",
+    "version": "Version",
+    "deprecated": "deprecated"
   },
   "installed": {
     "title": "Installed starters",

@@ -70,6 +70,27 @@ class RuleEngineSyncTest {
     }
 
     @Test
+    void unregistersAfterCommitImmediatelyWhenNoTransactionIsActive() {
+        ruleEngineSync.unregisterAfterCommit("demo", "max-quantity");
+
+        verify(ruleEngine).unregisterRule(RuleKey.of("demo", "max-quantity"));
+    }
+
+    @Test
+    void defersUnregistrationUntilTheTransactionCommits() {
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            ruleEngineSync.unregisterAfterCommit("demo", "max-quantity");
+            verifyNoInteractions(ruleEngine);
+
+            TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+            verify(ruleEngine).unregisterRule(RuleKey.of("demo", "max-quantity"));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
     void unregistersInsteadOfRegisteringWhenTheRuleIsDisabled() {
         // Disabling is the same thing as removal as far as the engine is concerned.
         ruleEngineSync.register(rule(false));

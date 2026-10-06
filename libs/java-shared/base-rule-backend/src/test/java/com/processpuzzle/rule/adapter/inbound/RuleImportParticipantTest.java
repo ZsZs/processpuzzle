@@ -231,4 +231,11 @@ class RuleImportParticipantTest {
     private static byte[] bytes(String content) {
         return content.getBytes(StandardCharsets.UTF_8);
     }
+
+    @Test
+    void removeAllDelegatesToTheUseCase() {
+        when(importRules.removeAll(ORG)).thenReturn(java.util.List.of("max-quantity"));
+
+        assertThat(participant.removeAll(ORG)).containsExactly("max-quantity");
+    }
 }

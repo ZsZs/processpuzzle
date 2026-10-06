@@ -56,6 +56,15 @@ class FakeParticipant implements DefinitionImportParticipant {
     }
 
     @Override
+    public List<String> removeAll(String orgKey) {
+        calls.add(kind + ":removeAll");
+        Map<String, String> org = store.computeIfAbsent(orgKey, k -> new LinkedHashMap<>());
+        List<String> keys = List.copyOf(org.keySet());
+        org.clear();
+        return keys;
+    }
+
+    @Override
     public Map<String, String> fingerprints(String orgKey, Set<String> keys) {
         Map<String, String> result = new LinkedHashMap<>();
         store.getOrDefault(orgKey, Map.of()).forEach((key, value) -> {

@@ -5,24 +5,25 @@
 
 ## Introduction
 
-The Angular half of **Business Starters**: the screen that imports a starter bundle into the current
-organization. The backend half, which validates the bundle and runs every feature's importer in one
-transaction, is [base-starter-backend](../../java-shared/base-starter-backend/README.md). Design:
+The Angular half of **Business Starters**: the screen that installs a starter from the catalog into the
+current organization. The backend half, which reads the registry, verifies the bundle and replaces the
+organization's definitions through every feature's importer in one transaction, is
+[base-starter-backend](../../java-shared/base-starter-backend/README.md). Design:
 [business-starters-design.md](../../../docs/business-starters/business-starters-design.md).
 
-## The import screen
+## The install screen
 
 `StarterImportComponent` (`pp-starter-import`), mounted by `BASE_STARTER_ROUTES` at `starters`:
 
-1. Pick a bundle `.zip`.
-2. **Preview** runs a dry run — the whole import, rolled back — and shows the `ImportReport`: what would be
-   created or updated per definition kind, or why the bundle is refused.
-3. **Import** is enabled only after a preview of the *same* file came back `would-apply`.
-4. Below, the starters already installed, with how many of their definitions were changed since import.
+1. Pick a starter from the catalog, and a version (the newest by default).
+2. **Preview** runs a dry run — the whole install, rolled back — and shows the `ImportReport`: what would be
+   created, updated and deleted per definition kind, or why the install is refused.
+3. **Install** is enabled only after a preview of the *same* starter and version came back `would-apply`.
+4. Below, the starter already installed, with how many of its definitions were changed since.
 
-A refused import is a report, not an error: the backend answers 422 / 413 with the same `ImportReport`
-shape, and `StarterService` emits it. Installing from the starter **catalog** is not part of this library;
-the catalog lives in processpuzzle-biz and calls the same endpoint.
+A starter replaces the organization's definitions, so the backend refuses it once the organization holds
+entity objects or workflow instances. A refused install is a report, not an error: the backend answers
+409 / 413 / 422 with the same `ImportReport` shape, and `StarterService` emits it.
 
 ## Using it
 
@@ -32,5 +33,6 @@ import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
 export const routes: Routes = [{ path: 'design', children: [...BASE_STARTER_ROUTES] }];
 ```
 
-Copy the translations to `assets/i18n/base_starter` (see the testbed's `project.json`). The endpoints are
-read from `STARTER_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT`.
+Copy the translations to `assets/i18n/base_starter` (see the testbed's `project.json`). The organization's
+endpoints are read from `STARTER_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT`; the tenant-free
+catalog from the same root with its `/organizations/<orgKey>` tail removed.

@@ -188,4 +188,11 @@ class EntityDefinitionImportParticipantTest {
     private static byte[] bytes(String content) {
         return content.getBytes(StandardCharsets.UTF_8);
     }
+
+    @Test
+    void removeAllDelegatesToTheUseCase() {
+        when(importDefinitions.removeAll(ORG)).thenReturn(java.util.List.of("item"));
+
+        assertThat(participant.removeAll(ORG)).containsExactly("item");
+    }
 }

@@ -12,6 +12,8 @@ public interface WorkflowInstanceRepository
 
     Optional<WorkflowInstance> findByOrgKeyAndId(String orgKey, UUID id);
 
+    long countByOrgKey(String orgKey);
+
     /** Non-terminal statuses are ACTIVE and SUSPENDED; COMPLETED/CANCELLED are terminal. */
     boolean existsByOrgKeyAndWorkflowIdAndStatusIn(
             String orgKey, String workflowId, Collection<WorkflowInstanceStatus> statuses);
