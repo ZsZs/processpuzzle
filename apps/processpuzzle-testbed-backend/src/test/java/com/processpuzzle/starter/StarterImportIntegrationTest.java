@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
-import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.rule.usecase.ImportRules;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
 import com.processpuzzle.rule.usecase.engine.RuleKey;
@@ -75,7 +74,7 @@ class StarterImportIntegrationTest {
         assertThat(report.items()).extracting(item -> item.kind() + ":" + item.key()).containsExactly(
                 "entity:stock-location", "entity:inventory-item", "state:inventory-item",
                 "rule:non-negative-quantity", "rule:sku-format");
-        assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportedItem.Action.CREATE);
+        assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.CREATE);
 
         assertThat(entityAttributeQuery.entityTypeExists("dry-run-org", "inventory-item")).isFalse();
         assertThatThrownBy(() -> findStateMachine.execute("dry-run-org", "inventory-item")).isInstanceOf(RuntimeException.class);
@@ -109,7 +108,7 @@ class StarterImportIntegrationTest {
         importBundle.execute("reimport-org", zip(pilot()), false, null);
 
         ImportReport again = importBundle.execute("reimport-org", zip(pilot()), false, null);
-        assertThat(again.items()).hasSize(5).extracting(ImportReport.Item::action).containsOnly(ImportedItem.Action.UPDATE);
+        assertThat(again.items()).hasSize(5).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
         assertThat(listInstalledStarters.execute("reimport-org")).singleElement()
                 .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
 
