@@ -42,6 +42,11 @@ CI builds the bucket's content with [`tools/business-starters/package-starters.m
 5. On apply, the importer replaces the organization's **provenance** — starter id, version and the sha256 of
    each definition's canonical fingerprint — and its installed starter.
 
+`InstallStarter.provision(orgKey, starterId, version, installedBy)` runs steps 1–5 without the design-rights
+check and never as a dry run. It is for an application's seed use case, which installs the starter a
+subscription chose while the organization is provisioned: that call carries the platform's client credentials,
+not a member's token, and its own endpoint authorizes it. No REST endpoint exposes it.
+
 The SPI lives in `processpuzzle-core`; base-entity, base-state and base-rule implement the participant today.
 `GET /organizations/{orgKey}/starters` lists the installed starter; a definition counts as *customized* when
 its current fingerprint no longer hashes to the stored value.

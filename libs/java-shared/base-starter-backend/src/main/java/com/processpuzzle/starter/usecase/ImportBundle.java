@@ -91,7 +91,15 @@ public class ImportBundle {
      */
     public ImportReport execute(String orgKey, InputStream input, boolean dryRun, String importedBy, Expected expected) {
         guard.requireDesign(orgKey);
+        return importAuthorized(orgKey, input, dryRun, importedBy, expected);
+    }
 
+    /**
+     * The import without the design-rights check, for {@link InstallStarter}, which has made the check
+     * itself, or deliberately skips it for a provisioning call. Package-private so no other feature can
+     * import bytes unchecked.
+     */
+    ImportReport importAuthorized(String orgKey, InputStream input, boolean dryRun, String importedBy, Expected expected) {
         StarterBundle bundle;
         try {
             bundle = reader.read(input);

@@ -56,10 +56,30 @@ class InstallStarterTest {
     @Test
     void importsTheDownloadedBundleAsTheRequestedStarter() {
         ImportReport applied = new ImportReport(false, ImportReport.Status.APPLIED, "inventory", "1.0.0", List.of(), List.of());
-        when(importBundle.execute(eq("acme"), any(InputStream.class), eq(false), eq("alice"),
+        when(importBundle.importAuthorized(eq("acme"), any(InputStream.class), eq(false), eq("alice"),
                 eq(new ImportBundle.Expected("inventory", "1.0.0")))).thenReturn(applied);
 
         assertThat(installStarter.execute("acme", "inventory", "1.0.0", false, "alice")).isSameAs(applied);
+    }
+
+    @Test
+    void provisioningInstallsWithoutDesignRights() {
+        doThrow(new OrganizationAccessDeniedException("acme")).when(policy).requireDesign("acme");
+        ImportReport applied = new ImportReport(false, ImportReport.Status.APPLIED, "inventory", "1.0.0", List.of(), List.of());
+        when(importBundle.importAuthorized(eq("acme"), any(InputStream.class), eq(false), eq("custom-seed"),
+                eq(new ImportBundle.Expected("inventory", "1.0.0")))).thenReturn(applied);
+
+        assertThat(installStarter.provision("acme", "inventory", "1.0.0", "custom-seed")).isSameAs(applied);
+        verify(policy, never()).requireDesign(any());
+    }
+
+    @Test
+    void provisioningStillRefusesADownloadThatDoesNotMatchTheCatalog() {
+        when(registry.catalog()).thenReturn(catalog(BundleReader.sha256("other".getBytes(StandardCharsets.UTF_8))));
+
+        assertThatThrownBy(() -> installStarter.provision("acme", "inventory", "1.0.0", "custom-seed"))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().dryRun()).isFalse());
+        verifyNoInteractions(importBundle);
     }
 
     @Test
