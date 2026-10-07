@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>The catalog is cached for {@code catalog-ttl}; bundles are not, they are fetched once per install.
  * A blank {@code base-url} means this deployment has no registry, and the catalog is empty.
+ *
+ * <p>So does a registry that answers 404 for {@code catalog.json}: that is a bucket CI has not
+ * published to yet, and the publish workflow reads the same 404 the same way. Only the catalog gets
+ * that reading. A 404 for a bundle the catalog names is still a broken registry.
  */
 @Component
 public class HttpStarterRegistry implements StarterRegistry {
@@ -56,9 +61,9 @@ public class HttpStarterRegistry implements StarterRegistry {
         }
         Instant now = clock.instant();
         if (cached == null || now.isAfter(cachedUntil)) {
-            byte[] content = get(CATALOG_FILE);
+            Optional<byte[]> content = get(CATALOG_FILE, true);
             try {
-                StarterCatalog catalog = json.readValue(content, StarterCatalog.class);
+                StarterCatalog catalog = content.isEmpty() ? null : json.readValue(content.orElseThrow(), StarterCatalog.class);
                 cached = catalog == null ? StarterCatalog.EMPTY : catalog;
             } catch (IOException e) {
                 throw new RegistryUnavailableException("The registry's " + CATALOG_FILE + " is not valid: " + e.getMessage(), e);
@@ -73,10 +78,11 @@ public class HttpStarterRegistry implements StarterRegistry {
         if (isDisabled()) {
             throw new RegistryUnavailableException("No registry is configured (base-starter.registry.base-url).");
         }
-        return get(path);
+        return get(path, false).orElseThrow();
     }
 
-    private byte[] get(String path) {
+    /** @param missingIsEmpty whether a 404 answers {@link Optional#empty()} rather than failing */
+    private Optional<byte[]> get(String path, boolean missingIsEmpty) {
         if (path == null || !SAFE_PATH.matcher(path).matches() || path.contains("..")) {
             throw new RegistryUnavailableException("The registry names an unsafe path: '" + path + "'.");
         }
@@ -85,10 +91,13 @@ public class HttpStarterRegistry implements StarterRegistry {
         try {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             try (InputStream body = response.body()) {
+                if (missingIsEmpty && response.statusCode() == 404) {
+                    return Optional.empty();
+                }
                 if (response.statusCode() != 200) {
                     throw new RegistryUnavailableException("The registry answered " + response.statusCode() + " for " + uri + ".");
                 }
-                return readCapped(body, uri);
+                return Optional.of(readCapped(body, uri));
             }
         } catch (IOException e) {
             throw new RegistryUnavailableException("The registry is unreachable at " + uri + ": " + e.getMessage(), e);
