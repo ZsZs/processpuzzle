@@ -189,6 +189,19 @@ class HttpStarterRegistryTest {
     }
 
     @Test
+    void readsAMissingCatalogAsEmptyUntilItsTtlRunsOut() {
+        files.remove("catalog.json");
+        HttpStarterRegistry registry = registry();
+
+        assertThat(registry.catalog()).isEqualTo(StarterCatalog.EMPTY);
+
+        files.put("catalog.json", CATALOG.getBytes(StandardCharsets.UTF_8));
+        assertThat(registry.catalog()).isEqualTo(StarterCatalog.EMPTY);
+        clock.advance(properties.getRegistry().getCatalogTtl().plusSeconds(1));
+        assertThat(registry.catalog().starter("inventory")).isPresent();
+    }
+
+    @Test
     void readsANullCatalogAsEmpty() {
         files.put("catalog.json", "null".getBytes(StandardCharsets.UTF_8));
 
