@@ -194,11 +194,23 @@ class HttpStarterRegistryTest {
         HttpStarterRegistry registry = registry();
 
         assertThat(registry.catalog()).isEqualTo(StarterCatalog.EMPTY);
+        assertThat(catalogReads).hasValue(1);
 
         files.put("catalog.json", CATALOG.getBytes(StandardCharsets.UTF_8));
         assertThat(registry.catalog()).isEqualTo(StarterCatalog.EMPTY);
+        assertThat(catalogReads).hasValue(1);
         clock.advance(properties.getRegistry().getCatalogTtl().plusSeconds(1));
         assertThat(registry.catalog().starter("inventory")).isPresent();
+        assertThat(catalogReads).hasValue(2);
+    }
+
+    @Test
+    void anEmptySuccessfulCatalogResponseIsUnavailable() {
+        files.put("catalog.json", new byte[0]);
+        HttpStarterRegistry registry = registry();
+
+        assertThatThrownBy(registry::catalog)
+                .isInstanceOf(RegistryUnavailableException.class).hasMessageContaining("not valid");
     }
 
     @Test
