@@ -62,7 +62,7 @@ describe('appRoutes — entity screen mount points', () => {
 
   it('exposes every primary feature as a titled navigation route', () => {
     expect(appRoutes.filter((route) => route.title).map((route) => route.path)).toEqual([
-      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
+      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-event', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
     ]);
   });
 

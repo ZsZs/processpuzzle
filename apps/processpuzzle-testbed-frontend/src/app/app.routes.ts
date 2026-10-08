@@ -14,6 +14,7 @@ import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
+import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
 import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
@@ -265,6 +266,25 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'base-event',
+    title: 'ProcessPuzzle Testbed - Base Event',
+    data: { icon: 'bolt', menuTitle: 'base-event' },
+    loadComponent: () => import('./content/base-event/base-event.component').then((comp) => comp.BaseEventComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-event/overview.component').then((comp) => comp.OverviewComponent) },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-event/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_EVENT_ROUTES` brings the `event-definition` branch — the catalog a workflow's
+        // TRIGGERING_EVENT start event picks from — and declares its own transloco scopes. Static children,
+        // for the same reason as the base-state branch above.
+        children: BASE_EVENT_ROUTES,
+      },
+    ],
+  },
+  {
     path: 'base-workflow',
     title: 'ProcessPuzzle Testbed - Base Workflow',
     data: { icon: 'schema', menuTitle: 'base-workflow' },
@@ -296,7 +316,24 @@ export const appRoutes: Route[] = [
         // it: this route had no default child before, so the outlet under the toggle bar was simply empty
         // until a sample was picked. Static children rather than `loadChildren`, for the same reason as the
         // base-state and base-document branches above.
-        children: [{ path: '', pathMatch: 'full', redirectTo: WORKFLOW_DASHBOARD_PATH }, ...WORKFLOW_DASHBOARD_ROUTES, ...BASE_WORKFLOW_ROUTES],
+        //
+        // The two artifacts of the seeded order-fulfillment workflow are mounted beside them so a run can be
+        // played through on this one page: `Order` exactly as the Base Rule samples mount it (a metadata
+        // entity resolved at run-time, `data.entityName` on the segment-contributing route, and the
+        // `base_entity` scope its generic tab labels need), and the Fulfillment Invoice as base-document's
+        // `document` branch, which brings its own scopes.
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: WORKFLOW_DASHBOARD_PATH },
+          ...WORKFLOW_DASHBOARD_ROUTES,
+          ...BASE_WORKFLOW_ROUTES,
+          {
+            path: ORDER_PATH,
+            data: { entityName: ORDER_NAME },
+            providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+            loadChildren: orderScreenRoutes,
+          },
+          ...BASE_DOCUMENT_ROUTES,
+        ],
       },
     ],
   },

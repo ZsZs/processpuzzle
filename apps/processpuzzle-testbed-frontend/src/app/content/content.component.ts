@@ -87,6 +87,15 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'bolt',
+      title: 'base-event_card_title',
+      subtitle: 'base-event_card_subtitle',
+      content: ['base-event_card_content', 'base-event_card_content_1', 'base-event_card_content_2', 'base-event_card_content_3'],
+      actions: [{ link: '/base-event', caption: 'base-event_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-event_card_button', link: '/base-event' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'schema',
       title: 'base-workflow_card_title',
       subtitle: 'base-workflow_card_subtitle',
