@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
 import { EntityReference, toReferenceIds } from '../reference-ids';
-import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, TimerDefinition, timerOf, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
 
 // region wire shapes — the schemas of base-workflow-api.yaml, exactly as they travel
 interface RoleUseDto {
@@ -37,6 +37,7 @@ interface StartEventDto {
   authorizedRoles?: EntityReference[];
   milestoneRef?: string;
   preconditionExpression?: string;
+  timer?: TimerDefinition | null;
 }
 
 /**
@@ -59,6 +60,9 @@ interface EventUseDto {
   joinType?: JoinType;
   correlationKey?: string | null;
   payloadMapping?: PropertyMap | null;
+  timer?: TimerDefinition | null;
+  attachedTo?: string | null;
+  interrupting?: boolean;
 }
 
 interface WorkflowTaskAssignmentDto {
@@ -204,6 +208,7 @@ function toStartEvent(dto: StartEventDto): StartEvent {
     authorizedRoles: toReferenceIds(dto.authorizedRoles),
     milestoneRef: dto.milestoneRef,
     preconditionExpression: dto.preconditionExpression,
+    timer: dto.timer ?? undefined,
   });
 }
 
@@ -222,6 +227,7 @@ function fromStartEvent(event: StartEvent): StartEventDto {
     authorizedRoles: toReferenceIds(event.authorizedRoles),
     milestoneRef: event.milestoneRef,
     preconditionExpression: event.preconditionExpression,
+    timer: timerOf(event),
   };
 }
 
@@ -263,23 +269,31 @@ function toEventUse(dto: EventUseDto): EventUse {
     joinType: dto.joinType,
     correlationKey: dto.correlationKey ?? undefined,
     payloadMapping: dto.payloadMapping ?? undefined,
+    timer: dto.timer ?? undefined,
+    attachedTo: dto.attachedTo ?? undefined,
+    interrupting: dto.interrupting,
   });
 }
 
 /**
- * A blank name or correlation key is sent as absent: the backend refuses a correlation key on anything
- * but a MESSAGE, and a cleared text box would otherwise send `''`.
+ * A blank name, correlation key or task to attach to is sent as absent: the backend refuses a correlation
+ * key on anything but a MESSAGE, and a cleared text box would otherwise send `''`. The flattened timer
+ * controls are folded back into `timer`; a timer catch names no catalog event, so its empty
+ * `eventDefinitionId` is sent as absent too. `interrupting` only means something on a boundary event.
  */
 function fromEventUse(event: EventUse): EventUseDto {
   return {
     id: event.id,
     name: event.name?.trim() || undefined,
-    eventDefinitionId: referenceIdOf(event.eventDefinitionId),
+    eventDefinitionId: referenceIdOf(event.eventDefinitionId) || undefined,
     direction: event.direction,
     dependsOn: event.dependsOn,
     joinType: event.joinType,
     correlationKey: event.correlationKey?.trim() || undefined,
     payloadMapping: event.payloadMapping,
+    timer: timerOf(event),
+    attachedTo: event.attachedTo?.trim() || undefined,
+    interrupting: event.attachedTo?.trim() ? (event.interrupting ?? true) : undefined,
   };
 }
 

@@ -23,6 +23,8 @@ export interface TaskInstanceDto {
   activatedAt?: string;
   completedAt?: string;
   skippedAt?: string;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   stepResults?: StepResultDto[];
 }
 
@@ -40,7 +42,7 @@ interface ArtifactInstanceDto {
 interface EventInstanceDto {
   id?: string;
   eventUseId?: string;
-  eventDefinitionId?: string;
+  eventDefinitionId?: string | null;
   name?: string | null;
   direction?: EventDirection;
   status?: EventInstanceStatus;
@@ -49,6 +51,8 @@ interface EventInstanceDto {
   occurredAt?: string | null;
   payload?: PropertyMap | null;
   contextContribution?: PropertyMap | null;
+  dueAt?: string | null;
+  fireCount?: number;
 }
 
 interface WorkflowInstanceDto {
@@ -154,6 +158,8 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     activatedAt: dto.activatedAt,
     completedAt: dto.completedAt,
     skippedAt: dto.skippedAt,
+    cancelledAt: dto.cancelledAt ?? undefined,
+    cancelReason: dto.cancelReason ?? undefined,
     stepResults: (dto.stepResults ?? []).map(toStepResult),
   });
 }
@@ -169,6 +175,8 @@ function fromTaskInstance(task: TaskInstance): TaskInstanceDto {
     activatedAt: task.activatedAt,
     completedAt: task.completedAt,
     skippedAt: task.skippedAt,
+    cancelledAt: task.cancelledAt,
+    cancelReason: task.cancelReason,
     stepResults: (task.stepResults ?? []).map(fromStepResult),
   };
 }
@@ -202,7 +210,7 @@ function toEventInstance(dto: EventInstanceDto): EventInstance {
   return new EventInstance({
     id: dto.id,
     eventUseId: dto.eventUseId,
-    eventDefinitionId: dto.eventDefinitionId,
+    eventDefinitionId: dto.eventDefinitionId ?? undefined,
     name: dto.name ?? undefined,
     direction: dto.direction,
     status: dto.status,
@@ -211,6 +219,8 @@ function toEventInstance(dto: EventInstanceDto): EventInstance {
     occurredAt: dto.occurredAt ?? undefined,
     payload: dto.payload ?? undefined,
     contextContribution: dto.contextContribution ?? undefined,
+    dueAt: dto.dueAt ?? undefined,
+    fireCount: dto.fireCount,
   });
 }
 
@@ -227,6 +237,8 @@ function fromEventInstance(event: EventInstance): EventInstanceDto {
     occurredAt: event.occurredAt,
     payload: event.payload,
     contextContribution: event.contextContribution,
+    dueAt: event.dueAt,
+    fireCount: event.fireCount,
   };
 }
 // endregion

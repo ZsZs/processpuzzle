@@ -43,6 +43,12 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   completedAtAttr.hideInTable = true;
   const skippedAtAttr = timestampAttr('skippedAt', 'Skipped At');
   skippedAtAttr.hideInTable = true;
+  const cancelledAtAttr = timestampAttr('cancelledAt', 'Cancelled At');
+  cancelledAtAttr.hideInTable = true;
+
+  // Only set while CANCELLED: interrupted by which boundary event, unreachable, or why the run was cancelled.
+  const cancelReasonAttr = readOnlyAttr('cancelReason', FormControlType.TEXT_BOX, 'Cancel Reason');
+  cancelReasonAttr.hideInTable = true;
 
   // Containment: the contract nests the step results inside the task instance, and the task instance
   // inside the workflow instance, so these rows travel inside the *instance's* payload.
@@ -55,10 +61,10 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([idAttr, taskDefinitionIdAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
-  const timestampRow = new FlexboxDescriptor([activatedAtAttr, completedAtAttr, skippedAtAttr], FlexDirection.ROW);
+  const timestampRow = new FlexboxDescriptor([activatedAtAttr, completedAtAttr, skippedAtAttr, cancelledAtAttr], FlexDirection.ROW);
   timestampRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, blockedReasonAttr, stepResultsAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, blockedReasonAttr, cancelReasonAttr, stepResultsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

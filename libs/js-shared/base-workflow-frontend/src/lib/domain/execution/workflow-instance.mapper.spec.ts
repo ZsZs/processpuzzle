@@ -83,6 +83,26 @@ describe('WorkflowInstanceMapper', () => {
       expect(mapper.fromDto({ id: 'i1' }).events).toEqual([]);
     });
 
+    it('reads when a timer fires next and how often it has, and a timer catch without a catalog event', () => {
+      const [timer] = mapper.fromDto({
+        id: 'i1',
+        events: [{ id: 'e1', eventUseId: 'overdue', eventDefinitionId: null, direction: 'CATCH', status: 'WAITING', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 }],
+      }).events;
+
+      expect(timer).toMatchObject({ eventDefinitionId: '', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 });
+      expect(mapper.toDto(new WorkflowInstance({ id: 'i1', events: [timer] })).events?.[0]).toMatchObject({ dueAt: '2026-10-08T11:00:00Z', fireCount: 0 });
+    });
+
+    it('reads why a task was cancelled', () => {
+      const task = mapper.fromDto({
+        id: 'i1',
+        tasks: [{ id: 't1', taskDefinitionId: 'issue-invoice', status: 'CANCELLED', cancelledAt: '2026-10-08T11:00:00Z', cancelReason: 'interrupted by overdue' }],
+      }).tasks[0];
+
+      expect(task).toMatchObject({ status: TaskInstanceStatus.CANCELLED, cancelledAt: '2026-10-08T11:00:00Z', cancelReason: 'interrupted by overdue' });
+      expect(mapper.fromDto({ id: 'i1', tasks: [{ id: 't1', cancelledAt: null, cancelReason: null }] }).tasks[0].cancelReason).toBeUndefined();
+    });
+
     it('round-trips the events', () => {
       expect(mapper.toDto(mapper.fromDto(WORKFLOW_INSTANCE_DTO)).events?.map((event) => event.eventUseId)).toEqual(['request-invoice', 'invoice-issued']);
       expect(mapper.toDto(new WorkflowInstance({ id: 'i1' })).events).toEqual([]);

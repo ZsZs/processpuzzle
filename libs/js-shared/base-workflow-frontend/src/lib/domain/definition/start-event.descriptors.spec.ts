@@ -24,7 +24,7 @@ describe('createStartEventDescriptor', () => {
   });
 
   it('describes the identity, the trigger fields and the nested artifacts', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'startType', 'eventType', 'milestoneRef', 'preconditionExpression', 'authorizedRoles', 'payloadMapping', 'requiredArtifacts']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'startType', 'eventType', 'timerType', 'timerExpression', 'milestoneRef', 'preconditionExpression', 'authorizedRoles', 'payloadMapping', 'requiredArtifacts']);
   });
 
   // Unlike the workflow's other rows, a start event has a key of its own.
@@ -65,6 +65,16 @@ describe('createStartEventDescriptor', () => {
     expect(byName('requiredArtifacts')?.linkedEntityType).toBe(WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME);
     expect(byName('requiredArtifacts')?.referenceIdField).toBe('artifactDefinitionId');
     expect(descriptor.embeddedAttrFor(WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME)?.attrName).toBe('requiredArtifacts');
+  });
+
+  // A scheduled start needs a moment; a DURATION would have nothing to be relative to.
+  it('offers a date or a cycle as the timer of a scheduled start', () => {
+    expect(
+      byName('timerType')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.key),
+    ).toEqual(['DATE', 'CYCLE']);
+    expect(byName('timerExpression')?.formControlType).toBe(FormControlType.TEXT_BOX);
   });
 
   it('shows only the identity and the type in the table', () => {

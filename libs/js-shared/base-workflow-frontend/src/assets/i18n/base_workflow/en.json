@@ -49,6 +49,9 @@
       },
       "throw_event": "Throw event",
       "catch_event": "Catch event",
+      "timer_event": "Timer event",
+      "boundary_event": "Boundary event (interrupting)",
+      "non_interrupting_boundary_event": "Boundary event (non-interrupting)",
       "event": "Intermediate event"
     }
   },
@@ -83,6 +86,8 @@
     "eventType": "Event Type",
     "milestoneRef": "Milestone",
     "preconditionExpression": "Precondition",
+    "timerType": "Timer",
+    "timerExpression": "Timer Expression",
     "authorizedRoles": "Authorized Roles",
     "payloadMapping": "Payload Mapping",
     "requiredArtifacts": "Required Artifacts"
@@ -101,6 +106,10 @@
     "dependsOn": "Depends On",
     "joinType": "Join Type",
     "correlationKey": "Correlation Key",
+    "timerType": "Timer",
+    "timerExpression": "Timer Expression",
+    "attachedTo": "Attached To",
+    "interrupting": "Interrupting",
     "payloadMapping": "Payload Mapping"
   },
   "workflow_task_artifact_state": {
@@ -209,6 +218,8 @@
     "activatedAt": "Activated At",
     "completedAt": "Completed At",
     "skippedAt": "Skipped At",
+    "cancelledAt": "Cancelled At",
+    "cancelReason": "Cancel Reason",
     "stepResults": "Step Results",
     "dashboard": {
       "title": "My tasks",
@@ -266,6 +277,8 @@
     "correlationValue": "Correlation Value",
     "waitingSince": "Waiting Since",
     "occurredAt": "Occurred At",
+    "dueAt": "Due At",
+    "fireCount": "Fire Count",
     "payload": "Payload",
     "contextContribution": "Context Contribution"
   },

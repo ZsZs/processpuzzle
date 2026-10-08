@@ -2,11 +2,13 @@ import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor,
 import { WORKFLOW_START_EVENT_I18N_SCOPE } from '../../base-workflow.i18n';
 import { EVENT_DEFINITION_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME, WORKFLOW_START_EVENT_ENTITY_NAME } from '../workflow-entity-names';
 import { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD } from './required-start-artifact.descriptors';
-import { WorkflowStartConditionType } from './workflow';
+import { TimerType, WorkflowStartConditionType } from './workflow';
 
 export { WORKFLOW_START_EVENT_ENTITY_NAME };
 
 const startTypeSelectables = toSelectables(Object.keys(WorkflowStartConditionType));
+// A scheduled start needs a moment to start at; a DURATION would have nothing to be relative to.
+const timerTypeSelectables = toSelectables([TimerType.DATE, TimerType.CYCLE]);
 
 function createStartEventAttrDescriptors(): AbstractAttrDescriptor[] {
   // Unlike the workflow's other embedded rows, a start event has an `id` of its own — author-chosen, and
@@ -39,6 +41,14 @@ function createStartEventAttrDescriptors(): AbstractAttrDescriptor[] {
   milestoneRefAttr.hideInTable = true;
   milestoneRefAttr.placeholder = 'TIME_BASED_PRECONDITION — the milestone whose arrival triggers it';
 
+  // The contract's nested `timer`, flattened into two controls by the mapper — see `timerOf`.
+  const timerTypeAttr = new BaseEntityAttrDescriptor('timerType', FormControlType.DROPDOWN, 'Timer', timerTypeSelectables);
+  timerTypeAttr.hideInTable = true;
+
+  const timerExpressionAttr = new BaseEntityAttrDescriptor('timerExpression', FormControlType.TEXT_BOX, 'Timer Expression');
+  timerExpressionAttr.placeholder = 'TIME_BASED_PRECONDITION — 2026-12-24T08:00:00Z, or R/P1D';
+  timerExpressionAttr.hideInTable = true;
+
   const preconditionExpressionAttr = new BaseEntityAttrDescriptor('preconditionExpression', FormControlType.TEXT_BOX, 'Precondition');
   preconditionExpressionAttr.hideInTable = true;
   preconditionExpressionAttr.placeholder = "TIME_BASED_PRECONDITION — PPCL guard, e.g. milestone.status == 'PASSED'";
@@ -64,7 +74,7 @@ function createStartEventAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, startTypeAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const triggerRow = new FlexboxDescriptor([eventTypeAttr, milestoneRefAttr, preconditionExpressionAttr], FlexDirection.ROW);
+  const triggerRow = new FlexboxDescriptor([eventTypeAttr, timerTypeAttr, timerExpressionAttr, milestoneRefAttr, preconditionExpressionAttr], FlexDirection.ROW);
   triggerRow.style = { 'column-gap': '10px' };
   const detailRow = new FlexboxDescriptor([authorizedRolesAttr, payloadMappingAttr], FlexDirection.ROW);
   detailRow.style = { 'column-gap': '10px' };

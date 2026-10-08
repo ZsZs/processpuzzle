@@ -36,6 +36,38 @@ export enum EventDirection {
   CATCH = 'CATCH',
 }
 
+/**
+ * How a {@link TimerDefinition}'s expression is read: once after a DURATION (`PT2H`), once at a DATE
+ * (`2026-10-10T08:00:00Z`), or repeatedly on a CYCLE (`R3/PT1H`).
+ */
+export enum TimerType {
+  DURATION = 'DURATION',
+  DATE = 'DATE',
+  CYCLE = 'CYCLE',
+}
+
+/**
+ * When a timer fires — of a timer catch {@link EventUse}, or of a `TIME_BASED_PRECONDITION`
+ * {@link StartEvent}. `expression` is an ISO 8601 literal of the form `type` asks for, or a `$.variable`
+ * path into the instance context; the backend checks a literal when the workflow is saved.
+ */
+export interface TimerDefinition {
+  type: TimerType;
+  expression: string;
+}
+
+/**
+ * The timer of an {@link EventUse} or a {@link StartEvent}: the flattened `timerType` / `timerExpression`
+ * pair the form edits, falling back to the `timer` the workflow was loaded with. Read through this rather
+ * than `timer`, which an edit not yet saved leaves stale.
+ */
+export function timerOf(source: { timer?: TimerDefinition; timerType?: TimerType; timerExpression?: string }): TimerDefinition | undefined {
+  if (source.timerType !== undefined || source.timerExpression !== undefined) {
+    return source.timerType && source.timerExpression?.trim() ? { type: source.timerType, expression: source.timerExpression.trim() } : undefined;
+  }
+  return source.timer;
+}
+
 /** How an instance of a workflow comes into being. Selects which fields of a {@link StartEvent} carry meaning. */
 export enum WorkflowStartConditionType {
   INPUT_ARTIFACT = 'INPUT_ARTIFACT',
@@ -178,6 +210,12 @@ export class StartEvent implements BaseEntity {
   milestoneRef?: string;
   /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. */
   preconditionExpression?: string;
+  /** TIME_BASED_PRECONDITION — when the workflow starts on its own: a DATE or a CYCLE literal. */
+  timer?: TimerDefinition;
+  /** {@link timer}'s type, flattened for the form; see {@link timerOf}. */
+  timerType?: TimerType;
+  /** {@link timer}'s expression, flattened for the form; see {@link timerOf}. */
+  timerExpression?: string;
 
   constructor(init: Partial<StartEvent> = {}) {
     this.id = init.id ?? '';
@@ -189,6 +227,9 @@ export class StartEvent implements BaseEntity {
     this.authorizedRoles = init.authorizedRoles ?? [];
     this.milestoneRef = init.milestoneRef;
     this.preconditionExpression = init.preconditionExpression;
+    this.timer = init.timer;
+    this.timerType = init.timerType ?? init.timer?.type;
+    this.timerExpression = init.timerExpression ?? init.timer?.expression;
   }
 }
 
@@ -202,6 +243,10 @@ export class StartEvent implements BaseEntity {
  * `payloadMapping` maps the occurred event into the context on a CATCH, and the context into the payload
  * sent on a THROW.
  *
+ * A CATCH may wait for a `timer` instead — exactly one of `eventDefinitionId` and `timer` is set. With
+ * `attachedTo` a catch is a boundary event of that task: it waits only while the task is ACTIVE, takes no
+ * `dependsOn`, and when it fires an `interrupting` one (the default) cancels the task.
+ *
  * Like {@link StartEvent} it has an author-chosen `id`, unique within the workflow against the task and
  * start-event ids, because `dependsOn` names tasks and events alike.
  *
@@ -211,7 +256,7 @@ export class EventUse implements BaseEntity {
   id: string;
   /** What the diagram calls the event. Absent falls back to the catalog event's id. */
   name?: string;
-  /** Id of an `Event Definition` of base-event's catalog. */
+  /** Id of an `Event Definition` of base-event's catalog; empty on a timer catch. */
   eventDefinitionId: string;
   /** Required by contract; `undefined` only on the blank row an `Add` opens the form on. */
   direction: EventDirection | undefined;
@@ -223,6 +268,16 @@ export class EventUse implements BaseEntity {
   correlationKey?: string;
   /** CATCH: context variable → path into the event. THROW: payload attribute → path into the context. */
   payloadMapping?: PropertyMap;
+  /** A timer catch: when it fires. Read it through {@link timerOf}. */
+  timer?: TimerDefinition;
+  /** {@link timer}'s type, flattened for the form. */
+  timerType?: TimerType;
+  /** {@link timer}'s expression, flattened for the form. */
+  timerExpression?: string;
+  /** Id of the task this is a boundary event of. */
+  attachedTo?: string;
+  /** Boundary events only — whether firing cancels the task. Absent means true. */
+  interrupting?: boolean;
 
   constructor(init: Partial<EventUse> = {}) {
     this.id = init.id ?? '';
@@ -233,6 +288,11 @@ export class EventUse implements BaseEntity {
     this.joinType = init.joinType;
     this.correlationKey = init.correlationKey;
     this.payloadMapping = init.payloadMapping;
+    this.timer = init.timer;
+    this.timerType = init.timerType ?? init.timer?.type;
+    this.timerExpression = init.timerExpression ?? init.timer?.expression;
+    this.attachedTo = init.attachedTo;
+    this.interrupting = init.interrupting;
   }
 }
 

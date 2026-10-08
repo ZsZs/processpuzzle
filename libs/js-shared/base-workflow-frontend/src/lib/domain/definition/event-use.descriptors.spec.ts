@@ -24,7 +24,7 @@ describe('createEventUseDescriptor', () => {
   });
 
   it('describes the identity, the flow wiring and the mapping', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'dependsOn', 'joinType', 'correlationKey', 'payloadMapping']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'dependsOn', 'joinType', 'correlationKey', 'timerType', 'timerExpression', 'attachedTo', 'interrupting', 'payloadMapping']);
   });
 
   // Like a start event, and unlike the workflow's other rows, an event has a key of its own.
@@ -45,11 +45,26 @@ describe('createEventUseDescriptor', () => {
     ).toEqual(['THROW', 'CATCH']);
   });
 
-  // Cross-feature, by name only: the catalog belongs to base-event.
+  // Cross-feature, by name only: the catalog belongs to base-event. Optional, since a timer catch names none.
   it('picks the event from the base-event catalog', () => {
     expect(byName('eventDefinitionId')?.formControlType).toBe(FormControlType.FOREIGN_KEY);
     expect(byName('eventDefinitionId')?.linkedEntityType).toBe(EVENT_DEFINITION_ENTITY_NAME);
-    expect(byName('eventDefinitionId')?.required).toBe(true);
+    expect(byName('eventDefinitionId')?.required).toBeFalsy();
+  });
+
+  it('flattens the timer into a type and an expression', () => {
+    expect(byName('timerType')?.formControlType).toBe(FormControlType.DROPDOWN);
+    expect(
+      byName('timerType')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.key),
+    ).toEqual(['DURATION', 'DATE', 'CYCLE']);
+    expect(byName('timerExpression')?.formControlType).toBe(FormControlType.TEXT_BOX);
+  });
+
+  it('attaches the event to a task by id, interrupting it or not', () => {
+    expect(byName('attachedTo')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    expect(byName('interrupting')?.formControlType).toBe(FormControlType.CHECKBOX);
   });
 
   it('wires the event into the flow like a task assignment', () => {
@@ -58,7 +73,7 @@ describe('createEventUseDescriptor', () => {
     expect(byName('payloadMapping')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
   });
 
-  it('shows the identity and the correlation key in the table', () => {
-    expect(attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'correlationKey']);
+  it('shows the identity, the correlation key and the task it is attached to in the table', () => {
+    expect(attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'correlationKey', 'attachedTo']);
   });
 });

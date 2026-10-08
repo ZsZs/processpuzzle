@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EventDirection } from '../definition/workflow';
-import { modelerElementNameKey } from './modeler-element-names';
+import englishBundle from '../../../assets/i18n/base_workflow/en.json';
+import { EventMarker, modelerElementNameKey, modelerEventMarkerNameKey } from './modeler-element-names';
 import { WorkflowElementKind } from './workflow-graph';
 
 describe('modelerElementNameKey', () => {
@@ -30,5 +31,20 @@ describe('modelerElementNameKey', () => {
     expect(modelerElementNameKey('event', EventDirection.THROW)).toBe('base_workflow.workflow.modeler.throw_event');
     expect(modelerElementNameKey('event', EventDirection.CATCH)).toBe('base_workflow.workflow.modeler.catch_event');
     expect(modelerElementNameKey('event')).toBe('base_workflow.workflow.modeler.event');
+  });
+
+  // The symbols an event has besides its direction, named by the modeler's own labels too.
+  it('names the timer and the two boundary rings through the modeler labels', () => {
+    expect(modelerEventMarkerNameKey('timer')).toBe('base_workflow.workflow.modeler.timer_event');
+    expect(modelerEventMarkerNameKey('boundary')).toBe('base_workflow.workflow.modeler.boundary_event');
+    expect(modelerEventMarkerNameKey('non_interrupting_boundary')).toBe('base_workflow.workflow.modeler.non_interrupting_boundary_event');
+  });
+
+  // The bundle spec keeps the five locales in step; this keeps the keys named here in the bundle.
+  it('names every marker by a key the bundle has', () => {
+    const modeler = (englishBundle as { workflow: { modeler: Record<string, unknown> } }).workflow.modeler;
+    const markers: EventMarker[] = ['timer', 'boundary', 'non_interrupting_boundary'];
+
+    markers.forEach((marker) => expect(modeler[modelerEventMarkerNameKey(marker).split('.').pop() as string]).toEqual(expect.any(String)));
   });
 });

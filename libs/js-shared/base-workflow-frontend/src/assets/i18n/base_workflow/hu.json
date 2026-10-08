@@ -49,6 +49,9 @@
       },
       "throw_event": "Kiváltott esemény",
       "catch_event": "Bekövetkező esemény",
+      "timer_event": "Időzítő esemény",
+      "boundary_event": "Határesemény (megszakító)",
+      "non_interrupting_boundary_event": "Határesemény (nem megszakító)",
       "event": "Köztes esemény"
     }
   },
@@ -83,6 +86,8 @@
     "eventType": "Esemény típusa",
     "milestoneRef": "Mérföldkő",
     "preconditionExpression": "Előfeltétel",
+    "timerType": "Időzítő",
+    "timerExpression": "Időzítő kifejezés",
     "authorizedRoles": "Jogosult szerepkörök",
     "payloadMapping": "Adattartalom-hozzárendelés",
     "requiredArtifacts": "Szükséges artefaktumok"
@@ -101,6 +106,10 @@
     "dependsOn": "Függ ettől",
     "joinType": "Összekapcsolás típusa",
     "correlationKey": "Korrelációs kulcs",
+    "timerType": "Időzítő",
+    "timerExpression": "Időzítő kifejezés",
+    "attachedTo": "Csatolva ehhez",
+    "interrupting": "Megszakító",
     "payloadMapping": "Adatleképezés"
   },
   "workflow_task_artifact_state": {
@@ -209,6 +218,8 @@
     "activatedAt": "Aktiválva",
     "completedAt": "Befejezve",
     "skippedAt": "Kihagyva",
+    "cancelledAt": "Megszakítva",
+    "cancelReason": "Megszakítás oka",
     "stepResults": "Lépés eredmények",
     "dashboard": {
       "title": "Feladataim",
@@ -266,6 +277,8 @@
     "correlationValue": "Korrelációs érték",
     "waitingSince": "Várakozik ekkortól",
     "occurredAt": "Bekövetkezett",
+    "dueAt": "Esedékes",
+    "fireCount": "Kiváltások száma",
     "payload": "Adatok",
     "contextContribution": "Kontextushoz adott"
   },

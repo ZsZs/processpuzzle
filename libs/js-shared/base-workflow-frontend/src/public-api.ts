@@ -5,7 +5,7 @@
 // region models
 export { type PropertyMap } from './lib/domain/property-map';
 export { toReferenceIds } from './lib/domain/reference-ids';
-export { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
+export { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, type TimerDefinition, timerOf, TimerType, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
 export { RoleDefinition } from './lib/domain/definition/role-definition';
 export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifact-definition';
 export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';

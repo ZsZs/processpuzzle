@@ -42,6 +42,12 @@ describe('createEventInstanceDescriptor', () => {
     expect(byName('eventDefinitionId')?.linkedEntityType).toBe(EVENT_DEFINITION_ENTITY_NAME);
   });
 
+  // Timer catches only, so a reader sees when the run moves on by itself.
+  it('shows when a timer fires next and how often it has', () => {
+    expect(byName('dueAt')).toBeDefined();
+    expect(byName('fireCount')?.formControlType).toBe(FormControlType.TEXT_BOX);
+  });
+
   it('keeps the payload and the contribution out of the table', () => {
     expect(byName('payload')?.hideInTable).toBe(true);
     expect(byName('contextContribution')?.hideInTable).toBe(true);

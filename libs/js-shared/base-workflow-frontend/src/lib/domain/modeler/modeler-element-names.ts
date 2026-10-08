@@ -49,3 +49,20 @@ export function modelerElementNameKey(kind: WorkflowElementKind, direction?: Eve
   if (kind === 'event' && direction) return DIRECTION_NAME_KEYS[direction];
   return kind === 'start' || kind === 'end' || kind === 'event' ? EVENT_NAME_KEYS[kind] : `${ELEMENT_I18N_SCOPES[kind]}._self`;
 }
+
+/**
+ * The event symbols that are not a direction: a timer's clock, and the two rings a boundary event is drawn
+ * with — solid when firing cancels its task, dashed when the task runs on. Explained by the legend beside
+ * the throw and the catch, and named by the modeler's own labels for the same reason they are.
+ */
+export type EventMarker = 'timer' | 'boundary' | 'non_interrupting_boundary';
+const MARKER_NAME_KEYS: Record<EventMarker, string> = {
+  timer: `${WORKFLOW_I18N_SCOPE}.modeler.timer_event`,
+  boundary: `${WORKFLOW_I18N_SCOPE}.modeler.boundary_event`,
+  non_interrupting_boundary: `${WORKFLOW_I18N_SCOPE}.modeler.non_interrupting_boundary_event`,
+};
+
+/** The key naming one of the {@link EventMarker} symbols. */
+export function modelerEventMarkerNameKey(marker: EventMarker): string {
+  return MARKER_NAME_KEYS[marker];
+}

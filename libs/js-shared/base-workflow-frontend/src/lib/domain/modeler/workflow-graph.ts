@@ -58,7 +58,8 @@ export const WORKFLOW_RELATION_EDGE_TYPE = 'ppWorkflowRelation';
  * `start` and `end` are the Workflows perspective's BPMN events. A `start` node is one `StartEvent` of the
  * workflow; the `end` node is *derived* — the model has no end element, and the one drawn stands for every
  * task nothing depends on having finished. An `event` node is one intermediate `EventUse`, a throw or a
- * catch by its {@link WorkflowNodeData.direction}.
+ * catch by its {@link WorkflowNodeData.direction} — or, with {@link WorkflowNodeData.attachedTo} set, a
+ * boundary event on the border of the task it is attached to.
  */
 export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workflow' | 'start' | 'end' | 'event';
 
@@ -77,6 +78,15 @@ export const FLOW_KINDS: readonly WorkflowElementKind[] = ['task', 'start', 'end
  * inside the lane's bottom padding.
  */
 export const EVENT_NODE_SIZE = { width: 64, height: 64 };
+
+/**
+ * The box a boundary event is drawn as: a smaller circle, so that pinned across the lower edge of a 76px-high
+ * task card it covers no more of the card than its bottom padding.
+ *
+ * Stated with `autoSize: false` for the same reason as {@link EVENT_NODE_SIZE}: the layouts read it to centre
+ * the circle on the card's edge.
+ */
+export const BOUNDARY_EVENT_NODE_SIZE = { width: 36, height: 36 };
 
 /**
  * What a modeler node carries in ng-diagram's `data`.
@@ -119,6 +129,21 @@ export interface WorkflowNodeData {
    * the filled or the outlined symbol. Unset on every other kind, and on an event row not yet given one.
    */
   direction?: EventDirection;
+  /**
+   * True for an event that waits for a timer rather than a catalog event, which draws it with the clock.
+   * Read through `timerOf`, so a timer typed into the form but not saved yet is drawn as one too.
+   */
+  timer?: boolean;
+  /**
+   * A boundary event's host: the node id of the task it is attached to. The layouts pin the event to the
+   * host's lower edge rather than giving it a column of its own — see `placeBoundaryEvents`.
+   */
+  attachedTo?: string;
+  /**
+   * A boundary event's `interrupting`, resolved — `true` where the model leaves it absent. A solid double
+   * ring when true, a dashed one when not. Unset on every other node.
+   */
+  interrupting?: boolean;
 }
 
 /**
@@ -170,6 +195,11 @@ export type WorkflowEdge = Edge<WorkflowEdgeData>;
  */
 export function isLaneNode(node: WorkflowNode): node is WorkflowLaneNode {
   return 'isGroup' in node;
+}
+
+/** Whether a node is a boundary event — one the layouts pin to its host task rather than place. */
+export function isBoundaryNode(node: WorkflowNode): boolean {
+  return !isLaneNode(node) && !!node.data.attachedTo;
 }
 
 /**

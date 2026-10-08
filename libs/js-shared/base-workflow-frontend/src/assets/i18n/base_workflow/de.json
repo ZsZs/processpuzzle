@@ -49,6 +49,9 @@
       },
       "throw_event": "Auslösendes Ereignis",
       "catch_event": "Eintretendes Ereignis",
+      "timer_event": "Zeitereignis",
+      "boundary_event": "Angeheftetes Ereignis (unterbrechend)",
+      "non_interrupting_boundary_event": "Angeheftetes Ereignis (nicht unterbrechend)",
       "event": "Zwischenereignis"
     }
   },
@@ -83,6 +86,8 @@
     "eventType": "Ereignistyp",
     "milestoneRef": "Meilenstein",
     "preconditionExpression": "Vorbedingung",
+    "timerType": "Timer",
+    "timerExpression": "Timer-Ausdruck",
     "authorizedRoles": "Berechtigte Rollen",
     "payloadMapping": "Nutzdatenzuordnung",
     "requiredArtifacts": "Erforderliche Artefakte"
@@ -101,6 +106,10 @@
     "dependsOn": "Abhängig von",
     "joinType": "Verknüpfungstyp",
     "correlationKey": "Korrelationsschlüssel",
+    "timerType": "Timer",
+    "timerExpression": "Timer-Ausdruck",
+    "attachedTo": "Angeheftet an",
+    "interrupting": "Unterbrechend",
     "payloadMapping": "Nutzdatenzuordnung"
   },
   "workflow_task_artifact_state": {
@@ -209,6 +218,8 @@
     "activatedAt": "Aktiviert am",
     "completedAt": "Abgeschlossen am",
     "skippedAt": "Übersprungen am",
+    "cancelledAt": "Abgebrochen am",
+    "cancelReason": "Abbruchgrund",
     "stepResults": "Schrittergebnisse",
     "dashboard": {
       "title": "Meine Aufgaben",
@@ -266,6 +277,8 @@
     "correlationValue": "Korrelationswert",
     "waitingSince": "Wartet seit",
     "occurredAt": "Eingetreten am",
+    "dueAt": "Fällig am",
+    "fireCount": "Auslösungen",
     "payload": "Nutzdaten",
     "contextContribution": "Kontextbeitrag"
   },

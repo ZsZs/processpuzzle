@@ -18,7 +18,7 @@ describe('WorkflowInstance', () => {
 
   it('mirrors the contract status enums', () => {
     expect(Object.keys(WorkflowInstanceStatus)).toEqual(['ACTIVE', 'COMPLETED', 'CANCELLED', 'SUSPENDED']);
-    expect(Object.keys(TaskInstanceStatus)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED']);
+    expect(Object.keys(TaskInstanceStatus)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED', 'CANCELLED']);
   });
 });
 

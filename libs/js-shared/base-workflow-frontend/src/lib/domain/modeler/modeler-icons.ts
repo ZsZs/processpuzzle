@@ -42,8 +42,17 @@ const EVENT_ICON_FILE_NAMES: Record<EventDirection, string> = {
   [EventDirection.CATCH]: 'EventCatch.svg',
 };
 
-/** The symbol one kind is drawn with — for an intermediate event, the one its direction picks. */
-export function modelerIconUrl(kind: WorkflowElementKind, direction?: EventDirection): string {
-  const fileName = kind === 'event' && direction ? EVENT_ICON_FILE_NAMES[direction] : ICON_FILE_NAMES[kind];
+/**
+ * A timer event's symbol — BPMN's clock, whether the timer is intermediate or on a task's boundary. It wins
+ * over the direction: a timer catches nothing from the catalog, and the clock is what says what it waits for.
+ */
+const TIMER_ICON_FILE_NAME = 'EventTimer.svg';
+
+/**
+ * The symbol one kind is drawn with — for an intermediate event, the one its direction picks, or the clock
+ * when it waits for a timer.
+ */
+export function modelerIconUrl(kind: WorkflowElementKind, direction?: EventDirection, timer?: boolean): string {
+  const fileName = kind === 'event' && timer ? TIMER_ICON_FILE_NAME : kind === 'event' && direction ? EVENT_ICON_FILE_NAMES[direction] : ICON_FILE_NAMES[kind];
   return `${MODELER_ASSET_FOLDER}/${fileName}`;
 }

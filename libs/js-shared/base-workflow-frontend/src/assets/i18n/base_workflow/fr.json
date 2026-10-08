@@ -49,6 +49,9 @@
       },
       "throw_event": "Événement émis",
       "catch_event": "Événement intercepté",
+      "timer_event": "Événement temporisé",
+      "boundary_event": "Événement de bordure (interrompant)",
+      "non_interrupting_boundary_event": "Événement de bordure (non interrompant)",
       "event": "Événement intermédiaire"
     }
   },
@@ -83,6 +86,8 @@
     "eventType": "Type d'événement",
     "milestoneRef": "Jalon",
     "preconditionExpression": "Précondition",
+    "timerType": "Minuteur",
+    "timerExpression": "Expression du minuteur",
     "authorizedRoles": "Rôles autorisés",
     "payloadMapping": "Mappage de charge utile",
     "requiredArtifacts": "Artefacts requis"
@@ -101,6 +106,10 @@
     "dependsOn": "Dépend de",
     "joinType": "Type de jonction",
     "correlationKey": "Clé de corrélation",
+    "timerType": "Minuteur",
+    "timerExpression": "Expression du minuteur",
+    "attachedTo": "Attaché à",
+    "interrupting": "Interrompant",
     "payloadMapping": "Mappage de charge utile"
   },
   "workflow_task_artifact_state": {
@@ -209,6 +218,8 @@
     "activatedAt": "Activée le",
     "completedAt": "Terminée le",
     "skippedAt": "Ignorée le",
+    "cancelledAt": "Annulée le",
+    "cancelReason": "Motif d'annulation",
     "stepResults": "Résultats des étapes",
     "dashboard": {
       "title": "Mes tâches",
@@ -266,6 +277,8 @@
     "correlationValue": "Valeur de corrélation",
     "waitingSince": "En attente depuis",
     "occurredAt": "Survenu le",
+    "dueAt": "Échéance",
+    "fireCount": "Déclenchements",
     "payload": "Charge utile",
     "contextContribution": "Contribution au contexte"
   },

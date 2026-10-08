@@ -32,6 +32,10 @@ function createEventInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const waitingSinceAttr = timestampAttr('waitingSince', 'Waiting Since');
   const occurredAtAttr = timestampAttr('occurredAt', 'Occurred At');
 
+  // Timer catches only: when the timer fires next, and how often it has — a CYCLE fires more than once.
+  const dueAtAttr = timestampAttr('dueAt', 'Due At');
+  const fireCountAttr = readOnlyAttr('fireCount', FormControlType.TEXT_BOX, 'Fire Count');
+
   const payloadAttr = readOnlyAttr('payload', FormControlType.ADDITIONAL_PROPERTIES, 'Payload');
   payloadAttr.hideInTable = true;
   const contextContributionAttr = readOnlyAttr('contextContribution', FormControlType.ADDITIONAL_PROPERTIES, 'Context Contribution');
@@ -41,10 +45,12 @@ function createEventInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const deliveryRow = new FlexboxDescriptor([correlationValueAttr, waitingSinceAttr, occurredAtAttr], FlexDirection.ROW);
   deliveryRow.style = { 'column-gap': '10px' };
+  const timerRow = new FlexboxDescriptor([dueAtAttr, fireCountAttr], FlexDirection.ROW);
+  timerRow.style = { 'column-gap': '10px' };
   const dataRow = new FlexboxDescriptor([payloadAttr, contextContributionAttr], FlexDirection.ROW);
   dataRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, deliveryRow, dataRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, deliveryRow, timerRow, dataRow], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

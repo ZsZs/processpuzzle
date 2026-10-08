@@ -17,6 +17,9 @@ describe('ModelerLegendComponent', () => {
               'base_workflow.artifact_definition._self': 'Artifact',
               'base_workflow.workflow.modeler.throw_event': 'Throw event',
               'base_workflow.workflow.modeler.catch_event': 'Catch event',
+              'base_workflow.workflow.modeler.timer_event': 'Timer event',
+              'base_workflow.workflow.modeler.boundary_event': 'Boundary event (interrupting)',
+              'base_workflow.workflow.modeler.non_interrupting_boundary_event': 'Boundary event (non-interrupting)',
             },
           },
         }),
@@ -43,18 +46,46 @@ describe('ModelerLegendComponent', () => {
     expect(items().map((item) => item.querySelector('img')?.getAttribute('src'))).toEqual(['assets/modeler/Role.svg', 'assets/modeler/Artifact.svg']);
   });
 
-  // One kind, two symbols: an intermediate event is explained as its throw and its catch.
-  it('explains an event as a throw and a catch, each with its own symbol', () => {
+  // One kind, several symbols: an event is explained as its throw and its catch, its timer, and both rings.
+  it('explains an event as a throw, a catch, a timer and the two boundary events, each with its own symbol', () => {
     fixture.componentRef.setInput('kinds', ['role', 'event']);
     fixture.detectChanges();
 
-    expect(items().map((item) => item.dataset['testid'])).toEqual(['modeler-legend-role', 'modeler-legend-event-throw', 'modeler-legend-event-catch']);
-    expect(items().map((item) => item.textContent?.trim())).toEqual(['Role', 'Throw event', 'Catch event']);
+    expect(items().map((item) => item.dataset['testid'])).toEqual([
+      'modeler-legend-role',
+      'modeler-legend-event-throw',
+      'modeler-legend-event-catch',
+      'modeler-legend-event-timer',
+      'modeler-legend-event-boundary',
+      'modeler-legend-event-non-interrupting-boundary',
+    ]);
+    expect(items().map((item) => item.textContent?.trim())).toEqual([
+      'Role',
+      'Throw event',
+      'Catch event',
+      'Timer event',
+      'Boundary event (interrupting)',
+      'Boundary event (non-interrupting)',
+    ]);
     expect(items().map((item) => item.querySelector('img')?.getAttribute('src'))).toEqual([
       'assets/modeler/Role.svg',
       'assets/modeler/EventThrow.svg',
       'assets/modeler/EventCatch.svg',
+      'assets/modeler/EventTimer.svg',
+      'assets/modeler/EventCatch.svg',
+      'assets/modeler/EventCatch.svg',
     ]);
+  });
+
+  // The rings are what tells the two boundary events apart, so the legend draws them: solid, then dashed.
+  it('draws each boundary entry inside the ring its node is drawn with', () => {
+    fixture.componentRef.setInput('kinds', ['event']);
+    fixture.detectChanges();
+
+    const ringOf = (testId: string) => items().find((item) => item.dataset['testid'] === testId)?.querySelector('.legend__ring');
+    expect(ringOf('modeler-legend-event-catch')).toBeNull();
+    expect(ringOf('modeler-legend-event-boundary')?.classList.contains('legend__ring--dashed')).toBe(false);
+    expect(ringOf('modeler-legend-event-non-interrupting-boundary')?.classList.contains('legend__ring--dashed')).toBe(true);
   });
 
   // Only what it draws: the Tasks perspective passes a longer list and reuses this unchanged.

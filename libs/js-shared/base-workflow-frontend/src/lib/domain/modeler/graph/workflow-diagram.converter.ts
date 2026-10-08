@@ -1,5 +1,6 @@
 import { DiagramEdgeLayout, DiagramNodeLayout, DiagramViewport, NodeSize, Point, WorkflowDiagram } from '../models/workflow-diagram';
 import { WorkflowEdge, WorkflowNode } from '../workflow-graph';
+import { placeBoundaryEvents } from './boundary-event-placement';
 
 /**
  * Joins a laid-out modeler graph to a saved arrangement, and takes the arrangement back off it again:
@@ -9,7 +10,7 @@ import { WorkflowEdge, WorkflowNode } from '../workflow-graph';
  * which leaves exactly one place that has to know how they fit together. This is it: nothing else in the
  * modeler reads a `DiagramNodeLayout` row or writes one.
  *
- * Three rules are worth stating, because each is a decision rather than a mechanical mapping.
+ * Four rules are worth stating, because each is a decision rather than a mechanical mapping.
  *
  * **The automatic layout runs first, and the saved one overrides it.** This is the one real departure from
  * base-state's `StateMachineGraphConverter`, which reports the states a layout does not mention as
@@ -18,6 +19,9 @@ import { WorkflowEdge, WorkflowNode } from '../workflow-graph';
  * band from the tasks in it — so a node the saved layout does not mention needs no special handling: it
  * simply keeps its computed position. That is what makes a task added since the last save appear in the
  * right lane rather than at the origin.
+ *
+ * **A boundary event is never where it was saved.** It is pinned to its task's lower edge, so it follows
+ * the task's saved position and ignores its own.
  *
  * **A stale row is ignored, not an error.** `updateWorkflow` is free to drop a task, so a row naming a
  * node the diagram no longer draws is normal; the contract's `saveWorkflowDiagram` says as much.
@@ -46,8 +50,10 @@ export function applySavedLayout(nodes: WorkflowNode[], edges: WorkflowEdge[], d
   const nodeLayouts = new Map(diagram.nodes.map((node) => [node.nodeId, node]));
   const edgeLayouts = new Map(diagram.edges.map((edge) => [edge.edgeId, edge]));
 
+  // Boundary events are pinned again afterwards: a saved row moves the task, and the event belongs on the
+  // edge of wherever the task now is — not where the event itself was when the arrangement was saved.
   return {
-    nodes: nodes.map((node) => applyNodeLayout(node, nodeLayouts.get(node.id))),
+    nodes: placeBoundaryEvents(nodes.map((node) => applyNodeLayout(node, nodeLayouts.get(node.id)))),
     edges: edges.map((edge) => applyEdgeLayout(edge, edgeLayouts.get(edge.id))),
   };
 }

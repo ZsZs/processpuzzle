@@ -91,6 +91,44 @@ describe('WorkflowElementNodeComponent', () => {
     expect(caught.dataset['direction']).toBe('CATCH');
   });
 
+  it('draws a timer event with the clock, whatever its direction', () => {
+    const timer = render({ kind: 'event', label: 'Two hours later', description: 'DURATION PT2H', direction: EventDirection.CATCH, timer: true });
+
+    expect(timer.classList).toContain('element--timer');
+    expect(timer.dataset['timer']).toBe('true');
+    expect(timer.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/EventTimer.svg');
+    expect(timer.getAttribute('title')).toBe('Two hours later (DURATION PT2H)');
+  });
+
+  // The small circle on a task's edge: no name beneath it, which would run into the row below, so the name
+  // is the tooltip; the ring says whether firing interrupts the task.
+  it('draws a boundary event as a ring with no name beneath, solid when it interrupts', () => {
+    const overdue = render({ kind: 'event', label: 'Review overdue', description: 'DURATION PT2H', direction: EventDirection.CATCH, timer: true, attachedTo: 'task:review-order', interrupting: true });
+
+    expect(overdue.classList).toContain('element--boundary');
+    expect(overdue.classList).not.toContain('element--non-interrupting');
+    expect(overdue.dataset['boundary']).toBe('interrupting');
+    expect(overdue.querySelector('.element__label')).toBeNull();
+    expect(overdue.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/EventTimer.svg');
+    expect(overdue.getAttribute('title')).toBe('Review overdue (DURATION PT2H)');
+  });
+
+  it('dashes the ring of a boundary event that does not interrupt, and shows its catalog event as a catch', () => {
+    const reminder = render({ kind: 'event', label: 'Order cancelled', direction: EventDirection.CATCH, attachedTo: 'task:review-order', interrupting: false });
+
+    expect(reminder.classList).toContain('element--non-interrupting');
+    expect(reminder.dataset['boundary']).toBe('non-interrupting');
+    expect(reminder.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/EventCatch.svg');
+  });
+
+  it('marks neither on an intermediate event', () => {
+    const caught = render({ kind: 'event', label: 'Payment received', direction: EventDirection.CATCH });
+
+    expect(caught.dataset['boundary']).toBeUndefined();
+    expect(caught.dataset['timer']).toBeUndefined();
+    expect(caught.querySelector('.element__label')?.textContent?.trim()).toBe('Payment received');
+  });
+
   it('gives the end event its name as the tooltip, and a card none', () => {
     expect(render({ kind: 'end', label: 'End' }).getAttribute('title')).toBe('End');
     expect(render({ kind: 'role', label: 'Order Clerk', description: 'Enters orders.' }).hasAttribute('title')).toBe(false);

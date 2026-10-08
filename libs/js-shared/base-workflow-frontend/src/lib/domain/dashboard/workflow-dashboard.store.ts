@@ -21,9 +21,13 @@ import { TaskActionService } from './task-action.service';
  * `SKIPPED` has no column of its own: a skipped task folds into `COMPLETED`, which is the decision
  * recorded in screen 5 — it is a way of finishing rather than a state to watch, and a column that is
  * empty in every healthy run is worse than a card that says why it is there. The card marks it; the
- * board does not reserve space for it.
+ * board does not reserve space for it. `CANCELLED` folds in the same way, for the same reason: a task
+ * interrupted by a boundary event, or left unreachable by one, is how a run went rather than a state to
+ * watch.
  */
 export const KANBAN_COLUMNS: TaskInstanceStatus[] = [TaskInstanceStatus.PENDING, TaskInstanceStatus.ACTIVE, TaskInstanceStatus.BLOCKED, TaskInstanceStatus.COMPLETED];
+
+const FOLDED_INTO_COMPLETED = new Set<TaskInstanceStatus | undefined>([TaskInstanceStatus.SKIPPED, TaskInstanceStatus.CANCELLED]);
 
 /**
  * What the three verbs need to address a task: the run, and the task's **definition** id.
@@ -282,7 +286,7 @@ export const WorkflowDashboardStore = signalStore(
         const rows = processTasks();
         return KANBAN_COLUMNS.map((status) => ({
           status,
-          rows: rows.filter((row) => (row.task.status === TaskInstanceStatus.SKIPPED ? status === TaskInstanceStatus.COMPLETED : row.task.status === status)),
+          rows: rows.filter((row) => (FOLDED_INTO_COMPLETED.has(row.task.status) ? status === TaskInstanceStatus.COMPLETED : row.task.status === status)),
         }));
       }),
 

@@ -10,11 +10,12 @@ import {
   RequiredStartArtifact,
   StartEvent,
   TaskArtifactState,
+  TimerType,
   Workflow,
   WorkflowStartConditionType,
   WorkflowTaskAssignment,
 } from '../../definition/workflow';
-import { elementEdgeId, elementNodeId, EVENT_NODE_SIZE, isLaneNode, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph } from '../workflow-graph';
+import { BOUNDARY_EVENT_NODE_SIZE, elementEdgeId, elementNodeId, EVENT_NODE_SIZE, isLaneNode, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph } from '../workflow-graph';
 import { WorkflowFlowGraphConverter, WorkflowFlowGraphOptions } from './workflow-flow-graph.converter';
 
 /**
@@ -630,6 +631,132 @@ describe('WorkflowFlowGraphConverter', () => {
         expect(node.size).toEqual(EVENT_NODE_SIZE);
         expect(node.autoSize).toBe(false);
       });
+    });
+  });
+
+  describe('boundary events', () => {
+    const OVERDUE = elementNodeId('event', 'review-overdue');
+    const ESCALATE = elementNodeId('task', 'escalate-review');
+
+    /** The seeded workflow, its review carrying a two-hour timer that hands the order to an escalation. */
+    function withOverdueReview(overdue: Partial<EventUse> = {}, overrides: Partial<Workflow> = {}): Workflow {
+      return workflow({
+        tasks: [...workflow().tasks, assignment({ taskDefinitionId: 'escalate-review', performedBy: 'manager', dependsOn: ['review-overdue'] })],
+        events: [
+          new EventUse({
+            id: 'review-overdue',
+            name: 'Review overdue',
+            direction: EventDirection.CATCH,
+            timer: { type: TimerType.DURATION, expression: 'PT2H' },
+            attachedTo: 'review-order',
+            ...overdue,
+          }),
+        ],
+        ...overrides,
+      });
+    }
+
+    it('draws the event as the smaller circle, naming its task and resolving `interrupting`', () => {
+      const node = nodeOf(convert(withOverdueReview()), OVERDUE);
+
+      expect(node?.size).toEqual(BOUNDARY_EVENT_NODE_SIZE);
+      expect(node?.autoSize).toBe(false);
+      expect(node?.data).toEqual({
+        kind: 'event',
+        elementId: 'review-overdue',
+        label: 'Review overdue',
+        description: 'DURATION PT2H',
+        direction: EventDirection.CATCH,
+        timer: true,
+        attachedTo: REVIEW,
+        interrupting: true,
+      });
+    });
+
+    it('marks a non-interrupting event as such', () => {
+      expect(nodeOf(convert(withOverdueReview({ interrupting: false })), OVERDUE)?.data.interrupting).toBe(false);
+    });
+
+    // Above its siblings, so the half overlapping the card is drawn over the card.
+    it('orders the event above the task it sits on', () => {
+      expect(nodeOf(convert(withOverdueReview()), OVERDUE)?.zOrder).toBe(1);
+      expect(nodeOf(convert(withOverdueReview()), REVIEW)?.zOrder).toBeUndefined();
+    });
+
+    // Through `timerOf`: what the form edits is the flattened pair, and an unsaved edit already shows.
+    it('draws a timer typed into the flattened fields as a timer', () => {
+      const node = nodeOf(convert(withOverdueReview({ timer: undefined, timerType: TimerType.DATE, timerExpression: '2026-10-10T08:00:00Z' })), OVERDUE);
+
+      expect(node?.data.timer).toBe(true);
+      expect(node?.data.description).toBe('DATE 2026-10-10T08:00:00Z');
+    });
+
+    it('draws a boundary event on a catalog event as a catch, even before it is given a direction', () => {
+      const node = nodeOf(convert(withOverdueReview({ timer: undefined, eventDefinitionId: 'OrderCancelledEvent', direction: undefined })), OVERDUE);
+
+      expect(node?.data.timer).toBeUndefined();
+      expect(node?.data.direction).toBe(EventDirection.CATCH);
+      expect(node?.data.description).toBe('OrderCancelledEvent');
+    });
+
+    it('marks an intermediate timer as a timer, with no host', () => {
+      const node = nodeOf(convert(withOverdueReview({ attachedTo: undefined, dependsOn: ['review-order'] })), OVERDUE);
+
+      expect(node?.data.timer).toBe(true);
+      expect(node?.data.attachedTo).toBeUndefined();
+      expect(node?.size).toEqual(EVENT_NODE_SIZE);
+    });
+
+    it('draws no edge into the event, even from a dependsOn a form still holds', () => {
+      const graph = convert(withOverdueReview({ dependsOn: ['approve-shipment'] }));
+
+      expect(graph.edges.filter((edge) => edge.target === OVERDUE)).toEqual([]);
+    });
+
+    it('runs a sequence edge from the event to what depends on it, leaving the circle downwards', () => {
+      const out = convert(withOverdueReview()).edges.filter((edge) => edge.source === OVERDUE);
+
+      expect(out.map((edge) => [edge.target, edge.data?.relation, edge.sourcePort, edge.targetPort])).toEqual([[ESCALATE, 'sequence', 'port-bottom', 'port-left']]);
+    });
+
+    // Reached by its task being active, so neither a root the start feeds nor a sink feeding the end.
+    it('is neither fed by the start nor feeds the end', () => {
+      const graph = convert(withOverdueReview({}, { tasks: workflow().tasks }));
+
+      expect(graph.edges.filter((edge) => edge.source === ORDER_DRAFTED).map((edge) => edge.target)).toEqual([REVIEW]);
+      expect(graph.edges.filter((edge) => edge.target === END).map((edge) => edge.source)).toEqual([CONFIRM]);
+    });
+
+    it('draws the event in its task’s lane', () => {
+      expect(nodeOf(convert(withOverdueReview()), OVERDUE)?.groupId).toBe(laneNodeId('clerk'));
+    });
+
+    it('lends its task’s lane to an event depending on it', () => {
+      const graph = convert(
+        withOverdueReview(
+          {},
+          {
+            events: [
+              ...withOverdueReview().events,
+              new EventUse({ id: 'reminder-sent', eventDefinitionId: 'ReminderSent', direction: EventDirection.THROW, dependsOn: ['review-overdue'] }),
+            ],
+          },
+        ),
+      );
+
+      expect(nodeOf(graph, elementNodeId('event', 'reminder-sent'))?.groupId).toBe(laneNodeId('clerk'));
+    });
+
+    it('draws a host the workflow does not have as a dangling task in the unassigned lane, the event on it', () => {
+      const graph = convert(withOverdueReview({ attachedTo: 'deleted-task' }));
+
+      expect(nodeOf(graph, elementNodeId('task', 'deleted-task'))?.data.unresolved).toBe(true);
+      expect(nodeOf(graph, OVERDUE)?.groupId).toBe(laneNodeId(''));
+      expect(nodeOf(graph, OVERDUE)?.data.attachedTo).toBe(elementNodeId('task', 'deleted-task'));
+    });
+
+    it('treats a blank attachedTo as no host', () => {
+      expect(nodeOf(convert(withOverdueReview({ attachedTo: '  ', dependsOn: ['review-order'] })), OVERDUE)?.data.attachedTo).toBeUndefined();
     });
   });
 

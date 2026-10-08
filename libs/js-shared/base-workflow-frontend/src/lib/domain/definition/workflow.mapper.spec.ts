@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, timerOf, TimerType, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
 import { WorkflowMapper } from './workflow.mapper';
 import { WORKFLOW_DTO } from './test-workflow';
 
@@ -116,6 +116,24 @@ describe('WorkflowMapper', () => {
       expect(mapper.fromDto({ id: 'p1' }).events).toEqual([]);
     });
 
+    // The form edits the timer as two flat controls, so reading one fills them in.
+    it('reads a timer boundary event into the flat controls the form edits', () => {
+      const event = mapper.fromDto({
+        id: 'p1',
+        events: [{ id: 'overdue', direction: 'CATCH', attachedTo: 'issue-invoice', interrupting: false, timer: { type: 'DURATION', expression: 'PT1H' }, eventDefinitionId: null }],
+      }).events[0];
+
+      expect(event).toMatchObject({ attachedTo: 'issue-invoice', interrupting: false, timerType: TimerType.DURATION, timerExpression: 'PT1H', eventDefinitionId: '' });
+      expect(timerOf(event)).toEqual({ type: TimerType.DURATION, expression: 'PT1H' });
+    });
+
+    it('reads the timer of a scheduled start event', () => {
+      const event = mapper.fromDto({ id: 'p1', startEvents: [{ id: 'nightly', startType: 'TIME_BASED_PRECONDITION', timer: { type: 'CYCLE', expression: 'R/P1D' } }] }).startEvents[0];
+
+      expect(event.timerType).toBe(TimerType.CYCLE);
+      expect(event.timerExpression).toBe('R/P1D');
+    });
+
     it('defaults the lists of a start event the document omits', () => {
       const event = mapper.fromDto({ id: 'p1', startEvents: [{ id: 'by-hand', startType: 'ROLE_DEFINITION' }] }).startEvents[0];
 
@@ -188,6 +206,31 @@ describe('WorkflowMapper', () => {
       const event = new EventUse({ id: 'e', eventDefinitionId: 'Stock', direction: EventDirection.CATCH, name: ' ', correlationKey: '' });
 
       expect(mapper.toDto(new Workflow({ id: 'p1', events: [event] })).events?.[0]).toMatchObject({ name: undefined, correlationKey: undefined });
+    });
+
+    // What the form edited wins over the timer the workflow was loaded with.
+    it('folds the flat timer controls back into the contract’s timer', () => {
+      const loaded = new EventUse({ id: 'overdue', direction: EventDirection.CATCH, attachedTo: 'issue-invoice', timer: { type: TimerType.DURATION, expression: 'PT1H' } });
+      loaded.timerExpression = ' PT2H ';
+
+      expect(mapper.toDto(new Workflow({ id: 'p1', events: [loaded] })).events?.[0]).toMatchObject({
+        timer: { type: TimerType.DURATION, expression: 'PT2H' },
+        eventDefinitionId: undefined,
+        attachedTo: 'issue-invoice',
+        interrupting: true,
+      });
+    });
+
+    it('sends no timer when a control is cleared, and no interrupting flag off a boundary', () => {
+      const cleared = new EventUse({ id: 'e', eventDefinitionId: 'Stock', direction: EventDirection.CATCH, timerType: TimerType.DATE, timerExpression: '', attachedTo: ' ', interrupting: false });
+
+      expect(mapper.toDto(new Workflow({ id: 'p1', events: [cleared] })).events?.[0]).toMatchObject({ timer: undefined, attachedTo: undefined, interrupting: undefined, eventDefinitionId: 'Stock' });
+    });
+
+    it('round-trips the timer of a scheduled start event', () => {
+      const event = new StartEvent({ id: 'nightly', startType: WorkflowStartConditionType.TIME_BASED_PRECONDITION, timerType: TimerType.CYCLE, timerExpression: 'R/P1D' });
+
+      expect(mapper.toDto(new Workflow({ id: 'p1', startEvents: [event] })).startEvents?.[0].timer).toEqual({ type: TimerType.CYCLE, expression: 'R/P1D' });
     });
 
     it('emits every list unconditionally', () => {

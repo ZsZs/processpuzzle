@@ -46,6 +46,8 @@ export enum TaskInstanceStatus {
   COMPLETED = 'COMPLETED',
   SKIPPED = 'SKIPPED',
   BLOCKED = 'BLOCKED',
+  /** Terminal, but satisfies nothing: interrupted by a boundary event, unreachable, or its run cancelled. */
+  CANCELLED = 'CANCELLED',
 }
 
 /** Mirrors the contract's `WorkflowInstanceStatus`. */
@@ -79,6 +81,9 @@ export class TaskInstance implements BaseEntity {
   activatedAt?: string;
   completedAt?: string;
   skippedAt?: string;
+  cancelledAt?: string;
+  /** Set while CANCELLED: `interrupted by <eventUseId>`, `unreachable`, or the run's cancel reason. */
+  cancelReason?: string;
   stepResults: StepResult[];
 
   constructor(init: Partial<TaskInstance> = {}) {
@@ -91,6 +96,8 @@ export class TaskInstance implements BaseEntity {
     this.activatedAt = init.activatedAt;
     this.completedAt = init.completedAt;
     this.skippedAt = init.skippedAt;
+    this.cancelledAt = init.cancelledAt;
+    this.cancelReason = init.cancelReason;
     this.stepResults = init.stepResults ?? [];
   }
 }
@@ -134,6 +141,7 @@ export class EventInstance implements BaseEntity {
   id: string;
   /** `EventUse.id` of the workflow this row runs. */
   eventUseId: string;
+  /** Empty for a timer catch. */
   eventDefinitionId: string;
   name?: string;
   direction: EventDirection | undefined;
@@ -145,6 +153,10 @@ export class EventInstance implements BaseEntity {
   payload?: PropertyMap;
   /** CATCH: what the payload mapping added to the context. */
   contextContribution?: PropertyMap;
+  /** Timer catches — when the timer fires next. */
+  dueAt?: string;
+  /** Timer catches — how many times it has fired; a CYCLE fires more than once. */
+  fireCount?: number;
 
   constructor(init: Partial<EventInstance> = {}) {
     this.id = init.id ?? '';
@@ -158,6 +170,8 @@ export class EventInstance implements BaseEntity {
     this.occurredAt = init.occurredAt;
     this.payload = init.payload;
     this.contextContribution = init.contextContribution;
+    this.dueAt = init.dueAt;
+    this.fireCount = init.fireCount;
   }
 }
 

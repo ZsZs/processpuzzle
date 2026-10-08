@@ -42,16 +42,23 @@ const EVENT_KINDS: readonly WorkflowElementKind[] = ['start', 'end', 'event'];
       [attr.data-testid]="'workflow-node-' + data().kind"
       [attr.data-highlighted]="highlighted() ? 'true' : null"
       [attr.data-unresolved]="unresolved() ? 'true' : null"
+      [class.element--timer]="data().timer === true"
+      [class.element--boundary]="isBoundary()"
+      [class.element--non-interrupting]="isBoundary() && data().interrupting === false"
       [attr.data-direction]="data().direction ?? null"
+      [attr.data-timer]="data().timer ? 'true' : null"
+      [attr.data-boundary]="isBoundary() ? (data().interrupting === false ? 'non-interrupting' : 'interrupting') : null"
       [attr.title]="tooltip()"
     >
       <img class="element__symbol" [src]="iconUrl()" alt="" aria-hidden="true" />
-      <div class="element__text">
-        <div class="element__label">{{ data().label }}</div>
-        @if (data().description && !isEvent()) {
-          <div class="element__description">{{ data().description }}</div>
-        }
-      </div>
+      @if (!isBoundary()) {
+        <div class="element__text">
+          <div class="element__label">{{ data().label }}</div>
+          @if (data().description && !isEvent()) {
+            <div class="element__description">{{ data().description }}</div>
+          }
+        </div>
+      }
     </div>
 
     <ng-diagram-port id="port-left" side="left" type="both" />
@@ -184,6 +191,51 @@ const EVENT_KINDS: readonly WorkflowElementKind[] = ['start', 'end', 'event'];
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    /* The host fills the box the layout stated, so a task card can fill it too. A task is the one card a
+       boundary event is pinned to, on the lower edge of that box - drawn only as tall as its text, the card
+       would end above the event. Without a stated box (an autoSize node) both heights resolve to auto. */
+    :host {
+      display: block;
+      height: 100%;
+    }
+    .element--task {
+      min-height: 100%;
+    }
+    /* The clock is square, where the other event symbols are twice as wide as high. */
+    .element--event.element--timer .element__symbol {
+      width: 32px;
+      height: 32px;
+    }
+    /* A boundary event (BOUNDARY_EVENT_NODE_SIZE, 36px): two 2px rings and a 2px gap like an intermediate
+       event, drawn as a border and an inset pseudo-element rather than as a double border, because a double
+       border cannot also be dashed - and dashed is what says it does not interrupt its task. The filled
+       background hides the card's edge behind the circle. No name underneath: it would run into the row
+       below the task, so the name is the tooltip. */
+    .element--boundary {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--pp-color-dark-blue, rgb(24, 111, 206));
+    }
+    .element--boundary::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      border: 2px solid var(--pp-color-dark-blue, rgb(24, 111, 206));
+      pointer-events: none;
+    }
+    .element--non-interrupting,
+    .element--non-interrupting::before {
+      border-style: dashed;
+    }
+    .element--event.element--boundary .element__symbol {
+      width: 20px;
+      height: 10px;
+    }
+    .element--event.element--boundary.element--timer .element__symbol {
+      width: 18px;
+      height: 18px;
+    }
   `,
 })
 export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<WorkflowNodeData> {
@@ -192,7 +244,10 @@ export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<Workf
   /** What this node carries, read once per change rather than through `node().data` in six bindings. */
   protected readonly data = computed(() => this.node().data);
 
-  protected readonly iconUrl = computed(() => modelerIconUrl(this.data().kind, this.data().direction));
+  protected readonly iconUrl = computed(() => modelerIconUrl(this.data().kind, this.data().direction, this.data().timer));
+
+  /** An event pinned to a task's border: the smaller circle, single or dashed rings, its name only a tooltip. */
+  protected readonly isBoundary = computed(() => this.data().kind === 'event' && !!this.data().attachedTo);
 
   /** A start, intermediate or end event, drawn as a circle with its name beneath and its description only as a tooltip. */
   protected readonly isEvent = computed(() => EVENT_KINDS.includes(this.data().kind));

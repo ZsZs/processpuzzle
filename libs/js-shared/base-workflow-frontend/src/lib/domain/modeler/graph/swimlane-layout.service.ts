@@ -1,6 +1,7 @@
 import dagre from '@dagrejs/dagre';
 import { inject, Injectable } from '@angular/core';
-import { FLOW_KINDS, isLaneNode, WorkflowEdge, WorkflowLaneNode, WorkflowNode } from '../workflow-graph';
+import { FLOW_KINDS, isBoundaryNode, isLaneNode, WorkflowEdge, WorkflowLaneNode, WorkflowNode } from '../workflow-graph';
+import { placeBoundaryEvents, rankingEdges } from './boundary-event-placement';
 import { WorkflowLayoutService } from './workflow-layout.service';
 
 /**
@@ -78,22 +79,26 @@ export class SwimlaneLayoutService {
     // The flow is the tasks *and* the start and end events: the events ride the same `sequence` edges, so
     // they take a column of their own — a start event the one before its roots, the end the one after the
     // last task — and a band's row in it, rather than a place in the strip.
-    const flowNodes = nodes.filter((node) => !isLaneNode(node) && FLOW_KINDS.includes(node.data.kind));
+    // A boundary event is neither: it takes no column and no row, but is pinned to its task once the task is
+    // placed. Its outgoing edges are ranked as its task's, so what follows it still lands a column on.
+    const flowNodes = nodes.filter((node) => !isLaneNode(node) && !isBoundaryNode(node) && FLOW_KINDS.includes(node.data.kind));
     const loose = nodes.filter((node) => !isLaneNode(node) && !FLOW_KINDS.includes(node.data.kind));
+    const boundaries = nodes.filter(isBoundaryNode);
+    const ranked = rankingEdges(nodes, edges);
 
-    const columnOf = this.columns(flowNodes, edges);
+    const columnOf = this.columns(flowNodes, ranked);
     const flow = flowNodes.map((node) => (node.data.kind === 'end' ? rehomeEnd(node, edges, columnOf, flowNodes) : node));
     const layout = measureBands(lanes, flow, columnOf);
     const laneWidth = HEADER_WIDTH + LANE_PADDING + widestColumn(columnOf) * (NODE_SIZE.width + COLUMN_GAP) + NODE_SIZE.width + LANE_PADDING;
 
     const placedLanes = lanes.map((lane) => placeLane(lane, layout.bands.get(lane.id) as Band, laneWidth));
     const placedTasks = flow.map((node) => placeTask(node, layout, columnOf));
-    const placedLoose = placeStrip(loose, edges, columnOf, stripTop(layout.bands));
+    const placedLoose = placeStrip(loose, ranked, columnOf, stripTop(layout.bands));
 
     // In the input's order rather than lane-first: the converter already ordered the lanes ahead of their
     // children, and reordering here would silently override whatever it decided.
-    const byId = new Map([...placedLanes, ...placedTasks, ...placedLoose].map((node) => [node.id, node]));
-    return nodes.map((node) => byId.get(node.id) ?? node);
+    const byId = new Map([...placedLanes, ...placedTasks, ...placedLoose, ...boundaries].map((node) => [node.id, node]));
+    return placeBoundaryEvents(nodes.map((node) => byId.get(node.id) ?? node));
   }
 
   /**

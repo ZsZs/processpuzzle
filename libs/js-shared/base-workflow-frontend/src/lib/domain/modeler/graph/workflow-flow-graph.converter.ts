@@ -2,11 +2,12 @@ import { ArtifactDefinition } from '../../definition/artifact-definition';
 import { RoleDefinition } from '../../definition/role-definition';
 import { StepDefinition, TaskDefinition, TaskStepType } from '../../definition/task-definition';
 import { ToolDefinition } from '../../definition/tool-definition';
-import { EventUse, JoinType, StartEvent, TaskArtifactState, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
+import { EventDirection, EventUse, JoinType, StartEvent, TaskArtifactState, timerOf, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
 import { EntityReference, toReferenceIds } from '../../reference-ids';
 import {
   elementEdgeId,
   elementNodeId,
+  BOUNDARY_EVENT_NODE_SIZE,
   EVENT_NODE_SIZE,
   laneNodeId,
   WORKFLOW_LANE_TYPE,
@@ -75,6 +76,10 @@ export interface WorkflowFlowGraphOptions {
  * - **The intermediate events.** An `EventUse` takes part in the flow like a task — its `dependsOn` and a
  *   task's may name tasks and events alike — so it is a node of the flow, a root or a sink like any task.
  *   It has no performer, so it is drawn in the lane of its first dependency, or of its first dependent.
+ * - **The boundary events.** An `EventUse` `attachedTo` a task waits only while that task is active, so it
+ *   is drawn on the task's border, in the task's lane, rather than as a step of the flow: no edge runs into
+ *   it, it is never a root or a sink, and the layout pins it rather than ranking it. What names it in a
+ *   `dependsOn` is fed from it like from any event. A dangling `attachedTo` is drawn as a dangling task.
  * - **The implicit order.** Siblings sharing a `dependsOn` set with `parallel: false` run sequentially *in
  *   declaration order* — an ordering that exists nowhere as data. Drawn, because a diagram that showed them
  *   side by side would say they run together and they do not; drawn *distinctly*, because reordering the
@@ -152,8 +157,9 @@ export class WorkflowFlowGraphConverter {
     // region tasks, intermediate events and their lanes
     // Every dependency naming no assignment or event of this workflow. Drawn rather than dropped so that the
     // chain does not simply stop, and placed in the unassigned lane because nothing says who would perform it.
+    // A boundary event's host is one more such reference: the event is drawn on a task either way.
     const danglingTaskIds = distinct(
-      [...assignments.flatMap(dependenciesOf), ...events.flatMap(eventDependenciesOf)].filter(
+      [...assignments.flatMap(dependenciesOf), ...events.flatMap(eventDependenciesOf), ...events.flatMap((event) => hostOf(event) ?? [])].filter(
         (dependencyId) => !assignedTaskIds.has(dependencyId) && !eventIds.has(dependencyId),
       ),
     );
@@ -174,9 +180,14 @@ export class WorkflowFlowGraphConverter {
 
     // region sequence — the flow the model states
     // The join is a property of the whole set, so it is written on each edge of it rather than once.
+    // An edge out of a boundary event leaves it downwards: the circle sits on its task's lower edge, and its
+    // right-hand port would start the line inside the card.
+    const boundaryIds = new Set(events.filter((event) => hostOf(event) !== undefined).map((event) => event.id));
     const addSequence = (targetNodeId: string, dependencies: string[], joinType: JoinType | undefined) => {
       const label = joinType === JoinType.ANY && dependencies.length > 1 ? anyJoinLabel : undefined;
-      dependencies.forEach((dependencyId) => builder.addEdge(flowNodeIdOf(dependencyId), targetNodeId, 'sequence', label));
+      dependencies.forEach((dependencyId) =>
+        builder.addEdge(flowNodeIdOf(dependencyId), targetNodeId, 'sequence', label, boundaryIds.has(dependencyId) ? 'port-bottom' : undefined),
+      );
     };
     assignments.forEach((assignment) => addSequence(elementNodeId('task', assignment.taskDefinitionId), dependenciesOf(assignment), assignment.joinType));
     events.forEach((event) => addSequence(elementNodeId('event', event.id), eventDependenciesOf(event), event.joinType));
@@ -194,7 +205,11 @@ export class WorkflowFlowGraphConverter {
         dependencies: dependenciesOf(assignment),
         lane: laneOf(assignment),
       })),
-      ...events.map((event) => ({ id: event.id, nodeId: elementNodeId('event', event.id), dependencies: eventDependenciesOf(event), lane: eventLaneOf(event) })),
+      // Not a boundary event: it is reached by its task being active, never by the start, and leads nowhere
+      // unless something names it — in which case that is the sink.
+      ...events
+        .filter((event) => !boundaryIds.has(event.id))
+        .map((event) => ({ id: event.id, nodeId: elementNodeId('event', event.id), dependencies: eventDependenciesOf(event), lane: eventLaneOf(event) })),
     ];
     const roots = flowItems.filter((item) => item.dependencies.length === 0);
     const dependedOnIds = new Set(flowItems.flatMap((item) => item.dependencies));
@@ -319,11 +334,13 @@ class GraphBuilder {
     this.nodes.push(node);
   }
 
-  addEdge(source: string, target: string, relation: WorkflowRelation, label?: string): void {
+  /** `sourcePort` overrides the relation's own, for the one edge that leaves its node differently. */
+  addEdge(source: string, target: string, relation: WorkflowRelation, label?: string, sourcePort?: string): void {
     const id = elementEdgeId(source, target);
     if (this.edgeIds.has(id)) return;
     this.edgeIds.add(id);
-    this.edges.push({ id, source, target, type: WORKFLOW_RELATION_EDGE_TYPE, ...RELATION_PORTS[relation], data: { relation, label } });
+    const ports = { ...RELATION_PORTS[relation], ...(sourcePort ? { sourcePort } : {}) };
+    this.edges.push({ id, source, target, type: WORKFLOW_RELATION_EDGE_TYPE, ...ports, data: { relation, label } });
   }
 
   build(): WorkflowGraph {
@@ -360,9 +377,19 @@ function dependenciesOf(assignment: WorkflowTaskAssignment): string[] {
   return toReferenceIds(assignment.dependsOn).filter((dependencyId) => dependencyId !== assignment.taskDefinitionId);
 }
 
-/** What an intermediate event waits for — {@link dependenciesOf}'s rules, for an `EventUse`. */
+/**
+ * What an intermediate event waits for — {@link dependenciesOf}'s rules, for an `EventUse`. Nothing, for a
+ * boundary event: it takes no `dependsOn`, and one a form still holds would draw an edge into the border of
+ * a task, which the engine never follows.
+ */
 function eventDependenciesOf(event: EventUse): string[] {
+  if (hostOf(event) !== undefined) return [];
   return toReferenceIds(event.dependsOn).filter((dependencyId) => dependencyId !== event.id);
+}
+
+/** The task a boundary event is attached to, or `undefined` for an intermediate one. Blank is no host. */
+function hostOf(event: EventUse): string | undefined {
+  return event.attachedTo?.trim() || undefined;
 }
 
 /** One node of the flow as its roots and sinks are found — a task or an intermediate event. */
@@ -404,6 +431,13 @@ function eventLanes(assignments: WorkflowTaskAssignment[], events: EventUse[]): 
   function resolve(event: EventUse): string | undefined {
     if (resolved.has(event.id)) return resolved.get(event.id);
     if (resolving.has(event.id)) return undefined;
+    // A boundary event is drawn on its task, so it is in the task's lane — the unassigned one for a dangling
+    // task, which is where that is drawn.
+    const host = hostOf(event);
+    if (host !== undefined) {
+      const assignment = assignmentsById.get(host);
+      return assignment ? laneOf(assignment) : UNASSIGNED_ROLE_ID;
+    }
     resolving.add(event.id);
     const lane = firstDefined(eventDependenciesOf(event).map(laneOfDependency)) ?? laneOfDependents(event.id);
     resolving.delete(event.id);
@@ -554,24 +588,35 @@ function startEventNode(event: StartEvent, laneRoleId: string | undefined): Work
 }
 
 /**
- * One intermediate event, labelled by its name or, lacking one, by the catalog event it throws or catches —
- * which is otherwise the description, the node's tooltip. The direction picks the symbol.
+ * One intermediate or boundary event, labelled by its name or, lacking one, by the catalog event it throws
+ * or catches — which is otherwise the description, the node's tooltip. The direction picks the symbol, and
+ * a timer the clock; a timer's description is when it fires, `DURATION PT2H`.
+ *
+ * A boundary event is the smaller circle, carries its host's node id for the layout to pin it by, and is
+ * ordered above its siblings so that the half of it overlapping the task card is drawn over the card.
  */
 function intermediateEventNode(event: EventUse, laneRoleId: string | undefined): WorkflowNode {
+  const timer = timerOf(event);
+  const host = hostOf(event);
   const label = event.name || event.eventDefinitionId || event.id;
+  const fires = timer ? `${timer.type} ${timer.expression}` : event.eventDefinitionId || undefined;
   return {
     id: elementNodeId('event', event.id),
     type: WORKFLOW_NODE_TYPE,
     position: { x: 0, y: 0 },
-    size: { ...EVENT_NODE_SIZE },
+    size: { ...(host === undefined ? EVENT_NODE_SIZE : BOUNDARY_EVENT_NODE_SIZE) },
     autoSize: false,
+    ...(host === undefined ? {} : { zOrder: 1 }),
     ...(laneRoleId === undefined ? {} : { groupId: laneNodeId(laneRoleId) }),
     data: {
       kind: 'event',
       elementId: event.id,
       label,
-      description: label === event.eventDefinitionId ? undefined : event.eventDefinitionId || undefined,
-      direction: event.direction,
+      description: label === fires ? undefined : fires,
+      // A boundary event can only catch, so a row not given a direction yet is drawn as the catch it will be.
+      direction: event.direction ?? (host === undefined ? undefined : EventDirection.CATCH),
+      ...(timer ? { timer: true } : {}),
+      ...(host === undefined ? {} : { attachedTo: elementNodeId('task', host), interrupting: event.interrupting !== false }),
     },
   };
 }

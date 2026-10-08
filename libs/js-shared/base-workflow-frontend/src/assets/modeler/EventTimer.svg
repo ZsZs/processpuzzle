@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- A clock, outlined in the stroke of EventCatch.svg: the BPMN marker of a timer event. -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="15.586mm" height="15.586mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="-10 -10 280.08 280.08"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil1 {fill:none;stroke:black;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}
+    .fil0 {fill:white;stroke:black;stroke-width:14;stroke-linejoin:round}
+   ]]>
+  </style>
+ </defs>
+ <g id="Outline">
+  <circle class="fil0" cx="130.04" cy="130.04" r="123"/>
+  <!-- The twelve hour ticks, the quarters longer. -->
+  <path class="fil1" d="M130.04 22.04l0 28M130.04 210.04l0 28M22.04 130.04l28 0M210.04 130.04l28 0"/>
+  <path class="fil1" d="M184.04 36.51l-7 12.12M223.57 76.04l-12.12 7M223.57 184.04l-12.12 -7M184.04 223.57l-7 -12.12M76.04 223.57l7 -12.12M36.51 184.04l12.12 -7M36.51 76.04l12.12 7M76.04 36.51l7 12.12"/>
+  <!-- The two hands. -->
+  <path class="fil1" d="M130.04 130.04l0 -78M130.04 130.04l52 30"/>
+ </g>
+</svg>

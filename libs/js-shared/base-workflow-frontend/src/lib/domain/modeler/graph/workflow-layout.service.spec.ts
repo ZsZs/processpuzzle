@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { WORKFLOW_NODE_TYPE, WorkflowEdge, WorkflowElementKind, WorkflowNode } from '../workflow-graph';
+import { BOUNDARY_EVENT_NODE_SIZE, WORKFLOW_NODE_TYPE, WorkflowEdge, WorkflowElementKind, WorkflowNode } from '../workflow-graph';
 import { WorkflowLayoutService } from './workflow-layout.service';
 
 function node(id: string, kind: WorkflowElementKind = 'role'): WorkflowNode {
@@ -64,5 +64,38 @@ describe('WorkflowLayoutService', () => {
     const placed = service.place([node('role:clerk')], [edge('role:clerk', 'artifact:deleted')]);
 
     expect(placed.map((each) => each.id)).toEqual(['role:clerk']);
+  });
+
+  describe('boundary events', () => {
+    /** A boundary event on `task:review`, as the converter emits one. */
+    function boundary(id: string): WorkflowNode {
+      return { ...node(id, 'event'), size: { ...BOUNDARY_EVENT_NODE_SIZE }, autoSize: false, data: { kind: 'event', label: id, attachedTo: 'task:review', interrupting: true } };
+    }
+
+    // Lanes off: the event is still pinned, and its task is given the box it was laid out as so the visible
+    // card ends where the event sits.
+    it('pins the event across the lower edge of its task, and states the task’s box', () => {
+      const [review, overdue] = service.place([node('task:review', 'task'), boundary('event:overdue')], []);
+
+      expect(review.autoSize).toBe(false);
+      expect(overdue.position.y + BOUNDARY_EVENT_NODE_SIZE.height / 2).toBe(review.position.y + (review.size?.height as number));
+      expect(overdue.position.x).toBeGreaterThan(review.position.x);
+    });
+
+    it('ranks what depends on the event after the event’s task', () => {
+      const [review, , escalate] = service.place(
+        [node('task:review', 'task'), boundary('event:overdue'), node('task:escalate', 'task')],
+        [edge('event:overdue', 'task:escalate')],
+      );
+
+      expect(escalate.position.x).toBeGreaterThan(review.position.x);
+    });
+
+    it('leaves a task with no boundary event to be measured', () => {
+      const [review] = service.place([node('task:review', 'task')], []);
+
+      expect(review.autoSize).toBe(true);
+      expect(review.size).toBeUndefined();
+    });
   });
 });

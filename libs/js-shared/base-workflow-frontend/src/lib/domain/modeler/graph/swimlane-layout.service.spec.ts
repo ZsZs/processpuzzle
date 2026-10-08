@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  BOUNDARY_EVENT_NODE_SIZE,
   elementEdgeId,
   elementNodeId,
   EVENT_NODE_SIZE,
@@ -371,6 +372,67 @@ describe('SwimlaneLayoutService', () => {
       );
 
       expect(placed.find((node) => node.id === END)?.groupId).toBe(laneNodeId('manager'));
+    });
+  });
+
+  describe('boundary events', () => {
+    const OVERDUE = elementNodeId('event', 'review-overdue');
+    const ESCALATE = elementNodeId('task', 'escalate-review');
+
+    /** A boundary event as the converter emits one: the small circle, in its host's lane, naming its host. */
+    function boundary(id: string, host: string, laneRoleId: string): WorkflowNode {
+      const node = element('event', id, laneRoleId);
+      return { ...node, size: { ...BOUNDARY_EVENT_NODE_SIZE }, autoSize: false, data: { ...node.data, attachedTo: host, interrupting: true } };
+    }
+
+    /** The seeded chain, the review carrying a timer that escalates it to the manager. */
+    function withOverdueReview(): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
+      return {
+        nodes: [...seededNodes(), element('task', 'escalate-review', 'manager'), boundary('review-overdue', REVIEW, 'clerk')],
+        edges: [...seededEdges(), edge(OVERDUE, ESCALATE, 'sequence')],
+      };
+    }
+
+    it('pins the event across the lower edge of its task, inside the task’s width', () => {
+      const { nodes, edges } = withOverdueReview();
+      const placed = service.place(nodes, edges);
+      const review = placed.find((node) => node.id === REVIEW) as WorkflowNode;
+      const overdue = placed.find((node) => node.id === OVERDUE) as WorkflowNode;
+
+      expect(overdue.size).toEqual(BOUNDARY_EVENT_NODE_SIZE);
+      expect(overdue.autoSize).toBe(false);
+      expect(overdue.position.y + BOUNDARY_EVENT_NODE_SIZE.height / 2).toBe(review.position.y + (review.size?.height as number));
+      expect(overdue.position.x).toBeGreaterThanOrEqual(review.position.x);
+      expect(overdue.position.x + BOUNDARY_EVENT_NODE_SIZE.width).toBeLessThanOrEqual(review.position.x + (review.size?.width as number));
+    });
+
+    // Ranked as an edge out of its task: what follows the event comes one column after the task, not first.
+    it('ranks what depends on the event a column after the event’s task', () => {
+      const { nodes, edges } = withOverdueReview();
+      const placed = service.place(nodes, edges);
+
+      expect(positionOf(placed, ESCALATE)?.x).toBe(positionOf(placed, APPROVE)?.x);
+    });
+
+    // It takes no row of its band: the clerk's lane is no deeper for it.
+    it('takes neither a column nor a row of its own', () => {
+      const plain = service.place(seededNodes(), seededEdges());
+      const { nodes, edges } = withOverdueReview();
+      const placed = service.place(nodes, edges);
+      const clerkHeight = (graph: WorkflowNode[]) => graph.find((node) => node.id === laneNodeId('clerk'))?.size?.height;
+
+      expect(clerkHeight(placed)).toBe(clerkHeight(plain));
+      expect(positionOf(placed, CONFIRM)).toEqual(positionOf(plain, CONFIRM));
+    });
+
+    it('spreads a task’s several boundary events along its edge, from the right', () => {
+      const { nodes, edges } = withOverdueReview();
+      const placed = service.place([...nodes, boundary('review-cancelled', REVIEW, 'clerk')], edges);
+      const first = positionOf(placed, OVERDUE) as { x: number; y: number };
+      const second = positionOf(placed, elementNodeId('event', 'review-cancelled')) as { x: number; y: number };
+
+      expect(second.y).toBe(first.y);
+      expect(second.x).toBeLessThan(first.x - BOUNDARY_EVENT_NODE_SIZE.width + 1);
     });
   });
 

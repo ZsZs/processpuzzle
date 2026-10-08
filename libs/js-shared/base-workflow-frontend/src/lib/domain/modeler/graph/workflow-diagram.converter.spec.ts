@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DiagramEdgeLayout, DiagramNodeLayout, DiagramViewport, NodeSize, Point, WorkflowDiagram } from '../models/workflow-diagram';
-import { WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WorkflowEdge, WorkflowNode } from '../workflow-graph';
+import { BOUNDARY_EVENT_NODE_SIZE, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WorkflowEdge, WorkflowNode } from '../workflow-graph';
 import { applySavedLayout, toDiagram } from './workflow-diagram.converter';
 
 /** As `SwimlaneLayoutService` leaves them: placed, sized, and with `autoSize` turned off. */
@@ -48,6 +48,33 @@ describe('workflow diagram converter', () => {
       const { nodes } = applySavedLayout(placedNodes(), placedEdges(), saved);
 
       expect(nodes.find((node) => node.id === 'task:review-order')?.position).toEqual({ x: 900, y: 800 });
+    });
+
+    // Pinned to the task, so it follows the task's saved position and ignores a row of its own.
+    it('moves a boundary event with its task, whatever was saved for the event itself', () => {
+      const overdue: WorkflowNode = {
+        id: 'event:review-overdue',
+        type: WORKFLOW_NODE_TYPE,
+        groupId: 'lane:clerk',
+        position: { x: 280, y: 74 },
+        size: { ...BOUNDARY_EVENT_NODE_SIZE },
+        autoSize: false,
+        data: { kind: 'event', label: 'Overdue', attachedTo: 'task:review-order', interrupting: true },
+      };
+      const saved = new WorkflowDiagram({
+        workflowId: 'w',
+        nodes: [
+          new DiagramNodeLayout({ nodeId: 'task:review-order', position: new Point({ x: 900, y: 800 }) }),
+          new DiagramNodeLayout({ nodeId: 'event:review-overdue', position: new Point({ x: 0, y: 0 }) }),
+        ],
+      });
+
+      const { nodes } = applySavedLayout([...placedNodes(), overdue], placedEdges(), saved);
+      const pinned = nodes.find((node) => node.id === overdue.id) as WorkflowNode;
+
+      expect(pinned.position.y + BOUNDARY_EVENT_NODE_SIZE.height / 2).toBe(800 + 76);
+      expect(pinned.position.x).toBeGreaterThan(900);
+      expect(pinned.position.x + BOUNDARY_EVENT_NODE_SIZE.width).toBeLessThanOrEqual(900 + 170);
     });
 
     /**
