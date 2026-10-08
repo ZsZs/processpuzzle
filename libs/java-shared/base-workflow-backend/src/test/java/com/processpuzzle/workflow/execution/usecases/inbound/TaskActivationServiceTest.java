@@ -10,6 +10,8 @@ import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow.ResolvedTask;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleCheckResult;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleEvaluationPort;
@@ -18,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -54,7 +58,8 @@ class TaskActivationServiceTest {
             savedInstances.add(saved);
             return saved;
         });
-        service = new TaskActivationService(taskInstanceRepository, ruleEvaluationPort, mock(ApplicationEventPublisher.class));
+        service = new TaskActivationService(taskInstanceRepository, mock(EventInstanceRepository.class),
+                mock(WorkflowInstanceRepository.class), ruleEvaluationPort, mock(ApplicationEventPublisher.class));
     }
 
     @Test
@@ -130,14 +135,18 @@ class TaskActivationServiceTest {
     }
 
     @Test
-    void allTerminalIsTrueOnlyWhenEveryTaskIsCompletedOrSkipped() {
-        List<TaskInstance> instances = List.of(
-                TaskInstance.builder().status(TaskInstanceStatus.COMPLETED).build(),
-                TaskInstance.builder().status(TaskInstanceStatus.SKIPPED).build());
+    void allTerminalIsTrueOnlyWhenNoTaskIsLeftOutsideCompletedOrSkipped() {
+        ResolvedWorkflow workflow = workflowWithSequentialTasks("draft", "review");
         UUID workflowInstanceId = UUID.randomUUID();
-        when(taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId("acme", workflowInstanceId)).thenReturn(instances);
+        Set<TaskInstanceStatus> terminal = EnumSet.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED);
 
-        assertThat(service.allTerminal("acme", workflowInstanceId)).isTrue();
+        when(taskInstanceRepository.countByOrgKeyAndWorkflowInstanceIdAndStatusNotIn("acme", workflowInstanceId, terminal))
+                .thenReturn(0L);
+        assertThat(service.allTerminal("acme", workflow, workflowInstanceId)).isTrue();
+
+        when(taskInstanceRepository.countByOrgKeyAndWorkflowInstanceIdAndStatusNotIn("acme", workflowInstanceId, terminal))
+                .thenReturn(1L);
+        assertThat(service.allTerminal("acme", workflow, workflowInstanceId)).isFalse();
     }
 
     // ---------------------------------------------------------------- join type

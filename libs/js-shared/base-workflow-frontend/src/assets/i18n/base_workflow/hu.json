@@ -13,6 +13,7 @@
     "artifacts": "Artefaktumok",
     "tools": "Eszközök",
     "tasks": "Tevékenységek",
+    "events": "Események",
     "tabs": {
       "modeler": "Munkafolyamat-modellező"
     },
@@ -45,7 +46,10 @@
           "start": "Induláshoz szükséges",
           "unknown": "Kapcsolódik ehhez"
         }
-      }
+      },
+      "throw_event": "Kiváltott esemény",
+      "catch_event": "Bekövetkező esemény",
+      "event": "Köztes esemény"
     }
   },
   "workflow_task_assignment": {
@@ -87,6 +91,17 @@
     "_self": "Szükséges artefaktum",
     "artifactDefinitionId": "Artefaktum",
     "state": "Állapot"
+  },
+  "workflow_event_use": {
+    "_self": "Köztes esemény",
+    "id": "Azonosító",
+    "name": "Név",
+    "direction": "Irány",
+    "eventDefinitionId": "Esemény",
+    "dependsOn": "Függ ettől",
+    "joinType": "Összekapcsolás típusa",
+    "correlationKey": "Korrelációs kulcs",
+    "payloadMapping": "Adatleképezés"
   },
   "workflow_task_artifact_state": {
     "_self": "Tevékenység artefaktum-állapota",
@@ -180,7 +195,8 @@
     "completedAt": "Befejezve",
     "context": "Kontextus",
     "tasks": "Tevékenységek",
-    "artifacts": "Artefaktumok"
+    "artifacts": "Artefaktumok",
+    "events": "Események"
   },
   "task_instance": {
     "_self": "Tevékenységpéldány",
@@ -226,7 +242,8 @@
       "skip_reason": "A kihagyás oka",
       "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
       "unassigned": "nincs hozzárendelve",
-      "assigned_to": "Hozzárendelve"
+      "assigned_to": "Hozzárendelve",
+      "waiting_for": "Várakozik:"
     }
   },
   "artifact_instance": {
@@ -239,6 +256,18 @@
     "stateMachineInstanceId": "Állapotgép példány",
     "currentState": "Jelenlegi állapot",
     "updatedAt": "Módosítva"
+  },
+  "event_instance": {
+    "_self": "Eseménypéldány",
+    "eventUseId": "Esemény",
+    "direction": "Irány",
+    "status": "Állapot",
+    "eventDefinitionId": "Katalógusesemény",
+    "correlationValue": "Korrelációs érték",
+    "waitingSince": "Várakozik ekkortól",
+    "occurredAt": "Bekövetkezett",
+    "payload": "Adatok",
+    "contextContribution": "Kontextushoz adott"
   },
   "task_step_result": {
     "_self": "Lépés eredmény",

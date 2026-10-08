@@ -9,7 +9,7 @@ import { ArtifactDefinition } from '../../domain/definition/artifact-definition'
 import { ArtifactDefinitionMapper } from '../../domain/definition/artifact-definition.mapper';
 import { ArtifactDefinitionService } from '../../domain/definition/artifact-definition.service';
 import { ArtifactDefinitionStore } from '../../domain/definition/artifact-definition.store';
-import { ArtifactUse, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowTaskAssignment } from '../../domain/definition/workflow';
+import { ArtifactUse, EventUse, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowTaskAssignment } from '../../domain/definition/workflow';
 import { WorkflowMapper } from '../../domain/definition/workflow.mapper';
 import { WorkflowService } from '../../domain/definition/workflow.service';
 import { WorkflowStore } from '../../domain/definition/workflow.store';
@@ -34,6 +34,7 @@ import { TaskDefinitionFacade } from './task-definition.facade';
 import { ToolDefinitionFacade } from './tool-definition.facade';
 import {
   WorkflowArtifactUseFacade,
+  WorkflowEventUseFacade,
   WorkflowRequiredStartArtifactFacade,
   WorkflowRoleUseFacade,
   WorkflowStartEventFacade,
@@ -62,6 +63,7 @@ describe('the definition-layer facades', () => {
         WorkflowToolUseFacade,
         WorkflowStartEventFacade,
         WorkflowRequiredStartArtifactFacade,
+        WorkflowEventUseFacade,
         WorkflowTaskArtifactStateFacade,
         TaskStepDefinitionFacade,
         ToolOperationFacade,
@@ -197,6 +199,13 @@ describe('the definition-layer facades', () => {
       expect(facade.entityName).toBe('Workflow Start Event');
     });
 
+    it('give the workflow its intermediate events', () => {
+      const facade = TestBed.inject(WorkflowEventUseFacade);
+
+      expect(facade.entityType).toBe(EventUse);
+      expect(facade.entityName).toBe('Workflow Event Use');
+    });
+
     it('give a start event its required artifacts', () => {
       const facade = TestBed.inject(WorkflowRequiredStartArtifactFacade);
 
@@ -221,6 +230,7 @@ describe('the definition-layer facades', () => {
         WorkflowToolUseFacade,
         WorkflowStartEventFacade,
         WorkflowRequiredStartArtifactFacade,
+        WorkflowEventUseFacade,
         WorkflowTaskArtifactStateFacade,
         TaskStepDefinitionFacade,
         ToolOperationFacade,

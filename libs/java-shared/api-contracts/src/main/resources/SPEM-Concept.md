@@ -122,8 +122,8 @@ mechanisms:
 No start events means anyone may start the workflow. Otherwise a start is
 admitted when *any* event admits it (403 when none does, 409 when every
 event is of the last two kinds); the admitting event's id is recorded on
-the instance. A start event's `id` shares the task id namespace, so that a
-task's `dependsOn` can later name it.
+the instance. A start event's `id` shares one namespace with the task and
+intermediate-event ids, which `dependsOn` names.
 
 A `TRIGGERING_EVENT` start fires on its own. Its `eventType` names an
 entry of the organization's event catalog (base-event's `EventDefinition`,
@@ -139,8 +139,43 @@ events travel through the Spring Modulith publication registry, so a start
 is retried until it completes.
 
 Still not implemented: an `INPUT_ARTIFACT` reaching its state on its own
-(it only guards explicit starts), `TIME_BASED_PRECONDITION`, and MESSAGE /
-SIGNAL events thrown or caught inside a workflow.
+(it only guards explicit starts) and `TIME_BASED_PRECONDITION`.
+
+## Intermediate events
+
+While it runs, a workflow can raise catalogued events and wait for them —
+BPMN's intermediate throw and catch events. `Workflow.events` holds
+**EventUses**, each naming an `EventDefinition` of base-event's catalog and
+a `direction`. An event takes part in the flow like a task: its
+`dependsOn` decides when it is reached, a task's `dependsOn` may name it,
+and the whole flow must be acyclic.
+
+- **THROW** — reached means done. The engine publishes `EventThrown`;
+  base-event checks the definition (MESSAGE or SIGNAL — SYSTEM events are
+  the platform's) and republishes it as `DefinedEventOccurred`, so it is
+  the only publisher of occurrences. `payloadMapping` builds the payload
+  out of the instance context (`$.<variable>`); the occurrence's subject is
+  the throwing instance's subject.
+- **CATCH** — reached means WAITING; the event occurring makes it
+  OCCURRED, and `payloadMapping` copies values out of the event
+  (`$.payload.<attribute>`, `$.correlationValue`, …) into the context.
+
+How an occurrence finds its catches depends on the definition's kind:
+
+| Kind | Delivered to | Matched on |
+|---|---|---|
+| SYSTEM | every waiting catch | its subject — the instance's `entityId` |
+| MESSAGE | exactly one waiting catch, the longest waiting, never in the thrower | `correlationKey`: both sides read the named context variable |
+| SIGNAL | every waiting catch | — |
+
+A MESSAGE nobody waits for is dropped — there is no buffer — and a message
+that starts a workflow through a TRIGGERING_EVENT start event needs no
+catch at all: that is how one workflow asks another for work. Delivery runs
+through the publication registry like a start, so it is retried until it
+completes, and a redelivered occurrence is recognised by its id. A catch
+that every dependent has moved past — an ANY-join that went ahead on
+another branch — is withdrawn, and cancelling an instance withdraws its
+catches.
 
 Along the flow, `TaskUse.artifactStates` record the state a task expects
 each input in and leaves each output in (SPEM's work product state). The
@@ -149,9 +184,9 @@ Order [CONFIRMED]` — so the same artifact appears once per state it passes
 through, and each object sits between the task producing it and the task
 consuming it. Recorded and drawn, not yet enforced at run time.
 
-There is no stored end event: an instance completes when every task is
-terminal, and the modeler draws that as one End node fed by every task
-nothing depends on.
+There is no stored end event: an instance completes when every task and
+every intermediate event is terminal, and the modeler draws that as one End
+node fed by every task or event nothing depends on.
 
 ---
 

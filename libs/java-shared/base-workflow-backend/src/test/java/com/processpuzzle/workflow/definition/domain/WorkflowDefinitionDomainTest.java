@@ -142,7 +142,8 @@ class WorkflowDefinitionDomainTest {
                 List.of(RoleUse.builder().roleDefinitionId("dev").build()),
                 List.of(ArtifactUse.builder().artifactDefinitionId("pr").build()),
                 List.of(ToolUse.builder().toolDefinitionId("git").build()),
-                List.of(newUse));
+                List.of(newUse),
+                List.of(EventUse.builder().id("merged").eventDefinitionId("PrMerged").direction(EventDirection.CATCH).build()));
 
         assertThat(def.getName()).isEqualTo("New Name");
         assertThat(def.getDescription()).isEqualTo("New Desc");
@@ -152,6 +153,9 @@ class WorkflowDefinitionDomainTest {
         assertThat(def.getTasks()).containsExactly(newUse);
         assertThat(def.artifactDefinitionIds()).containsExactly("pr");
         assertThat(def.toolDefinitionIds()).containsExactly("git");
+        assertThat(def.eventUseIds()).containsExactly("merged");
+        assertThat(def.findEventUse("merged")).map(EventUse::isCatch).contains(true);
+        assertThat(def.findEventUse("nope")).isEmpty();
 
         // Test with null collections
         Workflow emptyDef = new Workflow();
@@ -161,12 +165,27 @@ class WorkflowDefinitionDomainTest {
         assertThat(emptyDef.getTools()).isNotNull().isEmpty();
         assertThat(emptyDef.getStartEvents()).isNotNull().isEmpty();
 
-        emptyDef.replaceContent(null, null, null, null, List.of(), List.of(), List.of(), List.of());
+        emptyDef.replaceContent(null, null, null, null, List.of(), List.of(), List.of(), List.of(), null);
         assertThat(emptyDef.getRoles()).isEmpty();
         assertThat(emptyDef.getTasks()).isEmpty();
         assertThat(emptyDef.getArtifacts()).isEmpty();
         assertThat(emptyDef.getTools()).isEmpty();
         assertThat(emptyDef.getStartEvents()).isEmpty();
+        assertThat(emptyDef.getEvents()).isEmpty();
+
+        // An event use survives the JSONB column's Jackson round trip — its isThrow/isCatch are not properties.
+        EventUse event = EventUse.builder().id("e").eventDefinitionId("E").direction(EventDirection.THROW)
+                .correlationKey("k").payloadMapping(java.util.Map.of("a", "$.b")).build();
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        try {
+            assertThat(json.readValue(json.writeValueAsString(event), EventUse.class)).isEqualTo(event);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new AssertionError(e);
+        }
+
+        // A row stored before the events column existed reads it as NULL.
+        emptyDef.setEvents(null);
+        assertThat(emptyDef.getEvents()).isNotNull().isEmpty();
     }
 
     /**

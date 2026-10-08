@@ -16,6 +16,8 @@ import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.ArtifactUse;
 import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
+import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
 import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
@@ -45,6 +47,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -134,9 +137,9 @@ class DefaultWorkflowImporterTest {
         try (InputStream input = bundledTestbedFile().getInputStream()) {
             ImportOutcome outcome = realImportUseCase.execute(ORG, input);
 
-            // 2 roles + 2 artifacts + 1 tool + 3 tasks + 1 workflow
+            // 2 roles + 2 artifacts + 1 tool + 4 tasks + 2 workflows
             assertThat(outcome.errors()).isEmpty();
-            assertThat(outcome.created()).isEqualTo(9);
+            assertThat(outcome.created()).isEqualTo(11);
             assertThat(outcome.updated()).isZero();
 
             assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager");
@@ -154,20 +157,22 @@ class DefaultWorkflowImporterTest {
                     .containsExactly(ArtifactType.ENTITY, ArtifactType.DOCUMENT);
             assertThat(savedTools).extracting(ToolDefinition::getId).containsExactly("automated-check-tool");
             assertThat(savedTasks).extracting(TaskDefinition::getId)
-                    .containsExactly("review-order", "approve-shipment", "confirm-delivery");
+                    .containsExactly("review-order", "approve-shipment", "confirm-delivery", "issue-invoice");
 
             // Every task's artifacts resolve, which is what the validator would otherwise refuse.
             assertThat(savedTasks).flatExtracting(TaskDefinition::getInputs).containsOnly("order-entity");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getOutputs)
-                    .containsExactly("order-entity", "order-entity", "order-entity", "fulfillment-invoice");
+                    .containsExactly("order-entity", "order-entity", "order-entity", "fulfillment-invoice",
+                            "fulfillment-invoice");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getSteps)
                     .extracting(StepDefinition::getStepType)
-                    .containsExactly(TaskStepType.SERVICE_STEP, TaskStepType.USER_STEP, TaskStepType.SERVICE_STEP);
+                    .containsExactly(TaskStepType.SERVICE_STEP, TaskStepType.USER_STEP, TaskStepType.SERVICE_STEP,
+                            TaskStepType.USER_STEP);
 
             ArgumentCaptor<Workflow> defCaptor = ArgumentCaptor.forClass(Workflow.class);
-            verify(repository).save(defCaptor.capture());
+            verify(repository, times(2)).save(defCaptor.capture());
 
-            Workflow def = defCaptor.getValue();
+            Workflow def = defCaptor.getAllValues().get(0);
             assertThat(def.getOrgKey()).isEqualTo(ORG);
             assertThat(def.getId()).isEqualTo("order-fulfillment-workflow");
             assertThat(def.getName()).isEqualTo("Order Fulfillment Workflow");
@@ -189,6 +194,22 @@ class DefaultWorkflowImporterTest {
             assertThat(def.getTasks()).flatExtracting(TaskUse::getArtifactStates)
                     .extracting(TaskArtifactState::getInputState, TaskArtifactState::getOutputState)
                     .containsExactly(tuple("DRAFT", "CONFIRMED"), tuple("CONFIRMED", "SHIPPED"), tuple("SHIPPED", "DELIVERED"));
+
+            // The invoice round trip: throw after approval, wait for the answer before confirming delivery.
+            assertThat(def.getEvents()).extracting(EventUse::getId, EventUse::getDirection, EventUse::getEventDefinitionId)
+                    .containsExactly(tuple("request-invoice", EventDirection.THROW, "InvoiceRequested"),
+                            tuple("invoice-issued", EventDirection.CATCH, "InvoiceIssued"));
+            assertThat(def.findTaskUse("confirm-delivery")).map(TaskUse::getDependsOn).contains(List.of("invoice-issued"));
+
+            Workflow invoicing = defCaptor.getAllValues().get(1);
+            assertThat(invoicing.getId()).isEqualTo("invoicing-workflow");
+            assertThat(invoicing.getStartEvents()).singleElement()
+                    .satisfies(startEvent -> assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.correlationValue"));
+            assertThat(invoicing.getEvents()).singleElement().satisfies(event -> {
+                assertThat(event.getDirection()).isEqualTo(EventDirection.THROW);
+                assertThat(event.getCorrelationKey()).isEqualTo("orderId");
+                assertThat(event.getPayloadMapping()).containsEntry("invoiceNumber", "$.invoiceNumber");
+            });
         }
     }
 

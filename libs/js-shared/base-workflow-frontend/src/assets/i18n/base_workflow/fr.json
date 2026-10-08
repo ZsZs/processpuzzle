@@ -13,6 +13,7 @@
     "artifacts": "Artefacts",
     "tools": "Outils",
     "tasks": "Tâches",
+    "events": "Événements",
     "tabs": {
       "modeler": "Modeleur de flux de travail"
     },
@@ -45,7 +46,10 @@
           "start": "Requis au démarrage",
           "unknown": "En relation avec"
         }
-      }
+      },
+      "throw_event": "Événement émis",
+      "catch_event": "Événement intercepté",
+      "event": "Événement intermédiaire"
     }
   },
   "workflow_task_assignment": {
@@ -87,6 +91,17 @@
     "_self": "Artefact requis",
     "artifactDefinitionId": "Artefact",
     "state": "État"
+  },
+  "workflow_event_use": {
+    "_self": "Événement intermédiaire",
+    "id": "Id",
+    "name": "Nom",
+    "direction": "Direction",
+    "eventDefinitionId": "Événement",
+    "dependsOn": "Dépend de",
+    "joinType": "Type de jonction",
+    "correlationKey": "Clé de corrélation",
+    "payloadMapping": "Mappage de charge utile"
   },
   "workflow_task_artifact_state": {
     "_self": "État d'artefact de la tâche",
@@ -180,7 +195,8 @@
     "completedAt": "Terminé le",
     "context": "Contexte",
     "tasks": "Tâches",
-    "artifacts": "Artefacts"
+    "artifacts": "Artefacts",
+    "events": "Événements"
   },
   "task_instance": {
     "_self": "Instance de tâche",
@@ -226,7 +242,8 @@
       "skip_reason": "Motif de l’omission",
       "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
       "unassigned": "non attribuée",
-      "assigned_to": "Attribuée à"
+      "assigned_to": "Attribuée à",
+      "waiting_for": "En attente de"
     }
   },
   "artifact_instance": {
@@ -239,6 +256,18 @@
     "stateMachineInstanceId": "Instance de machine à états",
     "currentState": "État actuel",
     "updatedAt": "Modifié le"
+  },
+  "event_instance": {
+    "_self": "Instance d'événement",
+    "eventUseId": "Événement",
+    "direction": "Direction",
+    "status": "Statut",
+    "eventDefinitionId": "Événement du catalogue",
+    "correlationValue": "Valeur de corrélation",
+    "waitingSince": "En attente depuis",
+    "occurredAt": "Survenu le",
+    "payload": "Charge utile",
+    "contextContribution": "Contribution au contexte"
   },
   "task_step_result": {
     "_self": "Résultat d'étape",

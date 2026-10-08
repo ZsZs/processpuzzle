@@ -37,7 +37,7 @@ function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[]
   // form*, so any closed option list would be stale the moment an assignment is added. The backend
   // resolves every id on save. Same call as base-state's `initialStateKey`.
   const dependsOnAttr = new BaseEntityAttrDescriptor('dependsOn', FormControlType.TAGS, 'Depends On');
-  dependsOnAttr.placeholder = 'Task ids that must complete first; empty means eligible at start';
+  dependsOnAttr.placeholder = 'Task or event ids that must be done first; empty means eligible at start';
   dependsOnAttr.hideInTable = true;
 
   // How that set is satisfied: every task named above (ALL, the contract's default) or the first of

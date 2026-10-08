@@ -7,6 +7,7 @@ import com.processpuzzle.workflow.execution.usecases.inbound.FindAllWorkflowInst
 import com.processpuzzle.workflow.execution.usecases.inbound.FindWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstancesUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.ListEventInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.model.CancelWorkflowInstanceRequest;
 import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
@@ -40,6 +41,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
     private final CancelWorkflowInstanceUseCase cancelWorkflowInstance;
     private final ListTaskInstancesUseCase listTaskInstances;
     private final ListArtifactInstancesUseCase listArtifactInstances;
+    private final ListEventInstancesUseCase listEventInstances;
     private final WorkflowExecutionMapper mapper;
 
     public WorkflowInstancesEndpoint(StartWorkflowInstanceUseCase startWorkflowInstance,
@@ -48,6 +50,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
                                      CancelWorkflowInstanceUseCase cancelWorkflowInstance,
                                      ListTaskInstancesUseCase listTaskInstances,
                                      ListArtifactInstancesUseCase listArtifactInstances,
+                                     ListEventInstancesUseCase listEventInstances,
                                      WorkflowExecutionMapper mapper) {
         this.startWorkflowInstance = startWorkflowInstance;
         this.findWorkflowInstance = findWorkflowInstance;
@@ -55,6 +58,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
         this.cancelWorkflowInstance = cancelWorkflowInstance;
         this.listTaskInstances = listTaskInstances;
         this.listArtifactInstances = listArtifactInstances;
+        this.listEventInstances = listEventInstances;
         this.mapper = mapper;
     }
 
@@ -81,9 +85,9 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
      * instance by id would repeat a query the page has already answered, and would fail the whole list
      * with a 404 for a row deleted between the two reads.
      *
-     * <p>The two child collections are still read per row, so this is N+1 — bounded, {@code size}
+     * <p>Tasks and artifacts are still read per row, so this is N+1 — bounded, {@code size}
      * defaulting to 20 in the contract. If a caller ever pages much wider than that, the fix is a batch
-     * read keyed by instance id, not a return to summaries.
+     * read keyed by instance id, not a return to summaries — which is how the events are read already.
      */
     @Override
     public ResponseEntity<PageOfWorkflowInstance> listWorkflowInstances(
@@ -92,10 +96,14 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
         WorkflowInstanceStatus domainStatus = status == null ? null : WorkflowInstanceStatus.valueOf(status.getValue());
         var query = new FindAllWorkflowInstancesUseCase.Query(orgKey, workflowId, domainStatus, entityId, where, order, page, size);
         var result = findAllWorkflowInstances.findAll(query);
+        var eventsByInstance = listEventInstances.findAllByInstance(orgKey, result.getContent().stream()
+                .map(com.processpuzzle.workflow.execution.domain.WorkflowInstance::getId)
+                .toList());
         List<WorkflowInstance> content = result.getContent().stream()
                 .map(instance -> mapper.toModel(instance,
                         listTaskInstances.findAll(orgKey, instance.getId()),
-                        listArtifactInstances.findAll(orgKey, instance.getId())))
+                        listArtifactInstances.findAll(orgKey, instance.getId()),
+                        eventsByInstance.getOrDefault(instance.getId(), List.of())))
                 .toList();
         return ResponseEntity.ok(mapper.toPageModel(result, content));
     }
@@ -111,6 +119,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
         var instance = findWorkflowInstance.findByOrgKeyAndId(orgKey, instanceId);
         var tasks = listTaskInstances.findAll(orgKey, instanceId);
         var artifacts = listArtifactInstances.findAll(orgKey, instanceId);
-        return mapper.toModel(instance, tasks, artifacts);
+        var events = listEventInstances.findAll(orgKey, instanceId);
+        return mapper.toModel(instance, tasks, artifacts, events);
     }
 }

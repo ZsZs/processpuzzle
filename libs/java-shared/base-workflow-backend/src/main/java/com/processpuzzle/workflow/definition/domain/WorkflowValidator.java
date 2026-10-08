@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.workflow.common.ValidationException;
 import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
@@ -7,9 +8,13 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,7 +36,13 @@ import java.util.stream.Collectors;
  * PPCL expressions; its {@code requiredArtifacts} and {@code authorizedRoles}, however, name this
  * organization's own catalog and so are checked. A TRIGGERING_EVENT's {@code eventType} names
  * base-event's catalog, which this module does not own either — but a misspelt one would make a
- * workflow that never starts and says nothing, so it is asked through {@link EventCatalogPort}.
+ * workflow that never starts and says nothing, so it is asked through {@link EventCatalogPort}. The
+ * same port vets each intermediate {@link EventUse}: its definition must exist and, where the port can
+ * tell the kind, a THROW may not name a SYSTEM event and only a MESSAGE carries a correlation key.
+ *
+ * <p>Tasks, intermediate events and start events share one id namespace, because {@code dependsOn}
+ * names tasks and events alike. The flow they form must be acyclic — a cycle would leave every node
+ * on it waiting for another forever — which {@link #detectCycles} checks over tasks and events.
  */
 @Component
 public class WorkflowValidator {
@@ -78,11 +89,20 @@ public class WorkflowValidator {
                 artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId));
         toolIds.forEach(toolId -> requireExists(toolRepository.existsByOrgKeyAndId(orgKey, toolId), "tool", toolId));
 
-        validateTaskUses(workflow, orgKey, roleIds, taskIds);
-        validateStartEvents(workflow, orgKey, taskIds);
+        List<String> eventIds = workflow.eventUseIds();
+        requireUniqueIds(taskIds, eventIds);
+        Set<String> startEventIds = startEventIds(workflow);
+        Set<String> flowIds = new HashSet<>(taskIds);
+        flowIds.addAll(eventIds);
+
+        validateTaskUses(workflow, orgKey, roleIds, taskIds, flowIds, startEventIds);
+        validateEvents(workflow, orgKey, flowIds, startEventIds);
+        validateStartEvents(workflow, orgKey, flowIds);
+        detectCycles(workflow);
     }
 
-    private void validateTaskUses(Workflow workflow, String orgKey, List<String> roleIds, List<String> taskIds) {
+    private void validateTaskUses(Workflow workflow, String orgKey, List<String> roleIds, List<String> taskIds,
+                                  Set<String> flowIds, Set<String> startEventIds) {
         Map<String, TaskDefinition> tasksById = taskRepository
                 .findByOrgKeyAndIdIn(orgKey, taskIds)
                 .stream()
@@ -98,7 +118,7 @@ public class WorkflowValidator {
             validatePerformedBy(use, task, declaredRoles);
             validateTaskArtifacts(task, declaredArtifacts);
             validateArtifactStates(use, task);
-            validateDependsOn(use, taskIds);
+            validateDependsOn("Task", taskId, use.getDependsOn(), flowIds, startEventIds);
         }
     }
 
@@ -179,21 +199,128 @@ public class WorkflowValidator {
         return java.util.stream.Stream.concat(inputs.stream(), outputs.stream()).distinct().toList();
     }
 
-    private void validateDependsOn(TaskUse use, List<String> usedTaskIds) {
-        List<String> dependsOn = use.getDependsOn() == null ? List.of() : use.getDependsOn();
-        for (String dependsOnId : dependsOn) {
-            if (dependsOnId.equals(use.getTaskDefinitionId())) {
-                throw new ValidationException("Task '%s' cannot depend on itself".formatted(use.getTaskDefinitionId()));
+    /**
+     * A {@code dependsOn} entry, of a task or of an event, names a task or an event of this workflow.
+     * Not a start event: the flow already begins at every node without dependencies, and letting one
+     * start event gate a node would need the engine to know which start admitted the instance.
+     */
+    private void validateDependsOn(String ownerKind, String ownerId, List<String> dependsOn, Set<String> flowIds,
+                                   Set<String> startEventIds) {
+        for (String dependsOnId : dependsOn == null ? List.<String>of() : dependsOn) {
+            if (dependsOnId.equals(ownerId)) {
+                throw new ValidationException("%s '%s' cannot depend on itself".formatted(ownerKind, ownerId));
             }
-            if (!usedTaskIds.contains(dependsOnId)) {
-                throw new ValidationException("Task '%s' dependsOn '%s', which this workflow does not use"
-                        .formatted(use.getTaskDefinitionId(), dependsOnId));
+            if (startEventIds.contains(dependsOnId)) {
+                throw new ValidationException("%s '%s' dependsOn start event '%s'; name a task or an event instead"
+                        .formatted(ownerKind, ownerId, dependsOnId));
+            }
+            if (!flowIds.contains(dependsOnId)) {
+                throw new ValidationException("%s '%s' dependsOn '%s', which this workflow does not use"
+                        .formatted(ownerKind, ownerId, dependsOnId));
             }
         }
     }
 
-    private void validateStartEvents(Workflow workflow, String orgKey, List<String> taskIds) {
-        List<StartEvent> startEvents = workflow.getStartEvents() == null ? List.of() : workflow.getStartEvents();
+    private void validateEvents(Workflow workflow, String orgKey, Set<String> flowIds, Set<String> startEventIds) {
+        for (EventUse event : workflow.getEvents()) {
+            String eventId = event.getId();
+            if (event.getDirection() == null) {
+                throw new ValidationException("Event '%s' has no direction".formatted(eventId));
+            }
+            String definitionId = event.getEventDefinitionId();
+            if (!isSet(definitionId)) {
+                throw new ValidationException("Event '%s' names no eventDefinitionId".formatted(eventId));
+            }
+            if (!eventCatalog.exists(orgKey, definitionId)) {
+                throw new ValidationException("Event '%s' names event '%s', which is not in this organization's event catalog"
+                        .formatted(eventId, definitionId));
+            }
+            Optional<CatalogEventKind> kind = eventCatalog.kindOf(orgKey, definitionId);
+            kind.ifPresent(known -> validateEventKind(event, known));
+            validateDependsOn("Event", eventId, event.getDependsOn(), flowIds, startEventIds);
+        }
+    }
+
+    private void validateEventKind(EventUse event, CatalogEventKind kind) {
+        if (event.isThrow() && kind == CatalogEventKind.SYSTEM) {
+            throw new ValidationException("Event '%s' throws SYSTEM event '%s', which only the platform raises"
+                    .formatted(event.getId(), event.getEventDefinitionId()));
+        }
+        boolean hasKey = isSet(event.getCorrelationKey());
+        if (kind == CatalogEventKind.MESSAGE && !hasKey) {
+            throw new ValidationException("Event '%s' names MESSAGE '%s' but has no correlationKey"
+                    .formatted(event.getId(), event.getEventDefinitionId()));
+        }
+        if (kind != CatalogEventKind.MESSAGE && hasKey) {
+            throw new ValidationException("Event '%s' names %s '%s'; only a MESSAGE takes a correlationKey"
+                    .formatted(event.getId(), kind, event.getEventDefinitionId()));
+        }
+    }
+
+    /**
+     * Depth-first search over the {@code dependsOn} edges of tasks and events. A node on the current
+     * path seen again closes a cycle; the message spells the cycle out.
+     */
+    private void detectCycles(Workflow workflow) {
+        Map<String, List<String>> edges = new LinkedHashMap<>();
+        workflow.getTasks().forEach(use -> edges.put(use.getTaskDefinitionId(), orEmpty(use.getDependsOn())));
+        workflow.getEvents().forEach(use -> edges.put(use.getId(), orEmpty(use.getDependsOn())));
+        Map<String, Boolean> done = new HashMap<>();
+        for (String node : edges.keySet()) {
+            visit(node, edges, done, new ArrayList<>());
+        }
+    }
+
+    private void visit(String node, Map<String, List<String>> edges, Map<String, Boolean> done, List<String> path) {
+        if (Boolean.TRUE.equals(done.get(node))) {
+            return;
+        }
+        int onPath = path.indexOf(node);
+        if (onPath >= 0) {
+            List<String> cycle = new ArrayList<>(path.subList(onPath, path.size()));
+            cycle.add(node);
+            throw new ValidationException("The flow has a cycle: %s".formatted(String.join(" -> ", cycle)));
+        }
+        path.add(node);
+        for (String next : edges.getOrDefault(node, List.of())) {
+            visit(next, edges, done, path);
+        }
+        path.remove(path.size() - 1);
+        done.put(node, true);
+    }
+
+    private static List<String> orEmpty(List<String> list) {
+        return list == null ? List.of() : list;
+    }
+
+    private static Set<String> startEventIds(Workflow workflow) {
+        Set<String> ids = new HashSet<>();
+        orEmptyStartEvents(workflow).forEach(startEvent -> ids.add(startEvent.getId()));
+        return ids;
+    }
+
+    private static List<StartEvent> orEmptyStartEvents(Workflow workflow) {
+        return workflow.getStartEvents() == null ? List.of() : workflow.getStartEvents();
+    }
+
+    /** Task and event ids share one namespace, because {@code dependsOn} names both. */
+    private void requireUniqueIds(List<String> taskIds, List<String> eventIds) {
+        Set<String> seen = new HashSet<>();
+        for (String eventId : eventIds) {
+            if (!isSet(eventId)) {
+                throw new ValidationException("An event has no id");
+            }
+            if (!seen.add(eventId)) {
+                throw new ValidationException("Duplicate event '%s' within workflow".formatted(eventId));
+            }
+            if (taskIds.contains(eventId)) {
+                throw new ValidationException("Event '%s' has the same id as a task of the workflow".formatted(eventId));
+            }
+        }
+    }
+
+    private void validateStartEvents(Workflow workflow, String orgKey, Set<String> flowIds) {
+        List<StartEvent> startEvents = orEmptyStartEvents(workflow);
         Set<String> seenIds = new HashSet<>();
         Set<String> declaredArtifacts = new HashSet<>(workflow.artifactDefinitionIds());
         for (StartEvent startEvent : startEvents) {
@@ -204,9 +331,9 @@ public class WorkflowValidator {
             if (!seenIds.add(eventId)) {
                 throw new ValidationException("Duplicate start event '%s' within workflow".formatted(eventId));
             }
-            if (taskIds.contains(eventId)) {
+            if (flowIds.contains(eventId)) {
                 throw new ValidationException(
-                        "Start event '%s' has the same id as a task of the workflow".formatted(eventId));
+                        "Start event '%s' has the same id as a task or event of the workflow".formatted(eventId));
             }
             if (startEvent.getStartType() == null) {
                 throw new ValidationException("Start event '%s' has no startType".formatted(eventId));

@@ -30,6 +30,12 @@ export enum JoinType {
   ANY = 'ANY',
 }
 
+/** Whether an intermediate {@link EventUse} raises its catalog event or waits for it. */
+export enum EventDirection {
+  THROW = 'THROW',
+  CATCH = 'CATCH',
+}
+
 /** How an instance of a workflow comes into being. Selects which fields of a {@link StartEvent} carry meaning. */
 export enum WorkflowStartConditionType {
   INPUT_ARTIFACT = 'INPUT_ARTIFACT',
@@ -187,6 +193,50 @@ export class StartEvent implements BaseEntity {
 }
 
 /**
+ * One intermediate event of the workflow — the contract's `EventUse`, BPMN's intermediate throw or catch
+ * event. It names an entry of base-event's catalog and takes part in the flow like a task: `dependsOn`
+ * decides when it is reached, and a task's `dependsOn` may name it.
+ *
+ * A THROW raises its MESSAGE or SIGNAL event when reached; a CATCH waits for its event. `correlationKey`
+ * names the context variable a MESSAGE is correlated on, and is required for — and only for — a MESSAGE.
+ * `payloadMapping` maps the occurred event into the context on a CATCH, and the context into the payload
+ * sent on a THROW.
+ *
+ * Like {@link StartEvent} it has an author-chosen `id`, unique within the workflow against the task and
+ * start-event ids, because `dependsOn` names tasks and events alike.
+ *
+ * A class rather than an interface, for the same reason as {@link RoleUse}.
+ */
+export class EventUse implements BaseEntity {
+  id: string;
+  /** What the diagram calls the event. Absent falls back to the catalog event's id. */
+  name?: string;
+  /** Id of an `Event Definition` of base-event's catalog. */
+  eventDefinitionId: string;
+  /** Required by contract; `undefined` only on the blank row an `Add` opens the form on. */
+  direction: EventDirection | undefined;
+  /** Ids of tasks or events of this workflow that must be done before the event is reached. */
+  dependsOn?: string[];
+  /** Whether every node named in {@link dependsOn} has to be done, or only the first of them. */
+  joinType?: JoinType;
+  /** MESSAGE only — the context variable carrying the correlation value. */
+  correlationKey?: string;
+  /** CATCH: context variable → path into the event. THROW: payload attribute → path into the context. */
+  payloadMapping?: PropertyMap;
+
+  constructor(init: Partial<EventUse> = {}) {
+    this.id = init.id ?? '';
+    this.name = init.name;
+    this.eventDefinitionId = init.eventDefinitionId ?? '';
+    this.direction = init.direction;
+    this.dependsOn = init.dependsOn;
+    this.joinType = init.joinType;
+    this.correlationKey = init.correlationKey;
+    this.payloadMapping = init.payloadMapping;
+  }
+}
+
+/**
  * One task's place in one workflow: which of the task's `performedByRoles` performs it here, what has
  * to finish first, and whether it may run beside its siblings.
  *
@@ -209,7 +259,7 @@ export class WorkflowTaskAssignment implements BaseEntity {
    * able to perform it, the workflow says who does.
    */
   performedBy: string;
-  /** Task definition ids of assignments in this same workflow that must be COMPLETED first. */
+  /** Ids of task assignments or intermediate events of this same workflow that must be done first. */
   dependsOn?: string[];
   /** Whether every task named in {@link dependsOn} has to finish, or only the first of them. */
   joinType?: JoinType;
@@ -246,6 +296,8 @@ export class Workflow implements BaseEntity {
   tasks: WorkflowTaskAssignment[];
   /** The ways an instance comes into being. Empty means only explicitly, through `/instances`. */
   startEvents: StartEvent[];
+  /** The catalog events this workflow throws or catches while it runs. */
+  events: EventUse[];
   // region server-assigned
   /** Number of ACTIVE instances; computed per row by the list endpoint, never sent on write. */
   activeInstances: number | undefined;
@@ -266,6 +318,7 @@ export class Workflow implements BaseEntity {
     this.tools = init.tools ?? [];
     this.tasks = init.tasks ?? [];
     this.startEvents = init.startEvents ?? [];
+    this.events = init.events ?? [];
     this.activeInstances = init.activeInstances;
     this.version = init.version;
     this.createdAt = init.createdAt;

@@ -1259,6 +1259,22 @@ components:
       type: string
       enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED ]
 
+    EventDirection:
+      type: string
+      enum: [ THROW, CATCH ]
+      description: >-
+        THROW — reaching the event raises it: the workflow publishes the catalogued event and moves
+        on. CATCH — reaching the event makes the workflow wait until the catalogued event occurs.
+
+    EventInstanceStatus:
+      type: string
+      enum: [ PENDING, WAITING, OCCURRED, THROWN, CANCELLED ]
+      description: >-
+        PENDING — not reached yet. WAITING — a catch that was reached and waits for its event.
+        OCCURRED — a catch whose event arrived. THROWN — a throw that was reached and raised.
+        CANCELLED — withdrawn, because the instance was cancelled or every dependent moved on
+        without it.
+
     TaskStepType:
       type: string
       enum: [ USER_STEP, SERVICE_STEP ]
@@ -1658,7 +1674,8 @@ components:
         id:
           type: string
           description: >-
-            Unique within the workflow, and distinct from the ids of its tasks.
+            Unique within the workflow, and distinct from the ids of its tasks and of its
+            intermediate events.
           example: order-drafted
         name:
           type: string
@@ -1686,7 +1703,8 @@ components:
           description: >-
             TRIGGERING_EVENT — maps the event into the new instance's context. Keys are context
             variable names, values are paths into the whole event — `$.subjectId`, `$.subjectType`,
-            `$.eventDefinitionId`, `$.occurredAt`, `$.payload.<attribute>` — in a JSONPath subset:
+            `$.eventDefinitionId`, `$.occurredAt`, `$.correlationValue`, `$.payload.<attribute>` — in a
+            JSONPath subset:
             dotted properties and numeric list indexes, no filters or wildcards. A path that does not
             resolve yields null.
           additionalProperties:
@@ -1773,6 +1791,13 @@ components:
           description: The tasks of this workflow, each pinned to the role performing it here.
           items:
             $ref: "#/components/schemas/TaskUse"
+        events:
+          type: array
+          description: >-
+            The workflow's intermediate events — the catalogued events it raises (THROW) or waits for
+            (CATCH) while it runs. Tasks and events name each other in `dependsOn`.
+          items:
+            $ref: "#/components/schemas/EventUse"
         version:
           type: integer
           format: int64
@@ -1867,9 +1892,9 @@ components:
         dependsOn:
           type: array
           description: >-
-            Task definition ids, of task uses of this same workflow, that must reach a terminal
-            status before this task can become ACTIVE. Empty means the task is eligible from
-            workflow start.
+            Ids of task uses or intermediate events of this same workflow that must be done — a task
+            completed or skipped, an event thrown or occurred — before this task can become ACTIVE.
+            Empty means the task is eligible from workflow start.
           items:
             type: string
         joinType:
@@ -1895,6 +1920,64 @@ components:
             outputs. Recorded and drawn, not yet enforced at run time.
           items:
             $ref: "#/components/schemas/TaskArtifactState"
+
+    # ── Event Use ───────────────────────────────────────────
+    EventUse:
+      type: object
+      required: [ id, eventDefinitionId, direction ]
+      description: >-
+        One intermediate event of a workflow — BPMN's intermediate throw or catch event. It names an
+        entry of the organization's event catalog and takes part in the flow like a task does:
+        `dependsOn` decides when it is reached, and a task may depend on it.
+
+        A THROW raises a MESSAGE or SIGNAL event the moment it is reached. A CATCH waits: a SYSTEM
+        event is matched by subject — the instance's entityId — a MESSAGE by the correlation value,
+        and a SIGNAL reaches every waiting instance.
+      properties:
+        id:
+          type: string
+          description: >-
+            Unique within the workflow, and distinct from the ids of its tasks and start events.
+          example: invoice-issued
+        name:
+          type: string
+          nullable: true
+          example: Invoice issued
+        eventDefinitionId:
+          type: string
+          description: >-
+            Id of an event of the organization's catalog (base-event's EventDefinition). A THROW may
+            not name a SYSTEM event — those are raised by the platform only.
+          example: InvoiceIssued
+        direction:
+          $ref: "#/components/schemas/EventDirection"
+        dependsOn:
+          type: array
+          description: >-
+            Ids of task uses or intermediate events of this workflow that must be done before this
+            event is reached. Empty means it is reached when the instance starts.
+          items:
+            type: string
+        joinType:
+          $ref: "#/components/schemas/JoinType"
+        correlationKey:
+          type: string
+          nullable: true
+          description: >-
+            MESSAGE only, and required there — the name of the context variable that carries the
+            correlation value. A THROW sends the variable's value; a CATCH waits for a message whose
+            value equals its own.
+          example: orderId
+        payloadMapping:
+          type: object
+          nullable: true
+          description: >-
+            CATCH — maps the occurred event into the instance context: keys are context variable
+            names, values are paths into the event (`$.payload.<attribute>`, `$.correlationValue`,
+            `$.subjectId`, …). THROW — maps the instance context into the payload sent: keys are
+            payload attribute names, values are paths into the context (`$.<variable>`).
+          additionalProperties:
+            type: string
 
     TaskArtifactState:
       type: object
@@ -2007,12 +2090,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ArtifactInstance"
+        events:
+          type: array
+          readOnly: true
+          description: The run-time state of the workflow's intermediate events.
+          items:
+            $ref: "#/components/schemas/EventInstance"
         context:
           type: object
           readOnly: true
           description: >-
             The instance's current context: the values it was started with, with every completed
-            task's `contextContribution` folded in, in completion order. Assembled per response
+            task's and every occurred catch event's `contextContribution` folded in, in the order
+            they happened. Assembled per response
             rather than stored as one accumulated field — see TaskInstance.contextContribution for
             why. Server-computed; ignored on write.
           additionalProperties: true
@@ -2067,6 +2157,50 @@ components:
             task writes only its own row — otherwise every completion would contend on the
             instance's optimistic lock and two `parallel` tasks could not be completed
             concurrently. `WorkflowInstance.context` is the fold of these.
+          additionalProperties: true
+
+    # ── Event Instance (runtime) ───────────────────────────
+    EventInstance:
+      type: object
+      properties:
+        id:
+          type: string
+        eventUseId:
+          type: string
+          description: The EventUse of the workflow this instance runs.
+        eventDefinitionId:
+          type: string
+        name:
+          type: string
+          nullable: true
+        direction:
+          $ref: "#/components/schemas/EventDirection"
+        status:
+          $ref: "#/components/schemas/EventInstanceStatus"
+        correlationValue:
+          type: string
+          nullable: true
+          description: >-
+            THROW — the value sent. CATCH — the value waited for: the correlation variable's value
+            for a MESSAGE, the instance's entityId otherwise.
+        waitingSince:
+          type: string
+          format: date-time
+          nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When a catch's event arrived, or when a throw was raised.
+        payload:
+          type: object
+          nullable: true
+          description: The payload sent (THROW) or received (CATCH).
+          additionalProperties: true
+        contextContribution:
+          type: object
+          nullable: true
+          description: CATCH — what the payload mapping added to the workflow context.
           additionalProperties: true
 
     StepResult:

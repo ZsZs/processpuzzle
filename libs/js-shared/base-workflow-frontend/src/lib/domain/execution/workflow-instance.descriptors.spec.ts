@@ -31,7 +31,7 @@ describe('createWorkflowInstanceDescriptor', () => {
   });
 
   it('describes the run, its references, its timestamps and its two nested lists', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['instanceNumber', 'workflowName', 'status', 'entityLabel', 'workflowId', 'startEventId', 'startedAt', 'completedAt', 'context', 'tasks', 'artifacts']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['instanceNumber', 'workflowName', 'status', 'entityLabel', 'workflowId', 'startEventId', 'startedAt', 'completedAt', 'context', 'tasks', 'artifacts', 'events']);
   });
 
   // The list's link opens the run itself, so it is the run's own identity — the server-assigned number —
@@ -72,6 +72,6 @@ describe('createWorkflowInstanceDescriptor', () => {
   it('carries both nested lists as embedded components addressed by their own id', () => {
     expect(descriptor.embeddedAttrFor(TASK_INSTANCE_ENTITY_NAME)?.attrName).toBe('tasks');
     expect(descriptor.embeddedAttrFor(ARTIFACT_INSTANCE_ENTITY_NAME)?.attrName).toBe('artifacts');
-    expect(descriptor.embeddedAttrDescriptors().map((attr) => attr.referenceIdField)).toEqual(['id', 'id']);
+    expect(descriptor.embeddedAttrDescriptors().map((attr) => attr.referenceIdField)).toEqual(['id', 'id', 'id']);
   });
 });

@@ -324,6 +324,56 @@ describe('SwimlaneLayoutService', () => {
     });
   });
 
+  describe('intermediate events', () => {
+    const PAID = elementNodeId('event', 'payment-received');
+    const END = elementNodeId('end', 'end');
+
+    /** An intermediate event as the converter emits one: a fixed circle in the lane of its dependency. */
+    function event(id: string, laneRoleId: string): WorkflowNode {
+      return { ...element('event', id, laneRoleId), size: { ...EVENT_NODE_SIZE }, autoSize: false };
+    }
+
+    /** The seeded chain with a caught payment between the review and the approval. */
+    function withPayment(): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
+      return {
+        nodes: [...seededNodes(), event('payment-received', 'clerk')],
+        edges: [edge(REVIEW, PAID, 'sequence'), edge(PAID, APPROVE, 'sequence'), edge(APPROVE, CONFIRM, 'sequence')],
+      };
+    }
+
+    // A node of the flow like a task, so it takes a column of its own between the two it sits between.
+    it('ranks an event in a column of its own between its dependency and its dependent', () => {
+      const { nodes, edges } = withPayment();
+      const placed = service.place(nodes, edges);
+
+      expect(positionOf(placed, PAID)?.x as number).toBeGreaterThan(positionOf(placed, REVIEW)?.x as number);
+      expect(positionOf(placed, PAID)?.x as number).toBeLessThan(positionOf(placed, APPROVE)?.x as number);
+    });
+
+    it('places the event inside its band, keeping its box and centring it in its cell', () => {
+      const { nodes, edges } = withPayment();
+      const placed = service.place(nodes, edges);
+      const paid = placed.find((node) => node.id === PAID) as WorkflowNode;
+      const review = placed.find((node) => node.id === REVIEW) as WorkflowNode;
+
+      expect(paid.groupId).toBe(laneNodeId('clerk'));
+      expect(paid.size).toEqual(EVENT_NODE_SIZE);
+      expect(paid.autoSize).toBe(false);
+      expect(paid.position.y + EVENT_NODE_SIZE.height / 2).toBe(review.position.y + (review.size?.height as number) / 2);
+    });
+
+    it('moves the end into the lane of an event feeding it from the last column', () => {
+      const { nodes, edges } = withPayment();
+      const thrown = event('order-shipped', 'manager');
+      const placed = service.place(
+        [...nodes, thrown, { ...element('end', 'end', 'clerk'), size: { ...EVENT_NODE_SIZE }, autoSize: false }],
+        [...edges, edge(CONFIRM, thrown.id, 'sequence'), edge(thrown.id, END, 'sequence')],
+      );
+
+      expect(placed.find((node) => node.id === END)?.groupId).toBe(laneNodeId('manager'));
+    });
+  });
+
   describe('degenerate input', () => {
     it('returns an empty graph untouched', () => {
       expect(service.place([], [])).toEqual([]);

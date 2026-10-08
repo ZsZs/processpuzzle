@@ -139,7 +139,7 @@ describe('WorkflowModelerTabComponent', () => {
         .map((node: { id: string }) => node.id),
     ).toEqual([laneNodeId('clerk'), laneNodeId('manager')]);
     // The two dependencies of the chain, plus the start event into its root and its last task into the end.
-    expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(4);
+    expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(6);
     expect(graph().nodes.map((node: { id: string }) => node.id)).toEqual(expect.arrayContaining([elementNodeId('start', 'order-created'), elementNodeId('end', 'end')]));
   });
 
@@ -217,7 +217,7 @@ describe('WorkflowModelerTabComponent', () => {
       fixture.detectChanges();
 
       expect(graph().nodes.filter(isLaneNode)).toEqual([]);
-      expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(4);
+      expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(6);
     });
 
     it('takes the work products off the canvas', async () => {

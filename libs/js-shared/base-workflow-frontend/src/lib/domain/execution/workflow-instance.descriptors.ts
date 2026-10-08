@@ -1,10 +1,11 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_INSTANCE_ENTITY_NAME, EVENT_INSTANCE_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { WorkflowInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_INSTANCE_ID_FIELD } from './task-instance.descriptors';
 import { ARTIFACT_INSTANCE_ID_FIELD } from './artifact-instance.descriptors';
+import { EVENT_INSTANCE_ID_FIELD } from './event-instance.descriptors';
 import { timestampAttr } from '../timestamp-attr';
 
 export { WORKFLOW_INSTANCE_ENTITY_NAME };
@@ -62,6 +63,12 @@ function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   artifactsAttr.referenceIdField = ARTIFACT_INSTANCE_ID_FIELD;
   artifactsAttr.hideInTable = true;
 
+  // Below the two lists rather than beside them: what the run is waiting for, or has thrown.
+  const eventsAttr = readOnlyAttr('events', FormControlType.EMBEDDED_COMPONENTS, 'Events');
+  eventsAttr.linkedEntityType = EVENT_INSTANCE_ENTITY_NAME;
+  eventsAttr.referenceIdField = EVENT_INSTANCE_ID_FIELD;
+  eventsAttr.hideInTable = true;
+
   const identityRow = new FlexboxDescriptor([instanceNumberAttr, workflowNameAttr, statusAttr, entityLabelAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([workflowIdAttr, startEventIdAttr], FlexDirection.ROW);
@@ -71,7 +78,7 @@ function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const contentRow = new FlexboxDescriptor([tasksAttr, artifactsAttr], FlexDirection.ROW);
   contentRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, contextAttr, contentRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, contextAttr, contentRow, eventsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

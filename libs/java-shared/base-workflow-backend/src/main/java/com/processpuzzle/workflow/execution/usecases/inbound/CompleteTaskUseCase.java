@@ -7,11 +7,10 @@ import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUse
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
-import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.events.WorkflowInstanceCompletedEvent;
 import com.processpuzzle.workflow.execution.events.TaskCompletedEvent;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleCheckResult;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleEvaluationPort;
@@ -28,8 +27,8 @@ import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 /**
  * Completes an ACTIVE task: merges any additional context supplied by the caller, evaluates the
  * postcondition rule, and — only if it passes — runs the task's tool-backed steps, marks it
- * COMPLETED, advances the workflow via {@link TaskActivationService}, and closes out the workflow
- * instance if every task is now terminal.
+ * COMPLETED, and advances the workflow via {@link WorkflowProgression}, which also closes out the
+ * workflow instance once every task and event is terminal.
  *
  * <p>Only the task row is written on the way through. What the completion added to the workflow
  * context is recorded on the task as its {@code contextContribution} and folded back in on read by
@@ -53,23 +52,26 @@ public class CompleteTaskUseCase {
     private final ResolveWorkflowUseCase resolveWorkflow;
     private final TaskInstanceRepository taskInstanceRepository;
     private final RuleEvaluationPort ruleEvaluationPort;
+    private final EventInstanceRepository eventInstanceRepository;
     private final ToolStepExecutor toolStepExecutor;
-    private final TaskActivationService taskActivationService;
+    private final WorkflowProgression progression;
     private final ApplicationEventPublisher eventPublisher;
 
     public CompleteTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
                                 ResolveWorkflowUseCase resolveWorkflow,
                                 TaskInstanceRepository taskInstanceRepository,
+                                EventInstanceRepository eventInstanceRepository,
                                 RuleEvaluationPort ruleEvaluationPort,
                                 ToolStepExecutor toolStepExecutor,
-                                TaskActivationService taskActivationService,
+                                WorkflowProgression progression,
                                 ApplicationEventPublisher eventPublisher) {
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
+        this.eventInstanceRepository = eventInstanceRepository;
         this.ruleEvaluationPort = ruleEvaluationPort;
         this.toolStepExecutor = toolStepExecutor;
-        this.taskActivationService = taskActivationService;
+        this.progression = progression;
         this.eventPublisher = eventPublisher;
     }
 
@@ -92,9 +94,10 @@ public class CompleteTaskUseCase {
                 .definition();
 
         // The context this task sees: the instance's initial values, every earlier task's
-        // contribution, then whatever the caller supplied with the completion.
+        // and occurred event's contribution, then whatever the caller supplied with the completion.
         Map<String, Object> inheritedContext = WorkflowContext.assemble(
-                workflowInstance, taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId));
+                workflowInstance, taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId),
+                eventInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId));
         Map<String, Object> workingContext = new HashMap<>(inheritedContext);
         if (additionalContext != null) {
             workingContext.putAll(additionalContext);
@@ -119,14 +122,7 @@ public class CompleteTaskUseCase {
 
         eventPublisher.publishEvent(new TaskCompletedEvent(orgKey, workflowInstanceId, taskInstance.getId(), taskDefinitionId));
 
-        taskActivationService.activateEligibleTasks(orgKey, definition, workflowInstanceId, workingContext);
-
-        if (taskActivationService.allTerminal(orgKey, workflowInstanceId)) {
-            workflowInstance.setStatus(WorkflowInstanceStatus.COMPLETED);
-            workflowInstance.setCompletedAt(Instant.now());
-            workflowInstanceRepository.save(workflowInstance);
-            eventPublisher.publishEvent(new WorkflowInstanceCompletedEvent(orgKey, workflowInstanceId, definition.id()));
-        }
+        progression.advance(orgKey, definition, workflowInstance, workingContext);
 
         return new Result(true, taskInstance, null);
     }

@@ -15,6 +15,8 @@ describe('ModelerLegendComponent', () => {
             en: {
               'base_workflow.workflow_role_definition._self': 'Role',
               'base_workflow.artifact_definition._self': 'Artifact',
+              'base_workflow.workflow.modeler.throw_event': 'Throw event',
+              'base_workflow.workflow.modeler.catch_event': 'Catch event',
             },
           },
         }),
@@ -39,6 +41,20 @@ describe('ModelerLegendComponent', () => {
 
   it('shows each kind next to the symbol the nodes draw it with', () => {
     expect(items().map((item) => item.querySelector('img')?.getAttribute('src'))).toEqual(['assets/modeler/Role.svg', 'assets/modeler/Artifact.svg']);
+  });
+
+  // One kind, two symbols: an intermediate event is explained as its throw and its catch.
+  it('explains an event as a throw and a catch, each with its own symbol', () => {
+    fixture.componentRef.setInput('kinds', ['role', 'event']);
+    fixture.detectChanges();
+
+    expect(items().map((item) => item.dataset['testid'])).toEqual(['modeler-legend-role', 'modeler-legend-event-throw', 'modeler-legend-event-catch']);
+    expect(items().map((item) => item.textContent?.trim())).toEqual(['Role', 'Throw event', 'Catch event']);
+    expect(items().map((item) => item.querySelector('img')?.getAttribute('src'))).toEqual([
+      'assets/modeler/Role.svg',
+      'assets/modeler/EventThrow.svg',
+      'assets/modeler/EventCatch.svg',
+    ]);
   });
 
   // Only what it draws: the Tasks perspective passes a longer list and reuses this unchanged.

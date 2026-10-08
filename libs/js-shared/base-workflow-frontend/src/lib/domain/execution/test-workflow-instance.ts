@@ -52,6 +52,11 @@ export const WORKFLOW_INSTANCE_DTO = {
     },
     { id: '7c9e6679-0002-4a00-8000-000000000002', artifactDefinitionId: 'fulfillment-invoice', name: 'Fulfillment Invoice', type: 'DOCUMENT', updatedAt: '2026-08-20T08:15:00Z' },
   ],
+  // The invoice round trip, not reached yet: approve-shipment is still ACTIVE.
+  events: [
+    { id: '9d2e7f10-0001-4a00-8000-000000000001', eventUseId: 'request-invoice', eventDefinitionId: 'InvoiceRequested', name: 'Invoice requested', direction: 'THROW', status: 'PENDING' },
+    { id: '9d2e7f10-0002-4a00-8000-000000000002', eventUseId: 'invoice-issued', eventDefinitionId: 'InvoiceIssued', name: 'Invoice issued', direction: 'CATCH', status: 'PENDING' },
+  ],
 };
 
 /** A finished run whose last task is BLOCKED with a failed tool step — the interesting error path. */

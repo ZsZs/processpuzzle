@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EventDirection } from '../definition/workflow';
 import { modelerElementNameKey } from './modeler-element-names';
 import { WorkflowElementKind } from './workflow-graph';
 
@@ -10,7 +11,7 @@ describe('modelerElementNameKey', () => {
   it('names each kind through the entity key already translated for its screens', () => {
     const kinds: WorkflowElementKind[] = ['role', 'artifact', 'task', 'tool', 'workflow'];
 
-    expect(kinds.map(modelerElementNameKey)).toEqual([
+    expect(kinds.map((kind) => modelerElementNameKey(kind))).toEqual([
       'base_workflow.workflow_role_definition._self',
       'base_workflow.artifact_definition._self',
       'base_workflow.task_definition._self',
@@ -23,5 +24,11 @@ describe('modelerElementNameKey', () => {
   it('names the start and end events through the modeler labels', () => {
     expect(modelerElementNameKey('start')).toBe('base_workflow.workflow.modeler.start');
     expect(modelerElementNameKey('end')).toBe('base_workflow.workflow.modeler.end');
+  });
+
+  it('names an intermediate event by its direction', () => {
+    expect(modelerElementNameKey('event', EventDirection.THROW)).toBe('base_workflow.workflow.modeler.throw_event');
+    expect(modelerElementNameKey('event', EventDirection.CATCH)).toBe('base_workflow.workflow.modeler.catch_event');
+    expect(modelerElementNameKey('event')).toBe('base_workflow.workflow.modeler.event');
   });
 });

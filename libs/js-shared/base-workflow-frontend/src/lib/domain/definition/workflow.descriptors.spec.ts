@@ -36,7 +36,7 @@ describe('createWorkflowDescriptor', () => {
   });
 
   it('describes the header, the revision and the five embedded lists', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'extends', 'activeInstances', 'version', 'updatedAt', 'description', 'startEvents', 'roles', 'artifacts', 'tools', 'tasks']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'extends', 'activeInstances', 'version', 'updatedAt', 'description', 'startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
   });
 
   // One row per entry point, replacing the single start condition this form used to flatten. A start
@@ -93,7 +93,7 @@ describe('createWorkflowDescriptor', () => {
   it('carries five embedded lists, the assignments among them', () => {
     const embedded = descriptor.embeddedAttrDescriptors();
 
-    expect(embedded.map((attr) => attr.attrName)).toEqual(['startEvents', 'roles', 'artifacts', 'tools', 'tasks']);
+    expect(embedded.map((attr) => attr.attrName)).toEqual(['startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
     embedded.forEach((attr) => expect(attr.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS));
     expect(descriptor.embeddedAttrFor(WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME)?.attrName).toBe('tasks');
     expect(descriptor.embeddedAttrFor(WORKFLOW_ROLE_USE_ENTITY_NAME)?.attrName).toBe('roles');

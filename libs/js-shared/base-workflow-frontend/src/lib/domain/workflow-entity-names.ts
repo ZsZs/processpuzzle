@@ -76,6 +76,13 @@ export const WORKFLOW_START_EVENT_ENTITY_NAME = 'Workflow Start Event';
 export const WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME = 'Workflow Required Start Artifact';
 
 /**
+ * One intermediate event of a workflow — the contract's `EventUse`: a catalog event the workflow throws or
+ * catches while it runs. A row of `Workflow.events` with an author-chosen `id`, embedded for the reason a
+ * start event is.
+ */
+export const WORKFLOW_EVENT_USE_ENTITY_NAME = 'Workflow Event Use';
+
+/**
  * The catalog event a `TRIGGERING_EVENT` start event waits for — an entity of **base-event**, not of this
  * library. Named here as a string rather than imported, because features meet through each other's
  * metadata and never through a package dependency: the `FOREIGN_KEY` resolves it through the application's
@@ -106,4 +113,6 @@ export const WORKFLOW_INSTANCE_ENTITY_NAME = 'Workflow Instance';
 export const TASK_INSTANCE_ENTITY_NAME = 'Task Instance';
 export const ARTIFACT_INSTANCE_ENTITY_NAME = 'Artifact Instance';
 export const TASK_STEP_RESULT_ENTITY_NAME = 'Task Step Result';
+/** The run-time state of one intermediate event of an instance — read-only, like the rest of the run. */
+export const EVENT_INSTANCE_ENTITY_NAME = 'Event Instance';
 // endregion

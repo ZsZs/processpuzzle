@@ -28,6 +28,8 @@ import com.processpuzzle.workflow.model.WorkflowInput;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -165,7 +167,44 @@ class WorkflowDefinitionMapperTest {
         assertThat(emptyDomain.getTools()).isEmpty();
         assertThat(emptyDomain.getTasks()).isEmpty();
         assertThat(emptyDomain.getStartEvents()).isEmpty();
+        assertThat(emptyDomain.getEvents()).isEmpty();
         assertThat(mapper.toModel(emptyDomain).getStartEvents()).isEmpty();
+        assertThat(mapper.toModel(emptyDomain).getEvents()).isEmpty();
+    }
+
+    @Test
+    void eventUseMappingIsSymmetricAndDefaultsJoinTypeToAll() {
+        WorkflowInput input = new WorkflowInput().id("wf").name("WF")
+                .events(List.of(
+                        new com.processpuzzle.workflow.model.EventUse().id("ask").name("Ask")
+                                .eventDefinitionId("InvoiceRequested")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.THROW)
+                                .dependsOn(List.of("approve")).correlationKey("orderId")
+                                .payloadMapping(Map.of("number", "$.orderNumber")),
+                        new com.processpuzzle.workflow.model.EventUse().id("issued").eventDefinitionId("InvoiceIssued")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .dependsOn(null).joinType(null)));
+
+        Workflow domain = mapper.toDomain("org-1", input);
+
+        assertThat(domain.getEvents()).hasSize(2);
+        EventUse ask = domain.getEvents().get(0);
+        assertThat(ask.getDirection()).isEqualTo(EventDirection.THROW);
+        assertThat(ask.getDependsOn()).containsExactly("approve");
+        assertThat(ask.getJoinType()).isEqualTo(JoinType.ALL);
+        assertThat(ask.getCorrelationKey()).isEqualTo("orderId");
+        assertThat(ask.getPayloadMapping()).containsEntry("number", "$.orderNumber");
+        assertThat(domain.getEvents().get(1).getDependsOn()).isEmpty();
+
+        var model = mapper.toModel(domain).getEvents();
+        assertThat(model.get(0).getId()).isEqualTo("ask");
+        assertThat(model.get(0).getName()).isEqualTo("Ask");
+        assertThat(model.get(0).getDirection()).isEqualTo(com.processpuzzle.workflow.model.EventDirection.THROW);
+        assertThat(model.get(0).getPayloadMapping()).containsEntry("number", "$.orderNumber");
+        assertThat(model.get(1).getDirection()).isEqualTo(com.processpuzzle.workflow.model.EventDirection.CATCH);
+        assertThat(model.get(1).getJoinType()).isEqualTo(com.processpuzzle.workflow.model.JoinType.ALL);
+        assertThat(mapper.toModel(Workflow.builder().id("x").events(List.of(EventUse.builder().id("e").build())).build())
+                .getEvents().get(0).getDirection()).isNull();
     }
 
     /** joinType is nullable on both sides and defaults to ALL rather than to null. */

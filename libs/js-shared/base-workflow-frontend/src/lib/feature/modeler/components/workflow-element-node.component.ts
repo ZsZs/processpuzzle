@@ -1,7 +1,9 @@
 import { Component, computed, input } from '@angular/core';
 import { NgDiagramNodeSelectedDirective, NgDiagramNodeTemplate, NgDiagramPortComponent, Node } from 'ng-diagram';
 import { modelerIconUrl } from '../../../domain/modeler/modeler-icons';
-import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
+import { WorkflowElementKind, WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
+
+const EVENT_KINDS: readonly WorkflowElementKind[] = ['start', 'end', 'event'];
 
 /**
  * How one element is drawn on a modeler canvas — registered against `WORKFLOW_NODE_TYPE` in
@@ -40,6 +42,7 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
       [attr.data-testid]="'workflow-node-' + data().kind"
       [attr.data-highlighted]="highlighted() ? 'true' : null"
       [attr.data-unresolved]="unresolved() ? 'true' : null"
+      [attr.data-direction]="data().direction ?? null"
       [attr.title]="tooltip()"
     >
       <img class="element__symbol" [src]="iconUrl()" alt="" aria-hidden="true" />
@@ -125,10 +128,11 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
     /* A start or end event is a BPMN circle the size of the box the converter stated (EVENT_NODE_SIZE, 64px),
        the event symbol inside it and its name written underneath rather than inside - positioned absolutely,
        so it overflows the box instead of growing it, and every edge still anchors on the circle. A thin
-       border starts, a thick one ends, which is BPMN's own distinction; box-sizing keeps the circle the
-       same size either way. */
+       border starts, a thick one ends, a double one is an intermediate event - BPMN's own distinction;
+       box-sizing keeps the circle the same size either way. */
     .element--start,
-    .element--end {
+    .element--end,
+    .element--event {
       position: relative;
       justify-content: center;
       width: 64px;
@@ -140,10 +144,15 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
     .element--end {
       border-width: 6px;
     }
+    /* Two 2px rings and a 2px gap. Throw or catch is told by the symbol inside, not by the circle. */
+    .element--event {
+      border: 6px double var(--pp-color-dark-blue, rgb(24, 111, 206));
+    }
     /* Event.svg is twice as wide as it is high. 40x20 is the largest box of that shape that clears the
        border of even the end event's circle with a margin, so the symbol is as big as the circle allows. */
     .element--start .element__symbol,
-    .element--end .element__symbol {
+    .element--end .element__symbol,
+    .element--event .element__symbol {
       width: 40px;
       height: 20px;
     }
@@ -152,7 +161,8 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
        from the tooltip. The light backing keeps it legible where an artifact's line runs up into the circle
        behind it. Shrink-wrapped rather than full width, so that backing covers the text and no more. */
     .element--start .element__text,
-    .element--end .element__text {
+    .element--end .element__text,
+    .element--event .element__text {
       position: absolute;
       top: calc(100% + 4px);
       left: 50%;
@@ -165,7 +175,8 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
       text-align: center;
     }
     .element--start .element__label,
-    .element--end .element__label {
+    .element--end .element__label,
+    .element--event .element__label {
       font-size: 13px;
       line-height: 16px;
       color: var(--pp-color-dark-blue, rgb(24, 111, 206));
@@ -181,10 +192,10 @@ export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<Workf
   /** What this node carries, read once per change rather than through `node().data` in six bindings. */
   protected readonly data = computed(() => this.node().data);
 
-  protected readonly iconUrl = computed(() => modelerIconUrl(this.data().kind));
+  protected readonly iconUrl = computed(() => modelerIconUrl(this.data().kind, this.data().direction));
 
-  /** A start or end event, drawn as a circle with its name beneath and its description only as a tooltip. */
-  protected readonly isEvent = computed(() => this.data().kind === 'start' || this.data().kind === 'end');
+  /** A start, intermediate or end event, drawn as a circle with its name beneath and its description only as a tooltip. */
+  protected readonly isEvent = computed(() => EVENT_KINDS.includes(this.data().kind));
 
   /**
    * The event's whole name and how it fires, on hover. Only an event needs one: its label is a single

@@ -10,10 +10,12 @@ import { createTaskDefinitionDescriptor } from './domain/definition/task-definit
 import { createWorkflowArtifactUseDescriptor, createWorkflowRoleUseDescriptor, createWorkflowToolUseDescriptor } from './domain/definition/workflow-use.descriptors';
 import { createRequiredStartArtifactDescriptor } from './domain/definition/required-start-artifact.descriptors';
 import { createStartEventDescriptor } from './domain/definition/start-event.descriptors';
+import { createEventUseDescriptor } from './domain/definition/event-use.descriptors';
 import { createTaskArtifactStateDescriptor } from './domain/definition/task-artifact-state.descriptors';
 import { createToolDefinitionDescriptor } from './domain/definition/tool-definition.descriptors';
 import { createToolOperationDescriptor } from './domain/definition/tool-operation.descriptors';
 import { createArtifactInstanceDescriptor } from './domain/execution/artifact-instance.descriptors';
+import { createEventInstanceDescriptor } from './domain/execution/event-instance.descriptors';
 import { createWorkflowInstanceDescriptor } from './domain/execution/workflow-instance.descriptors';
 import { createStepResultDescriptor } from './domain/execution/step-result.descriptors';
 import { createTaskInstanceDescriptor } from './domain/execution/task-instance.descriptors';
@@ -29,6 +31,7 @@ const allDescriptors: BaseEntityDescriptor[] = [
   createWorkflowToolUseDescriptor(),
   createStartEventDescriptor(),
   createRequiredStartArtifactDescriptor(),
+  createEventUseDescriptor(),
   createRoleDefinitionDescriptor(),
   createArtifactDefinitionDescriptor(),
   createTaskDefinitionDescriptor(),
@@ -38,6 +41,7 @@ const allDescriptors: BaseEntityDescriptor[] = [
   createWorkflowInstanceDescriptor(),
   createTaskInstanceDescriptor(),
   createArtifactInstanceDescriptor(),
+  createEventInstanceDescriptor(),
   createStepResultDescriptor(),
 ];
 

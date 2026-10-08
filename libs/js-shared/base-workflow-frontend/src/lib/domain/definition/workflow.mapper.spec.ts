@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
 import { WorkflowMapper } from './workflow.mapper';
 import { WORKFLOW_DTO } from './test-workflow';
 
@@ -98,6 +98,24 @@ describe('WorkflowMapper', () => {
       expect(bare.startEvents).toEqual([]);
     });
 
+    it('maps every intermediate event, with its correlation and payload mapping', () => {
+      expect(workflow.events).toHaveLength(2);
+      expect(workflow.events[0]).toBeInstanceOf(EventUse);
+      expect(workflow.events[0]).toMatchObject({ id: 'request-invoice', eventDefinitionId: 'InvoiceRequested', direction: EventDirection.THROW, dependsOn: ['approve-shipment'], correlationKey: 'orderId' });
+      expect(workflow.events[1].payloadMapping).toEqual({ invoiceNumber: '$.payload.invoiceNumber' });
+      expect(workflow.tasks[2].dependsOn).toEqual(['invoice-issued']);
+    });
+
+    it('reads nulls of an event as absent and flattens a picked catalog event', () => {
+      const event = mapper.fromDto({ id: 'p1', events: [{ id: 'e', eventDefinitionId: { id: 'InvoiceIssued', name: 'Invoice issued' }, direction: 'CATCH', name: null, correlationKey: null, payloadMapping: null }] }).events[0];
+
+      expect(event.eventDefinitionId).toBe('InvoiceIssued');
+      expect(event.name).toBeUndefined();
+      expect(event.correlationKey).toBeUndefined();
+      expect(event.payloadMapping).toBeUndefined();
+      expect(mapper.fromDto({ id: 'p1' }).events).toEqual([]);
+    });
+
     it('defaults the lists of a start event the document omits', () => {
       const event = mapper.fromDto({ id: 'p1', startEvents: [{ id: 'by-hand', startType: 'ROLE_DEFINITION' }] }).startEvents[0];
 
@@ -159,6 +177,19 @@ describe('WorkflowMapper', () => {
 
     // `PUT /workflows/{workflowId}` is a full replacement, so an absent list is an emptied one. A blank
     // workflow therefore has to send five empty arrays rather than five missing keys.
+    it('round-trips every intermediate event', () => {
+      const dto = mapper.toDto(mapper.fromDto(WORKFLOW_DTO));
+
+      expect(dto.events).toEqual(WORKFLOW_DTO.events);
+    });
+
+    // The backend refuses a correlation key on anything but a MESSAGE, and a cleared text box writes ''.
+    it('sends a blank name or correlation key as absent', () => {
+      const event = new EventUse({ id: 'e', eventDefinitionId: 'Stock', direction: EventDirection.CATCH, name: ' ', correlationKey: '' });
+
+      expect(mapper.toDto(new Workflow({ id: 'p1', events: [event] })).events?.[0]).toMatchObject({ name: undefined, correlationKey: undefined });
+    });
+
     it('emits every list unconditionally', () => {
       const dto = mapper.toDto(new Workflow({ id: 'p1', name: 'P1' }));
 
@@ -167,6 +198,7 @@ describe('WorkflowMapper', () => {
       expect(dto.tools).toEqual([]);
       expect(dto.tasks).toEqual([]);
       expect(dto.startEvents).toEqual([]);
+      expect(dto.events).toEqual([]);
     });
 
     it('round-trips the artifact states of every assignment', () => {
@@ -220,7 +252,7 @@ describe('WorkflowMapper', () => {
     it('emits exactly the contract’s fields and nothing else', () => {
       const dto = mapper.toDto(mapper.fromDto(WORKFLOW_DTO));
 
-      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'createdAt', 'description', 'extends', 'id', 'name', 'roles', 'startEvents', 'tasks', 'tools', 'updatedAt', 'version']);
+      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'createdAt', 'description', 'events', 'extends', 'id', 'name', 'roles', 'startEvents', 'tasks', 'tools', 'updatedAt', 'version']);
     });
   });
 });

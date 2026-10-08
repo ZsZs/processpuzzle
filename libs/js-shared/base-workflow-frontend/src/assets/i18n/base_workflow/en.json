@@ -13,6 +13,7 @@
     "artifacts": "Artifacts",
     "tools": "Tools",
     "tasks": "Tasks",
+    "events": "Events",
     "tabs": {
       "modeler": "Workflow Modeler"
     },
@@ -45,7 +46,10 @@
           "start": "Required at start",
           "unknown": "Related to"
         }
-      }
+      },
+      "throw_event": "Throw event",
+      "catch_event": "Catch event",
+      "event": "Intermediate event"
     }
   },
   "workflow_task_assignment": {
@@ -87,6 +91,17 @@
     "_self": "Required Artifact",
     "artifactDefinitionId": "Artifact",
     "state": "State"
+  },
+  "workflow_event_use": {
+    "_self": "Intermediate Event",
+    "id": "Id",
+    "name": "Name",
+    "direction": "Direction",
+    "eventDefinitionId": "Event",
+    "dependsOn": "Depends On",
+    "joinType": "Join Type",
+    "correlationKey": "Correlation Key",
+    "payloadMapping": "Payload Mapping"
   },
   "workflow_task_artifact_state": {
     "_self": "Task Artifact State",
@@ -180,7 +195,8 @@
     "completedAt": "Completed At",
     "context": "Context",
     "tasks": "Tasks",
-    "artifacts": "Artifacts"
+    "artifacts": "Artifacts",
+    "events": "Events"
   },
   "task_instance": {
     "_self": "Task Instance",
@@ -226,7 +242,8 @@
       "skip_reason": "Reason for skipping",
       "unstated_refusal": "Not accepted yet, and the server gave no detail.",
       "unassigned": "unassigned",
-      "assigned_to": "Assigned to"
+      "assigned_to": "Assigned to",
+      "waiting_for": "Waiting for"
     }
   },
   "artifact_instance": {
@@ -239,6 +256,18 @@
     "stateMachineInstanceId": "State Machine Instance",
     "currentState": "Current State",
     "updatedAt": "Updated At"
+  },
+  "event_instance": {
+    "_self": "Event Instance",
+    "eventUseId": "Event",
+    "direction": "Direction",
+    "status": "Status",
+    "eventDefinitionId": "Catalog Event",
+    "correlationValue": "Correlation Value",
+    "waitingSince": "Waiting Since",
+    "occurredAt": "Occurred At",
+    "payload": "Payload",
+    "contextContribution": "Context Contribution"
   },
   "task_step_result": {
     "_self": "Step Result",

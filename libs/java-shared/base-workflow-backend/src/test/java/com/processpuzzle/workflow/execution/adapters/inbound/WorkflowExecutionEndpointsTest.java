@@ -15,6 +15,7 @@ import com.processpuzzle.workflow.execution.usecases.inbound.FindTaskInstanceUse
 import com.processpuzzle.workflow.execution.usecases.inbound.FindArtifactInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstancesUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.ListEventInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
@@ -59,9 +60,11 @@ class WorkflowExecutionEndpointsTest {
         CancelWorkflowInstanceUseCase cancelUseCase = mock(CancelWorkflowInstanceUseCase.class);
         ListTaskInstancesUseCase listTasksUseCase = mock(ListTaskInstancesUseCase.class);
         ListArtifactInstancesUseCase listWpsUseCase = mock(ListArtifactInstancesUseCase.class);
+        ListEventInstancesUseCase listEventsUseCase = mock(ListEventInstancesUseCase.class);
 
         WorkflowInstancesEndpoint endpoint = new WorkflowInstancesEndpoint(
-                startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase, mapper);
+                startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase,
+                listEventsUseCase, mapper);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("p1")

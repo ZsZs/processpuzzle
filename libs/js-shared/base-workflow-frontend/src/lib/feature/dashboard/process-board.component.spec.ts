@@ -108,6 +108,19 @@ describe('ProcessBoardComponent', () => {
     expect(host.querySelector('[data-testid="board-column-SKIPPED"]')).toBeNull();
   });
 
+  it('names the catches the run is waiting for, and nothing else', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
+    controller
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'THROWN' }, { ...issued, status: 'WAITING' }] }] });
+
+    const host = render();
+    expect(host.querySelector('[data-testid="board-waiting-invoice-issued"]')?.textContent).toContain('Invoice issued');
+    expect(host.querySelector('[data-testid="board-waiting-request-invoice"]')).toBeNull();
+  });
+
   it('marks an empty column rather than collapsing it', () => {
     store.selectInstance(RUN_ID);
 

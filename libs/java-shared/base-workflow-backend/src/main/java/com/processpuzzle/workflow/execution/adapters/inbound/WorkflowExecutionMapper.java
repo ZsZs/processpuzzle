@@ -3,6 +3,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
 import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
@@ -47,6 +48,12 @@ public class WorkflowExecutionMapper {
 
     public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
                                                                       List<ArtifactInstance> artifacts) {
+        return toModel(instance, tasks, artifacts, List.of());
+    }
+
+    public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
+                                                                      List<ArtifactInstance> artifacts,
+                                                                      List<EventInstance> events) {
         com.processpuzzle.workflow.model.WorkflowInstance model = new com.processpuzzle.workflow.model.WorkflowInstance();
         model.setId(instance.getId().toString());
         model.setInstanceNumber(instance.getInstanceNumber());
@@ -60,11 +67,12 @@ public class WorkflowExecutionMapper {
         model.setStartedAt(toOffsetDateTime(instance.getStartedAt()));
         model.setCompletedAt(toOffsetDateTime(instance.getCompletedAt()));
         // Assembled, not stored: the API's `context` is still the *current* context, it is simply
-        // derived from the task contributions rather than from a field. Costs no query — the task
-        // instances are already here because the response carries them.
-        model.setContext(WorkflowContext.assemble(instance, tasks));
+        // derived from the task and event contributions rather than from a field. Costs no query — the
+        // task and event instances are already here because the response carries them.
+        model.setContext(WorkflowContext.assemble(instance, tasks, events));
         model.setTasks(tasks.stream().map(this::toModel).toList());
         model.setArtifacts(artifacts.stream().map(this::toModel).toList());
+        model.setEvents(events.stream().map(this::toModel).toList());
         return model;
     }
 
@@ -125,6 +133,23 @@ public class WorkflowExecutionMapper {
                 .accepted(result.accepted())
                 .task(toModel(result.task()))
                 .postconditionDetail(result.postconditionDetail());
+    }
+
+    // -- Event Instance -------------------------------------------------------
+
+    public com.processpuzzle.workflow.model.EventInstance toModel(EventInstance instance) {
+        return new com.processpuzzle.workflow.model.EventInstance()
+                .id(instance.getId() == null ? null : instance.getId().toString())
+                .eventUseId(instance.getEventUseId())
+                .eventDefinitionId(instance.getEventDefinitionId())
+                .name(instance.getName())
+                .direction(com.processpuzzle.workflow.model.EventDirection.fromValue(instance.getDirection().name()))
+                .status(com.processpuzzle.workflow.model.EventInstanceStatus.fromValue(instance.getStatus().name()))
+                .correlationValue(instance.getCorrelationValue())
+                .waitingSince(toOffsetDateTime(instance.getWaitingSince()))
+                .occurredAt(toOffsetDateTime(instance.getOccurredAt()))
+                .payload(instance.getPayload())
+                .contextContribution(instance.getContextContribution());
     }
 
     // -- Artifact Instance ------------------------------------------------

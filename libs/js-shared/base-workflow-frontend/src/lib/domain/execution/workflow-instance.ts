@@ -1,5 +1,6 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
+import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
 
 /**
@@ -48,6 +49,15 @@ export enum TaskInstanceStatus {
 }
 
 /** Mirrors the contract's `WorkflowInstanceStatus`. */
+/** Where an intermediate event of a run stands: not reached, waiting, occurred, thrown, or withdrawn. */
+export enum EventInstanceStatus {
+  PENDING = 'PENDING',
+  WAITING = 'WAITING',
+  OCCURRED = 'OCCURRED',
+  THROWN = 'THROWN',
+  CANCELLED = 'CANCELLED',
+}
+
 export enum WorkflowInstanceStatus {
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
@@ -116,6 +126,41 @@ export class ArtifactInstance implements BaseEntity {
 }
 
 /** A running workflow: the aggregate root of the execution layer, addressed by its server-minted UUID. */
+/**
+ * The run-time state of one intermediate event of an instance — the contract's `EventInstance`. Read-only:
+ * the engine throws it, or delivers the catalog event a catch waits for.
+ */
+export class EventInstance implements BaseEntity {
+  id: string;
+  /** `EventUse.id` of the workflow this row runs. */
+  eventUseId: string;
+  eventDefinitionId: string;
+  name?: string;
+  direction: EventDirection | undefined;
+  status: EventInstanceStatus | undefined;
+  /** THROW: the value sent. CATCH: the value waited for. */
+  correlationValue?: string;
+  waitingSince?: string;
+  occurredAt?: string;
+  payload?: PropertyMap;
+  /** CATCH: what the payload mapping added to the context. */
+  contextContribution?: PropertyMap;
+
+  constructor(init: Partial<EventInstance> = {}) {
+    this.id = init.id ?? '';
+    this.eventUseId = init.eventUseId ?? '';
+    this.eventDefinitionId = init.eventDefinitionId ?? '';
+    this.name = init.name;
+    this.direction = init.direction;
+    this.status = init.status;
+    this.correlationValue = init.correlationValue;
+    this.waitingSince = init.waitingSince;
+    this.occurredAt = init.occurredAt;
+    this.payload = init.payload;
+    this.contextContribution = init.contextContribution;
+  }
+}
+
 export class WorkflowInstance implements BaseEntity {
   id: string;
   /** Server-assigned, sequential per organization: the instance's human-facing identity. */
@@ -144,6 +189,8 @@ export class WorkflowInstance implements BaseEntity {
   context?: PropertyMap;
   tasks: TaskInstance[];
   artifacts: ArtifactInstance[];
+  /** The run-time state of the workflow's intermediate events. */
+  events: EventInstance[];
 
   constructor(init: Partial<WorkflowInstance> = {}) {
     this.id = init.id ?? '';
@@ -160,6 +207,7 @@ export class WorkflowInstance implements BaseEntity {
     this.context = init.context;
     this.tasks = init.tasks ?? [];
     this.artifacts = init.artifacts ?? [];
+    this.events = init.events ?? [];
     this.title = [this.workflowName, this.instanceNumber === undefined ? undefined : `#${this.instanceNumber}`].filter(Boolean).join(' ');
   }
 }

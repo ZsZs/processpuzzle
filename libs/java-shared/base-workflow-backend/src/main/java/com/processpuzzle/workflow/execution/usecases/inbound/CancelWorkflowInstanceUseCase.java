@@ -4,6 +4,8 @@ import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.events.WorkflowInstanceCancelledEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,10 +20,14 @@ import java.util.UUID;
 public class CancelWorkflowInstanceUseCase {
 
     private final WorkflowInstanceRepository repository;
+    private final EventInstanceRepository eventInstanceRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public CancelWorkflowInstanceUseCase(WorkflowInstanceRepository repository, ApplicationEventPublisher eventPublisher) {
+    public CancelWorkflowInstanceUseCase(WorkflowInstanceRepository repository,
+                                         EventInstanceRepository eventInstanceRepository,
+                                         ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
+        this.eventInstanceRepository = eventInstanceRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -35,6 +41,14 @@ public class CancelWorkflowInstanceUseCase {
         instance.setStatus(WorkflowInstanceStatus.CANCELLED);
         instance.setCompletedAt(Instant.now());
         repository.save(instance);
+
+        // A cancelled run waits for nothing any more: withdraw its catches, so no event is delivered to it.
+        eventInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, instanceId).stream()
+                .filter(event -> !event.getStatus().isTerminal())
+                .forEach(event -> {
+                    event.setStatus(EventInstanceStatus.CANCELLED);
+                    eventInstanceRepository.save(event);
+                });
 
         eventPublisher.publishEvent(new WorkflowInstanceCancelledEvent(orgKey, instanceId, instance.getWorkflowId(), reason));
     }

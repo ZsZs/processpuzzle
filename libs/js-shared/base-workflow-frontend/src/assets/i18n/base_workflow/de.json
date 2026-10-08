@@ -13,6 +13,7 @@
     "artifacts": "Artefakte",
     "tools": "Werkzeuge",
     "tasks": "Aufgaben",
+    "events": "Ereignisse",
     "tabs": {
       "modeler": "Workflow-Modellierer"
     },
@@ -45,7 +46,10 @@
           "start": "Zu Beginn erforderlich",
           "unknown": "Bezogen auf"
         }
-      }
+      },
+      "throw_event": "Auslösendes Ereignis",
+      "catch_event": "Eintretendes Ereignis",
+      "event": "Zwischenereignis"
     }
   },
   "workflow_task_assignment": {
@@ -87,6 +91,17 @@
     "_self": "Erforderliches Artefakt",
     "artifactDefinitionId": "Artefakt",
     "state": "Zustand"
+  },
+  "workflow_event_use": {
+    "_self": "Zwischenereignis",
+    "id": "Id",
+    "name": "Name",
+    "direction": "Richtung",
+    "eventDefinitionId": "Ereignis",
+    "dependsOn": "Abhängig von",
+    "joinType": "Verknüpfungstyp",
+    "correlationKey": "Korrelationsschlüssel",
+    "payloadMapping": "Nutzdatenzuordnung"
   },
   "workflow_task_artifact_state": {
     "_self": "Artefaktzustand der Aufgabe",
@@ -180,7 +195,8 @@
     "completedAt": "Abgeschlossen am",
     "context": "Kontext",
     "tasks": "Aufgaben",
-    "artifacts": "Artefakte"
+    "artifacts": "Artefakte",
+    "events": "Ereignisse"
   },
   "task_instance": {
     "_self": "Aufgabeninstanz",
@@ -226,7 +242,8 @@
       "skip_reason": "Grund für das Überspringen",
       "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
       "unassigned": "nicht zugewiesen",
-      "assigned_to": "Zugewiesen an"
+      "assigned_to": "Zugewiesen an",
+      "waiting_for": "Wartet auf"
     }
   },
   "artifact_instance": {
@@ -239,6 +256,18 @@
     "stateMachineInstanceId": "Zustandsmaschineninstanz",
     "currentState": "Aktueller Zustand",
     "updatedAt": "Geändert am"
+  },
+  "event_instance": {
+    "_self": "Ereignisinstanz",
+    "eventUseId": "Ereignis",
+    "direction": "Richtung",
+    "status": "Status",
+    "eventDefinitionId": "Katalogereignis",
+    "correlationValue": "Korrelationswert",
+    "waitingSince": "Wartet seit",
+    "occurredAt": "Eingetreten am",
+    "payload": "Nutzdaten",
+    "contextContribution": "Kontextbeitrag"
   },
   "task_step_result": {
     "_self": "Schrittergebnis",

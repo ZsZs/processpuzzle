@@ -5,6 +5,7 @@ import {
   WORKFLOW_I18N_SCOPE,
   WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,
 } from '../../base-workflow.i18n';
+import { EventDirection } from '../definition/workflow';
 import { WorkflowElementKind } from './workflow-graph';
 
 /**
@@ -26,15 +27,25 @@ const ELEMENT_I18N_SCOPES: Record<Exclude<WorkflowElementKind, EventKind>, strin
 /**
  * The two events are the exception, named by the Workflow Modeler's own labels. The end event is no entity
  * at all, and a start event's entity name — *Start Event* — beside an *End* that is not one would read
- * oddly; the legend names them as the pair BPMN makes of them.
+ * oddly; the legend names them as the pair BPMN makes of them. An intermediate event is named by its
+ * direction — a throw and a catch are two symbols, and the legend explains both.
  */
-type EventKind = 'start' | 'end';
+type EventKind = 'start' | 'end' | 'event';
 const EVENT_NAME_KEYS: Record<EventKind, string> = {
   start: `${WORKFLOW_I18N_SCOPE}.modeler.start`,
   end: `${WORKFLOW_I18N_SCOPE}.modeler.end`,
+  event: `${WORKFLOW_I18N_SCOPE}.modeler.event`,
+};
+const DIRECTION_NAME_KEYS: Record<EventDirection, string> = {
+  [EventDirection.THROW]: `${WORKFLOW_I18N_SCOPE}.modeler.throw_event`,
+  [EventDirection.CATCH]: `${WORKFLOW_I18N_SCOPE}.modeler.catch_event`,
 };
 
-/** The key naming one kind — `base_workflow.workflow_role_definition._self` and its siblings. */
-export function modelerElementNameKey(kind: WorkflowElementKind): string {
-  return kind === 'start' || kind === 'end' ? EVENT_NAME_KEYS[kind] : `${ELEMENT_I18N_SCOPES[kind]}._self`;
+/**
+ * The key naming one kind — `base_workflow.workflow_role_definition._self` and its siblings; for an
+ * intermediate event, the one its direction picks.
+ */
+export function modelerElementNameKey(kind: WorkflowElementKind, direction?: EventDirection): string {
+  if (kind === 'event' && direction) return DIRECTION_NAME_KEYS[direction];
+  return kind === 'start' || kind === 'end' || kind === 'event' ? EVENT_NAME_KEYS[kind] : `${ELEMENT_I18N_SCOPES[kind]}._self`;
 }

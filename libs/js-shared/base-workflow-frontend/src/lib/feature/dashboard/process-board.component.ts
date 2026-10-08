@@ -4,7 +4,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { DashboardTask } from '../../domain/dashboard/dashboard-task';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
-import { TaskInstanceStatus } from '../../domain/execution/workflow-instance';
+import { EventInstance, EventInstanceStatus, TaskInstanceStatus } from '../../domain/execution/workflow-instance';
 import { TaskStatusBadgeComponent } from './task-status-badge.component';
 
 /**
@@ -41,6 +41,10 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                 <span data-testid="board-started">{{ instance.startedAt | date: 'short' }}</span>
               }
             </div>
+            <!-- What the run waits for when no task is moving: its catches, read-only. -->
+            @for (event of waitingEvents(instance.events); track event.id) {
+              <span class="board__waiting" [attr.data-testid]="'board-waiting-' + event.eventUseId">{{ waitingForKey | transloco }} {{ event.name || event.eventDefinitionId }}</span>
+            }
           </div>
           <span class="board__status" [attr.data-testid]="'board-status-' + (instance.status ?? 'unknown')">{{ instance.status }}</span>
         </header>
@@ -107,6 +111,16 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
       gap: 4px 16px;
       font-size: 12px;
       color: #888888;
+    }
+    .board__waiting {
+      display: inline-block;
+      margin-top: 4px;
+      margin-right: 6px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      background-color: #fff4e5;
+      font-size: 11px;
+      color: #8a5300;
     }
     .board__status {
       font-size: 11px;
@@ -189,11 +203,16 @@ export class ProcessBoardComponent {
 
   protected readonly unassignedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unassigned`;
   protected readonly noRunKey = `${TASK_DASHBOARD_I18N_SCOPE}.run_none`;
+  protected readonly waitingForKey = `${TASK_DASHBOARD_I18N_SCOPE}.waiting_for`;
 
   // `@switch` compares against values, so the enum members are fields rather than reachable as a type.
   protected readonly blocked = TaskInstanceStatus.BLOCKED;
   protected readonly completed = TaskInstanceStatus.COMPLETED;
   protected readonly skipped = TaskInstanceStatus.SKIPPED;
+
+  protected waitingEvents(events: EventInstance[] | undefined): EventInstance[] {
+    return (events ?? []).filter((event) => event.status === EventInstanceStatus.WAITING);
+  }
 
   protected isSelected(row: DashboardTask): boolean {
     return this.store.selectedTaskId() === row.task.id;

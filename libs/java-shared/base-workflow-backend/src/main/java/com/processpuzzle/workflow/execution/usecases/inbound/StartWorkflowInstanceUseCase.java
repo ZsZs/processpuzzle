@@ -9,6 +9,7 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
@@ -50,6 +51,7 @@ public class StartWorkflowInstanceUseCase {
     private final InstanceNumberAllocator instanceNumbers;
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final TaskInstanceRepository taskInstanceRepository;
+    private final EventInstanceRepository eventInstanceRepository;
     private final ArtifactInstanceRepository artifactInstanceRepository;
     private final TaskActivationService taskActivationService;
     private final ApplicationEventPublisher eventPublisher;
@@ -59,6 +61,7 @@ public class StartWorkflowInstanceUseCase {
                                         InstanceNumberAllocator instanceNumbers,
                                         WorkflowInstanceRepository workflowInstanceRepository,
                                         TaskInstanceRepository taskInstanceRepository,
+                                        EventInstanceRepository eventInstanceRepository,
                                         ArtifactInstanceRepository artifactInstanceRepository,
                                         TaskActivationService taskActivationService,
                                         ApplicationEventPublisher eventPublisher) {
@@ -67,6 +70,7 @@ public class StartWorkflowInstanceUseCase {
         this.instanceNumbers = instanceNumbers;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.taskInstanceRepository = taskInstanceRepository;
+        this.eventInstanceRepository = eventInstanceRepository;
         this.artifactInstanceRepository = artifactInstanceRepository;
         this.taskActivationService = taskActivationService;
         this.eventPublisher = eventPublisher;
@@ -161,6 +165,8 @@ public class StartWorkflowInstanceUseCase {
                 .name(task.definition().getName())
                 .status(TaskInstanceStatus.PENDING)
                 .build()));
+        definition.events().forEach(event -> eventInstanceRepository.save(
+                TaskActivationService.pendingEventInstance(orgKey, instance.getId(), event)));
 
         // Nothing has completed yet, so the initial context *is* the assembled one.
         taskActivationService.activateEligibleTasks(orgKey, definition, instance.getId(), instance.getInitialContext());

@@ -107,15 +107,29 @@ describe('BASE_WORKFLOW_ROUTES', () => {
     // The roles, artifacts and tools a workflow involves are references now, picked from their own
     // branches — so there is no URL under a workflow that addresses them, and the assignments are the
     // only child left.
-    // Five embedded levels, not one: besides the task assignments, the three `*Use` rows through which a
-    // workflow involves a role, an artifact or a tool, and its start events. A `*Use` is a URL of its own
+    // Six embedded levels, not one: besides the task assignments, the three `*Use` rows through which a
+    // workflow involves a role, an artifact or a tool, its start events and its intermediate events. A `*Use` is a URL of its own
     // because the contract makes it an object rather than an id - the definition it names is still edited
     // on its own branch.
-    it('hangs the assignments, the three Use rows and the start events below the workflow', async () => {
+    it('hangs the assignments, the three Use rows, the start events and the intermediate events below the workflow', async () => {
       const branches = await embeddedBranchesOf(detailsOf(workflowRoute));
 
-      expect(branches.map((branch) => branch.path)).toEqual(['workflow-task-assignment', 'workflow-role-use', 'workflow-artifact-use', 'workflow-tool-use', 'workflow-start-event']);
-      expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['Workflow Task Assignment', 'Workflow Role Use', 'Workflow Artifact Use', 'Workflow Tool Use', 'Workflow Start Event']);
+      expect(branches.map((branch) => branch.path)).toEqual([
+        'workflow-task-assignment',
+        'workflow-role-use',
+        'workflow-artifact-use',
+        'workflow-tool-use',
+        'workflow-start-event',
+        'workflow-event-use',
+      ]);
+      expect(branches.map((branch) => branch.data?.['entityName'])).toEqual([
+        'Workflow Task Assignment',
+        'Workflow Role Use',
+        'Workflow Artifact Use',
+        'Workflow Tool Use',
+        'Workflow Start Event',
+        'Workflow Event Use',
+      ]);
       branches.forEach((branch) => expect(branch.data?.['embeddedEntity']).toBe(true));
     });
 
@@ -176,10 +190,10 @@ describe('BASE_WORKFLOW_ROUTES', () => {
   });
 
   describe('the instance branch', () => {
-    it('hangs the tasks and the artifacts below the run', async () => {
+    it('hangs the tasks, the artifacts and the events below the run', async () => {
       const branches = await embeddedBranchesOf(detailsOf(instanceRoute));
 
-      expect(branches.map((branch) => branch.path)).toEqual(['task-instance', 'artifact-instance']);
+      expect(branches.map((branch) => branch.path)).toEqual(['task-instance', 'artifact-instance', 'event-instance']);
     });
 
     it('hangs the step results one level below a task instance', async () => {

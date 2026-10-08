@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.workflow.definition.adapters.inbound.WorkflowYamlMapper;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactYamlEntry;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.EventUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlDocument;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlEntry;
@@ -18,6 +19,7 @@ import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.AuthType;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.definition.domain.HttpMethod;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -201,6 +203,7 @@ public class ImportWorkflowsUseCase {
         for (WorkflowYamlEntry workflow : workflows.values()) {
             validateExtendsLink(workflow, extendsLinks, errors);
             validateTaskUses(workflow, errors);
+            validateEventUses(workflow, errors);
             validateStartEvents(workflow, errors);
         }
     }
@@ -237,13 +240,14 @@ public class ImportWorkflowsUseCase {
      * and belongs to {@link WorkflowValidator}, which runs inside the same transaction.
      */
     private void validateTaskUses(WorkflowYamlEntry entry, List<String> errors) {
-        Set<String> used = new HashSet<>();
+        Set<String> used = new HashSet<>(eventIds(entry));
         for (TaskUseYaml use : safeList(entry.tasks())) {
             String taskId = use.taskDefinitionId();
             if (taskId == null || taskId.isBlank()) {
                 errors.add(WORKFLOW_PREFIX + entry.id() + "' has a task use missing 'taskDefinitionId'.");
             } else if (!used.add(taskId)) {
-                errors.add(WORKFLOW_PREFIX + entry.id() + "' uses task '" + taskId + "' more than once.");
+                errors.add(WORKFLOW_PREFIX + entry.id() + "' uses task '" + taskId
+                        + "' more than once, or as an event id too.");
             }
             if (use.joinType() != null && !WorkflowYamlMapper.isEnumName(JoinType.class, use.joinType())) {
                 errors.add(WORKFLOW_PREFIX + entry.id() + "', task '" + taskId
@@ -251,17 +255,43 @@ public class ImportWorkflowsUseCase {
             }
         }
         for (TaskUseYaml use : safeList(entry.tasks())) {
-            validateDependsOn(entry, use, used, errors);
+            validateDependsOn(entry, "task", use.taskDefinitionId(), use.dependsOn(), used, errors);
         }
     }
 
-    private void validateDependsOn(WorkflowYamlEntry entry, TaskUseYaml use, Set<String> used, List<String> errors) {
-        for (String dependsOnId : safeList(use.dependsOn())) {
-            if (dependsOnId.equals(use.taskDefinitionId())) {
-                errors.add(WORKFLOW_PREFIX + entry.id() + "', task '" + use.taskDefinitionId() + "' dependsOn itself.");
+    /** Enum names and id presence; the catalog lookups are {@link WorkflowValidator}'s. */
+    private void validateEventUses(WorkflowYamlEntry entry, List<String> errors) {
+        Set<String> flowIds = new HashSet<>(eventIds(entry));
+        safeList(entry.tasks()).forEach(use -> flowIds.add(use.taskDefinitionId()));
+        for (EventUseYaml use : safeList(entry.events())) {
+            String eventId = use.id();
+            if (eventId == null || eventId.isBlank()) {
+                errors.add(WORKFLOW_PREFIX + entry.id() + "' has an event missing 'id'.");
+            }
+            if (!WorkflowYamlMapper.isEnumName(EventDirection.class, use.direction())) {
+                errors.add(WORKFLOW_PREFIX + entry.id() + "', event '" + eventId
+                        + "' has unknown direction '" + use.direction() + "'.");
+            }
+            if (use.joinType() != null && !WorkflowYamlMapper.isEnumName(JoinType.class, use.joinType())) {
+                errors.add(WORKFLOW_PREFIX + entry.id() + "', event '" + eventId
+                        + "' has unknown joinType '" + use.joinType() + "'.");
+            }
+            validateDependsOn(entry, "event", eventId, use.dependsOn(), flowIds, errors);
+        }
+    }
+
+    private static List<String> eventIds(WorkflowYamlEntry entry) {
+        return safeList(entry.events()).stream().map(EventUseYaml::id).filter(java.util.Objects::nonNull).toList();
+    }
+
+    private void validateDependsOn(WorkflowYamlEntry entry, String ownerKind, String ownerId, List<String> dependsOn,
+                                   Set<String> used, List<String> errors) {
+        for (String dependsOnId : safeList(dependsOn)) {
+            if (dependsOnId.equals(ownerId)) {
+                errors.add(WORKFLOW_PREFIX + entry.id() + "', " + ownerKind + " '" + ownerId + "' dependsOn itself.");
             } else if (!used.contains(dependsOnId)) {
-                errors.add(WORKFLOW_PREFIX + entry.id() + "', task '" + use.taskDefinitionId()
-                        + "' dependsOn task '" + dependsOnId + "', which the workflow does not use.");
+                errors.add(WORKFLOW_PREFIX + entry.id() + "', " + ownerKind + " '" + ownerId
+                        + "' dependsOn '" + dependsOnId + "', which is neither a task nor an event of the workflow.");
             }
         }
     }

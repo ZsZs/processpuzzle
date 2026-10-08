@@ -110,6 +110,18 @@ task-definitions:
         toolDefinitionId: automated-check-tool
         toolOperation: generate-doc
 
+  - id: issue-invoice
+    name: Issue Invoice
+    description: Issue the invoice of an approved order and record its number.
+    performedByRoles: [ manager ]
+    inputs: [ order-entity ]
+    outputs: [ fulfillment-invoice ]
+    steps:
+      - id: enter-invoice-number
+        name: Enter Invoice Number
+        description: Issue the invoice and enter its number as invoiceNumber when completing the task.
+        stepType: USER_STEP
+
 workflows:
   - id: order-fulfillment-workflow
     name: Order Fulfillment Workflow
@@ -171,9 +183,77 @@ workflows:
 
       - taskDefinitionId: confirm-delivery
         performedBy: clerk
-        dependsOn: [ approve-shipment ]
+        dependsOn: [ invoice-issued ]
         parallel: false
         artifactStates:
           - artifactDefinitionId: order-entity
             inputState: SHIPPED
             outputState: DELIVERED
+
+    # The invoice round trip, with invoicing-workflow below. Once the shipment is approved the
+    # workflow throws InvoiceRequested — a MESSAGE of base-event's catalog, correlated on the order's
+    # id — which starts invoicing-workflow; then it waits until InvoiceIssued comes back for the same
+    # order before delivery can be confirmed. The catch copies the invoice number into the context.
+    events:
+      - id: request-invoice
+        name: Invoice requested
+        eventDefinitionId: InvoiceRequested
+        direction: THROW
+        dependsOn: [ approve-shipment ]
+        correlationKey: orderId
+        payloadMapping:
+          orderNumber: $.orderNumber
+          customerName: $.customerName
+
+      - id: invoice-issued
+        name: Invoice issued
+        eventDefinitionId: InvoiceIssued
+        direction: CATCH
+        dependsOn: [ request-invoice ]
+        correlationKey: orderId
+        payloadMapping:
+          invoiceNumber: $.payload.invoiceNumber
+
+  - id: invoicing-workflow
+    name: Invoicing Workflow
+    description: >-
+      Issues the invoice an order asks for and reports its number back. Started by the
+      InvoiceRequested message order-fulfillment-workflow throws; playable from My Tasks.
+
+    # A thrown event keeps the thrower's subject, so this instance is about the same order — and, like
+    # every triggered start, is started once per order. $.correlationValue is the order id the message
+    # was correlated on.
+    startEvents:
+      - id: invoice-requested
+        name: InvoiceRequested
+        startType: TRIGGERING_EVENT
+        eventType: InvoiceRequested
+        payloadMapping:
+          orderId: $.correlationValue
+          orderNumber: $.payload.orderNumber
+          customerName: $.payload.customerName
+
+    roles:
+      - roleDefinitionId: manager
+
+    artifacts:
+      - artifactDefinitionId: order-entity
+        objectName: order
+      - artifactDefinitionId: fulfillment-invoice
+        objectName: invoice
+
+    # The manager enters invoiceNumber in the completion form; the throw below sends it back.
+    tasks:
+      - taskDefinitionId: issue-invoice
+        performedBy: manager
+        dependsOn: [ ]
+
+    events:
+      - id: invoice-issued
+        name: Invoice issued
+        eventDefinitionId: InvoiceIssued
+        direction: THROW
+        dependsOn: [ issue-invoice ]
+        correlationKey: orderId
+        payloadMapping:
+          invoiceNumber: $.invoiceNumber

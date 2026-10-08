@@ -1,4 +1,5 @@
 import { Edge, GroupNode, Node } from 'ng-diagram';
+import { EventDirection } from '../definition/workflow';
 
 /**
  * The ng-diagram graph of one modeler perspective, and the vocabulary every perspective shares.
@@ -56,15 +57,16 @@ export const WORKFLOW_RELATION_EDGE_TYPE = 'ppWorkflowRelation';
  *
  * `start` and `end` are the Workflows perspective's BPMN events. A `start` node is one `StartEvent` of the
  * workflow; the `end` node is *derived* — the model has no end element, and the one drawn stands for every
- * task nothing depends on having finished.
+ * task nothing depends on having finished. An `event` node is one intermediate `EventUse`, a throw or a
+ * catch by its {@link WorkflowNodeData.direction}.
  */
-export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workflow' | 'start' | 'end';
+export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workflow' | 'start' | 'end' | 'event';
 
 /** The flow's own kinds — the ones that ride `sequence` edges and take a column of the flow. */
-export const FLOW_KINDS: readonly WorkflowElementKind[] = ['task', 'start', 'end'];
+export const FLOW_KINDS: readonly WorkflowElementKind[] = ['task', 'start', 'end', 'event'];
 
 /**
- * The box a start or end event is drawn as: a circle, its name written underneath rather than inside.
+ * The box a start, intermediate or end event is drawn as: a circle, its name written underneath rather than inside.
  *
  * Stated on the node with `autoSize: false` by the converter rather than measured, because both layouts
  * read it — the flat one to centre the circle on its Dagre position, the swimlane one to centre it in its
@@ -112,6 +114,11 @@ export interface WorkflowNodeData {
    * it claims.
    */
   unresolved?: boolean;
+  /**
+   * An intermediate event's direction — whether it raises its catalog event or waits for it, which picks
+   * the filled or the outlined symbol. Unset on every other kind, and on an event row not yet given one.
+   */
+  direction?: EventDirection;
 }
 
 /**
@@ -121,9 +128,9 @@ export interface WorkflowNodeData {
  * control flow and are drawn solid, everything else is a data or tool association and is drawn dashed, the
  * same distinction BPMN makes between a sequence flow and an association.
  *
- * - `sequence` — a `dependsOn` entry, the only flow relation the model states outright; and the two the
- *   events add: a start event to each task that depends on nothing, and each task nothing depends on to
- *   the end event.
+ * - `sequence` — a `dependsOn` entry of a task or an intermediate event, the only flow relation the model
+ *   states outright; and the two the start and end events add: a start event to each task or intermediate
+ *   event that depends on nothing, and each one nothing depends on to the end event.
  * - `implicit` — the order two `parallel: false` siblings sharing a `dependsOn` set actually run in, which
  *   is their position in `Workflow.tasks` and exists nowhere as data. Drawn distinctly rather than as a
  *   plain sequence edge, so a reader can tell a declared dependency from one inferred from declaration

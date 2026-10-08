@@ -10,7 +10,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
@@ -99,14 +101,33 @@ class TriggeredStartListenerTest {
 
     @Test
     void theMappingDocumentIsTheWholeEvent() {
-        assertThat(TriggeredStartListener.asDocument(ORDER_CREATED))
+        assertThat(OccurredEventDocument.of(ORDER_CREATED))
                 .containsEntry("orgKey", ORG)
                 .containsEntry("eventDefinitionId", "OrderCreatedEvent")
                 .containsEntry("subjectType", "order")
                 .containsEntry("subjectId", "order-1")
                 .containsEntry("payload", Map.of("customerName", "ACME"))
                 .containsEntry("occurredAt", "2026-10-08T10:00:00Z");
-        assertThat(TriggeredStartListener.asDocument(
+        assertThat(OccurredEventDocument.of(
                 new DefinedEventOccurred(ORG, "E", "order", "1", null, null))).containsEntry("occurredAt", null);
+    }
+
+    /** A message's correlation value is mappable, which is how a triggered start learns what it answers. */
+    @Test
+    void theDocumentOfAMessageCarriesItsCorrelationAndSource() {
+        UUID occurrence = UUID.randomUUID();
+        UUID source = UUID.randomUUID();
+        DefinedEventOccurred message = new DefinedEventOccurred(ORG, "InvoiceRequested", "order", "order-1",
+                Map.of(), null, CatalogEventKind.MESSAGE, occurrence, "order-1", source);
+
+        assertThat(OccurredEventDocument.of(message))
+                .containsEntry("kind", "MESSAGE")
+                .containsEntry("correlationValue", "order-1")
+                .containsEntry("occurrenceId", occurrence.toString())
+                .containsEntry("sourceWorkflowInstanceId", source.toString());
+        assertThat(OccurredEventDocument.of(ORDER_CREATED))
+                .containsEntry("kind", "SYSTEM")
+                .containsEntry("correlationValue", null)
+                .containsEntry("sourceWorkflowInstanceId", null);
     }
 }

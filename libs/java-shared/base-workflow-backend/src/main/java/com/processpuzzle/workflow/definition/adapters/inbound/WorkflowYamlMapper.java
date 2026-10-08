@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.definition.adapters.inbound;
 
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactYamlEntry;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.EventUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RequiredStartArtifactYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
@@ -19,6 +20,8 @@ import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.ArtifactUse;
 import com.processpuzzle.workflow.definition.domain.AuthType;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.HttpMethod;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
@@ -132,7 +135,22 @@ public class WorkflowYamlMapper {
                 safeList(entry.roles()).stream().map(this::toRoleUseDomain).toList(),
                 safeList(entry.artifacts()).stream().map(this::toArtifactUseDomain).toList(),
                 safeList(entry.tools()).stream().map(this::toToolUseDomain).toList(),
-                safeList(entry.tasks()).stream().map(this::toTaskUseDomain).toList());
+                safeList(entry.tasks()).stream().map(this::toTaskUseDomain).toList(),
+                safeList(entry.events()).stream().map(this::toEventUseDomain).toList());
+    }
+
+    private EventUse toEventUseDomain(EventUseYaml entry) {
+        JoinType joinType = toEnum(JoinType.class, entry.joinType());
+        return EventUse.builder()
+                .id(entry.id())
+                .name(entry.name())
+                .eventDefinitionId(entry.eventDefinitionId())
+                .direction(toEnum(EventDirection.class, entry.direction()))
+                .dependsOn(List.copyOf(safeList(entry.dependsOn())))
+                .joinType(joinType == null ? JoinType.ALL : joinType)
+                .correlationKey(entry.correlationKey())
+                .payloadMapping(entry.payloadMapping())
+                .build();
     }
 
     private RoleUse toRoleUseDomain(RoleUseYaml entry) {
@@ -281,7 +299,20 @@ public class WorkflowYamlMapper {
                         .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId(), use.getObjectName())).toList(),
                 safeList(workflow.getTools()).stream()
                         .map(use -> new ToolUseYaml(use.getToolDefinitionId())).toList(),
-                safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList());
+                safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList(),
+                workflow.getEvents().isEmpty() ? null : workflow.getEvents().stream().map(this::toEventUseYaml).toList());
+    }
+
+    private EventUseYaml toEventUseYaml(EventUse use) {
+        return new EventUseYaml(
+                use.getId(),
+                use.getName(),
+                use.getEventDefinitionId(),
+                nameOf(use.getDirection()),
+                use.getDependsOn(),
+                nameOf(use.getJoinType()),
+                use.getCorrelationKey(),
+                use.getPayloadMapping());
     }
 
     private TaskUseYaml toTaskUseYaml(TaskUse use) {

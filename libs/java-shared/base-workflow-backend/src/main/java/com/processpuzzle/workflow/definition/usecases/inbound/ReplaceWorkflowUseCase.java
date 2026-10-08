@@ -47,7 +47,8 @@ public class ReplaceWorkflowUseCase {
                 desiredState.getRoles(),
                 desiredState.getArtifacts(),
                 desiredState.getTools(),
-                desiredState.getTasks());
+                desiredState.getTasks(),
+                desiredState.getEvents());
 
         validator.validate(existing);
         return repository.save(existing);

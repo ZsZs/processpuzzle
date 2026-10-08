@@ -176,7 +176,9 @@ On the backend the events are Spring application events (in-process, transaction
 Spring Modulith event publication registry: a publication is stored with the publishing transaction and
 retried until its listener completes. Features publish raw facts as `PlatformEvent`; `base-event` matches them
 against the organization's event catalog and republishes the named ones (`OrderCreatedEvent`) as
-`DefinedEventOccurred`, which is what starts a workflow. On the frontend they are
+`DefinedEventOccurred`, which is what starts a workflow. A running workflow raises MESSAGE and SIGNAL events as
+`EventThrown`, which `base-event` republishes the same way, and waits for any of them at an intermediate catch
+event. On the frontend they are
 signal-based store notifications.
 
 ### Feature maturity
@@ -188,9 +190,9 @@ different stages:
 | `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
-| `base-workflow` | authoring UI for workflows and tools, with start / end events in the modeler; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented; start events guard explicit starts, and a TRIGGERING_EVENT start event starts the workflow when its catalogued event occurs |
+| `base-workflow` | authoring UI for workflows and tools, with start / end events in the modeler; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented; start events guard explicit starts, and a TRIGGERING_EVENT start event starts the workflow when its catalogued event occurs; intermediate throw / catch events raise and wait for catalogued events during a run |
 | `base-app` | scaffold | scaffold |
-| `base-event` | CRUD screens for the event catalog | event catalog, matching of platform facts to catalogued events (SYSTEM only; MESSAGE / SIGNAL not thrown yet) |
+| `base-event` | CRUD screens for the event catalog | event catalog, matching of platform facts to catalogued events, and republishing of MESSAGE / SIGNAL events thrown by workflows |
 
 The event contracts and the scaffolded libraries exist so that each feature can be filled in without
 reshaping the whole.

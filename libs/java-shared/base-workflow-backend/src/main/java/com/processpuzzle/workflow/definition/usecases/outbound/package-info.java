@@ -13,8 +13,8 @@
  * tenant registry is expected to replace the role directory adapter.
  *
  * <p>{@link com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort} answers whether
- * the event a TRIGGERING_EVENT start event names exists in the organization's event catalog. The host
- * application supplies it from base-event; without one,
+ * the event a TRIGGERING_EVENT start event or an intermediate event names exists in the organization's
+ * event catalog, and of which kind it is. The host application supplies it from base-event; without one,
  * {@link com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort} accepts any
  * name. That is why this package is the {@code definition-port} named interface: a host application
  * implements these.

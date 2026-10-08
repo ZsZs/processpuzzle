@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Node, provideNgDiagram } from 'ng-diagram';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { EventDirection } from '../../../domain/definition/workflow';
 import { WORKFLOW_NODE_TYPE, WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
 import { WorkflowElementNodeComponent } from './workflow-element-node.component';
 
@@ -72,6 +73,22 @@ describe('WorkflowElementNodeComponent', () => {
     expect(circle.querySelector('.element__label')?.textContent?.trim()).toBe('OrderCreatedEvent');
     expect(circle.querySelector('.element__description')).toBeNull();
     expect(circle.getAttribute('title')).toBe('OrderCreatedEvent (INPUT_ARTIFACT)');
+  });
+
+  // A double circle like the start and end, its symbol saying whether it throws or catches.
+  it('draws an intermediate event as a circle whose symbol its direction picks', () => {
+    const thrown = render({ kind: 'event', label: 'Order shipped', description: 'OrderShippedEvent', direction: EventDirection.THROW });
+
+    expect(thrown.classList).toContain('element--event');
+    expect(thrown.dataset['testid']).toBe('workflow-node-event');
+    expect(thrown.dataset['direction']).toBe('THROW');
+    expect(thrown.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/EventThrow.svg');
+    expect(thrown.querySelector('.element__description')).toBeNull();
+    expect(thrown.getAttribute('title')).toBe('Order shipped (OrderShippedEvent)');
+
+    const caught = render({ kind: 'event', label: 'Payment received', direction: EventDirection.CATCH });
+    expect(caught.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/EventCatch.svg');
+    expect(caught.dataset['direction']).toBe('CATCH');
   });
 
   it('gives the end event its name as the tooltip, and a card none', () => {

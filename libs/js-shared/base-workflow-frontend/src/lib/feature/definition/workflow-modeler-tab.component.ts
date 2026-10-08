@@ -19,7 +19,7 @@ import { WorkflowRelationPropertiesPanelComponent } from '../modeler/pages/workf
 import { WorkflowSelectionService } from '../modeler/services/workflow-selection.service';
 
 /** The kinds this perspective draws, and the order the legend reads them in. */
-const DRAWN_KINDS: WorkflowElementKind[] = ['start', 'role', 'task', 'end', 'artifact', 'tool'];
+const DRAWN_KINDS: WorkflowElementKind[] = ['start', 'role', 'task', 'event', 'end', 'artifact', 'tool'];
 
 /** Everything on, which is the whole workflow — a toggle exists to take something away. */
 const ALL_LAYERS: ModelerLayers = { lanes: true, data: true, tools: true };

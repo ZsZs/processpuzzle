@@ -1,7 +1,10 @@
 package com.processpuzzle.workflow.definition.domain;
 
 import com.processpuzzle.workflow.common.ValidationException;
+import com.processpuzzle.shared.event.CatalogEventKind;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.ObjectProvider;
@@ -516,7 +519,158 @@ class WorkflowValidatorTest {
                 .hasMessageContaining("Start event 'code' has the same id as a task");
     }
 
+    // ---------------------------------------------------------------- intermediate events
+
+    @Test
+    void acceptsATaskThatDependsOnAnEvent() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("ship", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.MESSAGE));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("code", "developer"), assignment("ship", "developer", "approved")),
+                catching("approved", "Approved", "orderId", "code"));
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsAnEventNamedLikeATask() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                catching("code", "Approved", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Event 'code' has the same id as a task");
+    }
+
+    @Test
+    void rejectsTwoEventsWithTheSameId() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null), catching("e", "Approved", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("Duplicate event 'e'");
+    }
+
+    @Test
+    void rejectsAStartEventNamedLikeAnEvent() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withStartEvents(withEvents(workflow(List.of(), List.of(), List.of()),
+                        catching("e", "Approved", null)),
+                StartEvent.builder().id("e").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("same id as a task or event");
+    }
+
+    @Test
+    void rejectsADependsOnThatNamesAStartEvent() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "begin")),
+                StartEvent.builder().id("begin").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("dependsOn start event 'begin'");
+    }
+
+    @Test
+    void rejectsAnEventThatDependsOnItselfOrOnNothingKnown() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null, "e")))).hasMessageContaining("Event 'e' cannot depend on itself");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null, "ghost")))).hasMessageContaining("Event 'e' dependsOn 'ghost'");
+    }
+
+    @Test
+    void rejectsAnEventTheCatalogDoesNotKnow() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of());
+        Workflow workflow = withEvents(workflow(List.of(), List.of(), List.of()), catching("e", "Ghost", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("not in this organization's event catalog");
+    }
+
+    @Test
+    void rejectsAnEventWithoutDirectionOrDefinition() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        EventUse noDirection = EventUse.builder().id("e").eventDefinitionId("Approved").build();
+        EventUse noDefinition = EventUse.builder().id("e").direction(EventDirection.CATCH).build();
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDirection)))
+                .hasMessageContaining("has no direction");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDefinition)))
+                .hasMessageContaining("names no eventDefinitionId");
+    }
+
+    @Test
+    void rejectsThrowingASystemEvent() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("OrderCreatedEvent", CatalogEventKind.SYSTEM));
+        EventUse throwing = EventUse.builder().id("e").eventDefinitionId("OrderCreatedEvent").direction(EventDirection.THROW).build();
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), throwing)))
+                .hasMessageContaining("throws SYSTEM event");
+    }
+
+    @Test
+    void aMessageNeedsACorrelationKeyAndNothingElseTakesOne() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Invoice", CatalogEventKind.MESSAGE, "Stock", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Invoice", null)))).hasMessageContaining("has no correlationKey");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Stock", "orderId")))).hasMessageContaining("only a MESSAGE takes a correlationKey");
+    }
+
+    @Test
+    void anUnknownKindSkipsTheKindRules() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        when(eventCatalog.exists(eq("acme"), anyString())).thenReturn(true);
+        when(eventCatalog.kindOf(eq("acme"), anyString())).thenReturn(Optional.empty());
+
+        assertThatCode(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Anything", null)))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsACycleThroughTasksAndEventsAndNamesIt() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("a", "developer"), task("b", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("a", "developer", "e"), assignment("b", "developer", "a")),
+                catching("e", "Approved", null, "b"));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("The flow has a cycle: a -> e -> b -> a");
+    }
+
     // ---------------------------------------------------------------- fixtures
+
+    private void knownEvents(Map<String, CatalogEventKind> kinds) {
+        lenient().when(eventCatalog.exists(eq("acme"), anyString())).thenAnswer(call -> kinds.containsKey(call.getArgument(1)));
+        lenient().when(eventCatalog.kindOf(eq("acme"), anyString()))
+                .thenAnswer(call -> Optional.ofNullable(kinds.get(call.<String>getArgument(1))));
+    }
+
+    private Workflow withEvents(Workflow workflow, EventUse... events) {
+        workflow.setEvents(List.of(events));
+        return workflow;
+    }
+
+    private EventUse catching(String id, String definition, String correlationKey, String... dependsOn) {
+        return EventUse.builder().id(id).eventDefinitionId(definition).direction(EventDirection.CATCH)
+                .correlationKey(correlationKey).dependsOn(List.of(dependsOn)).build();
+    }
 
     private Workflow withStartEvents(Workflow workflow, StartEvent... startEvents) {
         workflow.setStartEvents(List.of(startEvents));

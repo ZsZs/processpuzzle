@@ -39,6 +39,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -535,6 +538,9 @@ class WorkflowUseCasesTest {
                         .artifactStates(List.of(TaskArtifactState.builder()
                                 .artifactDefinitionId("code").inputState("DRAFT").outputState("REVIEWED").build()))
                         .build()))
+                .events(List.of(EventUse.builder().id("merged").name("Merged").eventDefinitionId("PrMerged")
+                        .direction(EventDirection.CATCH).dependsOn(List.of("impl")).joinType(JoinType.ANY)
+                        .correlationKey("prId").payloadMapping(Map.of("mergedBy", "$.payload.user")).build()))
                 .build();
 
         when(workflowRepo.findByOrgKeyAndId(ORG, "wf-export")).thenReturn(Optional.of(workflow));
@@ -557,7 +563,8 @@ class WorkflowUseCasesTest {
                 .contains("artifactType: \"ENTITY\"")
                 .contains("stepType: \"SERVICE_STEP\"")
                 .contains("startType: \"INPUT_ARTIFACT\"")
-                .contains("joinType: \"ANY\"");
+                .contains("joinType: \"ANY\"")
+                .contains("direction: \"CATCH\"");
 
         // Feed it straight back: nothing exists yet, so everything is a create and nothing errors.
         when(workflowRepo.findByOrgKey(ORG)).thenReturn(List.of());
@@ -594,6 +601,7 @@ class WorkflowUseCasesTest {
         });
         assertThat(reimported.getStartEvents().get(0).getRequiredArtifacts()).singleElement()
                 .satisfies(required -> assertThat(required.getState()).isEqualTo("DRAFT"));
+        assertThat(reimported.getEvents()).containsExactlyElementsOf(workflow.getEvents());
     }
 
     @Test
@@ -680,7 +688,42 @@ class WorkflowUseCasesTest {
                       - taskDefinitionId: impl
                         performedBy: dev
                         dependsOn: [ ghost ]
-                """)).anyMatch(error -> error.contains("which the workflow does not use"));
+                """)).anyMatch(error -> error.contains("which is neither a task nor an event of the workflow"));
+
+        assertThat(importOf(importUseCase, """
+                workflows:
+                  - id: wf1
+                    name: WF1
+                    events:
+                      - id: issued
+                        eventDefinitionId: InvoiceIssued
+                        direction: SIDEWAYS
+                        joinType: SOMETIMES
+                        dependsOn: [ ghost ]
+                      - eventDefinitionId: Nameless
+                        direction: CATCH
+                """)).anyMatch(error -> error.contains("event 'issued' has unknown direction 'SIDEWAYS'"))
+                .anyMatch(error -> error.contains("event 'issued' has unknown joinType 'SOMETIMES'"))
+                .anyMatch(error -> error.contains("event 'issued' dependsOn 'ghost'"))
+                .anyMatch(error -> error.contains("has an event missing 'id'"));
+
+        assertThat(importOf(importUseCase, """
+                workflows:
+                  - id: wf1
+                    name: WF1
+                    tasks:
+                      - taskDefinitionId: impl
+                        performedBy: dev
+                        dependsOn: [ issued ]
+                    events:
+                      - id: issued
+                        eventDefinitionId: InvoiceIssued
+                        direction: catch
+                      - id: impl
+                        eventDefinitionId: InvoiceIssued
+                        direction: THROW
+                """)).anyMatch(error -> error.contains("uses task 'impl' more than once, or as an event id too"))
+                .noneMatch(error -> error.contains("dependsOn 'issued'"));
 
         // A rejected import is all-or-nothing: no section is written.
         verify(workflowRepo, never()).save(any());

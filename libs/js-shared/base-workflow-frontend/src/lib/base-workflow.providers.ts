@@ -18,7 +18,9 @@ import {
   WORKFLOW_TOOL_USE_ENTITY_NAME,
   WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
   WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_EVENT_USE_ENTITY_NAME,
   WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME,
+  EVENT_INSTANCE_ENTITY_NAME,
 } from './domain/workflow-entity-names';
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
 import { WorkflowFacade } from './feature/definition/workflow.facade';
@@ -30,6 +32,7 @@ import {
   WorkflowRequiredStartArtifactFacade,
   WorkflowRoleUseFacade,
   WorkflowStartEventFacade,
+  WorkflowEventUseFacade,
   WorkflowTaskArtifactStateFacade,
   WorkflowTaskAssignmentFacade,
   WorkflowToolUseFacade,
@@ -37,7 +40,7 @@ import {
   ToolOperationFacade,
 } from './feature/definition/workflow-embedded.facades';
 import { WorkflowInstanceFacade } from './feature/execution/workflow-instance.facade';
-import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './feature/execution/instance-embedded.facades';
+import { ArtifactInstanceFacade, EventInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './feature/execution/instance-embedded.facades';
 
 /**
  * The facades of the whole workflow graph, to be spread into the application's `providers`.
@@ -46,7 +49,7 @@ import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
  * facade like any other — that is what gives it a store — and only its repository differs, reading and
  * writing the aggregate's document rather than an endpoint of its own.
  *
- * All eighteen or none: a consuming application cannot register half of a graph whose forms reference
+ * All twenty or none: a consuming application cannot register half of a graph whose forms reference
  * each other by entity name.
  */
 export const BASE_WORKFLOW_FACADE_PROVIDERS: Provider[] = [
@@ -58,6 +61,7 @@ export const BASE_WORKFLOW_FACADE_PROVIDERS: Provider[] = [
   WorkflowToolUseFacade,
   WorkflowStartEventFacade,
   WorkflowRequiredStartArtifactFacade,
+  WorkflowEventUseFacade,
   WorkflowRoleDefinitionFacade,
   ArtifactDefinitionFacade,
   TaskDefinitionFacade,
@@ -67,6 +71,7 @@ export const BASE_WORKFLOW_FACADE_PROVIDERS: Provider[] = [
   WorkflowInstanceFacade,
   TaskInstanceFacade,
   ArtifactInstanceFacade,
+  EventInstanceFacade,
   TaskStepResultFacade,
 ];
 
@@ -94,6 +99,7 @@ export const BASE_WORKFLOW_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [WORKFLOW_TOOL_USE_ENTITY_NAME]: WorkflowToolUseFacade,
   [WORKFLOW_START_EVENT_ENTITY_NAME]: WorkflowStartEventFacade,
   [WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME]: WorkflowRequiredStartArtifactFacade,
+  [WORKFLOW_EVENT_USE_ENTITY_NAME]: WorkflowEventUseFacade,
   [WORKFLOW_ROLE_DEFINITION_ENTITY_NAME]: WorkflowRoleDefinitionFacade,
   [ARTIFACT_DEFINITION_ENTITY_NAME]: ArtifactDefinitionFacade,
   [TASK_DEFINITION_ENTITY_NAME]: TaskDefinitionFacade,
@@ -103,5 +109,6 @@ export const BASE_WORKFLOW_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [WORKFLOW_INSTANCE_ENTITY_NAME]: WorkflowInstanceFacade,
   [TASK_INSTANCE_ENTITY_NAME]: TaskInstanceFacade,
   [ARTIFACT_INSTANCE_ENTITY_NAME]: ArtifactInstanceFacade,
+  [EVENT_INSTANCE_ENTITY_NAME]: EventInstanceFacade,
   [TASK_STEP_RESULT_ENTITY_NAME]: TaskStepResultFacade,
 };

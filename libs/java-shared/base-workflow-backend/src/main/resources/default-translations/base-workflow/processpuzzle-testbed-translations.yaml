@@ -22,3 +22,7 @@ translations:
       role:
         clerk: Order clerk
         manager: Order manager
+      # The catalogued events the sample workflows throw and catch — the invoice round trip.
+      event:
+        InvoiceRequested: Invoice requested
+        InvoiceIssued: Invoice issued

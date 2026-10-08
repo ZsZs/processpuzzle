@@ -4,6 +4,8 @@ import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.ArtifactUse;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
@@ -84,6 +86,7 @@ public class WorkflowDefinitionMapper {
                 .artifacts(mapEach(input.getArtifacts(), this::toArtifactUseDomain))
                 .tools(mapEach(input.getTools(), this::toToolUseDomain))
                 .tasks(mapEach(input.getTasks(), this::toTaskUseDomain))
+                .events(mapEach(input.getEvents(), this::toEventUseDomain))
                 .build();
     }
 
@@ -98,6 +101,7 @@ public class WorkflowDefinitionMapper {
         model.setArtifacts(mapEach(workflow.getArtifacts(), this::toArtifactUseModel));
         model.setTools(mapEach(workflow.getTools(), this::toToolUseModel));
         model.setTasks(mapEach(workflow.getTasks(), this::toTaskUseModel));
+        model.setEvents(mapEach(workflow.getEvents(), this::toEventUseModel));
         model.setVersion(workflow.getVersion());
         model.setCreatedAt(toOffsetDateTime(workflow.getCreatedAt()));
         model.setUpdatedAt(toOffsetDateTime(workflow.getUpdatedAt()));
@@ -203,6 +207,36 @@ public class WorkflowDefinitionMapper {
                 .artifactDefinitionId(state.getArtifactDefinitionId())
                 .inputState(state.getInputState())
                 .outputState(state.getOutputState());
+    }
+
+    // -- Intermediate events -------------------------------------------
+
+    private EventUse toEventUseDomain(com.processpuzzle.workflow.model.EventUse input) {
+        return EventUse.builder()
+                .id(input.getId())
+                .name(input.getName())
+                .eventDefinitionId(input.getEventDefinitionId())
+                .direction(input.getDirection() == null ? null : EventDirection.valueOf(input.getDirection().getValue()))
+                .dependsOn(copyOf(input.getDependsOn()))
+                .joinType(input.getJoinType() == null ? JoinType.ALL : JoinType.valueOf(input.getJoinType().getValue()))
+                .correlationKey(input.getCorrelationKey())
+                .payloadMapping(input.getPayloadMapping())
+                .build();
+    }
+
+    private com.processpuzzle.workflow.model.EventUse toEventUseModel(EventUse use) {
+        return new com.processpuzzle.workflow.model.EventUse()
+                .id(use.getId())
+                .name(use.getName())
+                .eventDefinitionId(use.getEventDefinitionId())
+                .direction(use.getDirection() == null
+                        ? null
+                        : com.processpuzzle.workflow.model.EventDirection.fromValue(use.getDirection().name()))
+                .dependsOn(copyOf(use.getDependsOn()))
+                .joinType(com.processpuzzle.workflow.model.JoinType.fromValue(
+                        (use.getJoinType() == null ? JoinType.ALL : use.getJoinType()).name()))
+                .correlationKey(use.getCorrelationKey())
+                .payloadMapping(use.getPayloadMapping());
     }
 
     // -- Start events --------------------------------------------------

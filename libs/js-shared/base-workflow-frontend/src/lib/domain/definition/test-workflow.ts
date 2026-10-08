@@ -47,9 +47,32 @@ export const WORKFLOW_DTO = {
     {
       taskDefinitionId: 'confirm-delivery',
       performedBy: 'clerk',
-      dependsOn: ['approve-shipment'],
+      dependsOn: ['invoice-issued'],
       parallel: false,
       artifactStates: [{ artifactDefinitionId: 'order-entity', inputState: 'SHIPPED', outputState: 'DELIVERED' }],
+    },
+  ],
+  // The invoice round trip: thrown after the approval, answered before delivery can be confirmed.
+  events: [
+    {
+      id: 'request-invoice',
+      name: 'Invoice requested',
+      eventDefinitionId: 'InvoiceRequested',
+      direction: 'THROW',
+      dependsOn: ['approve-shipment'],
+      joinType: 'ALL',
+      correlationKey: 'orderId',
+      payloadMapping: { orderNumber: '$.orderNumber', customerName: '$.customerName' },
+    },
+    {
+      id: 'invoice-issued',
+      name: 'Invoice issued',
+      eventDefinitionId: 'InvoiceIssued',
+      direction: 'CATCH',
+      dependsOn: ['request-invoice'],
+      joinType: 'ALL',
+      correlationKey: 'orderId',
+      payloadMapping: { invoiceNumber: '$.payload.invoiceNumber' },
     },
   ],
   activeInstances: 1,

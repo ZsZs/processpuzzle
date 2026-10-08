@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
+import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
-import { ArtifactInstance, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './workflow-instance';
+import { ArtifactInstance, EventInstance, EventInstanceStatus, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './workflow-instance';
 
 // region wire shapes
 interface StepResultDto {
@@ -36,6 +37,20 @@ interface ArtifactInstanceDto {
   updatedAt?: string;
 }
 
+interface EventInstanceDto {
+  id?: string;
+  eventUseId?: string;
+  eventDefinitionId?: string;
+  name?: string | null;
+  direction?: EventDirection;
+  status?: EventInstanceStatus;
+  correlationValue?: string | null;
+  waitingSince?: string | null;
+  occurredAt?: string | null;
+  payload?: PropertyMap | null;
+  contextContribution?: PropertyMap | null;
+}
+
 interface WorkflowInstanceDto {
   id?: string;
   instanceNumber?: number;
@@ -51,6 +66,7 @@ interface WorkflowInstanceDto {
   context?: PropertyMap;
   tasks?: TaskInstanceDto[];
   artifacts?: ArtifactInstanceDto[];
+  events?: EventInstanceDto[];
 }
 // endregion
 
@@ -87,6 +103,7 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
       context: source.context,
       tasks: (source.tasks ?? []).map(toTaskInstance),
       artifacts: (source.artifacts ?? []).map(toArtifactInstance),
+      events: (source.events ?? []).map(toEventInstance),
     });
   }
 
@@ -106,6 +123,7 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
       context: entity.context,
       tasks: (entity.tasks ?? []).map(fromTaskInstance),
       artifacts: (entity.artifacts ?? []).map(fromArtifactInstance),
+      events: (entity.events ?? []).map(fromEventInstance),
     };
   }
 }
@@ -178,6 +196,37 @@ function fromArtifactInstance(artifact: ArtifactInstance): ArtifactInstanceDto {
     stateMachineInstanceId: artifact.stateMachineInstanceId,
     currentState: artifact.currentState,
     updatedAt: artifact.updatedAt,
+  };
+}
+function toEventInstance(dto: EventInstanceDto): EventInstance {
+  return new EventInstance({
+    id: dto.id,
+    eventUseId: dto.eventUseId,
+    eventDefinitionId: dto.eventDefinitionId,
+    name: dto.name ?? undefined,
+    direction: dto.direction,
+    status: dto.status,
+    correlationValue: dto.correlationValue ?? undefined,
+    waitingSince: dto.waitingSince ?? undefined,
+    occurredAt: dto.occurredAt ?? undefined,
+    payload: dto.payload ?? undefined,
+    contextContribution: dto.contextContribution ?? undefined,
+  });
+}
+
+function fromEventInstance(event: EventInstance): EventInstanceDto {
+  return {
+    id: event.id,
+    eventUseId: event.eventUseId,
+    eventDefinitionId: event.eventDefinitionId,
+    name: event.name,
+    direction: event.direction,
+    status: event.status,
+    correlationValue: event.correlationValue,
+    waitingSince: event.waitingSince,
+    occurredAt: event.occurredAt,
+    payload: event.payload,
+    contextContribution: event.contextContribution,
   };
 }
 // endregion

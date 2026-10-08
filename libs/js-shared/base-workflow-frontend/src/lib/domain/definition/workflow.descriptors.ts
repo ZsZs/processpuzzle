@@ -5,6 +5,7 @@ import {
   WORKFLOW_ENTITY_NAME,
   WORKFLOW_ROLE_USE_ENTITY_NAME,
   WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_EVENT_USE_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
 } from '../workflow-entity-names';
@@ -91,14 +92,20 @@ function createWorkflowAttrDescriptors(): AbstractAttrDescriptor[] {
   tasksAttr.referenceIdField = WORKFLOW_TASK_ASSIGNMENT_ID_FIELD;
   tasksAttr.hideInTable = true;
 
+  // The catalog events the workflow throws or catches while it runs; each row has an id of its own, which
+  // the tasks' `dependsOn` may name — see `event-use.descriptors.ts`.
+  const eventsAttr = new BaseEntityAttrDescriptor('events', FormControlType.EMBEDDED_COMPONENTS, 'Events');
+  eventsAttr.linkedEntityType = WORKFLOW_EVENT_USE_ENTITY_NAME;
+  eventsAttr.hideInTable = true;
+
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([extendsAttr, activeInstancesAttr, versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
 
-  // The five embedded lists are stacked rather than laid out in a row: each renders a table with its
+  // The six embedded lists are stacked rather than laid out in a row: each renders a table with its
   // own toolbar, and three of those side by side leaves no column wide enough to read.
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, revisionRow, descriptionAttr, startEventsAttr, rolesAttr, artifactsAttr, toolsAttr, tasksAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, revisionRow, descriptionAttr, startEventsAttr, rolesAttr, artifactsAttr, toolsAttr, tasksAttr, eventsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

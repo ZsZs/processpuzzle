@@ -3,7 +3,17 @@ import { ArtifactDefinition, ArtifactType } from '../../definition/artifact-defi
 import { RoleDefinition } from '../../definition/role-definition';
 import { StepDefinition, TaskDefinition, TaskStepType } from '../../definition/task-definition';
 import { ToolDefinition } from '../../definition/tool-definition';
-import { JoinType, RequiredStartArtifact, StartEvent, TaskArtifactState, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
+import {
+  EventDirection,
+  EventUse,
+  JoinType,
+  RequiredStartArtifact,
+  StartEvent,
+  TaskArtifactState,
+  Workflow,
+  WorkflowStartConditionType,
+  WorkflowTaskAssignment,
+} from '../../definition/workflow';
 import { elementEdgeId, elementNodeId, EVENT_NODE_SIZE, isLaneNode, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph } from '../workflow-graph';
 import { WorkflowFlowGraphConverter, WorkflowFlowGraphOptions } from './workflow-flow-graph.converter';
 
@@ -131,6 +141,29 @@ const DELIVERED_ORDER = elementNodeId('artifact', 'order-entity[DELIVERED]');
 const CHECK_TOOL = elementNodeId('tool', 'automated-check-tool');
 const ORDER_DRAFTED = elementNodeId('start', 'order-drafted');
 const END = elementNodeId('end', 'end');
+const PAYMENT_RECEIVED = elementNodeId('event', 'payment-received');
+const ORDER_SHIPPED = elementNodeId('event', 'order-shipped');
+
+/**
+ * The seeded workflow with two intermediate events in its chain: approval waits for a caught payment after
+ * the review, and the shipment is announced by a thrown event after the delivery is confirmed — the last
+ * node of the flow, so it is what feeds the end.
+ */
+function withEvents(overrides: Partial<Workflow> = {}): Workflow {
+  const [review, approve, confirm] = workflow().tasks;
+  return workflow({
+    tasks: [review, assignment({ ...approve, dependsOn: ['payment-received'] }), confirm],
+    events: [
+      new EventUse({ id: 'payment-received', name: 'Payment received', eventDefinitionId: 'PaymentReceivedEvent', direction: EventDirection.CATCH, dependsOn: ['review-order'] }),
+      new EventUse({ id: 'order-shipped', eventDefinitionId: 'OrderShippedEvent', direction: EventDirection.THROW, dependsOn: ['confirm-delivery'] }),
+    ],
+    ...overrides,
+  });
+}
+
+function nodeOf(graph: WorkflowGraph, id: string) {
+  return graph.nodes.find((node) => node.id === id);
+}
 
 describe('WorkflowFlowGraphConverter', () => {
   describe('nothing to draw', () => {
@@ -421,6 +454,176 @@ describe('WorkflowFlowGraphConverter', () => {
     // A fixed circle rather than a measured card, so both layouts can centre it.
     it('states the event box rather than letting it be measured', () => {
       const events = convert().nodes.filter((node) => node.data.kind === 'start' || node.data.kind === 'end');
+
+      expect(events).toHaveLength(2);
+      events.forEach((node) => {
+        expect(node.size).toEqual(EVENT_NODE_SIZE);
+        expect(node.autoSize).toBe(false);
+      });
+    });
+  });
+
+  describe('intermediate events', () => {
+    it('draws one event node per event use, carrying its direction', () => {
+      const graph = convert(withEvents());
+
+      expect(nodeOf(graph, PAYMENT_RECEIVED)?.data).toEqual({
+        kind: 'event',
+        elementId: 'payment-received',
+        label: 'Payment received',
+        description: 'PaymentReceivedEvent',
+        direction: EventDirection.CATCH,
+      });
+      expect(nodeOf(graph, ORDER_SHIPPED)?.data.direction).toBe(EventDirection.THROW);
+    });
+
+    // The catalog event is then the label, and a tooltip repeating it would say nothing.
+    it('labels a nameless event by the catalog event it throws or catches', () => {
+      const shipped = nodeOf(convert(withEvents()), ORDER_SHIPPED);
+
+      expect(shipped?.data.label).toBe('OrderShippedEvent');
+      expect(shipped?.data.description).toBeUndefined();
+    });
+
+    it('skips an event that has no id yet', () => {
+      const graph = convert(withEvents({ events: [new EventUse({ eventDefinitionId: 'OrderShippedEvent', direction: EventDirection.THROW })] }));
+
+      expect(graph.nodes.filter((node) => node.data.kind === 'event')).toEqual([]);
+    });
+
+    // One id namespace: a `dependsOn` entry is a task or an event, whichever the workflow has by that id.
+    it('runs sequence edges through the events, from a task’s or an event’s dependsOn alike', () => {
+      const pairs = edgesOfRelation(convert(withEvents()), 'sequence').map((edge) => [edge.source, edge.target]);
+
+      expect(pairs).toEqual(
+        expect.arrayContaining([
+          [REVIEW, PAYMENT_RECEIVED],
+          [PAYMENT_RECEIVED, APPROVE],
+          [CONFIRM, ORDER_SHIPPED],
+        ]),
+      );
+      expect(pairs).not.toContainEqual([REVIEW, APPROVE]);
+    });
+
+    it('lets an event depend on another event', () => {
+      const graph = convert(
+        withEvents({
+          events: [...withEvents().events, new EventUse({ id: 'invoice-sent', eventDefinitionId: 'InvoiceSentEvent', direction: EventDirection.THROW, dependsOn: ['order-shipped'] })],
+        }),
+      );
+
+      expect(graph.edges.map((edge) => edge.id)).toContain(elementEdgeId(ORDER_SHIPPED, elementNodeId('event', 'invoice-sent')));
+    });
+
+    it('feeds the end from an event nothing depends on, and no longer from the task before it', () => {
+      const feeders = convert(withEvents())
+        .edges.filter((edge) => edge.target === END)
+        .map((edge) => edge.source);
+
+      expect(feeders).toEqual([ORDER_SHIPPED]);
+    });
+
+    // A catch event depending on nothing is where the flow may begin, as a task depending on nothing is.
+    it('runs a start edge to an event that depends on nothing', () => {
+      const [review, ...rest] = workflow().tasks;
+      const graph = convert(
+        workflow({
+          tasks: [assignment({ ...review, dependsOn: ['go-signal'] }), ...rest],
+          events: [new EventUse({ id: 'go-signal', eventDefinitionId: 'GoSignal', direction: EventDirection.CATCH })],
+        }),
+      );
+
+      expect(graph.edges.filter((edge) => edge.source === ORDER_DRAFTED).map((edge) => edge.target)).toEqual([elementNodeId('event', 'go-signal')]);
+    });
+
+    it('marks the edges into an event with an ANY join', () => {
+      const graph = convert(
+        withEvents({
+          events: [
+            new EventUse({ id: 'payment-received', eventDefinitionId: 'PaymentReceivedEvent', direction: EventDirection.CATCH, dependsOn: ['review-order', 'confirm-delivery'], joinType: JoinType.ANY }),
+          ],
+        }),
+      );
+
+      expect(graph.edges.filter((edge) => edge.target === PAYMENT_RECEIVED).map((edge) => edge.data?.label)).toEqual(['any', 'any']);
+    });
+
+    // The engine chains siblings among tasks only: an event sharing a task's dependsOn runs beside it.
+    it('chains no event into the implicit order', () => {
+      const [review, approve, confirm] = workflow().tasks;
+      const graph = convert(
+        workflow({
+          tasks: [review, approve, confirm],
+          events: [new EventUse({ id: 'review-done', eventDefinitionId: 'ReviewDone', direction: EventDirection.THROW, dependsOn: ['review-order'] })],
+        }),
+      );
+
+      expect(edgesOfRelation(graph, 'implicit')).toEqual([]);
+    });
+
+    it('draws a dependency of an event that names nothing as a dangling task in the unassigned lane', () => {
+      const graph = convert(
+        withEvents({ events: [new EventUse({ id: 'payment-received', eventDefinitionId: 'PaymentReceivedEvent', direction: EventDirection.CATCH, dependsOn: ['deleted-task'] })] }),
+      );
+
+      expect(nodeOf(graph, elementNodeId('task', 'deleted-task'))?.groupId).toBe(laneNodeId(''));
+      expect(nodeOf(graph, PAYMENT_RECEIVED)?.groupId).toBe(laneNodeId(''));
+    });
+
+    describe('lanes', () => {
+      it('puts an event in the lane of its first dependency', () => {
+        const graph = convert(withEvents());
+
+        expect(nodeOf(graph, PAYMENT_RECEIVED)?.groupId).toBe(laneNodeId('clerk'));
+        expect(nodeOf(graph, ORDER_SHIPPED)?.groupId).toBe(laneNodeId('clerk'));
+      });
+
+      it('puts an event depending on nothing in the lane of its first dependent', () => {
+        const graph = convert(
+          withEvents({ events: [new EventUse({ id: 'payment-received', eventDefinitionId: 'PaymentReceivedEvent', direction: EventDirection.CATCH })] }),
+        );
+
+        expect(nodeOf(graph, PAYMENT_RECEIVED)?.groupId).toBe(laneNodeId('manager'));
+      });
+
+      it('lends an event the lane of the event it depends on', () => {
+        const graph = convert(
+          withEvents({
+            events: [
+              new EventUse({ id: 'payment-received', eventDefinitionId: 'PaymentReceivedEvent', direction: EventDirection.CATCH }),
+              new EventUse({ id: 'payment-booked', eventDefinitionId: 'PaymentBooked', direction: EventDirection.THROW, dependsOn: ['payment-received'] }),
+            ],
+          }),
+        );
+
+        expect(nodeOf(graph, elementNodeId('event', 'payment-booked'))?.groupId).toBe(laneNodeId('manager'));
+      });
+
+      it('falls back to the first task’s lane for an event joined to no task, even in a cycle of events', () => {
+        const [, approve] = workflow().tasks;
+        const graph = convert(
+          workflow({
+            tasks: [approve],
+            events: [
+              new EventUse({ id: 'ping', eventDefinitionId: 'Ping', direction: EventDirection.THROW, dependsOn: ['pong'] }),
+              new EventUse({ id: 'pong', eventDefinitionId: 'Pong', direction: EventDirection.CATCH, dependsOn: ['ping'] }),
+            ],
+          }),
+        );
+
+        expect(nodeOf(graph, elementNodeId('event', 'ping'))?.groupId).toBe(laneNodeId('manager'));
+        expect(nodeOf(graph, elementNodeId('event', 'pong'))?.groupId).toBe(laneNodeId('manager'));
+      });
+
+      it('puts no event in a lane when lanes are off', () => {
+        const graph = convert(withEvents(), { lanes: false });
+
+        expect(graph.nodes.filter((node) => node.data.kind === 'event').every((node) => node.groupId === undefined)).toBe(true);
+      });
+    });
+
+    it('states the event box rather than letting it be measured', () => {
+      const events = convert(withEvents()).nodes.filter((node) => node.data.kind === 'event');
 
       expect(events).toHaveLength(2);
       events.forEach((node) => {

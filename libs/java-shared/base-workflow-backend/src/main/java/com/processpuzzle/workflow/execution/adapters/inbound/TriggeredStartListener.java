@@ -5,9 +5,9 @@ import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
+import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
 import com.processpuzzle.workflow.execution.domain.PayloadPath;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -61,7 +61,7 @@ public class TriggeredStartListener {
 
     private void start(DefinedEventOccurred event, Workflow workflow, StartEvent startEvent) {
         try {
-            Map<String, Object> context = PayloadPath.map(asDocument(event), startEvent.getPayloadMapping());
+            Map<String, Object> context = PayloadPath.map(OccurredEventDocument.of(event), startEvent.getPayloadMapping());
             startWorkflowInstance.startTriggered(
                             event.orgKey(), workflow.getId(), startEvent.getId(), event.subjectId(),
                             event.subjectType(), context)
@@ -76,17 +76,5 @@ public class TriggeredStartListener {
                     event.eventDefinitionId(), event.subjectType(), event.subjectId(), workflow.getId(),
                     startEvent.getId(), e);
         }
-    }
-
-    /** The event as the document a {@code payloadMapping} path is evaluated against. */
-    static Map<String, Object> asDocument(DefinedEventOccurred event) {
-        Map<String, Object> document = new LinkedHashMap<>();
-        document.put("orgKey", event.orgKey());
-        document.put("eventDefinitionId", event.eventDefinitionId());
-        document.put("subjectType", event.subjectType());
-        document.put("subjectId", event.subjectId());
-        document.put("payload", event.payload());
-        document.put("occurredAt", event.occurredAt() == null ? null : event.occurredAt().toString());
-        return document;
     }
 }

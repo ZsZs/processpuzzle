@@ -1,6 +1,7 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
+import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.JoinType;
@@ -55,6 +56,11 @@ public record ResolvedWorkflow(
 
     public String id() {
         return definition.getId();
+    }
+
+    /** The workflow's intermediate events, in declaration order; they reference nothing to resolve. */
+    public List<EventUse> events() {
+        return definition.getEvents();
     }
 
     public Optional<ResolvedTask> findTask(String taskDefinitionId) {

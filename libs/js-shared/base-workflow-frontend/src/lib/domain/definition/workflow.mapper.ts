@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
 import { EntityReference, toReferenceIds } from '../reference-ids';
-import { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
 
 // region wire shapes — the schemas of base-workflow-api.yaml, exactly as they travel
 interface RoleUseDto {
@@ -49,6 +49,18 @@ interface TaskArtifactStateDto {
   outputState?: string | null;
 }
 
+/** `eventDefinitionId` is a plain id by contract, typed wider for the `FOREIGN_KEY` control's sake. */
+interface EventUseDto {
+  id?: string;
+  name?: string | null;
+  eventDefinitionId?: EntityReference;
+  direction?: EventDirection;
+  dependsOn?: string[];
+  joinType?: JoinType;
+  correlationKey?: string | null;
+  payloadMapping?: PropertyMap | null;
+}
+
 interface WorkflowTaskAssignmentDto {
   taskDefinitionId?: string;
   performedBy?: string;
@@ -69,6 +81,7 @@ interface WorkflowDto {
   artifacts?: ArtifactUseDto[];
   tools?: ToolUseDto[];
   tasks?: WorkflowTaskAssignmentDto[];
+  events?: EventUseDto[];
   activeInstances?: number;
   version?: number;
   createdAt?: string;
@@ -82,7 +95,7 @@ interface WorkflowDto {
  *
  * Four things are worth knowing about it.
  *
- * **The five embedded lists are mapped element by element**, never passed through. An embedded row is
+ * **The six embedded lists are mapped element by element**, never passed through. An embedded row is
  * edited as the parsed JSON it arrived as, so a field the wire spelled differently from the model would
  * leave its control empty and silently drop the value on the next save. That is not hypothetical here:
  * `roles`, `artifacts` and `tools` were modelled as id arrays until this revision, while the contract
@@ -96,7 +109,7 @@ interface WorkflowDto {
  * what the generic screens already know how to edit. A workflow with none is an empty list, not an
  * absent one — the PUT would otherwise read it as untouched.
  *
- * **`PUT /workflows/{workflowId}` is a full replacement**, so `toDto` emits all five lists
+ * **`PUT /workflows/{workflowId}` is a full replacement**, so `toDto` emits all six lists
  * unconditionally — an absent one is an emptied workflow, not an untouched one. It is also why every
  * contract field has to be modelled even if the form never edits it: a field the mapper does not carry
  * is a field the next save deletes.
@@ -120,6 +133,7 @@ export class WorkflowMapper implements BaseEntityMapper<Workflow> {
       artifacts: (source.artifacts ?? []).map(toArtifactUse),
       tools: (source.tools ?? []).map(toToolUse),
       tasks: (source.tasks ?? []).map(toWorkflowTaskAssignment),
+      events: (source.events ?? []).map(toEventUse),
       activeInstances: source.activeInstances,
       version: source.version,
       createdAt: source.createdAt,
@@ -138,6 +152,7 @@ export class WorkflowMapper implements BaseEntityMapper<Workflow> {
       artifacts: (entity.artifacts ?? []).map(fromArtifactUse),
       tools: (entity.tools ?? []).map(fromToolUse),
       tasks: (entity.tasks ?? []).map(fromWorkflowTaskAssignment),
+      events: (entity.events ?? []).map(fromEventUse),
       version: entity.version,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -235,6 +250,36 @@ function fromWorkflowTaskAssignment(assignment: WorkflowTaskAssignment): Workflo
     parallel: assignment.parallel ?? false,
     override: assignment.override ?? false,
     artifactStates: (assignment.artifactStates ?? []).map(fromTaskArtifactState),
+  };
+}
+
+function toEventUse(dto: EventUseDto): EventUse {
+  return new EventUse({
+    id: dto.id,
+    name: dto.name ?? undefined,
+    eventDefinitionId: referenceIdOf(dto.eventDefinitionId),
+    direction: dto.direction,
+    dependsOn: dto.dependsOn,
+    joinType: dto.joinType,
+    correlationKey: dto.correlationKey ?? undefined,
+    payloadMapping: dto.payloadMapping ?? undefined,
+  });
+}
+
+/**
+ * A blank name or correlation key is sent as absent: the backend refuses a correlation key on anything
+ * but a MESSAGE, and a cleared text box would otherwise send `''`.
+ */
+function fromEventUse(event: EventUse): EventUseDto {
+  return {
+    id: event.id,
+    name: event.name?.trim() || undefined,
+    eventDefinitionId: referenceIdOf(event.eventDefinitionId),
+    direction: event.direction,
+    dependsOn: event.dependsOn,
+    joinType: event.joinType,
+    correlationKey: event.correlationKey?.trim() || undefined,
+    payloadMapping: event.payloadMapping,
   };
 }
 

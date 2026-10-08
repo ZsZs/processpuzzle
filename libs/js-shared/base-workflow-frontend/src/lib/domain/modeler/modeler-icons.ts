@@ -1,3 +1,4 @@
+import { EventDirection } from '../definition/workflow';
 import { WorkflowElementKind } from './workflow-graph';
 
 /**
@@ -28,9 +29,21 @@ const ICON_FILE_NAMES: Record<WorkflowElementKind, string> = {
   // template draws, not by the artwork inside it.
   start: 'Event.svg',
   end: 'Event.svg',
+  // An intermediate event without a direction yet — the blank row an `Add` opens on.
+  event: 'Event.svg',
 };
 
-/** The symbol one kind is drawn with. */
-export function modelerIconUrl(kind: WorkflowElementKind): string {
-  return `${MODELER_ASSET_FOLDER}/${ICON_FILE_NAMES[kind]}`;
+/**
+ * An intermediate event's symbol by direction, which BPMN *does* tell apart by the marker: filled for an
+ * event the workflow throws, outlined for one it catches.
+ */
+const EVENT_ICON_FILE_NAMES: Record<EventDirection, string> = {
+  [EventDirection.THROW]: 'EventThrow.svg',
+  [EventDirection.CATCH]: 'EventCatch.svg',
+};
+
+/** The symbol one kind is drawn with — for an intermediate event, the one its direction picks. */
+export function modelerIconUrl(kind: WorkflowElementKind, direction?: EventDirection): string {
+  const fileName = kind === 'event' && direction ? EVENT_ICON_FILE_NAMES[direction] : ICON_FILE_NAMES[kind];
+  return `${MODELER_ASSET_FOLDER}/${fileName}`;
 }
