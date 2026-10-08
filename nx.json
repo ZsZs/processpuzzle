@@ -108,6 +108,7 @@
     "projects": [
       "base-ai-frontend",
       "base-starter-frontend",
+      "base-event-frontend",
       "auth",
       "base-app-frontend",
       "base-document-frontend",

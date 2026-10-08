@@ -1,0 +1,12 @@
+{
+  "event_definition": {
+    "_self": "Eseménydefiníció",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "kind": "Fajta",
+    "subjectType": "Alany típusa",
+    "action": "Művelet",
+    "state": "Állapot"
+  }
+}

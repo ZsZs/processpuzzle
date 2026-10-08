@@ -1,0 +1,12 @@
+{
+  "event_definition": {
+    "_self": "Définition d'événement",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "kind": "Type",
+    "subjectType": "Type de sujet",
+    "action": "Action",
+    "state": "État"
+  }
+}
