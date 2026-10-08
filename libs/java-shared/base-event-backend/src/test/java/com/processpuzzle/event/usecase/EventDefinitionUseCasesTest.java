@@ -15,6 +15,7 @@ import com.processpuzzle.event.usecase.exception.EventDefinitionAlreadyExistsExc
 import com.processpuzzle.event.usecase.exception.EventDefinitionNotFoundException;
 import com.processpuzzle.event.usecase.exception.InvalidEventDefinitionException;
 import com.processpuzzle.event.usecase.exception.StaleEventDefinitionException;
+import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.util.List;
 import java.util.Optional;
@@ -146,6 +147,21 @@ class EventDefinitionUseCasesTest {
         delete.delete(ORG, "OrderCreatedEvent");
 
         verify(repository).delete(stored);
+    }
+
+    @Test
+    void kindOfNamesTheKindAsTheSharedContractDoes() {
+        when(repository.findByOrgKeyAndId(ORG, "InvoiceIssued")).thenReturn(Optional.of(
+                EventDefinition.builder().orgKey(ORG).id("InvoiceIssued").name("x").kind(EventKind.MESSAGE).build()));
+
+        FindEventDefinition find = new FindEventDefinition(repository);
+
+        assertThat(find.kindOf(ORG, "InvoiceIssued")).contains(CatalogEventKind.MESSAGE);
+        assertThat(find.kindOf(ORG, "Nope")).isEmpty();
+        assertThat(find.lookup(ORG, null)).isEmpty();
+        for (EventKind kind : EventKind.values()) {
+            assertThat(CatalogEventKind.valueOf(kind.name()).name()).isEqualTo(kind.name());
+        }
     }
 
     @Test

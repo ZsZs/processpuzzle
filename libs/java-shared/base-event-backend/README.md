@@ -14,10 +14,11 @@ An `EventDefinition` gives a fact a name the rest of the platform can refer to:
 | --- | --- | --- |
 | `OrderCreatedEvent` | SYSTEM | `order`, CREATED |
 | `OrderConfirmedEvent` | SYSTEM | `order`, STATE_CHANGED, `CONFIRMED` |
+| `InvoiceRequested` | MESSAGE | — |
 
 SYSTEM definitions are bound to a fact: `subjectType` (an entity definition code), `action`
 (CREATED / UPDATED / DELETED / STATE_CHANGED) and, for STATE_CHANGED only, an optional `state`. MESSAGE and
-SIGNAL definitions carry no binding; they can be catalogued now and are thrown by workflows in a later version.
+SIGNAL definitions carry no binding: workflows throw them from intermediate throw events.
 
 ## How an event flows
 
@@ -30,10 +31,19 @@ base-entity / base-state ──> PlatformEvent           (shared.event — the r
                                   ▼
                              base-workflow TriggeredStartListener — starts workflows whose
                              TRIGGERING_EVENT start event names the definition
+                             base-workflow IntermediateCatchListener — delivers it to waiting catch events
+
+base-workflow throw event ──> EventThrown            (shared.event — MESSAGE or SIGNAL, with correlation)
+                                  │  ThrownEventCatalogListener checks the definition exists and is not SYSTEM
+                                  ▼
+                             DefinedEventOccurred    (kind, occurrenceId, correlationValue)
 ```
 
-Both events live in `api-contracts`' `com.processpuzzle.shared.event`, so no feature compiles against another.
-Both hops are `@TransactionalEventListener` + `REQUIRES_NEW`, and the host application's Spring Modulith
+A thrown event naming a missing or SYSTEM definition is logged at WARN and dropped — not rethrown, which would
+make the registry redeliver it forever.
+
+All three events live in `api-contracts`' `com.processpuzzle.shared.event`, so no feature compiles against another.
+Every hop is `@TransactionalEventListener` + `REQUIRES_NEW`, and the host application's Spring Modulith
 event publication registry (`spring-modulith-events-jpa`) makes them durable: a publication is retried until
 its listener completes. Listeners must therefore be idempotent.
 

@@ -9,7 +9,8 @@ package com.processpuzzle.event.domain;
  *   <li>SIGNAL — a workflow, broadcast to every listener.</li>
  * </ul>
  *
- * <p>Only SYSTEM events are raised in this version; the other two can be catalogued already.
+ * <p>base-workflow mirrors these as {@code CatalogEventKind} in {@code shared.event}; the names must
+ * stay equal.
  */
 public enum EventKind {
     SYSTEM, MESSAGE, SIGNAL

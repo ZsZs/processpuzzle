@@ -24,3 +24,16 @@ event-definitions:
     subjectType: order
     action: STATE_CHANGED
     state: DELIVERED
+
+  # MESSAGE events of the invoice round trip: order-fulfillment-workflow throws InvoiceRequested, which
+  # starts invoicing-workflow; that throws InvoiceIssued back, which order-fulfillment catches. Both
+  # are correlated on the order's id.
+  - id: InvoiceRequested
+    name: Invoice requested
+    description: An approved Order asks for its invoice.
+    kind: MESSAGE
+
+  - id: InvoiceIssued
+    name: Invoice issued
+    description: The invoice of an Order was issued.
+    kind: MESSAGE
