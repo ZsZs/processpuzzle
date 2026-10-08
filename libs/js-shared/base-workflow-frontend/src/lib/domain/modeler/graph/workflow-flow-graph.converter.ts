@@ -2,11 +2,12 @@ import { ArtifactDefinition } from '../../definition/artifact-definition';
 import { RoleDefinition } from '../../definition/role-definition';
 import { StepDefinition, TaskDefinition, TaskStepType } from '../../definition/task-definition';
 import { ToolDefinition } from '../../definition/tool-definition';
-import { JoinType, Workflow, WorkflowTaskAssignment } from '../../definition/workflow';
-import { toReferenceIds } from '../../reference-ids';
+import { JoinType, StartEvent, TaskArtifactState, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
+import { EntityReference, toReferenceIds } from '../../reference-ids';
 import {
   elementEdgeId,
   elementNodeId,
+  EVENT_NODE_SIZE,
   laneNodeId,
   WORKFLOW_LANE_TYPE,
   WORKFLOW_NODE_TYPE,
@@ -18,22 +19,22 @@ import {
 } from '../workflow-graph';
 
 /**
- * Which layers of the workflow are on screen, and the two strings the screen has to lend the converter.
+ * Which layers of the workflow are on screen, and the three strings the screen has to lend the converter.
  *
  * Every flag defaults to `true`: the whole workflow is the useful first sight of it, and a toggle exists to
  * take something *away*. They are applied here rather than in the canvas so that a hidden layer's nodes and
  * edges never reach the layout — a filtered layout re-ranks the remaining flow instead of leaving the gaps
  * the hidden nodes occupied.
  *
- * `labels` is here because this module holds no transloco. Two of the diagram's labels are not data — the
- * name of the lane for a task nobody is shown to perform, and the word marking an `ANY` join — so the
- * screen resolves them and passes them down, the same way `RoleResponsibilityGraphConverter` takes the id
+ * `labels` is here because this module holds no transloco. Three of the diagram's labels are not data — the
+ * name of the lane for a task nobody is shown to perform, the word marking an `ANY` join, and the name of the
+ * derived end event — so the screen resolves them and passes them down, the same way `RoleResponsibilityGraphConverter` takes the id
  * to highlight from the screen rather than discovering it.
  */
 export interface WorkflowFlowGraphOptions {
   /** Group tasks into one lane per performing role. Off draws a flat left-to-right flow. */
   lanes?: boolean;
-  /** Artifact nodes, their input/output edges, and the workflow's required start artifacts. */
+  /** Artifact nodes, their input/output edges, and the artifacts the start events wait for. */
   data?: boolean;
   /** Tool nodes and the service steps that call them. */
   tools?: boolean;
@@ -42,6 +43,8 @@ export interface WorkflowFlowGraphOptions {
     unassignedLane?: string;
     /** Written on the incoming edges of a task whose `dependsOn` set is satisfied by any one of them. */
     anyJoin?: string;
+    /** Name of the end event, which the model does not have and so cannot name. */
+    endEvent?: string;
   };
 }
 
@@ -60,9 +63,13 @@ export interface WorkflowFlowGraphOptions {
  * before it, so every sequence edge here is a `dependsOn` entry read in reverse. Three things qualify it,
  * and all three are drawn:
  *
- * - **The root.** A task depending on nothing is eligible from the start. There is no start element to
- *   draw, so with the data layer on the workflow's `requiredArtifacts` are drawn feeding those roots, which
- *   is the nearest honest thing to one.
+ * - **The root.** A task depending on nothing is eligible from the start, so every one of the workflow's
+ *   `startEvents` is drawn as a BPMN start event feeding all of them — the engine activates every root
+ *   whichever event fired. With the data layer on, an event's `requiredArtifacts` are drawn feeding it.
+ * - **The end.** The model has no end element: an instance completes when every task has. One end event is
+ *   *derived* nevertheless, fed by every task nothing depends on, so that the flow reads as closed. Not
+ *   drawn when no task qualifies — a dependency cycle, which the backend refuses — because an end with
+ *   nothing leading into it would claim an exit the flow does not have.
  * - **The join.** `joinType: ANY` on a task with two or more dependencies is the model's only gateway. It
  *   has no element of its own, so it is written on the edges it qualifies.
  * - **The implicit order.** Siblings sharing a `dependsOn` set with `parallel: false` run sequentially *in
@@ -83,6 +90,15 @@ export interface WorkflowFlowGraphOptions {
  * is on the referenced `TaskDefinition`. Only the latter can be drawn as a flow, so a declared artifact no
  * task names does not appear — it is on the workflow's own form, where it was authored.
  *
+ * **An artifact is drawn once per state it is in, not once.** As in a UML activity diagram, the same class
+ * may appear several times, each node the object *in one state*: a task's input edge comes from the object
+ * in the assignment's `inputState` for it, its output edge goes to the object in the `outputState`. One
+ * task's output state is the next one's input state, so the two meet in one node and the object's
+ * lifecycle reads along the flow — `new_order : Order [DRAFT]` → Review → `[CONFIRMED]` → Approve →
+ * `[SHIPPED]` — with every edge staying local. A start event's required state is the same node as the
+ * first task's input in that state. Where no state is stated the stateless object is drawn, so a workflow
+ * that states none draws each artifact exactly once, as it did before states existed.
+ *
  * **`extends` is not drawn.** A parent's roles, artifacts, tools and tasks are not merged client-side, and
  * an `override: true` row only means something against a resolved parent. Drawing the parent's id as a
  * lone node would suggest the diagram accounted for what it inherits, which it has not.
@@ -93,7 +109,8 @@ export class WorkflowFlowGraphConverter {
    *
    * An absent workflow, or one with no tasks, converts to an empty graph rather than to a diagram of its
    * roles alone: the tab has not loaded yet in the first case and there is no flow in the second, and the
-   * screen says so in words.
+   * screen says so in words. Its start events alone are not drawn either — a start wired straight to an end
+   * would draw a workflow that completes the moment it begins, which is not what an unfinished one does.
    */
   static toGraph(
     workflow: Workflow | undefined,
@@ -108,6 +125,7 @@ export class WorkflowFlowGraphConverter {
     const { lanes = true, data = true, tools: withTools = true } = options;
     const unassignedLaneLabel = options.labels?.unassignedLane ?? '?';
     const anyJoinLabel = options.labels?.anyJoin;
+    const endEventLabel = options.labels?.endEvent ?? 'End';
 
     // Indexed once rather than searched per reference: every task names a role and artifacts, so a
     // per-reference `find` over four catalogs would be quadratic in lists that grow together.
@@ -115,6 +133,9 @@ export class WorkflowFlowGraphConverter {
     const rolesById = new Map(roles.map((role) => [role.id, role]));
     const artifactsById = new Map(artifacts.map((artifact) => [artifact.id, artifact]));
     const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
+    const objectNamesById = new Map(workflow.artifacts.map((use) => [use.artifactDefinitionId, use.objectName]));
+    const objectOf = (artifactId: string, state?: string): WorkflowNode =>
+      artifactNode(artifactId, artifactsById.get(artifactId), objectNamesById.get(artifactId), state);
 
     const assignments = workflow.tasks;
     const assignedTaskIds = new Set(assignments.map((assignment) => assignment.taskDefinitionId));
@@ -148,6 +169,27 @@ export class WorkflowFlowGraphConverter {
     });
     // endregion
 
+    // region events — the start events the model states, and the end it implies
+    // Emitted after the tasks so that the lanes still precede everything placed in them. An event sits in
+    // the lane of the task it is drawn beside: a start event beside the first root, the end beside the last
+    // sink — the swimlane layout moves the end to whichever feeder lands in the last column.
+    const rootAssignments = assignments.filter((assignment) => dependenciesOf(assignment).length === 0);
+    const dependedOnIds = new Set(assignments.flatMap(dependenciesOf));
+    const sinkAssignments = assignments.filter((assignment) => !dependedOnIds.has(assignment.taskDefinitionId));
+
+    const startLane = lanes ? laneOf(rootAssignments[0] ?? assignments[0]) : undefined;
+    const startEvents = (workflow.startEvents ?? []).filter((event) => !!event.id);
+    startEvents.forEach((event) => {
+      builder.addNode(startEventNode(event, startLane));
+      rootAssignments.forEach((root) => builder.addEdge(elementNodeId('start', event.id), elementNodeId('task', root.taskDefinitionId), 'sequence'));
+    });
+
+    if (sinkAssignments.length > 0) {
+      builder.addNode(endEventNode(endEventLabel, lanes ? laneOf(sinkAssignments[sinkAssignments.length - 1]) : undefined));
+      sinkAssignments.forEach((sink) => builder.addEdge(elementNodeId('task', sink.taskDefinitionId), END_EVENT_NODE_ID, 'sequence'));
+    }
+    // endregion
+
     // region sequence — the flow only declaration order states
     implicitChains(assignments).forEach(([earlier, later]) =>
       builder.addEdge(elementNodeId('task', earlier.taskDefinitionId), elementNodeId('task', later.taskDefinitionId), 'implicit'),
@@ -155,31 +197,36 @@ export class WorkflowFlowGraphConverter {
     // endregion
 
     // region data
-    // Before the inputs and outputs, so that where a start artifact is also a root task's input the one
-    // line they would share reads as the start. Only one edge is held per pair of ends — two lines between
-    // the same two nodes would be drawn exactly on top of each other.
+    // An artifact an event waits for feeds that event, not the roots after it: which event a document
+    // starts is the fact worth drawing, and a root task's own inputs already say what it reads. In the
+    // state the event requires, which is the node the first task reads when its input state is the same.
     if (data) {
-      const rootTaskIds = assignments.filter((assignment) => dependenciesOf(assignment).length === 0).map((assignment) => assignment.taskDefinitionId);
-      workflow.requiredArtifacts.forEach((required) => {
-        const artifactId = required.artifactDefinitionId;
-        if (!artifactId) return;
-        builder.addNode(artifactNode(artifactId, artifactsById.get(artifactId)));
-        rootTaskIds.forEach((taskId) => builder.addEdge(elementNodeId('artifact', artifactId), elementNodeId('task', taskId), 'start', required.state));
-      });
+      startEvents.forEach((event) =>
+        (event.requiredArtifacts ?? []).forEach((required) => {
+          const artifactId = referenceIdOf(required.artifactDefinitionId);
+          if (!artifactId) return;
+          const object = objectOf(artifactId, stateName(required.state));
+          builder.addNode(object);
+          builder.addEdge(object.id, elementNodeId('start', event.id), 'start');
+        }),
+      );
 
       assignments.forEach((assignment) => {
         const definition = tasksById.get(assignment.taskDefinitionId);
         if (!definition) return;
         const taskNodeId = elementNodeId('task', assignment.taskDefinitionId);
+        const states = artifactStatesOf(assignment);
         // Through `toReferenceIds`, because a RELATED_ENTITIES control writes whole entities into its form
         // control: an edited task holds ids for what the server sent and objects for what was just picked.
         toReferenceIds(definition.inputs).forEach((artifactId) => {
-          builder.addNode(artifactNode(artifactId, artifactsById.get(artifactId)));
-          builder.addEdge(elementNodeId('artifact', artifactId), taskNodeId, 'input');
+          const object = objectOf(artifactId, stateName(states.get(artifactId)?.inputState));
+          builder.addNode(object);
+          builder.addEdge(object.id, taskNodeId, 'input');
         });
         toReferenceIds(definition.outputs).forEach((artifactId) => {
-          builder.addNode(artifactNode(artifactId, artifactsById.get(artifactId)));
-          builder.addEdge(taskNodeId, elementNodeId('artifact', artifactId), 'output');
+          const object = objectOf(artifactId, stateName(states.get(artifactId)?.outputState));
+          builder.addNode(object);
+          builder.addEdge(taskNodeId, object.id, 'output');
         });
       });
     }
@@ -209,6 +256,9 @@ export class WorkflowFlowGraphConverter {
 // region private helper functions
 /** The lane a task with no stated performer goes in — and the one a dangling dependency goes in too. */
 const UNASSIGNED_ROLE_ID = '';
+
+/** The one end event's node id. Fixed, because there is only ever one and the model gives it no id. */
+const END_EVENT_NODE_ID = elementNodeId('end', 'end');
 
 /**
  * Which ports each relation leaves and enters by.
@@ -322,6 +372,29 @@ function implicitChains(assignments: WorkflowTaskAssignment[]): [WorkflowTaskAss
   );
 }
 
+/** One reference as its id — a `FOREIGN_KEY` control may have written the picked entity itself. */
+function referenceIdOf(reference: EntityReference | undefined): string | undefined {
+  return reference === undefined ? undefined : toReferenceIds([reference])[0];
+}
+
+/** A stated state, or `undefined` for a blank one — a cleared text box writes `''`, which is no state. */
+function stateName(state: string | null | undefined): string | undefined {
+  return state?.trim() || undefined;
+}
+
+/**
+ * The assignment's artifact states by artifact id. The first row for an artifact wins, as the backend
+ * refuses a second one anyway; the list may be absent on an assignment built before the field existed.
+ */
+function artifactStatesOf(assignment: WorkflowTaskAssignment): Map<string, TaskArtifactState> {
+  const byArtifactId = new Map<string, TaskArtifactState>();
+  (assignment.artifactStates ?? []).forEach((state) => {
+    const artifactId = referenceIdOf(state.artifactDefinitionId);
+    if (artifactId && !byArtifactId.has(artifactId)) byArtifactId.set(artifactId, state);
+  });
+  return byArtifactId;
+}
+
 /** Whether completing a step is a call the engine makes, and to something it can name. */
 function isToolCall(step: StepDefinition): boolean {
   return step.stepType === TaskStepType.SERVICE_STEP && !!step.toolDefinitionId;
@@ -373,17 +446,64 @@ function taskNode(taskId: string, definition: TaskDefinition | undefined, laneRo
   };
 }
 
-/** One artifact a task reads or writes, or the workflow waits for. Outside every lane — see the layout. */
-function artifactNode(artifactId: string, artifact: ArtifactDefinition | undefined): WorkflowNode {
+/**
+ * One start event, labelled by what most plainly says what starts the workflow: its name; lacking one, the
+ * event it waits for when it is a `TRIGGERING_EVENT`; lacking that, how it fires. The start type is always
+ * the description — the node's tooltip — unless it already is the label.
+ */
+function startEventNode(event: StartEvent, laneRoleId: string | undefined): WorkflowNode {
+  const eventType = event.startType === WorkflowStartConditionType.TRIGGERING_EVENT ? event.eventType : undefined;
+  const label = event.name || eventType || event.startType || event.id;
   return {
-    id: elementNodeId('artifact', artifactId),
+    id: elementNodeId('start', event.id),
+    type: WORKFLOW_NODE_TYPE,
+    position: { x: 0, y: 0 },
+    size: { ...EVENT_NODE_SIZE },
+    autoSize: false,
+    ...(laneRoleId === undefined ? {} : { groupId: laneNodeId(laneRoleId) }),
+    data: {
+      kind: 'start',
+      elementId: event.id,
+      label,
+      description: label === event.startType ? undefined : event.startType,
+    },
+  };
+}
+
+/** The derived end event. No `elementId`: there is no row behind it to name. */
+function endEventNode(label: string, laneRoleId: string | undefined): WorkflowNode {
+  return {
+    id: END_EVENT_NODE_ID,
+    type: WORKFLOW_NODE_TYPE,
+    position: { x: 0, y: 0 },
+    size: { ...EVENT_NODE_SIZE },
+    autoSize: false,
+    ...(laneRoleId === undefined ? {} : { groupId: laneNodeId(laneRoleId) }),
+    data: { kind: 'end', label },
+  };
+}
+
+/**
+ * One artifact a task reads or writes, or a start event waits for. Outside every lane — see the layout.
+ *
+ * Drawn as the *object* flowing through this workflow, in UML's object notation: `new_order : Order`, the
+ * name from the workflow's `ArtifactUse.objectName`, anonymous `:Order` without one. With a state —
+ * `new_order : Order [DRAFT]` — it is the object in that state, a node of its own per state as in a UML
+ * activity diagram: the id carries the state, so every task reading or writing the object in that state
+ * meets in it. `elementId` stays the artifact's, so every one of them navigates to the same definition.
+ */
+function artifactNode(artifactId: string, artifact: ArtifactDefinition | undefined, objectName?: string, state?: string): WorkflowNode {
+  const className = artifact ? artifact.name || artifactId : artifactId;
+  const objectLabel = objectName ? `${objectName} : ${className}` : `:${className}`;
+  return {
+    id: elementNodeId('artifact', state ? `${artifactId}[${state}]` : artifactId),
     type: WORKFLOW_NODE_TYPE,
     position: { x: 0, y: 0 },
     autoSize: true,
     data: {
       kind: 'artifact',
       elementId: artifactId,
-      label: artifact ? artifact.name || artifactId : artifactId,
+      label: state ? `${objectLabel} [${state}]` : objectLabel,
       description: artifact?.description,
       unresolved: artifact === undefined,
     },

@@ -4,6 +4,7 @@ import { WorkflowElementKind } from './workflow-graph';
 
 describe('modelerIconUrl', () => {
   const kinds: WorkflowElementKind[] = ['role', 'artifact', 'task', 'tool', 'workflow'];
+  const eventKinds: WorkflowElementKind[] = ['start', 'end'];
 
   /**
    * The folder a consuming application has to copy the library's `src/assets/modeler` into — the same
@@ -22,5 +23,10 @@ describe('modelerIconUrl', () => {
 
   it('gives each kind a symbol of its own', () => {
     expect(new Set(kinds.map(modelerIconUrl)).size).toBe(kinds.length);
+  });
+
+  // The circle's border tells a start from an end, not the artwork.
+  it('draws both events with the one event symbol', () => {
+    expect(eventKinds.map(modelerIconUrl)).toEqual(['assets/modeler/Event.svg', 'assets/modeler/Event.svg']);
   });
 });

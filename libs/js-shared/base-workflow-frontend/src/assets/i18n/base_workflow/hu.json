@@ -8,13 +8,7 @@
     "activeInstances": "Aktív példányok",
     "version": "Verzió",
     "updatedAt": "Módosítva",
-    "startType": "Indítás típusa",
-    "eventType": "Esemény típusa",
-    "milestoneRef": "Mérföldkő",
-    "preconditionExpression": "Előfeltétel",
-    "authorizedRoles": "Jogosult szerepkörök",
-    "payloadMapping": "Adattartalom-hozzárendelés",
-    "requiredArtifacts": "Szükséges artefaktumok",
+    "startEvents": "Indító események",
     "roles": "Szerepkörök",
     "artifacts": "Artefaktumok",
     "tools": "Eszközök",
@@ -29,6 +23,8 @@
       "tools": "Eszközök",
       "unassigned": "Nincs hozzárendelve",
       "join_any": "bármelyik",
+      "start": "Kezdés",
+      "end": "Befejezés",
       "save": "Elrendezés mentése",
       "properties": {
         "none": "Válasszon egy elemet a tulajdonságai megtekintéséhez.",
@@ -59,7 +55,8 @@
     "dependsOn": "Előfeltételei",
     "joinType": "Egyesítés típusa",
     "parallel": "Párhuzamos",
-    "override": "Felülírás"
+    "override": "Felülírás",
+    "artifactStates": "Artefaktum-állapotok"
   },
   "workflow_role_use": {
     "_self": "Szerepkör használat",
@@ -67,16 +64,35 @@
   },
   "workflow_artifact_use": {
     "_self": "Artefaktum használat",
-    "artifactDefinitionId": "Artefaktum"
+    "artifactDefinitionId": "Artefaktum",
+    "objectName": "Objektum neve"
   },
   "workflow_tool_use": {
     "_self": "Eszköz használat",
     "toolDefinitionId": "Eszköz"
   },
+  "workflow_start_event": {
+    "_self": "Indító esemény",
+    "id": "Azonosító",
+    "name": "Név",
+    "startType": "Indítás típusa",
+    "eventType": "Esemény típusa",
+    "milestoneRef": "Mérföldkő",
+    "preconditionExpression": "Előfeltétel",
+    "authorizedRoles": "Jogosult szerepkörök",
+    "payloadMapping": "Adattartalom-hozzárendelés",
+    "requiredArtifacts": "Szükséges artefaktumok"
+  },
   "workflow_required_start_artifact": {
     "_self": "Szükséges artefaktum",
     "artifactDefinitionId": "Artefaktum",
     "state": "Állapot"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "Tevékenység artefaktum-állapota",
+    "artifactDefinitionId": "Artefaktum",
+    "inputState": "Bemeneti állapot",
+    "outputState": "Kimeneti állapot"
   },
   "workflow_role_definition": {
     "_self": "Szerepkör",
@@ -155,9 +171,11 @@
     "_self": "Munkafolyamat-példány",
     "id": "Azonosító",
     "workflowId": "Munkafolyamat",
+    "startEventId": "Indító esemény",
     "workflowName": "Munkafolyamat neve",
     "status": "Állapot",
-    "entityId": "Entitás",
+    "instanceNumber": "Sorszám",
+    "entityLabel": "Entitás",
     "startedAt": "Indítva",
     "completedAt": "Befejezve",
     "context": "Kontextus",

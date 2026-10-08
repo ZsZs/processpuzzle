@@ -9,6 +9,7 @@ import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleUse;
 import com.processpuzzle.workflow.definition.domain.StepDefinition;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskStepType;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
@@ -17,7 +18,7 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
-import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
+import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
@@ -78,7 +79,7 @@ public class WorkflowDefinitionMapper {
                 .description(input.getDescription())
                 .extendsWorkflowId(input.getExtends()) // see class Javadoc
                 .version(input.getVersion()) // null unless the caller opted into the lock check
-                .startCondition(toStartConditionDomain(input.getStartCondition()))
+                .startEvents(mapEach(input.getStartEvents(), this::toStartEventDomain))
                 .roles(mapEach(input.getRoles(), this::toRoleUseDomain))
                 .artifacts(mapEach(input.getArtifacts(), this::toArtifactUseDomain))
                 .tools(mapEach(input.getTools(), this::toToolUseDomain))
@@ -92,7 +93,7 @@ public class WorkflowDefinitionMapper {
         model.setName(workflow.getName());
         model.setDescription(workflow.getDescription());
         model.setExtends(workflow.getExtendsWorkflowId()); // see class Javadoc
-        model.setStartCondition(toStartConditionModel(workflow.getStartCondition()));
+        model.setStartEvents(mapEach(workflow.getStartEvents(), this::toStartEventModel));
         model.setRoles(mapEach(workflow.getRoles(), this::toRoleUseModel));
         model.setArtifacts(mapEach(workflow.getArtifacts(), this::toArtifactUseModel));
         model.setTools(mapEach(workflow.getTools(), this::toToolUseModel));
@@ -148,11 +149,13 @@ public class WorkflowDefinitionMapper {
     }
 
     public ArtifactUse toArtifactUseDomain(com.processpuzzle.workflow.model.ArtifactUse input) {
-        return ArtifactUse.builder().artifactDefinitionId(input.getArtifactDefinitionId()).build();
+        return ArtifactUse.builder().artifactDefinitionId(input.getArtifactDefinitionId()).objectName(input.getObjectName()).build();
     }
 
     public com.processpuzzle.workflow.model.ArtifactUse toArtifactUseModel(ArtifactUse use) {
-        return new com.processpuzzle.workflow.model.ArtifactUse().artifactDefinitionId(use.getArtifactDefinitionId());
+        return new com.processpuzzle.workflow.model.ArtifactUse()
+                .artifactDefinitionId(use.getArtifactDefinitionId())
+                .objectName(use.getObjectName());
     }
 
     public ToolUse toToolUseDomain(com.processpuzzle.workflow.model.ToolUse input) {
@@ -171,6 +174,7 @@ public class WorkflowDefinitionMapper {
                 .joinType(input.getJoinType() == null ? JoinType.ALL : JoinType.valueOf(input.getJoinType().getValue()))
                 .parallel(Boolean.TRUE.equals(input.getParallel()))
                 .override(Boolean.TRUE.equals(input.getOverride()))
+                .artifactStates(mapEach(input.getArtifactStates(), this::toArtifactStateDomain))
                 .build();
     }
 
@@ -182,16 +186,31 @@ public class WorkflowDefinitionMapper {
                 .joinType(com.processpuzzle.workflow.model.JoinType.fromValue(
                         (use.getJoinType() == null ? JoinType.ALL : use.getJoinType()).name()))
                 .parallel(use.isParallel())
-                .override(use.isOverride());
+                .override(use.isOverride())
+                .artifactStates(mapEach(use.getArtifactStates(), this::toArtifactStateModel));
     }
 
-    // -- Start condition -----------------------------------------------
+    private TaskArtifactState toArtifactStateDomain(com.processpuzzle.workflow.model.TaskArtifactState input) {
+        return TaskArtifactState.builder()
+                .artifactDefinitionId(input.getArtifactDefinitionId())
+                .inputState(input.getInputState())
+                .outputState(input.getOutputState())
+                .build();
+    }
 
-    private WorkflowStartCondition toStartConditionDomain(com.processpuzzle.workflow.model.WorkflowStartCondition input) {
-        if (input == null) {
-            return null;
-        }
-        return WorkflowStartCondition.builder()
+    private com.processpuzzle.workflow.model.TaskArtifactState toArtifactStateModel(TaskArtifactState state) {
+        return new com.processpuzzle.workflow.model.TaskArtifactState()
+                .artifactDefinitionId(state.getArtifactDefinitionId())
+                .inputState(state.getInputState())
+                .outputState(state.getOutputState());
+    }
+
+    // -- Start events --------------------------------------------------
+
+    private StartEvent toStartEventDomain(com.processpuzzle.workflow.model.StartEvent input) {
+        return StartEvent.builder()
+                .id(input.getId())
+                .name(input.getName())
                 .startType(input.getStartType() == null
                         ? null
                         : WorkflowStartConditionType.valueOf(input.getStartType().getValue()))
@@ -204,20 +223,19 @@ public class WorkflowDefinitionMapper {
                 .build();
     }
 
-    private com.processpuzzle.workflow.model.WorkflowStartCondition toStartConditionModel(WorkflowStartCondition condition) {
-        if (condition == null) {
-            return null;
-        }
-        return new com.processpuzzle.workflow.model.WorkflowStartCondition()
-                .startType(condition.getStartType() == null
+    private com.processpuzzle.workflow.model.StartEvent toStartEventModel(StartEvent startEvent) {
+        return new com.processpuzzle.workflow.model.StartEvent()
+                .id(startEvent.getId())
+                .name(startEvent.getName())
+                .startType(startEvent.getStartType() == null
                         ? null
-                        : com.processpuzzle.workflow.model.WorkflowStartConditionType.fromValue(condition.getStartType().name()))
-                .requiredArtifacts(mapEach(condition.getRequiredArtifacts(), this::toRequiredArtifactModel))
-                .eventType(condition.getEventType())
-                .payloadMapping(condition.getPayloadMapping())
-                .authorizedRoles(condition.getAuthorizedRoles() == null ? null : copyOf(condition.getAuthorizedRoles()))
-                .milestoneRef(condition.getMilestoneRef())
-                .preconditionExpression(condition.getPreconditionExpression());
+                        : com.processpuzzle.workflow.model.WorkflowStartConditionType.fromValue(startEvent.getStartType().name()))
+                .requiredArtifacts(mapEach(startEvent.getRequiredArtifacts(), this::toRequiredArtifactModel))
+                .eventType(startEvent.getEventType())
+                .payloadMapping(startEvent.getPayloadMapping())
+                .authorizedRoles(startEvent.getAuthorizedRoles() == null ? null : copyOf(startEvent.getAuthorizedRoles()))
+                .milestoneRef(startEvent.getMilestoneRef())
+                .preconditionExpression(startEvent.getPreconditionExpression());
     }
 
     private RequiredStartArtifact toRequiredArtifactDomain(com.processpuzzle.workflow.model.RequiredStartArtifact input) {

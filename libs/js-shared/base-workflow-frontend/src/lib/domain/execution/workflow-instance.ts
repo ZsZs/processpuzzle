@@ -118,13 +118,26 @@ export class ArtifactInstance implements BaseEntity {
 /** A running workflow: the aggregate root of the execution layer, addressed by its server-minted UUID. */
 export class WorkflowInstance implements BaseEntity {
   id: string;
+  /** Server-assigned, sequential per organization: the instance's human-facing identity. */
+  instanceNumber?: number;
+  /**
+   * What the form and status bar call the run — `Order Fulfillment Workflow #3`: the definition alone
+   * would name every run of it the same. Derived here, never sent.
+   */
+  title: string;
   /** {@link Workflow.id} this instance runs. */
   workflowId: string;
+  /** `StartEvent.id` of the event this instance was started through; absent for an explicit start. */
+  startEventId?: string;
   /** Denormalized name of the definition, so a list needs no second read. */
   workflowName?: string;
   status: WorkflowInstanceStatus | undefined;
   /** The base-entity instance this workflow runs against, when it was started for one. */
   entityId?: string;
+  /** The base-entity definition code of {@link entityId}'s object, e.g. `order`. Server-set. */
+  entityType?: string;
+  /** {@link entityId}'s object by name — its order number — resolved per response; the id when nameless. */
+  entityLabel?: string;
   startedAt?: string;
   completedAt?: string;
   /** Context variables, updated by the output mappings of every tool step that has run. */
@@ -134,14 +147,19 @@ export class WorkflowInstance implements BaseEntity {
 
   constructor(init: Partial<WorkflowInstance> = {}) {
     this.id = init.id ?? '';
+    this.instanceNumber = init.instanceNumber;
     this.workflowId = init.workflowId ?? '';
+    this.startEventId = init.startEventId;
     this.workflowName = init.workflowName;
     this.status = init.status;
     this.entityId = init.entityId;
+    this.entityType = init.entityType;
+    this.entityLabel = init.entityLabel;
     this.startedAt = init.startedAt;
     this.completedAt = init.completedAt;
     this.context = init.context;
     this.tasks = init.tasks ?? [];
     this.artifacts = init.artifacts ?? [];
+    this.title = [this.workflowName, this.instanceNumber === undefined ? undefined : `#${this.instanceNumber}`].filter(Boolean).join(' ');
   }
 }

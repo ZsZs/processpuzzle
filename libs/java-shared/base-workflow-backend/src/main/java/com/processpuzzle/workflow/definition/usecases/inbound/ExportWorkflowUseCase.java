@@ -13,7 +13,6 @@ import com.processpuzzle.workflow.definition.adapters.inbound.dto.ToolYamlEntry;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.Workflow;
-import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
@@ -99,20 +98,17 @@ public class ExportWorkflowUseCase {
     private Set<String> roleIds(Workflow workflow, List<TaskDefinition> tasks) {
         Set<String> ids = new LinkedHashSet<>(workflow.roleDefinitionIds());
         tasks.forEach(task -> ids.addAll(safeList(task.getPerformedByRoles())));
-        addStartConditionRoles(ids, workflow);
+        addStartEventRoles(ids, workflow);
         return ids;
     }
 
     /**
-     * A ROLE_DEFINITION start condition names roles nothing else in the workflow has to: it says who
+     * A ROLE_DEFINITION start event names roles nothing else in the workflow has to: it says who
      * may launch it, not who performs anything. Omitting them would export a workflow that cannot be
      * started.
      */
-    private void addStartConditionRoles(Set<String> ids, Workflow workflow) {
-        WorkflowStartCondition condition = workflow.getStartCondition();
-        if (condition != null) {
-            ids.addAll(safeList(condition.getAuthorizedRoles()));
-        }
+    private void addStartEventRoles(Set<String> ids, Workflow workflow) {
+        safeList(workflow.getStartEvents()).forEach(startEvent -> ids.addAll(safeList(startEvent.getAuthorizedRoles())));
     }
 
     private Set<String> artifactIds(Workflow workflow, List<TaskDefinition> tasks) {
@@ -121,11 +117,8 @@ public class ExportWorkflowUseCase {
             ids.addAll(safeList(task.getInputs()));
             ids.addAll(safeList(task.getOutputs()));
         }
-        WorkflowStartCondition condition = workflow.getStartCondition();
-        if (condition != null) {
-            safeList(condition.getRequiredArtifacts())
-                    .forEach(required -> ids.add(required.getArtifactDefinitionId()));
-        }
+        safeList(workflow.getStartEvents()).forEach(startEvent -> safeList(startEvent.getRequiredArtifacts())
+                .forEach(required -> ids.add(required.getArtifactDefinitionId())));
         return ids;
     }
 

@@ -37,8 +37,8 @@ describe('WorkflowStore', () => {
     store.setCurrentEntity('order-fulfillment-workflow');
 
     expect(store.currentEntity()?.roles).toEqual([{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }]);
-    expect(store.currentEntity()?.artifacts).toEqual([{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
+    expect(store.currentEntity()?.artifacts).toEqual([{ artifactDefinitionId: 'order-entity', objectName: 'new_order' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
     expect(store.currentEntity()?.tasks[1].dependsOn).toEqual(['review-order']);
-    expect(store.currentEntity()?.startType).toBe('INPUT_ARTIFACT');
+    expect(store.currentEntity()?.startEvents[0].startType).toBe('TRIGGERING_EVENT');
   });
 });

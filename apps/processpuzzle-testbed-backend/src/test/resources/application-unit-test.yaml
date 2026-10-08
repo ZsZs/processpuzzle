@@ -58,6 +58,9 @@ base-workflow:
   loadDefaultWorkflows: no
   loadDefaultTranslations: no
 
+base-event:
+  loadDefaultEventDefinitions: no
+
 org-admin:
   loadDefaults: no
 

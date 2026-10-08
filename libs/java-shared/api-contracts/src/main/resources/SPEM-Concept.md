@@ -106,6 +106,53 @@ consistent with how base-workflow already couples task completion to
 base-state transitions via event listeners — rather than being polled or
 invoked imperatively.
 
+## Start and end events
+
+A workflow says how an instance comes into being with a list of
+**StartEvents** — BPMN's start event, carrying one of SPEM's four start
+mechanisms:
+
+| `startType` | SPEM equivalent | Admits an explicit start (`POST /instances`) when |
+|---|---|---|
+| `ROLE_DEFINITION` | Role Definition + Task Use | the caller holds one of `authorizedRoles` (none named = anyone) |
+| `INPUT_ARTIFACT` | Artifact / Precondition | `entityId` is given and each required ENTITY artifact is in its required state |
+| `TRIGGERING_EVENT` | Triggering Event | never — the event starts the workflow |
+| `TIME_BASED_PRECONDITION` | Time-based Precondition / Milestone Guard | never — the milestone starts the workflow |
+
+No start events means anyone may start the workflow. Otherwise a start is
+admitted when *any* event admits it (403 when none does, 409 when every
+event is of the last two kinds); the admitting event's id is recorded on
+the instance. A start event's `id` shares the task id namespace, so that a
+task's `dependsOn` can later name it.
+
+A `TRIGGERING_EVENT` start fires on its own. Its `eventType` names an
+entry of the organization's event catalog (base-event's `EventDefinition`,
+e.g. `OrderCreatedEvent` = an `order` was created), checked when the
+workflow is saved. When base-entity or base-state publishes a matching
+platform fact, base-event republishes it as `DefinedEventOccurred` and
+base-workflow starts every workflow whose start event names it: the
+event's subject becomes the instance's `entityId`, and `payloadMapping`
+copies values into the initial context — `$.subjectId`,
+`$.payload.<attribute>`, evaluated against the whole event. A subject that
+already has a running instance of the workflow is not started twice. The
+events travel through the Spring Modulith publication registry, so a start
+is retried until it completes.
+
+Still not implemented: an `INPUT_ARTIFACT` reaching its state on its own
+(it only guards explicit starts), `TIME_BASED_PRECONDITION`, and MESSAGE /
+SIGNAL events thrown or caught inside a workflow.
+
+Along the flow, `TaskUse.artifactStates` record the state a task expects
+each input in and leaves each output in (SPEM's work product state). The
+modeler draws one object node per artifact *and state* — `new_order :
+Order [CONFIRMED]` — so the same artifact appears once per state it passes
+through, and each object sits between the task producing it and the task
+consuming it. Recorded and drawn, not yet enforced at run time.
+
+There is no stored end event: an instance completes when every task is
+terminal, and the modeler draws that as one End node fed by every task
+nothing depends on.
+
 ---
 
 ## Summary Table

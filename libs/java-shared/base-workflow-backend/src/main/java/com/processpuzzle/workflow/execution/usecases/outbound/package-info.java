@@ -1,7 +1,7 @@
 /**
  * Ports the execution use cases depend on but don't implement themselves: rule evaluation (base-rule),
- * role membership (via the host application — see {@code RoleMembershipPort}'s Javadoc for why
- * there's no adapter for it in this module), and tool invocation (plain HTTP).
+ * role membership and start authorization (via the host application — see
+ * {@code RoleMembershipPort}'s Javadoc for why there's no adapter for them in this module), and tool invocation (plain HTTP).
  *
  * <p>Exposed as the {@code port} named interface, which it had to become the first time a host
  * application actually implemented one of these. {@code RoleMembershipPort}'s Javadoc has always said

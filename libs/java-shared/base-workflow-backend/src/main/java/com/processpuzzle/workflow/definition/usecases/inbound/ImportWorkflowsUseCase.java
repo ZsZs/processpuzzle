@@ -9,7 +9,7 @@ import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlDocument;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
-import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartConditionYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartEventYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StepYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ToolOperationYaml;
@@ -201,7 +201,7 @@ public class ImportWorkflowsUseCase {
         for (WorkflowYamlEntry workflow : workflows.values()) {
             validateExtendsLink(workflow, extendsLinks, errors);
             validateTaskUses(workflow, errors);
-            validateStartCondition(workflow, errors);
+            validateStartEvents(workflow, errors);
         }
     }
 
@@ -267,18 +267,19 @@ public class ImportWorkflowsUseCase {
     }
 
     /**
-     * Only the {@code startType} enum, which is decidable from the file. Whether the required
-     * artifacts and authorized roles exist is cross-aggregate and belongs to
-     * {@link WorkflowValidator}.
+     * Only each start event's {@code startType} enum, which is decidable from the file. Id
+     * presence and uniqueness, and whether the required artifacts and authorized roles exist, are
+     * left to {@link WorkflowValidator} with the rest of the save-time checks.
      */
-    private void validateStartCondition(WorkflowYamlEntry entry, List<String> errors) {
-        StartConditionYaml condition = entry.startCondition();
-        if (condition == null) {
+    private void validateStartEvents(WorkflowYamlEntry entry, List<String> errors) {
+        if (entry.startEvents() == null) {
             return;
         }
-        if (!WorkflowYamlMapper.isEnumName(WorkflowStartConditionType.class, condition.startType())) {
-            errors.add(WORKFLOW_PREFIX + entry.id() + "' has an unknown startCondition startType '"
-                    + condition.startType() + "'.");
+        for (StartEventYaml startEvent : entry.startEvents()) {
+            if (!WorkflowYamlMapper.isEnumName(WorkflowStartConditionType.class, startEvent.startType())) {
+                errors.add(WORKFLOW_PREFIX + entry.id() + "', start event '" + startEvent.id()
+                        + "' has an unknown startType '" + startEvent.startType() + "'.");
+            }
         }
     }
 

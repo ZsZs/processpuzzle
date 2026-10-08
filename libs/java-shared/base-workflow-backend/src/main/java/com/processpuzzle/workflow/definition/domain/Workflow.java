@@ -79,12 +79,13 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
     private String extendsWorkflowId;
 
     /**
-     * How an instance of this workflow comes into being. Null means it can only be started
+     * The ways an instance of this workflow comes into being. Empty means anyone may start it
      * explicitly through {@code /instances}.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private WorkflowStartCondition startCondition;
+    @Builder.Default
+    private List<StartEvent> startEvents = new ArrayList<>();
 
     /** The {@link RoleDefinition}s (same org) taking part in this workflow. */
     @JdbcTypeCode(SqlTypes.JSON)
@@ -144,12 +145,12 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
      * {@code BaseEntityAttribute}.
      */
     public void replaceContent(String name, String description, String extendsWorkflowId,
-                                WorkflowStartCondition startCondition, List<RoleUse> roles,
+                                List<StartEvent> startEvents, List<RoleUse> roles,
                                 List<ArtifactUse> artifacts, List<ToolUse> tools, List<TaskUse> tasks) {
         this.name = name;
         this.description = description;
         this.extendsWorkflowId = extendsWorkflowId;
-        this.startCondition = startCondition;
+        this.startEvents = startEvents == null ? new ArrayList<>() : new ArrayList<>(startEvents);
         this.roles = new ArrayList<>(roles);
         this.artifacts = new ArrayList<>(artifacts);
         this.tools = new ArrayList<>(tools);

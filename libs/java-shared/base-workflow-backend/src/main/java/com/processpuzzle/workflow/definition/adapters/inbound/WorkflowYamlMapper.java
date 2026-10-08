@@ -5,7 +5,8 @@ import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactYamlEn
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RequiredStartArtifactYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
-import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartConditionYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartEventYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskArtifactStateYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StepYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskYamlEntry;
@@ -32,7 +33,8 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
-import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
+import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import org.springframework.stereotype.Component;
 
@@ -126,7 +128,7 @@ public class WorkflowYamlMapper {
                 entry.name(),
                 entry.description(),
                 entry.extendsWorkflowId(),
-                toStartConditionDomain(entry.startCondition()),
+                safeList(entry.startEvents()).stream().map(this::toStartEventDomain).toList(),
                 safeList(entry.roles()).stream().map(this::toRoleUseDomain).toList(),
                 safeList(entry.artifacts()).stream().map(this::toArtifactUseDomain).toList(),
                 safeList(entry.tools()).stream().map(this::toToolUseDomain).toList(),
@@ -138,7 +140,7 @@ public class WorkflowYamlMapper {
     }
 
     private ArtifactUse toArtifactUseDomain(ArtifactUseYaml entry) {
-        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).build();
+        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).objectName(entry.objectName()).build();
     }
 
     private ToolUse toToolUseDomain(ToolUseYaml entry) {
@@ -154,14 +156,20 @@ public class WorkflowYamlMapper {
                 .joinType(joinType == null ? JoinType.ALL : joinType)
                 .parallel(Boolean.TRUE.equals(entry.parallel()))
                 .override(Boolean.TRUE.equals(entry.override()))
+                .artifactStates(safeList(entry.artifactStates()).stream()
+                        .map(state -> TaskArtifactState.builder()
+                                .artifactDefinitionId(state.artifactDefinitionId())
+                                .inputState(state.inputState())
+                                .outputState(state.outputState())
+                                .build())
+                        .toList())
                 .build();
     }
 
-    private WorkflowStartCondition toStartConditionDomain(StartConditionYaml entry) {
-        if (entry == null) {
-            return null;
-        }
-        return WorkflowStartCondition.builder()
+    private StartEvent toStartEventDomain(StartEventYaml entry) {
+        return StartEvent.builder()
+                .id(entry.id())
+                .name(entry.name())
                 .startType(toEnum(WorkflowStartConditionType.class, entry.startType()))
                 .requiredArtifacts(safeList(entry.requiredArtifacts()).stream().map(this::toRequiredArtifactDomain).toList())
                 .eventType(entry.eventType())
@@ -266,11 +274,11 @@ public class WorkflowYamlMapper {
                 workflow.getName(),
                 workflow.getDescription(),
                 workflow.getExtendsWorkflowId(),
-                toStartConditionYaml(workflow.getStartCondition()),
+                safeList(workflow.getStartEvents()).stream().map(this::toStartEventYaml).toList(),
                 safeList(workflow.getRoles()).stream()
                         .map(use -> new RoleUseYaml(use.getRoleDefinitionId())).toList(),
                 safeList(workflow.getArtifacts()).stream()
-                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId())).toList(),
+                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId(), use.getObjectName())).toList(),
                 safeList(workflow.getTools()).stream()
                         .map(use -> new ToolUseYaml(use.getToolDefinitionId())).toList(),
                 safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList());
@@ -284,23 +292,26 @@ public class WorkflowYamlMapper {
                 use.getDependsOn(),
                 nameOf(use.getJoinType()),
                 use.isParallel() ? Boolean.TRUE : null,
-                use.isOverride() ? Boolean.TRUE : null);
+                use.isOverride() ? Boolean.TRUE : null,
+                safeList(use.getArtifactStates()).isEmpty() ? null : use.getArtifactStates().stream()
+                        .map(state -> new TaskArtifactStateYaml(
+                                state.getArtifactDefinitionId(), state.getInputState(), state.getOutputState()))
+                        .toList());
     }
 
-    private StartConditionYaml toStartConditionYaml(WorkflowStartCondition condition) {
-        if (condition == null) {
-            return null;
-        }
-        return new StartConditionYaml(
-                nameOf(condition.getStartType()),
-                safeList(condition.getRequiredArtifacts()).stream()
+    private StartEventYaml toStartEventYaml(StartEvent startEvent) {
+        return new StartEventYaml(
+                startEvent.getId(),
+                startEvent.getName(),
+                nameOf(startEvent.getStartType()),
+                safeList(startEvent.getRequiredArtifacts()).stream()
                         .map(artifact -> new RequiredStartArtifactYaml(artifact.getArtifactDefinitionId(), artifact.getState()))
                         .toList(),
-                condition.getEventType(),
-                condition.getPayloadMapping(),
-                condition.getAuthorizedRoles(),
-                condition.getMilestoneRef(),
-                condition.getPreconditionExpression());
+                startEvent.getEventType(),
+                startEvent.getPayloadMapping(),
+                startEvent.getAuthorizedRoles(),
+                startEvent.getMilestoneRef(),
+                startEvent.getPreconditionExpression());
     }
 
     private StepYamlEntry toStepYaml(StepDefinition step) {

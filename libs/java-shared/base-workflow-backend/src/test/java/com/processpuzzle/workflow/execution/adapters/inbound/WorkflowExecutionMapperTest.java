@@ -13,6 +13,8 @@ import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityLabelPort;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,30 @@ class WorkflowExecutionMapperTest {
     }
 
     /**
+     * The subject is shown by name: resolved through the port per response, falling back to the id when
+     * the port names nothing or the instance has no entity type to ask by.
+     */
+    @Test
+    void toModel_namesTheSubjectThroughThePortAndFallsBackToItsId() {
+        EntityLabelPort labels = (orgKey, type, id) -> "order".equals(type) && "o-1".equals(id)
+                ? Optional.of("ORD-1001") : Optional.empty();
+        WorkflowExecutionMapper labelling = new WorkflowExecutionMapper(labels);
+        WorkflowInstance.WorkflowInstanceBuilder base = WorkflowInstance.builder().id(UUID.randomUUID()).orgKey("org-1")
+                .workflowId("w").workflowName("W").status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now());
+
+        var named = labelling.toModel(base.entityId("o-1").entityType("order").build(), List.of(), List.of());
+        var unknown = labelling.toModel(base.entityId("o-2").entityType("order").build(), List.of(), List.of());
+        var untyped = labelling.toModel(base.entityId("o-1").entityType(null).build(), List.of(), List.of());
+        var subjectless = labelling.toModel(base.entityId(null).build(), List.of(), List.of());
+
+        assertThat(named.getEntityLabel()).isEqualTo("ORD-1001");
+        assertThat(named.getEntityType()).isEqualTo("order");
+        assertThat(unknown.getEntityLabel()).isEqualTo("o-2");
+        assertThat(untyped.getEntityLabel()).isEqualTo("o-1");
+        assertThat(subjectless.getEntityLabel()).isNull();
+    }
+
+    /**
      * The page wraps rows the caller has already assembled — the endpoint maps each instance together
      * with its task and artifact instances, which this mapper has no repository to reach. Only the
      * paging metadata is this method's business.
@@ -42,6 +68,7 @@ class WorkflowExecutionMapperTest {
         WorkflowInstance instance = WorkflowInstance.builder()
                 .id(id)
                 .orgKey("org-1")
+                .instanceNumber(3L)
                 .workflowId("proc-def-1")
                 .workflowName("Workflow Name")
                 .status(WorkflowInstanceStatus.ACTIVE)
@@ -51,6 +78,7 @@ class WorkflowExecutionMapperTest {
 
         com.processpuzzle.workflow.model.WorkflowInstance row = mapper.toModel(instance, List.of(), List.of());
         assertThat(row.getId()).isEqualTo(id.toString());
+        assertThat(row.getInstanceNumber()).isEqualTo(3L);
         assertThat(row.getWorkflowId()).isEqualTo("proc-def-1");
         assertThat(row.getStatus().getValue()).isEqualTo("ACTIVE");
 

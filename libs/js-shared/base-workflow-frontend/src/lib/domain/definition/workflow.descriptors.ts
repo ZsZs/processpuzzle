@@ -1,22 +1,18 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { WORKFLOW_I18N_SCOPE } from '../../base-workflow.i18n';
 import {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_ENTITY_NAME,
-  WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
-  WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
   WORKFLOW_ROLE_USE_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
 } from '../workflow-entity-names';
-import { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD } from './required-start-artifact.descriptors';
-import { WorkflowStartConditionType } from './workflow';
 import { WORKFLOW_TASK_ASSIGNMENT_ID_FIELD } from './workflow-task-assignment.descriptors';
 import { WORKFLOW_ARTIFACT_USE_ID_FIELD, WORKFLOW_ROLE_USE_ID_FIELD, WORKFLOW_TOOL_USE_ID_FIELD } from './workflow-use.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { WORKFLOW_ENTITY_NAME };
-
-const startConditionTypeSelectables = toSelectables(Object.keys(WorkflowStartConditionType));
 
 function createWorkflowAttrDescriptors(): AbstractAttrDescriptor[] {
   // The business key *and* the record's identity: the contract addresses a workflow by the
@@ -51,54 +47,13 @@ function createWorkflowAttrDescriptors(): AbstractAttrDescriptor[] {
   const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
   versionAttr.disabled = true;
 
-  const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
-  updatedAtAttr.disabled = true;
+  const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
 
-  // region start condition — the contract's nested `startCondition`, flattened
-  // Flattened onto this form rather than modelled as a nested entity, following the `auth` fields of
-  // `Tool Definition`: the generic form builds one control per attribute of one entity, and a start
-  // condition is a single object rather than a list. `WorkflowMapper` re-nests all seven on save.
-  //
-  // Every field is shown regardless of `startType`, because base-entity has no conditional-visibility
-  // mechanism and the backend ignores rather than rejects the fields the chosen type does not read.
-  // The placeholders name the type each belongs to, which is the honest substitute.
-  //
-  // None of them appears in the table: what starts a workflow is a detail of the definition, and six
-  // mostly-empty columns would crowd out the four that identify it.
-  const startTypeAttr = new BaseEntityAttrDescriptor('startType', FormControlType.DROPDOWN, 'Start Type', startConditionTypeSelectables);
-  startTypeAttr.hideInTable = true;
-  startTypeAttr.placeholder = 'How an instance comes into being; empty means only through /instances';
-
-  const eventTypeAttr = new BaseEntityAttrDescriptor('eventType', FormControlType.TEXT_BOX, 'Event Type');
-  eventTypeAttr.hideInTable = true;
-  eventTypeAttr.placeholder = 'TRIGGERING_EVENT — e.g. order.submitted';
-
-  const milestoneRefAttr = new BaseEntityAttrDescriptor('milestoneRef', FormControlType.TEXT_BOX, 'Milestone');
-  milestoneRefAttr.hideInTable = true;
-  milestoneRefAttr.placeholder = 'TIME_BASED_PRECONDITION — the milestone whose arrival triggers it';
-
-  const preconditionExpressionAttr = new BaseEntityAttrDescriptor('preconditionExpression', FormControlType.TEXT_BOX, 'Precondition');
-  preconditionExpressionAttr.hideInTable = true;
-  preconditionExpressionAttr.placeholder = "TIME_BASED_PRECONDITION — PPCL guard, e.g. milestone.status == 'PASSED'";
-
-  // Role ids, so a `RELATED_ENTITIES` picker over the role catalog: unlike the workflow's own `roles`
-  // these are plain strings by contract, not a `*Use`. `WorkflowMapper` flattens what the control
-  // writes back to ids.
-  const authorizedRolesAttr = new BaseEntityAttrDescriptor('authorizedRoles', FormControlType.RELATED_ENTITIES, 'Authorized Roles');
-  authorizedRolesAttr.linkedEntityType = WORKFLOW_ROLE_DEFINITION_ENTITY_NAME;
-  authorizedRolesAttr.hideInTable = true;
-
-  // A key/value map of context variable name to JSONPath into the event — the same control an
-  // instance's `context` uses.
-  const payloadMappingAttr = new BaseEntityAttrDescriptor('payloadMapping', FormControlType.ADDITIONAL_PROPERTIES, 'Payload Mapping');
-  payloadMappingAttr.hideInTable = true;
-
-  // The one part of the start condition that is a list, so the one part that is an embedded entity.
-  const requiredArtifactsAttr = new BaseEntityAttrDescriptor('requiredArtifacts', FormControlType.EMBEDDED_COMPONENTS, 'Required Artifacts');
-  requiredArtifactsAttr.linkedEntityType = WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME;
-  requiredArtifactsAttr.referenceIdField = WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD;
-  requiredArtifactsAttr.hideInTable = true;
-  // endregion
+  // The ways an instance comes into being, one row per entry point. Each row carries its own start type
+  // and the fields that type reads, and nests its own required artifacts — see `start-event.descriptors.ts`.
+  const startEventsAttr = new BaseEntityAttrDescriptor('startEvents', FormControlType.EMBEDDED_COMPONENTS, 'Start Events');
+  startEventsAttr.linkedEntityType = WORKFLOW_START_EVENT_ENTITY_NAME;
+  startEventsAttr.hideInTable = true;
 
   // region the `*Use` rows — participation, not containment of the definition
   // A role, an artifact and a tool are catalog aggregates of their own, each with a list screen and
@@ -140,17 +95,10 @@ function createWorkflowAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([extendsAttr, activeInstancesAttr, versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
-  const startConditionRow = new FlexboxDescriptor([startTypeAttr, eventTypeAttr, milestoneRefAttr, preconditionExpressionAttr], FlexDirection.ROW);
-  startConditionRow.style = { 'column-gap': '10px' };
-  const startConditionDetailRow = new FlexboxDescriptor([authorizedRolesAttr, payloadMappingAttr], FlexDirection.ROW);
-  startConditionDetailRow.style = { 'column-gap': '10px' };
 
   // The five embedded lists are stacked rather than laid out in a row: each renders a table with its
   // own toolbar, and three of those side by side leaves no column wide enough to read.
-  const flexBoxContainer = new FlexboxDescriptor(
-    [identityRow, revisionRow, descriptionAttr, startConditionRow, startConditionDetailRow, requiredArtifactsAttr, rolesAttr, artifactsAttr, toolsAttr, tasksAttr],
-    FlexDirection.COLUMN,
-  );
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, revisionRow, descriptionAttr, startEventsAttr, rolesAttr, artifactsAttr, toolsAttr, tasksAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

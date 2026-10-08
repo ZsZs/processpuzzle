@@ -1,13 +1,13 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE } from '../../base-workflow.i18n';
-import { ARTIFACT_DEFINITION_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_DEFINITION_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, WORKFLOW_START_EVENT_ENTITY_NAME } from '../workflow-entity-names';
 
 export { WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME };
 
 /**
  * A `RequiredStartArtifact` has no `id` — the artifact it names is what identifies it within the start
- * condition. The referencing attribute therefore has to set `referenceIdField`; see the
- * `requiredArtifacts` attribute of the `Workflow` descriptor.
+ * event. The referencing attribute therefore has to set `referenceIdField`; see the
+ * `requiredArtifacts` attribute of the `Workflow Start Event` descriptor.
  */
 export const WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD = 'artifactDefinitionId';
 
@@ -32,18 +32,19 @@ function createRequiredStartArtifactAttrDescriptors(): AbstractAttrDescriptor[] 
 }
 
 /**
- * One artifact an `INPUT_ARTIFACT` start condition waits for.
+ * One artifact an `INPUT_ARTIFACT` start event waits for.
  *
- * Embedded in the workflow because the start condition is part of the workflow and nothing else, and
- * an entity of its own because `requiredArtifacts` is the one part of that condition the author edits
- * row by row — the other six fields are scalars, flattened onto the workflow's own form.
+ * Embedded in the start event — two levels below the workflow — because it is part of that event and
+ * nothing else, and an entity of its own because `requiredArtifacts` is the one part of the event the
+ * author edits row by row: `workflow/<id>/details/workflow-start-event/<eventId>/details/
+ * workflow-required-start-artifact/<artifactId>/details`.
  */
 export function createRequiredStartArtifactDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
     attrDescriptors: createRequiredStartArtifactAttrDescriptors(),
     i18nScope: WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
-    componentParent: WORKFLOW_ENTITY_NAME,
+    componentParent: WORKFLOW_START_EVENT_ENTITY_NAME,
     isEmbedded: true,
   });
 }

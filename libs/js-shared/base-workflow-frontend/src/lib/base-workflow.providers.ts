@@ -17,6 +17,8 @@ import {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
   WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME,
 } from './domain/workflow-entity-names';
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
 import { WorkflowFacade } from './feature/definition/workflow.facade';
@@ -27,6 +29,8 @@ import {
   WorkflowArtifactUseFacade,
   WorkflowRequiredStartArtifactFacade,
   WorkflowRoleUseFacade,
+  WorkflowStartEventFacade,
+  WorkflowTaskArtifactStateFacade,
   WorkflowTaskAssignmentFacade,
   WorkflowToolUseFacade,
   TaskStepDefinitionFacade,
@@ -42,15 +46,17 @@ import { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from
  * facade like any other — that is what gives it a store — and only its repository differs, reading and
  * writing the aggregate's document rather than an endpoint of its own.
  *
- * All seventeen or none: a consuming application cannot register half of a graph whose forms reference
+ * All eighteen or none: a consuming application cannot register half of a graph whose forms reference
  * each other by entity name.
  */
 export const BASE_WORKFLOW_FACADE_PROVIDERS: Provider[] = [
   WorkflowFacade,
   WorkflowTaskAssignmentFacade,
+  WorkflowTaskArtifactStateFacade,
   WorkflowRoleUseFacade,
   WorkflowArtifactUseFacade,
   WorkflowToolUseFacade,
+  WorkflowStartEventFacade,
   WorkflowRequiredStartArtifactFacade,
   WorkflowRoleDefinitionFacade,
   ArtifactDefinitionFacade,
@@ -82,9 +88,11 @@ export const BASE_WORKFLOW_FACADE_PROVIDERS: Provider[] = [
 export const BASE_WORKFLOW_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [WORKFLOW_ENTITY_NAME]: WorkflowFacade,
   [WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME]: WorkflowTaskAssignmentFacade,
+  [WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME]: WorkflowTaskArtifactStateFacade,
   [WORKFLOW_ROLE_USE_ENTITY_NAME]: WorkflowRoleUseFacade,
   [WORKFLOW_ARTIFACT_USE_ENTITY_NAME]: WorkflowArtifactUseFacade,
   [WORKFLOW_TOOL_USE_ENTITY_NAME]: WorkflowToolUseFacade,
+  [WORKFLOW_START_EVENT_ENTITY_NAME]: WorkflowStartEventFacade,
   [WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME]: WorkflowRequiredStartArtifactFacade,
   [WORKFLOW_ROLE_DEFINITION_ENTITY_NAME]: WorkflowRoleDefinitionFacade,
   [ARTIFACT_DEFINITION_ENTITY_NAME]: ArtifactDefinitionFacade,

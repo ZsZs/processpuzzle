@@ -73,6 +73,7 @@ class WorkflowExecutionUseCasesTest {
     private ToolDefinitionRepository toolDefRepo;
     private ToolInvocationPort toolInvocationPort;
     private RoleMembershipPort roleMembershipPort;
+    private InstanceNumberAllocator instanceNumbers;
 
     @BeforeEach
     void setUp() {
@@ -86,12 +87,15 @@ class WorkflowExecutionUseCasesTest {
         toolDefRepo = mock(ToolDefinitionRepository.class);
         toolInvocationPort = mock(ToolInvocationPort.class);
         roleMembershipPort = mock(RoleMembershipPort.class);
+        instanceNumbers = mock(InstanceNumberAllocator.class);
+        when(instanceNumbers.next(ORG)).thenReturn(7L, 8L);
     }
 
     @Test
     void startWorkflowInstanceUseCase_startsWorkflowWithTasksAndArtifacts() {
+        StartEventAdmission admission = mock(StartEventAdmission.class);
         StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
-                resolveWorkflow, procInstRepo, taskInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, wpInstRepo, taskActivationService, eventPublisher);
 
         ArtifactDefinition wpDef = ArtifactDefinition.builder().id("wp-1").name("Doc")
                 .artifactType(ArtifactType.DOCUMENT).stateMachineId("sm-1").build();
@@ -110,8 +114,12 @@ class WorkflowExecutionUseCasesTest {
             return wpi;
         });
 
-        WorkflowInstance started = useCase.start(ORG, "proc-1", "entity-1", Map.of("initKey", "initVal"));
+        when(admission.admit(ORG, procDef, "manual", "entity-1")).thenReturn(Optional.of("manual"));
+
+        WorkflowInstance started = useCase.start(ORG, "proc-1", "entity-1", "manual", Map.of("initKey", "initVal"));
         assertThat(started).isNotNull();
+        assertThat(started.getStartEventId()).isEqualTo("manual");
+        assertThat(started.getInstanceNumber()).isEqualTo(7L);
         assertThat(started.getStatus()).isEqualTo(WorkflowInstanceStatus.ACTIVE);
         assertThat(started.getInitialContext()).containsEntry("initKey", "initVal");
 
@@ -120,8 +128,42 @@ class WorkflowExecutionUseCasesTest {
         // Start unknown workflow — the resolver is what refuses, strictly
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "unknown"))
                 .thenThrow(new NotFoundException("No workflow with id 'unknown'"));
-        assertThatThrownBy(() -> useCase.start(ORG, "unknown", "entity-1", null))
+        assertThatThrownBy(() -> useCase.start(ORG, "unknown", "entity-1", null, null))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    /**
+     * A triggered start skips admission — nobody asked, so there is no principal to admit — and does
+     * nothing for a subject that already has a running instance, because the publication registry can
+     * deliver the same event twice.
+     */
+    @Test
+    void startTriggered_bypassesAdmissionAndIsIdempotentPerSubject() {
+        StartEventAdmission admission = mock(StartEventAdmission.class);
+        StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+        ResolvedWorkflow procDef = resolved("proc-1", "Proc 1", List.of(), TaskDefinition.builder().id("t-1").name("T").build());
+        when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1")).thenReturn(procDef);
+        when(procInstRepo.save(any(WorkflowInstance.class))).thenAnswer(inv -> {
+            WorkflowInstance pi = inv.getArgument(0);
+            pi.setId(UUID.randomUUID());
+            return pi;
+        });
+        when(procInstRepo.existsByOrgKeyAndWorkflowIdAndEntityIdAndStatusIn(eq(ORG), eq("proc-1"), eq("order-1"), any()))
+                .thenReturn(false, true);
+
+        Optional<WorkflowInstance> first = useCase.startTriggered(ORG, "proc-1", "order-created", "order-1", "order", Map.of("orderId", "order-1"));
+        Optional<WorkflowInstance> again = useCase.startTriggered(ORG, "proc-1", "order-created", "order-1", "order", Map.of());
+
+        assertThat(first).hasValueSatisfying(instance -> {
+            assertThat(instance.getStartEventId()).isEqualTo("order-created");
+            assertThat(instance.getEntityId()).isEqualTo("order-1");
+            assertThat(instance.getEntityType()).isEqualTo("order");
+            assertThat(instance.getInitialContext()).containsEntry("orderId", "order-1");
+        });
+        assertThat(again).isEmpty();
+        verify(procInstRepo).save(any(WorkflowInstance.class));
+        org.mockito.Mockito.verifyNoInteractions(admission);
     }
 
     @Test

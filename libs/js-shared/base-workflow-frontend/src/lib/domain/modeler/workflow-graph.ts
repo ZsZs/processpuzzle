@@ -47,14 +47,34 @@ export const WORKFLOW_LANE_TYPE = 'ppWorkflowLane';
 export const WORKFLOW_RELATION_EDGE_TYPE = 'ppWorkflowRelation';
 
 /**
- * What a node stands for, which is also which symbol it is drawn with — the five files in
- * `src/assets/modeler`. See {@link modelerIconUrl}.
+ * What a node stands for, which is also which symbol it is drawn with — files in `src/assets/modeler`. See
+ * {@link modelerIconUrl}.
  *
- * The five are base-workflow's routable aggregates minus the instance layer: a modeler draws what a tenant
- * *authors*. A run is monitored on the generated instance screens, and drawing it would need a different
- * vocabulary again (a step that has finished, a task waiting on someone).
+ * The first five are base-workflow's routable aggregates minus the instance layer: a modeler draws what a
+ * tenant *authors*. A run is monitored on the generated instance screens, and drawing it would need a
+ * different vocabulary again (a step that has finished, a task waiting on someone).
+ *
+ * `start` and `end` are the Workflows perspective's BPMN events. A `start` node is one `StartEvent` of the
+ * workflow; the `end` node is *derived* — the model has no end element, and the one drawn stands for every
+ * task nothing depends on having finished.
  */
-export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workflow';
+export type WorkflowElementKind = 'role' | 'artifact' | 'task' | 'tool' | 'workflow' | 'start' | 'end';
+
+/** The flow's own kinds — the ones that ride `sequence` edges and take a column of the flow. */
+export const FLOW_KINDS: readonly WorkflowElementKind[] = ['task', 'start', 'end'];
+
+/**
+ * The box a start or end event is drawn as: a circle, its name written underneath rather than inside.
+ *
+ * Stated on the node with `autoSize: false` by the converter rather than measured, because both layouts
+ * read it — the flat one to centre the circle on its Dagre position, the swimlane one to centre it in its
+ * cell — and ng-diagram discards an explicit `size` on an `autoSize` node.
+ *
+ * 64px: large enough that the event symbol — a drawing twice as wide as it is high — reads inside the
+ * circle, and small enough that, centred in a 76px swimlane row, the one-line name under it still ends
+ * inside the lane's bottom padding.
+ */
+export const EVENT_NODE_SIZE = { width: 64, height: 64 };
 
 /**
  * What a modeler node carries in ng-diagram's `data`.
@@ -101,15 +121,16 @@ export interface WorkflowNodeData {
  * control flow and are drawn solid, everything else is a data or tool association and is drawn dashed, the
  * same distinction BPMN makes between a sequence flow and an association.
  *
- * - `sequence` — a `dependsOn` entry, the only flow relation the model states outright.
+ * - `sequence` — a `dependsOn` entry, the only flow relation the model states outright; and the two the
+ *   events add: a start event to each task that depends on nothing, and each task nothing depends on to
+ *   the end event.
  * - `implicit` — the order two `parallel: false` siblings sharing a `dependsOn` set actually run in, which
  *   is their position in `Workflow.tasks` and exists nowhere as data. Drawn distinctly rather than as a
  *   plain sequence edge, so a reader can tell a declared dependency from one inferred from declaration
  *   order — the second changes when the rows are reordered and the first does not.
  * - `input` / `output` — a `TaskDefinition.inputs` / `.outputs` entry.
  * - `tool` — a `SERVICE_STEP`'s `toolDefinitionId`.
- * - `start` — a `Workflow.requiredArtifacts` entry feeding a task that depends on nothing. The model has no
- *   start element, and this is the nearest honest thing to one.
+ * - `start` — a `StartEvent.requiredArtifacts` entry feeding the start event it belongs to.
  */
 export type WorkflowRelation = 'sequence' | 'implicit' | 'input' | 'output' | 'tool' | 'start';
 

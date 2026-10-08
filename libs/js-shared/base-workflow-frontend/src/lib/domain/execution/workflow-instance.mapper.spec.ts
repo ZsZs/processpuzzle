@@ -14,8 +14,13 @@ describe('WorkflowInstanceMapper', () => {
       expect(instance.id).toBe('8f14e45f-ceea-467a-9c9b-9b0c1f0f5a01');
       expect(instance.workflowId).toBe('order-fulfillment-workflow');
       expect(instance.workflowName).toBe('Order Fulfillment Workflow');
+      expect(instance.startEventId).toBe('order-created');
       expect(instance.status).toBe(WorkflowInstanceStatus.ACTIVE);
       expect(instance.entityId).toBe('1');
+      expect(instance.entityType).toBe('order');
+      expect(instance.entityLabel).toBe('ORD-1001');
+      expect(instance.instanceNumber).toBe(3);
+      expect(instance.title).toBe('Order Fulfillment Workflow #3');
       expect(instance.context).toEqual({ channel: 'web', priority: 'normal' });
     });
 
@@ -77,7 +82,7 @@ describe('WorkflowInstanceMapper', () => {
     it('emits exactly the contract’s fields and nothing else', () => {
       const dto = mapper.toDto(mapper.fromDto(WORKFLOW_INSTANCE_DTO));
 
-      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'completedAt', 'context', 'entityId', 'id', 'startedAt', 'status', 'tasks', 'workflowId', 'workflowName']);
+      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'completedAt', 'context', 'entityId', 'entityLabel', 'entityType', 'id', 'instanceNumber', 'startEventId', 'startedAt', 'status', 'tasks', 'workflowId', 'workflowName']);
     });
   });
 });

@@ -8,13 +8,7 @@
     "activeInstances": "Instances actives",
     "version": "Version",
     "updatedAt": "Modifié le",
-    "startType": "Type de démarrage",
-    "eventType": "Type d'événement",
-    "milestoneRef": "Jalon",
-    "preconditionExpression": "Précondition",
-    "authorizedRoles": "Rôles autorisés",
-    "payloadMapping": "Mappage de charge utile",
-    "requiredArtifacts": "Artefacts requis",
+    "startEvents": "Événements de démarrage",
     "roles": "Rôles",
     "artifacts": "Artefacts",
     "tools": "Outils",
@@ -29,6 +23,8 @@
       "tools": "Outils",
       "unassigned": "Non attribué",
       "join_any": "au choix",
+      "start": "Début",
+      "end": "Fin",
       "save": "Enregistrer la disposition",
       "properties": {
         "none": "Sélectionnez un élément pour voir ses propriétés.",
@@ -59,7 +55,8 @@
     "dependsOn": "Dépend de",
     "joinType": "Type de jonction",
     "parallel": "Parallèle",
-    "override": "Remplacer"
+    "override": "Remplacer",
+    "artifactStates": "États des artefacts"
   },
   "workflow_role_use": {
     "_self": "Utilisation de rôle",
@@ -67,16 +64,35 @@
   },
   "workflow_artifact_use": {
     "_self": "Utilisation d'artefact",
-    "artifactDefinitionId": "Artefact"
+    "artifactDefinitionId": "Artefact",
+    "objectName": "Nom de l'objet"
   },
   "workflow_tool_use": {
     "_self": "Utilisation d'outil",
     "toolDefinitionId": "Outil"
   },
+  "workflow_start_event": {
+    "_self": "Événement de démarrage",
+    "id": "Id",
+    "name": "Nom",
+    "startType": "Type de démarrage",
+    "eventType": "Type d'événement",
+    "milestoneRef": "Jalon",
+    "preconditionExpression": "Précondition",
+    "authorizedRoles": "Rôles autorisés",
+    "payloadMapping": "Mappage de charge utile",
+    "requiredArtifacts": "Artefacts requis"
+  },
   "workflow_required_start_artifact": {
     "_self": "Artefact requis",
     "artifactDefinitionId": "Artefact",
     "state": "État"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "État d'artefact de la tâche",
+    "artifactDefinitionId": "Artefact",
+    "inputState": "État d'entrée",
+    "outputState": "État de sortie"
   },
   "workflow_role_definition": {
     "_self": "Rôle",
@@ -155,9 +171,11 @@
     "_self": "Instance de flux de travail",
     "id": "Id",
     "workflowId": "Flux de travail",
+    "startEventId": "Événement de démarrage",
     "workflowName": "Nom du flux de travail",
     "status": "Statut",
-    "entityId": "Entité",
+    "instanceNumber": "N°",
+    "entityLabel": "Entité",
     "startedAt": "Démarré le",
     "completedAt": "Terminé le",
     "context": "Contexte",

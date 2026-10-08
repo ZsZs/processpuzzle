@@ -1,7 +1,10 @@
 package com.processpuzzle.workflow.definition.domain;
 
 import com.processpuzzle.workflow.common.ValidationException;
-import lombok.RequiredArgsConstructor;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -24,18 +27,38 @@ import java.util.stream.Collectors;
  *
  * <p>Rule ids (base-rule) and state machine ids (base-state) are deliberately not checked here —
  * base-workflow-api.yaml records them as-is and validates them lazily at instance start, because
- * this module owns neither registry. The same goes for a start condition's {@code milestoneRef} and
+ * this module owns neither registry. The same goes for a start event's {@code milestoneRef} and
  * PPCL expressions; its {@code requiredArtifacts} and {@code authorizedRoles}, however, name this
- * organization's own catalog and so are checked.
+ * organization's own catalog and so are checked. A TRIGGERING_EVENT's {@code eventType} names
+ * base-event's catalog, which this module does not own either — but a misspelt one would make a
+ * workflow that never starts and says nothing, so it is asked through {@link EventCatalogPort}.
  */
 @Component
-@RequiredArgsConstructor
 public class WorkflowValidator {
 
     private final RoleDefinitionRepository roleRepository;
     private final ArtifactDefinitionRepository artifactRepository;
     private final ToolDefinitionRepository toolRepository;
     private final TaskDefinitionRepository taskRepository;
+    private final EventCatalogPort eventCatalog;
+
+    @Autowired
+    public WorkflowValidator(RoleDefinitionRepository roleRepository, ArtifactDefinitionRepository artifactRepository,
+                             ToolDefinitionRepository toolRepository, TaskDefinitionRepository taskRepository,
+                             ObjectProvider<EventCatalogPort> eventCatalogProvider) {
+        this(roleRepository, artifactRepository, toolRepository, taskRepository,
+                eventCatalogProvider.getIfUnique(PermitAllEventCatalogPort::new));
+    }
+
+    public WorkflowValidator(RoleDefinitionRepository roleRepository, ArtifactDefinitionRepository artifactRepository,
+                             ToolDefinitionRepository toolRepository, TaskDefinitionRepository taskRepository,
+                             EventCatalogPort eventCatalog) {
+        this.roleRepository = roleRepository;
+        this.artifactRepository = artifactRepository;
+        this.toolRepository = toolRepository;
+        this.taskRepository = taskRepository;
+        this.eventCatalog = eventCatalog;
+    }
 
     public void validate(Workflow workflow) {
         String orgKey = workflow.getOrgKey();
@@ -56,7 +79,7 @@ public class WorkflowValidator {
         toolIds.forEach(toolId -> requireExists(toolRepository.existsByOrgKeyAndId(orgKey, toolId), "tool", toolId));
 
         validateTaskUses(workflow, orgKey, roleIds, taskIds);
-        validateStartCondition(workflow, orgKey);
+        validateStartEvents(workflow, orgKey, taskIds);
     }
 
     private void validateTaskUses(Workflow workflow, String orgKey, List<String> roleIds, List<String> taskIds) {
@@ -74,6 +97,7 @@ public class WorkflowValidator {
 
             validatePerformedBy(use, task, declaredRoles);
             validateTaskArtifacts(task, declaredArtifacts);
+            validateArtifactStates(use, task);
             validateDependsOn(use, taskIds);
         }
     }
@@ -115,6 +139,40 @@ public class WorkflowValidator {
         }
     }
 
+    /**
+     * A state only means something for an artifact the task actually reads or writes, and on the side
+     * it does so: an input state on something the task only produces would draw an object nothing
+     * delivers. The state names themselves are base-state's and are not resolved here.
+     */
+    private void validateArtifactStates(TaskUse use, TaskDefinition task) {
+        List<TaskArtifactState> states = use.getArtifactStates() == null ? List.of() : use.getArtifactStates();
+        List<String> inputs = task.getInputs() == null ? List.of() : task.getInputs();
+        List<String> outputs = task.getOutputs() == null ? List.of() : task.getOutputs();
+        Set<String> seen = new HashSet<>();
+        for (TaskArtifactState state : states) {
+            String artifactId = state.getArtifactDefinitionId();
+            if (!seen.add(artifactId)) {
+                throw new ValidationException("Task '%s' states artifact '%s' twice".formatted(task.getId(), artifactId));
+            }
+            if (!inputs.contains(artifactId) && !outputs.contains(artifactId)) {
+                throw new ValidationException("Task '%s' states artifact '%s', which it neither reads nor writes"
+                        .formatted(task.getId(), artifactId));
+            }
+            if (isSet(state.getInputState()) && !inputs.contains(artifactId)) {
+                throw new ValidationException("Task '%s' gives an input state to artifact '%s', which is not one of its inputs"
+                        .formatted(task.getId(), artifactId));
+            }
+            if (isSet(state.getOutputState()) && !outputs.contains(artifactId)) {
+                throw new ValidationException("Task '%s' gives an output state to artifact '%s', which is not one of its outputs"
+                        .formatted(task.getId(), artifactId));
+            }
+        }
+    }
+
+    private static boolean isSet(String value) {
+        return value != null && !value.isBlank();
+    }
+
     private List<String> allArtifactsOf(TaskDefinition task) {
         List<String> inputs = task.getInputs() == null ? List.of() : task.getInputs();
         List<String> outputs = task.getOutputs() == null ? List.of() : task.getOutputs();
@@ -134,31 +192,58 @@ public class WorkflowValidator {
         }
     }
 
-    private void validateStartCondition(Workflow workflow, String orgKey) {
-        WorkflowStartCondition condition = workflow.getStartCondition();
-        if (condition == null) {
-            return;
-        }
-        if (condition.getStartType() == null) {
-            throw new ValidationException("Start condition has no startType");
-        }
-
-        List<RequiredStartArtifact> required =
-                condition.getRequiredArtifacts() == null ? List.of() : condition.getRequiredArtifacts();
+    private void validateStartEvents(Workflow workflow, String orgKey, List<String> taskIds) {
+        List<StartEvent> startEvents = workflow.getStartEvents() == null ? List.of() : workflow.getStartEvents();
+        Set<String> seenIds = new HashSet<>();
         Set<String> declaredArtifacts = new HashSet<>(workflow.artifactDefinitionIds());
-        for (RequiredStartArtifact artifact : required) {
-            String artifactId = artifact.getArtifactDefinitionId();
-            requireExists(artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId);
-            if (!declaredArtifacts.contains(artifactId)) {
+        for (StartEvent startEvent : startEvents) {
+            String eventId = startEvent.getId();
+            if (eventId == null || eventId.isBlank()) {
+                throw new ValidationException("A start event has no id");
+            }
+            if (!seenIds.add(eventId)) {
+                throw new ValidationException("Duplicate start event '%s' within workflow".formatted(eventId));
+            }
+            if (taskIds.contains(eventId)) {
                 throw new ValidationException(
-                        "Start condition requires artifact '%s', which the workflow does not declare".formatted(artifactId));
+                        "Start event '%s' has the same id as a task of the workflow".formatted(eventId));
+            }
+            if (startEvent.getStartType() == null) {
+                throw new ValidationException("Start event '%s' has no startType".formatted(eventId));
+            }
+
+            List<RequiredStartArtifact> required =
+                    startEvent.getRequiredArtifacts() == null ? List.of() : startEvent.getRequiredArtifacts();
+            for (RequiredStartArtifact artifact : required) {
+                String artifactId = artifact.getArtifactDefinitionId();
+                requireExists(artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId);
+                if (!declaredArtifacts.contains(artifactId)) {
+                    throw new ValidationException("Start event '%s' requires artifact '%s', which the workflow does not declare"
+                            .formatted(eventId, artifactId));
+                }
+            }
+
+            List<String> authorizedRoles =
+                    startEvent.getAuthorizedRoles() == null ? List.of() : startEvent.getAuthorizedRoles();
+            for (String roleId : authorizedRoles) {
+                requireExists(roleRepository.existsByOrgKeyAndId(orgKey, roleId), "role", roleId);
+            }
+
+            if (startEvent.getStartType() == WorkflowStartConditionType.TRIGGERING_EVENT) {
+                validateEventType(orgKey, startEvent);
             }
         }
+    }
 
-        List<String> authorizedRoles =
-                condition.getAuthorizedRoles() == null ? List.of() : condition.getAuthorizedRoles();
-        for (String roleId : authorizedRoles) {
-            requireExists(roleRepository.existsByOrgKeyAndId(orgKey, roleId), "role", roleId);
+    private void validateEventType(String orgKey, StartEvent startEvent) {
+        String eventType = startEvent.getEventType();
+        if (eventType == null || eventType.isBlank()) {
+            throw new ValidationException(
+                    "Start event '%s' is a TRIGGERING_EVENT but names no eventType".formatted(startEvent.getId()));
+        }
+        if (!eventCatalog.exists(orgKey, eventType)) {
+            throw new ValidationException("Start event '%s' names event '%s', which is not in this organization's event catalog"
+                    .formatted(startEvent.getId(), eventType));
         }
     }
 

@@ -18,4 +18,10 @@ describe('modelerElementNameKey', () => {
       'base_workflow.workflow._self',
     ]);
   });
+
+  // The end event is no entity at all, so the two events are named by the modeler's own pair of labels.
+  it('names the start and end events through the modeler labels', () => {
+    expect(modelerElementNameKey('start')).toBe('base_workflow.workflow.modeler.start');
+    expect(modelerElementNameKey('end')).toBe('base_workflow.workflow.modeler.end');
+  });
 });

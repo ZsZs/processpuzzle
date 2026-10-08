@@ -7,10 +7,14 @@
  */
 export const WORKFLOW_INSTANCE_DTO = {
   id: '8f14e45f-ceea-467a-9c9b-9b0c1f0f5a01',
+  instanceNumber: 3,
   workflowId: 'order-fulfillment-workflow',
+  startEventId: 'order-created',
   workflowName: 'Order Fulfillment Workflow',
   status: 'ACTIVE',
   entityId: '1',
+  entityType: 'order',
+  entityLabel: 'ORD-1001',
   startedAt: '2026-08-20T08:15:00Z',
   context: { channel: 'web', priority: 'normal' },
   tasks: [

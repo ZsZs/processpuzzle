@@ -61,7 +61,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
     @Override
     public ResponseEntity<WorkflowInstance> startWorkflowInstance(String orgKey, StartWorkflowRequest request) {
         Map<String, Object> context = request.getContext() == null ? Map.of() : request.getContext();
-        var instance = startWorkflowInstance.start(orgKey, request.getWorkflowId(), request.getEntityId(), context);
+        var instance = startWorkflowInstance.start(orgKey, request.getWorkflowId(), request.getEntityId(), request.getStartEventId(), context);
         return new ResponseEntity<>(toFullModel(orgKey, instance.getId()), HttpStatus.CREATED);
     }
 

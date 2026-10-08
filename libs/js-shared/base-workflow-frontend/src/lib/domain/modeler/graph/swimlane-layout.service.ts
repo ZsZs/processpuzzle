@@ -1,6 +1,6 @@
 import dagre from '@dagrejs/dagre';
 import { inject, Injectable } from '@angular/core';
-import { isLaneNode, WorkflowEdge, WorkflowLaneNode, WorkflowNode } from '../workflow-graph';
+import { FLOW_KINDS, isLaneNode, WorkflowEdge, WorkflowLaneNode, WorkflowNode } from '../workflow-graph';
 import { WorkflowLayoutService } from './workflow-layout.service';
 
 /**
@@ -30,7 +30,8 @@ const STRIP_GAP = 48;
 
 /**
  * Places one workflow perspective as BPMN-style swimlanes: a band per performing role, the flow running left
- * to right across all of them, and everything that is not a task in a strip underneath.
+ * to right across all of them, and everything that is not part of the flow — a task or a
+ * start or end event — in a strip underneath.
  *
  * ## Why it is not the flow layout with extra steps
  *
@@ -74,15 +75,19 @@ export class SwimlaneLayoutService {
     const lanes = nodes.filter(isLaneNode);
     if (nodes.length === 0 || lanes.length === 0) return this.flowLayout.place(nodes, edges);
 
-    const tasks = nodes.filter((node) => !isLaneNode(node) && node.data.kind === 'task');
-    const loose = nodes.filter((node) => !isLaneNode(node) && node.data.kind !== 'task');
+    // The flow is the tasks *and* the start and end events: the events ride the same `sequence` edges, so
+    // they take a column of their own — a start event the one before its roots, the end the one after the
+    // last task — and a band's row in it, rather than a place in the strip.
+    const flowNodes = nodes.filter((node) => !isLaneNode(node) && FLOW_KINDS.includes(node.data.kind));
+    const loose = nodes.filter((node) => !isLaneNode(node) && !FLOW_KINDS.includes(node.data.kind));
 
-    const columnOf = this.columns(tasks, edges);
-    const layout = measureBands(lanes, tasks, columnOf);
+    const columnOf = this.columns(flowNodes, edges);
+    const flow = flowNodes.map((node) => (node.data.kind === 'end' ? rehomeEnd(node, edges, columnOf, flowNodes) : node));
+    const layout = measureBands(lanes, flow, columnOf);
     const laneWidth = HEADER_WIDTH + LANE_PADDING + widestColumn(columnOf) * (NODE_SIZE.width + COLUMN_GAP) + NODE_SIZE.width + LANE_PADDING;
 
     const placedLanes = lanes.map((lane) => placeLane(lane, layout.bands.get(lane.id) as Band, laneWidth));
-    const placedTasks = tasks.map((task) => placeTask(task, layout, columnOf));
+    const placedTasks = flow.map((node) => placeTask(node, layout, columnOf));
     const placedLoose = placeStrip(loose, edges, columnOf, stripTop(layout.bands));
 
     // In the input's order rather than lane-first: the converter already ordered the lanes ahead of their
@@ -92,7 +97,7 @@ export class SwimlaneLayoutService {
   }
 
   /**
-   * Which column each task sits in — its Dagre rank, renumbered to consecutive integers.
+   * Which column each node of the flow — task or event — sits in — its Dagre rank, renumbered to consecutive integers.
    *
    * The renumbering is not cosmetic: Dagre reports ranks two apart (0, 2, 4) because it inserts a rank
    * between every pair for edge labels, so using them as column indices would leave every other column
@@ -102,30 +107,30 @@ export class SwimlaneLayoutService {
    * column of its own and push the tasks after it sideways, which is the one thing the columns must not
    * depend on.
    */
-  private columns(tasks: WorkflowNode[], edges: WorkflowEdge[]): Map<string, number> {
-    if (tasks.length === 0) return new Map();
+  private columns(flow: WorkflowNode[], edges: WorkflowEdge[]): Map<string, number> {
+    if (flow.length === 0) return new Map();
 
     const graph = new dagre.graphlib.Graph();
     graph.setGraph({ rankdir: 'LR', nodesep: ROW_GAP, ranksep: COLUMN_GAP });
     graph.setDefaultEdgeLabel(() => ({}));
-    tasks.forEach((task) => graph.setNode(task.id, { ...NODE_SIZE }));
+    flow.forEach((node) => graph.setNode(node.id, { ...NODE_SIZE }));
 
-    const taskIds = new Set(tasks.map((task) => task.id));
+    const flowIds = new Set(flow.map((node) => node.id));
     edges
       .filter((edge) => edge.data?.relation === 'sequence' || edge.data?.relation === 'implicit')
-      // Both ends have to be tasks of this graph, and the two ends have to differ: Dagre invents a node for
+      // Both ends have to be nodes of this flow, and the two ends have to differ: Dagre invents a node for
       // an id it has not been given, and a self-edge would make it lay out a phantom loop.
-      .filter((edge) => taskIds.has(edge.source) && taskIds.has(edge.target) && edge.source !== edge.target)
+      .filter((edge) => flowIds.has(edge.source) && flowIds.has(edge.target) && edge.source !== edge.target)
       .forEach((edge) => graph.setEdge(edge.source, edge.target));
 
     dagre.layout(graph);
 
     // Cast because `@dagrejs/dagre` types `node()` as its input label and does not declare the `rank` the
-    // ranking phase writes onto it. The fallback covers a task with no flow edge at all — Dagre does rank an
+    // ranking phase writes onto it. The fallback covers a node with no flow edge at all — Dagre does rank an
     // isolated node, but a layout is not the place to discover that a future version stopped.
-    const ranks = tasks.map((task) => (graph.node(task.id) as { rank?: number } | undefined)?.rank ?? 0);
+    const ranks = flow.map((node) => (graph.node(node.id) as { rank?: number } | undefined)?.rank ?? 0);
     const columnByRank = new Map([...new Set(ranks)].sort((left, right) => left - right).map((rank, column) => [rank, column]));
-    return new Map(tasks.map((task, index) => [task.id, columnByRank.get(ranks[index]) as number]));
+    return new Map(flow.map((node, index) => [node.id, columnByRank.get(ranks[index]) as number]));
   }
 }
 
@@ -216,16 +221,41 @@ function placeLane(lane: WorkflowLaneNode, band: Band, width: number): WorkflowL
  * A task with no lane cannot arise — the converter gives every task a `groupId` whenever it emits lanes at
  * all — but it is placed in the first band rather than at the origin if one ever does, because a node at
  * `0,0` looks like a bug in the diagram rather than a gap in the model.
+ *
+ * A start or end event is placed the same way but keeps the smaller box the converter gave it, centred in
+ * its cell, so that the circle sits on the line its neighbours' edges run along.
  */
 function placeTask(task: WorkflowNode, layout: Layout, columnOf: Map<string, number>): WorkflowNode {
   const band = (task.groupId === undefined ? undefined : layout.bands.get(task.groupId)) ?? { top: 0, height: 0, rows: 1 };
   const row = layout.rowByTaskId.get(task.id) ?? 0;
+  const size = task.data.kind === 'task' ? NODE_SIZE : (task.size ?? NODE_SIZE);
+  const inset = { x: (NODE_SIZE.width - size.width) / 2, y: (NODE_SIZE.height - size.height) / 2 };
   return {
     ...task,
-    position: { x: columnX(columnOf.get(task.id) ?? 0), y: band.top + LANE_PADDING + row * (NODE_SIZE.height + ROW_GAP) },
-    size: { ...NODE_SIZE },
+    position: { x: columnX(columnOf.get(task.id) ?? 0) + inset.x, y: band.top + LANE_PADDING + row * (NODE_SIZE.height + ROW_GAP) + inset.y },
+    size: { width: size.width, height: size.height },
     autoSize: false,
   };
+}
+
+/**
+ * The end event, moved into the lane of the feeder that lands in the last column — where the flow actually
+ * finishes, which the converter could not know before the columns were ranked. Of several feeders in that
+ * column the last declared wins, the same tie-break the converter's first guess used.
+ *
+ * Left where the converter put it when no feeder has a lane, which is the Lanes toggle being off.
+ */
+function rehomeEnd(end: WorkflowNode, edges: WorkflowEdge[], columnOf: Map<string, number>, flow: WorkflowNode[]): WorkflowNode {
+  const flowById = new Map(flow.map((node) => [node.id, node]));
+  let last: WorkflowNode | undefined;
+  edges
+    .filter((edge) => edge.target === end.id && edge.data?.relation === 'sequence')
+    .map((edge) => flowById.get(edge.source))
+    .forEach((feeder) => {
+      if (feeder?.groupId === undefined) return;
+      if (last === undefined || (columnOf.get(feeder.id) ?? 0) >= (columnOf.get(last.id) ?? 0)) last = feeder;
+    });
+  return last === undefined ? end : { ...end, groupId: last.groupId };
 }
 
 /**
@@ -235,8 +265,9 @@ function placeTask(task: WorkflowNode, layout: Layout, columnOf: Map<string, num
  * ng-diagram would happily draw it there, since a lane contains only the nodes whose `groupId` names it.
  *
  * Each is placed in the column of the task it is attached to, so its line to that task is short and vertical,
- * and stacked when several share a column. Attached by the *first* edge that joins it to a placed task,
- * which for an artifact two tasks share puts it under the earlier of them and lets the later one reach back.
+ * and stacked when several share a column. An object written by a task hangs under its producer and lets
+ * the task reading it on reach back; anything else under the earliest flow node it is joined to — see
+ * {@link anchorColumn}.
  */
 function placeStrip(loose: WorkflowNode[], edges: WorkflowEdge[], columnOf: Map<string, number>, top: number): WorkflowNode[] {
   const depthByColumn = new Map<number, number>();
@@ -248,12 +279,20 @@ function placeStrip(loose: WorkflowNode[], edges: WorkflowEdge[], columnOf: Map<
   });
 }
 
-/** The column of the earliest task this node is joined to, or the first column when it is joined to none. */
+/**
+ * The column a strip node hangs under: its earliest *producer's* when some task writes it, otherwise the
+ * earliest flow node it is joined to at all, and the first column when it is joined to none.
+ *
+ * The producer first, because an artifact is drawn once per state and the task leaving it in that state is
+ * what the node is about — `[CONFIRMED]` belongs under the task that confirms the order, not under one that
+ * merely reads it, even should that reader come earlier in a flow that loops back.
+ */
 function anchorColumn(nodeId: string, edges: WorkflowEdge[], columnOf: Map<string, number>): number {
-  const columns = edges
-    .filter((edge) => edge.source === nodeId || edge.target === nodeId)
-    .map((edge) => columnOf.get(edge.source === nodeId ? edge.target : edge.source))
-    .filter((column): column is number => column !== undefined);
+  const columnsOf = (joined: WorkflowEdge[]) =>
+    joined.map((edge) => columnOf.get(edge.source === nodeId ? edge.target : edge.source)).filter((column): column is number => column !== undefined);
+  const joined = edges.filter((edge) => edge.source === nodeId || edge.target === nodeId);
+  const producers = columnsOf(joined.filter((edge) => edge.target === nodeId && edge.data?.relation === 'output'));
+  const columns = producers.length > 0 ? producers : columnsOf(joined);
   return columns.length === 0 ? 0 : Math.min(...columns);
 }
 // endregion

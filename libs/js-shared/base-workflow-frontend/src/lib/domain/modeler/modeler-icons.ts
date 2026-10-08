@@ -1,7 +1,7 @@
 import { WorkflowElementKind } from './workflow-graph';
 
 /**
- * Where the modeler's symbols come from: the five SVGs in
+ * Where the modeler's symbols come from: the SVGs in
  * `libs/js-shared/base-workflow-frontend/src/assets/modeler`, published with the package by
  * `ng-package.json`'s `assets` entry.
  *
@@ -24,6 +24,10 @@ const ICON_FILE_NAMES: Record<WorkflowElementKind, string> = {
   task: 'Task.svg',
   tool: 'Tool.svg',
   workflow: 'Workflow.svg',
+  // One symbol for both events: BPMN tells a start from an end by the circle's border, which the node
+  // template draws, not by the artwork inside it.
+  start: 'Event.svg',
+  end: 'Event.svg',
 };
 
 /** The symbol one kind is drawn with. */

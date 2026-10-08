@@ -40,11 +40,12 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
       [attr.data-testid]="'workflow-node-' + data().kind"
       [attr.data-highlighted]="highlighted() ? 'true' : null"
       [attr.data-unresolved]="unresolved() ? 'true' : null"
+      [attr.title]="tooltip()"
     >
       <img class="element__symbol" [src]="iconUrl()" alt="" aria-hidden="true" />
       <div class="element__text">
         <div class="element__label">{{ data().label }}</div>
-        @if (data().description) {
+        @if (data().description && !isEvent()) {
           <div class="element__description">{{ data().description }}</div>
         }
       </div>
@@ -121,6 +122,57 @@ import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
       color: #d9534f;
       font-family: monospace;
     }
+    /* A start or end event is a BPMN circle the size of the box the converter stated (EVENT_NODE_SIZE, 64px),
+       the event symbol inside it and its name written underneath rather than inside - positioned absolutely,
+       so it overflows the box instead of growing it, and every edge still anchors on the circle. A thin
+       border starts, a thick one ends, which is BPMN's own distinction; box-sizing keeps the circle the
+       same size either way. */
+    .element--start,
+    .element--end {
+      position: relative;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      padding: 0;
+      border-radius: 50%;
+      border: 3px solid var(--pp-color-dark-blue, rgb(24, 111, 206));
+    }
+    .element--end {
+      border-width: 6px;
+    }
+    /* Event.svg is twice as wide as it is high. 40x20 is the largest box of that shape that clears the
+       border of even the end event's circle with a margin, so the symbol is as big as the circle allows. */
+    .element--start .element__symbol,
+    .element--end .element__symbol {
+      width: 40px;
+      height: 20px;
+    }
+    /* The name, centred under the circle on one line. One line because, centred in a 76px swimlane row,
+       the circle leaves 4px + 16px of the row's padding below it; a longer name is ellipsed and read in full
+       from the tooltip. The light backing keeps it legible where an artifact's line runs up into the circle
+       behind it. Shrink-wrapped rather than full width, so that backing covers the text and no more. */
+    .element--start .element__text,
+    .element--end .element__text {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 160px;
+      padding: 0 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.85);
+      text-align: center;
+    }
+    .element--start .element__label,
+    .element--end .element__label {
+      font-size: 13px;
+      line-height: 16px;
+      color: var(--pp-color-dark-blue, rgb(24, 111, 206));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   `,
 })
 export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<WorkflowNodeData> {
@@ -130,6 +182,19 @@ export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<Workf
   protected readonly data = computed(() => this.node().data);
 
   protected readonly iconUrl = computed(() => modelerIconUrl(this.data().kind));
+
+  /** A start or end event, drawn as a circle with its name beneath and its description only as a tooltip. */
+  protected readonly isEvent = computed(() => this.data().kind === 'start' || this.data().kind === 'end');
+
+  /**
+   * The event's whole name and how it fires, on hover. Only an event needs one: its label is a single
+   * ellipsed line and its description is not drawn, whereas a card shows both.
+   */
+  protected readonly tooltip = computed(() => {
+    if (!this.isEvent()) return null;
+    const { label, description } = this.data();
+    return description ? `${label} (${description})` : label;
+  });
 
   /** Both flags are optional in the data, and a template reads better against a definite boolean. */
   protected readonly highlighted = computed(() => this.data().highlighted === true);

@@ -43,7 +43,7 @@ public class ReplaceWorkflowUseCase {
                 desiredState.getName(),
                 desiredState.getDescription(),
                 desiredState.getExtendsWorkflowId(),
-                desiredState.getStartCondition(),
+                desiredState.getStartEvents(),
                 desiredState.getRoles(),
                 desiredState.getArtifacts(),
                 desiredState.getTools(),

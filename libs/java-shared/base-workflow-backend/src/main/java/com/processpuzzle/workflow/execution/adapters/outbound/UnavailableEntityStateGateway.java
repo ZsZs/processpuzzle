@@ -26,4 +26,9 @@ public class UnavailableEntityStateGateway implements EntityStateGateway {
                         + "This task declares a preconditionStateKey but base-state is not on the classpath."
                         .formatted(entityName, entityId, orgKey));
     }
+
+    @Override
+    public boolean isAvailable() {
+        return false;
+    }
 }

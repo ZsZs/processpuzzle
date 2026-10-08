@@ -48,11 +48,10 @@ describe.each(uses)('the %s Use descriptor', (_label, create, entityName, idFiel
     expect(descriptor.scopeRoot()).toBe(`base_workflow.${scopeSegment}`);
   });
 
-  // One field, and deliberately so: the contract's `RoleUse` and its two siblings wrap nothing but a
-  // definition id today, and the schema is explicit that the object is the extension point for
-  // per-workflow configuration rather than an oversight.
-  it('carries the one definition id the contract gives it', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual([idField]);
+  // The definition id comes first in every one; the object is the extension point for per-workflow
+  // configuration, and only `ArtifactUse` has any yet — see below.
+  it('leads with the definition id the contract gives it', () => {
+    expect(attrs[0].attrName).toBe(idField);
   });
 
   // A picker, not a text box, and this is the point of modelling a `*Use` as an entity at all: the
@@ -74,6 +73,22 @@ describe.each(uses)('the %s Use descriptor', (_label, create, entityName, idFiel
     expect(descriptor.componentIdentification()).toBe(idField);
     expect(attr.isHeading).toBe(true);
     expect(attr.isLinkToDetails).toBe(true);
+  });
+});
+
+describe('the artifact Use descriptor', () => {
+  // `objectName` is display only — the modeler's `new_order : Order` — so it is free text and optional.
+  it('adds an optional object name after the definition id', () => {
+    const attrs = flatten(createWorkflowArtifactUseDescriptor().attrDescriptors);
+
+    expect(attrs.map((attr) => attr.attrName)).toEqual([WORKFLOW_ARTIFACT_USE_ID_FIELD, 'objectName']);
+    expect(attrs[1].formControlType).toBe(FormControlType.TEXT_BOX);
+    expect(attrs[1].required).toBeFalsy();
+  });
+
+  it('keeps the role and tool uses to the definition id alone', () => {
+    expect(flatten(createWorkflowRoleUseDescriptor().attrDescriptors).map((attr) => attr.attrName)).toEqual([WORKFLOW_ROLE_USE_ID_FIELD]);
+    expect(flatten(createWorkflowToolUseDescriptor().attrDescriptors).map((attr) => attr.attrName)).toEqual([WORKFLOW_TOOL_USE_ID_FIELD]);
   });
 });
 

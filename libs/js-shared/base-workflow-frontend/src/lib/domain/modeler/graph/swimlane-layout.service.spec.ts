@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   elementEdgeId,
   elementNodeId,
+  EVENT_NODE_SIZE,
   isLaneNode,
   laneNodeId,
   WORKFLOW_LANE_TYPE,
@@ -221,10 +222,105 @@ describe('SwimlaneLayoutService', () => {
       expect(positionOf(placed, ORDER)?.y).not.toBe(positionOf(placed, tool)?.y);
     });
 
+    // One node per state: `[CONFIRMED]` is what review-order leaves and approve-shipment reads, and it hangs
+    // under the task that confirms the order.
+    it('hangs an object in a state under the task that leaves it in that state', () => {
+      const confirmed = elementNodeId('artifact', 'order-entity[CONFIRMED]');
+      const placed = service.place([...seededNodes(), element('artifact', 'order-entity[CONFIRMED]')], [...seededEdges(), edge(REVIEW, confirmed, 'output'), edge(confirmed, APPROVE, 'input')]);
+
+      expect(positionOf(placed, confirmed)?.x).toBe(positionOf(placed, REVIEW)?.x);
+    });
+
+    // Even where a reader comes earlier — a flow looping back — the producer is what the node is about.
+    it('prefers the producer’s column to an earlier reader’s', () => {
+      const placed = service.place([...seededNodes(), element('artifact', 'order-entity')], [...seededEdges(), edge(ORDER, REVIEW, 'input'), edge(CONFIRM, ORDER, 'output')]);
+
+      expect(positionOf(placed, ORDER)?.x).toBe(positionOf(placed, CONFIRM)?.x);
+    });
+
     it('places a loose node joined to nothing in the first column rather than at the origin', () => {
       const placed = service.place([...seededNodes(), element('artifact', 'order-entity')], seededEdges());
 
       expect(positionOf(placed, ORDER)?.x).toBe(positionOf(placed, REVIEW)?.x);
+    });
+  });
+
+  describe('the events', () => {
+    const START = elementNodeId('start', 'order-drafted');
+    const END = elementNodeId('end', 'end');
+
+    /** An event as the converter emits one: a fixed circle, already in its preliminary lane. */
+    function event(kind: 'start' | 'end', id: string, laneRoleId: string): WorkflowNode {
+      return { ...element(kind, id, laneRoleId), size: { ...EVENT_NODE_SIZE }, autoSize: false };
+    }
+
+    /** The seeded chain opened by a start event in the clerk's lane and closed by the end. */
+    function withEvents(endLane = 'clerk'): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
+      return {
+        nodes: [...seededNodes(), event('start', 'order-drafted', 'clerk'), event('end', 'end', endLane)],
+        edges: [...seededEdges(), edge(START, REVIEW, 'sequence'), edge(CONFIRM, END, 'sequence')],
+      };
+    }
+
+    // They ride the sequence edges, so they take a column of their own on either side of the tasks.
+    it('ranks a start event before the first task and the end after the last', () => {
+      const { nodes, edges } = withEvents();
+      const placed = service.place(nodes, edges);
+
+      expect(positionOf(placed, START)?.x as number).toBeLessThan(positionOf(placed, REVIEW)?.x as number);
+      expect(positionOf(placed, END)?.x as number).toBeGreaterThan(positionOf(placed, CONFIRM)?.x as number);
+    });
+
+    it('places both events inside a band rather than in the strip', () => {
+      const { nodes, edges } = withEvents();
+      const placed = service.place(nodes, edges);
+      const clerkLane = placed.find((node) => node.id === laneNodeId('clerk')) as WorkflowNode;
+
+      [START, END].forEach((id) => {
+        const placedEvent = placed.find((node) => node.id === id) as WorkflowNode;
+        expect(placedEvent.groupId).toBe(laneNodeId('clerk'));
+        expect(placedEvent.position.y).toBeGreaterThanOrEqual(clerkLane.position.y);
+        expect(placedEvent.position.y + (placedEvent.size?.height as number)).toBeLessThanOrEqual(clerkLane.position.y + (clerkLane.size?.height as number));
+      });
+    });
+
+    // The circle stays the box the converter stated, centred on the row its neighbours' edges run along.
+    it('keeps the event box and centres it in its cell', () => {
+      const { nodes, edges } = withEvents();
+      const placed = service.place(nodes, edges);
+      const start = placed.find((node) => node.id === START) as WorkflowNode;
+      const review = placed.find((node) => node.id === REVIEW) as WorkflowNode;
+
+      expect(start.size).toEqual(EVENT_NODE_SIZE);
+      expect(start.autoSize).toBe(false);
+      expect(start.position.y + EVENT_NODE_SIZE.height / 2).toBe(review.position.y + (review.size?.height as number) / 2);
+    });
+
+    // The converter guesses the end's lane before the columns exist; the layout corrects it.
+    it('moves the end into the lane of the feeder in the last column', () => {
+      const { nodes, edges } = withEvents('manager');
+      const placed = service.place(nodes, [...edges, edge(APPROVE, END, 'sequence')]);
+
+      expect(placed.find((node) => node.id === END)?.groupId).toBe(laneNodeId('clerk'));
+    });
+
+    it('widens the lanes to hold the end event’s column', () => {
+      const { nodes, edges } = withEvents();
+      const placed = service.place(nodes, edges);
+      const laneBox = placed.filter(isLaneNode)[0];
+
+      expect(laneBox.size?.width as number).toBeGreaterThanOrEqual((positionOf(placed, END)?.x as number) + EVENT_NODE_SIZE.width);
+    });
+
+    it('feeds a start artifact from the strip under the start event', () => {
+      const { nodes, edges } = withEvents();
+      const placed = service.place([...nodes, element('artifact', 'order-entity')], [...edges, edge(ORDER, START, 'start')]);
+
+      // The start event's column, left of the first task: the artifact card's box contains the circle's x.
+      const orderX = positionOf(placed, ORDER)?.x as number;
+      expect(orderX).toBeLessThan(positionOf(placed, REVIEW)?.x as number);
+      expect(positionOf(placed, START)?.x as number).toBeGreaterThan(orderX);
+      expect(positionOf(placed, START)?.x as number).toBeLessThan(orderX + 170);
     });
   });
 

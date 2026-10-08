@@ -3,8 +3,8 @@ import { ArtifactDefinition, ArtifactType } from '../../definition/artifact-defi
 import { RoleDefinition } from '../../definition/role-definition';
 import { StepDefinition, TaskDefinition, TaskStepType } from '../../definition/task-definition';
 import { ToolDefinition } from '../../definition/tool-definition';
-import { JoinType, RequiredStartArtifact, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
-import { elementEdgeId, elementNodeId, isLaneNode, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph } from '../workflow-graph';
+import { JoinType, RequiredStartArtifact, StartEvent, TaskArtifactState, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from '../../definition/workflow';
+import { elementEdgeId, elementNodeId, EVENT_NODE_SIZE, isLaneNode, laneNodeId, WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph } from '../workflow-graph';
 import { WorkflowFlowGraphConverter, WorkflowFlowGraphOptions } from './workflow-flow-graph.converter';
 
 /**
@@ -19,7 +19,8 @@ import { WorkflowFlowGraphConverter, WorkflowFlowGraphOptions } from './workflow
  * right here is a graph that would be right against a running testbed.
  *
  * The shape: a three-task linear chain — `review-order` performed by the clerk, `approve-shipment` by the
- * manager, `confirm-delivery` back to the clerk. Two lanes, and the chain crosses between them twice.
+ * manager, `confirm-delivery` back to the clerk. Two lanes, and the chain crosses between them twice. The
+ * order walks through its states along it: DRAFT → CONFIRMED → SHIPPED → DELIVERED.
  */
 const ROLES = [
   new RoleDefinition({ id: 'clerk', name: 'Order Clerk', description: 'Enters orders.', responsibleFor: ['order-entity'] }),
@@ -47,14 +48,14 @@ const TASKS = [
     name: 'Confirm Delivery',
     performedByRoles: ['clerk'],
     inputs: ['order-entity'],
-    outputs: ['fulfillment-invoice'],
+    outputs: ['order-entity', 'fulfillment-invoice'],
     steps: [new StepDefinition({ id: 'generate-invoice', name: 'Generate Invoice', stepType: TaskStepType.SERVICE_STEP, toolDefinitionId: 'automated-check-tool', toolOperation: 'generate-doc' })],
   }),
 ];
 
 const TOOLS = [new ToolDefinition({ id: 'automated-check-tool', name: 'Automated Check Tool', baseUrl: 'https://checks.example.com' })];
 
-const LABELS = { unassignedLane: 'Unassigned', anyJoin: 'any' };
+const LABELS = { unassignedLane: 'Unassigned', anyJoin: 'any', endEvent: 'End' };
 
 /**
  * One task assignment. Through the class rather than as a literal, so a field added to the contract arrives
@@ -64,23 +65,39 @@ function assignment(init: Partial<WorkflowTaskAssignment>): WorkflowTaskAssignme
   return new WorkflowTaskAssignment(init);
 }
 
-/** The seeded workflow. `startCondition` arrives flattened, which is what `WorkflowMapper` produces. */
+/** One row of an assignment's `artifactStates`, on the order. */
+function orderState(inputState: string, outputState: string): TaskArtifactState {
+  return new TaskArtifactState({ artifactDefinitionId: 'order-entity', inputState, outputState });
+}
+
+/** The seeded workflow: one start event, waiting for an order in `DRAFT`, and the order's states per task. */
 function workflow(overrides: Partial<Workflow> = {}): Workflow {
   return new Workflow({
     id: 'order-fulfillment-workflow',
     name: 'Order Fulfillment Workflow',
-    startType: WorkflowStartConditionType.INPUT_ARTIFACT,
-    requiredArtifacts: [new RequiredStartArtifact({ artifactDefinitionId: 'order-entity', state: 'DRAFT' })],
+    startEvents: [
+      new StartEvent({
+        id: 'order-drafted',
+        name: 'OrderCreatedEvent',
+        startType: WorkflowStartConditionType.INPUT_ARTIFACT,
+        requiredArtifacts: [new RequiredStartArtifact({ artifactDefinitionId: 'order-entity', state: 'DRAFT' })],
+      }),
+    ],
     roles: [{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }],
-    artifacts: [{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }],
+    artifacts: [{ artifactDefinitionId: 'order-entity', objectName: 'new_order' }, { artifactDefinitionId: 'fulfillment-invoice' }],
     tools: [{ toolDefinitionId: 'automated-check-tool' }],
     tasks: [
-      assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [] }),
-      assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'], joinType: JoinType.ALL }),
-      assignment({ taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['approve-shipment'] }),
+      assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], artifactStates: [orderState('DRAFT', 'CONFIRMED')] }),
+      assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'], joinType: JoinType.ALL, artifactStates: [orderState('CONFIRMED', 'SHIPPED')] }),
+      assignment({ taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['approve-shipment'], artifactStates: [orderState('SHIPPED', 'DELIVERED')] }),
     ],
     ...overrides,
   });
+}
+
+/** The seeded workflow with no artifact state stated anywhere — every artifact drawn once, stateless. */
+function stateless(overrides: Partial<Workflow> = {}): Workflow {
+  return workflow({ tasks: workflow().tasks.map((task) => assignment({ ...task, artifactStates: [] })), ...overrides });
 }
 
 function convert(target = workflow(), options: WorkflowFlowGraphOptions = {}): WorkflowGraph {
@@ -96,12 +113,24 @@ function edgesOfRelation(graph: WorkflowGraph, relation: string) {
   return graph.edges.filter((edge) => edge.data?.relation === relation);
 }
 
+/** The `sequence` edges between two tasks — the `dependsOn` entries, without the events' own edges. */
+function taskSequence(graph: WorkflowGraph) {
+  const taskIds = new Set(graph.nodes.filter((node) => node.data.kind === 'task').map((node) => node.id));
+  return edgesOfRelation(graph, 'sequence').filter((edge) => taskIds.has(edge.source) && taskIds.has(edge.target));
+}
+
 const REVIEW = elementNodeId('task', 'review-order');
 const APPROVE = elementNodeId('task', 'approve-shipment');
 const CONFIRM = elementNodeId('task', 'confirm-delivery');
 const ORDER = elementNodeId('artifact', 'order-entity');
 const INVOICE = elementNodeId('artifact', 'fulfillment-invoice');
+const DRAFT_ORDER = elementNodeId('artifact', 'order-entity[DRAFT]');
+const CONFIRMED_ORDER = elementNodeId('artifact', 'order-entity[CONFIRMED]');
+const SHIPPED_ORDER = elementNodeId('artifact', 'order-entity[SHIPPED]');
+const DELIVERED_ORDER = elementNodeId('artifact', 'order-entity[DELIVERED]');
 const CHECK_TOOL = elementNodeId('tool', 'automated-check-tool');
+const ORDER_DRAFTED = elementNodeId('start', 'order-drafted');
+const END = elementNodeId('end', 'end');
 
 describe('WorkflowFlowGraphConverter', () => {
   describe('nothing to draw', () => {
@@ -131,11 +160,11 @@ describe('WorkflowFlowGraphConverter', () => {
     it('runs a sequence edge from the dependency to the task that names it', () => {
       const graph = convert();
 
-      expect(edgesOfRelation(graph, 'sequence').map((edge) => edge.id)).toEqual([elementEdgeId(REVIEW, APPROVE), elementEdgeId(APPROVE, CONFIRM)]);
+      expect(taskSequence(graph).map((edge) => edge.id)).toEqual([elementEdgeId(REVIEW, APPROVE), elementEdgeId(APPROVE, CONFIRM)]);
     });
 
     it('gives every edge the relation template and the ports its direction needs', () => {
-      const sequence = edgesOfRelation(convert(), 'sequence')[0];
+      const sequence = taskSequence(convert())[0];
 
       expect(sequence.type).toBe(WORKFLOW_RELATION_EDGE_TYPE);
       expect(sequence.sourcePort).toBe('port-right');
@@ -148,13 +177,17 @@ describe('WorkflowFlowGraphConverter', () => {
         workflow({ tasks: [...workflow().tasks.slice(0, 2), assignment({ taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['review-order', 'approve-shipment'], joinType: JoinType.ANY })] }),
       );
 
-      expect(edgesOfRelation(anyJoin, 'sequence').filter((edge) => edge.target === CONFIRM).map((edge) => edge.data?.label)).toEqual(['any', 'any']);
+      expect(
+        taskSequence(anyJoin)
+          .filter((edge) => edge.target === CONFIRM)
+          .map((edge) => edge.data?.label),
+      ).toEqual(['any', 'any']);
     });
 
     it('leaves a single-dependency ANY join unlabelled — there is nothing to choose between', () => {
       const graph = convert(workflow({ tasks: [workflow().tasks[0], assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'], joinType: JoinType.ANY })] }));
 
-      expect(edgesOfRelation(graph, 'sequence').map((edge) => edge.data?.label)).toEqual([undefined]);
+      expect(taskSequence(graph).map((edge) => edge.data?.label)).toEqual([undefined]);
     });
 
     /**
@@ -245,7 +278,155 @@ describe('WorkflowFlowGraphConverter', () => {
 
       expect(nodeIds(graph)).toContain(REVIEW);
       expect(graph.edges.filter((edge) => edge.source === edge.target)).toEqual([]);
-      expect(edgesOfRelation(graph, 'sequence')).toEqual([]);
+      expect(taskSequence(graph)).toEqual([]);
+    });
+  });
+
+  describe('the events', () => {
+    it('draws one start node per start event, named by the event', () => {
+      const start = convert().nodes.find((node) => node.id === ORDER_DRAFTED);
+
+      expect(start?.type).toBe(WORKFLOW_NODE_TYPE);
+      expect(start?.data).toMatchObject({ kind: 'start', elementId: 'order-drafted', label: 'OrderCreatedEvent', description: 'INPUT_ARTIFACT' });
+    });
+
+    // Lacking a name, the event a TRIGGERING_EVENT waits for says best what starts the workflow.
+    it('labels a nameless triggering event by the event it waits for', () => {
+      const graph = convert(workflow({ startEvents: [new StartEvent({ id: 'submitted', startType: WorkflowStartConditionType.TRIGGERING_EVENT, eventType: 'order.submitted' })] }));
+
+      expect(graph.nodes.find((node) => node.id === elementNodeId('start', 'submitted'))?.data).toMatchObject({ label: 'order.submitted', description: 'TRIGGERING_EVENT' });
+    });
+
+    // An event type left over from another start type is not what fires this one, so it is not the label.
+    it('ignores an event type on an event that is not a triggering one', () => {
+      const graph = convert(workflow({ startEvents: [new StartEvent({ id: 'by-hand', startType: WorkflowStartConditionType.ROLE_DEFINITION, eventType: 'order.submitted' })] }));
+
+      expect(graph.nodes.find((node) => node.id === elementNodeId('start', 'by-hand'))?.data.label).toBe('ROLE_DEFINITION');
+    });
+
+    it('prefers the name to the event type', () => {
+      const graph = convert(
+        workflow({ startEvents: [new StartEvent({ id: 'submitted', name: 'OrderSubmitted', startType: WorkflowStartConditionType.TRIGGERING_EVENT, eventType: 'order.submitted' })] }),
+      );
+
+      expect(graph.nodes.find((node) => node.id === elementNodeId('start', 'submitted'))?.data.label).toBe('OrderSubmitted');
+    });
+
+    // A nameless event is labelled by how it fires, the next most telling thing about it.
+    it('labels a nameless start event by its start type', () => {
+      const graph = convert(workflow({ startEvents: [new StartEvent({ id: 'by-hand', startType: WorkflowStartConditionType.ROLE_DEFINITION })] }));
+
+      expect(graph.nodes.find((node) => node.id === elementNodeId('start', 'by-hand'))?.data).toMatchObject({ label: 'ROLE_DEFINITION', description: undefined });
+    });
+
+    it('runs a sequence edge from every start event to every task that depends on nothing', () => {
+      const graph = convert(
+        workflow({
+          startEvents: [new StartEvent({ id: 'a', startType: WorkflowStartConditionType.ROLE_DEFINITION }), new StartEvent({ id: 'b', startType: WorkflowStartConditionType.TRIGGERING_EVENT })],
+          tasks: [
+            assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], parallel: true }),
+            assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: [], parallel: true }),
+            assignment({ taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['review-order', 'approve-shipment'] }),
+          ],
+        }),
+      );
+      const fromStart = edgesOfRelation(graph, 'sequence').filter((edge) => edge.source.startsWith('start:'));
+
+      expect(fromStart.map((edge) => edge.id)).toEqual([
+        elementEdgeId(elementNodeId('start', 'a'), REVIEW),
+        elementEdgeId(elementNodeId('start', 'a'), APPROVE),
+        elementEdgeId(elementNodeId('start', 'b'), REVIEW),
+        elementEdgeId(elementNodeId('start', 'b'), APPROVE),
+      ]);
+      expect(fromStart.every((edge) => edge.sourcePort === 'port-right' && edge.targetPort === 'port-left')).toBe(true);
+    });
+
+    it('draws no start node for a workflow without start events', () => {
+      expect(convert(workflow({ startEvents: [] })).nodes.filter((node) => node.data.kind === 'start')).toEqual([]);
+    });
+
+    it('skips a start event that has no id yet — it would have no node id either', () => {
+      const graph = convert(workflow({ startEvents: [new StartEvent({ startType: WorkflowStartConditionType.ROLE_DEFINITION })] }));
+
+      expect(graph.nodes.filter((node) => node.data.kind === 'start')).toEqual([]);
+    });
+
+    // Derived, since the model has none: one end, fed by every task nothing depends on.
+    it('derives one end node fed by every task nothing depends on', () => {
+      const graph = convert(
+        workflow({
+          tasks: [
+            assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [] }),
+            assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'], parallel: true }),
+            assignment({ taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['review-order'], parallel: true }),
+          ],
+        }),
+      );
+
+      expect(graph.nodes.filter((node) => node.data.kind === 'end').map((node) => node.data)).toEqual([{ kind: 'end', label: 'End' }]);
+      expect(
+        edgesOfRelation(graph, 'sequence')
+          .filter((edge) => edge.target === END)
+          .map((edge) => edge.source),
+      ).toEqual([APPROVE, CONFIRM]);
+    });
+
+    it('closes the seeded chain on its last task', () => {
+      expect(
+        edgesOfRelation(convert(), 'sequence')
+          .filter((edge) => edge.target === END)
+          .map((edge) => edge.id),
+      ).toEqual([elementEdgeId(CONFIRM, END)]);
+    });
+
+    it('draws the end even when the workflow has no start event', () => {
+      expect(nodeIds(convert(workflow({ startEvents: [] })))).toContain(END);
+    });
+
+    // A cycle leaves no task undepended-on; an end with nothing leading into it would claim an exit.
+    it('draws no end when every task is depended on', () => {
+      const graph = convert(
+        workflow({
+          tasks: [
+            assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: ['approve-shipment'] }),
+            assignment({ taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'] }),
+          ],
+        }),
+      );
+
+      expect(nodeIds(graph)).not.toContain(END);
+      // The start event is still drawn — it is data — but with no root there is nothing for it to feed.
+      expect(nodeIds(graph)).toContain(ORDER_DRAFTED);
+      expect(graph.edges.filter((edge) => edge.source === ORDER_DRAFTED && edge.data?.relation === 'sequence')).toEqual([]);
+    });
+
+    // An empty workflow still converts to nothing at all — see 'nothing to draw' — start events or not.
+    it('draws neither event for a workflow with no tasks', () => {
+      expect(convert(workflow({ tasks: [] })).nodes).toEqual([]);
+    });
+
+    it('puts a start event in the lane of the first root and the end in the lane of the last sink', () => {
+      const graph = convert();
+
+      expect(graph.nodes.find((node) => node.id === ORDER_DRAFTED)?.groupId).toBe(laneNodeId('clerk'));
+      expect(graph.nodes.find((node) => node.id === END)?.groupId).toBe(laneNodeId('clerk'));
+    });
+
+    it('puts neither event in a lane when lanes are off', () => {
+      const graph = convert(workflow(), { lanes: false });
+
+      expect(graph.nodes.filter((node) => node.data.kind === 'start' || node.data.kind === 'end').every((node) => node.groupId === undefined)).toBe(true);
+    });
+
+    // A fixed circle rather than a measured card, so both layouts can centre it.
+    it('states the event box rather than letting it be measured', () => {
+      const events = convert().nodes.filter((node) => node.data.kind === 'start' || node.data.kind === 'end');
+
+      expect(events).toHaveLength(2);
+      events.forEach((node) => {
+        expect(node.size).toEqual(EVENT_NODE_SIZE);
+        expect(node.autoSize).toBe(false);
+      });
     });
   });
 
@@ -286,13 +467,13 @@ describe('WorkflowFlowGraphConverter', () => {
       expect(graph.nodes.filter((node) => isLaneNode(node))).toEqual([]);
       expect(graph.nodes.every((node) => node.groupId === undefined)).toBe(true);
       // The flow itself is untouched — only the grouping went away.
-      expect(edgesOfRelation(graph, 'sequence')).toHaveLength(2);
+      expect(taskSequence(graph)).toHaveLength(2);
     });
   });
 
   describe('the data layer', () => {
     it('draws an artifact a task reads as an edge into the task', () => {
-      const graph = convert();
+      const graph = convert(stateless());
 
       expect(nodeIds(graph)).toContain(ORDER);
       expect(edgesOfRelation(graph, 'input').map((edge) => edge.id)).toContain(elementEdgeId(ORDER, APPROVE));
@@ -309,15 +490,101 @@ describe('WorkflowFlowGraphConverter', () => {
       expect(input.targetPort).toBe('port-bottom');
     });
 
-    /**
-     * The nearest honest thing to a start element: the contract has none, and a root task is only a root
-     * because nothing depends on it. The required artifact's state is what the edge says.
-     */
-    it('feeds the required start artifacts into every task that depends on nothing', () => {
+    // An object of the workflow, not the artifact class: UML's `object : Class`, anonymous without a name.
+    it('labels an artifact as the object flowing through the workflow', () => {
+      const graph = convert(stateless());
+
+      expect(graph.nodes.find((node) => node.id === ORDER)?.data).toMatchObject({ elementId: 'order-entity', label: 'new_order : Order' });
+      expect(graph.nodes.find((node) => node.id === INVOICE)?.data.label).toBe(':Fulfillment Invoice');
+    });
+
+    // The artifact feeds the event it starts, not the root after it.
+    it('feeds a start event the artifacts it waits for', () => {
       const start = edgesOfRelation(convert(), 'start');
 
-      expect(start.map((edge) => edge.id)).toEqual([elementEdgeId(ORDER, REVIEW)]);
-      expect(start[0].data?.label).toBe('DRAFT');
+      expect(start.map((edge) => edge.id)).toEqual([elementEdgeId(DRAFT_ORDER, ORDER_DRAFTED)]);
+      expect(start[0].data?.label).toBeUndefined();
+      expect(start[0].sourcePort).toBe('port-top');
+      expect(start[0].targetPort).toBe('port-bottom');
+    });
+
+    // The object the event waits for is the object the first task reads when both name the same state, so
+    // they meet in one node rather than drawing the order in DRAFT twice.
+    it('merges the start event’s required object with the first task’s input in the same state', () => {
+      const graph = convert();
+      const drafted = graph.nodes.filter((node) => node.id === DRAFT_ORDER);
+
+      expect(drafted).toHaveLength(1);
+      expect(drafted[0].data).toMatchObject({ kind: 'artifact', elementId: 'order-entity', label: 'new_order : Order [DRAFT]' });
+      expect(edgesOfRelation(graph, 'start').map((edge) => edge.id)).toEqual([elementEdgeId(DRAFT_ORDER, ORDER_DRAFTED)]);
+      expect(edgesOfRelation(graph, 'input').map((edge) => edge.id)).toContain(elementEdgeId(DRAFT_ORDER, REVIEW));
+    });
+
+    it('keeps the required object apart from a first task that reads another state', () => {
+      const graph = convert(workflow({ tasks: [assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], artifactStates: [orderState('PENDING', 'CONFIRMED')] })] }));
+
+      expect(nodeIds(graph)).toEqual(expect.arrayContaining([DRAFT_ORDER, elementNodeId('artifact', 'order-entity[PENDING]')]));
+      expect(edgesOfRelation(graph, 'input').map((edge) => edge.id)).toEqual([elementEdgeId(elementNodeId('artifact', 'order-entity[PENDING]'), REVIEW)]);
+    });
+
+    // UML's rule: the same class may appear several times, but each time in a different state. One task's
+    // output state is the next one's input state, so they meet and the lifecycle reads along the flow.
+    it('draws one object per state, chaining each task’s output into the next task’s input', () => {
+      const graph = convert();
+
+      expect(graph.nodes.filter((node) => node.data.elementId === 'order-entity').map((node) => node.id)).toEqual([DRAFT_ORDER, CONFIRMED_ORDER, SHIPPED_ORDER, DELIVERED_ORDER]);
+      expect(edgesOfRelation(graph, 'input').map((edge) => edge.id)).toEqual([elementEdgeId(DRAFT_ORDER, REVIEW), elementEdgeId(CONFIRMED_ORDER, APPROVE), elementEdgeId(SHIPPED_ORDER, CONFIRM)]);
+      expect(edgesOfRelation(graph, 'output').map((edge) => edge.id)).toEqual([
+        elementEdgeId(REVIEW, CONFIRMED_ORDER),
+        elementEdgeId(APPROVE, SHIPPED_ORDER),
+        elementEdgeId(CONFIRM, DELIVERED_ORDER),
+        elementEdgeId(CONFIRM, INVOICE),
+      ]);
+      expect(graph.nodes.find((node) => node.id === SHIPPED_ORDER)?.data.label).toBe('new_order : Order [SHIPPED]');
+    });
+
+    // No row for an artifact, or a row with that side blank, is a task saying nothing about the state.
+    it('falls back to the stateless object where no state is stated', () => {
+      const graph = convert();
+
+      expect(nodeIds(graph)).toContain(INVOICE);
+      expect(nodeIds(graph)).not.toContain(ORDER);
+
+      const blankOutput = convert(workflow({ tasks: [assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], artifactStates: [orderState('DRAFT', ' ')] })] }));
+      expect(edgesOfRelation(blankOutput, 'output').map((edge) => edge.id)).toEqual([elementEdgeId(REVIEW, ORDER)]);
+    });
+
+    it('draws each artifact once when no task states any state', () => {
+      const graph = convert(stateless({ startEvents: [] }));
+
+      expect(graph.nodes.filter((node) => node.data.kind === 'artifact').map((node) => node.id)).toEqual([ORDER, INVOICE]);
+    });
+
+    // A FOREIGN_KEY control may write the picked artifact itself into the row rather than its id.
+    it('reads an artifact state whose artifact the reference control wrote as a whole entity', () => {
+      const state = orderState('DRAFT', 'CONFIRMED');
+      (state as unknown as Record<string, unknown>)['artifactDefinitionId'] = { id: 'order-entity', name: 'Order' };
+      const graph = convert(workflow({ tasks: [assignment({ taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], artifactStates: [state] })] }));
+
+      expect(edgesOfRelation(graph, 'output').map((edge) => edge.id)).toEqual([elementEdgeId(REVIEW, CONFIRMED_ORDER)]);
+    });
+
+    it('feeds a start event the stateless object when no state is required', () => {
+      const anyState = workflow({
+        startEvents: [
+          new StartEvent({
+            id: 'order-drafted',
+            startType: WorkflowStartConditionType.INPUT_ARTIFACT,
+            requiredArtifacts: [new RequiredStartArtifact({ artifactDefinitionId: 'order-entity' })],
+          }),
+        ],
+      });
+
+      expect(edgesOfRelation(convert(anyState), 'start').map((edge) => edge.id)).toEqual([elementEdgeId(ORDER, ORDER_DRAFTED)]);
+    });
+
+    it('draws no start artifact for a workflow without start events', () => {
+      expect(edgesOfRelation(convert(workflow({ startEvents: [] })), 'start')).toEqual([]);
     });
 
     it('draws no artifact and no data edge when the layer is off', () => {
@@ -368,7 +635,7 @@ describe('WorkflowFlowGraphConverter', () => {
       const dangling = graph.nodes.find((node) => node.id === elementNodeId('task', 'nothing-of-the-kind'));
 
       expect(dangling?.data).toMatchObject({ kind: 'task', label: 'nothing-of-the-kind', unresolved: true });
-      expect(edgesOfRelation(graph, 'sequence').map((edge) => edge.id)).toEqual([elementEdgeId(elementNodeId('task', 'nothing-of-the-kind'), REVIEW)]);
+      expect(taskSequence(graph).map((edge) => edge.id)).toEqual([elementEdgeId(elementNodeId('task', 'nothing-of-the-kind'), REVIEW)]);
     });
 
     it('puts a dangling dependency in the unassigned lane — nothing says who performs it', () => {

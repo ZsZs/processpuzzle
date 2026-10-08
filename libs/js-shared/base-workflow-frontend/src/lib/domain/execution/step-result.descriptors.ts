@@ -2,6 +2,7 @@ import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDi
 import { TASK_STEP_RESULT_I18N_SCOPE } from '../../base-workflow.i18n';
 import { TASK_INSTANCE_ENTITY_NAME, TASK_STEP_RESULT_ENTITY_NAME } from '../workflow-entity-names';
 import { readOnlyAttr } from './read-only-attr';
+import { timestampAttr } from '../timestamp-attr';
 
 export { TASK_STEP_RESULT_ENTITY_NAME };
 
@@ -12,7 +13,7 @@ function createStepResultAttrDescriptors(): AbstractAttrDescriptor[] {
   const stepIdAttr = readOnlyAttr('stepId', FormControlType.TEXT_BOX, 'Step', undefined, true);
   stepIdAttr.isHeading = true;
 
-  const completedAtAttr = readOnlyAttr('completedAt', FormControlType.TEXT_BOX, 'Completed At');
+  const completedAtAttr = timestampAttr('completedAt', 'Completed At');
 
   // The raw body the tool answered with. An open map is the only shape that can carry it; the control
   // renders every value as text, so a nested object shows as `[object Object]` — acceptable for a

@@ -28,7 +28,8 @@ import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
-import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
+import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionDeletedEvent;
@@ -519,16 +520,21 @@ class WorkflowUseCasesTest {
                 .id("wf-export")
                 .name("Exportable Workflow")
                 .description("Description")
-                .startCondition(WorkflowStartCondition.builder()
+                .startEvents(List.of(StartEvent.builder()
+                        .id("code-drafted")
+                        .name("Code drafted")
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                                 .artifactDefinitionId("code").state("DRAFT").build()))
-                        .build())
+                        .build()))
                 .roles(List.of(RoleUse.builder().roleDefinitionId("dev").build()))
-                .artifacts(List.of(ArtifactUse.builder().artifactDefinitionId("code").build()))
+                .artifacts(List.of(ArtifactUse.builder().artifactDefinitionId("code").objectName("patch").build()))
                 .tools(List.of(ToolUse.builder().toolDefinitionId("runner").build()))
                 .tasks(List.of(TaskUse.builder().taskDefinitionId("impl").performedBy("dev")
-                        .joinType(JoinType.ANY).build()))
+                        .joinType(JoinType.ANY)
+                        .artifactStates(List.of(TaskArtifactState.builder()
+                                .artifactDefinitionId("code").inputState("DRAFT").outputState("REVIEWED").build()))
+                        .build()))
                 .build();
 
         when(workflowRepo.findByOrgKeyAndId(ORG, "wf-export")).thenReturn(Optional.of(workflow));
@@ -571,14 +577,22 @@ class WorkflowUseCasesTest {
         Workflow reimported = saved.getValue();
         assertThat(reimported.roleDefinitionIds()).containsExactly("dev");
         assertThat(reimported.artifactDefinitionIds()).containsExactly("code");
+        assertThat(reimported.getArtifacts().get(0).getObjectName()).isEqualTo("patch");
         assertThat(reimported.toolDefinitionIds()).containsExactly("runner");
         assertThat(reimported.getTasks()).singleElement().satisfies(use -> {
             assertThat(use.getTaskDefinitionId()).isEqualTo("impl");
             assertThat(use.getJoinType()).isEqualTo(JoinType.ANY);
+            assertThat(use.getArtifactStates()).singleElement().satisfies(state -> {
+                assertThat(state.getInputState()).isEqualTo("DRAFT");
+                assertThat(state.getOutputState()).isEqualTo("REVIEWED");
+            });
         });
-        assertThat(reimported.getStartCondition().getStartType())
-                .isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
-        assertThat(reimported.getStartCondition().getRequiredArtifacts()).singleElement()
+        assertThat(reimported.getStartEvents()).singleElement().satisfies(startEvent -> {
+            assertThat(startEvent.getId()).isEqualTo("code-drafted");
+            assertThat(startEvent.getName()).isEqualTo("Code drafted");
+            assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
+        });
+        assertThat(reimported.getStartEvents().get(0).getRequiredArtifacts()).singleElement()
                 .satisfies(required -> assertThat(required.getState()).isEqualTo("DRAFT"));
     }
 
@@ -643,9 +657,10 @@ class WorkflowUseCasesTest {
                 workflows:
                   - id: wf1
                     name: WF1
-                    startCondition:
-                      startType: WHENEVER
-                """)).anyMatch(error -> error.contains("unknown startCondition startType 'WHENEVER'"));
+                    startEvents:
+                      - id: whenever
+                        startType: WHENEVER
+                """)).anyMatch(error -> error.contains("start event 'whenever' has an unknown startType 'WHENEVER'"));
 
         assertThat(importOf(importUseCase, """
                 workflows:

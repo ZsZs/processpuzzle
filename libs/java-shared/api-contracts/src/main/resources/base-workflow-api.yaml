@@ -809,8 +809,25 @@ paths:
                 $ref: "#/components/schemas/WorkflowInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          description: >-
+            No start event of the workflow admits this start — the caller holds none of the
+            authorized roles, or the input artifact is not in the required state. The message names
+            the start events that refused.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: >-
+            Every start event of the workflow is TRIGGERING_EVENT or TIME_BASED_PRECONDITION — the
+            workflow starts on its own and cannot be started by hand.
           content:
             application/json:
               schema:
@@ -1626,14 +1643,27 @@ components:
       type: string
       enum: [ INPUT_ARTIFACT, TRIGGERING_EVENT, ROLE_DEFINITION, TIME_BASED_PRECONDITION ]
 
-    WorkflowStartCondition:
+    StartEvent:
       type: object
-      required: [ startType ]
+      required: [ id, startType ]
       description: >-
-        How an instance of this workflow comes into being. `startType` selects the mechanism and
-        decides which of the remaining fields carry meaning; the others are ignored. A workflow
-        without a start condition can only be started explicitly through /instances.
+        One way an instance of this workflow comes into being — BPMN's start event. `startType`
+        selects the mechanism and decides which of the remaining fields carry meaning; the others
+        are ignored. A workflow without start events may be started by anyone through /instances;
+        otherwise an explicit start is admitted when any of its start events admits it:
+        ROLE_DEFINITION when the caller holds one of `authorizedRoles`, INPUT_ARTIFACT when
+        `entityId` is given and the required ENTITY artifacts are in the required state.
+        TRIGGERING_EVENT and TIME_BASED_PRECONDITION never admit an explicit start.
       properties:
+        id:
+          type: string
+          description: >-
+            Unique within the workflow, and distinct from the ids of its tasks.
+          example: order-drafted
+        name:
+          type: string
+          nullable: true
+          example: Order drafted
         startType:
           $ref: "#/components/schemas/WorkflowStartConditionType"
         requiredArtifacts:
@@ -1644,14 +1674,21 @@ components:
         eventType:
           type: string
           nullable: true
-          description: TRIGGERING_EVENT — the event that starts the workflow.
-          example: order.submitted
+          description: >-
+            TRIGGERING_EVENT — the id of the event-catalog entry (base-event's EventDefinition) whose
+            occurrence starts the workflow. Required for that start type, and checked against the
+            organization's catalog when the workflow is saved. The event's subject becomes the new
+            instance's entityId; a subject with a running instance of the workflow is not started again.
+          example: OrderCreatedEvent
         payloadMapping:
           type: object
           nullable: true
           description: >-
-            TRIGGERING_EVENT — maps the event payload into the new instance's context. Keys are
-            context variable names, values are JSONPath expressions into the event.
+            TRIGGERING_EVENT — maps the event into the new instance's context. Keys are context
+            variable names, values are paths into the whole event — `$.subjectId`, `$.subjectType`,
+            `$.eventDefinitionId`, `$.occurredAt`, `$.payload.<attribute>` — in a JSONPath subset:
+            dotted properties and numeric list indexes, no filters or wildcards. A path that does not
+            resolve yields null.
           additionalProperties:
             type: string
         authorizedRoles:
@@ -1706,8 +1743,13 @@ components:
           description: >-
             Id of a parent workflow to inherit roles, artifacts, tools and task uses from. Follows
             the same extends/override convention as base-rule.
-        startCondition:
-          $ref: "#/components/schemas/WorkflowStartCondition"
+        startEvents:
+          type: array
+          description: >-
+            The ways an instance of this workflow may come into being. Empty or absent means
+            anyone may start it through /instances.
+          items:
+            $ref: "#/components/schemas/StartEvent"
         roles:
           type: array
           description: The RoleDefinitions taking part in this workflow.
@@ -1780,6 +1822,13 @@ components:
           type: string
           description: Id of an ArtifactDefinition of this organization.
           example: order-entity
+        objectName:
+          type: string
+          nullable: true
+          description: >-
+            The name the artifact's object goes by in this workflow — the `new_order` of UML's
+            `new_order : Order` object notation. Display only; absent draws an anonymous object.
+          example: new_order
 
     # ── Tool Use ────────────────────────────────────────────
     ToolUse:
@@ -1838,6 +1887,36 @@ components:
           description: >-
             When this workflow extends another, marks this task use as replacing the parent's use of
             the same task rather than adding to it.
+        artifactStates:
+          type: array
+          description: >-
+            The states this task expects its inputs in and leaves its outputs in, in this workflow.
+            One entry per artifact at most, each naming one of the task definition's inputs or
+            outputs. Recorded and drawn, not yet enforced at run time.
+          items:
+            $ref: "#/components/schemas/TaskArtifactState"
+
+    TaskArtifactState:
+      type: object
+      required: [ artifactDefinitionId ]
+      properties:
+        artifactDefinitionId:
+          type: string
+          example: order-entity
+        inputState:
+          type: string
+          nullable: true
+          description: >-
+            The state the task expects the artifact in, as named by its base-state machine. Only for
+            one of the task's inputs; absent means any state.
+          example: DRAFT
+        outputState:
+          type: string
+          nullable: true
+          description: >-
+            The state the task leaves the artifact in. Only for one of the task's outputs; absent
+            means unchanged or unstated.
+          example: CONFIRMED
 
     # ── Workflow Instance (runtime) ─────────────────────────
     StartWorkflowRequest:
@@ -1852,6 +1931,12 @@ components:
           description: >-
             Optional base-entity entity instance this workflow runs against. When set,
             it is passed as context to rule evaluation and state machine triggers.
+        startEventId:
+          type: string
+          nullable: true
+          description: >-
+            The start event to admit this start by. Absent means every start event of the
+            workflow is tried and the first that admits it is recorded.
         context:
           type: object
           nullable: true
@@ -1868,6 +1953,15 @@ components:
       properties:
         id:
           type: string
+        instanceNumber:
+          type: integer
+          format: int64
+          nullable: true
+          readOnly: true
+          description: >-
+            The instance's human-facing identity — 1, 2, 3… per organization, in start order — assigned
+            by the server when the instance is created. `id` remains the key every reference uses. Null
+            only on instances created before numbering existed.
         workflowId:
           type: string
         workflowName:
@@ -1877,6 +1971,27 @@ components:
         entityId:
           type: string
           nullable: true
+        entityType:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The base-entity definition code of entityId's object (e.g. `order`): the triggering event's
+            subject type for a triggered start, the workflow's first ENTITY artifact for an explicit one.
+        entityLabel:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The subject's name as its entity type shows it — the definition's isLinkToDetails attribute,
+            e.g. the order number. Resolved per response, so it follows a rename; falls back to entityId
+            when no name can be resolved.
+        startEventId:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The start event that admitted this instance's start. Null when the workflow had none.
         startedAt:
           type: string
           format: date-time

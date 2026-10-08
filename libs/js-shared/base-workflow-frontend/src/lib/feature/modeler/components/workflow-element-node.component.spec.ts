@@ -63,6 +63,22 @@ describe('WorkflowElementNodeComponent', () => {
     expect(render({ kind: 'artifact', label: 'Order Entity' }).dataset['unresolved']).toBeUndefined();
   });
 
+  // An event is a circle with its name beneath: how it fires is a tooltip rather than a second line, which
+  // would push the name out of its lane.
+  it('draws a start event as its symbol and name, how it fires only as a tooltip', () => {
+    const circle = render({ kind: 'start', label: 'OrderCreatedEvent', description: 'INPUT_ARTIFACT' });
+
+    expect(circle.querySelector('img')?.getAttribute('src')).toBe('assets/modeler/Event.svg');
+    expect(circle.querySelector('.element__label')?.textContent?.trim()).toBe('OrderCreatedEvent');
+    expect(circle.querySelector('.element__description')).toBeNull();
+    expect(circle.getAttribute('title')).toBe('OrderCreatedEvent (INPUT_ARTIFACT)');
+  });
+
+  it('gives the end event its name as the tooltip, and a card none', () => {
+    expect(render({ kind: 'end', label: 'End' }).getAttribute('title')).toBe('End');
+    expect(render({ kind: 'role', label: 'Order Clerk', description: 'Enters orders.' }).hasAttribute('title')).toBe(false);
+  });
+
   /**
    * Four ports, so an edge can anchor sensibly whichever way the layout put the two nodes. Nothing
    * persists an anchor here; the ports are what let ng-diagram pick one.

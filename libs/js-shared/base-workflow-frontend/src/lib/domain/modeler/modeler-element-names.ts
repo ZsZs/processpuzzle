@@ -15,7 +15,7 @@ import { WorkflowElementKind } from './workflow-graph';
  * call it — in all five languages, already translated. A `base_workflow.modeler.*` block beside them would
  * be the same five words maintained twice, free to drift.
  */
-const ELEMENT_I18N_SCOPES: Record<WorkflowElementKind, string> = {
+const ELEMENT_I18N_SCOPES: Record<Exclude<WorkflowElementKind, EventKind>, string> = {
   role: WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,
   artifact: ARTIFACT_DEFINITION_I18N_SCOPE,
   task: TASK_DEFINITION_I18N_SCOPE,
@@ -23,7 +23,18 @@ const ELEMENT_I18N_SCOPES: Record<WorkflowElementKind, string> = {
   workflow: WORKFLOW_I18N_SCOPE,
 };
 
-/** The key naming one kind — `base_workflow.workflow_role_definition._self` and its four siblings. */
+/**
+ * The two events are the exception, named by the Workflow Modeler's own labels. The end event is no entity
+ * at all, and a start event's entity name — *Start Event* — beside an *End* that is not one would read
+ * oddly; the legend names them as the pair BPMN makes of them.
+ */
+type EventKind = 'start' | 'end';
+const EVENT_NAME_KEYS: Record<EventKind, string> = {
+  start: `${WORKFLOW_I18N_SCOPE}.modeler.start`,
+  end: `${WORKFLOW_I18N_SCOPE}.modeler.end`,
+};
+
+/** The key naming one kind — `base_workflow.workflow_role_definition._self` and its siblings. */
 export function modelerElementNameKey(kind: WorkflowElementKind): string {
-  return `${ELEMENT_I18N_SCOPES[kind]}._self`;
+  return kind === 'start' || kind === 'end' ? EVENT_NAME_KEYS[kind] : `${ELEMENT_I18N_SCOPES[kind]}._self`;
 }

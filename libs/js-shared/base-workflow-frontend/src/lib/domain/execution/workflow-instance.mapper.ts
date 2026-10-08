@@ -38,10 +38,14 @@ interface ArtifactInstanceDto {
 
 interface WorkflowInstanceDto {
   id?: string;
+  instanceNumber?: number;
   workflowId?: string;
+  startEventId?: string;
   workflowName?: string;
   status?: WorkflowInstanceStatus;
   entityId?: string;
+  entityType?: string;
+  entityLabel?: string;
   startedAt?: string;
   completedAt?: string;
   context?: PropertyMap;
@@ -70,10 +74,14 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
     const source = dto as WorkflowInstanceDto;
     return new WorkflowInstance({
       id: source.id,
+      instanceNumber: source.instanceNumber ?? undefined,
       workflowId: source.workflowId,
+      startEventId: source.startEventId,
       workflowName: source.workflowName,
       status: source.status,
       entityId: source.entityId,
+      entityType: source.entityType,
+      entityLabel: source.entityLabel,
       startedAt: source.startedAt,
       completedAt: source.completedAt,
       context: source.context,
@@ -85,10 +93,14 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
   toDto(entity: WorkflowInstance): WorkflowInstanceDto {
     return {
       id: entity.id,
+      instanceNumber: entity.instanceNumber,
       workflowId: entity.workflowId,
+      startEventId: entity.startEventId,
       workflowName: entity.workflowName,
       status: entity.status,
       entityId: entity.entityId,
+      entityType: entity.entityType,
+      entityLabel: entity.entityLabel,
       startedAt: entity.startedAt,
       completedAt: entity.completedAt,
       context: entity.context,

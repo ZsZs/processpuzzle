@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * One workflow of a {@link WorkflowYamlDocument}: its identity, its start condition, and its uses
+ * One workflow of a {@link WorkflowYamlDocument}: its identity, its start events, and its uses
  * of the file's (or the organization's) definitions.
  *
  * <p>{@code extends} is a Java reserved word, hence the {@link JsonProperty} rename — the same
@@ -16,7 +16,7 @@ public record WorkflowYamlEntry(
         String name,
         String description,
         @JsonProperty("extends") String extendsWorkflowId,
-        StartConditionYaml startCondition,
+        List<StartEventYaml> startEvents,
         List<RoleUseYaml> roles,
         List<ArtifactUseYaml> artifacts,
         List<ToolUseYaml> tools,

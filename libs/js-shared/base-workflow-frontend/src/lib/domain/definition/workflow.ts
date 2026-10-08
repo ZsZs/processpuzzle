@@ -15,9 +15,9 @@ import { PropertyMap } from '../property-map';
  * {@link RoleUse}.
  *
  * `PUT /workflows/{workflowId}` is a full replacement, so every list travels on every save — an absent
- * one is an emptied workflow, not an untouched one. That is also why {@link startCondition} is
- * flattened onto this entity rather than left off the form: a field the model does not carry is a
- * field the next save deletes.
+ * one is an emptied workflow, not an untouched one. That is also why every field of a
+ * {@link StartEvent} is modelled even where the form needs it only for one `startType`: a field the
+ * model does not carry is a field the next save deletes.
  *
  * Field names are the contract's throughout, including `extends`. It is a reserved *word* in
  * JavaScript but a perfectly ordinary property *name*, so the payload keeps the schema's spelling
@@ -30,7 +30,7 @@ export enum JoinType {
   ANY = 'ANY',
 }
 
-/** How an instance of a workflow comes into being. Selects which start-condition fields carry meaning. */
+/** How an instance of a workflow comes into being. Selects which fields of a {@link StartEvent} carry meaning. */
 export enum WorkflowStartConditionType {
   INPUT_ARTIFACT = 'INPUT_ARTIFACT',
   TRIGGERING_EVENT = 'TRIGGERING_EVENT',
@@ -72,8 +72,12 @@ export class ArtifactUse implements BaseEntity {
   /** Id of an `Artifact Definition` of this organization. */
   artifactDefinitionId: string;
 
+  /** The name the artifact's object goes by in this workflow — UML's `new_order : Order`. Display only. */
+  objectName?: string;
+
   constructor(init: Partial<ArtifactUse> = {}) {
     this.artifactDefinitionId = init.artifactDefinitionId ?? '';
+    this.objectName = init.objectName;
   }
 }
 
@@ -90,8 +94,7 @@ export class ToolUse implements BaseEntity {
 }
 
 /**
- * One artifact an `INPUT_ARTIFACT` start condition waits for, and optionally the state it has to be
- * in.
+ * One artifact an `INPUT_ARTIFACT` start event waits for, and optionally the state it has to be in.
  *
  * `state` is named by the artifact's base-state machine; base-workflow records the name and never
  * resolves it, so this is a plain string rather than a reference. Absent means any state will do.
@@ -105,6 +108,81 @@ export class RequiredStartArtifact implements BaseEntity {
   constructor(init: Partial<RequiredStartArtifact> = {}) {
     this.artifactDefinitionId = init.artifactDefinitionId ?? '';
     this.state = init.state;
+  }
+}
+
+/**
+ * The state a task of this workflow expects one of its input artifacts in, and the state it leaves one of
+ * its output artifacts in — the contract's `TaskArtifactState`.
+ *
+ * Workflow-scoped: the shared `TaskDefinition` says *which* artifacts a task reads and writes, the
+ * workflow says in *which states*, so the same task may move an order from `DRAFT` to `CONFIRMED` in one
+ * workflow and do something else in another. Display and save-time validation only — the backend refuses
+ * an entry whose artifact is none of the task's inputs or outputs, an `inputState` on a non-input and an
+ * `outputState` on a non-output. Both states are base-state names recorded as plain strings, like
+ * {@link RequiredStartArtifact.state}; absent means the task says nothing about it.
+ *
+ * Identified within its assignment by the artifact it names, so it declares but never assigns `id`.
+ */
+export class TaskArtifactState implements BaseEntity {
+  declare readonly id?: string;
+
+  artifactDefinitionId: string;
+  inputState?: string;
+  outputState?: string;
+
+  constructor(init: Partial<TaskArtifactState> = {}) {
+    this.artifactDefinitionId = init.artifactDefinitionId ?? '';
+    this.inputState = init.inputState;
+    this.outputState = init.outputState;
+  }
+}
+
+/**
+ * One way an instance of the workflow comes into being — the contract's `StartEvent`, BPMN's start event.
+ * A workflow may have several, each its own entry point: one started by hand by a clerk, another by an
+ * order arriving in `DRAFT`. None at all means the workflow can only be started explicitly through
+ * `/instances`.
+ *
+ * Unlike the other embedded rows of a workflow it *has* an `id`, author-chosen and unique within the
+ * workflow — unique against the task ids too, because both name nodes of the same flow and a
+ * `StartWorkflowRequest` names the event it fires by it. That is also what lets this row nest a list of
+ * its own: {@link requiredArtifacts} is addressed through the event's id in the URL.
+ *
+ * `startType` decides which of the rest carry meaning; the others are ignored by the backend rather than
+ * rejected, so the form shows them all and the author fills in the ones their choice needs.
+ *
+ * A class rather than an interface, for the same reason as {@link RoleUse}.
+ */
+export class StartEvent implements BaseEntity {
+  id: string;
+  /** What the diagram calls the event. Absent falls back to the `startType`. */
+  name?: string;
+  /** Required by contract; `undefined` only on the blank row an `Add` opens the form on. */
+  startType: WorkflowStartConditionType | undefined;
+  /** INPUT_ARTIFACT — the artifacts, and optionally the states, that must be present. */
+  requiredArtifacts: RequiredStartArtifact[];
+  /** TRIGGERING_EVENT — the event that starts the workflow. */
+  eventType?: string;
+  /** TRIGGERING_EVENT — maps the event payload into the new instance's context, by JSONPath. */
+  payloadMapping?: PropertyMap;
+  /** ROLE_DEFINITION — role definition ids allowed to start the workflow by hand. */
+  authorizedRoles: string[];
+  /** TIME_BASED_PRECONDITION — the milestone whose arrival is the trigger. */
+  milestoneRef?: string;
+  /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. */
+  preconditionExpression?: string;
+
+  constructor(init: Partial<StartEvent> = {}) {
+    this.id = init.id ?? '';
+    this.name = init.name;
+    this.startType = init.startType;
+    this.requiredArtifacts = init.requiredArtifacts ?? [];
+    this.eventType = init.eventType;
+    this.payloadMapping = init.payloadMapping;
+    this.authorizedRoles = init.authorizedRoles ?? [];
+    this.milestoneRef = init.milestoneRef;
+    this.preconditionExpression = init.preconditionExpression;
   }
 }
 
@@ -139,6 +217,8 @@ export class WorkflowTaskAssignment implements BaseEntity {
   parallel: boolean;
   /** Replaces the parent workflow's assignment of the same task rather than adding to it. */
   override: boolean;
+  /** The states this task expects its inputs in and leaves its outputs in, one row per artifact. */
+  artifactStates: TaskArtifactState[];
 
   constructor(init: Partial<WorkflowTaskAssignment> = {}) {
     this.taskDefinitionId = init.taskDefinitionId ?? '';
@@ -147,6 +227,7 @@ export class WorkflowTaskAssignment implements BaseEntity {
     this.joinType = init.joinType;
     this.parallel = init.parallel ?? false;
     this.override = init.override ?? false;
+    this.artifactStates = init.artifactStates ?? [];
   }
 }
 
@@ -163,30 +244,8 @@ export class Workflow implements BaseEntity {
   /** The `Tool Definition`s this workflow's steps may invoke. */
   tools: ToolUse[];
   tasks: WorkflowTaskAssignment[];
-  // region start condition — flattened from the contract's nested `startCondition`
-  /**
-   * Flattened rather than nested, following the `auth` fields of `Tool Definition`: the generic form
-   * builds one control per attribute of one entity, so a nested object would need an embedded entity
-   * for a thing that is not a list. `WorkflowMapper` re-nests all seven on save.
-   *
-   * `startType` decides which of the rest carry meaning; the others are ignored by the backend rather
-   * than rejected, so the form shows them all and the author fills in the ones their choice needs.
-   * A workflow with no `startType` can only be started explicitly through `/instances`.
-   */
-  startType?: WorkflowStartConditionType;
-  /** INPUT_ARTIFACT — the artifacts, and optionally the states, that must be present. */
-  requiredArtifacts: RequiredStartArtifact[];
-  /** TRIGGERING_EVENT — the event that starts the workflow. */
-  eventType?: string;
-  /** TRIGGERING_EVENT — maps the event payload into the new instance's context, by JSONPath. */
-  payloadMapping?: PropertyMap;
-  /** ROLE_DEFINITION — role definition ids allowed to start the workflow by hand. */
-  authorizedRoles: string[];
-  /** TIME_BASED_PRECONDITION — the milestone whose arrival is the trigger. */
-  milestoneRef?: string;
-  /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. */
-  preconditionExpression?: string;
-  // endregion
+  /** The ways an instance comes into being. Empty means only explicitly, through `/instances`. */
+  startEvents: StartEvent[];
   // region server-assigned
   /** Number of ACTIVE instances; computed per row by the list endpoint, never sent on write. */
   activeInstances: number | undefined;
@@ -206,13 +265,7 @@ export class Workflow implements BaseEntity {
     this.artifacts = init.artifacts ?? [];
     this.tools = init.tools ?? [];
     this.tasks = init.tasks ?? [];
-    this.startType = init.startType;
-    this.requiredArtifacts = init.requiredArtifacts ?? [];
-    this.eventType = init.eventType;
-    this.payloadMapping = init.payloadMapping;
-    this.authorizedRoles = init.authorizedRoles ?? [];
-    this.milestoneRef = init.milestoneRef;
-    this.preconditionExpression = init.preconditionExpression;
+    this.startEvents = init.startEvents ?? [];
     this.activeInstances = init.activeInstances;
     this.version = init.version;
     this.createdAt = init.createdAt;

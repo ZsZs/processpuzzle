@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityDescriptor, EmbeddedEntityFacade } from '@processpuzzle/base-entity';
-import { ArtifactUse, RequiredStartArtifact, RoleUse, ToolUse, WorkflowTaskAssignment } from '../../domain/definition/workflow';
+import { ArtifactUse, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, WorkflowTaskAssignment } from '../../domain/definition/workflow';
 import { createWorkflowTaskAssignmentDescriptor } from '../../domain/definition/workflow-task-assignment.descriptors';
 import { createWorkflowArtifactUseDescriptor, createWorkflowRoleUseDescriptor, createWorkflowToolUseDescriptor } from '../../domain/definition/workflow-use.descriptors';
 import { createRequiredStartArtifactDescriptor } from '../../domain/definition/required-start-artifact.descriptors';
+import { createStartEventDescriptor } from '../../domain/definition/start-event.descriptors';
+import { createTaskArtifactStateDescriptor } from '../../domain/definition/task-artifact-state.descriptors';
 import { StepDefinition } from '../../domain/definition/task-definition';
 import { createStepDefinitionDescriptor } from '../../domain/definition/step-definition.descriptors';
 import { ToolOperation } from '../../domain/definition/tool-definition';
@@ -15,8 +17,9 @@ import { createToolOperationDescriptor } from '../../domain/definition/tool-oper
  * and only its repository differs, reading and writing the aggregate's document rather than an
  * endpoint of its own.
  *
- * Five of the seven belong to the workflow — its task assignments, the three `*Use` rows and the
- * required artifacts of its start condition — and two to a task and a tool. That distribution is the
+ * Seven of the nine belong to the workflow — its task assignments with the artifact states nested in each,
+ * the three `*Use` rows, its start events and the required artifacts nested in each of those — and two to a
+ * task and a tool. That distribution is the
  * shape of the reference model: nothing embedded is shared, which is precisely why it stayed embedded.
  * A role, an artifact, a task and a tool each moved out to a catalog aggregate of its own once more
  * than one workflow needed it; what stayed behind is the workflow's *use* of them.
@@ -33,6 +36,15 @@ export class WorkflowTaskAssignmentFacade extends EmbeddedEntityFacade<WorkflowT
 
   protected override createDescriptor(): BaseEntityDescriptor {
     return createWorkflowTaskAssignmentDescriptor();
+  }
+}
+
+@Injectable()
+export class WorkflowTaskArtifactStateFacade extends EmbeddedEntityFacade<TaskArtifactState> {
+  readonly entityType = TaskArtifactState;
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createTaskArtifactStateDescriptor();
   }
 }
 
@@ -60,6 +72,15 @@ export class WorkflowToolUseFacade extends EmbeddedEntityFacade<ToolUse> {
 
   protected override createDescriptor(): BaseEntityDescriptor {
     return createWorkflowToolUseDescriptor();
+  }
+}
+
+@Injectable()
+export class WorkflowStartEventFacade extends EmbeddedEntityFacade<StartEvent> {
+  readonly entityType = StartEvent;
+
+  protected override createDescriptor(): BaseEntityDescriptor {
+    return createStartEventDescriptor();
   }
 }
 

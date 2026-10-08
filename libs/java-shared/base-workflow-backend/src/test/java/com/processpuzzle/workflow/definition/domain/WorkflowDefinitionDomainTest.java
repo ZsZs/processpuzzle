@@ -114,7 +114,7 @@ class WorkflowDefinitionDomainTest {
                 .isEqualTo(new RoleUse("analyst"))
                 .hasToString("RoleUse(roleDefinitionId=analyst)");
         assertThat(ArtifactUse.builder().artifactDefinitionId("spec").build())
-                .isEqualTo(new ArtifactUse("spec"));
+                .isEqualTo(new ArtifactUse("spec", null));
         assertThat(ToolUse.builder().toolDefinitionId("jira").build())
                 .isEqualTo(new ToolUse("jira"));
 
@@ -132,12 +132,13 @@ class WorkflowDefinitionDomainTest {
 
         TaskUse newUse = TaskUse.builder()
                 .taskDefinitionId("code").performedBy("dev").build();
-        WorkflowStartCondition condition = WorkflowStartCondition.builder()
+        StartEvent startEvent = StartEvent.builder()
+                .id("on-demand")
                 .startType(WorkflowStartConditionType.ROLE_DEFINITION)
                 .authorizedRoles(List.of("dev"))
                 .build();
 
-        def.replaceContent("New Name", "New Desc", "new-parent", condition,
+        def.replaceContent("New Name", "New Desc", "new-parent", List.of(startEvent),
                 List.of(RoleUse.builder().roleDefinitionId("dev").build()),
                 List.of(ArtifactUse.builder().artifactDefinitionId("pr").build()),
                 List.of(ToolUse.builder().toolDefinitionId("git").build()),
@@ -146,7 +147,7 @@ class WorkflowDefinitionDomainTest {
         assertThat(def.getName()).isEqualTo("New Name");
         assertThat(def.getDescription()).isEqualTo("New Desc");
         assertThat(def.getExtendsWorkflowId()).isEqualTo("new-parent");
-        assertThat(def.getStartCondition()).isSameAs(condition);
+        assertThat(def.getStartEvents()).containsExactly(startEvent);
         assertThat(def.roleDefinitionIds()).containsExactly("dev");
         assertThat(def.getTasks()).containsExactly(newUse);
         assertThat(def.artifactDefinitionIds()).containsExactly("pr");
@@ -158,24 +159,26 @@ class WorkflowDefinitionDomainTest {
         assertThat(emptyDef.getTasks()).isNotNull().isEmpty();
         assertThat(emptyDef.getArtifacts()).isNotNull().isEmpty();
         assertThat(emptyDef.getTools()).isNotNull().isEmpty();
-        assertThat(emptyDef.getStartCondition()).isNull();
+        assertThat(emptyDef.getStartEvents()).isNotNull().isEmpty();
 
         emptyDef.replaceContent(null, null, null, null, List.of(), List.of(), List.of(), List.of());
         assertThat(emptyDef.getRoles()).isEmpty();
         assertThat(emptyDef.getTasks()).isEmpty();
         assertThat(emptyDef.getArtifacts()).isEmpty();
         assertThat(emptyDef.getTools()).isEmpty();
-        assertThat(emptyDef.getStartCondition()).isNull();
+        assertThat(emptyDef.getStartEvents()).isEmpty();
     }
 
     /**
-     * A start condition is one flat value with a discriminant, so the assertion that matters is that
+     * A start event is one flat value with a discriminant, so the assertion that matters is that
      * every mechanism's fields survive on the same object — nothing is lost by the absence of a
      * subtype per {@code startType}.
      */
     @Test
-    void startCondition_carriesEveryMechanismsFields() {
-        WorkflowStartCondition condition = WorkflowStartCondition.builder()
+    void startEvent_carriesEveryMechanismsFields() {
+        StartEvent condition = StartEvent.builder()
+                .id("order-drafted")
+                .name("Order drafted")
                 .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                 .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                         .artifactDefinitionId("order-entity").state("DRAFT").build()))
@@ -186,6 +189,8 @@ class WorkflowDefinitionDomainTest {
                 .preconditionExpression("milestone.status == 'PASSED'")
                 .build();
 
+        assertThat(condition.getId()).isEqualTo("order-drafted");
+        assertThat(condition.getName()).isEqualTo("Order drafted");
         assertThat(condition.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
         assertThat(condition.getRequiredArtifacts()).singleElement().satisfies(required -> {
             assertThat(required.getArtifactDefinitionId()).isEqualTo("order-entity");
@@ -197,13 +202,23 @@ class WorkflowDefinitionDomainTest {
         assertThat(condition.getMilestoneRef()).isEqualTo("MILESTONE_REACHED");
         assertThat(condition.getPreconditionExpression()).isEqualTo("milestone.status == 'PASSED'");
 
-        WorkflowStartCondition plain = new WorkflowStartCondition();
+        StartEvent plain = new StartEvent();
         assertThat(plain.getRequiredArtifacts()).isNotNull().isEmpty();
         assertThat(plain.getStartType()).isNull();
+        assertThat(plain.admitsManualStart()).isFalse();
 
         RequiredStartArtifact anyState = new RequiredStartArtifact();
         anyState.setArtifactDefinitionId("order-entity");
         assertThat(anyState.getState()).isNull();
+    }
+
+    /** Only the two mechanisms an explicit start can satisfy admit one. */
+    @Test
+    void startEvent_admitsManualStartOnlyForRoleAndArtifactMechanisms() {
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.ROLE_DEFINITION).build().admitsManualStart()).isTrue();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.INPUT_ARTIFACT).build().admitsManualStart()).isTrue();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.TRIGGERING_EVENT).build().admitsManualStart()).isFalse();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION).build().admitsManualStart()).isFalse();
     }
 
     @Test

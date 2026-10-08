@@ -19,6 +19,8 @@ import {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
   WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME,
 } from './domain/workflow-entity-names';
 import { ArtifactDefinitionFacade } from './feature/definition/artifact-definition.facade';
 import { WorkflowFacade } from './feature/definition/workflow.facade';
@@ -31,6 +33,8 @@ import {
   WorkflowArtifactUseFacade,
   WorkflowRequiredStartArtifactFacade,
   WorkflowRoleUseFacade,
+  WorkflowStartEventFacade,
+  WorkflowTaskArtifactStateFacade,
   WorkflowTaskAssignmentFacade,
   WorkflowToolUseFacade,
   TaskStepDefinitionFacade,
@@ -143,8 +147,9 @@ function authoringScopes() {
 
 /**
  * The embedded levels of a workflow, all below its details route: its task assignments, the three
- * `*Use` rows through which it involves a role, an artifact or a tool, and the required artifacts of
- * its start condition.
+ * `*Use` rows through which it involves a role, an artifact or a tool, and its start events. Two of them
+ * nest a list one level further down: an assignment its artifact states, a start event its required
+ * artifacts.
  *
  * The `*Use` rows are URLs of their own and not merely pickers, because that is what the contract makes
  * them: `Workflow.roles` is an array of `RoleUse` objects, each wrapping a `roleDefinitionId` and
@@ -152,19 +157,28 @@ function authoringScopes() {
  * *definition* the row names is still edited on its own branch — the row is the participation, not the
  * role.
  *
- * None of the five has an id of its own, so the URL is what addresses each, resolved against the rows
- * of the workflow above it:
+ * Apart from the start events, none has an id of its own, so the URL is what addresses each, resolved
+ * against the rows of the workflow above it:
  * `workflow/order-fulfillment-workflow/details/workflow-task-assignment/review-order/details`, and
- * `.../workflow-role-use/clerk/details` beside it.
+ * `.../workflow-role-use/clerk/details` beside it. A start event is addressed by its own id, and its
+ * required artifacts below it: `.../workflow-start-event/order-drafted/details/workflow-required-start-artifact/order-entity/details`.
  */
 function embeddedWorkflowRoutes(): EmbeddedChildRoute[] {
   return [
-    { entityName: WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, facade: WorkflowTaskAssignmentFacade },
+    { entityName: WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, facade: WorkflowTaskAssignmentFacade, children: () => [taskArtifactStateRoute()] },
     { entityName: WORKFLOW_ROLE_USE_ENTITY_NAME, facade: WorkflowRoleUseFacade },
     { entityName: WORKFLOW_ARTIFACT_USE_ENTITY_NAME, facade: WorkflowArtifactUseFacade },
     { entityName: WORKFLOW_TOOL_USE_ENTITY_NAME, facade: WorkflowToolUseFacade },
-    { entityName: WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, facade: WorkflowRequiredStartArtifactFacade },
+    { entityName: WORKFLOW_START_EVENT_ENTITY_NAME, facade: WorkflowStartEventFacade, children: () => [requiredStartArtifactRoute()] },
   ];
+}
+
+function requiredStartArtifactRoute(): EmbeddedChildRoute {
+  return { entityName: WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, facade: WorkflowRequiredStartArtifactFacade };
+}
+
+function taskArtifactStateRoute(): EmbeddedChildRoute {
+  return { entityName: WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME, facade: WorkflowTaskArtifactStateFacade };
 }
 
 /**

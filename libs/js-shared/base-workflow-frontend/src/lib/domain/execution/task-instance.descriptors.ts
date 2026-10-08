@@ -4,6 +4,7 @@ import { TASK_DEFINITION_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTAN
 import { TaskInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_STEP_RESULT_ID_FIELD } from './step-result.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { TASK_INSTANCE_ENTITY_NAME };
 
@@ -36,11 +37,11 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const blockedReasonAttr = readOnlyAttr('blockedReason', FormControlType.TEXTAREA, 'Blocked Reason');
   blockedReasonAttr.styleClass = 'full-width';
 
-  const activatedAtAttr = readOnlyAttr('activatedAt', FormControlType.TEXT_BOX, 'Activated At');
+  const activatedAtAttr = timestampAttr('activatedAt', 'Activated At');
   activatedAtAttr.hideInTable = true;
-  const completedAtAttr = readOnlyAttr('completedAt', FormControlType.TEXT_BOX, 'Completed At');
+  const completedAtAttr = timestampAttr('completedAt', 'Completed At');
   completedAtAttr.hideInTable = true;
-  const skippedAtAttr = readOnlyAttr('skippedAt', FormControlType.TEXT_BOX, 'Skipped At');
+  const skippedAtAttr = timestampAttr('skippedAt', 'Skipped At');
   skippedAtAttr.hideInTable = true;
 
   // Containment: the contract nests the step results inside the task instance, and the task instance

@@ -11,13 +11,37 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityLabelPort;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 
-/** Maps between execution-layer domain objects and the generated {@code workflow.model} classes. */
+/**
+ * Maps between execution-layer domain objects and the generated {@code workflow.model} classes.
+ *
+ * <p>An instance's {@code entityLabel} is resolved here, per response, through {@link EntityLabelPort}
+ * rather than stored: a name copied at start time would go stale the first time the object is renamed.
+ */
 @Component
 public class WorkflowExecutionMapper {
+
+    private final EntityLabelPort entityLabels;
+
+    /** Names no entity — for callers that only map, as the endpoint tests do. */
+    public WorkflowExecutionMapper() {
+        this(EntityLabelPort.NONE);
+    }
+
+    @Autowired
+    public WorkflowExecutionMapper(ObjectProvider<EntityLabelPort> entityLabelsProvider) {
+        this(entityLabelsProvider.getIfUnique(() -> EntityLabelPort.NONE));
+    }
+
+    public WorkflowExecutionMapper(EntityLabelPort entityLabels) {
+        this.entityLabels = entityLabels;
+    }
 
     // -- Workflow Instance --------------------------------------------------
 
@@ -25,10 +49,14 @@ public class WorkflowExecutionMapper {
                                                                       List<ArtifactInstance> artifacts) {
         com.processpuzzle.workflow.model.WorkflowInstance model = new com.processpuzzle.workflow.model.WorkflowInstance();
         model.setId(instance.getId().toString());
+        model.setInstanceNumber(instance.getInstanceNumber());
         model.setWorkflowId(instance.getWorkflowId());
         model.setWorkflowName(instance.getWorkflowName());
         model.setStatus(com.processpuzzle.workflow.model.WorkflowInstanceStatus.fromValue(instance.getStatus().name()));
         model.setEntityId(instance.getEntityId());
+        model.setEntityType(instance.getEntityType());
+        model.setEntityLabel(entityLabelOf(instance));
+        model.setStartEventId(instance.getStartEventId());
         model.setStartedAt(toOffsetDateTime(instance.getStartedAt()));
         model.setCompletedAt(toOffsetDateTime(instance.getCompletedAt()));
         // Assembled, not stored: the API's `context` is still the *current* context, it is simply
@@ -38,6 +66,18 @@ public class WorkflowExecutionMapper {
         model.setTasks(tasks.stream().map(this::toModel).toList());
         model.setArtifacts(artifacts.stream().map(this::toModel).toList());
         return model;
+    }
+
+    /** The subject's name; its id when it has no type to resolve a name by, or the host names nothing. */
+    private String entityLabelOf(WorkflowInstance instance) {
+        if (instance.getEntityId() == null) {
+            return null;
+        }
+        if (instance.getEntityType() == null) {
+            return instance.getEntityId();
+        }
+        return entityLabels.labelOf(instance.getOrgKey(), instance.getEntityType(), instance.getEntityId())
+                .orElse(instance.getEntityId());
     }
 
     /**

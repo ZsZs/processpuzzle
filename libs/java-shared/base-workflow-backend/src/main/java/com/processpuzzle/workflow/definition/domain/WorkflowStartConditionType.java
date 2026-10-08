@@ -2,7 +2,7 @@ package com.processpuzzle.workflow.definition.domain;
 
 /**
  * The mechanism by which an instance of a {@link Workflow} comes into being. Selects which fields
- * of {@link WorkflowStartCondition} carry meaning.
+ * of {@link StartEvent} carry meaning.
  *
  * <pre>
  * INPUT_ARTIFACT           SPEM Artifact / Precondition

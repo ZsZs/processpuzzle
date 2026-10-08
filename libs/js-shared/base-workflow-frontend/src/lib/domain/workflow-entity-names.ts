@@ -57,14 +57,44 @@ export const WORKFLOW_ARTIFACT_USE_ENTITY_NAME = 'Workflow Artifact Use';
 export const WORKFLOW_TOOL_USE_ENTITY_NAME = 'Workflow Tool Use';
 
 /**
- * One artifact — and optionally the state it has to be in — that a workflow's `INPUT_ARTIFACT` start
- * condition waits for.
+ * One way an instance of a workflow comes into being — the contract's `StartEvent`. A workflow may
+ * declare several, each a row of `Workflow.startEvents` with an author-chosen `id`.
  *
- * Embedded in the workflow because it is part of that workflow's start condition and nothing else, and
- * an entity of its own because `requiredArtifacts` is a list the author edits row by row. The `state`
- * is base-state's to interpret; base-workflow records it and never resolves it.
+ * Embedded in the workflow because a start event means nothing outside it, and the one embedded row of
+ * the workflow that nests a list of its own: its required artifacts, below.
+ */
+export const WORKFLOW_START_EVENT_ENTITY_NAME = 'Workflow Start Event';
+
+/**
+ * One artifact — and optionally the state it has to be in — that an `INPUT_ARTIFACT` start event waits
+ * for.
+ *
+ * Embedded in the start event because it is part of that event and nothing else, and an entity of its
+ * own because `requiredArtifacts` is a list the author edits row by row. The `state` is base-state's to
+ * interpret; base-workflow records it and never resolves it.
  */
 export const WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME = 'Workflow Required Start Artifact';
+
+/**
+ * The catalog event a `TRIGGERING_EVENT` start event waits for — an entity of **base-event**, not of this
+ * library. Named here as a string rather than imported, because features meet through each other's
+ * metadata and never through a package dependency: the `FOREIGN_KEY` resolves it through the application's
+ * `BASE_ENTITY_FACADE_REGISTRY`, into which the host spreads `BASE_EVENT_ENTITY_FACADES`. A host without
+ * base-event still renders the control; it just has nothing to offer.
+ *
+ * Deliberately absent from `BASE_WORKFLOW_ENTITY_FACADES` for the same reason.
+ */
+export const EVENT_DEFINITION_ENTITY_NAME = 'Event Definition';
+
+/**
+ * The state one task of one workflow expects an input artifact in, and the state it leaves an output
+ * artifact in — the contract's `TaskArtifactState`.
+ *
+ * Embedded in the task assignment because a state is true of a task only *in this workflow*: the shared
+ * task definition says which artifacts it reads and writes, the workflow says in which states. Display and
+ * save-time validation only — base-state still owns the transition.
+ */
+export const WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME = 'Workflow Task Artifact State';
 
 export const TASK_STEP_DEFINITION_ENTITY_NAME = 'Task Step Definition';
 export const TOOL_DEFINITION_ENTITY_NAME = 'Tool Definition';

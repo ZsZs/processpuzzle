@@ -32,7 +32,12 @@ public class WorkflowApiExceptionHandler {
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
-        return problem(HttpStatus.CONFLICT, "workflow.conflict", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, ex.getErrorId(), ex.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
+        return problem(HttpStatus.FORBIDDEN, ex.getErrorId(), ex.getMessage());
     }
 
     @ExceptionHandler(ValidationException.class)

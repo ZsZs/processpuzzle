@@ -9,20 +9,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * How an instance of a {@link Workflow} comes into being. {@link #startType} selects the mechanism
- * and decides which of the remaining fields carry meaning; the others are ignored. A workflow
- * without a start condition can only be started explicitly through {@code /instances}.
+ * One way an instance of a {@link Workflow} may come into being — BPMN's start event. A workflow
+ * lists any number of them and an explicit start is admitted when <em>any</em> one does (see
+ * {@code StartEventAdmission}); a workflow with none can be started by anyone through
+ * {@code /instances}. {@link #startType} selects the mechanism and decides which of the remaining
+ * fields carry meaning; the others are ignored.
+ *
+ * <p>{@link #id} is unique within the workflow, and against the workflow's task ids too: a later
+ * phase lets a task's {@code dependsOn} name a start event, so the two share one namespace.
  *
  * <p>One flat class with a discriminant field rather than a subtype per mechanism: that is how
  * every ProcessPuzzle contract models a variant, and it keeps this value a plain Jackson round-trip
- * in the JSONB column {@link Workflow#getStartCondition()} is stored in — a subtype tree would need
+ * in the JSONB column {@link Workflow#getStartEvents()} is stored in — a subtype tree would need
  * {@code @JsonTypeInfo} / {@code @JsonSubTypes} wiring to survive it.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkflowStartCondition {
+public class StartEvent {
+
+    private String id;
+
+    private String name;
 
     private WorkflowStartConditionType startType;
 
@@ -50,4 +59,14 @@ public class WorkflowStartCondition {
 
     /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. */
     private String preconditionExpression;
+
+    /**
+     * Whether this mechanism can admit a start requested by hand through {@code /instances}.
+     * TRIGGERING_EVENT and TIME_BASED_PRECONDITION fire on their own; an explicit start is not
+     * what they describe.
+     */
+    public boolean admitsManualStart() {
+        return startType == WorkflowStartConditionType.ROLE_DEFINITION
+                || startType == WorkflowStartConditionType.INPUT_ARTIFACT;
+    }
 }

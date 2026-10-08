@@ -5,7 +5,7 @@
 // region models
 export { type PropertyMap } from './lib/domain/property-map';
 export { toReferenceIds } from './lib/domain/reference-ids';
-export { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
+export { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
 export { RoleDefinition } from './lib/domain/definition/role-definition';
 export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifact-definition';
 export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';
@@ -32,6 +32,8 @@ export {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
   WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME,
 } from './lib/domain/workflow-entity-names';
 // endregion
 
@@ -50,6 +52,8 @@ export {
   createWorkflowToolUseDescriptor,
 } from './lib/domain/definition/workflow-use.descriptors';
 export { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD, createRequiredStartArtifactDescriptor } from './lib/domain/definition/required-start-artifact.descriptors';
+export { createStartEventDescriptor } from './lib/domain/definition/start-event.descriptors';
+export { WORKFLOW_TASK_ARTIFACT_STATE_ID_FIELD, createTaskArtifactStateDescriptor } from './lib/domain/definition/task-artifact-state.descriptors';
 export { TASK_STEP_DEFINITION_ID_FIELD, createStepDefinitionDescriptor } from './lib/domain/definition/step-definition.descriptors';
 export { createToolDefinitionDescriptor } from './lib/domain/definition/tool-definition.descriptors';
 export { TOOL_OPERATION_ID_FIELD, createToolOperationDescriptor } from './lib/domain/definition/tool-operation.descriptors';
@@ -97,6 +101,8 @@ export {
   WorkflowArtifactUseFacade,
   WorkflowToolUseFacade,
   WorkflowRequiredStartArtifactFacade,
+  WorkflowStartEventFacade,
+  WorkflowTaskArtifactStateFacade,
   TaskStepDefinitionFacade,
   ToolOperationFacade,
 } from './lib/feature/definition/workflow-embedded.facades';
@@ -174,6 +180,8 @@ export {
   WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
   WORKFLOW_TOOL_USE_I18N_SCOPE,
   WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
+  WORKFLOW_START_EVENT_I18N_SCOPE,
+  WORKFLOW_TASK_ARTIFACT_STATE_I18N_SCOPE,
   TASK_DEFINITION_I18N_SCOPE,
   TASK_INSTANCE_I18N_SCOPE,
   TASK_STEP_DEFINITION_I18N_SCOPE,

@@ -13,8 +13,12 @@ import com.processpuzzle.workflow.definition.domain.TaskStepType;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
+import com.processpuzzle.workflow.definition.domain.ArtifactUse;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
+import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
+import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
@@ -35,6 +39,7 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -92,7 +97,7 @@ class DefaultWorkflowImporterTest {
         ToolDefinitionRepository toolRepository = mock(ToolDefinitionRepository.class);
         TaskDefinitionRepository taskRepository = mock(TaskDefinitionRepository.class);
         WorkflowValidator validator = new WorkflowValidator(
-                roleRepository, artifactRepository, toolRepository, taskRepository);
+                roleRepository, artifactRepository, toolRepository, taskRepository, new PermitAllEventCatalogPort());
         ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
         ImportWorkflowsUseCase realImportUseCase = new ImportWorkflowsUseCase(
                 repository, roleRepository, artifactRepository, toolRepository, taskRepository,
@@ -154,7 +159,7 @@ class DefaultWorkflowImporterTest {
             // Every task's artifacts resolve, which is what the validator would otherwise refuse.
             assertThat(savedTasks).flatExtracting(TaskDefinition::getInputs).containsOnly("order-entity");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getOutputs)
-                    .containsExactly("order-entity", "order-entity", "fulfillment-invoice");
+                    .containsExactly("order-entity", "order-entity", "order-entity", "fulfillment-invoice");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getSteps)
                     .extracting(StepDefinition::getStepType)
                     .containsExactly(TaskStepType.SERVICE_STEP, TaskStepType.USER_STEP, TaskStepType.SERVICE_STEP);
@@ -168,16 +173,22 @@ class DefaultWorkflowImporterTest {
             assertThat(def.getName()).isEqualTo("Order Fulfillment Workflow");
             assertThat(def.roleDefinitionIds()).containsExactly("clerk", "manager");
             assertThat(def.artifactDefinitionIds()).containsExactly("order-entity", "fulfillment-invoice");
+            assertThat(def.getArtifacts()).extracting(ArtifactUse::getObjectName).containsExactly("new_order", "invoice");
             assertThat(def.toolDefinitionIds()).containsExactly("automated-check-tool");
             assertThat(def.taskDefinitionIds())
                     .containsExactly("review-order", "approve-shipment", "confirm-delivery");
-            assertThat(def.getStartCondition().getStartType())
-                    .isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
-            assertThat(def.getStartCondition().getRequiredArtifacts()).singleElement()
-                    .satisfies(required -> {
-                        assertThat(required.getArtifactDefinitionId()).isEqualTo("order-entity");
-                        assertThat(required.getState()).isEqualTo("DRAFT");
-                    });
+            assertThat(def.getStartEvents()).singleElement().satisfies(startEvent -> {
+                assertThat(startEvent.getId()).isEqualTo("order-created");
+                assertThat(startEvent.getName()).isEqualTo("OrderCreatedEvent");
+                assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.TRIGGERING_EVENT);
+                assertThat(startEvent.getEventType()).isEqualTo("OrderCreatedEvent");
+                assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.subjectId");
+                assertThat(startEvent.getRequiredArtifacts()).isEmpty();
+            });
+            // The order walks its state machine from task to task.
+            assertThat(def.getTasks()).flatExtracting(TaskUse::getArtifactStates)
+                    .extracting(TaskArtifactState::getInputState, TaskArtifactState::getOutputState)
+                    .containsExactly(tuple("DRAFT", "CONFIRMED"), tuple("CONFIRMED", "SHIPPED"), tuple("SHIPPED", "DELIVERED"));
         }
     }
 

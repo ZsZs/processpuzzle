@@ -16,17 +16,41 @@ export const WORKFLOW_DTO = {
   id: 'order-fulfillment-workflow',
   name: 'Order Fulfillment Workflow',
   description: 'Tiny end-to-end workflow governing order review, shipment approval, and delivery confirmation in the testbed environment.',
-  startCondition: {
-    startType: 'INPUT_ARTIFACT',
-    requiredArtifacts: [{ artifactDefinitionId: 'order-entity', state: 'DRAFT' }],
-  },
+  startEvents: [
+    {
+      id: 'order-created',
+      name: 'OrderCreatedEvent',
+      startType: 'TRIGGERING_EVENT',
+      eventType: 'OrderCreatedEvent',
+      payloadMapping: { orderId: '$.subjectId' },
+    },
+  ],
   roles: [{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }],
-  artifacts: [{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }],
+  artifacts: [{ artifactDefinitionId: 'order-entity', objectName: 'new_order' }, { artifactDefinitionId: 'fulfillment-invoice' }],
   tools: [{ toolDefinitionId: 'automated-check-tool' }],
   tasks: [
-    { taskDefinitionId: 'review-order', performedBy: 'clerk', dependsOn: [], parallel: false },
-    { taskDefinitionId: 'approve-shipment', performedBy: 'manager', dependsOn: ['review-order'], joinType: 'ALL', parallel: false },
-    { taskDefinitionId: 'confirm-delivery', performedBy: 'clerk', dependsOn: ['approve-shipment'], parallel: false },
+    {
+      taskDefinitionId: 'review-order',
+      performedBy: 'clerk',
+      dependsOn: [],
+      parallel: false,
+      artifactStates: [{ artifactDefinitionId: 'order-entity', inputState: 'DRAFT', outputState: 'CONFIRMED' }],
+    },
+    {
+      taskDefinitionId: 'approve-shipment',
+      performedBy: 'manager',
+      dependsOn: ['review-order'],
+      joinType: 'ALL',
+      parallel: false,
+      artifactStates: [{ artifactDefinitionId: 'order-entity', inputState: 'CONFIRMED', outputState: 'SHIPPED' }],
+    },
+    {
+      taskDefinitionId: 'confirm-delivery',
+      performedBy: 'clerk',
+      dependsOn: ['approve-shipment'],
+      parallel: false,
+      artifactStates: [{ artifactDefinitionId: 'order-entity', inputState: 'SHIPPED', outputState: 'DELIVERED' }],
+    },
   ],
   activeInstances: 1,
   version: 3,
@@ -36,7 +60,7 @@ export const WORKFLOW_DTO = {
 
 /**
  * A second row, so a list spec can tell selection from "the only entry". Also the shape a workflow with
- * no start condition arrives in — one that can only be started explicitly through `/instances`.
+ * no start event arrives in — one that can only be started explicitly through `/instances`.
  */
 export const OTHER_WORKFLOW_DTO = {
   id: 'claim-handling-workflow',
