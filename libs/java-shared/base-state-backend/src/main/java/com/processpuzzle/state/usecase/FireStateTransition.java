@@ -7,6 +7,7 @@ import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.state.usecase.service.EntityObjectGatewayResolver;
 import com.processpuzzle.state.usecase.service.StateMachineEngine;
+import com.processpuzzle.shared.event.PlatformEvent;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -71,9 +72,14 @@ public class FireStateTransition {
 
         long newVersion = gateway.updateStateAttribute(
                 orgKey, entityName, objectId, definition.getStateAttributeKey(), outcome.newStateKey(), expectedVersion);
+        Instant now = Instant.now();
         eventPublisher.publishEvent(new EntityObjectStateChangedEvent(
                 orgKey, entityName, objectId, outcome.previousStateKey(), outcome.newStateKey(),
-                outcome.transitionKey(), triggerKey, newVersion, Instant.now()));
+                outcome.transitionKey(), triggerKey, newVersion, now));
+        eventPublisher.publishEvent(PlatformEvent.stateChanged(orgKey, entityName, objectId.toString(),
+                outcome.newStateKey(),
+                StartStateMachine.withState(snapshot.payload(), definition.getStateAttributeKey(), outcome.newStateKey()),
+                now));
         return new Result(outcome, newVersion);
     }
 

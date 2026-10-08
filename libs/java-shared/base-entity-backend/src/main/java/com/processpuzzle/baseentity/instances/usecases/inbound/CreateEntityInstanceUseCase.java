@@ -9,6 +9,8 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinition
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectCreatedEvent;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +55,14 @@ public class CreateEntityInstanceUseCase {
 
         // saveAndFlush above, so the id and version the event carries are the persisted ones rather
         // than nulls a listener would have to read back.
+        Instant now = Instant.now();
         eventPublisher.publishEvent(new EntityObjectCreatedEvent(
             orgKey, entityDefinitionCode, created.getId(), created.getPayload(),
-            created.getVersion() == null ? 0L : created.getVersion(), Instant.now()));
+            created.getVersion() == null ? 0L : created.getVersion(), now));
+        // The feature-neutral twin of the event above, for base-event's catalog — see PlatformEvent.
+        eventPublisher.publishEvent(PlatformEvent.of(
+            orgKey, entityDefinitionCode, created.getId().toString(), PlatformEventAction.CREATED,
+            created.getPayload(), now));
         return created;
     }
 }

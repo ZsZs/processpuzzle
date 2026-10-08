@@ -9,6 +9,8 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinition
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectUpdatedEvent;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -48,9 +50,13 @@ public class UpdateEntityInstanceUseCase {
         entityObject.setPayload(payload);
         EntityObject updated = repository.saveAndFlush(entityObject);
 
+        Instant now = Instant.now();
         eventPublisher.publishEvent(new EntityObjectUpdatedEvent(
             orgKey, updated.getEntityDefinitionCode(), updated.getId(), updated.getPayload(),
-            updated.getVersion() == null ? 0L : updated.getVersion(), Instant.now()));
+            updated.getVersion() == null ? 0L : updated.getVersion(), now));
+        eventPublisher.publishEvent(PlatformEvent.of(
+            orgKey, updated.getEntityDefinitionCode(), updated.getId().toString(), PlatformEventAction.UPDATED,
+            updated.getPayload(), now));
         return updated;
     }
 }

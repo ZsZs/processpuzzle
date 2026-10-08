@@ -6,6 +6,8 @@ import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.domain.event.EntityObjectDeletedEvent;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +35,9 @@ public class DeleteEntityInstanceUseCase {
         }
         repository.delete(entityObject);
 
-        eventPublisher.publishEvent(
-            new EntityObjectDeletedEvent(orgKey, entityDefinitionCode, id, Instant.now()));
+        Instant now = Instant.now();
+        eventPublisher.publishEvent(new EntityObjectDeletedEvent(orgKey, entityDefinitionCode, id, now));
+        eventPublisher.publishEvent(PlatformEvent.of(
+            orgKey, entityDefinitionCode, id.toString(), PlatformEventAction.DELETED, null, now));
     }
 }

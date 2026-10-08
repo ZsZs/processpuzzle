@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -25,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,9 +88,7 @@ class FireStateTransitionTest {
         assertThat(result.outcome().newStateKey()).isEqualTo("approved");
         assertThat(result.version()).isEqualTo(2L);
 
-        ArgumentCaptor<EntityObjectStateChangedEvent> eventCaptor = ArgumentCaptor.forClass(EntityObjectStateChangedEvent.class);
-        verify(eventPublisher).publishEvent(eventCaptor.capture());
-        EntityObjectStateChangedEvent published = eventCaptor.getValue();
+        EntityObjectStateChangedEvent published = published(EntityObjectStateChangedEvent.class);
         assertThat(published.orgKey()).isEqualTo(ORG);
         assertThat(published.entityName()).isEqualTo(ENTITY);
         assertThat(published.objectId()).isEqualTo(OBJECT_ID);
@@ -97,6 +98,12 @@ class FireStateTransitionTest {
         assertThat(published.triggerKey()).isEqualTo("approve");
         assertThat(published.version()).isEqualTo(2L);
         assertThat(published.occurredAt()).isNotNull();
+
+        PlatformEvent fact = published(PlatformEvent.class);
+        assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+        assertThat(fact.state()).isEqualTo("approved");
+        assertThat(fact.subjectId()).isEqualTo(OBJECT_ID.toString());
+        assertThat(fact.payload()).containsEntry("state", "approved");
     }
 
     @Test
@@ -149,5 +156,12 @@ class FireStateTransitionTest {
 
         assertThatThrownBy(() -> usecase.execute(ORG, "missing", OBJECT_ID, "approve", null, 1L))
                 .isInstanceOf(StateMachineNotFoundException.class);
+    }
+
+    private <T> T published(Class<T> type) {
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeastOnce()).publishEvent(captor.capture());
+        return captor.getAllValues().stream().filter(type::isInstance).map(type::cast).findFirst()
+                .orElseThrow(() -> new AssertionError("No " + type.getSimpleName() + " published"));
     }
 }
