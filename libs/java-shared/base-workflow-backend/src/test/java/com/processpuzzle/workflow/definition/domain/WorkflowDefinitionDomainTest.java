@@ -177,8 +177,18 @@ class WorkflowDefinitionDomainTest {
         EventUse event = EventUse.builder().id("e").eventDefinitionId("E").direction(EventDirection.THROW)
                 .correlationKey("k").payloadMapping(java.util.Map.of("a", "$.b")).build();
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        // So does a timer boundary event's timer, and a start event's: hasTimer() and isPath() are not
+        // properties either, and isBoundary() names none the event has.
+        EventUse boundary = EventUse.builder().id("b").direction(EventDirection.CATCH).attachedTo("t").interrupting(false)
+                .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("$.cycle").build()).build();
+        StartEvent nightly = StartEvent.builder().id("s").startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                .timer(TimerDefinition.builder().type(TimerType.DATE).expression("2026-12-24").build()).build();
         try {
             assertThat(json.readValue(json.writeValueAsString(event), EventUse.class)).isEqualTo(event);
+            assertThat(json.readValue(json.writeValueAsString(boundary), EventUse.class)).isEqualTo(boundary);
+            assertThat(json.readValue(json.writeValueAsString(nightly), StartEvent.class)).isEqualTo(nightly);
+            // A row stored before boundaries existed has no interrupting, and reads as interrupting.
+            assertThat(json.readValue("{\"id\":\"old\",\"direction\":\"CATCH\"}", EventUse.class).isInterrupting()).isTrue();
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             throw new AssertionError(e);
         }

@@ -17,6 +17,7 @@ import com.processpuzzle.workflow.execution.usecases.outbound.StartAuthorization
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -36,8 +37,8 @@ import java.util.Set;
  *   <li>TRIGGERING_EVENT, TIME_BASED_PRECONDITION — never: they start the workflow on their own.
  *       A TRIGGERING_EVENT start does so through {@code TriggeredStartListener} and
  *       {@code StartWorkflowInstanceUseCase.startTriggered}, which does not come here at all — the
- *       event has matched already, and there is no caller to admit. TIME_BASED_PRECONDITION has no
- *       trigger yet.
+ *       event has matched already, and there is no caller to admit. TIME_BASED_PRECONDITION starts
+ *       through {@code TimerSweep} and {@code StartWorkflowInstanceUseCase.startScheduled}.
  * </ul>
  *
  * <p>When nothing admits, a workflow whose events are all of the last kind answers 409 — the start
@@ -124,10 +125,23 @@ public class StartEventAdmission {
     }
 
     private boolean requiredArtifactsInState(String orgKey, ResolvedWorkflow workflow, StartEvent startEvent, String entityId) {
+        return requiredArtifactsInState(orgKey, workflow, startEvent, entityId, Set.of());
+    }
+
+    /**
+     * Whether every required ENTITY artifact of {@code startEvent} that names a state is in it, for the
+     * subject {@code entityId}. Also asked by {@code InputArtifactStartListener} before it starts a
+     * workflow on its own, with the artifacts the triggering fact already proves in state left out.
+     *
+     * @param knownInState ids of required artifacts not to read the state of
+     */
+    public boolean requiredArtifactsInState(String orgKey, ResolvedWorkflow workflow, StartEvent startEvent, String entityId,
+                                            Collection<String> knownInState) {
         List<RequiredStartArtifact> required =
                 startEvent.getRequiredArtifacts() == null ? List.of() : startEvent.getRequiredArtifacts();
         for (RequiredStartArtifact artifact : required) {
-            if (artifact.getState() == null || !entityStateGateway.isAvailable()) {
+            if (artifact.getState() == null || knownInState.contains(artifact.getArtifactDefinitionId())
+                    || !entityStateGateway.isAvailable()) {
                 continue;
             }
             Optional<String> entityName = entityNameOf(workflow, artifact.getArtifactDefinitionId());

@@ -29,6 +29,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -205,6 +207,45 @@ class WorkflowDefinitionMapperTest {
         assertThat(model.get(1).getJoinType()).isEqualTo(com.processpuzzle.workflow.model.JoinType.ALL);
         assertThat(mapper.toModel(Workflow.builder().id("x").events(List.of(EventUse.builder().id("e").build())).build())
                 .getEvents().get(0).getDirection()).isNull();
+    }
+
+    @Test
+    void timersAndBoundariesMapBothWays() {
+        WorkflowInput input = new WorkflowInput().id("wf").name("WF")
+                .startEvents(List.of(new com.processpuzzle.workflow.model.StartEvent().id("nightly")
+                        .startType(com.processpuzzle.workflow.model.WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                        .timer(new com.processpuzzle.workflow.model.TimerDefinition()
+                                .type(com.processpuzzle.workflow.model.TimerType.CYCLE).expression("R/P1D"))))
+                .events(List.of(
+                        new com.processpuzzle.workflow.model.EventUse().id("overdue")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .attachedTo("issue").interrupting(null)
+                                .timer(new com.processpuzzle.workflow.model.TimerDefinition()
+                                        .type(com.processpuzzle.workflow.model.TimerType.DURATION).expression("PT1H")),
+                        new com.processpuzzle.workflow.model.EventUse().id("nudge")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .attachedTo("issue").interrupting(false)
+                                .timer(new com.processpuzzle.workflow.model.TimerDefinition().expression("R2/PT5M"))));
+
+        Workflow domain = mapper.toDomain("org-1", input);
+
+        EventUse overdue = domain.getEvents().get(0);
+        assertThat(overdue.getTimer()).isEqualTo(new TimerDefinition(TimerType.DURATION, "PT1H"));
+        assertThat(overdue.getAttachedTo()).isEqualTo("issue");
+        assertThat(overdue.isInterrupting()).isTrue();
+        assertThat(domain.getEvents().get(1).isInterrupting()).isFalse();
+        assertThat(domain.getEvents().get(1).getTimer().getType()).isNull();
+        assertThat(domain.getStartEvents().get(0).getTimer()).isEqualTo(new TimerDefinition(TimerType.CYCLE, "R/P1D"));
+
+        var model = mapper.toModel(domain);
+        assertThat(model.getEvents().get(0).getTimer().getType()).isEqualTo(com.processpuzzle.workflow.model.TimerType.DURATION);
+        assertThat(model.getEvents().get(0).getTimer().getExpression()).isEqualTo("PT1H");
+        assertThat(model.getEvents().get(0).getAttachedTo()).isEqualTo("issue");
+        assertThat(model.getEvents().get(1).getInterrupting()).isFalse();
+        assertThat(model.getEvents().get(1).getTimer().getType()).isNull();
+        assertThat(model.getStartEvents().get(0).getTimer().getExpression()).isEqualTo("R/P1D");
+        assertThat(mapper.toModel(Workflow.builder().id("x").events(List.of(EventUse.builder().id("e").build())).build())
+                .getEvents().get(0).getTimer()).isNull();
     }
 
     /** joinType is nullable on both sides and defaults to ALL rather than to null. */

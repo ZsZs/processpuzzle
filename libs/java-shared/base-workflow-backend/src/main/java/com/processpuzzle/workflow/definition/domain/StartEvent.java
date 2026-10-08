@@ -43,8 +43,9 @@ public class StartEvent {
     private String eventType;
 
     /**
-     * TRIGGERING_EVENT — maps the event payload into the new instance's context. Keys are context
-     * variable names, values are JSONPath expressions into the event.
+     * TRIGGERING_EVENT and INPUT_ARTIFACT — maps the event into the new instance's context: the
+     * catalogued occurrence, or the platform fact that started it. Keys are context variable names,
+     * values are JSONPath expressions into the event.
      */
     private Map<String, String> payloadMapping;
 
@@ -57,8 +58,11 @@ public class StartEvent {
     /** TIME_BASED_PRECONDITION — the milestone whose arrival is the trigger. */
     private String milestoneRef;
 
-    /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. */
+    /** TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. Not evaluated yet. */
     private String preconditionExpression;
+
+    /** TIME_BASED_PRECONDITION — when the workflow starts on its own: a DATE or a CYCLE literal. */
+    private TimerDefinition timer;
 
     /**
      * Whether this mechanism can admit a start requested by hand through {@code /instances}.

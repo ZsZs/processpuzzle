@@ -21,6 +21,8 @@ import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
@@ -221,7 +223,23 @@ public class WorkflowDefinitionMapper {
                 .joinType(input.getJoinType() == null ? JoinType.ALL : JoinType.valueOf(input.getJoinType().getValue()))
                 .correlationKey(input.getCorrelationKey())
                 .payloadMapping(input.getPayloadMapping())
+                .timer(toTimerDomain(input.getTimer()))
+                .attachedTo(input.getAttachedTo())
+                .interrupting(!Boolean.FALSE.equals(input.getInterrupting()))
                 .build();
+    }
+
+    private TimerDefinition toTimerDomain(com.processpuzzle.workflow.model.TimerDefinition input) {
+        return input == null ? null : TimerDefinition.builder()
+                .type(input.getType() == null ? null : TimerType.valueOf(input.getType().getValue()))
+                .expression(input.getExpression())
+                .build();
+    }
+
+    private com.processpuzzle.workflow.model.TimerDefinition toTimerModel(TimerDefinition timer) {
+        return timer == null ? null : new com.processpuzzle.workflow.model.TimerDefinition()
+                .type(timer.getType() == null ? null : com.processpuzzle.workflow.model.TimerType.fromValue(timer.getType().name()))
+                .expression(timer.getExpression());
     }
 
     private com.processpuzzle.workflow.model.EventUse toEventUseModel(EventUse use) {
@@ -236,7 +254,10 @@ public class WorkflowDefinitionMapper {
                 .joinType(com.processpuzzle.workflow.model.JoinType.fromValue(
                         (use.getJoinType() == null ? JoinType.ALL : use.getJoinType()).name()))
                 .correlationKey(use.getCorrelationKey())
-                .payloadMapping(use.getPayloadMapping());
+                .payloadMapping(use.getPayloadMapping())
+                .timer(toTimerModel(use.getTimer()))
+                .attachedTo(use.getAttachedTo())
+                .interrupting(use.isInterrupting());
     }
 
     // -- Start events --------------------------------------------------
@@ -254,6 +275,7 @@ public class WorkflowDefinitionMapper {
                 .authorizedRoles(input.getAuthorizedRoles() == null ? null : copyOf(input.getAuthorizedRoles()))
                 .milestoneRef(input.getMilestoneRef())
                 .preconditionExpression(input.getPreconditionExpression())
+                .timer(toTimerDomain(input.getTimer()))
                 .build();
     }
 
@@ -269,7 +291,8 @@ public class WorkflowDefinitionMapper {
                 .payloadMapping(startEvent.getPayloadMapping())
                 .authorizedRoles(startEvent.getAuthorizedRoles() == null ? null : copyOf(startEvent.getAuthorizedRoles()))
                 .milestoneRef(startEvent.getMilestoneRef())
-                .preconditionExpression(startEvent.getPreconditionExpression());
+                .preconditionExpression(startEvent.getPreconditionExpression())
+                .timer(toTimerModel(startEvent.getTimer()));
     }
 
     private RequiredStartArtifact toRequiredArtifactDomain(com.processpuzzle.workflow.model.RequiredStartArtifact input) {

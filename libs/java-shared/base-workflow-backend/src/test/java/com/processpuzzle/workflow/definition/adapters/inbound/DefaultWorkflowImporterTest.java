@@ -18,10 +18,15 @@ import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.JoinType;
+import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
 import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import java.io.IOException;
@@ -137,9 +142,9 @@ class DefaultWorkflowImporterTest {
         try (InputStream input = bundledTestbedFile().getInputStream()) {
             ImportOutcome outcome = realImportUseCase.execute(ORG, input);
 
-            // 2 roles + 2 artifacts + 1 tool + 4 tasks + 2 workflows
+            // 2 roles + 2 artifacts + 1 tool + 6 tasks + 3 workflows
             assertThat(outcome.errors()).isEmpty();
-            assertThat(outcome.created()).isEqualTo(11);
+            assertThat(outcome.created()).isEqualTo(14);
             assertThat(outcome.updated()).isZero();
 
             assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager");
@@ -157,20 +162,22 @@ class DefaultWorkflowImporterTest {
                     .containsExactly(ArtifactType.ENTITY, ArtifactType.DOCUMENT);
             assertThat(savedTools).extracting(ToolDefinition::getId).containsExactly("automated-check-tool");
             assertThat(savedTasks).extracting(TaskDefinition::getId)
-                    .containsExactly("review-order", "approve-shipment", "confirm-delivery", "issue-invoice");
+                    .containsExactly("review-order", "approve-shipment", "confirm-delivery", "issue-invoice",
+                            "escalate-invoice", "collect-feedback");
 
             // Every task's artifacts resolve, which is what the validator would otherwise refuse.
             assertThat(savedTasks).flatExtracting(TaskDefinition::getInputs).containsOnly("order-entity");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getOutputs)
                     .containsExactly("order-entity", "order-entity", "order-entity", "fulfillment-invoice",
-                            "fulfillment-invoice");
+                            "fulfillment-invoice", "fulfillment-invoice", "order-entity");
             assertThat(savedTasks).flatExtracting(TaskDefinition::getSteps)
                     .extracting(StepDefinition::getStepType)
                     .containsExactly(TaskStepType.SERVICE_STEP, TaskStepType.USER_STEP, TaskStepType.SERVICE_STEP,
-                            TaskStepType.USER_STEP);
+                            TaskStepType.USER_STEP, TaskStepType.USER_STEP, TaskStepType.USER_STEP);
 
             ArgumentCaptor<Workflow> defCaptor = ArgumentCaptor.forClass(Workflow.class);
-            verify(repository, times(2)).save(defCaptor.capture());
+            verify(repository, times(3)).save(defCaptor.capture());
+            verify(events).publishEvent(new WorkflowChangedEvent(ORG, "order-fulfillment-workflow", false));
 
             Workflow def = defCaptor.getAllValues().get(0);
             assertThat(def.getOrgKey()).isEqualTo(ORG);
@@ -198,17 +205,42 @@ class DefaultWorkflowImporterTest {
             // The invoice round trip: throw after approval, wait for the answer before confirming delivery.
             assertThat(def.getEvents()).extracting(EventUse::getId, EventUse::getDirection, EventUse::getEventDefinitionId)
                     .containsExactly(tuple("request-invoice", EventDirection.THROW, "InvoiceRequested"),
-                            tuple("invoice-issued", EventDirection.CATCH, "InvoiceIssued"));
+                            tuple("invoice-issued", EventDirection.CATCH, "InvoiceIssued"),
+                            tuple("approval-reminder", EventDirection.CATCH, null));
+            // A reminder while the manager has not approved: a non-interrupting cycle on the task.
+            assertThat(def.findEventUse("approval-reminder")).hasValueSatisfying(reminder -> {
+                assertThat(reminder.getAttachedTo()).isEqualTo("approve-shipment");
+                assertThat(reminder.isInterrupting()).isFalse();
+                assertThat(reminder.getTimer()).isEqualTo(new TimerDefinition(TimerType.CYCLE, "R2/PT5M"));
+            });
             assertThat(def.findTaskUse("confirm-delivery")).map(TaskUse::getDependsOn).contains(List.of("invoice-issued"));
 
             Workflow invoicing = defCaptor.getAllValues().get(1);
             assertThat(invoicing.getId()).isEqualTo("invoicing-workflow");
             assertThat(invoicing.getStartEvents()).singleElement()
                     .satisfies(startEvent -> assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.correlationValue"));
-            assertThat(invoicing.getEvents()).singleElement().satisfies(event -> {
+            assertThat(invoicing.findEventUse("invoice-issued")).hasValueSatisfying(event -> {
                 assertThat(event.getDirection()).isEqualTo(EventDirection.THROW);
                 assertThat(event.getCorrelationKey()).isEqualTo("orderId");
                 assertThat(event.getPayloadMapping()).containsEntry("invoiceNumber", "$.invoiceNumber");
+                assertThat(event.getDependsOn()).containsExactly("issue-invoice", "escalate-invoice");
+                assertThat(event.getJoinType()).isEqualTo(JoinType.ANY);
+            });
+            // Not issued within the hour: the boundary interrupts issue-invoice, escalate-invoice takes over.
+            assertThat(invoicing.findEventUse("invoice-overdue")).hasValueSatisfying(overdue -> {
+                assertThat(overdue.getAttachedTo()).isEqualTo("issue-invoice");
+                assertThat(overdue.isInterrupting()).isTrue();
+                assertThat(overdue.getTimer()).isEqualTo(new TimerDefinition(TimerType.DURATION, "PT1H"));
+            });
+
+            Workflow feedback = defCaptor.getAllValues().get(2);
+            assertThat(feedback.getId()).isEqualTo("customer-feedback-workflow");
+            assertThat(feedback.getStartEvents()).singleElement().satisfies(startEvent -> {
+                assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
+                assertThat(startEvent.getRequiredArtifacts()).singleElement()
+                        .extracting(RequiredStartArtifact::getArtifactDefinitionId, RequiredStartArtifact::getState)
+                        .containsExactly("order-entity", "DELIVERED");
+                assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.subjectId");
             });
         }
     }

@@ -41,11 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -95,7 +98,7 @@ class WorkflowUseCasesTest {
 
     @Test
     void createWorkflow_success() {
-        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator);
+        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
         Workflow proc = Workflow.builder().id("proc1").build();
         when(workflowRepo.existsByOrgKeyAndId(ORG, "proc1")).thenReturn(false);
         when(workflowRepo.save(proc)).thenReturn(proc);
@@ -105,11 +108,12 @@ class WorkflowUseCasesTest {
         assertThat(proc.getOrgKey()).isEqualTo(ORG);
         verify(extendsValidator).validate(ORG, "proc1", null);
         verify(validator).validate(proc);
+        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", false));
     }
 
     @Test
     void createWorkflow_alreadyExists_throwsConflict() {
-        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator);
+        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
         Workflow proc = Workflow.builder().id("proc1").build();
         when(workflowRepo.existsByOrgKeyAndId(ORG, "proc1")).thenReturn(true);
 
@@ -143,7 +147,7 @@ class WorkflowUseCasesTest {
 
     @Test
     void replaceWorkflow_successAndValidation() {
-        ReplaceWorkflowUseCase useCase = new ReplaceWorkflowUseCase(workflowRepo, validator, extendsValidator);
+        ReplaceWorkflowUseCase useCase = new ReplaceWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
         Workflow existing = Workflow.builder().orgKey(ORG).id("proc1").version(1L).name("Old").build();
         Workflow desired = Workflow.builder().orgKey(ORG).id("proc1").version(1L).name("New").build();
 
@@ -152,6 +156,7 @@ class WorkflowUseCasesTest {
 
         Workflow result = useCase.replace(ORG, "proc1", desired);
         assertThat(result.getName()).isEqualTo("New");
+        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", false));
 
         // ID mismatch
         Workflow wrongId = Workflow.builder().orgKey(ORG).id("proc2").build();
@@ -174,7 +179,7 @@ class WorkflowUseCasesTest {
     @Test
     void deleteWorkflow_successAndConflicts() {
         WorkflowDiagramRepository diagramRepo = mock(WorkflowDiagramRepository.class);
-        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, diagramRepo, activePort);
+        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, diagramRepo, activePort, events);
         Workflow existing = Workflow.builder().orgKey(ORG).id("proc1").build();
 
         when(workflowRepo.findByOrgKeyAndId(ORG, "proc1")).thenReturn(Optional.of(existing));
@@ -183,6 +188,7 @@ class WorkflowUseCasesTest {
 
         useCase.delete(ORG, "proc1");
         verify(workflowRepo).delete(existing);
+        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", true));
         // The modeler's arrangement goes with the workflow it arranged: addressed only by that
         // workflow's id, an orphaned layout is unreachable and would resurface if the id were reused.
         verify(diagramRepo).deleteByOrgKeyAndWorkflowId(ORG, "proc1");
@@ -529,6 +535,10 @@ class WorkflowUseCasesTest {
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                                 .artifactDefinitionId("code").state("DRAFT").build()))
+                        .build(), StartEvent.builder()
+                        .id("nightly")
+                        .startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                        .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("R/P1D").build())
                         .build()))
                 .roles(List.of(RoleUse.builder().roleDefinitionId("dev").build()))
                 .artifacts(List.of(ArtifactUse.builder().artifactDefinitionId("code").objectName("patch").build()))
@@ -540,7 +550,14 @@ class WorkflowUseCasesTest {
                         .build()))
                 .events(List.of(EventUse.builder().id("merged").name("Merged").eventDefinitionId("PrMerged")
                         .direction(EventDirection.CATCH).dependsOn(List.of("impl")).joinType(JoinType.ANY)
-                        .correlationKey("prId").payloadMapping(Map.of("mergedBy", "$.payload.user")).build()))
+                        .correlationKey("prId").payloadMapping(Map.of("mergedBy", "$.payload.user")).build(),
+                        EventUse.builder().id("nudge").direction(EventDirection.CATCH).attachedTo("impl")
+                                .interrupting(false)
+                                .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("R2/PT5M").build())
+                                .build(),
+                        EventUse.builder().id("deadline").direction(EventDirection.CATCH).attachedTo("impl")
+                                .timer(TimerDefinition.builder().type(TimerType.DATE).expression("$.dueDate").build())
+                                .build()))
                 .build();
 
         when(workflowRepo.findByOrgKeyAndId(ORG, "wf-export")).thenReturn(Optional.of(workflow));
@@ -564,7 +581,10 @@ class WorkflowUseCasesTest {
                 .contains("stepType: \"SERVICE_STEP\"")
                 .contains("startType: \"INPUT_ARTIFACT\"")
                 .contains("joinType: \"ANY\"")
-                .contains("direction: \"CATCH\"");
+                .contains("direction: \"CATCH\"")
+                .contains("attachedTo: \"impl\"")
+                .contains("interrupting: false")
+                .contains("expression: \"R2/PT5M\"");
 
         // Feed it straight back: nothing exists yet, so everything is a create and nothing errors.
         when(workflowRepo.findByOrgKey(ORG)).thenReturn(List.of());
@@ -594,11 +614,13 @@ class WorkflowUseCasesTest {
                 assertThat(state.getOutputState()).isEqualTo("REVIEWED");
             });
         });
-        assertThat(reimported.getStartEvents()).singleElement().satisfies(startEvent -> {
+        assertThat(reimported.getStartEvents()).first().satisfies(startEvent -> {
             assertThat(startEvent.getId()).isEqualTo("code-drafted");
             assertThat(startEvent.getName()).isEqualTo("Code drafted");
             assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
         });
+        assertThat(reimported.getStartEvents().get(1).getTimer())
+                .isEqualTo(TimerDefinition.builder().type(TimerType.CYCLE).expression("R/P1D").build());
         assertThat(reimported.getStartEvents().get(0).getRequiredArtifacts()).singleElement()
                 .satisfies(required -> assertThat(required.getState()).isEqualTo("DRAFT"));
         assertThat(reimported.getEvents()).containsExactlyElementsOf(workflow.getEvents());

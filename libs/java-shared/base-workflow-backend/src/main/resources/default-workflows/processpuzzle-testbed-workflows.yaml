@@ -122,6 +122,30 @@ task-definitions:
         description: Issue the invoice and enter its number as invoiceNumber when completing the task.
         stepType: USER_STEP
 
+  - id: escalate-invoice
+    name: Escalate Invoice
+    description: Issue an invoice that was not issued in time, and record its number.
+    performedByRoles: [ manager ]
+    inputs: [ order-entity ]
+    outputs: [ fulfillment-invoice ]
+    steps:
+      - id: issue-overdue-invoice
+        name: Issue Overdue Invoice
+        description: Issue the overdue invoice and enter its number as invoiceNumber when completing the task.
+        stepType: USER_STEP
+
+  - id: collect-feedback
+    name: Collect Feedback
+    description: Ask the customer of a delivered order how the delivery went.
+    performedByRoles: [ clerk ]
+    inputs: [ order-entity ]
+    outputs: [ order-entity ]
+    steps:
+      - id: record-feedback
+        name: Record Feedback
+        description: Record the customer's feedback as feedback when completing the task.
+        stepType: USER_STEP
+
 workflows:
   - id: order-fulfillment-workflow
     name: Order Fulfillment Workflow
@@ -214,6 +238,18 @@ workflows:
         payloadMapping:
           invoiceNumber: $.payload.invoiceNumber
 
+      # A non-interrupting boundary timer: while approve-shipment waits for the manager, it fires every
+      # five minutes, twice at most, and leaves the task running. Nothing depends on it; each firing shows
+      # as the fire count on the Event Instance tab, and publishes TimerFiredEvent for a notifier to hook.
+      - id: approval-reminder
+        name: Approval reminder
+        direction: CATCH
+        attachedTo: approve-shipment
+        interrupting: false
+        timer:
+          type: CYCLE
+          expression: R2/PT5M
+
   - id: invoicing-workflow
     name: Invoicing Workflow
     description: >-
@@ -242,18 +278,68 @@ workflows:
       - artifactDefinitionId: fulfillment-invoice
         objectName: invoice
 
-    # The manager enters invoiceNumber in the completion form; the throw below sends it back.
+    # The manager enters invoiceNumber in the completion form; the throw below sends it back. If the
+    # invoice is not issued within the hour, the boundary timer interrupts issue-invoice and the invoice
+    # is issued as an escalation instead; either way InvoiceIssued goes back (joinType ANY). Whichever
+    # path is not taken is cancelled as unreachable.
     tasks:
       - taskDefinitionId: issue-invoice
         performedBy: manager
         dependsOn: [ ]
 
+      - taskDefinitionId: escalate-invoice
+        performedBy: manager
+        dependsOn: [ invoice-overdue ]
+
     events:
+      - id: invoice-overdue
+        name: Invoice overdue
+        direction: CATCH
+        attachedTo: issue-invoice
+        timer:
+          type: DURATION
+          expression: PT1H
+
       - id: invoice-issued
         name: Invoice issued
         eventDefinitionId: InvoiceIssued
         direction: THROW
-        dependsOn: [ issue-invoice ]
+        dependsOn: [ issue-invoice, escalate-invoice ]
+        joinType: ANY
         correlationKey: orderId
         payloadMapping:
           invoiceNumber: $.invoiceNumber
+
+  - id: customer-feedback-workflow
+    name: Customer Feedback Workflow
+    description: >-
+      Asks the customer of a delivered order for feedback. Starts on its own when an order reaches
+      DELIVERED.
+
+    # An INPUT_ARTIFACT start event starts the workflow on its own once its required artifacts are in the
+    # required state: here, when an order enters DELIVERED. The order becomes the instance's entityId;
+    # payloadMapping reads the platform fact, so `$.subjectId` is the order and `$.payload.<attribute>` one
+    # of its values. It also admits a start by hand for an order that is DELIVERED already.
+    startEvents:
+      - id: order-delivered
+        name: Order delivered
+        startType: INPUT_ARTIFACT
+        requiredArtifacts:
+          - artifactDefinitionId: order-entity
+            state: DELIVERED
+        payloadMapping:
+          orderId: $.subjectId
+          orderNumber: $.payload.orderNumber
+          customerName: $.payload.customerName
+
+    roles:
+      - roleDefinitionId: clerk
+
+    artifacts:
+      - artifactDefinitionId: order-entity
+        objectName: delivered_order
+
+    tasks:
+      - taskDefinitionId: collect-feedback
+        performedBy: clerk
+        dependsOn: [ ]

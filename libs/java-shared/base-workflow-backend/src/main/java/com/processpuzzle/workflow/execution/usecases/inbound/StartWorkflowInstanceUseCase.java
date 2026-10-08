@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Starts a new instance of a workflow definition: an explicit start checks that one of its start
- * events admits the start ({@link StartEventAdmission}), a triggered one does not; either then creates the {@link WorkflowInstance}, one
+ * events admits the start ({@link StartEventAdmission}), a triggered or scheduled one does not; either then creates the {@link WorkflowInstance}, one
  * {@link TaskInstance} per {@code TaskDefinition} (all initially PENDING), one
  * {@link ArtifactInstance} per {@code ArtifactDefinition}, then hands off to
  * {@link TaskActivationService} to activate whichever tasks are immediately eligible (those with
@@ -114,6 +114,17 @@ public class StartWorkflowInstanceUseCase {
         }
         ResolvedWorkflow definition = resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowId);
         return Optional.of(createInstance(orgKey, definition, entityId, entityType, startEventId, initialContext));
+    }
+
+    /**
+     * A start by a TIME_BASED_PRECONDITION start event whose timer came due. Like a triggered start it
+     * bypasses {@link StartEventAdmission}; unlike one it has no subject, so it is not deduplicated per
+     * subject either — the caller, {@code FireStartTimerUseCase}, deduplicates the firing on its schedule
+     * row's version, in this same transaction.
+     */
+    public WorkflowInstance startScheduled(String orgKey, String workflowId, String startEventId) {
+        ResolvedWorkflow definition = resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowId);
+        return createInstance(orgKey, definition, null, null, startEventId, Map.of());
     }
 
     /**

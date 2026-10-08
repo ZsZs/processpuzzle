@@ -117,7 +117,7 @@ mechanisms:
 | `ROLE_DEFINITION` | Role Definition + Task Use | the caller holds one of `authorizedRoles` (none named = anyone) |
 | `INPUT_ARTIFACT` | Artifact / Precondition | `entityId` is given and each required ENTITY artifact is in its required state |
 | `TRIGGERING_EVENT` | Triggering Event | never — the event starts the workflow |
-| `TIME_BASED_PRECONDITION` | Time-based Precondition / Milestone Guard | never — the milestone starts the workflow |
+| `TIME_BASED_PRECONDITION` | Time-based Precondition / Milestone Guard | never — its timer starts the workflow |
 
 No start events means anyone may start the workflow. Otherwise a start is
 admitted when *any* event admits it (403 when none does, 409 when every
@@ -138,8 +138,22 @@ already has a running instance of the workflow is not started twice. The
 events travel through the Spring Modulith publication registry, so a start
 is retried until it completes.
 
-Still not implemented: an `INPUT_ARTIFACT` reaching its state on its own
-(it only guards explicit starts) and `TIME_BASED_PRECONDITION`.
+Two more start types fire on their own:
+
+- **`INPUT_ARTIFACT`** — when the subject reaches the required state. A
+  platform fact matches a required ENTITY artifact when its entity type is
+  the artifact's and either the artifact names no state and the object was
+  created, or the object entered exactly the state named. The remaining
+  required artifacts are checked as an explicit start checks them; then
+  the workflow starts for that subject, `payloadMapping` reading the fact
+  (`$.subjectId`, `$.state`, `$.payload.<attribute>`). base-state reports
+  an object's initial state too, so a start waiting for `DRAFT` fires on
+  creation. Deduplicated per subject like a triggered start.
+- **`TIME_BASED_PRECONDITION`** — when its `timer` comes due: a DATE fires
+  once, a CYCLE repeatedly (see *Timers* below). A DURATION is refused, as
+  it would have nothing to be relative to. A scheduled instance has no
+  subject. The milestone and the precondition are recorded but not yet
+  evaluated.
 
 ## Intermediate events
 
@@ -177,6 +191,63 @@ that every dependent has moved past — an ANY-join that went ahead on
 another branch — is withdrawn, and cancelling an instance withdraws its
 catches.
 
+### Timers
+
+A CATCH may wait for time instead of a catalogued event: a `timer` with a
+`type` and an `expression` takes the place of `eventDefinitionId` — an
+event has exactly one of the two.
+
+| `type` | Fires | Literal |
+|---|---|---|
+| `DURATION` | once, that long after it is reached | `PT2H`, `P3D`, `P1M` |
+| `DATE` | once, at that moment | `2026-10-10T08:00:00Z`; a date is read as UTC midnight |
+| `CYCLE` | repeatedly, at that interval | `R3/PT1H`, `R/PT1H` (unbounded), `R3/2026-10-10T08:00:00Z/P1D` (anchored) |
+
+Years and months are calendar amounts, applied in UTC. Instead of a
+literal, the expression may be a `$.variable` path into the instance
+context, read when the timer is reached — `$.deadline` waits for whatever
+date an earlier task recorded. A path that resolves to nothing leaves the
+timer waiting without a due time. Firings of an anchored cycle already in
+the past are skipped, not caught up.
+
+A reached timer waits with a due time; a sweep that runs every 30 seconds
+fires what is due — polling rather than a scheduler or a broker, so the
+granularity is the sweep interval. Every firing publishes
+`TimerFiredEvent`, the hook for a reminder. A CYCLE is allowed only on a
+non-interrupting boundary event: anywhere else it would have nothing to
+stop it.
+
+### Boundary events
+
+With `attachedTo` naming a task, a catch is a **boundary event** of that
+task — the escalation of BPMN. It has no `dependsOn` of its own: it starts
+waiting when its task becomes ACTIVE, and is cancelled when the task ends
+first. Its dependents name it in their `dependsOn` like any other event.
+When it fires:
+
+- an **interrupting** one (the default) cancels the task, which becomes
+  CANCELLED with the reason `interrupted by <event id>`;
+- a **non-interrupting** one leaves the task running — a CYCLE fires again
+  until its repetitions run out or the task ends.
+
+Either way the boundary's dependents go ahead. A timer or any catalogued
+event — MESSAGE, SIGNAL, SYSTEM — may be a boundary.
+
+### Dead-path elimination
+
+A CANCELLED task does not satisfy its dependents the way a COMPLETED or
+SKIPPED one does, so whatever can no longer be reached is cancelled too,
+rather than left waiting forever. A pending task or event is dead when its
+join is ALL and any dependency was cancelled, or its join is ANY and every
+dependency was; dead tasks are cancelled as `unreachable`. That is what
+makes the two paths of a boundary exclusive. In the testbed's invoicing
+workflow `issue-invoice` carries an interrupting `PT1H` timer leading to
+`escalate-invoice`, and the `invoice-issued` throw depends on either with
+`joinType: ANY`: issued in time, the timer is cancelled with its task and
+the escalation becomes unreachable; overdue, `issue-invoice` is
+interrupted, its successors become unreachable, and the escalation answers
+instead.
+
 Along the flow, `TaskUse.artifactStates` record the state a task expects
 each input in and leaves each output in (SPEM's work product state). The
 modeler draws one object node per artifact *and state* — `new_order :
@@ -185,7 +256,7 @@ through, and each object sits between the task producing it and the task
 consuming it. Recorded and drawn, not yet enforced at run time.
 
 There is no stored end event: an instance completes when every task and
-every intermediate event is terminal, and the modeler draws that as one End
+every intermediate event is terminal — a CANCELLED task counts — and the modeler draws that as one End
 node fed by every task or event nothing depends on.
 
 ---

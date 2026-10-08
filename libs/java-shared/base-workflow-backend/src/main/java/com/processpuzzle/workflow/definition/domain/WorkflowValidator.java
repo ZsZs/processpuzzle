@@ -40,9 +40,16 @@ import java.util.stream.Collectors;
  * same port vets each intermediate {@link EventUse}: its definition must exist and, where the port can
  * tell the kind, a THROW may not name a SYSTEM event and only a MESSAGE carries a correlation key.
  *
+ * <p>A timer catch names no catalogued event; its {@link TimerDefinition} is checked by
+ * {@link TimerExpressions} instead, as far as a literal can be checked before it runs. A boundary event —
+ * one {@code attachedTo} a task — is a catch with no {@code dependsOn} of its own, and a CYCLE timer is
+ * only allowed on a non-interrupting one: an interrupting timer ends its task at the first firing, and
+ * a repeating catch in the flow would have no task whose lifetime bounds it.
+ *
  * <p>Tasks, intermediate events and start events share one id namespace, because {@code dependsOn}
  * names tasks and events alike. The flow they form must be acyclic — a cycle would leave every node
- * on it waiting for another forever — which {@link #detectCycles} checks over tasks and events.
+ * on it waiting for another forever — which {@link #detectCycles} checks over tasks and events. A
+ * boundary event counts as depending on its task.
  */
 @Component
 public class WorkflowValidator {
@@ -96,7 +103,7 @@ public class WorkflowValidator {
         flowIds.addAll(eventIds);
 
         validateTaskUses(workflow, orgKey, roleIds, taskIds, flowIds, startEventIds);
-        validateEvents(workflow, orgKey, flowIds, startEventIds);
+        validateEvents(workflow, orgKey, new HashSet<>(taskIds), flowIds, startEventIds);
         validateStartEvents(workflow, orgKey, flowIds);
         detectCycles(workflow);
     }
@@ -221,23 +228,68 @@ public class WorkflowValidator {
         }
     }
 
-    private void validateEvents(Workflow workflow, String orgKey, Set<String> flowIds, Set<String> startEventIds) {
+    private void validateEvents(Workflow workflow, String orgKey, Set<String> taskIds, Set<String> flowIds,
+                                Set<String> startEventIds) {
         for (EventUse event : workflow.getEvents()) {
             String eventId = event.getId();
             if (event.getDirection() == null) {
                 throw new ValidationException("Event '%s' has no direction".formatted(eventId));
             }
             String definitionId = event.getEventDefinitionId();
-            if (!isSet(definitionId)) {
-                throw new ValidationException("Event '%s' names no eventDefinitionId".formatted(eventId));
+            if (isSet(definitionId) == event.hasTimer()) {
+                throw new ValidationException(
+                        "Event '%s' must name either an eventDefinitionId or a timer, and not both".formatted(eventId));
             }
-            if (!eventCatalog.exists(orgKey, definitionId)) {
-                throw new ValidationException("Event '%s' names event '%s', which is not in this organization's event catalog"
-                        .formatted(eventId, definitionId));
+            if (event.hasTimer()) {
+                validateTimerEvent(event);
+            } else {
+                if (!eventCatalog.exists(orgKey, definitionId)) {
+                    throw new ValidationException("Event '%s' names event '%s', which is not in this organization's event catalog"
+                            .formatted(eventId, definitionId));
+                }
+                Optional<CatalogEventKind> kind = eventCatalog.kindOf(orgKey, definitionId);
+                kind.ifPresent(known -> validateEventKind(event, known));
             }
-            Optional<CatalogEventKind> kind = eventCatalog.kindOf(orgKey, definitionId);
-            kind.ifPresent(known -> validateEventKind(event, known));
+            if (event.isBoundary()) {
+                validateBoundary(event, taskIds);
+            }
             validateDependsOn("Event", eventId, event.getDependsOn(), flowIds, startEventIds);
+        }
+    }
+
+    private void validateTimerEvent(EventUse event) {
+        if (!event.isCatch()) {
+            throw new ValidationException("Event '%s' has a timer, so it must be a CATCH".formatted(event.getId()));
+        }
+        if (isSet(event.getCorrelationKey())) {
+            throw new ValidationException("Event '%s' is a timer; only a MESSAGE takes a correlationKey".formatted(event.getId()));
+        }
+        validateTimer("Event", event.getId(), event.getTimer());
+        if (event.getTimer().getType() == TimerType.CYCLE && !(event.isBoundary() && !event.isInterrupting())) {
+            throw new ValidationException(
+                    "Event '%s' has a CYCLE timer, which only a non-interrupting boundary event may have".formatted(event.getId()));
+        }
+    }
+
+    private void validateBoundary(EventUse event, Set<String> taskIds) {
+        if (!taskIds.contains(event.getAttachedTo())) {
+            throw new ValidationException("Event '%s' is attachedTo '%s', which is not a task of this workflow"
+                    .formatted(event.getId(), event.getAttachedTo()));
+        }
+        if (!event.isCatch()) {
+            throw new ValidationException("Boundary event '%s' must be a CATCH".formatted(event.getId()));
+        }
+        if (!orEmpty(event.getDependsOn()).isEmpty()) {
+            throw new ValidationException(
+                    "Boundary event '%s' takes no dependsOn — it is reached when its task becomes ACTIVE".formatted(event.getId()));
+        }
+    }
+
+    private static void validateTimer(String ownerKind, String ownerId, TimerDefinition timer) {
+        try {
+            TimerExpressions.validate(timer);
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException("%s '%s' has an invalid timer: %s".formatted(ownerKind, ownerId, e.getMessage()));
         }
     }
 
@@ -264,7 +316,8 @@ public class WorkflowValidator {
     private void detectCycles(Workflow workflow) {
         Map<String, List<String>> edges = new LinkedHashMap<>();
         workflow.getTasks().forEach(use -> edges.put(use.getTaskDefinitionId(), orEmpty(use.getDependsOn())));
-        workflow.getEvents().forEach(use -> edges.put(use.getId(), orEmpty(use.getDependsOn())));
+        workflow.getEvents().forEach(use -> edges.put(use.getId(),
+                use.isBoundary() ? List.of(use.getAttachedTo()) : orEmpty(use.getDependsOn())));
         Map<String, Boolean> done = new HashMap<>();
         for (String node : edges.keySet()) {
             visit(node, edges, done, new ArrayList<>());
@@ -359,6 +412,30 @@ public class WorkflowValidator {
             if (startEvent.getStartType() == WorkflowStartConditionType.TRIGGERING_EVENT) {
                 validateEventType(orgKey, startEvent);
             }
+            if (startEvent.getStartType() == WorkflowStartConditionType.TIME_BASED_PRECONDITION) {
+                validateStartTimer(startEvent);
+            }
+        }
+    }
+
+    /**
+     * A scheduled start needs a moment to start at: a DATE or a CYCLE, as a literal. A DURATION would have
+     * nothing to be relative to, and a path nothing to read — there is no instance yet.
+     */
+    private static void validateStartTimer(StartEvent startEvent) {
+        TimerDefinition timer = startEvent.getTimer();
+        if (timer == null) {
+            throw new ValidationException(
+                    "Start event '%s' is a TIME_BASED_PRECONDITION but has no timer".formatted(startEvent.getId()));
+        }
+        validateTimer("Start event", startEvent.getId(), timer);
+        if (timer.getType() == TimerType.DURATION) {
+            throw new ValidationException("Start event '%s' has a DURATION timer; a start needs a DATE or a CYCLE"
+                    .formatted(startEvent.getId()));
+        }
+        if (timer.isPath()) {
+            throw new ValidationException("Start event '%s' has a timer path; a start has no context to read it from"
+                    .formatted(startEvent.getId()));
         }
     }
 

@@ -34,6 +34,11 @@ import org.hibernate.type.SqlTypes;
  * occurrence's id, its {@link #payload} and what its payload mapping {@link #contextContribution
  * contributed} to the workflow context. Either may be CANCELLED.
  *
+ * <p>A timer catch names no catalogued event. While it waits, {@link #dueAt} says when it fires, which
+ * is what {@code TimerSweep} polls for; {@link #fireCount} counts its firings. A CYCLE boundary stays
+ * OCCURRED after its first firing and is re-armed while its task runs, {@link #remainingFirings} counting
+ * down.
+ *
  * <p>Its own row and its own {@link #version}, for the reason {@link WorkflowContext} gives: an event
  * occurring writes only this row, so it never contends with a task completed beside it.
  */
@@ -48,7 +53,8 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "workflow_event_instance", indexes = {
         @Index(name = "idx_wf_event_instance_instance", columnList = "org_key, workflow_instance_id"),
         @Index(name = "idx_wf_event_instance_waiting", columnList = "org_key, event_definition_id, status"),
-        @Index(name = "idx_wf_event_instance_occurrence", columnList = "org_key, occurrence_id")})
+        @Index(name = "idx_wf_event_instance_occurrence", columnList = "org_key, occurrence_id"),
+        @Index(name = "idx_wf_event_instance_due", columnList = "due_at")})
 public class EventInstance {
 
     @Id
@@ -65,7 +71,8 @@ public class EventInstance {
     @Column(name = "event_use_id", nullable = false)
     private String eventUseId;
 
-    @Column(name = "event_definition_id", nullable = false)
+    /** Null for a timer catch. */
+    @Column(name = "event_definition_id")
     private String eventDefinitionId;
 
     private String name;
@@ -104,8 +111,25 @@ public class EventInstance {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> contextContribution;
 
+    /** Timer catches — when the timer fires next; null when it will not fire (again). */
+    @Column(name = "due_at")
+    private Instant dueAt;
+
+    /** Timer catches — how many times the timer fired. Nullable: the column was added to existing rows. */
+    @Column(name = "fire_count")
+    private Integer fireCount;
+
+    /** CYCLE timers — firings left after the one at {@link #dueAt}; null for an unbounded cycle. */
+    @Column(name = "remaining_firings")
+    private Integer remainingFirings;
+
     @Version
     private Long version;
+
+    /** {@link #fireCount}, with a row from before the column read as never fired. */
+    public int firings() {
+        return fireCount == null ? 0 : fireCount;
+    }
 
     public boolean isThrow() {
         return direction == EventDirection.THROW;

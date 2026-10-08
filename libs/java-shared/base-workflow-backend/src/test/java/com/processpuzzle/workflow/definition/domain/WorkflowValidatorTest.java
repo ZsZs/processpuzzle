@@ -472,6 +472,7 @@ class WorkflowValidatorTest {
         StartEvent condition = StartEvent.builder().id("start")
                 .startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
                 .milestoneRef("MILESTONE_REACHED")
+                .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("R/P1D").build())
                 .build();
         condition.setRequiredArtifacts(null);
         condition.setAuthorizedRoles(null);
@@ -606,7 +607,7 @@ class WorkflowValidatorTest {
         assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDirection)))
                 .hasMessageContaining("has no direction");
         assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDefinition)))
-                .hasMessageContaining("names no eventDefinitionId");
+                .hasMessageContaining("either an eventDefinitionId or a timer");
     }
 
     @Test
@@ -652,6 +653,133 @@ class WorkflowValidatorTest {
         assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("The flow has a cycle: a -> e -> b -> a");
+    }
+
+    // ---------------------------------------------------------------- timers and boundary events
+
+    @Test
+    void acceptsATimerCatchAndAnInterruptingBoundaryWithItsEscalation() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("escalate", "developer")));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("code", "developer"), assignment("escalate", "developer", "overdue")),
+                boundary("overdue", "code", true, timer(TimerType.DURATION, "PT1H")),
+                timerCatch("wait", timer(TimerType.DATE, "$.deadline"), "code"));
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void anEventNamesEitherADefinitionOrATimerAndNotBoth() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        EventUse both = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        both.setEventDefinitionId("Approved");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), both)))
+                .hasMessageContaining("either an eventDefinitionId or a timer");
+    }
+
+    @Test
+    void aTimerMustBeACatchWithAParsingLiteralAndNoCorrelationKey() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        EventUse throwing = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        throwing.setDirection(EventDirection.THROW);
+        EventUse unparsable = timerCatch("e", timer(TimerType.DURATION, "an hour"));
+        EventUse untyped = timerCatch("e", timer(null, "PT1H"));
+        EventUse correlated = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        correlated.setCorrelationKey("orderId");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), throwing)))
+                .hasMessageContaining("must be a CATCH");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), unparsable)))
+                .hasMessageContaining("invalid timer").hasMessageContaining("an hour");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), untyped)))
+                .hasMessageContaining("has no type");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), correlated)))
+                .hasMessageContaining("only a MESSAGE takes a correlationKey");
+    }
+
+    @Test
+    void aCycleIsOnlyAllowedOnANonInterruptingBoundary() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        TimerDefinition cycle = timer(TimerType.CYCLE, "R2/PT5M");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                timerCatch("e", cycle)))).hasMessageContaining("only a non-interrupting boundary event");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "code", true, cycle)))).hasMessageContaining("only a non-interrupting boundary event");
+        assertThatCode(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "code", false, cycle)))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aBoundaryNamesATaskIsACatchAndTakesNoDependsOn() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("test", "developer")));
+        TimerDefinition hour = timer(TimerType.DURATION, "PT1H");
+        EventUse dependent = boundary("e", "code", true, hour);
+        dependent.setDependsOn(List.of("test"));
+        EventUse throwing = boundary("e", "code", true, null);
+        throwing.setEventDefinitionId("Approved");
+        throwing.setDirection(EventDirection.THROW);
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "ghost", true, hour)))).hasMessageContaining("which is not a task of this workflow");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"), assignment("test", "developer")),
+                dependent))).hasMessageContaining("takes no dependsOn");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                throwing))).hasMessageContaining("must be a CATCH");
+    }
+
+    @Test
+    void aTaskDependingOnItsOwnBoundaryIsACycle() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "overdue")),
+                boundary("overdue", "code", true, timer(TimerType.DURATION, "PT1H")));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("The flow has a cycle: code -> overdue -> code");
+    }
+
+    @Test
+    void aTimeBasedStartNeedsADateOrCycleLiteral() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+
+        assertThatThrownBy(() -> validator.validate(timedStart(null))).hasMessageContaining("has no timer");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.DURATION, "PT1H"))))
+                .hasMessageContaining("DURATION timer");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.DATE, "$.when"))))
+                .hasMessageContaining("timer path");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.CYCLE, "every day"))))
+                .hasMessageContaining("invalid timer");
+        assertThatCode(() -> validator.validate(timedStart(timer(TimerType.DATE, "2026-12-24"))))
+                .doesNotThrowAnyException();
+    }
+
+    private Workflow timedStart(TimerDefinition timer) {
+        return withStartEvents(workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("nightly").startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                        .timer(timer).build());
+    }
+
+    private static TimerDefinition timer(TimerType type, String expression) {
+        return TimerDefinition.builder().type(type).expression(expression).build();
+    }
+
+    private static EventUse timerCatch(String id, TimerDefinition timer, String... dependsOn) {
+        return EventUse.builder().id(id).direction(EventDirection.CATCH).timer(timer).dependsOn(List.of(dependsOn)).build();
+    }
+
+    private static EventUse boundary(String id, String task, boolean interrupting, TimerDefinition timer) {
+        return EventUse.builder().id(id).direction(EventDirection.CATCH).timer(timer).attachedTo(task)
+                .interrupting(interrupting).build();
     }
 
     // ---------------------------------------------------------------- fixtures

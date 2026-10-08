@@ -120,6 +120,8 @@ public class WorkflowExecutionMapper {
                 .activatedAt(toOffsetDateTime(instance.getActivatedAt()))
                 .completedAt(toOffsetDateTime(instance.getCompletedAt()))
                 .skippedAt(toOffsetDateTime(instance.getSkippedAt()))
+                .cancelledAt(toOffsetDateTime(instance.getCancelledAt()))
+                .cancelReason(instance.getCancelReason())
                 .stepResults(instance.getStepResults().stream().map(sr -> new StepResult()
                         .stepId(sr.getStepId())
                         .completedAt(toOffsetDateTime(sr.getCompletedAt()))
@@ -148,6 +150,8 @@ public class WorkflowExecutionMapper {
                 .correlationValue(instance.getCorrelationValue())
                 .waitingSince(toOffsetDateTime(instance.getWaitingSince()))
                 .occurredAt(toOffsetDateTime(instance.getOccurredAt()))
+                .dueAt(toOffsetDateTime(instance.getDueAt()))
+                .fireCount(instance.firings())
                 .payload(instance.getPayload())
                 .contextContribution(instance.getContextContribution());
     }

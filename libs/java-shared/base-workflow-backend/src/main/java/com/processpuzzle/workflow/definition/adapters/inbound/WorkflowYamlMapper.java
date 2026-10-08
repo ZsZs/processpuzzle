@@ -7,6 +7,7 @@ import com.processpuzzle.workflow.definition.adapters.inbound.dto.RequiredStartA
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartEventYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.TimerYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskArtifactStateYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StepYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskUseYaml;
@@ -37,6 +38,8 @@ import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import org.springframework.stereotype.Component;
@@ -150,7 +153,21 @@ public class WorkflowYamlMapper {
                 .joinType(joinType == null ? JoinType.ALL : joinType)
                 .correlationKey(entry.correlationKey())
                 .payloadMapping(entry.payloadMapping())
+                .timer(toTimerDomain(entry.timer()))
+                .attachedTo(entry.attachedTo())
+                .interrupting(!Boolean.FALSE.equals(entry.interrupting()))
                 .build();
+    }
+
+    private TimerDefinition toTimerDomain(TimerYaml entry) {
+        return entry == null ? null : TimerDefinition.builder()
+                .type(toEnum(TimerType.class, entry.type()))
+                .expression(entry.expression())
+                .build();
+    }
+
+    private TimerYaml toTimerYaml(TimerDefinition timer) {
+        return timer == null ? null : new TimerYaml(nameOf(timer.getType()), timer.getExpression());
     }
 
     private RoleUse toRoleUseDomain(RoleUseYaml entry) {
@@ -195,6 +212,7 @@ public class WorkflowYamlMapper {
                 .authorizedRoles(entry.authorizedRoles() == null ? null : List.copyOf(entry.authorizedRoles()))
                 .milestoneRef(entry.milestoneRef())
                 .preconditionExpression(entry.preconditionExpression())
+                .timer(toTimerDomain(entry.timer()))
                 .build();
     }
 
@@ -312,7 +330,10 @@ public class WorkflowYamlMapper {
                 use.getDependsOn(),
                 nameOf(use.getJoinType()),
                 use.getCorrelationKey(),
-                use.getPayloadMapping());
+                use.getPayloadMapping(),
+                toTimerYaml(use.getTimer()),
+                use.getAttachedTo(),
+                use.isBoundary() && !use.isInterrupting() ? Boolean.FALSE : null);
     }
 
     private TaskUseYaml toTaskUseYaml(TaskUse use) {
@@ -342,7 +363,8 @@ public class WorkflowYamlMapper {
                 startEvent.getPayloadMapping(),
                 startEvent.getAuthorizedRoles(),
                 startEvent.getMilestoneRef(),
-                startEvent.getPreconditionExpression());
+                startEvent.getPreconditionExpression(),
+                toTimerYaml(startEvent.getTimer()));
     }
 
     private StepYamlEntry toStepYaml(StepDefinition step) {

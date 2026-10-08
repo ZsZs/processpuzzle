@@ -16,6 +16,7 @@ public record StartEventYaml(
         Map<String, String> payloadMapping,
         List<String> authorizedRoles,
         String milestoneRef,
-        String preconditionExpression
+        String preconditionExpression,
+        TimerYaml timer
 ) {
 }

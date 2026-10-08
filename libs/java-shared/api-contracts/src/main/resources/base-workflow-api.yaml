@@ -1257,7 +1257,11 @@ components:
 
     TaskInstanceStatus:
       type: string
-      enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED ]
+      enum: [ PENDING, ACTIVE, COMPLETED, SKIPPED, BLOCKED, CANCELLED ]
+      description: >-
+        CANCELLED is terminal but, unlike COMPLETED and SKIPPED, does not satisfy the tasks and events
+        depending on it: the task was interrupted by a boundary event, became unreachable because what
+        it depended on was cancelled, or its instance was cancelled.
 
     EventDirection:
       type: string
@@ -1272,8 +1276,32 @@ components:
       description: >-
         PENDING — not reached yet. WAITING — a catch that was reached and waits for its event.
         OCCURRED — a catch whose event arrived. THROWN — a throw that was reached and raised.
-        CANCELLED — withdrawn, because the instance was cancelled or every dependent moved on
-        without it.
+        CANCELLED — withdrawn: the instance was cancelled, every dependent moved on without it, what
+        it depended on was cancelled, or — for a boundary event — its task ended first.
+
+    TimerType:
+      type: string
+      enum: [ DURATION, DATE, CYCLE ]
+      description: >-
+        DURATION — fires once, the given time after the timer is reached. DATE — fires once, at the
+        given moment. CYCLE — fires repeatedly, at the given interval.
+
+    TimerDefinition:
+      type: object
+      required: [ type, expression ]
+      description: >-
+        When a timer fires. `expression` is either an ISO 8601 literal or a `$.variable` path into the
+        instance context, read when the timer is reached. Literals by type — DURATION: `PT2H`, `P3D`,
+        `P1M`; DATE: a date-time (`2026-10-10T08:00:00Z`), or a date, read as UTC midnight; CYCLE:
+        `R3/PT1H` (three times, hourly), `R/PT1H` (unbounded), or `R3/2026-10-10T08:00:00Z/P1D`
+        (anchored at a moment; firings already past are skipped). Years and months are calendar
+        amounts, applied in UTC.
+      properties:
+        type:
+          $ref: "#/components/schemas/TimerType"
+        expression:
+          type: string
+          example: PT2H
 
     TaskStepType:
       type: string
@@ -1670,6 +1698,10 @@ components:
         ROLE_DEFINITION when the caller holds one of `authorizedRoles`, INPUT_ARTIFACT when
         `entityId` is given and the required ENTITY artifacts are in the required state.
         TRIGGERING_EVENT and TIME_BASED_PRECONDITION never admit an explicit start.
+
+        Three start types also start the workflow on their own: TRIGGERING_EVENT when its catalogued
+        event occurs; TIME_BASED_PRECONDITION when its `timer` comes due; INPUT_ARTIFACT when the
+        subject reaches the required state — or is created, for an artifact with no required state.
       properties:
         id:
           type: string
@@ -1701,7 +1733,9 @@ components:
           type: object
           nullable: true
           description: >-
-            TRIGGERING_EVENT — maps the event into the new instance's context. Keys are context
+            TRIGGERING_EVENT and INPUT_ARTIFACT — maps the event into the new instance's context. For
+            INPUT_ARTIFACT the event is the platform fact that started it (`$.subjectId`,
+            `$.subjectType`, `$.action`, `$.state`, `$.payload.<attribute>`). Keys are context
             variable names, values are paths into the whole event — `$.subjectId`, `$.subjectType`,
             `$.eventDefinitionId`, `$.occurredAt`, `$.correlationValue`, `$.payload.<attribute>` — in a
             JSONPath subset:
@@ -1725,8 +1759,18 @@ components:
         preconditionExpression:
           type: string
           nullable: true
-          description: TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives.
+          description: >-
+            TIME_BASED_PRECONDITION — PPCL guard that must hold when the milestone arrives. Recorded,
+            not yet evaluated.
           example: milestone.status == 'PASSED'
+        timer:
+          allOf:
+            - $ref: "#/components/schemas/TimerDefinition"
+          nullable: true
+          description: >-
+            TIME_BASED_PRECONDITION — when the workflow starts on its own, and required for that type: a
+            DATE or a CYCLE literal. A DURATION would have nothing to be relative to, and there is no
+            instance context for a `$.` path to read. A scheduled start has no subject.
 
     RequiredStartArtifact:
       type: object
@@ -1924,7 +1968,7 @@ components:
     # ── Event Use ───────────────────────────────────────────
     EventUse:
       type: object
-      required: [ id, eventDefinitionId, direction ]
+      required: [ id, direction ]
       description: >-
         One intermediate event of a workflow — BPMN's intermediate throw or catch event. It names an
         entry of the organization's event catalog and takes part in the flow like a task does:
@@ -1933,6 +1977,14 @@ components:
         A THROW raises a MESSAGE or SIGNAL event the moment it is reached. A CATCH waits: a SYSTEM
         event is matched by subject — the instance's entityId — a MESSAGE by the correlation value,
         and a SIGNAL reaches every waiting instance.
+
+        A CATCH may wait for a `timer` instead of a catalogued event — exactly one of
+        `eventDefinitionId` and `timer` is set.
+
+        With `attachedTo` the catch is a boundary event of that task: it waits only while the task is
+        ACTIVE, and is cancelled once the task ends. When it fires, an `interrupting` one cancels the
+        task — whose own successors are then cancelled as unreachable — and a non-interrupting one
+        leaves the task running. Either way the boundary's dependents go ahead.
       properties:
         id:
           type: string
@@ -1947,7 +1999,8 @@ components:
           type: string
           description: >-
             Id of an event of the organization's catalog (base-event's EventDefinition). A THROW may
-            not name a SYSTEM event — those are raised by the platform only.
+            not name a SYSTEM event — those are raised by the platform only. Absent on a timer catch.
+          nullable: true
           example: InvoiceIssued
         direction:
           $ref: "#/components/schemas/EventDirection"
@@ -1978,6 +2031,24 @@ components:
             payload attribute names, values are paths into the context (`$.<variable>`).
           additionalProperties:
             type: string
+        timer:
+          allOf:
+            - $ref: "#/components/schemas/TimerDefinition"
+          nullable: true
+          description: >-
+            A timer catch — waits for time instead of a catalogued event. A CYCLE is allowed only on a
+            non-interrupting boundary event.
+        attachedTo:
+          type: string
+          nullable: true
+          description: >-
+            Id of a task of this workflow. Makes the event a boundary event of that task; it then takes
+            no `dependsOn`, and must be a CATCH.
+          example: issue-invoice
+        interrupting:
+          type: boolean
+          default: true
+          description: Boundary events only — whether firing cancels the task the event is attached to.
 
     TaskArtifactState:
       type: object
@@ -2141,6 +2212,16 @@ components:
           type: string
           format: date-time
           nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelReason:
+          type: string
+          nullable: true
+          description: >-
+            Set when status is CANCELLED — `interrupted by <eventUseId>`, `unreachable`, or the reason
+            the instance was cancelled with.
         stepResults:
           type: array
           items:
@@ -2170,6 +2251,8 @@ components:
           description: The EventUse of the workflow this instance runs.
         eventDefinitionId:
           type: string
+          nullable: true
+          description: Absent for a timer catch.
         name:
           type: string
           nullable: true
@@ -2202,6 +2285,17 @@ components:
           nullable: true
           description: CATCH — what the payload mapping added to the workflow context.
           additionalProperties: true
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            Timer catches — when the timer fires next. Absent once it has fired for the last time, and
+            when a `$.` path did not resolve to a time.
+        fireCount:
+          type: integer
+          format: int32
+          description: Timer catches — how many times the timer has fired; a CYCLE fires more than once.
 
     StepResult:
       type: object

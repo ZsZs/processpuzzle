@@ -135,10 +135,11 @@ class TaskActivationServiceTest {
     }
 
     @Test
-    void allTerminalIsTrueOnlyWhenNoTaskIsLeftOutsideCompletedOrSkipped() {
+    void allTerminalIsTrueOnlyWhenNoTaskIsLeftOutsideCompletedSkippedOrCancelled() {
         ResolvedWorkflow workflow = workflowWithSequentialTasks("draft", "review");
         UUID workflowInstanceId = UUID.randomUUID();
-        Set<TaskInstanceStatus> terminal = EnumSet.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED);
+        Set<TaskInstanceStatus> terminal =
+                EnumSet.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED, TaskInstanceStatus.CANCELLED);
 
         when(taskInstanceRepository.countByOrgKeyAndWorkflowInstanceIdAndStatusNotIn("acme", workflowInstanceId, terminal))
                 .thenReturn(0L);

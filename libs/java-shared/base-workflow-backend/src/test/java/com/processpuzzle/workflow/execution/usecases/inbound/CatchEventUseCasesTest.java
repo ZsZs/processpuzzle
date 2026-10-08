@@ -19,10 +19,13 @@ import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
+import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
+import com.processpuzzle.workflow.execution.events.TaskInterruptedEvent;
 import com.processpuzzle.workflow.execution.events.WorkflowInstanceCompletedEvent;
 import java.time.Instant;
 import java.util.List;
@@ -34,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
-/** {@link WorkflowProgression} and {@link OccurCatchEventUseCase}. */
+/** {@link WorkflowProgression}, {@link OccurCatchEventUseCase} and the {@link CatchOccurrence} it shares. */
 class CatchEventUseCasesTest {
 
     private static final String ORG = "acme";
@@ -46,6 +49,7 @@ class CatchEventUseCasesTest {
     private EventInstanceRepository events;
     private ResolveWorkflowUseCase resolve;
     private ApplicationEventPublisher publisher;
+    private TaskInstanceRepository tasks;
     private WorkflowInstance instance;
     private ResolvedWorkflow definition;
 
@@ -56,6 +60,7 @@ class CatchEventUseCasesTest {
         events = mock(EventInstanceRepository.class);
         resolve = mock(ResolveWorkflowUseCase.class);
         publisher = mock(ApplicationEventPublisher.class);
+        tasks = mock(TaskInstanceRepository.class);
         instance = WorkflowInstance.builder().id(INSTANCE_ID).orgKey(ORG).workflowId("order")
                 .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("orderId", "42")).build();
         EventUse issued = EventUse.builder().id("issued").eventDefinitionId("InvoiceIssued")
@@ -151,10 +156,55 @@ class CatchEventUseCasesTest {
         verifyNoInteractions(progression);
     }
 
+    // ---------------------------------------------------------------- boundary events
+
+    @Test
+    void anInterruptingMessageBoundaryCancelsItsActiveTask() {
+        TaskInstance review = boundaryFixture(true);
+        WorkflowProgression progression = mock(WorkflowProgression.class);
+
+        assertThat(useCase(progression).occur(ORG, EVENT_ID, message(UUID.randomUUID()))).isTrue();
+
+        assertThat(review.getStatus()).isEqualTo(TaskInstanceStatus.CANCELLED);
+        assertThat(review.getCancelReason()).isEqualTo("interrupted by issued");
+        assertThat(review.getCancelledAt()).isNotNull();
+        verify(tasks).save(review);
+        verify(publisher).publishEvent(new TaskInterruptedEvent(ORG, INSTANCE_ID, review.getId(), "review", "issued"));
+        verify(progression).advance(eq(ORG), eq(definition), eq(instance), any());
+    }
+
+    @Test
+    void aNonInterruptingBoundaryLeavesItsTaskRunning() {
+        TaskInstance review = boundaryFixture(false);
+        WorkflowProgression progression = mock(WorkflowProgression.class);
+
+        assertThat(useCase(progression).occur(ORG, EVENT_ID, message(UUID.randomUUID()))).isTrue();
+
+        assertThat(review.getStatus()).isEqualTo(TaskInstanceStatus.ACTIVE);
+        verify(tasks, never()).save(any());
+        verify(progression).advance(eq(ORG), eq(definition), eq(instance), any());
+    }
+
     // ---------------------------------------------------------------- fixtures
 
+    private TaskInstance boundaryFixture(boolean interrupting) {
+        EventUse boundary = EventUse.builder().id("issued").eventDefinitionId("InvoiceIssued")
+                .direction(EventDirection.CATCH).correlationKey("orderId").attachedTo("review")
+                .interrupting(interrupting).build();
+        definition = new ResolvedWorkflow(Workflow.builder().orgKey(ORG).id("order").events(List.of(boundary)).build(),
+                List.of(), List.of(), List.of());
+        when(resolve.resolveByOrgKeyAndId(ORG, "order")).thenReturn(definition);
+        TaskInstance review = TaskInstance.builder().id(UUID.randomUUID()).orgKey(ORG).workflowInstanceId(INSTANCE_ID)
+                .taskDefinitionId("review").name("review").status(TaskInstanceStatus.ACTIVE).build();
+        when(tasks.findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(ORG, INSTANCE_ID, "review"))
+                .thenReturn(Optional.of(review));
+        when(events.findByOrgKeyAndId(ORG, EVENT_ID)).thenReturn(Optional.of(waiting()));
+        return review;
+    }
+
     private OccurCatchEventUseCase useCase(WorkflowProgression progression) {
-        return new OccurCatchEventUseCase(events, instances, mock(TaskInstanceRepository.class), resolve, progression);
+        return new OccurCatchEventUseCase(events, instances, resolve,
+                new CatchOccurrence(events, tasks, progression, publisher));
     }
 
     private static EventInstance waiting() {

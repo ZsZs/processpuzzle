@@ -59,7 +59,8 @@ public class SkipTaskUseCase {
                 .orElseThrow(() -> new NotFoundException(
                         "No task '%s' in workflow instance '%s'".formatted(taskDefinitionId, workflowInstanceId)));
 
-        if (taskInstance.getStatus() == TaskInstanceStatus.COMPLETED || taskInstance.getStatus() == TaskInstanceStatus.SKIPPED) {
+        if (taskInstance.getStatus() == TaskInstanceStatus.COMPLETED || taskInstance.getStatus() == TaskInstanceStatus.SKIPPED
+                || taskInstance.getStatus() == TaskInstanceStatus.CANCELLED) {
             throw new ConflictException("Task '%s' is already %s".formatted(taskDefinitionId, taskInstance.getStatus()));
         }
 

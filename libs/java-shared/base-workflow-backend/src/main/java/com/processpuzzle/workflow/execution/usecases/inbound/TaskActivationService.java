@@ -17,6 +17,8 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.events.TaskActivatedEvent;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleCheckResult;
 import com.processpuzzle.workflow.execution.usecases.outbound.RuleEvaluationPort;
+import com.processpuzzle.workflow.definition.domain.TimerExpressions;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -27,6 +29,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -61,14 +66,29 @@ import org.springframework.stereotype.Service;
  * branch — are withdrawn (CANCELLED) afterwards, so they stop waiting and no longer hold the instance
  * open.
  *
+ * <p><b>Timers and boundary events.</b> A timer catch, once reached, waits with a {@code dueAt} that
+ * {@code TimerSweep} polls for. A boundary event is not reached through {@code dependsOn}: each pass,
+ * after events and tasks, arms the PENDING boundaries whose task is now ACTIVE.
+ *
+ * <p><b>Dead-path elimination.</b> A task or event that can no longer be reached is cancelled rather
+ * than left PENDING, where it would hold the instance open forever. A node is dead when its join is ALL
+ * and any dependency is CANCELLED, or its join is ANY and every dependency is. A boundary whose task
+ * has ended is cancelled first, which is what makes a boundary's own successors dead when the task
+ * finished normally, and an interrupted task's successors dead when it did not. This runs to a fixed
+ * point at the start of every pass and once more at the end.
+ *
  * <p>The event rows are reconciled with the live definition first: an {@code EventUse} added since
  * the run started gets a PENDING row, the same way the definition is read live for tasks.
  */
 @Service
 public class TaskActivationService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TaskActivationService.class);
     private static final Set<TaskInstanceStatus> TERMINAL_TASK =
-            EnumSet.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED);
+            EnumSet.of(TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED, TaskInstanceStatus.CANCELLED);
+    private static final Set<TaskInstanceStatus> UNSTARTED_TASK =
+            EnumSet.of(TaskInstanceStatus.PENDING, TaskInstanceStatus.BLOCKED);
+    static final String UNREACHABLE = "unreachable";
     private static final Set<EventInstanceStatus> OPEN_EVENT =
             EnumSet.of(EventInstanceStatus.PENDING, EventInstanceStatus.WAITING);
 
@@ -77,17 +97,30 @@ public class TaskActivationService {
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final RuleEvaluationPort ruleEvaluationPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
+
+    @Autowired
+    public TaskActivationService(TaskInstanceRepository taskInstanceRepository,
+                                 EventInstanceRepository eventInstanceRepository,
+                                 WorkflowInstanceRepository workflowInstanceRepository,
+                                 RuleEvaluationPort ruleEvaluationPort,
+                                 ApplicationEventPublisher eventPublisher,
+                                 Clock clock) {
+        this.taskInstanceRepository = taskInstanceRepository;
+        this.eventInstanceRepository = eventInstanceRepository;
+        this.workflowInstanceRepository = workflowInstanceRepository;
+        this.ruleEvaluationPort = ruleEvaluationPort;
+        this.eventPublisher = eventPublisher;
+        this.clock = clock;
+    }
 
     public TaskActivationService(TaskInstanceRepository taskInstanceRepository,
                                  EventInstanceRepository eventInstanceRepository,
                                  WorkflowInstanceRepository workflowInstanceRepository,
                                  RuleEvaluationPort ruleEvaluationPort,
                                  ApplicationEventPublisher eventPublisher) {
-        this.taskInstanceRepository = taskInstanceRepository;
-        this.eventInstanceRepository = eventInstanceRepository;
-        this.workflowInstanceRepository = workflowInstanceRepository;
-        this.ruleEvaluationPort = ruleEvaluationPort;
-        this.eventPublisher = eventPublisher;
+        this(taskInstanceRepository, eventInstanceRepository, workflowInstanceRepository, ruleEvaluationPort,
+                eventPublisher, Clock.systemUTC());
     }
 
     /**
@@ -106,14 +139,17 @@ public class TaskActivationService {
 
         long throwCount = workflow.events().stream().filter(EventUse::isThrow).count();
         for (long pass = 0; pass <= throwCount; pass++) {
+            eliminateDeadPaths(run);
             boolean thrown = reachDueEvents(run);
             for (ResolvedTask task : workflow.tasks()) {
                 activateTaskIfEligible(run, task);
             }
+            armBoundaries(run);
             if (!thrown) {
                 break;
             }
         }
+        eliminateDeadPaths(run);
         withdrawObsoleteCatches(run);
     }
 
@@ -145,12 +181,15 @@ public class TaskActivationService {
                 .build();
     }
 
-    /** Reaches every PENDING event whose dependencies are done. @return whether a throw fired */
+    /**
+     * Reaches every PENDING event in the flow whose dependencies are done; boundaries are armed by
+     * {@link #armBoundaries} instead. @return whether a throw fired
+     */
     private boolean reachDueEvents(Run run) {
         boolean thrown = false;
         for (EventUse use : run.workflow.events()) {
             EventInstance event = run.state.event(use.getId());
-            if (event == null || event.getStatus() != EventInstanceStatus.PENDING
+            if (event == null || use.isBoundary() || event.getStatus() != EventInstanceStatus.PENDING
                     || !run.state.isSatisfied(use.getDependsOn(), use.getJoinType())) {
                 continue;
             }
@@ -164,9 +203,21 @@ public class TaskActivationService {
         return thrown;
     }
 
+    /** A PENDING boundary starts waiting once its task is ACTIVE. */
+    private void armBoundaries(Run run) {
+        for (EventUse use : run.workflow.events()) {
+            EventInstance event = run.state.event(use.getId());
+            TaskInstance task = use.isBoundary() ? run.state.task(use.getAttachedTo()) : null;
+            if (event != null && task != null && event.getStatus() == EventInstanceStatus.PENDING
+                    && task.getStatus() == TaskInstanceStatus.ACTIVE) {
+                startWaiting(run, use, event);
+            }
+        }
+    }
+
     private void raise(Run run, EventUse use, EventInstance event) {
         WorkflowInstance instance = run.instance();
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         Map<String, Object> payload = PayloadPath.map(run.context, use.getPayloadMapping());
         String correlationValue = use.getCorrelationKey() == null ? null : stringOf(run.context.get(use.getCorrelationKey()));
         event.setStatus(EventInstanceStatus.THROWN);
@@ -185,6 +236,10 @@ public class TaskActivationService {
      * instance's subject: a SYSTEM event is matched on it, and for a SIGNAL it is merely recorded.
      */
     private void startWaiting(Run run, EventUse use, EventInstance event) {
+        if (use.hasTimer()) {
+            armTimer(run, use, event);
+            return;
+        }
         String correlationValue;
         if (use.getCorrelationKey() != null) {
             correlationValue = stringOf(run.context.get(use.getCorrelationKey()));
@@ -193,8 +248,105 @@ public class TaskActivationService {
             correlationValue = instance == null ? null : instance.getEntityId();
         }
         event.setStatus(EventInstanceStatus.WAITING);
-        event.setWaitingSince(Instant.now());
+        event.setWaitingSince(clock.instant());
         event.setCorrelationValue(correlationValue);
+        eventInstanceRepository.save(event);
+    }
+
+    /**
+     * A timer catch waits for its due time. One whose expression cannot be armed (a {@code $.} path that
+     * resolves to nothing, or to something that is not a time) waits without one, which is logged: it
+     * will not fire, and only cancelling the instance releases it.
+     */
+    private void armTimer(Run run, EventUse use, EventInstance event) {
+        Instant now = clock.instant();
+        TimerExpressions.Arming arming = null;
+        try {
+            arming = TimerExpressions.arm(use.getTimer(), path -> PayloadPath.resolve(run.context, path), now).orElse(null);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("{}: timer '{}' of workflow instance {} cannot be armed: {}", run.orgKey, use.getId(),
+                    run.workflowInstanceId, e.getMessage());
+        }
+        if (arming == null) {
+            LOG.warn("{}: timer '{}' of workflow instance {} has no due time ('{}'); it will not fire.", run.orgKey,
+                    use.getId(), run.workflowInstanceId, use.getTimer().getExpression());
+        }
+        event.setStatus(EventInstanceStatus.WAITING);
+        event.setWaitingSince(now);
+        event.setDueAt(arming == null ? null : arming.dueAt());
+        event.setRemainingFirings(arming == null ? null : arming.remainingFirings());
+        event.setFireCount(0);
+        eventInstanceRepository.save(event);
+    }
+
+    // ---------------------------------------------------------------- dead paths
+
+    /**
+     * Cancels, to a fixed point, the boundaries whose task has ended and the tasks and events that can no
+     * longer be reached. See the class comment.
+     */
+    private void eliminateDeadPaths(Run run) {
+        boolean changed = true;
+        while (changed) {
+            changed = cancelEndedBoundaries(run) | cancelDeadTasks(run) | cancelDeadEvents(run);
+        }
+    }
+
+    private boolean cancelEndedBoundaries(Run run) {
+        boolean changed = false;
+        for (EventUse use : run.workflow.events()) {
+            EventInstance event = use.isBoundary() ? run.state.event(use.getId()) : null;
+            if (event == null) {
+                continue;
+            }
+            TaskInstance task = run.state.task(use.getAttachedTo());
+            if (task != null && !TERMINAL_TASK.contains(task.getStatus())) {
+                continue;
+            }
+            if (!event.getStatus().isTerminal()) {
+                cancel(event);
+                changed = true;
+            } else if (event.getDueAt() != null) {
+                // A cycle that already fired: it stops with its task.
+                event.setDueAt(null);
+                eventInstanceRepository.save(event);
+            }
+        }
+        return changed;
+    }
+
+    private boolean cancelDeadTasks(Run run) {
+        boolean changed = false;
+        for (ResolvedTask task : run.workflow.tasks()) {
+            TaskInstance instance = run.state.task(task.id());
+            if (instance != null && UNSTARTED_TASK.contains(instance.getStatus())
+                    && run.state.isDead(task.dependsOn(), task.joinType())) {
+                instance.setStatus(TaskInstanceStatus.CANCELLED);
+                instance.setCancelledAt(clock.instant());
+                instance.setCancelReason(UNREACHABLE);
+                taskInstanceRepository.save(instance);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private boolean cancelDeadEvents(Run run) {
+        boolean changed = false;
+        for (EventUse use : run.workflow.events()) {
+            EventInstance event = run.state.event(use.getId());
+            if (event != null && !use.isBoundary() && event.getStatus() == EventInstanceStatus.PENDING
+                    && run.state.isDead(use.getDependsOn(), use.getJoinType())) {
+                cancel(event);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private void cancel(EventInstance event) {
+        event.setStatus(EventInstanceStatus.CANCELLED);
+        event.setDueAt(null);
         eventInstanceRepository.save(event);
     }
 
@@ -224,8 +376,7 @@ public class TaskActivationService {
                 }
             }
             if (!dependentsMovedOn.isEmpty() && dependentsMovedOn.stream().allMatch(Boolean::booleanValue)) {
-                event.setStatus(EventInstanceStatus.CANCELLED);
-                eventInstanceRepository.save(event);
+                cancel(event);
             }
         }
     }
@@ -254,7 +405,7 @@ public class TaskActivationService {
         RuleCheckResult check = ruleEvaluationPort.evaluate(run.orgKey, task.definition().getPreconditionRuleId(), run.context);
         if (check.passed()) {
             instance.setStatus(TaskInstanceStatus.ACTIVE);
-            instance.setActivatedAt(Instant.now());
+            instance.setActivatedAt(clock.instant());
             instance.setBlockedReason(null);
             taskInstanceRepository.save(instance);
             eventPublisher.publishEvent(new TaskActivatedEvent(run.orgKey, run.workflowInstanceId, instance.getId(), task.id()));
@@ -279,8 +430,8 @@ public class TaskActivationService {
     // ---------------------------------------------------------------- close-out
 
     /**
-     * Whether nothing of the instance can move any more: every task COMPLETED or SKIPPED and every
-     * event THROWN, OCCURRED or CANCELLED. An event row whose {@code EventUse} the live definition no
+     * Whether nothing of the instance can move any more: every task COMPLETED, SKIPPED or CANCELLED and
+     * every event THROWN, OCCURRED or CANCELLED. An event row whose {@code EventUse} the live definition no
      * longer has is ignored — nothing would ever reach it.
      *
      * <p>Counts rather than loaded rows: a row this transaction already holds would be returned as its
@@ -340,6 +491,28 @@ public class TaskActivationService {
             }
             Predicate<String> done = this::isSatisfied;
             return joinType == JoinType.ANY ? dependsOn.stream().anyMatch(done) : dependsOn.stream().allMatch(done);
+        }
+
+        /** Whether the task or event {@code id} was cancelled: it will never be done. */
+        boolean isCancelled(String id) {
+            TaskInstance task = tasks.get(id);
+            if (task != null) {
+                return task.getStatus() == TaskInstanceStatus.CANCELLED;
+            }
+            EventInstance event = events.get(id);
+            return event != null && event.getStatus() == EventInstanceStatus.CANCELLED;
+        }
+
+        /**
+         * Whether a node waiting on {@code dependsOn} can never be reached: under ALL one cancelled
+         * dependency is enough, under ANY every one has to be. A node without dependencies never is.
+         */
+        boolean isDead(List<String> dependsOn, JoinType joinType) {
+            if (dependsOn == null || dependsOn.isEmpty()) {
+                return false;
+            }
+            Predicate<String> cancelled = this::isCancelled;
+            return joinType == JoinType.ANY ? dependsOn.stream().allMatch(cancelled) : dependsOn.stream().anyMatch(cancelled);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.processpuzzle.workflow.execution.domain;
 
 import com.processpuzzle.workflow.definition.domain.EventDirection;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,9 @@ public interface EventInstanceRepository extends JpaRepository<EventInstance, UU
     long countByOrgKeyAndWorkflowInstanceIdAndEventUseIdInAndStatusIn(
             String orgKey, UUID workflowInstanceId, Collection<String> eventUseIds,
             Collection<EventInstanceStatus> statuses);
+
+    /** The timers due by {@code now}, across organizations, earliest first — one page of {@code TimerSweep}. */
+    List<EventInstance> findTop100ByDueAtLessThanEqualOrderByDueAtAsc(Instant now);
 
     /** Whether an occurrence was already delivered to a catch — a MESSAGE redelivery. */
     boolean existsByOrgKeyAndOccurrenceIdAndDirection(String orgKey, UUID occurrenceId, EventDirection direction);

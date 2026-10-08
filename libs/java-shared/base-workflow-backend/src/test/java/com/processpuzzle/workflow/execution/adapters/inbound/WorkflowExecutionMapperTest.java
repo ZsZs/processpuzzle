@@ -4,6 +4,9 @@ import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
@@ -158,5 +161,24 @@ class WorkflowExecutionMapperTest {
         assertThat(response.getTask()).isNotNull();
         assertThat(response.getTask().getId()).isEqualTo(taskId.toString());
         assertThat(response.getPostconditionDetail()).isEqualTo("Condition met");
+    }
+    @Test
+    void toModel_carriesCancellationAndTimerFields() {
+        Instant now = Instant.now();
+        TaskInstance cancelled = TaskInstance.builder().id(UUID.randomUUID()).taskDefinitionId("issue").name("Issue")
+                .status(TaskInstanceStatus.CANCELLED).cancelledAt(now).cancelReason("interrupted by overdue").build();
+        EventInstance timer = EventInstance.builder().id(UUID.randomUUID()).eventUseId("overdue")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.WAITING).dueAt(now).fireCount(2).build();
+        EventInstance legacy = EventInstance.builder().id(UUID.randomUUID()).eventUseId("old")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.WAITING).build();
+
+        var task = mapper.toModel(cancelled);
+        assertThat(task.getStatus()).isEqualTo(com.processpuzzle.workflow.model.TaskInstanceStatus.CANCELLED);
+        assertThat(task.getCancelledAt()).isNotNull();
+        assertThat(task.getCancelReason()).isEqualTo("interrupted by overdue");
+        assertThat(mapper.toModel(timer).getDueAt()).isNotNull();
+        assertThat(mapper.toModel(timer).getFireCount()).isEqualTo(2);
+        assertThat(mapper.toModel(timer).getEventDefinitionId()).isNull();
+        assertThat(mapper.toModel(legacy).getFireCount()).isZero();
     }
 }

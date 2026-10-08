@@ -24,7 +24,9 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
@@ -176,15 +178,32 @@ class WorkflowExecutionUseCasesTest {
 
     @Test
     void cancelWorkflowInstanceUseCase_successAndConflict() {
-        CancelWorkflowInstanceUseCase useCase = new CancelWorkflowInstanceUseCase(procInstRepo, eventInstRepo, eventPublisher);
+        CancelWorkflowInstanceUseCase useCase =
+                new CancelWorkflowInstanceUseCase(procInstRepo, taskInstRepo, eventInstRepo, eventPublisher);
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance active = WorkflowInstance.builder().id(instanceId).orgKey(ORG).status(WorkflowInstanceStatus.ACTIVE).build();
+        TaskInstance running = TaskInstance.builder().taskDefinitionId("a").status(TaskInstanceStatus.ACTIVE).build();
+        TaskInstance done = TaskInstance.builder().taskDefinitionId("b").status(TaskInstanceStatus.COMPLETED).build();
+        EventInstance timer = EventInstance.builder().eventUseId("t").status(EventInstanceStatus.WAITING)
+                .dueAt(java.time.Instant.now()).build();
+        EventInstance cycle = EventInstance.builder().eventUseId("c").status(EventInstanceStatus.OCCURRED)
+                .dueAt(java.time.Instant.now()).build();
 
         when(procInstRepo.findByOrgKeyAndId(ORG, instanceId)).thenReturn(Optional.of(active));
+        when(taskInstRepo.findByOrgKeyAndWorkflowInstanceId(ORG, instanceId)).thenReturn(List.of(running, done));
+        when(eventInstRepo.findByOrgKeyAndWorkflowInstanceId(ORG, instanceId)).thenReturn(List.of(timer, cycle));
 
         useCase.cancel(ORG, instanceId, "User requested");
         assertThat(active.getStatus()).isEqualTo(WorkflowInstanceStatus.CANCELLED);
         verify(procInstRepo).save(active);
+        assertThat(running.getStatus()).isEqualTo(TaskInstanceStatus.CANCELLED);
+        assertThat(running.getCancelReason()).isEqualTo("User requested");
+        assertThat(running.getCancelledAt()).isNotNull();
+        assertThat(done.getStatus()).isEqualTo(TaskInstanceStatus.COMPLETED);
+        assertThat(timer.getStatus()).isEqualTo(EventInstanceStatus.CANCELLED);
+        assertThat(timer.getDueAt()).isNull();
+        assertThat(cycle.getStatus()).isEqualTo(EventInstanceStatus.OCCURRED);
+        assertThat(cycle.getDueAt()).isNull();
 
         // Cancel already cancelled / completed throws ConflictException
         WorkflowInstance cancelled = WorkflowInstance.builder().id(instanceId).orgKey(ORG).status(WorkflowInstanceStatus.CANCELLED).build();

@@ -190,7 +190,7 @@ different stages:
 | `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
-| `base-workflow` | authoring UI for workflows and tools, with start / end events in the modeler; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented; start events guard explicit starts, and a TRIGGERING_EVENT start event starts the workflow when its catalogued event occurs; intermediate throw / catch events raise and wait for catalogued events during a run |
+| `base-workflow` | authoring UI for workflows and tools, with start / end, timer and boundary events in the modeler; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented; start events guard explicit starts, and TRIGGERING_EVENT, INPUT_ARTIFACT and TIME_BASED_PRECONDITION start events start the workflow on their own; intermediate throw / catch events raise and wait for catalogued events during a run; timers (duration, date, cycle) and interrupting / non-interrupting boundary events on tasks |
 | `base-app` | scaffold | scaffold |
 | `base-event` | CRUD screens for the event catalog | event catalog, matching of platform facts to catalogued events, and republishing of MESSAGE / SIGNAL events thrown by workflows |
 

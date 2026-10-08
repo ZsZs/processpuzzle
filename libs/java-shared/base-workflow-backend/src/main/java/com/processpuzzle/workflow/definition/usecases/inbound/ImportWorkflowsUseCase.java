@@ -11,6 +11,7 @@ import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlDo
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.WorkflowYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartEventYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.TimerYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StepYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ToolOperationYaml;
@@ -20,6 +21,7 @@ import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.AuthType;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.TimerType;
 import com.processpuzzle.workflow.definition.domain.HttpMethod;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -34,6 +36,7 @@ import com.processpuzzle.workflow.definition.domain.TaskStepType;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -276,7 +279,16 @@ public class ImportWorkflowsUseCase {
                 errors.add(WORKFLOW_PREFIX + entry.id() + "', event '" + eventId
                         + "' has unknown joinType '" + use.joinType() + "'.");
             }
+            validateTimerType(entry, "event", eventId, use.timer(), errors);
             validateDependsOn(entry, "event", eventId, use.dependsOn(), flowIds, errors);
+        }
+    }
+
+    private void validateTimerType(WorkflowYamlEntry entry, String ownerKind, String ownerId, TimerYaml timer,
+                                   List<String> errors) {
+        if (timer != null && !WorkflowYamlMapper.isEnumName(TimerType.class, timer.type())) {
+            errors.add(WORKFLOW_PREFIX + entry.id() + "', " + ownerKind + " '" + ownerId
+                    + "' has an unknown timer type '" + timer.type() + "'.");
         }
     }
 
@@ -297,7 +309,7 @@ public class ImportWorkflowsUseCase {
     }
 
     /**
-     * Only each start event's {@code startType} enum, which is decidable from the file. Id
+     * Only each start event's {@code startType} and timer type enums, which are decidable from the file. Id
      * presence and uniqueness, and whether the required artifacts and authorized roles exist, are
      * left to {@link WorkflowValidator} with the rest of the save-time checks.
      */
@@ -310,6 +322,7 @@ public class ImportWorkflowsUseCase {
                 errors.add(WORKFLOW_PREFIX + entry.id() + "', start event '" + startEvent.id()
                         + "' has an unknown startType '" + startEvent.startType() + "'.");
             }
+            validateTimerType(entry, "start event", startEvent.id(), startEvent.timer(), errors);
         }
     }
 
@@ -385,6 +398,7 @@ public class ImportWorkflowsUseCase {
             tally.count(existing.isPresent());
             validator.validate(workflow);
             repository.save(workflow);
+            events.publishEvent(new WorkflowChangedEvent(orgKey, workflow.getId(), false));
         }
     }
 
