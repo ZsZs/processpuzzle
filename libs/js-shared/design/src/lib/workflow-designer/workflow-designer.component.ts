@@ -5,9 +5,9 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer.tabs';
 
 /**
- * The Workflows section of the designer: one page whose tabs switch between the six entities of
- * base-workflow — the workflow itself, the four catalog definitions it composes, and the instances it
- * produces.
+ * The Workflows section of the designer: one page whose tabs switch between the workflow itself, the
+ * catalog definitions it composes — base-workflow's four and base-event's Event Definition — and the
+ * instances it produces.
  *
  * Route buttons instead of a second tab bar, so the page does not stack two nearly identical tab
  * controls on top of each other. Each button still deep-links, survives a reload and keeps the browser's

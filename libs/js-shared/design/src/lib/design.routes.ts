@@ -7,6 +7,7 @@ import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
+import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
@@ -79,7 +80,7 @@ export const DESIGN_ROUTES: Routes = [
     data: { icon: 'flag_circle', menuTitle: 'design.states' },
     children: [{ path: '', pathMatch: 'full', redirectTo: 'state-machine-definition' }, ...BASE_STATE_ROUTES],
   },
-  // One section, six tabs — see WorkflowDesignerComponent. `BASE_WORKFLOW_ROUTES` is spread unchanged, so
+  // One section, seven tabs — see WorkflowDesignerComponent. `BASE_WORKFLOW_ROUTES` is spread unchanged, so
   // its branches keep their own transloco scopes and stay mountable elsewhere (the testbed mounts them a
   // second time under `/base-workflow/samples`); only the prefix they hang under is new. As for base-app,
   // base-document and base-widget, the hosting application has to spread BASE_WORKFLOW_FACADE_PROVIDERS
@@ -87,8 +88,13 @@ export const DESIGN_ROUTES: Routes = [
   // entity and its embedded levels through BASE_ENTITY_FACADE_REGISTRY and this library cannot contribute
   // to that token without replacing it.
   //
+  // BASE_EVENT_ROUTES is the seventh tab, the event catalog: base-workflow's start events and throw/catch
+  // events name an Event Definition by id without importing base-event, so its authoring screen belongs
+  // beside them. The same facade rule applies: BASE_EVENT_FACADE_PROVIDERS and BASE_EVENT_ENTITY_FACADES,
+  // which also fill the Event pickers of the workflow's own form.
+  //
   // Nested under one route rather than spread at this level like BASE_RULE_ROUTES and
-  // BASE_DOCUMENT_ROUTES: six branches for one authoring subject would be six sidenav entries, and their
+  // BASE_DOCUMENT_ROUTES: seven branches for one authoring subject would be seven sidenav entries, and their
   // `menuTitle` keys live in the `base_workflow` scope while DesignSidenavComponent registers only
   // `design`.
   {
@@ -98,7 +104,7 @@ export const DESIGN_ROUTES: Routes = [
     component: WorkflowDesignerComponent,
     // No `providers`: the tab bar names its `design` scope on the directive itself, so this route adds
     // nothing to the injectors the tabs' own screens resolve through.
-    children: [{ path: '', pathMatch: 'full', redirectTo: 'workflow' }, ...BASE_WORKFLOW_ROUTES],
+    children: [{ path: '', pathMatch: 'full', redirectTo: 'workflow' }, ...BASE_WORKFLOW_ROUTES, ...BASE_EVENT_ROUTES],
   },
   // One section, three tabs — see ApplicationDesignerComponent. Both spreads are unchanged, so the branches
   // keep their own transloco scopes and stay mountable elsewhere (the testbed mounts BASE_APP_ROUTES a second

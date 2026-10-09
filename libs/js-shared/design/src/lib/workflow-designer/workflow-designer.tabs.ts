@@ -10,12 +10,14 @@ export interface WorkflowDesignerTab {
 /**
  * The tabs of the Workflows section, in the order they are shown.
  *
- * Six views of one authoring subject, so they share a page instead of six sidenav entries. The order is
- * the order a tenant fills the catalog in: the workflow first, because it is what the author came for,
- * then the four definitions it composes — roles, tasks, artifacts, tools — and last the runs those
- * produce, which are read-only.
+ * Seven views of one authoring subject, so they share a page instead of seven sidenav entries. The order
+ * is the order a tenant fills the catalog in: the workflow first, because it is what the author came for,
+ * then the definitions it composes — roles, tasks, artifacts, tools, and the events its start events and
+ * throw/catch events name — and last the runs those produce, which are read-only.
  *
- * Every path is contributed by `BASE_WORKFLOW_ROUTES` and every one of them is
+ * Every path is contributed by `BASE_WORKFLOW_ROUTES`, except `event-definition`, which is
+ * `BASE_EVENT_ROUTES`' — base-workflow names an event by id and never imports base-event, so this page is
+ * where the two meet. Every one of them is
  * `snakeCaseName(entityName)`, which is not a style choice: `BaseFormNavigatorSingletonStore` builds a
  * details URL from the entity name, so a renamed segment silently breaks the Name column and Edit
  * navigation of that branch.
@@ -35,5 +37,6 @@ export const WORKFLOW_DESIGNER_TABS: WorkflowDesignerTab[] = [
   { path: 'task-definition', icon: 'assignment', label: 'design.workflow-tasks' },
   { path: 'artifact-definition', icon: 'inventory_2', label: 'design.workflow-artifacts' },
   { path: 'tool-definition', icon: 'build', label: 'design.workflow-tools' },
+  { path: 'event-definition', icon: 'bolt', label: 'design.workflow-events' },
   { path: 'workflow-instance', icon: 'play_circle', label: 'design.workflow-instances' },
 ];

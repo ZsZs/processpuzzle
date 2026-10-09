@@ -44,7 +44,7 @@ describe('design translations', () => {
   // release without ever being added here, and the sidenav rendered the key itself.
   //
   // Filtered to the keys of *this* scope, because not every mounted branch names one. base-app's routes
-  // do declare `design.*` menu titles — an inversion the tab files call out — but base-workflow's six
+  // do declare `design.*` menu titles — an inversion the tab files call out — but base-workflow's and base-event's
   // branches name keys of their own `base_workflow` scope, and holding this bundle responsible for
   // another library's key space would fail the moment any such branch is mounted here.
   it('translates every menu title the design routes declare in its own scope', () => {
