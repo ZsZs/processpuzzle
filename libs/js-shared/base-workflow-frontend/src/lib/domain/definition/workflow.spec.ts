@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, ToolUse, Workflow, WorkflowTaskAssignment } from './workflow';
 
 describe('Workflow', () => {
   // All four, and for one reason: a `RELATED_ENTITIES` control needs a list to add its first pick to
@@ -43,20 +43,23 @@ describe('Workflow', () => {
     expect(workflow.tools).toEqual([{ toolDefinitionId: 'automated-check-tool' }]);
   });
 
-  // Flattened onto the entity rather than nested, following the `auth` fields of `Tool Definition`: the
-  // generic form builds one control per attribute, so a nested object needs an embedded entity and a
-  // start condition is not a list. It has to be modelled at all because the PUT is a full replacement -
-  // a field the entity does not carry is a field the next save deletes, and this one was absent.
-  it('carries the start condition flattened, its one list defaulted', () => {
-    const workflow = new Workflow({ id: 'p1' });
+  // Modelled at all because the PUT is a full replacement — a field the entity does not carry is a field
+  // the next save deletes. Defaulted to an empty list so the embedded control has one to add to.
+  it('defaults its start events to none', () => {
+    expect(new Workflow({ id: 'p1' }).startEvents).toEqual([]);
+  });
 
-    expect(workflow.startType).toBeUndefined();
-    expect(workflow.requiredArtifacts).toEqual([]);
-    expect(workflow.authorizedRoles).toEqual([]);
-    expect(workflow.eventType).toBeUndefined();
-    expect(workflow.payloadMapping).toBeUndefined();
-    expect(workflow.milestoneRef).toBeUndefined();
-    expect(workflow.preconditionExpression).toBeUndefined();
+  it('builds a blank start event with its two lists defaulted', () => {
+    const event = new StartEvent();
+
+    expect(event.id).toBe('');
+    expect(event.startType).toBeUndefined();
+    expect(event.requiredArtifacts).toEqual([]);
+    expect(event.authorizedRoles).toEqual([]);
+    expect(event.eventType).toBeUndefined();
+    expect(event.payloadMapping).toBeUndefined();
+    expect(event.milestoneRef).toBeUndefined();
+    expect(event.preconditionExpression).toBeUndefined();
   });
 });
 
@@ -65,7 +68,7 @@ describe('the Use rows', () => {
   // must not reach the payload: `declare` emits nothing, which is what keeps the row exactly the shape
   // the schema describes.
   it('carry no id key at all, the schema giving them none', () => {
-    [new RoleUse(), new ArtifactUse(), new ToolUse(), new RequiredStartArtifact()].forEach((use) => expect('id' in use).toBe(false));
+    [new RoleUse(), new ArtifactUse(), new ToolUse(), new RequiredStartArtifact(), new TaskArtifactState()].forEach((use) => expect('id' in use).toBe(false));
   });
 
   it('mint a blank row an Add can open a form on', () => {
@@ -87,6 +90,11 @@ describe('WorkflowTaskAssignment', () => {
 
     expect(assignment.parallel).toBe(false);
     expect(assignment.override).toBe(false);
+  });
+
+  it('defaults the artifact states to an empty list, and each state to absent', () => {
+    expect(new WorkflowTaskAssignment().artifactStates).toEqual([]);
+    expect(new TaskArtifactState({ artifactDefinitionId: 'order-entity' })).toEqual({ artifactDefinitionId: 'order-entity', inputState: undefined, outputState: undefined });
   });
 
   // A false flag has to survive the round trip as `false`, not as `undefined`: the PUT is a full
@@ -112,7 +120,7 @@ describe('WorkflowTaskAssignment', () => {
   it('carries no id key at all, the schema giving it none', () => {
     const assignment = new WorkflowTaskAssignment({ taskDefinitionId: 'review-order', performedBy: 'clerk' });
 
-    expect(Object.keys(assignment)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'joinType', 'parallel', 'override']);
+    expect(Object.keys(assignment)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'joinType', 'parallel', 'override', 'artifactStates']);
     expect('id' in assignment).toBe(false);
   });
 

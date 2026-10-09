@@ -1,0 +1,39 @@
+# The testbed tenant's event catalog. Each SYSTEM event names a platform fact about an entity type —
+# its definition code, as in base-entity's seed — and the workflows in base-workflow's seed refer to
+# them by id. order-fulfillment-workflow starts on OrderCreatedEvent.
+event-definitions:
+  - id: OrderCreatedEvent
+    name: Order created
+    description: A new Order was created.
+    kind: SYSTEM
+    subjectType: order
+    action: CREATED
+
+  - id: OrderConfirmedEvent
+    name: Order confirmed
+    description: An Order entered state CONFIRMED.
+    kind: SYSTEM
+    subjectType: order
+    action: STATE_CHANGED
+    state: CONFIRMED
+
+  - id: OrderDeliveredEvent
+    name: Order delivered
+    description: An Order entered state DELIVERED.
+    kind: SYSTEM
+    subjectType: order
+    action: STATE_CHANGED
+    state: DELIVERED
+
+  # MESSAGE events of the invoice round trip: order-fulfillment-workflow throws InvoiceRequested, which
+  # starts invoicing-workflow; that throws InvoiceIssued back, which order-fulfillment catches. Both
+  # are correlated on the order's id.
+  - id: InvoiceRequested
+    name: Invoice requested
+    description: An approved Order asks for its invoice.
+    kind: MESSAGE
+
+  - id: InvoiceIssued
+    name: Invoice issued
+    description: The invoice of an Order was issued.
+    kind: MESSAGE

@@ -8,17 +8,12 @@
     "activeInstances": "Active Instances",
     "version": "Version",
     "updatedAt": "Updated At",
-    "startType": "Start Type",
-    "eventType": "Event Type",
-    "milestoneRef": "Milestone",
-    "preconditionExpression": "Precondition",
-    "authorizedRoles": "Authorized Roles",
-    "payloadMapping": "Payload Mapping",
-    "requiredArtifacts": "Required Artifacts",
+    "startEvents": "Start Events",
     "roles": "Roles",
     "artifacts": "Artifacts",
     "tools": "Tools",
     "tasks": "Tasks",
+    "events": "Events",
     "tabs": {
       "modeler": "Workflow Modeler"
     },
@@ -29,6 +24,8 @@
       "tools": "Tools",
       "unassigned": "Unassigned",
       "join_any": "any",
+      "start": "Start",
+      "end": "End",
       "save": "Save layout",
       "properties": {
         "none": "Select an element to see its properties.",
@@ -49,7 +46,13 @@
           "start": "Required at start",
           "unknown": "Related to"
         }
-      }
+      },
+      "throw_event": "Throw event",
+      "catch_event": "Catch event",
+      "timer_event": "Timer event",
+      "boundary_event": "Boundary event (interrupting)",
+      "non_interrupting_boundary_event": "Boundary event (non-interrupting)",
+      "event": "Intermediate event"
     }
   },
   "workflow_task_assignment": {
@@ -59,7 +62,8 @@
     "dependsOn": "Depends On",
     "joinType": "Join Type",
     "parallel": "Parallel",
-    "override": "Override"
+    "override": "Override",
+    "artifactStates": "Artifact States"
   },
   "workflow_role_use": {
     "_self": "Role Use",
@@ -67,16 +71,52 @@
   },
   "workflow_artifact_use": {
     "_self": "Artifact Use",
-    "artifactDefinitionId": "Artifact"
+    "artifactDefinitionId": "Artifact",
+    "objectName": "Object Name"
   },
   "workflow_tool_use": {
     "_self": "Tool Use",
     "toolDefinitionId": "Tool"
   },
+  "workflow_start_event": {
+    "_self": "Start Event",
+    "id": "Id",
+    "name": "Name",
+    "startType": "Start Type",
+    "eventType": "Event Type",
+    "milestoneRef": "Milestone",
+    "preconditionExpression": "Precondition",
+    "timerType": "Timer",
+    "timerExpression": "Timer Expression",
+    "authorizedRoles": "Authorized Roles",
+    "payloadMapping": "Payload Mapping",
+    "requiredArtifacts": "Required Artifacts"
+  },
   "workflow_required_start_artifact": {
     "_self": "Required Artifact",
     "artifactDefinitionId": "Artifact",
     "state": "State"
+  },
+  "workflow_event_use": {
+    "_self": "Intermediate Event",
+    "id": "Id",
+    "name": "Name",
+    "direction": "Direction",
+    "eventDefinitionId": "Event",
+    "dependsOn": "Depends On",
+    "joinType": "Join Type",
+    "correlationKey": "Correlation Key",
+    "timerType": "Timer",
+    "timerExpression": "Timer Expression",
+    "attachedTo": "Attached To",
+    "interrupting": "Interrupting",
+    "payloadMapping": "Payload Mapping"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "Task Artifact State",
+    "artifactDefinitionId": "Artifact",
+    "inputState": "Input State",
+    "outputState": "Output State"
   },
   "workflow_role_definition": {
     "_self": "Role",
@@ -155,14 +195,17 @@
     "_self": "Workflow Instance",
     "id": "Id",
     "workflowId": "Workflow",
+    "startEventId": "Start Event",
     "workflowName": "Workflow Name",
     "status": "Status",
-    "entityId": "Entity",
+    "instanceNumber": "No.",
+    "entityLabel": "Entity",
     "startedAt": "Started At",
     "completedAt": "Completed At",
     "context": "Context",
     "tasks": "Tasks",
-    "artifacts": "Artifacts"
+    "artifacts": "Artifacts",
+    "events": "Events"
   },
   "task_instance": {
     "_self": "Task Instance",
@@ -175,6 +218,8 @@
     "activatedAt": "Activated At",
     "completedAt": "Completed At",
     "skippedAt": "Skipped At",
+    "cancelledAt": "Cancelled At",
+    "cancelReason": "Cancel Reason",
     "stepResults": "Step Results",
     "dashboard": {
       "title": "My tasks",
@@ -208,7 +253,8 @@
       "skip_reason": "Reason for skipping",
       "unstated_refusal": "Not accepted yet, and the server gave no detail.",
       "unassigned": "unassigned",
-      "assigned_to": "Assigned to"
+      "assigned_to": "Assigned to",
+      "waiting_for": "Waiting for"
     }
   },
   "artifact_instance": {
@@ -221,6 +267,20 @@
     "stateMachineInstanceId": "State Machine Instance",
     "currentState": "Current State",
     "updatedAt": "Updated At"
+  },
+  "event_instance": {
+    "_self": "Event Instance",
+    "eventUseId": "Event",
+    "direction": "Direction",
+    "status": "Status",
+    "eventDefinitionId": "Catalog Event",
+    "correlationValue": "Correlation Value",
+    "waitingSince": "Waiting Since",
+    "occurredAt": "Occurred At",
+    "dueAt": "Due At",
+    "fireCount": "Fire Count",
+    "payload": "Payload",
+    "contextContribution": "Context Contribution"
   },
   "task_step_result": {
     "_self": "Step Result",

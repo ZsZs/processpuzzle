@@ -9,21 +9,29 @@ import { createStepDefinitionDescriptor } from './domain/definition/step-definit
 import { createTaskDefinitionDescriptor } from './domain/definition/task-definition.descriptors';
 import { createWorkflowArtifactUseDescriptor, createWorkflowRoleUseDescriptor, createWorkflowToolUseDescriptor } from './domain/definition/workflow-use.descriptors';
 import { createRequiredStartArtifactDescriptor } from './domain/definition/required-start-artifact.descriptors';
+import { createStartEventDescriptor } from './domain/definition/start-event.descriptors';
+import { createEventUseDescriptor } from './domain/definition/event-use.descriptors';
+import { createTaskArtifactStateDescriptor } from './domain/definition/task-artifact-state.descriptors';
 import { createToolDefinitionDescriptor } from './domain/definition/tool-definition.descriptors';
 import { createToolOperationDescriptor } from './domain/definition/tool-operation.descriptors';
 import { createArtifactInstanceDescriptor } from './domain/execution/artifact-instance.descriptors';
+import { createEventInstanceDescriptor } from './domain/execution/event-instance.descriptors';
 import { createWorkflowInstanceDescriptor } from './domain/execution/workflow-instance.descriptors';
 import { createStepResultDescriptor } from './domain/execution/step-result.descriptors';
 import { createTaskInstanceDescriptor } from './domain/execution/task-instance.descriptors';
+import { EVENT_DEFINITION_ENTITY_NAME } from './domain/workflow-entity-names';
 
 /** Every descriptor this library ships, so the registry can be checked against the graph itself. */
 const allDescriptors: BaseEntityDescriptor[] = [
   createWorkflowDescriptor(),
   createWorkflowTaskAssignmentDescriptor(),
+  createTaskArtifactStateDescriptor(),
   createWorkflowRoleUseDescriptor(),
   createWorkflowArtifactUseDescriptor(),
   createWorkflowToolUseDescriptor(),
+  createStartEventDescriptor(),
   createRequiredStartArtifactDescriptor(),
+  createEventUseDescriptor(),
   createRoleDefinitionDescriptor(),
   createArtifactDefinitionDescriptor(),
   createTaskDefinitionDescriptor(),
@@ -33,6 +41,7 @@ const allDescriptors: BaseEntityDescriptor[] = [
   createWorkflowInstanceDescriptor(),
   createTaskInstanceDescriptor(),
   createArtifactInstanceDescriptor(),
+  createEventInstanceDescriptor(),
   createStepResultDescriptor(),
 ];
 
@@ -47,7 +56,9 @@ const referencedNames = new Set(
     .flatMap((descriptor) => flatten(descriptor.attrDescriptors))
     .filter((attr) => attr.formControlType === FormControlType.RELATED_ENTITIES || attr.formControlType === FormControlType.FOREIGN_KEY)
     .map((attr) => attr.linkedEntityType)
-    .filter((entityName): entityName is string => entityName !== undefined),
+    .filter((entityName): entityName is string => entityName !== undefined)
+    // Another feature's entity, registered by the host application from base-event's own map.
+    .filter((entityName) => entityName !== EVENT_DEFINITION_ENTITY_NAME),
 );
 
 describe('BASE_WORKFLOW_FACADE_PROVIDERS', () => {

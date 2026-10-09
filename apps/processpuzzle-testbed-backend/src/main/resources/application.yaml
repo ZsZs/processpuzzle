@@ -26,6 +26,16 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+  # The event publication registry (spring-modulith-events-jpa, see the pom). Its table,
+  # event_publication, comes from ddl-auto like every other.
+  modulith:
+    events:
+      # A publication whose listener had not completed when the process stopped is redelivered at
+      # the next start. Listeners must therefore be idempotent — TriggeredStartListener is.
+      republish-outstanding-events-on-restart: true
+      # A completed publication is deleted rather than kept with a completion date: the registry is
+      # an outbox here, not an audit log, and an ever-growing table is a cost on a RAM-tight host.
+      completion-mode: delete
 
 logging:
   pattern:
@@ -138,6 +148,11 @@ base-state:
 base-workflow:
   loadDefaultWorkflows: yes
   loadDefaultTranslations: yes
+
+base-event:
+  # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an
+  # edited seed file reaches an already-seeded stack.
+  loadDefaultEventDefinitions: yes
 
 org-admin:
   # Nothing to seed — Keycloak is the system of record for users, so this module persists nothing.

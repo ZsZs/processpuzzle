@@ -7,10 +7,14 @@
  */
 export const WORKFLOW_INSTANCE_DTO = {
   id: '8f14e45f-ceea-467a-9c9b-9b0c1f0f5a01',
+  instanceNumber: 3,
   workflowId: 'order-fulfillment-workflow',
+  startEventId: 'order-created',
   workflowName: 'Order Fulfillment Workflow',
   status: 'ACTIVE',
   entityId: '1',
+  entityType: 'order',
+  entityLabel: 'ORD-1001',
   startedAt: '2026-08-20T08:15:00Z',
   context: { channel: 'web', priority: 'normal' },
   tasks: [
@@ -47,6 +51,11 @@ export const WORKFLOW_INSTANCE_DTO = {
       updatedAt: '2026-08-20T09:02:00Z',
     },
     { id: '7c9e6679-0002-4a00-8000-000000000002', artifactDefinitionId: 'fulfillment-invoice', name: 'Fulfillment Invoice', type: 'DOCUMENT', updatedAt: '2026-08-20T08:15:00Z' },
+  ],
+  // The invoice round trip, not reached yet: approve-shipment is still ACTIVE.
+  events: [
+    { id: '9d2e7f10-0001-4a00-8000-000000000001', eventUseId: 'request-invoice', eventDefinitionId: 'InvoiceRequested', name: 'Invoice requested', direction: 'THROW', status: 'PENDING' },
+    { id: '9d2e7f10-0002-4a00-8000-000000000002', eventUseId: 'invoice-issued', eventDefinitionId: 'InvoiceIssued', name: 'Invoice issued', direction: 'CATCH', status: 'PENDING' },
   ],
 };
 

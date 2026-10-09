@@ -71,6 +71,13 @@ Run the following command to validate the project and checkstyle:
 npx nx lint api-contracts
 ```
 
+### SonarCloud
+
+SonarCloud continues to analyze the contracts and shared event DTOs for code quality,
+but this contract-only module is excluded from coverage measurement through
+`sonar.coverage.exclusions` in `sonar-project.properties`. Coverage remains enabled
+for the backend and frontend implementations.
+
 ## Publishing
 
 This library is configured for publication to Maven Central via the Sonatype Central Portal.

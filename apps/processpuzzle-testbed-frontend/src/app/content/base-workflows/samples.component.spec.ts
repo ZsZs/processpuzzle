@@ -23,17 +23,19 @@ describe('base-workflows SamplesComponent', () => {
   // My Tasks first, because it is the screen an end user works from — the rest are what a designer authors
   // beforehand. `WORKFLOW_DASHBOARD_PATH` rather than the literal, so the toggle and the route it links to
   // cannot drift apart.
-  it.each([[WORKFLOW_DASHBOARD_PATH], ['workflow'], ['tool-definition'], ['workflow-instance']])('highlights the toggle of the sample being shown: %s', async (sample) => {
+  it.each([[WORKFLOW_DASHBOARD_PATH], ['order'], ['workflow-instance'], ['document'], ['workflow'], ['tool-definition']])('highlights the toggle of the sample being shown: %s', async (sample) => {
     expect(await selectedButtonAt(sample)).toBe(sample);
   });
 
   // Through the harness rather than `new SamplesComponent()`: the component reads a `viewChild`, which only
   // resolves inside an injection context.
-  it('offers the dashboard as the first toggle', async () => {
+  // Then the run's own path: the Order whose creation starts an instance, the instance, the invoice it
+  // produces — and only after them the definitions.
+  it('offers the dashboard first, then the run, then the definitions', async () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl(`/base-workflows/samples/${WORKFLOW_DASHBOARD_PATH}`, SamplesComponent);
 
-    expect(component.tabs.map((tab) => tab.route)).toEqual([WORKFLOW_DASHBOARD_PATH, 'workflow', 'tool-definition', 'workflow-instance']);
+    expect(component.tabs.map((tab) => tab.route)).toEqual([WORKFLOW_DASHBOARD_PATH, 'order', 'workflow-instance', 'document', 'workflow', 'tool-definition']);
   });
 
   it('highlights nothing for a sample it does not know', async () => {

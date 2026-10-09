@@ -16,6 +16,7 @@
     "base-widget-backend",
     "base-ai-backend",
     "base-starter-backend",
+    "base-event-backend",
     "org-admin-backend"
   ],
   "targets": {

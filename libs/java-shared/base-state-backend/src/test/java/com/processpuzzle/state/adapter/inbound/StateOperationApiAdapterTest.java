@@ -1,11 +1,14 @@
 package com.processpuzzle.state.adapter.inbound;
 
 import com.processpuzzle.state.api.StateTransitionResult;
+import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.usecase.EntityObjectStateProjection;
+import com.processpuzzle.state.usecase.FindStateMachineDefinition;
 import com.processpuzzle.state.usecase.FireStateTransition;
 import com.processpuzzle.state.usecase.GetEntityObjectState;
 import com.processpuzzle.state.usecase.TransitionOutcome;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
+import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.state.usecase.exception.UnknownTriggerException;
 import com.processpuzzle.state.usecase.port.EntityObjectGateway;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
@@ -40,12 +43,14 @@ class StateOperationApiAdapterTest {
     private EntityObjectGatewayResolver gatewayResolver;
     @Mock
     private EntityObjectGateway gateway;
+    @Mock
+    private FindStateMachineDefinition findStateMachineDefinition;
 
     private StateOperationApiAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        adapter = new StateOperationApiAdapter(fireStateTransition, getEntityObjectState, gatewayResolver);
+        adapter = new StateOperationApiAdapter(fireStateTransition, getEntityObjectState, gatewayResolver, findStateMachineDefinition);
     }
 
     private void objectIsAtVersion(long version) {
@@ -124,5 +129,25 @@ class StateOperationApiAdapterTest {
                 new EntityObjectStateProjection(OBJECT_ID, ENTITY, "confirmed", false, Instant.now(), List.of()));
 
         assertThat(adapter.currentStateKey(ORG, ENTITY, ENTITY_ID)).isEqualTo("confirmed");
+    }
+
+    @Test
+    void stateAttributeKey_namesTheGoverningMachinesAttribute() {
+        when(findStateMachineDefinition.execute(ORG, ENTITY)).thenReturn(machineWithStateAttribute("status"));
+
+        assertThat(adapter.stateAttributeKey(ORG, ENTITY)).contains("status");
+    }
+
+    @Test
+    void stateAttributeKey_isEmptyForAnUngovernedEntityOrABlankKey() {
+        when(findStateMachineDefinition.execute(ORG, ENTITY)).thenThrow(new StateMachineNotFoundException(ORG, ENTITY));
+        when(findStateMachineDefinition.execute(ORG, "invoice")).thenReturn(machineWithStateAttribute(" "));
+
+        assertThat(adapter.stateAttributeKey(ORG, ENTITY)).isEmpty();
+        assertThat(adapter.stateAttributeKey(ORG, "invoice")).isEmpty();
+    }
+
+    private static StateMachineDefinition machineWithStateAttribute(String stateAttributeKey) {
+        return StateMachineDefinition.builder().orgKey(ORG).entityName(ENTITY).stateAttributeKey(stateAttributeKey).build();
     }
 }

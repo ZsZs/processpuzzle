@@ -77,4 +77,44 @@ describe('EntityObjectStateService', () => {
 
     await pending;
   });
+
+  describe('fireTransition()', () => {
+    const transitionsUrl = `${serviceRoot}/entities/order/${objectId}/state-transitions`;
+
+    it("posts the trigger and the version the caller holds to the object's transitions resource", async () => {
+      const pending = firstValueFrom(service.fireTransition('order', objectId, 'ship', 7));
+
+      const request = controller.expectOne(transitionsUrl);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ triggerKey: 'ship', version: 7 });
+      request.flush({ success: true, previousStateKey: 'CONFIRMED', newStateKey: 'SHIPPED', transitionKey: 'ship', executedActions: ['notify'], version: 8 });
+
+      expect(await pending).toEqual({ success: true, previousStateKey: 'CONFIRMED', newStateKey: 'SHIPPED', transitionKey: 'ship', executedActions: ['notify'], version: 8 });
+    });
+
+    /** A refusing guard is an answer, not an error — and json-server leaves the optional array out. */
+    it('defaults executedActions of a response that leaves it out', async () => {
+      const pending = firstValueFrom(service.fireTransition('order', objectId, 'ship', 7));
+
+      controller.expectOne(transitionsUrl).flush({ success: false, previousStateKey: 'CONFIRMED', rejectionReason: 'insufficient balance' });
+
+      expect(await pending).toEqual({ success: false, previousStateKey: 'CONFIRMED', rejectionReason: 'insufficient balance', executedActions: [] });
+    });
+
+    it('propagates a stale version as an error', async () => {
+      const pending = firstValueFrom(service.fireTransition('order', objectId, 'ship', 6));
+
+      controller.expectOne(transitionsUrl).flush('stale', { status: 409, statusText: 'Conflict' });
+
+      await expect(pending).rejects.toBeDefined();
+    });
+
+    it('percent-encodes the ids it puts in the path', async () => {
+      const pending = firstValueFrom(service.fireTransition('special order', 'a/b', 'ship', 1));
+
+      controller.expectOne(`${serviceRoot}/entities/special%20order/a%2Fb/state-transitions`).flush({ success: true, previousStateKey: 'DRAFT' });
+
+      expect((await pending).executedActions).toEqual([]);
+    });
+  });
 });

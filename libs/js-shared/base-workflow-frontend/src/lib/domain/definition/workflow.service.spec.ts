@@ -78,10 +78,10 @@ describe('WorkflowService', () => {
     const request = controller.expectOne(`${serviceRoot}/workflows/order-fulfillment-workflow`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body.roles).toEqual([{ roleDefinitionId: 'clerk' }, { roleDefinitionId: 'manager' }]);
-    expect(request.request.body.artifacts).toEqual([{ artifactDefinitionId: 'order-entity' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
+    expect(request.request.body.artifacts).toEqual([{ artifactDefinitionId: 'order-entity', objectName: 'new_order' }, { artifactDefinitionId: 'fulfillment-invoice' }]);
     // The full-replacement PUT is what makes this load-bearing: a field absent from the body is a field
     // the server clears, and the start condition was absent from every save until this revision.
-    expect(request.request.body.startCondition).toMatchObject({ startType: 'INPUT_ARTIFACT' });
+    expect(request.request.body.startEvents).toMatchObject([{ id: 'order-created', startType: 'TRIGGERING_EVENT', eventType: 'OrderCreatedEvent' }]);
     expect(request.request.body.tasks[0]).toMatchObject({ taskDefinitionId: 'review-order', performedBy: 'clerk' });
     request.flush(WORKFLOW_DTO);
   });

@@ -69,5 +69,16 @@
     "readOnly": "Vista de solo lectura: la máquina se edita en Base State.",
     "loading": "Cargando la máquina de estados…",
     "noState": "Este registro aún no tiene estado."
+  },
+  "state_control": {
+    "placeholder": "Cambiar estado…",
+    "noTransitions": "No hay transiciones disponibles desde este estado.",
+    "transitionTo": "→ {{state}}",
+    "via": "({{trigger}})",
+    "blocked": "No permitido: {{reason}}",
+    "blockedNoReason": "No lo permite una condición de esta transición.",
+    "rejected": "La transición fue rechazada: {{reason}}",
+    "fired": "Estado cambiado a {{state}}.",
+    "initialState": "Empieza en {{state}}"
   }
 }

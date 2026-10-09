@@ -20,4 +20,12 @@ public interface EntityStateGateway {
      * Reads the entity's current state key, for Task.preconditionStateKey checks.
      */
     String currentState(String orgKey, String entityName, String entityId);
+
+    /**
+     * Whether a state-machine module stands behind this gateway. A check that is only a guard —
+     * an INPUT_ARTIFACT start event's required state — permits rather than fails when it does not.
+     */
+    default boolean isAvailable() {
+        return true;
+    }
 }

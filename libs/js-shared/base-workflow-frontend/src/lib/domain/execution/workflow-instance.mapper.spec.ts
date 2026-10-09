@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WorkflowInstance, WorkflowInstanceStatus, TaskInstance, TaskInstanceStatus, ArtifactInstance } from './workflow-instance';
+import { WorkflowInstance, WorkflowInstanceStatus, TaskInstance, TaskInstanceStatus, ArtifactInstance, EventInstance, EventInstanceStatus } from './workflow-instance';
+import { EventDirection } from '../definition/workflow';
 import { WorkflowInstanceMapper } from './workflow-instance.mapper';
 import { OTHER_WORKFLOW_INSTANCE_DTO, WORKFLOW_INSTANCE_DTO } from './test-workflow-instance';
 import { ArtifactType } from '../definition/artifact-definition';
@@ -14,8 +15,13 @@ describe('WorkflowInstanceMapper', () => {
       expect(instance.id).toBe('8f14e45f-ceea-467a-9c9b-9b0c1f0f5a01');
       expect(instance.workflowId).toBe('order-fulfillment-workflow');
       expect(instance.workflowName).toBe('Order Fulfillment Workflow');
+      expect(instance.startEventId).toBe('order-created');
       expect(instance.status).toBe(WorkflowInstanceStatus.ACTIVE);
       expect(instance.entityId).toBe('1');
+      expect(instance.entityType).toBe('order');
+      expect(instance.entityLabel).toBe('ORD-1001');
+      expect(instance.instanceNumber).toBe(3);
+      expect(instance.title).toBe('Order Fulfillment Workflow #3');
       expect(instance.context).toEqual({ channel: 'web', priority: 'normal' });
     });
 
@@ -54,6 +60,55 @@ describe('WorkflowInstanceMapper', () => {
     });
   });
 
+  describe('events', () => {
+    it('maps every intermediate event of the run', () => {
+      const instance = mapper.fromDto(WORKFLOW_INSTANCE_DTO);
+
+      expect(instance.events).toHaveLength(2);
+      expect(instance.events[1]).toBeInstanceOf(EventInstance);
+      expect(instance.events[1]).toMatchObject({ eventUseId: 'invoice-issued', direction: EventDirection.CATCH, status: EventInstanceStatus.PENDING });
+    });
+
+    it('reads the nulls of a waiting catch as absent, and keeps what an occurred one recorded', () => {
+      const [waiting, occurred] = mapper.fromDto({
+        id: 'i1',
+        events: [
+          { id: 'e1', eventUseId: 'a', direction: 'CATCH', status: 'WAITING', correlationValue: '42', waitingSince: '2026-10-08T10:00:00Z', occurredAt: null, payload: null, contextContribution: null, name: null },
+          { id: 'e2', eventUseId: 'b', direction: 'CATCH', status: 'OCCURRED', occurredAt: '2026-10-08T11:00:00Z', payload: { invoiceNumber: 'I-1' }, contextContribution: { invoiceNumber: 'I-1' } },
+        ],
+      }).events;
+
+      expect(waiting).toMatchObject({ correlationValue: '42', waitingSince: '2026-10-08T10:00:00Z', occurredAt: undefined, payload: undefined, name: undefined });
+      expect(occurred.contextContribution).toEqual({ invoiceNumber: 'I-1' });
+      expect(mapper.fromDto({ id: 'i1' }).events).toEqual([]);
+    });
+
+    it('reads when a timer fires next and how often it has, and a timer catch without a catalog event', () => {
+      const [timer] = mapper.fromDto({
+        id: 'i1',
+        events: [{ id: 'e1', eventUseId: 'overdue', eventDefinitionId: null, direction: 'CATCH', status: 'WAITING', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 }],
+      }).events;
+
+      expect(timer).toMatchObject({ eventDefinitionId: '', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 });
+      expect(mapper.toDto(new WorkflowInstance({ id: 'i1', events: [timer] })).events?.[0]).toMatchObject({ dueAt: '2026-10-08T11:00:00Z', fireCount: 0 });
+    });
+
+    it('reads why a task was cancelled', () => {
+      const task = mapper.fromDto({
+        id: 'i1',
+        tasks: [{ id: 't1', taskDefinitionId: 'issue-invoice', status: 'CANCELLED', cancelledAt: '2026-10-08T11:00:00Z', cancelReason: 'interrupted by overdue' }],
+      }).tasks[0];
+
+      expect(task).toMatchObject({ status: TaskInstanceStatus.CANCELLED, cancelledAt: '2026-10-08T11:00:00Z', cancelReason: 'interrupted by overdue' });
+      expect(mapper.fromDto({ id: 'i1', tasks: [{ id: 't1', cancelledAt: null, cancelReason: null }] }).tasks[0].cancelReason).toBeUndefined();
+    });
+
+    it('round-trips the events', () => {
+      expect(mapper.toDto(mapper.fromDto(WORKFLOW_INSTANCE_DTO)).events?.map((event) => event.eventUseId)).toEqual(['request-invoice', 'invoice-issued']);
+      expect(mapper.toDto(new WorkflowInstance({ id: 'i1' })).events).toEqual([]);
+    });
+  });
+
   // `toDto` is required by `BaseEntityMapper` but never reaches the network: the contract defines no
   // PUT here. It is implemented faithfully rather than left throwing, so the store's optimistic paths
   // and a future action surface have a payload to build on.
@@ -77,7 +132,7 @@ describe('WorkflowInstanceMapper', () => {
     it('emits exactly the contract’s fields and nothing else', () => {
       const dto = mapper.toDto(mapper.fromDto(WORKFLOW_INSTANCE_DTO));
 
-      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'completedAt', 'context', 'entityId', 'id', 'startedAt', 'status', 'tasks', 'workflowId', 'workflowName']);
+      expect(Object.keys(dto).sort()).toEqual(['artifacts', 'completedAt', 'context', 'entityId', 'entityLabel', 'entityType', 'events', 'id', 'instanceNumber', 'startEventId', 'startedAt', 'status', 'tasks', 'workflowId', 'workflowName']);
     });
   });
 });

@@ -5,7 +5,9 @@ import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowExtendsValidator;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ public class CreateWorkflowUseCase {
     private final WorkflowRepository repository;
     private final WorkflowValidator validator;
     private final WorkflowExtendsValidator extendsValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Workflow create(String orgKey, Workflow workflow) {
         workflow.setOrgKey(orgKey);
@@ -25,6 +28,8 @@ public class CreateWorkflowUseCase {
         }
         extendsValidator.validate(orgKey, workflow.getId(), workflow.getExtendsWorkflowId());
         validator.validate(workflow);
-        return repository.save(workflow);
+        Workflow saved = repository.save(workflow);
+        eventPublisher.publishEvent(new WorkflowChangedEvent(orgKey, saved.getId(), false));
+        return saved;
     }
 }

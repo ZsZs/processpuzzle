@@ -4,14 +4,14 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { DashboardTask } from '../../domain/dashboard/dashboard-task';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
-import { TaskInstanceStatus } from '../../domain/execution/workflow-instance';
+import { EventInstance, EventInstanceStatus, TaskInstanceStatus } from '../../domain/execution/workflow-instance';
 import { TaskStatusBadgeComponent } from './task-status-badge.component';
 
 /**
  * One run, grouped by status: the process owner's view rather than a single performer's.
  *
  * A header strip naming the run, then four columns — `PENDING`, `ACTIVE`, `BLOCKED`, `COMPLETED` — with
- * `SKIPPED` folded into the last of them. One endpoint, no cross-referencing: the whole board comes out of
+ * `SKIPPED` and `CANCELLED` folded into the last of them. One endpoint, no cross-referencing: the whole board comes out of
  * the instance the queue already loaded, which is what makes it the cheapest useful overview.
  *
  * **What this deliberately does not draw is sequence.** It shows *what* is stuck, not *where* in the flow it
@@ -41,6 +41,14 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                 <span data-testid="board-started">{{ instance.startedAt | date: 'short' }}</span>
               }
             </div>
+            <!-- What the run waits for when no task is moving: its catches, read-only; a timer says when it fires. -->
+            @for (event of waitingEvents(instance.events); track event.id) {
+              <span class="board__waiting" [attr.data-testid]="'board-waiting-' + event.eventUseId"
+                >{{ waitingForKey | transloco }} {{ event.name || event.eventDefinitionId || event.eventUseId }}@if (event.dueAt) {
+                  · {{ event.dueAt | date: 'short' }}
+                }</span
+              >
+            }
           </div>
           <span class="board__status" [attr.data-testid]="'board-status-' + (instance.status ?? 'unknown')">{{ instance.status }}</span>
         </header>
@@ -65,8 +73,12 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                       <span class="card__detail">{{ row.task.completedAt ? (row.task.completedAt | date: 'short') : '—' }}</span>
                     }
                     @case (skipped) {
-                      <!-- The one status with no column of its own, so the card says which it is. -->
+                      <!-- The two statuses with no column of their own, so the card says which it is. -->
                       <pp-task-status-badge [status]="row.task.status" />
+                    }
+                    @case (cancelled) {
+                      <pp-task-status-badge [status]="row.task.status" />
+                      <span class="card__detail" [attr.data-testid]="'board-cancel-reason-' + row.task.id">{{ row.task.cancelReason || '—' }}</span>
                     }
                     @default {
                       <span class="card__detail">{{ row.task.assignedTo || (unassignedKey | transloco) }}</span>
@@ -107,6 +119,16 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
       gap: 4px 16px;
       font-size: 12px;
       color: #888888;
+    }
+    .board__waiting {
+      display: inline-block;
+      margin-top: 4px;
+      margin-right: 6px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      background-color: #fff4e5;
+      font-size: 11px;
+      color: #8a5300;
     }
     .board__status {
       font-size: 11px;
@@ -189,11 +211,17 @@ export class ProcessBoardComponent {
 
   protected readonly unassignedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unassigned`;
   protected readonly noRunKey = `${TASK_DASHBOARD_I18N_SCOPE}.run_none`;
+  protected readonly waitingForKey = `${TASK_DASHBOARD_I18N_SCOPE}.waiting_for`;
 
   // `@switch` compares against values, so the enum members are fields rather than reachable as a type.
   protected readonly blocked = TaskInstanceStatus.BLOCKED;
   protected readonly completed = TaskInstanceStatus.COMPLETED;
   protected readonly skipped = TaskInstanceStatus.SKIPPED;
+  protected readonly cancelled = TaskInstanceStatus.CANCELLED;
+
+  protected waitingEvents(events: EventInstance[] | undefined): EventInstance[] {
+    return (events ?? []).filter((event) => event.status === EventInstanceStatus.WAITING);
+  }
 
   protected isSelected(row: DashboardTask): boolean {
     return this.store.selectedTaskId() === row.task.id;

@@ -4,6 +4,7 @@ import { TASK_DEFINITION_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTAN
 import { TaskInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_STEP_RESULT_ID_FIELD } from './step-result.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { TASK_INSTANCE_ENTITY_NAME };
 
@@ -36,12 +37,18 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const blockedReasonAttr = readOnlyAttr('blockedReason', FormControlType.TEXTAREA, 'Blocked Reason');
   blockedReasonAttr.styleClass = 'full-width';
 
-  const activatedAtAttr = readOnlyAttr('activatedAt', FormControlType.TEXT_BOX, 'Activated At');
+  const activatedAtAttr = timestampAttr('activatedAt', 'Activated At');
   activatedAtAttr.hideInTable = true;
-  const completedAtAttr = readOnlyAttr('completedAt', FormControlType.TEXT_BOX, 'Completed At');
+  const completedAtAttr = timestampAttr('completedAt', 'Completed At');
   completedAtAttr.hideInTable = true;
-  const skippedAtAttr = readOnlyAttr('skippedAt', FormControlType.TEXT_BOX, 'Skipped At');
+  const skippedAtAttr = timestampAttr('skippedAt', 'Skipped At');
   skippedAtAttr.hideInTable = true;
+  const cancelledAtAttr = timestampAttr('cancelledAt', 'Cancelled At');
+  cancelledAtAttr.hideInTable = true;
+
+  // Only set while CANCELLED: interrupted by which boundary event, unreachable, or why the run was cancelled.
+  const cancelReasonAttr = readOnlyAttr('cancelReason', FormControlType.TEXT_BOX, 'Cancel Reason');
+  cancelReasonAttr.hideInTable = true;
 
   // Containment: the contract nests the step results inside the task instance, and the task instance
   // inside the workflow instance, so these rows travel inside the *instance's* payload.
@@ -54,10 +61,10 @@ function createTaskInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const referenceRow = new FlexboxDescriptor([idAttr, taskDefinitionIdAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
-  const timestampRow = new FlexboxDescriptor([activatedAtAttr, completedAtAttr, skippedAtAttr], FlexDirection.ROW);
+  const timestampRow = new FlexboxDescriptor([activatedAtAttr, completedAtAttr, skippedAtAttr, cancelledAtAttr], FlexDirection.ROW);
   timestampRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, blockedReasonAttr, stepResultsAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, blockedReasonAttr, cancelReasonAttr, stepResultsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

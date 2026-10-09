@@ -9,9 +9,16 @@ describe('WorkflowInstance', () => {
     expect(instance.artifacts).toEqual([]);
   });
 
+  // Every run of a workflow shares its name, so the number is what tells two runs apart in a title.
+  it('titles the run by its workflow and number, and by whichever of the two it has', () => {
+    expect(new WorkflowInstance({ workflowName: 'Order Fulfillment', instanceNumber: 3 }).title).toBe('Order Fulfillment #3');
+    expect(new WorkflowInstance({ workflowName: 'Order Fulfillment' }).title).toBe('Order Fulfillment');
+    expect(new WorkflowInstance({ instanceNumber: 3 }).title).toBe('#3');
+  });
+
   it('mirrors the contract status enums', () => {
     expect(Object.keys(WorkflowInstanceStatus)).toEqual(['ACTIVE', 'COMPLETED', 'CANCELLED', 'SUSPENDED']);
-    expect(Object.keys(TaskInstanceStatus)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED']);
+    expect(Object.keys(TaskInstanceStatus)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED', 'CANCELLED']);
   });
 });
 

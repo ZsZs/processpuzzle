@@ -197,6 +197,23 @@ describe('WorkflowDiagramComponent', () => {
     it('still binds no destructive keyboard shortcut', () => {
       expect(component.config.shortcuts).toEqual([]);
     });
+
+    // Pinned to its task and re-pinned on every build, so a position given by hand would not survive.
+    it('keeps a boundary event locked to its task', () => {
+      fixture.componentRef.setInput('graph', {
+        nodes: [
+          { id: 'task:review', type: WORKFLOW_NODE_TYPE, position: { x: 0, y: 0 }, autoSize: true, data: { kind: 'task', label: 'Review' } },
+          { id: 'event:overdue', type: WORKFLOW_NODE_TYPE, position: { x: 0, y: 0 }, autoSize: false, data: { kind: 'event', label: 'Overdue', attachedTo: 'task:review' } },
+        ],
+        edges: [],
+      } satisfies WorkflowGraph);
+      fixture.detectChanges();
+
+      const [task, overdue] = component.model.getNodes();
+      expect(task.draggable).not.toBe(false);
+      expect(overdue.draggable).toBe(false);
+      expect(overdue.resizable).toBe(false);
+    });
   });
 
   describe('a saved arrangement', () => {

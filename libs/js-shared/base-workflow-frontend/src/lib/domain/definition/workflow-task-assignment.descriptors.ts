@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE } from '../../base-workflow.i18n';
-import { WORKFLOW_ENTITY_NAME, WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { WORKFLOW_ENTITY_NAME, WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME, WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME } from '../workflow-entity-names';
+import { WORKFLOW_TASK_ARTIFACT_STATE_ID_FIELD } from './task-artifact-state.descriptors';
 import { JoinType } from './workflow';
 
 export { WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME };
@@ -36,7 +37,7 @@ function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[]
   // form*, so any closed option list would be stale the moment an assignment is added. The backend
   // resolves every id on save. Same call as base-state's `initialStateKey`.
   const dependsOnAttr = new BaseEntityAttrDescriptor('dependsOn', FormControlType.TAGS, 'Depends On');
-  dependsOnAttr.placeholder = 'Task ids that must complete first; empty means eligible at start';
+  dependsOnAttr.placeholder = 'Task or event ids that must be done first; empty means eligible at start';
   dependsOnAttr.hideInTable = true;
 
   // How that set is satisfied: every task named above (ALL, the contract's default) or the first of
@@ -51,19 +52,27 @@ function createWorkflowTaskAssignmentAttrDescriptors(): AbstractAttrDescriptor[]
   const parallelAttr = new BaseEntityAttrDescriptor('parallel', FormControlType.CHECKBOX, 'Parallel');
   const overrideAttr = new BaseEntityAttrDescriptor('override', FormControlType.CHECKBOX, 'Override');
 
+  // The states the task reads its inputs in and leaves its outputs in, here. A list nested one level
+  // further down, the way a start event nests its required artifacts - and what the modeler draws as one
+  // object node per state.
+  const artifactStatesAttr = new BaseEntityAttrDescriptor('artifactStates', FormControlType.EMBEDDED_COMPONENTS, 'Artifact States');
+  artifactStatesAttr.linkedEntityType = WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME;
+  artifactStatesAttr.referenceIdField = WORKFLOW_TASK_ARTIFACT_STATE_ID_FIELD;
+  artifactStatesAttr.hideInTable = true;
+
   const identityRow = new FlexboxDescriptor([taskDefinitionIdAttr, performedByAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const flowRow = new FlexboxDescriptor([dependsOnAttr, joinTypeAttr, parallelAttr, overrideAttr], FlexDirection.ROW);
   flowRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, flowRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, flowRow, artifactStatesAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }
 
 /**
- * The one embedded row of a workflow definition, and the only place the reference model puts
- * per-workflow wiring.
+ * One task's wiring into one workflow, embedded in the workflow definition - and itself the parent of the
+ * states the task reads and leaves its artifacts in, in this workflow.
  *
  * Embedded rather than a resource of its own because an assignment has no meaning outside the workflow
  * making it: it travels inside the workflow's payload and is addressed through it —

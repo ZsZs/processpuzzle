@@ -36,7 +36,7 @@ import org.hibernate.type.SqlTypes;
  * swimlane layout the frontend computes.
  *
  * <p>{@code nodes}, {@code edges} and {@code viewport} are JSONB columns, exactly as
- * {@link Workflow}'s four {@code ...Use} lists and its {@code startCondition} are, and for the same
+ * {@link Workflow}'s four {@code ...Use} lists and its {@code startEvents} are, and for the same
  * reason: the whole layout stays in a single row, which is what makes {@link #getVersion()} a
  * meaningful optimistic-lock guard over the entire arrangement.
  *

@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -33,5 +34,11 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
     @Override
     public boolean entityTypeExists(String orgKey, String entityDefinitionCode) {
         return definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isPresent();
+    }
+
+    @Override
+    public Optional<String> titleAttribute(String orgKey, String entityDefinitionCode) {
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
+            .map(EntityDefinitionView::titleAttribute);
     }
 }

@@ -32,7 +32,7 @@ import { TaskInstanceStatus } from '../../domain/execution/workflow-instance';
       background-color: #eeeeee;
       color: #444444;
     }
-    /* The five statuses, keyed off the attribute rather than five classes, so the template stays one line. */
+    /* The six statuses, keyed off the attribute rather than six classes, so the template stays one line. */
     .badge[data-status='PENDING'] {
       background-color: #e8e8e8;
       color: #555555;
@@ -55,6 +55,13 @@ import { TaskInstanceStatus } from '../../domain/execution/workflow-instance';
       background-color: #ffffff;
       color: #666666;
       box-shadow: inset 0 0 0 1px #cccccc;
+    }
+    /* Cancelled never finished: interrupted, unreachable, or its run cancelled. Struck through and muted. */
+    .badge[data-status='CANCELLED'] {
+      background-color: #ffffff;
+      color: #999999;
+      text-decoration: line-through;
+      box-shadow: inset 0 0 0 1px #dddddd;
     }
   `,
 })

@@ -5,12 +5,12 @@
 // region models
 export { type PropertyMap } from './lib/domain/property-map';
 export { toReferenceIds } from './lib/domain/reference-ids';
-export { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
+export { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, type TimerDefinition, timerOf, TimerType, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
 export { RoleDefinition } from './lib/domain/definition/role-definition';
 export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifact-definition';
 export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';
 export { AuthType, HttpMethod, ToolDefinition, ToolOperation, type ToolAuthConfig } from './lib/domain/definition/tool-definition';
-export { ArtifactInstance, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './lib/domain/execution/workflow-instance';
+export { ArtifactInstance, EventInstance, EventInstanceStatus, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './lib/domain/execution/workflow-instance';
 export { INBOX_SCOPES, statusOf, type DashboardTask, type InboxScope, type ResolvedArtifact } from './lib/domain/dashboard/dashboard-task';
 // endregion
 
@@ -18,6 +18,7 @@ export { INBOX_SCOPES, statusOf, type DashboardTask, type InboxScope, type Resol
 export {
   ARTIFACT_DEFINITION_ENTITY_NAME,
   ARTIFACT_INSTANCE_ENTITY_NAME,
+  EVENT_INSTANCE_ENTITY_NAME,
   WORKFLOW_ENTITY_NAME,
   WORKFLOW_INSTANCE_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
@@ -32,6 +33,9 @@ export {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
   WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
+  WORKFLOW_EVENT_USE_ENTITY_NAME,
+  WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME,
 } from './lib/domain/workflow-entity-names';
 // endregion
 
@@ -50,12 +54,16 @@ export {
   createWorkflowToolUseDescriptor,
 } from './lib/domain/definition/workflow-use.descriptors';
 export { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD, createRequiredStartArtifactDescriptor } from './lib/domain/definition/required-start-artifact.descriptors';
+export { createStartEventDescriptor } from './lib/domain/definition/start-event.descriptors';
+export { createEventUseDescriptor } from './lib/domain/definition/event-use.descriptors';
+export { WORKFLOW_TASK_ARTIFACT_STATE_ID_FIELD, createTaskArtifactStateDescriptor } from './lib/domain/definition/task-artifact-state.descriptors';
 export { TASK_STEP_DEFINITION_ID_FIELD, createStepDefinitionDescriptor } from './lib/domain/definition/step-definition.descriptors';
 export { createToolDefinitionDescriptor } from './lib/domain/definition/tool-definition.descriptors';
 export { TOOL_OPERATION_ID_FIELD, createToolOperationDescriptor } from './lib/domain/definition/tool-operation.descriptors';
 export { createWorkflowInstanceDescriptor } from './lib/domain/execution/workflow-instance.descriptors';
 export { TASK_INSTANCE_ID_FIELD, createTaskInstanceDescriptor } from './lib/domain/execution/task-instance.descriptors';
 export { ARTIFACT_INSTANCE_ID_FIELD, createArtifactInstanceDescriptor } from './lib/domain/execution/artifact-instance.descriptors';
+export { EVENT_INSTANCE_ID_FIELD, createEventInstanceDescriptor } from './lib/domain/execution/event-instance.descriptors';
 export { TASK_STEP_RESULT_ID_FIELD, createStepResultDescriptor } from './lib/domain/execution/step-result.descriptors';
 export { readOnlyAttr } from './lib/domain/execution/read-only-attr';
 // endregion
@@ -97,11 +105,14 @@ export {
   WorkflowArtifactUseFacade,
   WorkflowToolUseFacade,
   WorkflowRequiredStartArtifactFacade,
+  WorkflowStartEventFacade,
+  WorkflowEventUseFacade,
+  WorkflowTaskArtifactStateFacade,
   TaskStepDefinitionFacade,
   ToolOperationFacade,
 } from './lib/feature/definition/workflow-embedded.facades';
 export { WorkflowInstanceFacade } from './lib/feature/execution/workflow-instance.facade';
-export { ArtifactInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './lib/feature/execution/instance-embedded.facades';
+export { ArtifactInstanceFacade, EventInstanceFacade, TaskInstanceFacade, TaskStepResultFacade } from './lib/feature/execution/instance-embedded.facades';
 // endregion
 
 // region modeler
@@ -165,6 +176,7 @@ export { WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from './lib/workfl
 export {
   ARTIFACT_DEFINITION_I18N_SCOPE,
   ARTIFACT_INSTANCE_I18N_SCOPE,
+  EVENT_INSTANCE_I18N_SCOPE,
   BASE_WORKFLOW_TRANSLATION_SOURCE,
   BASE_WORKFLOW_TRANSLOCO_SCOPE,
   WORKFLOW_I18N_SCOPE,
@@ -174,6 +186,9 @@ export {
   WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
   WORKFLOW_TOOL_USE_I18N_SCOPE,
   WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
+  WORKFLOW_START_EVENT_I18N_SCOPE,
+  WORKFLOW_EVENT_USE_I18N_SCOPE,
+  WORKFLOW_TASK_ARTIFACT_STATE_I18N_SCOPE,
   TASK_DEFINITION_I18N_SCOPE,
   TASK_INSTANCE_I18N_SCOPE,
   TASK_STEP_DEFINITION_I18N_SCOPE,

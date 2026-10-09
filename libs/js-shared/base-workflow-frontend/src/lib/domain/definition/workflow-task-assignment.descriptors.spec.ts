@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { createWorkflowTaskAssignmentDescriptor, WORKFLOW_TASK_ASSIGNMENT_ID_FIELD } from './workflow-task-assignment.descriptors';
-import { WORKFLOW_ENTITY_NAME, WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { WORKFLOW_ENTITY_NAME, WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME, WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -27,7 +27,7 @@ describe('createWorkflowTaskAssignmentDescriptor', () => {
   });
 
   it('describes the task, the performing role and the ordering', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'joinType', 'parallel', 'override']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['taskDefinitionId', 'performedBy', 'dependsOn', 'joinType', 'parallel', 'override', 'artifactStates']);
   });
 
   // Beside `dependsOn`, which is the only thing it qualifies. Absent from the descriptor until this
@@ -62,6 +62,16 @@ describe('createWorkflowTaskAssignmentDescriptor', () => {
   it('edits dependsOn as chips rather than a picker', () => {
     expect(byName('dependsOn')?.formControlType).toBe(FormControlType.TAGS);
     expect(byName('dependsOn')?.hideInTable).toBe(true);
+  });
+
+  // Nested one level further down, the way a start event nests its required artifacts. The row has no id
+  // of its own, so the attribute names the field that addresses it.
+  it('nests the artifact states as an embedded list addressed by artifact', () => {
+    expect(byName('artifactStates')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(byName('artifactStates')?.linkedEntityType).toBe(WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME);
+    expect(byName('artifactStates')?.referenceIdField).toBe('artifactDefinitionId');
+    expect(byName('artifactStates')?.hideInTable).toBe(true);
+    expect(descriptor.embeddedAttrFor(WORKFLOW_TASK_ARTIFACT_STATE_ENTITY_NAME)?.attrName).toBe('artifactStates');
   });
 
   it('shows both control-flow flags in the table as checkboxes', () => {

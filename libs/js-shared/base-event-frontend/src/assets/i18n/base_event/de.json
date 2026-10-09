@@ -1,0 +1,12 @@
+{
+  "event_definition": {
+    "_self": "Ereignisdefinition",
+    "id": "Kennung",
+    "name": "Name",
+    "description": "Beschreibung",
+    "kind": "Art",
+    "subjectType": "Subjekttyp",
+    "action": "Aktion",
+    "state": "Zustand"
+  }
+}

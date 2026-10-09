@@ -3,13 +3,16 @@ package com.processpuzzle.state.adapter.inbound;
 import com.processpuzzle.state.api.StateOperationApi;
 import com.processpuzzle.state.api.StateTransitionResult;
 import com.processpuzzle.state.usecase.EntityObjectStateProjection;
+import com.processpuzzle.state.usecase.FindStateMachineDefinition;
 import com.processpuzzle.state.usecase.FireStateTransition;
 import com.processpuzzle.state.usecase.GetEntityObjectState;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
+import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.state.usecase.exception.UnknownTriggerException;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.state.usecase.service.EntityObjectGatewayResolver;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -34,13 +37,16 @@ class StateOperationApiAdapter implements StateOperationApi {
     private final FireStateTransition fireStateTransition;
     private final GetEntityObjectState getEntityObjectState;
     private final EntityObjectGatewayResolver gatewayResolver;
+    private final FindStateMachineDefinition findStateMachineDefinition;
 
     StateOperationApiAdapter(FireStateTransition fireStateTransition,
                              GetEntityObjectState getEntityObjectState,
-                             EntityObjectGatewayResolver gatewayResolver) {
+                             EntityObjectGatewayResolver gatewayResolver,
+                             FindStateMachineDefinition findStateMachineDefinition) {
         this.fireStateTransition = fireStateTransition;
         this.getEntityObjectState = getEntityObjectState;
         this.gatewayResolver = gatewayResolver;
+        this.findStateMachineDefinition = findStateMachineDefinition;
     }
 
     @Override
@@ -71,5 +77,15 @@ class StateOperationApiAdapter implements StateOperationApi {
         EntityObjectStateProjection projection =
                 getEntityObjectState.execute(orgKey, entityName, UUID.fromString(entityId));
         return projection.currentStateKey();
+    }
+
+    @Override
+    public Optional<String> stateAttributeKey(String orgKey, String entityName) {
+        try {
+            String key = findStateMachineDefinition.execute(orgKey, entityName).getStateAttributeKey();
+            return key == null || key.isBlank() ? Optional.empty() : Optional.of(key);
+        } catch (StateMachineNotFoundException e) {
+            return Optional.empty();
+        }
     }
 }

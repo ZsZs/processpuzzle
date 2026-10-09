@@ -4,6 +4,7 @@ import { applySavedLayout, toDiagram } from '../../../domain/modeler/graph/workf
 import { WorkflowLayoutService } from '../../../domain/modeler/graph/workflow-layout.service';
 import { DiagramViewport, WorkflowDiagram } from '../../../domain/modeler/models/workflow-diagram';
 import {
+  isBoundaryNode,
   isLaneNode,
   WORKFLOW_LANE_TYPE,
   WORKFLOW_NODE_TYPE,
@@ -278,7 +279,9 @@ export class WorkflowDiagramComponent implements OnChanges {
    * columns pitched by a node's width, bands measured by its height — is stated in unrotated boxes.
    */
   private lockUnlessEditable(nodes: WorkflowNode[]): WorkflowNode[] {
-    if (this.editable) return nodes.map((node) => ({ ...node, rotatable: false }));
+    // A boundary event stays locked either way: it is pinned to its task's edge, and re-pinned on every
+    // build, so a position given to it by hand would not survive the next one.
+    if (this.editable) return nodes.map((node) => ({ ...node, rotatable: false, ...(isBoundaryNode(node) ? { draggable: false, resizable: false } : {}) }));
     return nodes.map((node) => ({ ...node, draggable: false, resizable: false, rotatable: false }));
   }
 }

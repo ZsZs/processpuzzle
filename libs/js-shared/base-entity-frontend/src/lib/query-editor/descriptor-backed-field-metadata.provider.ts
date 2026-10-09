@@ -19,6 +19,7 @@ const CONTROL_TYPE_TO_RSQL_TYPE: Partial<Record<FormControlType, RsqlFieldType>>
   [FormControlType.DATE]: 'date',
   [FormControlType.DROPDOWN]: 'enum',
   [FormControlType.RADIO]: 'enum',
+  [FormControlType.STATE]: 'string',
   [FormControlType.FOREIGN_KEY]: 'string',
   [FormControlType.LOOKUP]: 'string',
   [FormControlType.TAGS]: 'string',

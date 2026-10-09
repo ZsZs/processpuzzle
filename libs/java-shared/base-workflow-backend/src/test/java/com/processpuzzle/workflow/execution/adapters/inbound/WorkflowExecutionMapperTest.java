@@ -2,8 +2,12 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
@@ -13,6 +17,8 @@ import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityLabelPort;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 
 class WorkflowExecutionMapperTest {
 
@@ -28,6 +35,30 @@ class WorkflowExecutionMapperTest {
     @BeforeEach
     void setUp() {
         mapper = new WorkflowExecutionMapper();
+    }
+
+    /**
+     * The subject is shown by name: resolved through the port per response, falling back to the id when
+     * the port names nothing or the instance has no entity type to ask by.
+     */
+    @Test
+    void toModel_namesTheSubjectThroughThePortAndFallsBackToItsId() {
+        EntityLabelPort labels = (orgKey, type, id) -> "order".equals(type) && "o-1".equals(id)
+                ? Optional.of("ORD-1001") : Optional.empty();
+        WorkflowExecutionMapper labelling = new WorkflowExecutionMapper(labels);
+        WorkflowInstance.WorkflowInstanceBuilder base = WorkflowInstance.builder().id(UUID.randomUUID()).orgKey("org-1")
+                .workflowId("w").workflowName("W").status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now());
+
+        var named = labelling.toModel(base.entityId("o-1").entityType("order").build(), List.of(), List.of());
+        var unknown = labelling.toModel(base.entityId("o-2").entityType("order").build(), List.of(), List.of());
+        var untyped = labelling.toModel(base.entityId("o-1").entityType(null).build(), List.of(), List.of());
+        var subjectless = labelling.toModel(base.entityId(null).build(), List.of(), List.of());
+
+        assertThat(named.getEntityLabel()).isEqualTo("ORD-1001");
+        assertThat(named.getEntityType()).isEqualTo("order");
+        assertThat(unknown.getEntityLabel()).isEqualTo("o-2");
+        assertThat(untyped.getEntityLabel()).isEqualTo("o-1");
+        assertThat(subjectless.getEntityLabel()).isNull();
     }
 
     /**
@@ -42,6 +73,7 @@ class WorkflowExecutionMapperTest {
         WorkflowInstance instance = WorkflowInstance.builder()
                 .id(id)
                 .orgKey("org-1")
+                .instanceNumber(3L)
                 .workflowId("proc-def-1")
                 .workflowName("Workflow Name")
                 .status(WorkflowInstanceStatus.ACTIVE)
@@ -51,6 +83,7 @@ class WorkflowExecutionMapperTest {
 
         com.processpuzzle.workflow.model.WorkflowInstance row = mapper.toModel(instance, List.of(), List.of());
         assertThat(row.getId()).isEqualTo(id.toString());
+        assertThat(row.getInstanceNumber()).isEqualTo(3L);
         assertThat(row.getWorkflowId()).isEqualTo("proc-def-1");
         assertThat(row.getStatus().getValue()).isEqualTo("ACTIVE");
 
@@ -112,6 +145,52 @@ class WorkflowExecutionMapperTest {
     }
 
     @Test
+    void toModel_treatsNullCollectionsAsEmpty() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "value")).build();
+
+        var model = mapper.toModel(instance, null, null, null);
+
+        assertThat(model.getTasks()).isEmpty();
+        assertThat(model.getArtifacts()).isEmpty();
+        assertThat(model.getEvents()).isEmpty();
+        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(), List.of()));
+    }
+
+    @Test
+    void toModel_preservesTaskContributionsWhenEventsAreNull() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "initial")).build();
+        TaskInstance task = TaskInstance.builder().id(UUID.randomUUID()).taskDefinitionId("task")
+                .status(TaskInstanceStatus.COMPLETED).completedAt(Instant.now())
+                .contextContribution(Map.of("key", "updated")).build();
+
+        var model = mapper.toModel(instance, List.of(task), List.of(), null);
+
+        assertThat(model.getTasks()).hasSize(1);
+        assertThat(model.getEvents()).isEmpty();
+        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(task), List.of()))
+                .asInstanceOf(MAP).containsEntry("key", "updated");
+    }
+
+    @Test
+    void toModel_preservesEventContributionsWhenTasksAndArtifactsAreNull() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "initial")).build();
+        EventInstance event = EventInstance.builder().id(UUID.randomUUID()).eventUseId("received")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.OCCURRED).occurredAt(Instant.now())
+                .contextContribution(Map.of("key", "updated")).build();
+
+        var model = mapper.toModel(instance, null, null, List.of(event));
+
+        assertThat(model.getTasks()).isEmpty();
+        assertThat(model.getArtifacts()).isEmpty();
+        assertThat(model.getEvents()).singleElement()
+                .extracting(com.processpuzzle.workflow.model.EventInstance::getEventUseId).isEqualTo("received");
+        assertThat(model.getContext()).asInstanceOf(MAP).containsEntry("key", "updated");
+    }
+
+    @Test
     void toModel_completeTaskResponse() {
         UUID taskId = UUID.randomUUID();
         TaskInstance task = TaskInstance.builder()
@@ -130,5 +209,24 @@ class WorkflowExecutionMapperTest {
         assertThat(response.getTask()).isNotNull();
         assertThat(response.getTask().getId()).isEqualTo(taskId.toString());
         assertThat(response.getPostconditionDetail()).isEqualTo("Condition met");
+    }
+    @Test
+    void toModel_carriesCancellationAndTimerFields() {
+        Instant now = Instant.now();
+        TaskInstance cancelled = TaskInstance.builder().id(UUID.randomUUID()).taskDefinitionId("issue").name("Issue")
+                .status(TaskInstanceStatus.CANCELLED).cancelledAt(now).cancelReason("interrupted by overdue").build();
+        EventInstance timer = EventInstance.builder().id(UUID.randomUUID()).eventUseId("overdue")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.WAITING).dueAt(now).fireCount(2).build();
+        EventInstance legacy = EventInstance.builder().id(UUID.randomUUID()).eventUseId("old")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.WAITING).build();
+
+        var task = mapper.toModel(cancelled);
+        assertThat(task.getStatus()).isEqualTo(com.processpuzzle.workflow.model.TaskInstanceStatus.CANCELLED);
+        assertThat(task.getCancelledAt()).isNotNull();
+        assertThat(task.getCancelReason()).isEqualTo("interrupted by overdue");
+        assertThat(mapper.toModel(timer).getDueAt()).isNotNull();
+        assertThat(mapper.toModel(timer).getFireCount()).isEqualTo(2);
+        assertThat(mapper.toModel(timer).getEventDefinitionId()).isNull();
+        assertThat(mapper.toModel(legacy).getFireCount()).isZero();
     }
 }

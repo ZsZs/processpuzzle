@@ -3,6 +3,7 @@ import { ARTIFACT_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ArtifactType } from '../definition/artifact-definition';
 import { ARTIFACT_DEFINITION_ENTITY_NAME, ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { readOnlyAttr } from './read-only-attr';
+import { timestampAttr } from '../timestamp-attr';
 
 export { ARTIFACT_INSTANCE_ENTITY_NAME };
 
@@ -37,7 +38,7 @@ function createArtifactInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   const stateMachineInstanceIdAttr = readOnlyAttr('stateMachineInstanceId', FormControlType.TEXT_BOX, 'State Machine Instance');
   stateMachineInstanceIdAttr.hideInTable = true;
 
-  const updatedAtAttr = readOnlyAttr('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
+  const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
   updatedAtAttr.hideInTable = true;
 
   const identityRow = new FlexboxDescriptor([nameAttr, typeAttr, currentStateAttr], FlexDirection.ROW);

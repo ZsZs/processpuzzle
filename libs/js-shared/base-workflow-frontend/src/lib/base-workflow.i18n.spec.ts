@@ -7,6 +7,7 @@ import hungarianBundle from '../assets/i18n/base_workflow/hu.json';
 import {
   ARTIFACT_DEFINITION_I18N_SCOPE,
   ARTIFACT_INSTANCE_I18N_SCOPE,
+  EVENT_INSTANCE_I18N_SCOPE,
   BASE_ENTITY_TRANSLOCO_SCOPE,
   BASE_WORKFLOW_TRANSLATION_SOURCE,
   BASE_WORKFLOW_TRANSLOCO_SCOPE,
@@ -16,6 +17,9 @@ import {
   WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
   WORKFLOW_TOOL_USE_I18N_SCOPE,
   WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
+  WORKFLOW_START_EVENT_I18N_SCOPE,
+  WORKFLOW_EVENT_USE_I18N_SCOPE,
+  WORKFLOW_TASK_ARTIFACT_STATE_I18N_SCOPE,
   WORKFLOW_INSTANCE_I18N_SCOPE,
   TASK_DEFINITION_I18N_SCOPE,
   TASK_INSTANCE_I18N_SCOPE,
@@ -42,7 +46,10 @@ const entityScopes = [
   WORKFLOW_ROLE_USE_I18N_SCOPE,
   WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
   WORKFLOW_TOOL_USE_I18N_SCOPE,
+  WORKFLOW_START_EVENT_I18N_SCOPE,
   WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE,
+  WORKFLOW_EVENT_USE_I18N_SCOPE,
+  WORKFLOW_TASK_ARTIFACT_STATE_I18N_SCOPE,
   WORKFLOW_ROLE_DEFINITION_I18N_SCOPE,
   ARTIFACT_DEFINITION_I18N_SCOPE,
   TASK_DEFINITION_I18N_SCOPE,
@@ -52,6 +59,7 @@ const entityScopes = [
   WORKFLOW_INSTANCE_I18N_SCOPE,
   TASK_INSTANCE_I18N_SCOPE,
   ARTIFACT_INSTANCE_I18N_SCOPE,
+  EVENT_INSTANCE_I18N_SCOPE,
   TASK_STEP_RESULT_I18N_SCOPE,
 ];
 
@@ -121,5 +129,10 @@ describe.each(locales)('the %s bundle', (_locale, bundle) => {
   // an untranslated tab renders its raw key in the tab bar.
   it('labels the Role Modeler tab', () => {
     expect(flattenKeys(bundle)).toContain(WORKFLOW_ROLE_MODELER_I18N_KEY.slice(`${BASE_WORKFLOW_TRANSLOCO_SCOPE}.`.length));
+  });
+
+  // The two event kinds of the Workflow Modeler, which name no entity of their own in the legend.
+  it('names the start and end events of the Workflow Modeler', () => {
+    expect(flattenKeys(bundle)).toEqual(expect.arrayContaining(['workflow.modeler.start', 'workflow.modeler.end']));
   });
 });

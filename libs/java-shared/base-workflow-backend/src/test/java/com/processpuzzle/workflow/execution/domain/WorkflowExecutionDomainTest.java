@@ -224,6 +224,7 @@ class WorkflowExecutionDomainTest {
                 WorkflowInstanceStatus.CANCELLED, WorkflowInstanceStatus.SUSPENDED);
         assertThat(TaskInstanceStatus.values()).containsExactlyInAnyOrder(
                 TaskInstanceStatus.PENDING, TaskInstanceStatus.ACTIVE,
-                TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED, TaskInstanceStatus.BLOCKED);
+                TaskInstanceStatus.COMPLETED, TaskInstanceStatus.SKIPPED, TaskInstanceStatus.BLOCKED,
+                TaskInstanceStatus.CANCELLED);
     }
 }

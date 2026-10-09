@@ -37,3 +37,20 @@ export interface EntityObjectState {
   enteredStateAt?: string;
   availableTransitions: AvailableTransition[];
 }
+
+/**
+ * What firing one trigger produced, as `TransitionResult` of `base-state-api.yaml` reports it.
+ *
+ * A guard refusing is an ordinary answer (`success: false` with a `rejectionReason`), not an HTTP error; a stale
+ * `version` is — that is a 409, and reaches the caller as an error.
+ */
+export interface TransitionResult {
+  success: boolean;
+  previousStateKey: string;
+  newStateKey?: string;
+  transitionKey?: string;
+  executedActions: string[];
+  rejectionReason?: string;
+  /** The object's version after the transition — what the next save or fire has to send. */
+  version?: number;
+}

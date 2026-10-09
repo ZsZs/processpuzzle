@@ -31,8 +31,8 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 export const WORKFLOW_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow`;
 
 /**
- * Key roots of the workflow's own embedded rows — its task assignments, the three `*Use` rows and the
- * required artifacts of its start condition — of the three catalog aggregates it references, and of the
+ * Key roots of the workflow's own embedded rows — its task assignments, the three `*Use` rows, its start
+ * events and the required artifacts nested in those, its intermediate events, the artifact states nested in each task assignment — of the three catalog aggregates it references, and of the
  * steps nested one level deeper inside a task. They are children of
  * {@link BASE_WORKFLOW_TRANSLOCO_SCOPE} rather than scopes of their own, because the whole graph is
  * edited under {@link BASE_WORKFLOW_ROUTES} and one scope registration has to cover all of it — the
@@ -42,7 +42,10 @@ export const WORKFLOW_TASK_ASSIGNMENT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SC
 export const WORKFLOW_ROLE_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_use`;
 export const WORKFLOW_ARTIFACT_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_artifact_use`;
 export const WORKFLOW_TOOL_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_tool_use`;
+export const WORKFLOW_START_EVENT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_start_event`;
 export const WORKFLOW_REQUIRED_START_ARTIFACT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_required_start_artifact`;
+export const WORKFLOW_EVENT_USE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_event_use`;
+export const WORKFLOW_TASK_ARTIFACT_STATE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_task_artifact_state`;
 export const WORKFLOW_ROLE_DEFINITION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_role_definition`;
 
 /**
@@ -82,11 +85,12 @@ export const TOOL_OPERATION_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.tool_
 // endregion
 
 // region execution layer
-/** Key roots of the run-time side: an instance and the task, artifact and step rows below it. */
+/** Key roots of the run-time side: an instance and the task, artifact, event and step rows below it. */
 export const WORKFLOW_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.workflow_instance`;
 export const TASK_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_instance`;
 export const ARTIFACT_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.artifact_instance`;
 export const TASK_STEP_RESULT_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.task_step_result`;
+export const EVENT_INSTANCE_I18N_SCOPE = `${BASE_WORKFLOW_TRANSLOCO_SCOPE}.event_instance`;
 
 /**
  * Key root of the task dashboard's own labels — the queue toggle, the step and artifact headings, the

@@ -5,8 +5,10 @@ import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import com.processpuzzle.workflow.definition.usecases.outbound.ActiveWorkflowInstanceExistencePort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ public class DeleteWorkflowUseCase {
     private final WorkflowRepository repository;
     private final WorkflowDiagramRepository diagramRepository;
     private final ActiveWorkflowInstanceExistencePort activeInstanceExistencePort;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void delete(String orgKey, String id) {
         Workflow workflow = repository.findByOrgKeyAndId(orgKey, id)
@@ -35,5 +38,6 @@ public class DeleteWorkflowUseCase {
         // addressed only by its workflow's id — and would silently resurface if that id were reused.
         diagramRepository.deleteByOrgKeyAndWorkflowId(orgKey, id);
         repository.delete(workflow);
+        eventPublisher.publishEvent(new WorkflowChangedEvent(orgKey, id, true));
     }
 }

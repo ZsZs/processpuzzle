@@ -19,7 +19,7 @@ import { WorkflowRelationPropertiesPanelComponent } from '../modeler/pages/workf
 import { WorkflowSelectionService } from '../modeler/services/workflow-selection.service';
 
 /** The kinds this perspective draws, and the order the legend reads them in. */
-const DRAWN_KINDS: WorkflowElementKind[] = ['role', 'task', 'artifact', 'tool'];
+const DRAWN_KINDS: WorkflowElementKind[] = ['start', 'role', 'task', 'event', 'end', 'artifact', 'tool'];
 
 /** Everything on, which is the whole workflow — a toggle exists to take something away. */
 const ALL_LAYERS: ModelerLayers = { lanes: true, data: true, tools: true };
@@ -205,9 +205,9 @@ export class WorkflowModelerTabComponent {
    * than an effect writing a signal: the graph is a projection of five lists and three flags, with no state
    * of its own to keep in step.
    *
-   * The two labels are resolved here because the converter holds no transloco — the lane a task with no
-   * stated performer goes in, and the word marking an `ANY` join, are the only two things it draws that are
-   * not data.
+   * The three labels are resolved here because the converter holds no transloco — the lane a task with no
+   * stated performer goes in, the word marking an `ANY` join and the name of the derived end event are the
+   * only three things it draws that are not data.
    */
   protected readonly graph = computed(() =>
     WorkflowFlowGraphConverter.toGraph(this.workflowStore.currentEntity(), this.taskStore.entities(), this.roleStore.entities(), this.artifactStore.entities(), this.toolStore.entities(), {
@@ -215,6 +215,7 @@ export class WorkflowModelerTabComponent {
       labels: {
         unassignedLane: this.transloco.translate(`${WORKFLOW_I18N_SCOPE}.modeler.unassigned`),
         anyJoin: this.transloco.translate(`${WORKFLOW_I18N_SCOPE}.modeler.join_any`),
+        endEvent: this.transloco.translate(`${WORKFLOW_I18N_SCOPE}.modeler.end`),
       },
     }),
   );

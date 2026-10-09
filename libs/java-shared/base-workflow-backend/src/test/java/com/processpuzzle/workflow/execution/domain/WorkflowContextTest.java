@@ -171,7 +171,45 @@ class WorkflowContextTest {
         assertThat(WorkflowContext.assemble(instance, List.of(completed))).isEqualTo(working);
     }
 
+    // ---------------------------------------------------------------- events
+
+    @Test
+    void occurredCatchContributionsFoldInWithTheTasksInTimeOrder() {
+        WorkflowInstance instance = instanceWith(Map.of("invoiceNumber", "none"));
+        List<TaskInstance> tasks = List.of(
+                completed("review", 100, Map.of("reviewedBy", "clerk")),
+                completed("correct", 300, Map.of("invoiceNumber", "I-2")));
+        List<EventInstance> events = List.of(occurred("issued", 200, Map.of("invoiceNumber", "I-1")));
+
+        assertThat(WorkflowContext.assemble(instance, tasks, events))
+                .containsEntry("reviewedBy", "clerk")
+                .containsEntry("invoiceNumber", "I-2");
+        assertThat(WorkflowContext.assemble(instance, tasks.subList(0, 1), events))
+                .containsEntry("invoiceNumber", "I-1");
+    }
+
+    @Test
+    void eventsThatHaveNotOccurredContributeNothing() {
+        WorkflowInstance instance = instanceWith(Map.of());
+        EventInstance waiting = occurred("issued", 200, Map.of("invoiceNumber", "I-1"));
+        waiting.setStatus(EventInstanceStatus.WAITING);
+        EventInstance noTime = occurred("other", 0, Map.of("x", 1));
+        noTime.setOccurredAt(null);
+
+        assertThat(WorkflowContext.assemble(instance, List.of(), List.of(waiting, noTime))).isEmpty();
+        assertThat(WorkflowContext.assemble(instance, null, null)).isEmpty();
+    }
+
     // ---------------------------------------------------------------- fixtures
+
+    private EventInstance occurred(String eventUseId, long occurredAtMillis, Map<String, Object> contribution) {
+        return EventInstance.builder()
+                .eventUseId(eventUseId)
+                .status(EventInstanceStatus.OCCURRED)
+                .occurredAt(Instant.ofEpochMilli(occurredAtMillis))
+                .contextContribution(new HashMap<>(contribution))
+                .build();
+    }
 
     private WorkflowInstance instanceWith(Map<String, Object> initialContext) {
         return WorkflowInstance.builder().initialContext(new HashMap<>(initialContext)).build();

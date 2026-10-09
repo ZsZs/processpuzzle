@@ -50,6 +50,16 @@ class EntityAttributeQueryAdapterTest {
     }
 
     @Test
+    void titleAttribute_isTheDefinitionsLinkToDetailsAttribute() {
+        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+            new EntityDefinitionView("order", false, List.of(attribute("orderNumber", ValueKindView.TEXT)), "orderNumber")));
+        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
+
+        assertThat(adapter.titleAttribute(ORG, "order")).contains("orderNumber");
+        assertThat(adapter.titleAttribute(ORG, "nope")).isEmpty();
+    }
+
+    @Test
     void attributeKind_unknownEntityType_isEmpty() {
         when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
 

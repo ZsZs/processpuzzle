@@ -8,17 +8,12 @@
     "activeInstances": "Aktive Instanzen",
     "version": "Version",
     "updatedAt": "Geändert am",
-    "startType": "Starttyp",
-    "eventType": "Ereignistyp",
-    "milestoneRef": "Meilenstein",
-    "preconditionExpression": "Vorbedingung",
-    "authorizedRoles": "Berechtigte Rollen",
-    "payloadMapping": "Nutzdatenzuordnung",
-    "requiredArtifacts": "Erforderliche Artefakte",
+    "startEvents": "Startereignisse",
     "roles": "Rollen",
     "artifacts": "Artefakte",
     "tools": "Werkzeuge",
     "tasks": "Aufgaben",
+    "events": "Ereignisse",
     "tabs": {
       "modeler": "Workflow-Modellierer"
     },
@@ -29,6 +24,8 @@
       "tools": "Werkzeuge",
       "unassigned": "Nicht zugewiesen",
       "join_any": "beliebig",
+      "start": "Start",
+      "end": "Ende",
       "save": "Layout speichern",
       "properties": {
         "none": "Wählen Sie ein Element, um seine Eigenschaften zu sehen.",
@@ -49,7 +46,13 @@
           "start": "Zu Beginn erforderlich",
           "unknown": "Bezogen auf"
         }
-      }
+      },
+      "throw_event": "Auslösendes Ereignis",
+      "catch_event": "Eintretendes Ereignis",
+      "timer_event": "Zeitereignis",
+      "boundary_event": "Angeheftetes Ereignis (unterbrechend)",
+      "non_interrupting_boundary_event": "Angeheftetes Ereignis (nicht unterbrechend)",
+      "event": "Zwischenereignis"
     }
   },
   "workflow_task_assignment": {
@@ -59,7 +62,8 @@
     "dependsOn": "Abhängig von",
     "joinType": "Verknüpfungstyp",
     "parallel": "Parallel",
-    "override": "Überschreiben"
+    "override": "Überschreiben",
+    "artifactStates": "Artefaktzustände"
   },
   "workflow_role_use": {
     "_self": "Rollenverwendung",
@@ -67,16 +71,52 @@
   },
   "workflow_artifact_use": {
     "_self": "Artefaktverwendung",
-    "artifactDefinitionId": "Artefakt"
+    "artifactDefinitionId": "Artefakt",
+    "objectName": "Objektname"
   },
   "workflow_tool_use": {
     "_self": "Werkzeugverwendung",
     "toolDefinitionId": "Werkzeug"
   },
+  "workflow_start_event": {
+    "_self": "Startereignis",
+    "id": "Id",
+    "name": "Name",
+    "startType": "Starttyp",
+    "eventType": "Ereignistyp",
+    "milestoneRef": "Meilenstein",
+    "preconditionExpression": "Vorbedingung",
+    "timerType": "Timer",
+    "timerExpression": "Timer-Ausdruck",
+    "authorizedRoles": "Berechtigte Rollen",
+    "payloadMapping": "Nutzdatenzuordnung",
+    "requiredArtifacts": "Erforderliche Artefakte"
+  },
   "workflow_required_start_artifact": {
     "_self": "Erforderliches Artefakt",
     "artifactDefinitionId": "Artefakt",
     "state": "Zustand"
+  },
+  "workflow_event_use": {
+    "_self": "Zwischenereignis",
+    "id": "Id",
+    "name": "Name",
+    "direction": "Richtung",
+    "eventDefinitionId": "Ereignis",
+    "dependsOn": "Abhängig von",
+    "joinType": "Verknüpfungstyp",
+    "correlationKey": "Korrelationsschlüssel",
+    "timerType": "Timer",
+    "timerExpression": "Timer-Ausdruck",
+    "attachedTo": "Angeheftet an",
+    "interrupting": "Unterbrechend",
+    "payloadMapping": "Nutzdatenzuordnung"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "Artefaktzustand der Aufgabe",
+    "artifactDefinitionId": "Artefakt",
+    "inputState": "Eingangszustand",
+    "outputState": "Ausgangszustand"
   },
   "workflow_role_definition": {
     "_self": "Rolle",
@@ -155,14 +195,17 @@
     "_self": "Workflow-Instanz",
     "id": "Id",
     "workflowId": "Workflow",
+    "startEventId": "Startereignis",
     "workflowName": "Workflow-Name",
     "status": "Status",
-    "entityId": "Entität",
+    "instanceNumber": "Nr.",
+    "entityLabel": "Entität",
     "startedAt": "Gestartet am",
     "completedAt": "Abgeschlossen am",
     "context": "Kontext",
     "tasks": "Aufgaben",
-    "artifacts": "Artefakte"
+    "artifacts": "Artefakte",
+    "events": "Ereignisse"
   },
   "task_instance": {
     "_self": "Aufgabeninstanz",
@@ -175,6 +218,8 @@
     "activatedAt": "Aktiviert am",
     "completedAt": "Abgeschlossen am",
     "skippedAt": "Übersprungen am",
+    "cancelledAt": "Abgebrochen am",
+    "cancelReason": "Abbruchgrund",
     "stepResults": "Schrittergebnisse",
     "dashboard": {
       "title": "Meine Aufgaben",
@@ -208,7 +253,8 @@
       "skip_reason": "Grund für das Überspringen",
       "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
       "unassigned": "nicht zugewiesen",
-      "assigned_to": "Zugewiesen an"
+      "assigned_to": "Zugewiesen an",
+      "waiting_for": "Wartet auf"
     }
   },
   "artifact_instance": {
@@ -221,6 +267,20 @@
     "stateMachineInstanceId": "Zustandsmaschineninstanz",
     "currentState": "Aktueller Zustand",
     "updatedAt": "Geändert am"
+  },
+  "event_instance": {
+    "_self": "Ereignisinstanz",
+    "eventUseId": "Ereignis",
+    "direction": "Richtung",
+    "status": "Status",
+    "eventDefinitionId": "Katalogereignis",
+    "correlationValue": "Korrelationswert",
+    "waitingSince": "Wartet seit",
+    "occurredAt": "Eingetreten am",
+    "dueAt": "Fällig am",
+    "fireCount": "Auslösungen",
+    "payload": "Nutzdaten",
+    "contextContribution": "Kontextbeitrag"
   },
   "task_step_result": {
     "_self": "Schrittergebnis",

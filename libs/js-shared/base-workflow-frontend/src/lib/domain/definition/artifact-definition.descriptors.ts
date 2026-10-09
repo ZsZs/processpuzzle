@@ -2,6 +2,7 @@ import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor,
 import { ARTIFACT_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ArtifactType } from './artifact-definition';
 import { ARTIFACT_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { timestampAttr } from '../timestamp-attr';
 
 export { ARTIFACT_DEFINITION_ENTITY_NAME };
 
@@ -39,8 +40,7 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
   versionAttr.disabled = true;
 
-  const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
-  updatedAtAttr.disabled = true;
+  const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, artifactTypeAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };

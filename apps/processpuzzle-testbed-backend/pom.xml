@@ -72,6 +72,11 @@
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
+            <artifactId>base-event-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
             <artifactId>org-admin-backend</artifactId>
         </dependency>
 
@@ -138,6 +143,26 @@
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
+        <!-- The event publication registry (the outbox), added 2026-10-08 for the platform event bus.
+             Every event a @TransactionalEventListener observes is written to the event_publication
+             table inside the publishing transaction and redelivered until each listener completes, so
+             a PlatformEvent survives a crash between commit and the workflow start it triggers.
+
+             The two artifacts on purpose, NOT spring-modulith-starter-jpa: every starter pulls
+             spring-modulith-core and -runtime back in, and with them the boot-time ArchUnit pass the
+             comment above describes. events-jpa and events-jackson depend only on events-core and
+             events-api, which carry no module model. `mvn dependency:tree` should show neither
+             spring-modulith-core, spring-modulith-runtime nor archunit on the compile/runtime scope. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-events-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-events-jackson</artifactId>
         </dependency>
 
         <dependency>

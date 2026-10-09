@@ -2,10 +2,13 @@ package com.processpuzzle.workflow.definition.adapters.inbound;
 
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.ArtifactYamlEntry;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.EventUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RequiredStartArtifactYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.RoleYamlEntry;
-import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartConditionYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.StartEventYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.TimerYaml;
+import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskArtifactStateYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.StepYamlEntry;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskUseYaml;
 import com.processpuzzle.workflow.definition.adapters.inbound.dto.TaskYamlEntry;
@@ -18,6 +21,8 @@ import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.ArtifactUse;
 import com.processpuzzle.workflow.definition.domain.AuthType;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.HttpMethod;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
@@ -32,7 +37,10 @@ import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolOperation;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
-import com.processpuzzle.workflow.definition.domain.WorkflowStartCondition;
+import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import org.springframework.stereotype.Component;
 
@@ -126,11 +134,40 @@ public class WorkflowYamlMapper {
                 entry.name(),
                 entry.description(),
                 entry.extendsWorkflowId(),
-                toStartConditionDomain(entry.startCondition()),
+                safeList(entry.startEvents()).stream().map(this::toStartEventDomain).toList(),
                 safeList(entry.roles()).stream().map(this::toRoleUseDomain).toList(),
                 safeList(entry.artifacts()).stream().map(this::toArtifactUseDomain).toList(),
                 safeList(entry.tools()).stream().map(this::toToolUseDomain).toList(),
-                safeList(entry.tasks()).stream().map(this::toTaskUseDomain).toList());
+                safeList(entry.tasks()).stream().map(this::toTaskUseDomain).toList(),
+                safeList(entry.events()).stream().map(this::toEventUseDomain).toList());
+    }
+
+    private EventUse toEventUseDomain(EventUseYaml entry) {
+        JoinType joinType = toEnum(JoinType.class, entry.joinType());
+        return EventUse.builder()
+                .id(entry.id())
+                .name(entry.name())
+                .eventDefinitionId(entry.eventDefinitionId())
+                .direction(toEnum(EventDirection.class, entry.direction()))
+                .dependsOn(List.copyOf(safeList(entry.dependsOn())))
+                .joinType(joinType == null ? JoinType.ALL : joinType)
+                .correlationKey(entry.correlationKey())
+                .payloadMapping(entry.payloadMapping())
+                .timer(toTimerDomain(entry.timer()))
+                .attachedTo(entry.attachedTo())
+                .interrupting(!Boolean.FALSE.equals(entry.interrupting()))
+                .build();
+    }
+
+    private TimerDefinition toTimerDomain(TimerYaml entry) {
+        return entry == null ? null : TimerDefinition.builder()
+                .type(toEnum(TimerType.class, entry.type()))
+                .expression(entry.expression())
+                .build();
+    }
+
+    private TimerYaml toTimerYaml(TimerDefinition timer) {
+        return timer == null ? null : new TimerYaml(nameOf(timer.getType()), timer.getExpression());
     }
 
     private RoleUse toRoleUseDomain(RoleUseYaml entry) {
@@ -138,7 +175,7 @@ public class WorkflowYamlMapper {
     }
 
     private ArtifactUse toArtifactUseDomain(ArtifactUseYaml entry) {
-        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).build();
+        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).objectName(entry.objectName()).build();
     }
 
     private ToolUse toToolUseDomain(ToolUseYaml entry) {
@@ -154,14 +191,20 @@ public class WorkflowYamlMapper {
                 .joinType(joinType == null ? JoinType.ALL : joinType)
                 .parallel(Boolean.TRUE.equals(entry.parallel()))
                 .override(Boolean.TRUE.equals(entry.override()))
+                .artifactStates(safeList(entry.artifactStates()).stream()
+                        .map(state -> TaskArtifactState.builder()
+                                .artifactDefinitionId(state.artifactDefinitionId())
+                                .inputState(state.inputState())
+                                .outputState(state.outputState())
+                                .build())
+                        .toList())
                 .build();
     }
 
-    private WorkflowStartCondition toStartConditionDomain(StartConditionYaml entry) {
-        if (entry == null) {
-            return null;
-        }
-        return WorkflowStartCondition.builder()
+    private StartEvent toStartEventDomain(StartEventYaml entry) {
+        return StartEvent.builder()
+                .id(entry.id())
+                .name(entry.name())
                 .startType(toEnum(WorkflowStartConditionType.class, entry.startType()))
                 .requiredArtifacts(safeList(entry.requiredArtifacts()).stream().map(this::toRequiredArtifactDomain).toList())
                 .eventType(entry.eventType())
@@ -169,6 +212,7 @@ public class WorkflowYamlMapper {
                 .authorizedRoles(entry.authorizedRoles() == null ? null : List.copyOf(entry.authorizedRoles()))
                 .milestoneRef(entry.milestoneRef())
                 .preconditionExpression(entry.preconditionExpression())
+                .timer(toTimerDomain(entry.timer()))
                 .build();
     }
 
@@ -266,14 +310,30 @@ public class WorkflowYamlMapper {
                 workflow.getName(),
                 workflow.getDescription(),
                 workflow.getExtendsWorkflowId(),
-                toStartConditionYaml(workflow.getStartCondition()),
+                safeList(workflow.getStartEvents()).stream().map(this::toStartEventYaml).toList(),
                 safeList(workflow.getRoles()).stream()
                         .map(use -> new RoleUseYaml(use.getRoleDefinitionId())).toList(),
                 safeList(workflow.getArtifacts()).stream()
-                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId())).toList(),
+                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId(), use.getObjectName())).toList(),
                 safeList(workflow.getTools()).stream()
                         .map(use -> new ToolUseYaml(use.getToolDefinitionId())).toList(),
-                safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList());
+                safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList(),
+                workflow.getEvents().isEmpty() ? null : workflow.getEvents().stream().map(this::toEventUseYaml).toList());
+    }
+
+    private EventUseYaml toEventUseYaml(EventUse use) {
+        return new EventUseYaml(
+                use.getId(),
+                use.getName(),
+                use.getEventDefinitionId(),
+                nameOf(use.getDirection()),
+                use.getDependsOn(),
+                nameOf(use.getJoinType()),
+                use.getCorrelationKey(),
+                use.getPayloadMapping(),
+                toTimerYaml(use.getTimer()),
+                use.getAttachedTo(),
+                use.isBoundary() && !use.isInterrupting() ? Boolean.FALSE : null);
     }
 
     private TaskUseYaml toTaskUseYaml(TaskUse use) {
@@ -284,23 +344,27 @@ public class WorkflowYamlMapper {
                 use.getDependsOn(),
                 nameOf(use.getJoinType()),
                 use.isParallel() ? Boolean.TRUE : null,
-                use.isOverride() ? Boolean.TRUE : null);
+                use.isOverride() ? Boolean.TRUE : null,
+                safeList(use.getArtifactStates()).isEmpty() ? null : use.getArtifactStates().stream()
+                        .map(state -> new TaskArtifactStateYaml(
+                                state.getArtifactDefinitionId(), state.getInputState(), state.getOutputState()))
+                        .toList());
     }
 
-    private StartConditionYaml toStartConditionYaml(WorkflowStartCondition condition) {
-        if (condition == null) {
-            return null;
-        }
-        return new StartConditionYaml(
-                nameOf(condition.getStartType()),
-                safeList(condition.getRequiredArtifacts()).stream()
+    private StartEventYaml toStartEventYaml(StartEvent startEvent) {
+        return new StartEventYaml(
+                startEvent.getId(),
+                startEvent.getName(),
+                nameOf(startEvent.getStartType()),
+                safeList(startEvent.getRequiredArtifacts()).stream()
                         .map(artifact -> new RequiredStartArtifactYaml(artifact.getArtifactDefinitionId(), artifact.getState()))
                         .toList(),
-                condition.getEventType(),
-                condition.getPayloadMapping(),
-                condition.getAuthorizedRoles(),
-                condition.getMilestoneRef(),
-                condition.getPreconditionExpression());
+                startEvent.getEventType(),
+                startEvent.getPayloadMapping(),
+                startEvent.getAuthorizedRoles(),
+                startEvent.getMilestoneRef(),
+                startEvent.getPreconditionExpression(),
+                toTimerYaml(startEvent.getTimer()));
     }
 
     private StepYamlEntry toStepYaml(StepDefinition step) {

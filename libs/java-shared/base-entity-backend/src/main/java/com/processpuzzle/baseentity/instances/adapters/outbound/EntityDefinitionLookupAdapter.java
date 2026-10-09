@@ -32,7 +32,12 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
         return new EntityDefinitionView(
             definition.getCode(),
             definition.isEmbedded(),
-            definition.getAttributes().stream().map(this::toView).toList()
+            definition.getAttributes().stream().map(this::toView).toList(),
+            definition.getAttributes().stream()
+                .filter(BaseEntityAttribute::isLinkToDetails)
+                .map(BaseEntityAttribute::getCode)
+                .findFirst()
+                .orElse(null)
         );
     }
 

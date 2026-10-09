@@ -28,6 +28,10 @@ import com.processpuzzle.workflow.model.WorkflowInput;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import com.processpuzzle.workflow.definition.domain.EventUse;
+import com.processpuzzle.workflow.definition.domain.TimerDefinition;
+import com.processpuzzle.workflow.definition.domain.TimerType;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,12 +65,14 @@ class WorkflowDefinitionMapperTest {
                 .name("Workflow 1")
                 .description("Desc")
                 ._extends("parent-wf")
-                .startCondition(new com.processpuzzle.workflow.model.WorkflowStartCondition()
+                .startEvents(List.of(new com.processpuzzle.workflow.model.StartEvent()
+                        .id("wp1-drafted")
+                        .name("Drafted")
                         .startType(com.processpuzzle.workflow.model.WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(new com.processpuzzle.workflow.model.RequiredStartArtifact()
-                                .artifactDefinitionId("wp1").state("DRAFT"))))
+                                .artifactDefinitionId("wp1").state("DRAFT")))))
                 .roles(List.of(new com.processpuzzle.workflow.model.RoleUse().roleDefinitionId("r1")))
-                .artifacts(List.of(new com.processpuzzle.workflow.model.ArtifactUse().artifactDefinitionId("wp1")))
+                .artifacts(List.of(new com.processpuzzle.workflow.model.ArtifactUse().artifactDefinitionId("wp1").objectName("spec")))
                 .tools(List.of(new com.processpuzzle.workflow.model.ToolUse().toolDefinitionId("tool-1")))
                 .tasks(List.of(new com.processpuzzle.workflow.model.TaskUse()
                         .taskDefinitionId("t1")
@@ -74,7 +80,9 @@ class WorkflowDefinitionMapperTest {
                         .dependsOn(List.of("t0"))
                         .joinType(com.processpuzzle.workflow.model.JoinType.ANY)
                         .parallel(true)
-                        .override(true)));
+                        .override(true)
+                        .artifactStates(List.of(new com.processpuzzle.workflow.model.TaskArtifactState()
+                                .artifactDefinitionId("wp1").inputState("DRAFT").outputState("FINAL")))));
 
         Workflow domain = mapper.toDomain("org-1", input);
 
@@ -87,8 +95,12 @@ class WorkflowDefinitionMapperTest {
         assertThat(domain.roleDefinitionIds()).containsExactly("r1");
         assertThat(domain.artifactDefinitionIds()).containsExactly("wp1");
         assertThat(domain.toolDefinitionIds()).containsExactly("tool-1");
-        assertThat(domain.getStartCondition().getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
-        assertThat(domain.getStartCondition().getRequiredArtifacts()).singleElement()
+        assertThat(domain.getStartEvents()).singleElement().satisfies(startEvent -> {
+            assertThat(startEvent.getId()).isEqualTo("wp1-drafted");
+            assertThat(startEvent.getName()).isEqualTo("Drafted");
+            assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
+        });
+        assertThat(domain.getStartEvents().get(0).getRequiredArtifacts()).singleElement()
                 .satisfies(required -> {
                     assertThat(required.getArtifactDefinitionId()).isEqualTo("wp1");
                     assertThat(required.getState()).isEqualTo("DRAFT");
@@ -101,6 +113,11 @@ class WorkflowDefinitionMapperTest {
         assertThat(use.getJoinType()).isEqualTo(JoinType.ANY);
         assertThat(use.isParallel()).isTrue();
         assertThat(use.isOverride()).isTrue();
+        assertThat(use.getArtifactStates()).singleElement().satisfies(state -> {
+            assertThat(state.getArtifactDefinitionId()).isEqualTo("wp1");
+            assertThat(state.getInputState()).isEqualTo("DRAFT");
+            assertThat(state.getOutputState()).isEqualTo("FINAL");
+        });
 
         domain.setCreatedAt(Instant.now());
         domain.setUpdatedAt(Instant.now());
@@ -112,14 +129,22 @@ class WorkflowDefinitionMapperTest {
         assertThat(model.getExtends()).isEqualTo("parent-wf");
         assertThat(model.getRoles()).singleElement()
                 .extracting(com.processpuzzle.workflow.model.RoleUse::getRoleDefinitionId).isEqualTo("r1");
-        assertThat(model.getArtifacts()).singleElement()
-                .extracting(com.processpuzzle.workflow.model.ArtifactUse::getArtifactDefinitionId).isEqualTo("wp1");
+        assertThat(model.getArtifacts()).singleElement().satisfies(artifactUse -> {
+            assertThat(artifactUse.getArtifactDefinitionId()).isEqualTo("wp1");
+            assertThat(artifactUse.getObjectName()).isEqualTo("spec");
+        });
         assertThat(model.getTools()).singleElement()
                 .extracting(com.processpuzzle.workflow.model.ToolUse::getToolDefinitionId).isEqualTo("tool-1");
-        assertThat(model.getStartCondition().getRequiredArtifacts()).hasSize(1);
+        assertThat(model.getStartEvents()).singleElement().satisfies(startEvent -> {
+            assertThat(startEvent.getId()).isEqualTo("wp1-drafted");
+            assertThat(startEvent.getName()).isEqualTo("Drafted");
+            assertThat(startEvent.getRequiredArtifacts()).hasSize(1);
+        });
         assertThat(model.getTasks()).hasSize(1);
         assertThat(model.getTasks().get(0).getTaskDefinitionId()).isEqualTo("t1");
         assertThat(model.getTasks().get(0).getDependsOn()).containsExactly("t0");
+        assertThat(model.getTasks().get(0).getArtifactStates()).singleElement()
+                .extracting(com.processpuzzle.workflow.model.TaskArtifactState::getOutputState).isEqualTo("FINAL");
         assertThat(model.getTasks().get(0).getJoinType())
                 .isEqualTo(com.processpuzzle.workflow.model.JoinType.ANY);
         assertThat(model.getVersion()).isEqualTo(1L);
@@ -129,13 +154,13 @@ class WorkflowDefinitionMapperTest {
 
     /**
      * Generated inputs pre-fill list defaults, so an explicitly nulled collection is the only way to
-     * reach the mapper's null branches. A start condition is genuinely optional — a workflow without
-     * one can only be started explicitly through /instances.
+     * reach the mapper's null branches. Start events are genuinely optional — a workflow without
+     * any can be started by anyone through /instances.
      */
     @Test
-    void toDomain_workflowToleratesAbsentCollectionsAndStartCondition() {
+    void toDomain_workflowToleratesAbsentCollectionsAndStartEvents() {
         WorkflowInput emptyInput = new WorkflowInput().id("empty").name("Empty")
-                .startCondition(null).roles(null).artifacts(null).tools(null).tasks(null);
+                .startEvents(null).roles(null).artifacts(null).tools(null).tasks(null);
 
         Workflow emptyDomain = mapper.toDomain("org-1", emptyInput);
 
@@ -143,8 +168,84 @@ class WorkflowDefinitionMapperTest {
         assertThat(emptyDomain.getArtifacts()).isEmpty();
         assertThat(emptyDomain.getTools()).isEmpty();
         assertThat(emptyDomain.getTasks()).isEmpty();
-        assertThat(emptyDomain.getStartCondition()).isNull();
-        assertThat(mapper.toModel(emptyDomain).getStartCondition()).isNull();
+        assertThat(emptyDomain.getStartEvents()).isEmpty();
+        assertThat(emptyDomain.getEvents()).isEmpty();
+        assertThat(mapper.toModel(emptyDomain).getStartEvents()).isEmpty();
+        assertThat(mapper.toModel(emptyDomain).getEvents()).isEmpty();
+    }
+
+    @Test
+    void eventUseMappingIsSymmetricAndDefaultsJoinTypeToAll() {
+        WorkflowInput input = new WorkflowInput().id("wf").name("WF")
+                .events(List.of(
+                        new com.processpuzzle.workflow.model.EventUse().id("ask").name("Ask")
+                                .eventDefinitionId("InvoiceRequested")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.THROW)
+                                .dependsOn(List.of("approve")).correlationKey("orderId")
+                                .payloadMapping(Map.of("number", "$.orderNumber")),
+                        new com.processpuzzle.workflow.model.EventUse().id("issued").eventDefinitionId("InvoiceIssued")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .dependsOn(null).joinType(null)));
+
+        Workflow domain = mapper.toDomain("org-1", input);
+
+        assertThat(domain.getEvents()).hasSize(2);
+        EventUse ask = domain.getEvents().get(0);
+        assertThat(ask.getDirection()).isEqualTo(EventDirection.THROW);
+        assertThat(ask.getDependsOn()).containsExactly("approve");
+        assertThat(ask.getJoinType()).isEqualTo(JoinType.ALL);
+        assertThat(ask.getCorrelationKey()).isEqualTo("orderId");
+        assertThat(ask.getPayloadMapping()).containsEntry("number", "$.orderNumber");
+        assertThat(domain.getEvents().get(1).getDependsOn()).isEmpty();
+
+        var model = mapper.toModel(domain).getEvents();
+        assertThat(model.get(0).getId()).isEqualTo("ask");
+        assertThat(model.get(0).getName()).isEqualTo("Ask");
+        assertThat(model.get(0).getDirection()).isEqualTo(com.processpuzzle.workflow.model.EventDirection.THROW);
+        assertThat(model.get(0).getPayloadMapping()).containsEntry("number", "$.orderNumber");
+        assertThat(model.get(1).getDirection()).isEqualTo(com.processpuzzle.workflow.model.EventDirection.CATCH);
+        assertThat(model.get(1).getJoinType()).isEqualTo(com.processpuzzle.workflow.model.JoinType.ALL);
+        assertThat(mapper.toModel(Workflow.builder().id("x").events(List.of(EventUse.builder().id("e").build())).build())
+                .getEvents().get(0).getDirection()).isNull();
+    }
+
+    @Test
+    void timersAndBoundariesMapBothWays() {
+        WorkflowInput input = new WorkflowInput().id("wf").name("WF")
+                .startEvents(List.of(new com.processpuzzle.workflow.model.StartEvent().id("nightly")
+                        .startType(com.processpuzzle.workflow.model.WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                        .timer(new com.processpuzzle.workflow.model.TimerDefinition()
+                                .type(com.processpuzzle.workflow.model.TimerType.CYCLE).expression("R/P1D"))))
+                .events(List.of(
+                        new com.processpuzzle.workflow.model.EventUse().id("overdue")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .attachedTo("issue").interrupting(null)
+                                .timer(new com.processpuzzle.workflow.model.TimerDefinition()
+                                        .type(com.processpuzzle.workflow.model.TimerType.DURATION).expression("PT1H")),
+                        new com.processpuzzle.workflow.model.EventUse().id("nudge")
+                                .direction(com.processpuzzle.workflow.model.EventDirection.CATCH)
+                                .attachedTo("issue").interrupting(false)
+                                .timer(new com.processpuzzle.workflow.model.TimerDefinition().expression("R2/PT5M"))));
+
+        Workflow domain = mapper.toDomain("org-1", input);
+
+        EventUse overdue = domain.getEvents().get(0);
+        assertThat(overdue.getTimer()).isEqualTo(new TimerDefinition(TimerType.DURATION, "PT1H"));
+        assertThat(overdue.getAttachedTo()).isEqualTo("issue");
+        assertThat(overdue.isInterrupting()).isTrue();
+        assertThat(domain.getEvents().get(1).isInterrupting()).isFalse();
+        assertThat(domain.getEvents().get(1).getTimer().getType()).isNull();
+        assertThat(domain.getStartEvents().get(0).getTimer()).isEqualTo(new TimerDefinition(TimerType.CYCLE, "R/P1D"));
+
+        var model = mapper.toModel(domain);
+        assertThat(model.getEvents().get(0).getTimer().getType()).isEqualTo(com.processpuzzle.workflow.model.TimerType.DURATION);
+        assertThat(model.getEvents().get(0).getTimer().getExpression()).isEqualTo("PT1H");
+        assertThat(model.getEvents().get(0).getAttachedTo()).isEqualTo("issue");
+        assertThat(model.getEvents().get(1).getInterrupting()).isFalse();
+        assertThat(model.getEvents().get(1).getTimer().getType()).isNull();
+        assertThat(model.getStartEvents().get(0).getTimer().getExpression()).isEqualTo("R/P1D");
+        assertThat(mapper.toModel(Workflow.builder().id("x").events(List.of(EventUse.builder().id("e").build())).build())
+                .getEvents().get(0).getTimer()).isNull();
     }
 
     /** joinType is nullable on both sides and defaults to ALL rather than to null. */
@@ -163,44 +264,47 @@ class WorkflowDefinitionMapperTest {
                 .isEqualTo(com.processpuzzle.workflow.model.JoinType.ALL);
     }
 
-    /** A start condition's own collections are nullable too — ROLE_DEFINITION uses none of them. */
+    /** A start event's own collections are nullable too — ROLE_DEFINITION uses none of them. */
     @Test
-    void startConditionMappingToleratesAbsentCollections() {
+    void startEventMappingToleratesAbsentCollections() {
         Workflow domain = mapper.toDomain("org-1", new WorkflowInput().id("wf-1").name("Workflow 1")
-                .startCondition(new com.processpuzzle.workflow.model.WorkflowStartCondition()
+                .startEvents(List.of(new com.processpuzzle.workflow.model.StartEvent()
+                        .id("start")
                         .startType(null)
                         .requiredArtifacts(null)
-                        .authorizedRoles(null)));
+                        .authorizedRoles(null))));
 
-        assertThat(domain.getStartCondition().getStartType()).isNull();
-        assertThat(domain.getStartCondition().getRequiredArtifacts()).isEmpty();
-        assertThat(domain.getStartCondition().getAuthorizedRoles()).isNull();
+        var startEvent = domain.getStartEvents().get(0);
+        assertThat(startEvent.getStartType()).isNull();
+        assertThat(startEvent.getRequiredArtifacts()).isEmpty();
+        assertThat(startEvent.getAuthorizedRoles()).isNull();
 
-        var model = mapper.toModel(domain).getStartCondition();
+        var model = mapper.toModel(domain).getStartEvents().get(0);
         assertThat(model.getStartType()).isNull();
         assertThat(model.getAuthorizedRoles()).isNull();
     }
 
     /** The TRIGGERING_EVENT and TIME_BASED_PRECONDITION fields ride the same flat schema. */
     @Test
-    void startConditionMappingCarriesEveryMechanismsFields() {
+    void startEventMappingCarriesEveryMechanismsFields() {
         Workflow domain = mapper.toDomain("org-1", new WorkflowInput().id("wf-1").name("Workflow 1")
-                .startCondition(new com.processpuzzle.workflow.model.WorkflowStartCondition()
+                .startEvents(List.of(new com.processpuzzle.workflow.model.StartEvent()
+                        .id("submitted")
                         .startType(com.processpuzzle.workflow.model.WorkflowStartConditionType.TRIGGERING_EVENT)
                         .eventType("order.submitted")
                         .payloadMapping(Map.of("orderId", "$.id"))
                         .authorizedRoles(List.of("clerk"))
                         .milestoneRef("MILESTONE_REACHED")
-                        .preconditionExpression("milestone.status == 'PASSED'")));
+                        .preconditionExpression("milestone.status == 'PASSED'"))));
 
-        var condition = domain.getStartCondition();
+        var condition = domain.getStartEvents().get(0);
         assertThat(condition.getEventType()).isEqualTo("order.submitted");
         assertThat(condition.getPayloadMapping()).containsEntry("orderId", "$.id");
         assertThat(condition.getAuthorizedRoles()).containsExactly("clerk");
         assertThat(condition.getMilestoneRef()).isEqualTo("MILESTONE_REACHED");
         assertThat(condition.getPreconditionExpression()).isEqualTo("milestone.status == 'PASSED'");
 
-        var model = mapper.toModel(domain).getStartCondition();
+        var model = mapper.toModel(domain).getStartEvents().get(0);
         assertThat(model.getStartType())
                 .isEqualTo(com.processpuzzle.workflow.model.WorkflowStartConditionType.TRIGGERING_EVENT);
         assertThat(model.getPayloadMapping()).containsEntry("orderId", "$.id");

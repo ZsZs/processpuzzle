@@ -2,6 +2,7 @@ import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor,
 import { TASK_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ARTIFACT_DEFINITION_ENTITY_NAME, TASK_DEFINITION_ENTITY_NAME, TASK_STEP_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
 import { TASK_STEP_DEFINITION_ID_FIELD } from './step-definition.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { TASK_DEFINITION_ENTITY_NAME };
 
@@ -41,8 +42,7 @@ function createTaskDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
   versionAttr.disabled = true;
 
-  const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
-  updatedAtAttr.disabled = true;
+  const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
 
   // region what the task reads and writes — association, not containment
   // Artifact definition ids, so a picker over the artifact catalog. Ids rather than typed references,

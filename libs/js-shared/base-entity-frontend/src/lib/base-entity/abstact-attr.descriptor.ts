@@ -14,6 +14,11 @@ export enum FormControlType {
   LOOKUP = 'LOOKUP',
   RADIO = 'RADIO',
   RELATED_ENTITIES = 'RELATED_ENTITIES',
+  /**
+   * The attribute a state machine governs. Shows the current state and offers only the transitions allowed from
+   * it; rendered by the component registered under `ENTITY_STATE_CONTROL`, read-only as a label without one.
+   */
+  STATE = 'STATE',
   TAGS = 'TAGS',
   TITLE = 'TITLE',
   TEXT_BOX = 'TEXT_BOX',

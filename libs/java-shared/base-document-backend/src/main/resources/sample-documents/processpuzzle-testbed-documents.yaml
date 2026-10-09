@@ -343,3 +343,76 @@ documents:
                           content:
                             - type: text
                               text: Upgrade notes — is anything here breaking?
+
+  # ── 3. The fulfillment workflow's invoice ─────────────────────────────────────────────────
+  # The DOCUMENT artifact `fulfillment-invoice` of base-workflow's order-fulfillment-workflow names this
+  # slug as its artifactTypeId. One document, parameterised by its `order` input port: the host binds the
+  # order being fulfilled, and the embedded entity form shows it. Public, so the loader publishes it and the
+  # base-workflow Samples page can open it without a reviewer role.
+  - slug: fulfillment-invoice
+    title: Fulfillment Invoice
+    subject: Order fulfillment
+    description: >-
+      The invoice the order-fulfillment workflow produces for a delivered order. Its `order` port
+      takes the order being invoiced; the prose around it is the invoice's fixed wording.
+    author: ProcessPuzzle Team
+    sourceLocale: en
+    isPublic: true
+    editorRoles:
+      - documentation-editor
+
+    inputPorts:
+      - name: order
+        type: ENTITY_REF
+        entityType: Order
+        required: true
+        description: The order being invoiced — the workflow instance's entityId.
+
+    translations:
+      - locale: en
+        blocks:
+          - id: heading
+            kind: TEXT
+            editable: false
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 1 }
+                  content:
+                    - type: text
+                      text: Invoice
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Thank you for your order. The goods listed below have been delivered; payment
+                        is due within 30 days of the delivery date.
+
+          - id: invoiced-order
+            kind: WIDGET
+            placement: STANDALONE
+            type: entity-form
+            props:
+              entityName: Order
+              readOnly: true
+            inputBindings:
+              entity: order
+
+          - id: terms
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 2 }
+                  content:
+                    - type: text
+                      text: Payment terms
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Please quote the order number with your payment. Late payments may incur
+                        interest at the statutory rate.

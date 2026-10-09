@@ -73,6 +73,10 @@ public class TaskInstance {
     private Instant activatedAt;
     private Instant completedAt;
     private Instant skippedAt;
+    private Instant cancelledAt;
+
+    /** Set when status is CANCELLED: {@code interrupted by <eventUseId>}, {@code unreachable}, or the instance's cancel reason. */
+    private String cancelReason;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
