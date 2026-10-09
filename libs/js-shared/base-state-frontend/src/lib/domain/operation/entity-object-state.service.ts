@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
-import { AvailableTransition, EntityObjectState } from './entity-object-state';
+import { AvailableTransition, EntityObjectState, TransitionResult } from './entity-object-state';
 
 /**
  * The operation layer's read side: where one governed object currently sits in its machine.
@@ -14,7 +14,8 @@ import { AvailableTransition, EntityObjectState } from './entity-object-state';
  * of the configured service root, exactly as in `StateMachineDefinitionService`.
  *
  * This is the resource `StateMachineDefinitionService`'s class comment set aside as belonging "to whatever
- * surface drives an object through its machine". That surface is the State Machine tab.
+ * surface drives an object through its machine". The State Machine tab reads it; the STATE form control reads
+ * it and fires transitions through {@link fireTransition}.
  */
 @Injectable({ providedIn: 'root' })
 export class EntityObjectStateService {
@@ -32,13 +33,28 @@ export class EntityObjectStateService {
    * @param entityName the machine's key — the entity *definition code*, e.g. `order`
    */
   findState(entityName: string, objectId: string): Observable<EntityObjectState | undefined> {
-    // The configured root carries no trailing slash — see the `BACKEND_SERVICE_ROOT` values in the testbed's
-    // `run-time-conf` — so the separator is added here, as `buildUrl` does for the CRUD services.
-    const url = `${this.baseUrl}/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(objectId)}/state`;
-    return this.httpClient.get<unknown>(url).pipe(
+    return this.httpClient.get<unknown>(`${this.objectUrl(entityName, objectId)}/state`).pipe(
       map((response) => fromDto(response)),
       catchError((error: unknown) => (error instanceof HttpErrorResponse && error.status === 404 ? of(undefined) : throwError(() => error))),
     );
+  }
+
+  /**
+   * Fires `triggerKey` on one object. The server re-evaluates the guards — whatever {@link findState} said is
+   * only a dry run — and, on success, writes the new state onto the object and bumps its version.
+   *
+   * @param version the object's current version; a stale one is a 409, which propagates.
+   */
+  fireTransition(entityName: string, objectId: string, triggerKey: string, version: number): Observable<TransitionResult> {
+    return this.httpClient.post<TransitionResult>(`${this.objectUrl(entityName, objectId)}/state-transitions`, { triggerKey, version }).pipe(
+      map((result) => ({ ...result, executedActions: result?.executedActions ?? [] })),
+    );
+  }
+
+  // The configured root carries no trailing slash — see the `BACKEND_SERVICE_ROOT` values in the testbed's
+  // `run-time-conf` — so the separator is added here, as `buildUrl` does for the CRUD services.
+  private objectUrl(entityName: string, objectId: string): string {
+    return `${this.baseUrl}/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(objectId)}`;
   }
 }
 

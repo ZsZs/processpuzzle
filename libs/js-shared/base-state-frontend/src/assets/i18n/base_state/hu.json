@@ -69,5 +69,16 @@
     "readOnly": "Csak olvasható nézet — az állapotgép a Base State alatt szerkeszthető.",
     "loading": "Állapotgép betöltése…",
     "noState": "Ennek a rekordnak még nincs állapota."
+  },
+  "state_control": {
+    "placeholder": "Állapot módosítása…",
+    "noTransitions": "Ebből az állapotból nincs elérhető átmenet.",
+    "transitionTo": "→ {{state}}",
+    "via": "({{trigger}})",
+    "blocked": "Nem engedélyezett: {{reason}}",
+    "blockedNoReason": "Az átmenet egy feltétele nem engedi.",
+    "rejected": "Az átmenetet elutasították: {{reason}}",
+    "fired": "Az állapot megváltozott: {{state}}.",
+    "initialState": "Kezdő állapot: {{state}}"
   }
 }

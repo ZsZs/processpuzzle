@@ -74,6 +74,7 @@ export { DynamicEntityRegistry, type ResolvedDynamicEntity } from './lib/base-en
 // one caller of this, not a prerequisite for it.
 export { EntityScreenResolver, type EntityScreens } from './lib/base-entity-screens/entity-screens.resolver';
 export { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './lib/base-entity-screens/entity-tab-contributor';
+export { ENTITY_STATE_CONTROL, type EntityStateControl } from './lib/base-form/state/entity-state-control';
 export { entityScreenRoute, type EntityScreenRouteOptions } from './lib/base-entity-screens/entity-screen-routes';
 export { BaseEntityScreensComponent, ENTITY_DESCRIPTOR_ROUTE_DATA_KEY, REQUESTED_ENTITY_ROUTE_DATA_KEY } from './lib/base-entity-screens/entity-screens.component';
 export { EmbeddedEntityFacade } from './lib/base-entity-facade/embedded-entity.facade';

@@ -56,6 +56,13 @@ export const ENTITY_STATE_MACHINE_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE}.en
 export const ENTITY_STATE_MACHINE_I18N_KEY = `${ENTITY_STATE_MACHINE_I18N_SCOPE}.tab`;
 
 /**
+ * Key root of the STATE form control — the current state plus the transitions allowed from it, rendered
+ * inside a governed entity's Details form. Registered by `provideEntityStateControl()` for the same reason as
+ * the tab's scope: the form lives on the governed entity's route, not base-state's.
+ */
+export const ENTITY_STATE_CONTROL_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE}.state_control`;
+
+/**
  * Key roots of the nested definitions the `State Machine Definition` form contains through
  * `EMBEDDED_COMPONENTS` controls. They are children of {@link BASE_STATE_TRANSLOCO_SCOPE} rather than
  * scopes of their own, because the whole graph is edited under {@link BASE_STATE_ROUTES} and one scope

@@ -27,6 +27,7 @@ import { LookupComponent } from './lookup/lookup.component';
 import { TitleComponent } from './title/title.component';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { translateLabel } from '../i18n/entity-label.pipe';
+import { ENTITY_STATE_CONTROL } from './state/entity-state-control';
 
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
@@ -55,6 +56,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   private readonly logger = inject(NGXLogger);
   // Optional so a host without transloco still gets a working form — its tooltips fall back to `description`.
   private readonly transloco = inject(TranslocoService, { optional: true });
+  private readonly stateControl = inject(ENTITY_STATE_CONTROL, { optional: true });
 
   // region public methods
   public buildForm(
@@ -128,13 +130,21 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
     // validators compose rather than one implying the other.
     if (column.pattern) validators.push(Validators.pattern(column.pattern));
 
-    return new FormControl({ value: currentAttrValue, disabled: column.disabled }, validators);
+    // A STATE control is always disabled, and that is what keeps it out of the PUT: `BaseEntityFormComponent` saves
+    // `form.value`, which leaves disabled controls out. The state changes only by firing a transition.
+    const disabled = column.disabled || column.formControlType === FormControlType.STATE;
+    return new FormControl({ value: currentAttrValue, disabled }, validators);
   }
 
   private createFormControl(column: AbstractAttrDescriptor): Type<BaseFormControlComponent<Entity>> {
-    const componentType = column.formControlType === FormControlType.CUSTOM ? (column as BaseEntityAttrDescriptor).component : FORM_CONTROL_COMPONENTS[column.formControlType];
+    const componentType = column.formControlType === FormControlType.CUSTOM ? (column as BaseEntityAttrDescriptor).component : this.componentOf(column.formControlType);
     if (!componentType) throw new Error('Undefined form control type');
     return componentType as unknown as Type<BaseFormControlComponent<Entity>>;
+  }
+
+  private componentOf(formControlType: FormControlType): AnyFormControlComponent | undefined {
+    if (formControlType === FormControlType.STATE) return (this.stateControl?.component as AnyFormControlComponent | undefined) ?? LabelComponent;
+    return FORM_CONTROL_COMPONENTS[formControlType];
   }
 
   // endregion

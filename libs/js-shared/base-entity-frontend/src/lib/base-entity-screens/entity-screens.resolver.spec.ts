@@ -12,6 +12,8 @@ import { EntityScreenResolver } from './entity-screens.resolver';
 import { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './entity-tab-contributor';
 import { EntityDefinition } from '../base-entity-definition/entity-definition';
 import { TEST_ENTITY_DEFINITIONS } from '../base-entity-definition/test-entity-definition';
+import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
+import { ENTITY_STATE_CONTROL, type EntityStateControl } from '../base-form/state/entity-state-control';
 
 const ENTITY_DEFINITIONS_URL = 'http://localhost:8080/organizations/acme/entity-definitions?page=0&size=200';
 
@@ -190,6 +192,105 @@ describe('EntityScreenResolver', () => {
       const screens = await resolve(setupWithContributors([failing, contributorFor('Order')]), 'Order');
 
       expect(screens?.extraTabs.map((tab) => tab.segment)).toEqual(['state-machine']);
+    });
+  });
+
+  describe('state attribute', () => {
+    function governedDescriptor(): BaseEntityDescriptor {
+      const status = new BaseEntityAttrDescriptor('status', FormControlType.TEXT_BOX, 'Status');
+      const nestedState = new BaseEntityAttrDescriptor('phase', FormControlType.DROPDOWN, 'Phase');
+      const flexbox = new FlexboxDescriptor([nestedState], FlexDirection.ROW);
+      return new BaseEntityDescriptor({ entityName: 'Test Entity', entityTitle: 'Test Entity', attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name'), status, flexbox] });
+    }
+
+    function attrOf(descriptor: BaseEntityDescriptor, attrName: string) {
+      const top = descriptor.attrDescriptors.find((candidate) => candidate instanceof BaseEntityAttrDescriptor && candidate.attrName === attrName);
+      if (top) return top;
+      const flexbox = descriptor.attrDescriptors.find((candidate) => candidate instanceof FlexboxDescriptor) as FlexboxDescriptor;
+      return flexbox.attrDescriptors.find((candidate) => (candidate as BaseEntityAttrDescriptor).attrName === attrName);
+    }
+
+    function setupWithStateControl(descriptor: BaseEntityDescriptor, stateControl?: EntityStateControl) {
+      const facadeToken = new InjectionToken<unknown>('TEST_ENTITY_FACADE');
+      const providers: Array<Record<string, unknown>> = [{ provide: facadeToken, useValue: facadeOf(descriptor) }];
+      if (stateControl) providers.push({ provide: ENTITY_STATE_CONTROL, useValue: stateControl });
+      return setup(providers, { 'Test Entity': facadeToken });
+    }
+
+    function stateControlAnswering(answer: EntityStateControl['stateAttributeOf']): EntityStateControl {
+      return { component: class {}, stateAttributeOf: answer };
+    }
+
+    it('turns the attribute the state control names into a STATE control', async () => {
+      const descriptor = governedDescriptor();
+      const resolver = setupWithStateControl(descriptor, stateControlAnswering(async () => 'status'));
+
+      await resolver.resolve('Test Entity');
+
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.STATE);
+      expect(attrOf(descriptor, 'name')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it('finds the attribute inside a flexbox too, and accepts a synchronous answer', async () => {
+      const descriptor = governedDescriptor();
+      const resolver = setupWithStateControl(descriptor, stateControlAnswering(() => 'phase'));
+
+      await resolver.resolve('Test Entity');
+
+      expect(attrOf(descriptor, 'phase')?.formControlType).toBe(FormControlType.STATE);
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it('leaves the descriptor alone without a state control', async () => {
+      const descriptor = governedDescriptor();
+
+      await setupWithStateControl(descriptor).resolve('Test Entity');
+
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it('leaves the descriptor alone when no machine governs the entity', async () => {
+      const descriptor = governedDescriptor();
+
+      await setupWithStateControl(descriptor, stateControlAnswering(async () => undefined)).resolve('Test Entity');
+
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+      expect(attrOf(descriptor, 'phase')?.formControlType).toBe(FormControlType.DROPDOWN);
+    });
+
+    it('leaves the descriptor alone when the named attribute does not exist', async () => {
+      const descriptor = governedDescriptor();
+
+      const screens = await setupWithStateControl(descriptor, stateControlAnswering(() => 'nonexistent')).resolve('Test Entity');
+
+      expect(screens?.descriptor).toBe(descriptor);
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+
+    /** An optional feature that cannot answer must not cost the entity its screens. */
+    it('still resolves, with the attribute editable, when the state control rejects', async () => {
+      const descriptor = governedDescriptor();
+      const resolver = setupWithStateControl(descriptor, stateControlAnswering(() => Promise.reject(new Error('base-state is unreachable'))));
+
+      const screens = await resolver.resolve('Test Entity');
+
+      expect(screens?.descriptor).toBe(descriptor);
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it('still resolves, with the attribute editable, when the state control throws synchronously', async () => {
+      const descriptor = governedDescriptor();
+      const resolver = setupWithStateControl(
+        descriptor,
+        stateControlAnswering(() => {
+          throw new Error('base-state is misconfigured');
+        }),
+      );
+
+      const screens = await resolver.resolve('Test Entity');
+
+      expect(screens?.descriptor).toBe(descriptor);
+      expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
     });
   });
 

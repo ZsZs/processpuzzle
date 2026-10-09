@@ -7,6 +7,7 @@ import { addEntity } from './addEntity';
 import { deleteEntity } from './deleteEntity';
 import { deleteAllEntities } from './deleteAllEntities';
 import { updateEntity } from './updateEntity';
+import { reloadEntity } from './reloadEntity';
 import { findByQuery } from './findByQuery';
 import { BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
 
@@ -54,6 +55,8 @@ export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   deselectEntity(id: string): void;
   load(query: BaseEntityQueryCondition): void;
   loadById(id: string): Entity | undefined;
+  /** Re-reads one row from the repository — after something other than this store changed it on the server. */
+  reload(id: string): Promise<PersistedEntity<Entity> | undefined>;
   resetErrorState(): void;
   selectEntity(id: string): void;
   setCurrentEntity(id: string | undefined): void;
@@ -116,6 +119,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       loadById: (id: string): Entity | undefined => {
         return store.entities().find((entity) => keyOf(entity) === id);
       },
+      reload: reloadEntity(store, repository, keyOf),
       resetErrorState: () => patchState(store, { error: undefined }),
       selectEntity: (id: string) => {
         const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;

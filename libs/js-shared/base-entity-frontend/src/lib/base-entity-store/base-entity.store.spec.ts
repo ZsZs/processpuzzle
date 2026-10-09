@@ -1,4 +1,4 @@
-import { TestEntity } from '../test-entity';
+import { TestEntity, TestEnum } from '../test-entity';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { TestEntityService } from '../base-entity-service/test-entity.service';
@@ -9,7 +9,7 @@ import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 import { describe, expect, it } from 'vitest';
 import { signalStore } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { mock } from 'vitest-mock-extended';
 import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
@@ -138,6 +138,49 @@ describe('BaseEntityStore', () => {
 
       expect(mockService.update).toHaveBeenCalledTimes(1);
       expect(store.error()).toStrictEqual('API Failed');
+    });
+  });
+
+  describe('reload()', () => {
+    it('replaces the row the repository answers for with the fresh one', async () => {
+      const { store, mockService } = setup();
+      const fresh = new TestEntity('1', 'reloaded', 'fresh', true, 101, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_ONE);
+      mockService.findById.mockReturnValue(of(fresh));
+
+      const reloaded = await store.reload('1');
+
+      expect(mockService.findById).toHaveBeenCalledWith('1');
+      expect(reloaded).toBe(fresh);
+      expect(store.entities()).toHaveLength(2);
+      expect(store.loadById('1')).toBe(fresh);
+      expect(store.loadById('2')).toBe(testEntity_2);
+    });
+
+    it('appends a row the store does not hold yet', async () => {
+      const { store, mockService } = setup();
+      const missing = new TestEntity('3', 'third', 'new', false, 300, new Date('2024-03-18T20:02:27.000Z'), TestEnum.VALUE_ONE);
+      mockService.findById.mockReturnValue(of(missing));
+
+      await store.reload('3');
+
+      expect(store.entities().map((entity) => entity.id)).toEqual(['1', '2', '3']);
+    });
+
+    it('returns undefined and leaves the rows alone when the repository answers nothing', async () => {
+      const { store, mockService } = setup();
+      mockService.findById.mockReturnValue(of(undefined as unknown as PersistedEntity<TestEntity>));
+
+      expect(await store.reload('1')).toBeUndefined();
+      expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
+    });
+
+    it('sets the error state when the repository fails', async () => {
+      const { store, mockService } = setup();
+      mockService.findById.mockReturnValue(throwError(() => ({ message: 'API Failed' })));
+
+      expect(await store.reload('1')).toBeUndefined();
+      expect(store.error()).toStrictEqual('API Failed');
+      expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
     });
   });
 
