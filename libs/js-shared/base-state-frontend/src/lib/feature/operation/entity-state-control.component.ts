@@ -112,7 +112,13 @@ export class EntityStateControlComponent<Entity extends BaseEntity> extends Base
     return !this.entity().id && !this.objectState() && initial ? this.stateLabel(initial) : undefined;
   });
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    void this.loadState().catch((error) => {
+      this.logger.warn('EntityStateControlComponent failed to load state', { error });
+    });
+  }
+
+  private async loadState(): Promise<void> {
     const machine = await this.governed.machineFor(this.entityName());
     this.machine.set(machine);
     const objectId = this.entity().id;

@@ -117,7 +117,7 @@ describe('EntityStateControlComponent', () => {
   }
 
   /**
-   * `ngOnInit` is async and awaits two collaborators, which `whenStable` does not track — so each round yields a
+   * Initialization awaits two collaborators, which `whenStable` does not track — so each round yields a
    * macrotask too, letting those promises settle before the next change detection reads them.
    */
   async function settle(): Promise<void> {
@@ -143,6 +143,26 @@ describe('EntityStateControlComponent', () => {
     expect(stateService.findState).toHaveBeenCalledWith('order', objectId);
     expect(matSelect().placeholder).toBe('Draft');
     expect(matSelect().disabled).toBe(false);
+  });
+
+  it('returns void from the initialization hook while loading state asynchronously', async () => {
+    await render();
+
+    expect(fixture.componentInstance.ngOnInit()).toBeUndefined();
+    await settle();
+
+    expect(matSelect().placeholder).toBe('Draft');
+  });
+
+  it('reports initialization failures without an unhandled rejection', async () => {
+    await render();
+    const error = new Error('Machine lookup failed');
+    vi.mocked(TestBed.inject(GovernedEntityRegistry).machineFor).mockRejectedValueOnce(error);
+
+    expect(fixture.componentInstance.ngOnInit()).toBeUndefined();
+    await settle();
+
+    expect(logger.warn).toHaveBeenCalledWith('EntityStateControlComponent failed to load state', { error });
   });
 
   it('shows the initial state of the machine for a record not saved yet, without asking for its state', async () => {
