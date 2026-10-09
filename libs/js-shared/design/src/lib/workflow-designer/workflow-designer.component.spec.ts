@@ -17,6 +17,7 @@ describe('WorkflowDesignerComponent', () => {
         'workflow-tasks': 'Tasks',
         'workflow-artifacts': 'Artifacts',
         'workflow-tools': 'Tools',
+        'workflow-events': 'Events',
         'workflow-instances': 'Instances',
       },
     },
