@@ -2,7 +2,6 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -170,7 +169,7 @@ class IntermediateCatchListenerTest {
 
     private void waitingFor(String definition, String correlationValue, EventInstance... catches) {
         when(events.findByOrgKeyAndEventDefinitionIdAndDirectionAndStatusAndCorrelationValueOrderByWaitingSinceAscIdAsc(
-                eq(ORG), eq(definition), eq(EventDirection.CATCH), eq(EventInstanceStatus.WAITING), eq(correlationValue)))
+                ORG, definition, EventDirection.CATCH, EventInstanceStatus.WAITING, correlationValue))
                 .thenReturn(List.of(catches));
     }
 

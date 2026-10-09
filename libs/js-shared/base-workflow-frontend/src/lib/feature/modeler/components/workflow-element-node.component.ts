@@ -3,7 +3,7 @@ import { NgDiagramNodeSelectedDirective, NgDiagramNodeTemplate, NgDiagramPortCom
 import { modelerIconUrl } from '../../../domain/modeler/modeler-icons';
 import { WorkflowElementKind, WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
 
-const EVENT_KINDS: readonly WorkflowElementKind[] = ['start', 'end', 'event'];
+const EVENT_KINDS: ReadonlySet<WorkflowElementKind> = new Set(['start', 'end', 'event']);
 
 /**
  * How one element is drawn on a modeler canvas — registered against `WORKFLOW_NODE_TYPE` in
@@ -250,7 +250,7 @@ export class WorkflowElementNodeComponent implements NgDiagramNodeTemplate<Workf
   protected readonly isBoundary = computed(() => this.data().kind === 'event' && !!this.data().attachedTo);
 
   /** A start, intermediate or end event, drawn as a circle with its name beneath and its description only as a tooltip. */
-  protected readonly isEvent = computed(() => EVENT_KINDS.includes(this.data().kind));
+  protected readonly isEvent = computed(() => EVENT_KINDS.has(this.data().kind));
 
   /**
    * The event's whole name and how it fires, on hover. Only an event needs one: its label is a single

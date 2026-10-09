@@ -2,7 +2,6 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -222,7 +221,7 @@ class TaskActivationEventsTest {
         assertThat(service.allTerminal(ORG, workflow, INSTANCE_ID)).isFalse();
         assertThat(service.allTerminal(ORG, workflow, INSTANCE_ID)).isTrue();
         verify(eventRepository, atLeastOnce()).countByOrgKeyAndWorkflowInstanceIdAndEventUseIdInAndStatusIn(
-                eq(ORG), eq(INSTANCE_ID), eq(List.of("loose")), eq(open));
+                ORG, INSTANCE_ID, List.of("loose"), open);
     }
 
     // ---------------------------------------------------------------- fixtures

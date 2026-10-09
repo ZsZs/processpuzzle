@@ -117,7 +117,8 @@ class TimerExpressionsTest {
     @Test
     void aPathResolvingToNothingArmsNothingAndToGarbageIsRefused() {
         assertThat(TimerExpressions.arm(timer(TimerType.DATE, "$.missing"), NO_PATHS, NOW)).isEmpty();
-        assertThatThrownBy(() -> TimerExpressions.arm(timer(TimerType.DATE, "$.when"), path -> "soon", NOW))
+        TimerDefinition timer = timer(TimerType.DATE, "$.when");
+        assertThatThrownBy(() -> TimerExpressions.arm(timer, path -> "soon", NOW))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

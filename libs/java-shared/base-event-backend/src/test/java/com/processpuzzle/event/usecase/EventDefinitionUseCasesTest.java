@@ -63,8 +63,9 @@ class EventDefinitionUseCasesTest {
     @Test
     void createRefusesADuplicateId() {
         when(repository.existsByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(true);
+        EventDefinition input = orderCreated();
 
-        assertThatThrownBy(() -> create.create(ORG, orderCreated()))
+        assertThatThrownBy(() -> create.create(ORG, input))
                 .isInstanceOf(EventDefinitionAlreadyExistsException.class);
     }
 
@@ -129,8 +130,9 @@ class EventDefinitionUseCasesTest {
     @Test
     void replaceAndDeleteOfAnUnknownIdAreNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "nope")).thenReturn(Optional.empty());
+        EventDefinition desired = orderCreated();
 
-        assertThatThrownBy(() -> replace.replace(ORG, "nope", orderCreated()))
+        assertThatThrownBy(() -> replace.replace(ORG, "nope", desired))
                 .isInstanceOf(EventDefinitionNotFoundException.class);
         assertThatThrownBy(() -> delete.delete(ORG, "nope"))
                 .isInstanceOf(EventDefinitionNotFoundException.class);
@@ -153,8 +155,6 @@ class EventDefinitionUseCasesTest {
     void kindOfNamesTheKindAsTheSharedContractDoes() {
         when(repository.findByOrgKeyAndId(ORG, "InvoiceIssued")).thenReturn(Optional.of(
                 EventDefinition.builder().orgKey(ORG).id("InvoiceIssued").name("x").kind(EventKind.MESSAGE).build()));
-
-        FindEventDefinition find = new FindEventDefinition(repository);
 
         assertThat(find.kindOf(ORG, "InvoiceIssued")).contains(CatalogEventKind.MESSAGE);
         assertThat(find.kindOf(ORG, "Nope")).isEmpty();

@@ -124,7 +124,7 @@ class WorkflowDefinitionDomainTest {
     }
 
     @Test
-    void workflow_replaceContentAndEmptyDef() {
+    void workflow_replacesContent() {
         Workflow def = Workflow.builder()
                 .orgKey("org-1")
                 .id("wf-1")
@@ -156,8 +156,10 @@ class WorkflowDefinitionDomainTest {
         assertThat(def.eventUseIds()).containsExactly("merged");
         assertThat(def.findEventUse("merged")).map(EventUse::isCatch).contains(true);
         assertThat(def.findEventUse("nope")).isEmpty();
+    }
 
-        // Test with null collections
+    @Test
+    void workflow_normalizesEmptyAndNullCollections() {
         Workflow emptyDef = new Workflow();
         assertThat(emptyDef.getRoles()).isNotNull().isEmpty();
         assertThat(emptyDef.getTasks()).isNotNull().isEmpty();
@@ -173,6 +175,13 @@ class WorkflowDefinitionDomainTest {
         assertThat(emptyDef.getStartEvents()).isEmpty();
         assertThat(emptyDef.getEvents()).isEmpty();
 
+        // A row stored before the events column existed reads it as NULL.
+        emptyDef.setEvents(null);
+        assertThat(emptyDef.getEvents()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void events_surviveJsonRoundTrip() throws com.fasterxml.jackson.core.JsonProcessingException {
         // An event use survives the JSONB column's Jackson round trip — its isThrow/isCatch are not properties.
         EventUse event = EventUse.builder().id("e").eventDefinitionId("E").direction(EventDirection.THROW)
                 .correlationKey("k").payloadMapping(java.util.Map.of("a", "$.b")).build();
@@ -183,19 +192,11 @@ class WorkflowDefinitionDomainTest {
                 .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("$.cycle").build()).build();
         StartEvent nightly = StartEvent.builder().id("s").startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
                 .timer(TimerDefinition.builder().type(TimerType.DATE).expression("2026-12-24").build()).build();
-        try {
-            assertThat(json.readValue(json.writeValueAsString(event), EventUse.class)).isEqualTo(event);
-            assertThat(json.readValue(json.writeValueAsString(boundary), EventUse.class)).isEqualTo(boundary);
-            assertThat(json.readValue(json.writeValueAsString(nightly), StartEvent.class)).isEqualTo(nightly);
-            // A row stored before boundaries existed has no interrupting, and reads as interrupting.
-            assertThat(json.readValue("{\"id\":\"old\",\"direction\":\"CATCH\"}", EventUse.class).isInterrupting()).isTrue();
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new AssertionError(e);
-        }
-
-        // A row stored before the events column existed reads it as NULL.
-        emptyDef.setEvents(null);
-        assertThat(emptyDef.getEvents()).isNotNull().isEmpty();
+        assertThat(json.readValue(json.writeValueAsString(event), EventUse.class)).isEqualTo(event);
+        assertThat(json.readValue(json.writeValueAsString(boundary), EventUse.class)).isEqualTo(boundary);
+        assertThat(json.readValue(json.writeValueAsString(nightly), StartEvent.class)).isEqualTo(nightly);
+        // A row stored before boundaries existed has no interrupting, and reads as interrupting.
+        assertThat(json.readValue("{\"id\":\"old\",\"direction\":\"CATCH\"}", EventUse.class).isInterrupting()).isTrue();
     }
 
     /**

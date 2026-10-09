@@ -81,7 +81,8 @@ class StartEventAdmissionTest {
         when(roleRepository.findByOrgKeyAndId(ORG, "clerk")).thenReturn(Optional.of(role("clerk", "order-clerk")));
         when(startAuthorizationPort.currentPrincipalHoldsAny(ORG, Set.of("order-clerk"))).thenReturn(false);
 
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(roleEvent("manual", "clerk")), null, null))
+        ResolvedWorkflow workflow = workflow(roleEvent("manual", "clerk"));
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, null, null))
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("refused by [manual]")
                 .extracting(ex -> ((ForbiddenException) ex).getErrorId()).isEqualTo("workflow.startRefused");
@@ -107,13 +108,15 @@ class StartEventAdmissionTest {
     void inputArtifactRefusesAnEntityInAnotherState() {
         when(entityStateGateway.currentState(ORG, "Order", "o-1")).thenReturn("SHIPPED");
 
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(artifactEvent("drafted", "DRAFT")), null, "o-1"))
+        ResolvedWorkflow workflow = workflow(artifactEvent("drafted", "DRAFT"));
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, null, "o-1"))
                 .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
     void inputArtifactRefusesAStartWithoutAnEntity() {
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(artifactEvent("drafted", "DRAFT")), null, null))
+        ResolvedWorkflow workflow = workflow(artifactEvent("drafted", "DRAFT"));
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, null, null))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -139,7 +142,8 @@ class StartEventAdmissionTest {
         StartEvent scheduled = StartEvent.builder().id("milestone")
                 .startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION).build();
 
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(triggered, scheduled), null, null))
+        ResolvedWorkflow workflow = workflow(triggered, scheduled);
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, null, null))
                 .isInstanceOf(ConflictException.class)
                 .extracting(ex -> ((ConflictException) ex).getErrorId()).isEqualTo("workflow.startNotManual");
     }
@@ -171,13 +175,15 @@ class StartEventAdmissionTest {
         StartEvent triggered = StartEvent.builder().id("submitted")
                 .startType(WorkflowStartConditionType.TRIGGERING_EVENT).build();
 
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(triggered, roleEvent("manual")), "submitted", null))
+        ResolvedWorkflow workflow = workflow(triggered, roleEvent("manual"));
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, "submitted", null))
                 .isInstanceOf(ConflictException.class);
     }
 
     @Test
     void anUnknownStartEventIdIsAValidationError() {
-        assertThatThrownBy(() -> admission.admit(ORG, workflow(roleEvent("manual")), "ghost", null))
+        ResolvedWorkflow workflow = workflow(roleEvent("manual"));
+        assertThatThrownBy(() -> admission.admit(ORG, workflow, "ghost", null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("no start event 'ghost'");
     }

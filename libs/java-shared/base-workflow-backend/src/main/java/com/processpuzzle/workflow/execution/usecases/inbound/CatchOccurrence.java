@@ -48,29 +48,32 @@ public class CatchOccurrence {
         this.eventPublisher = eventPublisher;
     }
 
-    /**
-     * @param occurrenceId the occurrence delivered; a timer passes its own row's id
-     * @param payload      what the catch received; null for a timer
-     * @param contribution what the catch's payload mapping took from it into the context
-     */
     public void occur(String orgKey, ResolvedWorkflow definition, WorkflowInstance instance, EventInstance event,
-                      Instant at, UUID occurrenceId, Map<String, Object> payload, Map<String, Object> contribution) {
+                      Occurrence occurrence) {
         event.setStatus(EventInstanceStatus.OCCURRED);
-        event.setOccurredAt(at);
-        event.setOccurrenceId(occurrenceId);
-        event.setPayload(payload);
-        event.setContextContribution(contribution);
+        event.setOccurredAt(occurrence.at());
+        event.setOccurrenceId(occurrence.occurrenceId());
+        event.setPayload(occurrence.payload());
+        event.setContextContribution(occurrence.contribution());
         eventInstanceRepository.save(event);
 
         definition.definition().findEventUse(event.getEventUseId())
                 .filter(use -> use.isBoundary() && use.isInterrupting())
-                .ifPresent(use -> interrupt(orgKey, instance, use, at));
+                .ifPresent(use -> interrupt(orgKey, instance, use, occurrence.at()));
 
         Map<String, Object> context = WorkflowContext.assemble(instance,
                 taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, instance.getId()),
                 eventInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, instance.getId()));
         progression.advance(orgKey, definition, instance, context);
     }
+
+    /**
+     * @param occurrenceId the occurrence delivered; a timer passes its own row's id
+     * @param payload      what the catch received; null for a timer
+     * @param contribution what the catch's payload mapping took from it into the context
+     */
+    public record Occurrence(Instant at, UUID occurrenceId, Map<String, Object> payload,
+                             Map<String, Object> contribution) {}
 
     private void interrupt(String orgKey, WorkflowInstance instance, EventUse boundary, Instant at) {
         taskInstanceRepository.findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(orgKey, instance.getId(),

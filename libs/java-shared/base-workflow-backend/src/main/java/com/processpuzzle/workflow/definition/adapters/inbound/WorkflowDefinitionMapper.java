@@ -230,14 +230,20 @@ public class WorkflowDefinitionMapper {
     }
 
     private TimerDefinition toTimerDomain(com.processpuzzle.workflow.model.TimerDefinition input) {
-        return input == null ? null : TimerDefinition.builder()
+        if (input == null) {
+            return null;
+        }
+        return TimerDefinition.builder()
                 .type(input.getType() == null ? null : TimerType.valueOf(input.getType().getValue()))
                 .expression(input.getExpression())
                 .build();
     }
 
     private com.processpuzzle.workflow.model.TimerDefinition toTimerModel(TimerDefinition timer) {
-        return timer == null ? null : new com.processpuzzle.workflow.model.TimerDefinition()
+        if (timer == null) {
+            return null;
+        }
+        return new com.processpuzzle.workflow.model.TimerDefinition()
                 .type(timer.getType() == null ? null : com.processpuzzle.workflow.model.TimerType.fromValue(timer.getType().name()))
                 .expression(timer.getExpression());
     }

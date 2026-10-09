@@ -288,7 +288,10 @@ public class TaskActivationService {
     private void eliminateDeadPaths(Run run) {
         boolean changed = true;
         while (changed) {
-            changed = cancelEndedBoundaries(run) | cancelDeadTasks(run) | cancelDeadEvents(run);
+            boolean boundariesCancelled = cancelEndedBoundaries(run);
+            boolean tasksCancelled = cancelDeadTasks(run);
+            boolean eventsCancelled = cancelDeadEvents(run);
+            changed = boundariesCancelled || tasksCancelled || eventsCancelled;
         }
     }
 
@@ -296,11 +299,8 @@ public class TaskActivationService {
         boolean changed = false;
         for (EventUse use : run.workflow.events()) {
             EventInstance event = use.isBoundary() ? run.state.event(use.getId()) : null;
-            if (event == null) {
-                continue;
-            }
-            TaskInstance task = run.state.task(use.getAttachedTo());
-            if (task != null && !TERMINAL_TASK.contains(task.getStatus())) {
+            TaskInstance task = event == null ? null : run.state.task(use.getAttachedTo());
+            if (event == null || (task != null && !TERMINAL_TASK.contains(task.getStatus()))) {
                 continue;
             }
             if (!event.getStatus().isTerminal()) {
@@ -362,23 +362,28 @@ public class TaskActivationService {
                     || (event.getStatus() != EventInstanceStatus.PENDING && event.getStatus() != EventInstanceStatus.WAITING)) {
                 continue;
             }
-            List<Boolean> dependentsMovedOn = new ArrayList<>();
-            for (ResolvedTask task : run.workflow.tasks()) {
-                if (task.dependsOn().contains(use.getId())) {
-                    TaskInstance dependent = run.state.task(task.id());
-                    dependentsMovedOn.add(dependent != null && dependent.getStatus() != TaskInstanceStatus.PENDING);
-                }
-            }
-            for (EventUse other : run.workflow.events()) {
-                if (other.getDependsOn() != null && other.getDependsOn().contains(use.getId())) {
-                    EventInstance dependent = run.state.event(other.getId());
-                    dependentsMovedOn.add(dependent != null && dependent.getStatus() != EventInstanceStatus.PENDING);
-                }
-            }
+            List<Boolean> dependentsMovedOn = dependentProgress(run, use);
             if (!dependentsMovedOn.isEmpty() && dependentsMovedOn.stream().allMatch(Boolean::booleanValue)) {
                 cancel(event);
             }
         }
+    }
+
+    private List<Boolean> dependentProgress(Run run, EventUse use) {
+        List<Boolean> dependentsMovedOn = new ArrayList<>();
+        for (ResolvedTask task : run.workflow.tasks()) {
+            if (task.dependsOn().contains(use.getId())) {
+                TaskInstance dependent = run.state.task(task.id());
+                dependentsMovedOn.add(dependent != null && dependent.getStatus() != TaskInstanceStatus.PENDING);
+            }
+        }
+        for (EventUse other : run.workflow.events()) {
+            if (other.getDependsOn() != null && other.getDependsOn().contains(use.getId())) {
+                EventInstance dependent = run.state.event(other.getId());
+                dependentsMovedOn.add(dependent != null && dependent.getStatus() != EventInstanceStatus.PENDING);
+            }
+        }
+        return dependentsMovedOn;
     }
 
     private static String stringOf(Object value) {

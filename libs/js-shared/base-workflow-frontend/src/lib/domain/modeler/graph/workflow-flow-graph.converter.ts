@@ -223,7 +223,7 @@ export class WorkflowFlowGraphConverter {
     });
 
     if (sinks.length > 0) {
-      builder.addNode(endEventNode(endEventLabel, lanes ? sinks[sinks.length - 1].lane : undefined));
+      builder.addNode(endEventNode(endEventLabel, lanes ? sinks.at(-1)?.lane : undefined));
       sinks.forEach((sink) => builder.addEdge(sink.nodeId, END_EVENT_NODE_ID, 'sequence'));
     }
     // endregion

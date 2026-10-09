@@ -398,6 +398,7 @@ describe('WorkflowFlowGraphConverter', () => {
       );
 
       expect(graph.nodes.filter((node) => node.data.kind === 'end').map((node) => node.data)).toEqual([{ kind: 'end', label: 'End' }]);
+      expect(nodeOf(graph, END)?.groupId).toBe(laneNodeId('clerk'));
       expect(
         edgesOfRelation(graph, 'sequence')
           .filter((edge) => edge.target === END)

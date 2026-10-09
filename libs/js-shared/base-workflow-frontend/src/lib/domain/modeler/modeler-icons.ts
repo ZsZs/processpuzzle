@@ -53,6 +53,11 @@ const TIMER_ICON_FILE_NAME = 'EventTimer.svg';
  * when it waits for a timer.
  */
 export function modelerIconUrl(kind: WorkflowElementKind, direction?: EventDirection, timer?: boolean): string {
-  const fileName = kind === 'event' && timer ? TIMER_ICON_FILE_NAME : kind === 'event' && direction ? EVENT_ICON_FILE_NAMES[direction] : ICON_FILE_NAMES[kind];
+  let fileName = ICON_FILE_NAMES[kind];
+  if (kind === 'event' && timer) {
+    fileName = TIMER_ICON_FILE_NAME;
+  } else if (kind === 'event' && direction) {
+    fileName = EVENT_ICON_FILE_NAMES[direction];
+  }
   return `${MODELER_ASSET_FOLDER}/${fileName}`;
 }

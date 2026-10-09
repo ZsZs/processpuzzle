@@ -54,6 +54,9 @@ public class WorkflowExecutionMapper {
     public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
                                                                       List<ArtifactInstance> artifacts,
                                                                       List<EventInstance> events) {
+        tasks = tasks == null ? List.of() : tasks;
+        artifacts = artifacts == null ? List.of() : artifacts;
+        events = events == null ? List.of() : events;
         com.processpuzzle.workflow.model.WorkflowInstance model = new com.processpuzzle.workflow.model.WorkflowInstance();
         model.setId(instance.getId().toString());
         model.setInstanceNumber(instance.getInstanceNumber());

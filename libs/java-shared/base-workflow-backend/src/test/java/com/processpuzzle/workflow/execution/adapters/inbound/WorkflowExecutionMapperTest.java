@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
@@ -140,6 +141,35 @@ class WorkflowExecutionMapperTest {
         assertThat(model.getTasks().get(0).getId()).isEqualTo(taskId.toString());
         assertThat(model.getArtifacts()).hasSize(1);
         assertThat(model.getArtifacts().get(0).getId()).isEqualTo(wpId.toString());
+    }
+
+    @Test
+    void toModel_treatsNullCollectionsAsEmpty() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "value")).build();
+
+        var model = mapper.toModel(instance, null, null, null);
+
+        assertThat(model.getTasks()).isEmpty();
+        assertThat(model.getArtifacts()).isEmpty();
+        assertThat(model.getEvents()).isEmpty();
+        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(), List.of()));
+    }
+
+    @Test
+    void toModel_preservesTaskContributionsWhenEventsAreNull() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "initial")).build();
+        TaskInstance task = TaskInstance.builder().id(UUID.randomUUID()).taskDefinitionId("task")
+                .status(TaskInstanceStatus.COMPLETED).completedAt(Instant.now())
+                .contextContribution(Map.of("key", "updated")).build();
+
+        var model = mapper.toModel(instance, List.of(task), List.of(), null);
+
+        assertThat(model.getTasks()).hasSize(1);
+        assertThat(model.getEvents()).isEmpty();
+        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(task), List.of()));
+        assertThat(((Map<?, ?>) model.getContext()).get("key")).isEqualTo("updated");
     }
 
     @Test

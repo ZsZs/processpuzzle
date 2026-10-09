@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.execution.usecases.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,12 +53,14 @@ class TaskActivationTimersTest {
 
     private final List<TaskInstance> tasks = new ArrayList<>();
     private final List<EventInstance> events = new ArrayList<>();
+    private TaskInstanceRepository taskRepository;
+    private EventInstanceRepository eventRepository;
     private TaskActivationService service;
 
     @BeforeEach
     void setUp() {
-        TaskInstanceRepository taskRepository = mock(TaskInstanceRepository.class);
-        EventInstanceRepository eventRepository = mock(EventInstanceRepository.class);
+        taskRepository = mock(TaskInstanceRepository.class);
+        eventRepository = mock(EventInstanceRepository.class);
         WorkflowInstanceRepository instanceRepository = mock(WorkflowInstanceRepository.class);
         RuleEvaluationPort rules = mock(RuleEvaluationPort.class);
         when(rules.evaluate(any(), any(), any())).thenReturn(RuleCheckResult.ALWAYS_PASSES);
@@ -195,6 +198,26 @@ class TaskActivationTimersTest {
     }
 
     // ---------------------------------------------------------------- dead paths
+
+    @Test
+    void eachDeadPathPassCancelsBoundariesTasksAndEventsBeforeRepeating() {
+        ResolvedWorkflow workflow = workflow(List.of(task("finished"), task("downstream", "first-boundary")),
+                List.of(boundary("first-boundary", "finished", true, TimerType.DURATION, "PT1H"),
+                        boundary("second-boundary", "downstream", true, TimerType.DURATION, "PT1H"),
+                        timerCatch("after", TimerType.DURATION, "PT1H", "downstream")));
+        pending(workflow);
+        taskRow("finished").setStatus(TaskInstanceStatus.COMPLETED);
+
+        service.activateEligibleTasks(ORG, workflow, INSTANCE_ID, Map.of());
+
+        var cancellations = inOrder(eventRepository, taskRepository);
+        cancellations.verify(eventRepository).save(event("first-boundary"));
+        cancellations.verify(taskRepository).save(taskRow("downstream"));
+        cancellations.verify(eventRepository).save(event("after"));
+        cancellations.verify(eventRepository).save(event("second-boundary"));
+        assertThat(taskRow("downstream").getStatus()).isEqualTo(TaskInstanceStatus.CANCELLED);
+        assertThat(events).allMatch(event -> event.getStatus() == EventInstanceStatus.CANCELLED);
+    }
 
     @Test
     void anAllJoinIsDeadWhenAnyDependencyIsCancelled() {

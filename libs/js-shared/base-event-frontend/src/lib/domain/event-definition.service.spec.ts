@@ -65,6 +65,8 @@ describe('EventDefinitionService', () => {
 
     fallbackService.delete('OrderCreatedEvent').subscribe();
 
-    fallbackController.expectOne(`${serviceRoot}/event-definitions/OrderCreatedEvent`).flush(null);
+    const request = fallbackController.expectOne(`${serviceRoot}/event-definitions/OrderCreatedEvent`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 });

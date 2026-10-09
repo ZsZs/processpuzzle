@@ -126,7 +126,7 @@ class EventDefinitionTest {
         same.setId("x");
 
         assertThat(key).isEqualTo(same).hasSameHashCodeAs(same).isNotEqualTo(new EventDefinitionKey(ORG, "y"));
-        assertThat(key.toString()).isEqualTo("org-1/x");
+        assertThat(key).hasToString("org-1/x");
         assertThat(same.getOrgKey()).isEqualTo(ORG);
         assertThat(same.getId()).isEqualTo("x");
     }

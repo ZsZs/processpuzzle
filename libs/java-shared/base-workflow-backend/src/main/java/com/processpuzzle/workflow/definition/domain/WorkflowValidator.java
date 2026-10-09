@@ -377,31 +377,8 @@ public class WorkflowValidator {
         Set<String> seenIds = new HashSet<>();
         Set<String> declaredArtifacts = new HashSet<>(workflow.artifactDefinitionIds());
         for (StartEvent startEvent : startEvents) {
-            String eventId = startEvent.getId();
-            if (eventId == null || eventId.isBlank()) {
-                throw new ValidationException("A start event has no id");
-            }
-            if (!seenIds.add(eventId)) {
-                throw new ValidationException("Duplicate start event '%s' within workflow".formatted(eventId));
-            }
-            if (flowIds.contains(eventId)) {
-                throw new ValidationException(
-                        "Start event '%s' has the same id as a task or event of the workflow".formatted(eventId));
-            }
-            if (startEvent.getStartType() == null) {
-                throw new ValidationException("Start event '%s' has no startType".formatted(eventId));
-            }
-
-            List<RequiredStartArtifact> required =
-                    startEvent.getRequiredArtifacts() == null ? List.of() : startEvent.getRequiredArtifacts();
-            for (RequiredStartArtifact artifact : required) {
-                String artifactId = artifact.getArtifactDefinitionId();
-                requireExists(artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId);
-                if (!declaredArtifacts.contains(artifactId)) {
-                    throw new ValidationException("Start event '%s' requires artifact '%s', which the workflow does not declare"
-                            .formatted(eventId, artifactId));
-                }
-            }
+            validateStartEventIdentity(startEvent, seenIds, flowIds);
+            validateStartEventArtifacts(startEvent, orgKey, declaredArtifacts);
 
             List<String> authorizedRoles =
                     startEvent.getAuthorizedRoles() == null ? List.of() : startEvent.getAuthorizedRoles();
@@ -414,6 +391,36 @@ public class WorkflowValidator {
             }
             if (startEvent.getStartType() == WorkflowStartConditionType.TIME_BASED_PRECONDITION) {
                 validateStartTimer(startEvent);
+            }
+        }
+    }
+
+    private void validateStartEventIdentity(StartEvent startEvent, Set<String> seenIds, Set<String> flowIds) {
+        String eventId = startEvent.getId();
+        if (eventId == null || eventId.isBlank()) {
+            throw new ValidationException("A start event has no id");
+        }
+        if (!seenIds.add(eventId)) {
+            throw new ValidationException("Duplicate start event '%s' within workflow".formatted(eventId));
+        }
+        if (flowIds.contains(eventId)) {
+            throw new ValidationException(
+                    "Start event '%s' has the same id as a task or event of the workflow".formatted(eventId));
+        }
+        if (startEvent.getStartType() == null) {
+            throw new ValidationException("Start event '%s' has no startType".formatted(eventId));
+        }
+    }
+
+    private void validateStartEventArtifacts(StartEvent startEvent, String orgKey, Set<String> declaredArtifacts) {
+        List<RequiredStartArtifact> required =
+                startEvent.getRequiredArtifacts() == null ? List.of() : startEvent.getRequiredArtifacts();
+        for (RequiredStartArtifact artifact : required) {
+            String artifactId = artifact.getArtifactDefinitionId();
+            requireExists(artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId);
+            if (!declaredArtifacts.contains(artifactId)) {
+                throw new ValidationException("Start event '%s' requires artifact '%s', which the workflow does not declare"
+                        .formatted(startEvent.getId(), artifactId));
             }
         }
     }

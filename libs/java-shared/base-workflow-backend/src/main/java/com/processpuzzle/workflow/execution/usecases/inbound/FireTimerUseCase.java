@@ -114,7 +114,8 @@ public class FireTimerUseCase {
         }
 
         if (first) {
-            catchOccurrence.occur(orgKey, definition, instance, event, now, event.getId(), null, Map.of());
+            catchOccurrence.occur(orgKey, definition, instance, event,
+                    new CatchOccurrence.Occurrence(now, event.getId(), null, Map.of()));
         } else {
             eventInstanceRepository.save(event);
         }

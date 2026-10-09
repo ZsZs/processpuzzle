@@ -48,6 +48,7 @@ describe('modelerIconUrl', () => {
   // BPMN's clock, whatever the direction — a timer catches nothing from the catalog.
   it('draws a timer event with the clock, whether or not it has a direction', () => {
     expect(modelerIconUrl('event', EventDirection.CATCH, true)).toBe('assets/modeler/EventTimer.svg');
+    expect(modelerIconUrl('event', EventDirection.THROW, true)).toBe('assets/modeler/EventTimer.svg');
     expect(modelerIconUrl('event', undefined, true)).toBe('assets/modeler/EventTimer.svg');
   });
 
