@@ -22,6 +22,7 @@ import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { BaseFormControlComponent } from './base-form-control.component';
 import { MatTooltip } from '@angular/material/tooltip';
 import { TranslocoService } from '@jsverse/transloco';
+import { ENTITY_STATE_CONTROL } from './state/entity-state-control';
 
 @Component({ selector: 'test-custom-control', template: `<span class="test-custom-control">custom</span>` })
 class TestCustomControlComponent extends BaseFormControlComponent<TestEntity> {}
@@ -263,5 +264,71 @@ describe('BaseEntityFormBuilder', () => {
     }
 
     expect(() => formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new DummySubclass()], testEntity, 'Test Entity')).toThrow(new Error('Undefined form control type'));
+  });
+});
+
+@Component({ selector: 'test-state-control', template: `<span class="test-state-control">state</span>` })
+class TestStateControlComponent extends BaseFormControlComponent<TestEntity> {}
+
+describe('BaseEntityFormBuilder, STATE attributes', () => {
+  @Component({
+    selector: 'mock-state-container',
+    imports: [BaseFormHostDirective, FormsModule, ReactiveFormsModule],
+    template: `
+      <form [formGroup]="form">
+        <ng-template baseFormHost></ng-template>
+      </form>
+    `,
+  })
+  class MockStateContainerComponent {
+    form = new FormGroup({});
+    @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) formHost!: BaseFormHostDirective;
+  }
+
+  const testEntity: Signal<TestEntity> = signal(new TestEntity());
+
+  function setup(withStateControl: boolean) {
+    TestBed.configureTestingModule({
+      imports: [BaseFormHostDirective, MockStateContainerComponent],
+      providers: [
+        provideHttpClient(),
+        provideLogger({ level: 7 }),
+        provideRouter([]),
+        provideTranslocoTesting({ translations: {} }),
+        TestEntityStore,
+        { provide: TestEntityService, useValue: setupMockService() },
+        ...(withStateControl ? [{ provide: ENTITY_STATE_CONTROL, useValue: { component: TestStateControlComponent, stateAttributeOf: () => 'status' } }] : []),
+      ],
+    });
+    const fixture = TestBed.createComponent(MockStateContainerComponent);
+    const component = fixture.componentInstance;
+    const formBuilder = TestBed.inject(BaseEntityFormBuilder) as unknown as BaseEntityFormBuilder<TestEntity>;
+    const store = TestBed.inject(TestEntityStore);
+    formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name'), new BaseEntityAttrDescriptor('status', FormControlType.STATE, 'Status')], testEntity, 'Test Entity');
+    fixture.detectChanges();
+    return { fixture, component };
+  }
+
+  it('renders a STATE attribute with the component ENTITY_STATE_CONTROL registers', () => {
+    const { fixture } = setup(true);
+
+    expect(fixture.debugElement.query(By.css('test-state-control .test-state-control'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('base-label'))).toBeNull();
+  });
+
+  it('falls back to a read-only label without an ENTITY_STATE_CONTROL', () => {
+    const { fixture } = setup(false);
+
+    expect(fixture.debugElement.query(By.css('base-label'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('test-state-control'))).toBeNull();
+  });
+
+  // Disabled controls are left out of `form.value`, which is what keeps the state out of the PUT — as long as some
+  // control is enabled; a group whose every control is disabled reports them all.
+  it('creates the FormControl of a STATE attribute disabled, so the form never saves it', () => {
+    const { component } = setup(true);
+
+    expect(component.form.get('status')?.disabled).toBe(true);
+    expect(Object.keys(component.form.value)).toEqual(['name']);
   });
 });

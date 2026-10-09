@@ -7,6 +7,7 @@ export { DiagramDefinition, DiagramViewport, EdgeLayout, NodeLayout, NodeSize, P
 export {
   BASE_STATE_TRANSLATION_SOURCE,
   BASE_STATE_TRANSLOCO_SCOPE,
+  ENTITY_STATE_CONTROL_I18N_SCOPE,
   ENTITY_STATE_MACHINE_I18N_KEY,
   ENTITY_STATE_MACHINE_I18N_SCOPE,
   STATE_MACHINE_DEFINITION_I18N_SCOPE,
@@ -41,11 +42,13 @@ export { StateNodeComponent } from './lib/feature/modeler/components/state-node.
 export { DiagramSelectionService } from './lib/feature/modeler/services/diagram-selection.service';
 export { StateMachineDefinitionFacade } from './lib/feature/definition/state-machine-definition.facade';
 export { GovernedEntityRegistry } from './lib/domain/definition/governed-entity.registry';
-export { type AvailableTransition, type EntityObjectState } from './lib/domain/operation/entity-object-state';
+export { type AvailableTransition, type EntityObjectState, type TransitionResult } from './lib/domain/operation/entity-object-state';
 export { EntityObjectStateService } from './lib/domain/operation/entity-object-state.service';
 export { ENTITY_STATE_MACHINE_TAB, ENTITY_STATE_MACHINE_TAB_SEGMENT } from './lib/feature/definition/entity-state-machine-tab';
 export { EntityStateMachineTabComponent } from './lib/feature/definition/entity-state-machine-tab.component';
 export { EntityStateMachineTabContributor, provideEntityStateMachineTab } from './lib/feature/definition/entity-state-machine-tab.contributor';
+export { EntityStateControlComponent } from './lib/feature/operation/entity-state-control.component';
+export { BaseStateEntityStateControl, provideEntityStateControl } from './lib/feature/operation/entity-state-control.provider';
 export { STATE_MODELER_TAB } from './lib/feature/definition/state-modeler-tab';
 export { StateModelerTabComponent } from './lib/feature/definition/state-modeler-tab.component';
 export {

@@ -69,5 +69,16 @@
     "readOnly": "Nur-Lese-Ansicht — der Automat wird unter Base State bearbeitet.",
     "loading": "Zustandsautomat wird geladen…",
     "noState": "Dieser Datensatz hat noch keinen Zustand."
+  },
+  "state_control": {
+    "placeholder": "Status ändern…",
+    "noTransitions": "Aus diesem Status ist kein Übergang möglich.",
+    "transitionTo": "→ {{state}}",
+    "via": "({{trigger}})",
+    "blocked": "Nicht erlaubt: {{reason}}",
+    "blockedNoReason": "Von einer Bedingung dieses Übergangs nicht erlaubt.",
+    "rejected": "Der Übergang wurde abgelehnt: {{reason}}",
+    "fired": "Status geändert auf {{state}}.",
+    "initialState": "Beginnt in {{state}}"
   }
 }

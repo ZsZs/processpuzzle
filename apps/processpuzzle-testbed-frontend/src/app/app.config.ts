@@ -32,7 +32,7 @@ import {
 } from '@processpuzzle/base-entity';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
-import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateMachineTab } from '@processpuzzle/base-state';
+import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
 import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE, CurrentUserContext } from '@processpuzzle/base-workflow';
@@ -105,6 +105,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // this one provider is what puts the tab on all of them; it also registers the `base_state`
       // transloco scope, without which the tab's label would render as its key on those screens.
       ...provideEntityStateMachineTab(),
+      ...provideEntityStateControl(),
       // The same arrangement for base-ai: the Enrollment tab, offered to every entity type that has a
       // recognition profile — `Boat` in this tenant, a metadata-defined entity that names base-ai nowhere.
       ...provideEntityEnrollmentTab(),

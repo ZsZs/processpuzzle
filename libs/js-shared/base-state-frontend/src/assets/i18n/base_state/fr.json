@@ -69,5 +69,16 @@
     "readOnly": "Vue en lecture seule — la machine se modifie sous Base State.",
     "loading": "Chargement de la machine à états…",
     "noState": "Cet enregistrement n'a pas encore d'état."
+  },
+  "state_control": {
+    "placeholder": "Changer d'état…",
+    "noTransitions": "Aucune transition n'est disponible depuis cet état.",
+    "transitionTo": "→ {{state}}",
+    "via": "({{trigger}})",
+    "blocked": "Non autorisé : {{reason}}",
+    "blockedNoReason": "Non autorisé par une condition de cette transition.",
+    "rejected": "La transition a été refusée : {{reason}}",
+    "fired": "État changé en {{state}}.",
+    "initialState": "Commence en {{state}}"
   }
 }

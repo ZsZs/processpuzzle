@@ -1,5 +1,7 @@
 package com.processpuzzle.state.api;
 
+import java.util.Optional;
+
 import org.springframework.modulith.NamedInterface;
 
 /**
@@ -27,4 +29,11 @@ public interface StateOperationApi {
      * know are under a state machine.
      */
     String currentStateKey(String orgKey, String entityName, String entityId);
+
+    /**
+     * The attribute holding the state of {@code entityName}'s objects, or empty when no state machine
+     * governs that entity type. base-state is the only writer of that attribute; this is how another
+     * module learns which attribute it must leave alone.
+     */
+    Optional<String> stateAttributeKey(String orgKey, String entityName);
 }

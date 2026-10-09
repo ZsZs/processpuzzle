@@ -6,6 +6,9 @@ import { BaseEntityFacade } from '../base-entity-facade/base-entity-facade';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 import { DynamicEntityRegistry } from '../base-entity-definition/dynamic-entity.registry';
 import { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './entity-tab-contributor';
+import { FormControlType } from '../base-entity/abstact-attr.descriptor';
+import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
+import { ENTITY_STATE_CONTROL } from '../base-form/state/entity-state-control';
 
 /** Everything needed to mount one entity's List and Details screens somewhere. */
 export interface EntityScreens {
@@ -40,6 +43,7 @@ export class EntityScreenResolver {
   private readonly dynamicRegistry = inject(DynamicEntityRegistry);
   private readonly injector = inject(Injector);
   private readonly tabContributors = inject(ENTITY_TAB_CONTRIBUTORS, { optional: true }) ?? [];
+  private readonly stateControl = inject(ENTITY_STATE_CONTROL, { optional: true });
 
   /** `undefined` when neither a facade nor a definition answers to `entityName`. */
   async resolve(entityName: string | undefined): Promise<EntityScreens | undefined> {
@@ -48,7 +52,26 @@ export class EntityScreenResolver {
     const descriptor = this.compileTimeDescriptorOf(entityName) ?? (await this.dynamicRegistry.resolve(entityName))?.descriptor;
     if (!descriptor) return undefined;
 
+    await this.markStateAttribute(descriptor);
     return { descriptor, embeddedChildren: this.embeddedChildrenOf(descriptor), extraTabs: await this.extraTabsOf(descriptor) };
+  }
+
+  /**
+   * Turns the attribute a state machine governs into a {@link FormControlType.STATE} control, so the form offers
+   * the allowed transitions instead of a free edit of the value. Idempotent, which matters for the same reason as
+   * in {@link extraTabsOf}: a compile-time descriptor is a singleton resolved more than once. A provider that
+   * throws leaves the descriptor as it was — the attribute stays editable, as it was before base-state existed.
+   */
+  private async markStateAttribute(descriptor: BaseEntityDescriptor): Promise<void> {
+    const stateControl = this.stateControl;
+    if (!stateControl) return;
+    // Inside `then`, so a provider that throws synchronously is caught like one that rejects.
+    const attrName = await Promise.resolve()
+      .then(() => stateControl.stateAttributeOf(descriptor))
+      .catch(() => undefined);
+    if (!attrName) return;
+    const attrDescriptor = filterAttributeDescriptors(descriptor.attrDescriptors).find((candidate) => candidate.attrName === attrName);
+    if (attrDescriptor) attrDescriptor.formControlType = FormControlType.STATE;
   }
 
   /**

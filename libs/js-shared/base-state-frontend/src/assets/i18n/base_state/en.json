@@ -69,5 +69,16 @@
     "readOnly": "Read-only view — the machine is authored under Base State.",
     "loading": "Loading the state machine…",
     "noState": "This record has no state yet."
+  },
+  "state_control": {
+    "placeholder": "Change state…",
+    "noTransitions": "No transition is available from this state.",
+    "transitionTo": "→ {{state}}",
+    "via": "({{trigger}})",
+    "blocked": "Not allowed: {{reason}}",
+    "blockedNoReason": "Not allowed by a guard of this transition.",
+    "rejected": "The transition was refused: {{reason}}",
+    "fired": "State changed to {{state}}.",
+    "initialState": "Starts in {{state}}"
   }
 }
