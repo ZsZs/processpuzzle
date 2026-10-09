@@ -30,10 +30,11 @@ defineEntityRelationshipSuite({
     // read-only by contract. See entity-crud.spec.ts for all three reasons. Every list below those owners is
     // therefore unreachable, whichever control type it uses.
     //
-    // The workflow's five embedded lists are named individually rather than by owner, because that is the
+    // The workflow's embedded lists are named individually rather than by owner, because that is the
     // shape this suite's exclusion list takes; `artifacts` and `tools` used to be RELATED_ENTITIES and
-    // `workProducts` was the pre-rename name of `artifacts`.
-    ...(['roles', 'artifacts', 'tools', 'requiredArtifacts', 'tasks', 'authorizedRoles'] as const).map((attrName) => ({
+    // `workProducts` was the pre-rename name of `artifacts`. A list added to Workflow needs an entry here,
+    // or its test fails trying to create the owner — `startEvents` and `events` did, as a linked-entity cycle.
+    ...(['roles', 'artifacts', 'tools', 'requiredArtifacts', 'tasks', 'authorizedRoles', 'startEvents', 'events'] as const).map((attrName) => ({
       entityName: 'Workflow',
       attrName,
       reason: 'the owning workflow cannot be created from generated fixture data (tasks is required, and this suite cannot fill an embedded list)',
