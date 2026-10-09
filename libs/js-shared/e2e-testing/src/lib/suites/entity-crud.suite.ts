@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
+import type { FixtureOverride } from '../controls/control-tester';
 import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
 import { identificationAttr } from '../data/test-data-factory';
 import { EntityFormPO } from '../pages/entity-form.po';
@@ -26,6 +27,11 @@ export interface DefineEntityCrudSuiteOptions {
    * is a different flow and one the exclusion must not disable.
    */
   excludedEntities?: ExcludedEntity[];
+  /**
+   * Values pinned on an entity's generated fixture where one of its fields is only kept for some value of
+   * another — the alternative to excluding the whole entity. See {@link FixtureOverride}.
+   */
+  fixtureOverrides?: FixtureOverride[];
 }
 
 /** One entity the suite is told not to exercise, and why. */
@@ -70,14 +76,14 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('CREATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
 
         await manager.testSetup(page, descriptor);
         await manager.createEntity(page, descriptor);
       });
 
       test('READ', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -88,7 +94,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('UPDATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -106,7 +112,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('DELETE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options.expectTimeoutMs);
+        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -131,8 +137,8 @@ function createFixtureManager(
   descriptorMap: Map<string, BaseEntityDescriptor>,
   descriptor: BaseEntityDescriptor,
   retry: number,
-  expectTimeoutMs?: number,
+  options: DefineEntityCrudSuiteOptions,
 ): EntityCrudFixtureManager {
   const suffix = `e2e-${Date.now().toString(36)}-${descriptor.entityName.replace(/\s+/g, '-').toLowerCase()}-r${retry}`;
-  return new EntityCrudFixtureManager(routes, descriptorMap, suffix, expectTimeoutMs);
+  return new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides);
 }
