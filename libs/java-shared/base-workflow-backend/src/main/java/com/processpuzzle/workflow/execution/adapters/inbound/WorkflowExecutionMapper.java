@@ -69,13 +69,13 @@ public class WorkflowExecutionMapper {
         model.setStartEventId(instance.getStartEventId());
         model.setStartedAt(toOffsetDateTime(instance.getStartedAt()));
         model.setCompletedAt(toOffsetDateTime(instance.getCompletedAt()));
+        model.setTasks(tasks.stream().map(this::toModel).toList());
+        model.setArtifacts(artifacts.stream().map(this::toModel).toList());
+        model.setEvents(events.stream().map(this::toModel).toList());
         // Assembled, not stored: the API's `context` is still the *current* context, it is simply
         // derived from the task and event contributions rather than from a field. Costs no query — the
         // task and event instances are already here because the response carries them.
         model.setContext(WorkflowContext.assemble(instance, tasks, events));
-        model.setTasks(tasks.stream().map(this::toModel).toList());
-        model.setArtifacts(artifacts.stream().map(this::toModel).toList());
-        model.setEvents(events.stream().map(this::toModel).toList());
         return model;
     }
 

@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 
 class WorkflowExecutionMapperTest {
 
@@ -168,8 +169,25 @@ class WorkflowExecutionMapperTest {
 
         assertThat(model.getTasks()).hasSize(1);
         assertThat(model.getEvents()).isEmpty();
-        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(task), List.of()));
-        assertThat(((Map<?, ?>) model.getContext()).get("key")).isEqualTo("updated");
+        assertThat(model.getContext()).isEqualTo(WorkflowContext.assemble(instance, List.of(task), List.of()))
+                .asInstanceOf(MAP).containsEntry("key", "updated");
+    }
+
+    @Test
+    void toModel_preservesEventContributionsWhenTasksAndArtifactsAreNull() {
+        WorkflowInstance instance = WorkflowInstance.builder().id(UUID.randomUUID())
+                .status(WorkflowInstanceStatus.ACTIVE).initialContext(Map.of("key", "initial")).build();
+        EventInstance event = EventInstance.builder().id(UUID.randomUUID()).eventUseId("received")
+                .direction(EventDirection.CATCH).status(EventInstanceStatus.OCCURRED).occurredAt(Instant.now())
+                .contextContribution(Map.of("key", "updated")).build();
+
+        var model = mapper.toModel(instance, null, null, List.of(event));
+
+        assertThat(model.getTasks()).isEmpty();
+        assertThat(model.getArtifacts()).isEmpty();
+        assertThat(model.getEvents()).singleElement()
+                .extracting(com.processpuzzle.workflow.model.EventInstance::getEventUseId).isEqualTo("received");
+        assertThat(model.getContext()).asInstanceOf(MAP).containsEntry("key", "updated");
     }
 
     @Test
