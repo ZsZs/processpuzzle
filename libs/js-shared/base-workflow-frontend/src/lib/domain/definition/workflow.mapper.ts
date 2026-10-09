@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
 import { EntityReference, toReferenceIds } from '../reference-ids';
-import { ArtifactUse, JoinType, RequiredStartArtifact, RoleUse, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
+import { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, TimerDefinition, timerOf, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './workflow';
 
 // region wire shapes — the schemas of base-workflow-api.yaml, exactly as they travel
 interface RoleUseDto {
@@ -11,6 +11,7 @@ interface RoleUseDto {
 
 interface ArtifactUseDto {
   artifactDefinitionId?: string;
+  objectName?: string | null;
 }
 
 interface ToolUseDto {
@@ -26,7 +27,9 @@ interface RequiredStartArtifactDto {
  * `authorizedRoles` is `string[]` by contract. It is typed wider here because the `RELATED_ENTITIES`
  * control writes whole entities into its form control on selection — see {@link toReferenceIds}.
  */
-interface WorkflowStartConditionDto {
+interface StartEventDto {
+  id?: string;
+  name?: string;
   startType?: WorkflowStartConditionType;
   requiredArtifacts?: RequiredStartArtifactDto[];
   eventType?: string;
@@ -34,6 +37,32 @@ interface WorkflowStartConditionDto {
   authorizedRoles?: EntityReference[];
   milestoneRef?: string;
   preconditionExpression?: string;
+  timer?: TimerDefinition | null;
+}
+
+/**
+ * `artifactDefinitionId` is a plain id by contract, typed wider for the same reason as
+ * {@link StartEventDto.authorizedRoles}: the `FOREIGN_KEY` control may write the picked entity itself.
+ */
+interface TaskArtifactStateDto {
+  artifactDefinitionId?: EntityReference;
+  inputState?: string | null;
+  outputState?: string | null;
+}
+
+/** `eventDefinitionId` is a plain id by contract, typed wider for the `FOREIGN_KEY` control's sake. */
+interface EventUseDto {
+  id?: string;
+  name?: string | null;
+  eventDefinitionId?: EntityReference;
+  direction?: EventDirection;
+  dependsOn?: string[];
+  joinType?: JoinType;
+  correlationKey?: string | null;
+  payloadMapping?: PropertyMap | null;
+  timer?: TimerDefinition | null;
+  attachedTo?: string | null;
+  interrupting?: boolean;
 }
 
 interface WorkflowTaskAssignmentDto {
@@ -43,6 +72,7 @@ interface WorkflowTaskAssignmentDto {
   joinType?: JoinType;
   parallel?: boolean;
   override?: boolean;
+  artifactStates?: TaskArtifactStateDto[];
 }
 
 interface WorkflowDto {
@@ -50,11 +80,12 @@ interface WorkflowDto {
   name?: string;
   description?: string;
   extends?: string;
-  startCondition?: WorkflowStartConditionDto;
+  startEvents?: StartEventDto[];
   roles?: RoleUseDto[];
   artifacts?: ArtifactUseDto[];
   tools?: ToolUseDto[];
   tasks?: WorkflowTaskAssignmentDto[];
+  events?: EventUseDto[];
   activeInstances?: number;
   version?: number;
   createdAt?: string;
@@ -68,7 +99,7 @@ interface WorkflowDto {
  *
  * Four things are worth knowing about it.
  *
- * **The four embedded lists are mapped element by element**, never passed through. An embedded row is
+ * **The six embedded lists are mapped element by element**, never passed through. An embedded row is
  * edited as the parsed JSON it arrived as, so a field the wire spelled differently from the model would
  * leave its control empty and silently drop the value on the next save. That is not hypothetical here:
  * `roles`, `artifacts` and `tools` were modelled as id arrays until this revision, while the contract
@@ -76,13 +107,13 @@ interface WorkflowDto {
  * artifact and tool of a loaded workflow vanished, and the next save wrote `string[]` where the backend
  * expects objects.
  *
- * **`startCondition` is flattened and re-nested**, the same arrangement `ToolDefinitionMapper` uses for
- * `auth`: `fromDto` lifts the six scalar fields and the required-artifact rows onto the entity so the
- * generic form can build one control per field, and `toDto` rebuilds the nested object. It is emitted
- * as `undefined` when no `startType` was chosen, because a workflow may legitimately have no start
- * condition and an object carrying only nulls is not the same statement.
+ * **`startEvents` is a list of rows like any other**, each nesting its own `requiredArtifacts`. It
+ * replaced a single, optional `startCondition` object that this mapper used to flatten onto the
+ * workflow's form; a workflow with several entry points needs one row per entry point, and a row is
+ * what the generic screens already know how to edit. A workflow with none is an empty list, not an
+ * absent one — the PUT would otherwise read it as untouched.
  *
- * **`PUT /workflows/{workflowId}` is a full replacement**, so `toDto` emits all four lists
+ * **`PUT /workflows/{workflowId}` is a full replacement**, so `toDto` emits all six lists
  * unconditionally — an absent one is an emptied workflow, not an untouched one. It is also why every
  * contract field has to be modelled even if the form never edits it: a field the mapper does not carry
  * is a field the next save deletes.
@@ -96,23 +127,17 @@ interface WorkflowDto {
 export class WorkflowMapper implements BaseEntityMapper<Workflow> {
   fromDto(dto: unknown): Workflow {
     const source = dto as WorkflowDto;
-    const startCondition = source.startCondition;
     return new Workflow({
       id: source.id,
       name: source.name,
       description: source.description,
       extends: source.extends,
-      startType: startCondition?.startType,
-      requiredArtifacts: (startCondition?.requiredArtifacts ?? []).map(toRequiredStartArtifact),
-      eventType: startCondition?.eventType,
-      payloadMapping: startCondition?.payloadMapping,
-      authorizedRoles: toReferenceIds(startCondition?.authorizedRoles),
-      milestoneRef: startCondition?.milestoneRef,
-      preconditionExpression: startCondition?.preconditionExpression,
+      startEvents: (source.startEvents ?? []).map(toStartEvent),
       roles: (source.roles ?? []).map(toRoleUse),
       artifacts: (source.artifacts ?? []).map(toArtifactUse),
       tools: (source.tools ?? []).map(toToolUse),
       tasks: (source.tasks ?? []).map(toWorkflowTaskAssignment),
+      events: (source.events ?? []).map(toEventUse),
       activeInstances: source.activeInstances,
       version: source.version,
       createdAt: source.createdAt,
@@ -126,11 +151,12 @@ export class WorkflowMapper implements BaseEntityMapper<Workflow> {
       name: entity.name,
       description: entity.description,
       extends: entity.extends,
-      startCondition: toStartConditionDto(entity),
+      startEvents: (entity.startEvents ?? []).map(fromStartEvent),
       roles: (entity.roles ?? []).map(fromRoleUse),
       artifacts: (entity.artifacts ?? []).map(fromArtifactUse),
       tools: (entity.tools ?? []).map(fromToolUse),
       tasks: (entity.tasks ?? []).map(fromWorkflowTaskAssignment),
+      events: (entity.events ?? []).map(fromEventUse),
       version: entity.version,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -148,11 +174,11 @@ function fromRoleUse(use: RoleUse): RoleUseDto {
 }
 
 function toArtifactUse(dto: ArtifactUseDto): ArtifactUse {
-  return new ArtifactUse({ artifactDefinitionId: dto.artifactDefinitionId });
+  return new ArtifactUse({ artifactDefinitionId: dto.artifactDefinitionId, objectName: dto.objectName ?? undefined });
 }
 
 function fromArtifactUse(use: ArtifactUse): ArtifactUseDto {
-  return { artifactDefinitionId: use.artifactDefinitionId };
+  return { artifactDefinitionId: use.artifactDefinitionId, objectName: use.objectName || undefined };
 }
 
 function toToolUse(dto: ToolUseDto): ToolUse {
@@ -171,27 +197,37 @@ function fromRequiredStartArtifact(artifact: RequiredStartArtifact): RequiredSta
   return { artifactDefinitionId: artifact.artifactDefinitionId, state: artifact.state };
 }
 
-/**
- * Re-nests the seven flattened start-condition fields, or answers `undefined` when the author chose no
- * `startType`.
- *
- * `startType` is the contract's only required field of the object, so it is what decides whether there
- * is an object at all: a workflow without a start condition can only be started explicitly through
- * `/instances`, and that is a different statement from one whose condition is present but blank.
- */
-function toStartConditionDto(entity: Workflow): WorkflowStartConditionDto | undefined {
-  if (!entity.startType) {
-    return undefined;
-  }
+function toStartEvent(dto: StartEventDto): StartEvent {
+  return new StartEvent({
+    id: dto.id,
+    name: dto.name,
+    startType: dto.startType,
+    requiredArtifacts: (dto.requiredArtifacts ?? []).map(toRequiredStartArtifact),
+    eventType: dto.eventType,
+    payloadMapping: dto.payloadMapping,
+    authorizedRoles: toReferenceIds(dto.authorizedRoles),
+    milestoneRef: dto.milestoneRef,
+    preconditionExpression: dto.preconditionExpression,
+    timer: dto.timer ?? undefined,
+  });
+}
 
+/**
+ * Every field is written whatever the `startType`: the backend ignores the ones the type does not read,
+ * and dropping them here would lose what the author typed the moment they try another type and back.
+ */
+function fromStartEvent(event: StartEvent): StartEventDto {
   return {
-    startType: entity.startType,
-    requiredArtifacts: (entity.requiredArtifacts ?? []).map(fromRequiredStartArtifact),
-    eventType: entity.eventType,
-    payloadMapping: entity.payloadMapping,
-    authorizedRoles: toReferenceIds(entity.authorizedRoles),
-    milestoneRef: entity.milestoneRef,
-    preconditionExpression: entity.preconditionExpression,
+    id: event.id,
+    name: event.name,
+    startType: event.startType,
+    requiredArtifacts: (event.requiredArtifacts ?? []).map(fromRequiredStartArtifact),
+    eventType: event.eventType,
+    payloadMapping: event.payloadMapping,
+    authorizedRoles: toReferenceIds(event.authorizedRoles),
+    milestoneRef: event.milestoneRef,
+    preconditionExpression: event.preconditionExpression,
+    timer: timerOf(event),
   };
 }
 
@@ -203,6 +239,7 @@ function toWorkflowTaskAssignment(dto: WorkflowTaskAssignmentDto): WorkflowTaskA
     joinType: dto.joinType,
     parallel: dto.parallel,
     override: dto.override,
+    artifactStates: (dto.artifactStates ?? []).map(toTaskArtifactState),
   });
 }
 
@@ -218,6 +255,70 @@ function fromWorkflowTaskAssignment(assignment: WorkflowTaskAssignment): Workflo
     joinType: assignment.joinType,
     parallel: assignment.parallel ?? false,
     override: assignment.override ?? false,
+    artifactStates: (assignment.artifactStates ?? []).map(fromTaskArtifactState),
+  };
+}
+
+function toEventUse(dto: EventUseDto): EventUse {
+  return new EventUse({
+    id: dto.id,
+    name: dto.name ?? undefined,
+    eventDefinitionId: referenceIdOf(dto.eventDefinitionId),
+    direction: dto.direction,
+    dependsOn: dto.dependsOn,
+    joinType: dto.joinType,
+    correlationKey: dto.correlationKey ?? undefined,
+    payloadMapping: dto.payloadMapping ?? undefined,
+    timer: dto.timer ?? undefined,
+    attachedTo: dto.attachedTo ?? undefined,
+    interrupting: dto.interrupting,
+  });
+}
+
+/**
+ * A blank name, correlation key or task to attach to is sent as absent: the backend refuses a correlation
+ * key on anything but a MESSAGE, and a cleared text box would otherwise send `''`. The flattened timer
+ * controls are folded back into `timer`; a timer catch names no catalog event, so its empty
+ * `eventDefinitionId` is sent as absent too. `interrupting` only means something on a boundary event.
+ */
+function fromEventUse(event: EventUse): EventUseDto {
+  return {
+    id: event.id,
+    name: event.name?.trim() || undefined,
+    eventDefinitionId: referenceIdOf(event.eventDefinitionId) || undefined,
+    direction: event.direction,
+    dependsOn: event.dependsOn,
+    joinType: event.joinType,
+    correlationKey: event.correlationKey?.trim() || undefined,
+    payloadMapping: event.payloadMapping,
+    timer: timerOf(event),
+    attachedTo: event.attachedTo?.trim() || undefined,
+    interrupting: event.attachedTo?.trim() ? (event.interrupting ?? true) : undefined,
+  };
+}
+
+/** One reference as its id — `''` for none, which is what a blank row's required control holds. */
+function referenceIdOf(reference: EntityReference | undefined): string {
+  return reference === undefined ? '' : (toReferenceIds([reference])[0] ?? '');
+}
+
+function toTaskArtifactState(dto: TaskArtifactStateDto): TaskArtifactState {
+  return new TaskArtifactState({
+    artifactDefinitionId: referenceIdOf(dto.artifactDefinitionId),
+    inputState: dto.inputState ?? undefined,
+    outputState: dto.outputState ?? undefined,
+  });
+}
+
+/**
+ * A blank state is sent as absent rather than as `''`: a cleared text box writes the empty string, and
+ * the backend would read that as a state named nothing rather than as no state.
+ */
+function fromTaskArtifactState(state: TaskArtifactState): TaskArtifactStateDto {
+  return {
+    artifactDefinitionId: referenceIdOf(state.artifactDefinitionId),
+    inputState: state.inputState?.trim() || undefined,
+    outputState: state.outputState?.trim() || undefined,
   };
 }
 // endregion

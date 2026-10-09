@@ -49,6 +49,7 @@ class EntityDefinitionLookupAdapterTest {
                 .valueKind(ValueKind.TEXT)
                 .formControlType(FormControlType.TEXT)
                 .required(true)
+                .isLinkToDetails(true)
                 .linkedEntityType(null)
                 .build();
 
@@ -76,6 +77,7 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(view.code()).isEqualTo("partner");
         assertThat(view.embedded()).isFalse();
         assertThat(view.attributes()).hasSize(2);
+        assertThat(view.titleAttribute()).isEqualTo("name");
 
         EntityAttributeView viewAttr1 = view.attributes().get(0);
         assertThat(viewAttr1.code()).isEqualTo("name");

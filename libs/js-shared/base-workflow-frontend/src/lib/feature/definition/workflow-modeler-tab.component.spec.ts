@@ -133,8 +133,14 @@ describe('WorkflowModelerTabComponent', () => {
   it('draws the workflow the tab was opened from, as lanes and a chain', async () => {
     await loaded();
 
-    expect(graph().nodes.filter(isLaneNode).map((node: { id: string }) => node.id)).toEqual([laneNodeId('clerk'), laneNodeId('manager')]);
-    expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(2);
+    expect(
+      graph()
+        .nodes.filter(isLaneNode)
+        .map((node: { id: string }) => node.id),
+    ).toEqual([laneNodeId('clerk'), laneNodeId('manager')]);
+    // The two dependencies of the chain, plus the start event into its root and its last task into the end.
+    expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(6);
+    expect(graph().nodes.map((node: { id: string }) => node.id)).toEqual(expect.arrayContaining([elementNodeId('start', 'order-created'), elementNodeId('end', 'end')]));
   });
 
   /**
@@ -149,7 +155,13 @@ describe('WorkflowModelerTabComponent', () => {
     flushLayout('claim-handling-workflow');
     await fixture.whenStable();
 
-    expect(graph().nodes.map((node: { id: string }) => node.id)).toEqual([laneNodeId('clerk'), elementNodeId('task', 'review-order'), elementNodeId('artifact', 'order-entity'), elementNodeId('tool', 'automated-check-tool')]);
+    expect(graph().nodes.map((node: { id: string }) => node.id)).toEqual([
+      laneNodeId('clerk'),
+      elementNodeId('task', 'review-order'),
+      elementNodeId('end', 'end'),
+      elementNodeId('artifact', 'order-entity'),
+      elementNodeId('tool', 'automated-check-tool'),
+    ]);
   });
 
   // Selects the row, so the tab bar's Details link stays enabled and the status bar keeps naming the record —
@@ -205,7 +217,7 @@ describe('WorkflowModelerTabComponent', () => {
       fixture.detectChanges();
 
       expect(graph().nodes.filter(isLaneNode)).toEqual([]);
-      expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(2);
+      expect(graph().edges.filter((edge: { data?: { relation?: string } }) => edge.data?.relation === 'sequence')).toHaveLength(6);
     });
 
     it('takes the work products off the canvas', async () => {
@@ -230,7 +242,7 @@ describe('WorkflowModelerTabComponent', () => {
   it('explains every kind it draws', async () => {
     await loaded();
 
-    ['role', 'task', 'artifact', 'tool'].forEach((kind) => expect(query(`modeler-legend-${kind}`)).not.toBeNull());
+    ['start', 'role', 'task', 'end', 'artifact', 'tool'].forEach((kind) => expect(query(`modeler-legend-${kind}`)).not.toBeNull());
   });
 
   describe('the saved arrangement', () => {

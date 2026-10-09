@@ -4,11 +4,10 @@ import { createWorkflowDescriptor } from './workflow.descriptors';
 import {
   WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
   WORKFLOW_ENTITY_NAME,
-  WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME,
   WORKFLOW_ROLE_USE_ENTITY_NAME,
+  WORKFLOW_START_EVENT_ENTITY_NAME,
   WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME,
   WORKFLOW_TOOL_USE_ENTITY_NAME,
-  WORKFLOW_ROLE_DEFINITION_ENTITY_NAME,
 } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
@@ -36,45 +35,16 @@ describe('createWorkflowDescriptor', () => {
     expect(byName('tasks')?.i18nKey()).toBe('base_workflow.workflow.tasks');
   });
 
-  it('describes the header, the revision, the start condition and the five embedded lists', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual([
-      'id',
-      'name',
-      'extends',
-      'activeInstances',
-      'version',
-      'updatedAt',
-      'description',
-      'startType',
-      'eventType',
-      'milestoneRef',
-      'preconditionExpression',
-      'authorizedRoles',
-      'payloadMapping',
-      'requiredArtifacts',
-      'roles',
-      'artifacts',
-      'tools',
-      'tasks',
-    ]);
+  it('describes the header, the revision and the five embedded lists', () => {
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'extends', 'activeInstances', 'version', 'updatedAt', 'description', 'startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
   });
 
-  // Flattened onto this form rather than nested, following the `auth` fields of `Tool Definition`. It has
-  // to be on the form at all because the PUT is a full replacement: the entity carried no start
-  // condition until this revision, so saving a seeded workflow deleted it.
-  it('authors the start condition as flattened fields plus its one list', () => {
-    expect(byName('startType')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('startType')?.getSelectables()?.map((selectable) => selectable.key)).toEqual([
-      'INPUT_ARTIFACT',
-      'TRIGGERING_EVENT',
-      'ROLE_DEFINITION',
-      'TIME_BASED_PRECONDITION',
-    ]);
-    expect(byName('authorizedRoles')?.formControlType).toBe(FormControlType.RELATED_ENTITIES);
-    expect(byName('authorizedRoles')?.linkedEntityType).toBe(WORKFLOW_ROLE_DEFINITION_ENTITY_NAME);
-    expect(byName('payloadMapping')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
-    expect(byName('requiredArtifacts')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
-    expect(byName('requiredArtifacts')?.referenceIdField).toBe('artifactDefinitionId');
+  // One row per entry point, replacing the single start condition this form used to flatten. A start
+  // event has an `id` of its own, so the list addresses its rows by the default `id`.
+  it('authors the start events as an embedded list', () => {
+    expect(byName('startEvents')?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(byName('startEvents')?.linkedEntityType).toBe(WORKFLOW_START_EVENT_ENTITY_NAME);
+    expect(byName('startEvents')?.referenceIdField).toBe('id');
   });
 
   // The author-chosen id *is* the record's identity here, unlike base-state's machine where `id` mirrors
@@ -123,13 +93,13 @@ describe('createWorkflowDescriptor', () => {
   it('carries five embedded lists, the assignments among them', () => {
     const embedded = descriptor.embeddedAttrDescriptors();
 
-    expect(embedded.map((attr) => attr.attrName)).toEqual(['requiredArtifacts', 'roles', 'artifacts', 'tools', 'tasks']);
+    expect(embedded.map((attr) => attr.attrName)).toEqual(['startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
     embedded.forEach((attr) => expect(attr.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS));
     expect(descriptor.embeddedAttrFor(WORKFLOW_TASK_ASSIGNMENT_ENTITY_NAME)?.attrName).toBe('tasks');
     expect(descriptor.embeddedAttrFor(WORKFLOW_ROLE_USE_ENTITY_NAME)?.attrName).toBe('roles');
     expect(descriptor.embeddedAttrFor(WORKFLOW_ARTIFACT_USE_ENTITY_NAME)?.attrName).toBe('artifacts');
     expect(descriptor.embeddedAttrFor(WORKFLOW_TOOL_USE_ENTITY_NAME)?.attrName).toBe('tools');
-    expect(descriptor.embeddedAttrFor(WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME)?.attrName).toBe('requiredArtifacts');
+    expect(descriptor.embeddedAttrFor(WORKFLOW_START_EVENT_ENTITY_NAME)?.attrName).toBe('startEvents');
   });
 
   // An assignment has no `id` of its own; the task it assigns is what identifies it within the workflow.
@@ -137,11 +107,8 @@ describe('createWorkflowDescriptor', () => {
     expect(byName('tasks')?.referenceIdField).toBe('taskDefinitionId');
   });
 
-  it('keeps the long, the referencing, the nested and the start-condition fields out of the table', () => {
+  it('keeps the long, the referencing and the nested fields out of the table', () => {
     expect(byName('description')?.hideInTable).toBe(true);
-    ['roles', 'artifacts', 'tools', 'tasks'].forEach((attrName) => expect(byName(attrName)?.hideInTable).toBe(true));
-    ['startType', 'eventType', 'milestoneRef', 'preconditionExpression', 'authorizedRoles', 'payloadMapping', 'requiredArtifacts'].forEach((attrName) =>
-      expect(byName(attrName)?.hideInTable).toBe(true),
-    );
+    ['startEvents', 'roles', 'artifacts', 'tools', 'tasks'].forEach((attrName) => expect(byName(attrName)?.hideInTable).toBe(true));
   });
 });

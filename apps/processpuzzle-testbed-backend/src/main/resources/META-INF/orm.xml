@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Column types for the Spring Modulith event publication registry (spring-modulith-events-jpa).
+
+  Its entities declare plain @Column fields with no length, so Hibernate's ddl-auto creates them as
+  varchar(255) — and a serialized PlatformEvent carries the entity's whole payload. An event that does not
+  fit fails the INSERT, and because the publication is written inside the publishing transaction, the
+  business write fails with it: creating an Order answered 500 on 2026-10-08. Modulith ships schema scripts
+  for its JDBC variant only; with JPA the schema is the application's to declare, and this file is where.
+
+  Spring picks up META-INF/orm.xml for the default persistence unit on its own. ddl-auto: update never
+  alters an existing column, so a database that already has event_publication from before this file needs
+  the table dropped once (it is an outbox; with completion-mode: delete it holds only undelivered events).
+-->
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm https://jakarta.ee/xml/ns/persistence/orm/orm_3_1.xsd"
+                 version="3.1">
+
+  <entity class="org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication">
+    <attribute-override name="serializedEvent">
+      <column name="serialized_event" column-definition="text"/>
+    </attribute-override>
+    <attribute-override name="listenerId">
+      <column name="listener_id" column-definition="text"/>
+    </attribute-override>
+    <attribute-override name="eventType">
+      <column name="event_type" column-definition="text"/>
+    </attribute-override>
+  </entity>
+
+  <entity class="org.springframework.modulith.events.jpa.archiving.ArchivedJpaEventPublication">
+    <attribute-override name="serializedEvent">
+      <column name="serialized_event" column-definition="text"/>
+    </attribute-override>
+    <attribute-override name="listenerId">
+      <column name="listener_id" column-definition="text"/>
+    </attribute-override>
+    <attribute-override name="eventType">
+      <column name="event_type" column-definition="text"/>
+    </attribute-override>
+  </entity>
+</entity-mappings>

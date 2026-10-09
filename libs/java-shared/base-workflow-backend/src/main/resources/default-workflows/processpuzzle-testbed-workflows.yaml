@@ -101,7 +101,7 @@ task-definitions:
     description: Confirm the shipped order has reached the customer and generate the invoice.
     performedByRoles: [ clerk ]
     inputs: [ order-entity ]
-    outputs: [ fulfillment-invoice ]
+    outputs: [ order-entity, fulfillment-invoice ]
     steps:
       - id: generate-invoice
         name: Generate Invoice
@@ -110,6 +110,42 @@ task-definitions:
         toolDefinitionId: automated-check-tool
         toolOperation: generate-doc
 
+  - id: issue-invoice
+    name: Issue Invoice
+    description: Issue the invoice of an approved order and record its number.
+    performedByRoles: [ manager ]
+    inputs: [ order-entity ]
+    outputs: [ fulfillment-invoice ]
+    steps:
+      - id: enter-invoice-number
+        name: Enter Invoice Number
+        description: Issue the invoice and enter its number as invoiceNumber when completing the task.
+        stepType: USER_STEP
+
+  - id: escalate-invoice
+    name: Escalate Invoice
+    description: Issue an invoice that was not issued in time, and record its number.
+    performedByRoles: [ manager ]
+    inputs: [ order-entity ]
+    outputs: [ fulfillment-invoice ]
+    steps:
+      - id: issue-overdue-invoice
+        name: Issue Overdue Invoice
+        description: Issue the overdue invoice and enter its number as invoiceNumber when completing the task.
+        stepType: USER_STEP
+
+  - id: collect-feedback
+    name: Collect Feedback
+    description: Ask the customer of a delivered order how the delivery went.
+    performedByRoles: [ clerk ]
+    inputs: [ order-entity ]
+    outputs: [ order-entity ]
+    steps:
+      - id: record-feedback
+        name: Record Feedback
+        description: Record the customer's feedback as feedback when completing the task.
+        stepType: USER_STEP
+
 workflows:
   - id: order-fulfillment-workflow
     name: Order Fulfillment Workflow
@@ -117,13 +153,20 @@ workflows:
       Tiny end-to-end workflow governing order review, shipment approval, and delivery confirmation in
       the testbed environment.
 
-    # Data-driven start: an instance comes into being once a DRAFT order exists. The state name is
-    # base-state's to interpret — base-workflow records it and never resolves it.
-    startCondition:
-      startType: INPUT_ARTIFACT
-      requiredArtifacts:
-        - artifactDefinitionId: order-entity
-          state: DRAFT
+    # Event-driven start: creating an Order starts this workflow on its own. OrderCreatedEvent is an
+    # entry of base-event's catalog (order, CREATED); the created order becomes the instance's entityId,
+    # and payloadMapping copies values out of the event into the instance context — paths are evaluated
+    # against the whole event, so `$.subjectId` is the order's id and `$.payload.<attribute>` one of its
+    # values. A TRIGGERING_EVENT does not admit a start by hand: POST /instances answers 409.
+    startEvents:
+      - id: order-created
+        name: OrderCreatedEvent
+        startType: TRIGGERING_EVENT
+        eventType: OrderCreatedEvent
+        payloadMapping:
+          orderId: $.subjectId
+          orderNumber: $.payload.orderNumber
+          customerName: $.payload.customerName
 
     roles:
       - roleDefinitionId: clerk
@@ -131,26 +174,172 @@ workflows:
 
     # Every artifact any of the tasks below reads or writes has to be declared here, so that this
     # list is the whole picture of what flows through the workflow.
+    # objectName is how the modeler labels the artifact's object here: `new_order : Order`.
     artifacts:
       - artifactDefinitionId: order-entity
+        objectName: new_order
       - artifactDefinitionId: fulfillment-invoice
+        objectName: invoice
 
     tools:
       - toolDefinitionId: automated-check-tool
 
     # Strictly sequential: each task waits for the previous one. `performedBy` picks one of the
     # referenced task definition's performedByRoles — review-order offers both, and here the clerk
-    # does it.
+    # does it. `artifactStates` walk the order through its base-state machine, DRAFT → CONFIRMED →
+    # SHIPPED → DELIVERED; recorded and drawn, not yet enforced.
     tasks:
       - taskDefinitionId: review-order
         performedBy: clerk
         dependsOn: [ ]
+        artifactStates:
+          - artifactDefinitionId: order-entity
+            inputState: DRAFT
+            outputState: CONFIRMED
 
       - taskDefinitionId: approve-shipment
         performedBy: manager
         dependsOn: [ review-order ]
+        artifactStates:
+          - artifactDefinitionId: order-entity
+            inputState: CONFIRMED
+            outputState: SHIPPED
 
       - taskDefinitionId: confirm-delivery
         performedBy: clerk
-        dependsOn: [ approve-shipment ]
+        dependsOn: [ invoice-issued ]
         parallel: false
+        artifactStates:
+          - artifactDefinitionId: order-entity
+            inputState: SHIPPED
+            outputState: DELIVERED
+
+    # The invoice round trip, with invoicing-workflow below. Once the shipment is approved the
+    # workflow throws InvoiceRequested — a MESSAGE of base-event's catalog, correlated on the order's
+    # id — which starts invoicing-workflow; then it waits until InvoiceIssued comes back for the same
+    # order before delivery can be confirmed. The catch copies the invoice number into the context.
+    events:
+      - id: request-invoice
+        name: Invoice requested
+        eventDefinitionId: InvoiceRequested
+        direction: THROW
+        dependsOn: [ approve-shipment ]
+        correlationKey: orderId
+        payloadMapping:
+          orderNumber: $.orderNumber
+          customerName: $.customerName
+
+      - id: invoice-issued
+        name: Invoice issued
+        eventDefinitionId: InvoiceIssued
+        direction: CATCH
+        dependsOn: [ request-invoice ]
+        correlationKey: orderId
+        payloadMapping:
+          invoiceNumber: $.payload.invoiceNumber
+
+      # A non-interrupting boundary timer: while approve-shipment waits for the manager, it fires every
+      # five minutes, twice at most, and leaves the task running. Nothing depends on it; each firing shows
+      # as the fire count on the Event Instance tab, and publishes TimerFiredEvent for a notifier to hook.
+      - id: approval-reminder
+        name: Approval reminder
+        direction: CATCH
+        attachedTo: approve-shipment
+        interrupting: false
+        timer:
+          type: CYCLE
+          expression: R2/PT5M
+
+  - id: invoicing-workflow
+    name: Invoicing Workflow
+    description: >-
+      Issues the invoice an order asks for and reports its number back. Started by the
+      InvoiceRequested message order-fulfillment-workflow throws; playable from My Tasks.
+
+    # A thrown event keeps the thrower's subject, so this instance is about the same order — and, like
+    # every triggered start, is started once per order. $.correlationValue is the order id the message
+    # was correlated on.
+    startEvents:
+      - id: invoice-requested
+        name: InvoiceRequested
+        startType: TRIGGERING_EVENT
+        eventType: InvoiceRequested
+        payloadMapping:
+          orderId: $.correlationValue
+          orderNumber: $.payload.orderNumber
+          customerName: $.payload.customerName
+
+    roles:
+      - roleDefinitionId: manager
+
+    artifacts:
+      - artifactDefinitionId: order-entity
+        objectName: order
+      - artifactDefinitionId: fulfillment-invoice
+        objectName: invoice
+
+    # The manager enters invoiceNumber in the completion form; the throw below sends it back. If the
+    # invoice is not issued within the hour, the boundary timer interrupts issue-invoice and the invoice
+    # is issued as an escalation instead; either way InvoiceIssued goes back (joinType ANY). Whichever
+    # path is not taken is cancelled as unreachable.
+    tasks:
+      - taskDefinitionId: issue-invoice
+        performedBy: manager
+        dependsOn: [ ]
+
+      - taskDefinitionId: escalate-invoice
+        performedBy: manager
+        dependsOn: [ invoice-overdue ]
+
+    events:
+      - id: invoice-overdue
+        name: Invoice overdue
+        direction: CATCH
+        attachedTo: issue-invoice
+        timer:
+          type: DURATION
+          expression: PT1H
+
+      - id: invoice-issued
+        name: Invoice issued
+        eventDefinitionId: InvoiceIssued
+        direction: THROW
+        dependsOn: [ issue-invoice, escalate-invoice ]
+        joinType: ANY
+        correlationKey: orderId
+        payloadMapping:
+          invoiceNumber: $.invoiceNumber
+
+  - id: customer-feedback-workflow
+    name: Customer Feedback Workflow
+    description: >-
+      Asks the customer of a delivered order for feedback. Starts on its own when an order reaches
+      DELIVERED.
+
+    # An INPUT_ARTIFACT start event starts the workflow on its own once its required artifacts are in the
+    # required state: here, when an order enters DELIVERED. The order becomes the instance's entityId;
+    # payloadMapping reads the platform fact, so `$.subjectId` is the order and `$.payload.<attribute>` one
+    # of its values. It also admits a start by hand for an order that is DELIVERED already.
+    startEvents:
+      - id: order-delivered
+        name: Order delivered
+        startType: INPUT_ARTIFACT
+        requiredArtifacts:
+          - artifactDefinitionId: order-entity
+            state: DELIVERED
+        payloadMapping:
+          orderId: $.subjectId
+          orderNumber: $.payload.orderNumber
+          customerName: $.payload.customerName
+
+    roles:
+      - roleDefinitionId: clerk
+
+    artifacts:
+      - artifactDefinitionId: order-entity
+        objectName: delivered_order
+
+    tasks:
+      - taskDefinitionId: collect-feedback
+        performedBy: clerk
+        dependsOn: [ ]

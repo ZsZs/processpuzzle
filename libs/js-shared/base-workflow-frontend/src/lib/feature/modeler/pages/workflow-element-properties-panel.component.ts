@@ -128,8 +128,8 @@ export class WorkflowElementPropertiesPanelComponent {
    * catalog entry — whereas everything else takes the entity's own `_self` key, so a task is called
    * whatever the Tasks list and the Task form already call it, in all five languages.
    */
-  protected readonly kindKey = computed(() => (this.isLane() ? `${PROPERTIES_I18N_SCOPE}.lane` : modelerElementNameKey(this.element().kind)));
+  protected readonly kindKey = computed(() => (this.isLane() ? `${PROPERTIES_I18N_SCOPE}.lane` : modelerElementNameKey(this.element().kind, this.element().direction)));
 
   /** The same symbol the node is drawn with, so the panel is visibly about the thing that was clicked. */
-  protected readonly symbol = computed(() => modelerIconUrl(this.element().kind));
+  protected readonly symbol = computed(() => modelerIconUrl(this.element().kind, this.element().direction));
 }

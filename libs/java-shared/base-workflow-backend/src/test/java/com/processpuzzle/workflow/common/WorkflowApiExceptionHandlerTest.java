@@ -41,6 +41,25 @@ class WorkflowApiExceptionHandlerTest {
     }
 
     @Test
+    void handleConflict_keepsASpecificErrorId() {
+        ResponseEntity<ErrorResponse> response =
+                handler.handleConflict(new ConflictException("workflow.startNotManual", "Starts on its own"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody().getErrorId()).isEqualTo("workflow.startNotManual");
+    }
+
+    @Test
+    void handleForbidden_shouldReturn403() {
+        ForbiddenException ex = new ForbiddenException("workflow.startRefused", "Refused by [manual]");
+        ResponseEntity<ErrorResponse> response = handler.handleForbidden(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody().getErrorId()).isEqualTo("workflow.startRefused");
+        assertThat(response.getBody().getErrorText()).isEqualTo("Refused by [manual]");
+    }
+
+    @Test
     void handleValidation_shouldReturn400() {
         ValidationException ex = new ValidationException("Validation error");
         ResponseEntity<ErrorResponse> response = handler.handleValidation(ex);

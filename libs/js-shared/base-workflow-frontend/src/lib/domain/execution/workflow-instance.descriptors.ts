@@ -1,23 +1,25 @@
 import { AbstractAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_INSTANCE_I18N_SCOPE } from '../../base-workflow.i18n';
-import { ARTIFACT_INSTANCE_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_INSTANCE_ENTITY_NAME, EVENT_INSTANCE_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 import { WorkflowInstanceStatus } from './workflow-instance';
 import { readOnlyAttr } from './read-only-attr';
 import { TASK_INSTANCE_ID_FIELD } from './task-instance.descriptors';
 import { ARTIFACT_INSTANCE_ID_FIELD } from './artifact-instance.descriptors';
+import { EVENT_INSTANCE_ID_FIELD } from './event-instance.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { WORKFLOW_INSTANCE_ENTITY_NAME };
 
 const workflowInstanceStatusSelectables = toSelectables(Object.keys(WorkflowInstanceStatus));
 
 function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
-  // `id` opens the details and is the record's identity — a server-minted UUID — but the *heading* is
-  // the definition's name, which is what a monitor recognises a run by. `titleKey` on the descriptor
-  // says so for the status bar too, since it would otherwise take the `isLinkToDetails` attribute.
-  const idAttr = readOnlyAttr('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
+  // The run's own identity opens its details: the number the server assigns on creation, 1, 2, 3… per
+  // organization. Not the workflow's name — that belongs to the related definition, and every run of it
+  // shares it — and not the UUID, which is a database key rather than something a person reads, and so
+  // appears neither in the list nor on the form: it is only in the URL.
+  const instanceNumberAttr = readOnlyAttr('instanceNumber', FormControlType.TEXT_BOX, 'No.', undefined, true);
 
   const workflowNameAttr = readOnlyAttr('workflowName', FormControlType.TEXT_BOX, 'Workflow Name');
-  workflowNameAttr.isHeading = true;
 
   const statusAttr = readOnlyAttr('status', FormControlType.DROPDOWN, 'Status', workflowInstanceStatusSelectables);
 
@@ -30,12 +32,18 @@ function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   workflowIdAttr.linkedEntityType = WORKFLOW_ENTITY_NAME;
   workflowIdAttr.hideInTable = true;
 
-  // The base-entity instance this run was started for, when it was started for one — an order, a
-  // claim. By id only, as every cross-feature link in this contract is.
-  const entityIdAttr = readOnlyAttr('entityId', FormControlType.TEXT_BOX, 'Entity');
+  // Which of the definition's start events fired this run — by id, the way the contract names it. Empty
+  // for a run started explicitly through `/instances` without naming one.
+  const startEventIdAttr = readOnlyAttr('startEventId', FormControlType.TEXT_BOX, 'Start Event');
+  startEventIdAttr.hideInTable = true;
 
-  const startedAtAttr = readOnlyAttr('startedAt', FormControlType.TEXT_BOX, 'Started At');
-  const completedAtAttr = readOnlyAttr('completedAt', FormControlType.TEXT_BOX, 'Completed At');
+  // The base-entity instance this run was started for, when it was started for one — an order, a
+  // claim. Shown by name: `entityLabel` is resolved by the backend per response (the order number), and
+  // falls back to the id when there is no name to give.
+  const entityLabelAttr = readOnlyAttr('entityLabel', FormControlType.TEXT_BOX, 'Entity');
+
+  const startedAtAttr = timestampAttr('startedAt', 'Started At');
+  const completedAtAttr = timestampAttr('completedAt', 'Completed At');
 
   // Whatever the tool steps have written so far. Open by contract, so an open key/value view is the
   // only shape that can show it.
@@ -55,16 +63,22 @@ function createWorkflowInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   artifactsAttr.referenceIdField = ARTIFACT_INSTANCE_ID_FIELD;
   artifactsAttr.hideInTable = true;
 
-  const identityRow = new FlexboxDescriptor([workflowNameAttr, statusAttr, entityIdAttr], FlexDirection.ROW);
+  // Below the two lists rather than beside them: what the run is waiting for, or has thrown.
+  const eventsAttr = readOnlyAttr('events', FormControlType.EMBEDDED_COMPONENTS, 'Events');
+  eventsAttr.linkedEntityType = EVENT_INSTANCE_ENTITY_NAME;
+  eventsAttr.referenceIdField = EVENT_INSTANCE_ID_FIELD;
+  eventsAttr.hideInTable = true;
+
+  const identityRow = new FlexboxDescriptor([instanceNumberAttr, workflowNameAttr, statusAttr, entityLabelAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const referenceRow = new FlexboxDescriptor([idAttr, workflowIdAttr], FlexDirection.ROW);
+  const referenceRow = new FlexboxDescriptor([workflowIdAttr, startEventIdAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
   const timestampRow = new FlexboxDescriptor([startedAtAttr, completedAtAttr], FlexDirection.ROW);
   timestampRow.style = { 'column-gap': '10px' };
   const contentRow = new FlexboxDescriptor([tasksAttr, artifactsAttr], FlexDirection.ROW);
   contentRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, contextAttr, contentRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, referenceRow, timestampRow, contextAttr, contentRow, eventsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }
@@ -74,9 +88,9 @@ export function createWorkflowInstanceDescriptor(): BaseEntityDescriptor {
     entityName: WORKFLOW_INSTANCE_ENTITY_NAME,
     attrDescriptors: createWorkflowInstanceAttrDescriptors(),
     i18nScope: WORKFLOW_INSTANCE_I18N_SCOPE,
-    // Names the run in the status bar. Without it the bar would take the `isLinkToDetails` attribute,
-    // which here is the UUID.
-    titleKey: 'workflowName',
+    // Names the run in the form heading and the status bar: `Order Fulfillment Workflow #3`, derived by the
+    // model from the definition's name and the run's number.
+    titleKey: 'title',
     // Read-only by contract: an instance is started by POST, cancelled by DELETE, and never PUT.
     isAbstract: true,
   });

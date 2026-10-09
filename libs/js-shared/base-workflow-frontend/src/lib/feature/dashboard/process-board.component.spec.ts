@@ -108,6 +108,43 @@ describe('ProcessBoardComponent', () => {
     expect(host.querySelector('[data-testid="board-column-SKIPPED"]')).toBeNull();
   });
 
+  // CANCELLED folds the same way, and the card says why the task was cancelled.
+  it('folds a cancelled card into the completed column with its reason', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const cancelled = { ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'CANCELLED', cancelReason: 'interrupted by invoice-overdue' };
+    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [cancelled] }] });
+
+    const host = render();
+    expect(host.querySelector('[data-testid="board-column-COMPLETED"] [data-testid="task-status-CANCELLED"]')).not.toBeNull();
+    expect(host.querySelector(`[data-testid="board-cancel-reason-${cancelled.id}"]`)?.textContent).toContain('interrupted by invoice-overdue');
+    expect(host.querySelector('[data-testid="board-column-CANCELLED"]')).toBeNull();
+  });
+
+  it('says when a waiting timer fires', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const timer = { id: 'e-timer', eventUseId: 'invoice-overdue', name: 'Invoice overdue', direction: 'CATCH', status: 'WAITING', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 };
+    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [timer] }] });
+
+    const text = render().querySelector('[data-testid="board-waiting-invoice-overdue"]')?.textContent ?? '';
+    expect(text).toContain('Invoice overdue');
+    expect(text).toContain('·');
+  });
+
+  it('names the catches the run is waiting for, and nothing else', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
+    controller
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'THROWN' }, { ...issued, status: 'WAITING' }] }] });
+
+    const host = render();
+    expect(host.querySelector('[data-testid="board-waiting-invoice-issued"]')?.textContent).toContain('Invoice issued');
+    expect(host.querySelector('[data-testid="board-waiting-request-invoice"]')).toBeNull();
+  });
+
   it('marks an empty column rather than collapsing it', () => {
     store.selectInstance(RUN_ID);
 

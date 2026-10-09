@@ -13,6 +13,13 @@
  * subscriber does not know the publisher. When these Modulith modules become separate services, an
  * event here is already the wire contract a broker would carry; only the transport changes.
  *
+ * <p>The catalog's occurrences follow one path whatever raised them: base-entity and base-state
+ * publish raw {@link com.processpuzzle.shared.event.PlatformEvent}s, a workflow publishes an
+ * {@link com.processpuzzle.shared.event.EventThrown} when it reaches an intermediate throw event, and
+ * base-event republishes both — once it has checked them against the organization's catalog — as
+ * {@link com.processpuzzle.shared.event.DefinedEventOccurred}, the only event a reacting feature
+ * observes. {@link com.processpuzzle.shared.event.CatalogEventKind} tells it how to deliver one.
+ *
  * <p>Each event's Javadoc names the {@code @TransactionalEventListener} phase a subscriber must use
  * and why. Getting that wrong fails silently rather than loudly, so read it before subscribing.
  */

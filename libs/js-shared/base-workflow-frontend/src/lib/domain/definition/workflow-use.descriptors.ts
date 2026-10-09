@@ -35,13 +35,18 @@ export const WORKFLOW_TOOL_USE_ID_FIELD = 'toolDefinitionId';
  * `isHeading` and `isLinkToDetails`, because the definition is what this row *is* — there is no
  * separate name to head it with.
  */
-function createWorkflowUseAttrDescriptors(attrName: string, linkedEntityType: string, label: string): AbstractAttrDescriptor[] {
+function createWorkflowUseAttrDescriptors(
+  attrName: string,
+  linkedEntityType: string,
+  label: string,
+  extraAttrs: BaseEntityAttrDescriptor[] = [],
+): AbstractAttrDescriptor[] {
   const definitionIdAttr = new BaseEntityAttrDescriptor(attrName, FormControlType.FOREIGN_KEY, label, undefined, true);
   definitionIdAttr.linkedEntityType = linkedEntityType;
   definitionIdAttr.required = true;
   definitionIdAttr.isHeading = true;
 
-  const flexBoxContainer = new FlexboxDescriptor([definitionIdAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([definitionIdAttr, ...extraAttrs], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }
@@ -64,11 +69,17 @@ export function createWorkflowRoleUseDescriptor(): BaseEntityDescriptor {
   });
 }
 
-/** The artifact's participation in one workflow. Every artifact its tasks touch has to be declared here. */
+/**
+ * The artifact's participation in one workflow. Every artifact its tasks touch has to be declared here.
+ *
+ * The first `*Use` with configuration of its own: `objectName`, the name the modeler gives the artifact's
+ * object in UML's `new_order : Order` notation.
+ */
 export function createWorkflowArtifactUseDescriptor(): BaseEntityDescriptor {
+  const objectNameAttr = new BaseEntityAttrDescriptor('objectName', FormControlType.TEXT_BOX, 'Object Name');
   return new BaseEntityDescriptor({
     entityName: WORKFLOW_ARTIFACT_USE_ENTITY_NAME,
-    attrDescriptors: createWorkflowUseAttrDescriptors(WORKFLOW_ARTIFACT_USE_ID_FIELD, ARTIFACT_DEFINITION_ENTITY_NAME, 'Artifact'),
+    attrDescriptors: createWorkflowUseAttrDescriptors(WORKFLOW_ARTIFACT_USE_ID_FIELD, ARTIFACT_DEFINITION_ENTITY_NAME, 'Artifact', [objectNameAttr]),
     i18nScope: WORKFLOW_ARTIFACT_USE_I18N_SCOPE,
     componentParent: WORKFLOW_ENTITY_NAME,
     isEmbedded: true,

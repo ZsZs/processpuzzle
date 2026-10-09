@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  * the part of it the user was working on rather than to whatever an automatic fit chooses.
  *
  * <p>One JSONB column rather than base-state's three scalar ones: this module already stores its
- * nested objects as JSON ({@link Workflow#getStartCondition()}), so a single column keeps a
+ * nested objects as JSON ({@link Workflow#getStartEvents()}), so a single column keeps a
  * half-specified viewport unrepresentable without three coordinated null checks.
  */
 @Data

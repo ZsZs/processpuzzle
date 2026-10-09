@@ -1,5 +1,6 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
+import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
 
 /**
@@ -45,9 +46,20 @@ export enum TaskInstanceStatus {
   COMPLETED = 'COMPLETED',
   SKIPPED = 'SKIPPED',
   BLOCKED = 'BLOCKED',
+  /** Terminal, but satisfies nothing: interrupted by a boundary event, unreachable, or its run cancelled. */
+  CANCELLED = 'CANCELLED',
 }
 
 /** Mirrors the contract's `WorkflowInstanceStatus`. */
+/** Where an intermediate event of a run stands: not reached, waiting, occurred, thrown, or withdrawn. */
+export enum EventInstanceStatus {
+  PENDING = 'PENDING',
+  WAITING = 'WAITING',
+  OCCURRED = 'OCCURRED',
+  THROWN = 'THROWN',
+  CANCELLED = 'CANCELLED',
+}
+
 export enum WorkflowInstanceStatus {
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
@@ -69,6 +81,9 @@ export class TaskInstance implements BaseEntity {
   activatedAt?: string;
   completedAt?: string;
   skippedAt?: string;
+  cancelledAt?: string;
+  /** Set while CANCELLED: `interrupted by <eventUseId>`, `unreachable`, or the run's cancel reason. */
+  cancelReason?: string;
   stepResults: StepResult[];
 
   constructor(init: Partial<TaskInstance> = {}) {
@@ -81,6 +96,8 @@ export class TaskInstance implements BaseEntity {
     this.activatedAt = init.activatedAt;
     this.completedAt = init.completedAt;
     this.skippedAt = init.skippedAt;
+    this.cancelledAt = init.cancelledAt;
+    this.cancelReason = init.cancelReason;
     this.stepResults = init.stepResults ?? [];
   }
 }
@@ -116,32 +133,95 @@ export class ArtifactInstance implements BaseEntity {
 }
 
 /** A running workflow: the aggregate root of the execution layer, addressed by its server-minted UUID. */
+/**
+ * The run-time state of one intermediate event of an instance — the contract's `EventInstance`. Read-only:
+ * the engine throws it, or delivers the catalog event a catch waits for.
+ */
+export class EventInstance implements BaseEntity {
+  id: string;
+  /** `EventUse.id` of the workflow this row runs. */
+  eventUseId: string;
+  /** Empty for a timer catch. */
+  eventDefinitionId: string;
+  name?: string;
+  direction: EventDirection | undefined;
+  status: EventInstanceStatus | undefined;
+  /** THROW: the value sent. CATCH: the value waited for. */
+  correlationValue?: string;
+  waitingSince?: string;
+  occurredAt?: string;
+  payload?: PropertyMap;
+  /** CATCH: what the payload mapping added to the context. */
+  contextContribution?: PropertyMap;
+  /** Timer catches — when the timer fires next. */
+  dueAt?: string;
+  /** Timer catches — how many times it has fired; a CYCLE fires more than once. */
+  fireCount?: number;
+
+  constructor(init: Partial<EventInstance> = {}) {
+    this.id = init.id ?? '';
+    this.eventUseId = init.eventUseId ?? '';
+    this.eventDefinitionId = init.eventDefinitionId ?? '';
+    this.name = init.name;
+    this.direction = init.direction;
+    this.status = init.status;
+    this.correlationValue = init.correlationValue;
+    this.waitingSince = init.waitingSince;
+    this.occurredAt = init.occurredAt;
+    this.payload = init.payload;
+    this.contextContribution = init.contextContribution;
+    this.dueAt = init.dueAt;
+    this.fireCount = init.fireCount;
+  }
+}
+
 export class WorkflowInstance implements BaseEntity {
   id: string;
+  /** Server-assigned, sequential per organization: the instance's human-facing identity. */
+  instanceNumber?: number;
+  /**
+   * What the form and status bar call the run — `Order Fulfillment Workflow #3`: the definition alone
+   * would name every run of it the same. Derived here, never sent.
+   */
+  title: string;
   /** {@link Workflow.id} this instance runs. */
   workflowId: string;
+  /** `StartEvent.id` of the event this instance was started through; absent for an explicit start. */
+  startEventId?: string;
   /** Denormalized name of the definition, so a list needs no second read. */
   workflowName?: string;
   status: WorkflowInstanceStatus | undefined;
   /** The base-entity instance this workflow runs against, when it was started for one. */
   entityId?: string;
+  /** The base-entity definition code of {@link entityId}'s object, e.g. `order`. Server-set. */
+  entityType?: string;
+  /** {@link entityId}'s object by name — its order number — resolved per response; the id when nameless. */
+  entityLabel?: string;
   startedAt?: string;
   completedAt?: string;
   /** Context variables, updated by the output mappings of every tool step that has run. */
   context?: PropertyMap;
   tasks: TaskInstance[];
   artifacts: ArtifactInstance[];
+  /** The run-time state of the workflow's intermediate events. */
+  events: EventInstance[];
 
   constructor(init: Partial<WorkflowInstance> = {}) {
     this.id = init.id ?? '';
+    this.instanceNumber = init.instanceNumber;
     this.workflowId = init.workflowId ?? '';
+    this.startEventId = init.startEventId;
     this.workflowName = init.workflowName;
     this.status = init.status;
     this.entityId = init.entityId;
+    this.entityType = init.entityType;
+    this.entityLabel = init.entityLabel;
     this.startedAt = init.startedAt;
     this.completedAt = init.completedAt;
     this.context = init.context;
     this.tasks = init.tasks ?? [];
     this.artifacts = init.artifacts ?? [];
+    this.events = init.events ?? [];
+    this.title = [this.workflowName, this.instanceNumber === undefined ? undefined : `#${this.instanceNumber}`].filter(Boolean).join(' ');
   }
 }

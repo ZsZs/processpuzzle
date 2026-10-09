@@ -59,6 +59,12 @@
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-api</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -349,6 +355,31 @@
               <modelPackage>com.processpuzzle.starter.model</modelPackage>
               <schemaMappings>
                 ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-event-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-event-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.event.api</apiPackage>
+              <modelPackage>com.processpuzzle.event.model</modelPackage>
+              <!-- PlatformEventAction is the shared event contract's own enum, so a definition's
+                   binding and the fact it matches cannot drift apart. -->
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,PlatformEventAction=com.processpuzzle.shared.event.PlatformEventAction
               </schemaMappings>
               <configOptions>
                 <delegatePattern>false</delegatePattern>

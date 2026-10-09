@@ -8,17 +8,12 @@
     "activeInstances": "Aktív példányok",
     "version": "Verzió",
     "updatedAt": "Módosítva",
-    "startType": "Indítás típusa",
-    "eventType": "Esemény típusa",
-    "milestoneRef": "Mérföldkő",
-    "preconditionExpression": "Előfeltétel",
-    "authorizedRoles": "Jogosult szerepkörök",
-    "payloadMapping": "Adattartalom-hozzárendelés",
-    "requiredArtifacts": "Szükséges artefaktumok",
+    "startEvents": "Indító események",
     "roles": "Szerepkörök",
     "artifacts": "Artefaktumok",
     "tools": "Eszközök",
     "tasks": "Tevékenységek",
+    "events": "Események",
     "tabs": {
       "modeler": "Munkafolyamat-modellező"
     },
@@ -29,6 +24,8 @@
       "tools": "Eszközök",
       "unassigned": "Nincs hozzárendelve",
       "join_any": "bármelyik",
+      "start": "Kezdés",
+      "end": "Befejezés",
       "save": "Elrendezés mentése",
       "properties": {
         "none": "Válasszon egy elemet a tulajdonságai megtekintéséhez.",
@@ -49,7 +46,13 @@
           "start": "Induláshoz szükséges",
           "unknown": "Kapcsolódik ehhez"
         }
-      }
+      },
+      "throw_event": "Kiváltott esemény",
+      "catch_event": "Bekövetkező esemény",
+      "timer_event": "Időzítő esemény",
+      "boundary_event": "Határesemény (megszakító)",
+      "non_interrupting_boundary_event": "Határesemény (nem megszakító)",
+      "event": "Köztes esemény"
     }
   },
   "workflow_task_assignment": {
@@ -59,7 +62,8 @@
     "dependsOn": "Előfeltételei",
     "joinType": "Egyesítés típusa",
     "parallel": "Párhuzamos",
-    "override": "Felülírás"
+    "override": "Felülírás",
+    "artifactStates": "Artefaktum-állapotok"
   },
   "workflow_role_use": {
     "_self": "Szerepkör használat",
@@ -67,16 +71,52 @@
   },
   "workflow_artifact_use": {
     "_self": "Artefaktum használat",
-    "artifactDefinitionId": "Artefaktum"
+    "artifactDefinitionId": "Artefaktum",
+    "objectName": "Objektum neve"
   },
   "workflow_tool_use": {
     "_self": "Eszköz használat",
     "toolDefinitionId": "Eszköz"
   },
+  "workflow_start_event": {
+    "_self": "Indító esemény",
+    "id": "Azonosító",
+    "name": "Név",
+    "startType": "Indítás típusa",
+    "eventType": "Esemény típusa",
+    "milestoneRef": "Mérföldkő",
+    "preconditionExpression": "Előfeltétel",
+    "timerType": "Időzítő",
+    "timerExpression": "Időzítő kifejezés",
+    "authorizedRoles": "Jogosult szerepkörök",
+    "payloadMapping": "Adattartalom-hozzárendelés",
+    "requiredArtifacts": "Szükséges artefaktumok"
+  },
   "workflow_required_start_artifact": {
     "_self": "Szükséges artefaktum",
     "artifactDefinitionId": "Artefaktum",
     "state": "Állapot"
+  },
+  "workflow_event_use": {
+    "_self": "Köztes esemény",
+    "id": "Azonosító",
+    "name": "Név",
+    "direction": "Irány",
+    "eventDefinitionId": "Esemény",
+    "dependsOn": "Függ ettől",
+    "joinType": "Összekapcsolás típusa",
+    "correlationKey": "Korrelációs kulcs",
+    "timerType": "Időzítő",
+    "timerExpression": "Időzítő kifejezés",
+    "attachedTo": "Csatolva ehhez",
+    "interrupting": "Megszakító",
+    "payloadMapping": "Adatleképezés"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "Tevékenység artefaktum-állapota",
+    "artifactDefinitionId": "Artefaktum",
+    "inputState": "Bemeneti állapot",
+    "outputState": "Kimeneti állapot"
   },
   "workflow_role_definition": {
     "_self": "Szerepkör",
@@ -155,14 +195,17 @@
     "_self": "Munkafolyamat-példány",
     "id": "Azonosító",
     "workflowId": "Munkafolyamat",
+    "startEventId": "Indító esemény",
     "workflowName": "Munkafolyamat neve",
     "status": "Állapot",
-    "entityId": "Entitás",
+    "instanceNumber": "Sorszám",
+    "entityLabel": "Entitás",
     "startedAt": "Indítva",
     "completedAt": "Befejezve",
     "context": "Kontextus",
     "tasks": "Tevékenységek",
-    "artifacts": "Artefaktumok"
+    "artifacts": "Artefaktumok",
+    "events": "Események"
   },
   "task_instance": {
     "_self": "Tevékenységpéldány",
@@ -175,6 +218,8 @@
     "activatedAt": "Aktiválva",
     "completedAt": "Befejezve",
     "skippedAt": "Kihagyva",
+    "cancelledAt": "Megszakítva",
+    "cancelReason": "Megszakítás oka",
     "stepResults": "Lépés eredmények",
     "dashboard": {
       "title": "Feladataim",
@@ -208,7 +253,8 @@
       "skip_reason": "A kihagyás oka",
       "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
       "unassigned": "nincs hozzárendelve",
-      "assigned_to": "Hozzárendelve"
+      "assigned_to": "Hozzárendelve",
+      "waiting_for": "Várakozik:"
     }
   },
   "artifact_instance": {
@@ -221,6 +267,20 @@
     "stateMachineInstanceId": "Állapotgép példány",
     "currentState": "Jelenlegi állapot",
     "updatedAt": "Módosítva"
+  },
+  "event_instance": {
+    "_self": "Eseménypéldány",
+    "eventUseId": "Esemény",
+    "direction": "Irány",
+    "status": "Állapot",
+    "eventDefinitionId": "Katalógusesemény",
+    "correlationValue": "Korrelációs érték",
+    "waitingSince": "Várakozik ekkortól",
+    "occurredAt": "Bekövetkezett",
+    "dueAt": "Esedékes",
+    "fireCount": "Kiváltások száma",
+    "payload": "Adatok",
+    "contextContribution": "Kontextushoz adott"
   },
   "task_step_result": {
     "_self": "Lépés eredmény",

@@ -3,6 +3,7 @@ import { TOOL_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
 import { AuthType } from './tool-definition';
 import { TOOL_DEFINITION_ENTITY_NAME, TOOL_OPERATION_ENTITY_NAME } from '../workflow-entity-names';
 import { TOOL_OPERATION_ID_FIELD } from './tool-operation.descriptors';
+import { timestampAttr } from '../timestamp-attr';
 
 export { TOOL_DEFINITION_ENTITY_NAME };
 
@@ -46,8 +47,7 @@ function createToolDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
   versionAttr.disabled = true;
 
-  const createdAtAttr = new BaseEntityAttrDescriptor('createdAt', FormControlType.TEXT_BOX, 'Created At');
-  createdAtAttr.disabled = true;
+  const createdAtAttr = timestampAttr('createdAt', 'Created At');
 
   // Containment: the contract nests the operations inside the tool document and gives them no
   // endpoint of their own, so they travel inside this entity's payload and are saved with it.

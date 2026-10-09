@@ -6,7 +6,9 @@ import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowExtendsValidator;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowValidator;
+import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class ReplaceWorkflowUseCase {
     private final WorkflowRepository repository;
     private final WorkflowValidator validator;
     private final WorkflowExtendsValidator extendsValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Workflow replace(String orgKey, String id, Workflow desiredState) {
         Workflow existing = repository.findByOrgKeyAndId(orgKey, id)
@@ -43,13 +46,16 @@ public class ReplaceWorkflowUseCase {
                 desiredState.getName(),
                 desiredState.getDescription(),
                 desiredState.getExtendsWorkflowId(),
-                desiredState.getStartCondition(),
+                desiredState.getStartEvents(),
                 desiredState.getRoles(),
                 desiredState.getArtifacts(),
                 desiredState.getTools(),
-                desiredState.getTasks());
+                desiredState.getTasks(),
+                desiredState.getEvents());
 
         validator.validate(existing);
-        return repository.save(existing);
+        Workflow saved = repository.save(existing);
+        eventPublisher.publishEvent(new WorkflowChangedEvent(orgKey, id, false));
+        return saved;
     }
 }

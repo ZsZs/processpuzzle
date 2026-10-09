@@ -38,7 +38,7 @@ class SampleDocumentsContentTest {
     void theTestbedSampleFileIsImportable() throws IOException {
         List<DocumentInput> documents = readSamples();
 
-        assertThat(documents).hasSize(2);
+        assertThat(documents).hasSize(3);
         for (DocumentInput document : documents) {
             assertThat(document.getSlug()).isNotBlank();
             assertThat(document.getSourceLocale()).isNotBlank();
@@ -81,6 +81,23 @@ class SampleDocumentsContentTest {
         assertThat(sketch.getOutputPorts()).isEmpty();
         assertThat(sketch.getTranslations().getFirst().getBlocks())
                 .allMatch(block -> block.getType() == null);
+    }
+
+    /**
+     * The order-fulfillment workflow's DOCUMENT artifact names this slug as its artifactTypeId, so the
+     * slug is a cross-feature reference and must not drift.
+     */
+    @Test
+    void theFulfillmentInvoiceTakesTheOrderThroughItsPort() throws IOException {
+        DocumentInput invoice = sample("fulfillment-invoice");
+
+        assertThat(invoice.getIsPublic()).isTrue();
+        assertThat(invoice.getInputPorts()).singleElement().satisfies(port -> {
+            assertThat(port.getName()).isEqualTo("order");
+            assertThat(port.getEntityType()).isEqualTo("Order");
+        });
+        assertThat(invoice.getTranslations().getFirst().getBlocks())
+                .anyMatch(block -> block.getInputBindings() != null && "order".equals(block.getInputBindings().get("entity")));
     }
 
     private DocumentInput sample(String slug) throws IOException {

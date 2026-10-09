@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * One artifact an {@link WorkflowStartConditionType#INPUT_ARTIFACT} start condition waits for, and
+ * One artifact an {@link WorkflowStartConditionType#INPUT_ARTIFACT} start event waits for, and
  * optionally the state it has to be in.
  */
 @Data

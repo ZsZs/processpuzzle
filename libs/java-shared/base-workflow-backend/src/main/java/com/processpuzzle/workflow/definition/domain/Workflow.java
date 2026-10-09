@@ -79,12 +79,13 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
     private String extendsWorkflowId;
 
     /**
-     * How an instance of this workflow comes into being. Null means it can only be started
+     * The ways an instance of this workflow comes into being. Empty means anyone may start it
      * explicitly through {@code /instances}.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private WorkflowStartCondition startCondition;
+    @Builder.Default
+    private List<StartEvent> startEvents = new ArrayList<>();
 
     /** The {@link RoleDefinition}s (same org) taking part in this workflow. */
     @JdbcTypeCode(SqlTypes.JSON)
@@ -110,8 +111,35 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
     @Builder.Default
     private List<TaskUse> tasks = new ArrayList<>();
 
+    /**
+     * The intermediate events of this workflow — catalogued events it throws or catches while it
+     * runs. Nullable: {@code ddl-auto} adds the column to existing rows as NULL, which
+     * {@link #getEvents()} reads as empty.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<EventUse> events = new ArrayList<>();
+
     @Version
     private Long version;
+
+    /** The intermediate events; never null, also for a row stored before the column existed. */
+    public List<EventUse> getEvents() {
+        if (events == null) {
+            events = new ArrayList<>();
+        }
+        return events;
+    }
+
+    public Optional<EventUse> findEventUse(String eventUseId) {
+        return getEvents().stream().filter(use -> use.getId().equals(eventUseId)).findFirst();
+    }
+
+    /** Ids of the intermediate events, in declaration order. */
+    public List<String> eventUseIds() {
+        return getEvents().stream().map(EventUse::getId).toList();
+    }
 
     public Optional<TaskUse> findTaskUse(String taskDefinitionId) {
         return tasks.stream().filter(use -> use.getTaskDefinitionId().equals(taskDefinitionId)).findFirst();
@@ -144,15 +172,17 @@ public class Workflow extends com.processpuzzle.workflow.common.Auditable {
      * {@code BaseEntityAttribute}.
      */
     public void replaceContent(String name, String description, String extendsWorkflowId,
-                                WorkflowStartCondition startCondition, List<RoleUse> roles,
-                                List<ArtifactUse> artifacts, List<ToolUse> tools, List<TaskUse> tasks) {
+                                List<StartEvent> startEvents, List<RoleUse> roles,
+                                List<ArtifactUse> artifacts, List<ToolUse> tools, List<TaskUse> tasks,
+                                List<EventUse> events) {
         this.name = name;
         this.description = description;
         this.extendsWorkflowId = extendsWorkflowId;
-        this.startCondition = startCondition;
+        this.startEvents = startEvents == null ? new ArrayList<>() : new ArrayList<>(startEvents);
         this.roles = new ArrayList<>(roles);
         this.artifacts = new ArrayList<>(artifacts);
         this.tools = new ArrayList<>(tools);
         this.tasks = new ArrayList<>(tasks);
+        this.events = events == null ? new ArrayList<>() : new ArrayList<>(events);
     }
 }

@@ -34,7 +34,9 @@ describe('createTaskInstanceDescriptor', () => {
       'activatedAt',
       'completedAt',
       'skippedAt',
+      'cancelledAt',
       'blockedReason',
+      'cancelReason',
       'stepResults',
     ]);
   });
@@ -56,7 +58,7 @@ describe('createTaskInstanceDescriptor', () => {
 
   it('offers the closed task-status list as a dropdown', () => {
     expect(byName('status')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('status')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED']);
+    expect(byName('status')?.getSelectables()?.map((selectable) => selectable.value)).toEqual(['PENDING', 'ACTIVE', 'COMPLETED', 'SKIPPED', 'BLOCKED', 'CANCELLED']);
   });
 
   // The one field that explains a stuck workflow, so it earns a column.

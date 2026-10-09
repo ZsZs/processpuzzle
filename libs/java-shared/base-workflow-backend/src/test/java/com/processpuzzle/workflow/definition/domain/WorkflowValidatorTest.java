@@ -1,17 +1,24 @@
 package com.processpuzzle.workflow.definition.domain;
 
 import com.processpuzzle.workflow.common.ValidationException;
+import com.processpuzzle.shared.event.CatalogEventKind;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.ObjectProvider;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -30,6 +37,7 @@ class WorkflowValidatorTest {
     private ArtifactDefinitionRepository artifactRepository;
     private ToolDefinitionRepository toolRepository;
     private TaskDefinitionRepository taskRepository;
+    private EventCatalogPort eventCatalog;
     private WorkflowValidator validator;
 
     @BeforeEach
@@ -38,7 +46,8 @@ class WorkflowValidatorTest {
         artifactRepository = mock(ArtifactDefinitionRepository.class);
         toolRepository = mock(ToolDefinitionRepository.class);
         taskRepository = mock(TaskDefinitionRepository.class);
-        validator = new WorkflowValidator(roleRepository, artifactRepository, toolRepository, taskRepository);
+        eventCatalog = mock(EventCatalogPort.class);
+        validator = new WorkflowValidator(roleRepository, artifactRepository, toolRepository, taskRepository, eventCatalog);
     }
 
     @Test
@@ -241,6 +250,67 @@ class WorkflowValidatorTest {
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
+    // ---------------------------------------------------------------- artifact states
+
+    @Test
+    void acceptsArtifactStatesOnTheSidesTheTaskTouches() {
+        catalog(List.of("developer"), List.of("spec", "binary"), List.of(),
+                List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of("spec", "binary"))));
+        Workflow workflow = workflow(List.of("developer"), List.of("spec", "binary"), List.of(),
+                withStates(assignment("code", "developer"),
+                        state("spec", "DRAFT", "APPROVED"), state("binary", null, "BUILT")));
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsAStateForAnArtifactTheTaskDoesNotTouch() {
+        catalog(List.of("developer"), List.of("spec", "binary"), List.of(),
+                List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of())));
+        Workflow workflow = workflow(List.of("developer"), List.of("spec", "binary"), List.of(),
+                withStates(assignment("code", "developer"), state("binary", null, "BUILT")));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("states artifact 'binary', which it neither reads nor writes");
+    }
+
+    @Test
+    void rejectsAnInputStateOnAnOutputOnlyArtifact() {
+        catalog(List.of("developer"), List.of("binary"), List.of(),
+                List.of(taskWithArtifacts("code", "developer", List.of(), List.of("binary"))));
+        Workflow workflow = workflow(List.of("developer"), List.of("binary"), List.of(),
+                withStates(assignment("code", "developer"), state("binary", "DRAFT", null)));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("input state to artifact 'binary', which is not one of its inputs");
+    }
+
+    @Test
+    void rejectsAnOutputStateOnAnInputOnlyArtifact() {
+        catalog(List.of("developer"), List.of("spec"), List.of(),
+                List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of())));
+        Workflow workflow = workflow(List.of("developer"), List.of("spec"), List.of(),
+                withStates(assignment("code", "developer"), state("spec", null, "APPROVED")));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("output state to artifact 'spec', which is not one of its outputs");
+    }
+
+    @Test
+    void rejectsTwoStatesForOneArtifact() {
+        catalog(List.of("developer"), List.of("spec"), List.of(),
+                List.of(taskWithArtifacts("code", "developer", List.of("spec"), List.of("spec"))));
+        Workflow workflow = workflow(List.of("developer"), List.of("spec"), List.of(),
+                withStates(assignment("code", "developer"), state("spec", "DRAFT", null), state("spec", null, "APPROVED")));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("states artifact 'spec' twice");
+    }
+
     /** Null inputs/outputs mean the task touches no artifact, rather than tripping the check. */
     @Test
     void acceptsATaskWithNullArtifactLists() {
@@ -251,14 +321,14 @@ class WorkflowValidatorTest {
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
-    // ---------------------------------------------------------------- start condition
+    // ---------------------------------------------------------------- start events
 
     @Test
-    void acceptsAStartConditionWhoseReferencesAllResolve() {
+    void acceptsAStartEventWhoseReferencesAllResolve() {
         catalog(List.of("developer"), List.of("spec"), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of("spec"), List.of(), assignment("code", "developer")),
-                WorkflowStartCondition.builder()
+                StartEvent.builder().id("start")
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                                 .artifactDefinitionId("spec").state("DRAFT").build()))
@@ -268,9 +338,64 @@ class WorkflowValidatorTest {
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
-    /** A start condition is optional; a workflow without one is started explicitly. */
     @Test
-    void acceptsAWorkflowWithNoStartCondition() {
+    void acceptsATriggeringEventTheCatalogKnows() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        when(eventCatalog.exists("acme", "OrderCreatedEvent")).thenReturn(true);
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.TRIGGERING_EVENT)
+                        .eventType("OrderCreatedEvent").build());
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsATriggeringEventTheCatalogDoesNotKnow() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.TRIGGERING_EVENT)
+                        .eventType("OrderCreatdEvent").build());
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("names event 'OrderCreatdEvent', which is not in this organization's event catalog");
+    }
+
+    @Test
+    void rejectsATriggeringEventWithoutAnEventType() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.TRIGGERING_EVENT).eventType(" ").build());
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("is a TRIGGERING_EVENT but names no eventType");
+        verifyNoInteractions(eventCatalog);
+    }
+
+    /** Without a host-supplied catalog the event can only be checked by its firing, so any name passes. */
+    @Test
+    void withoutACatalogAnyEventTypeIsAccepted() {
+        @SuppressWarnings("unchecked")
+        ObjectProvider<EventCatalogPort> none = mock(ObjectProvider.class);
+        when(none.getIfUnique(any())).thenAnswer(invocation ->
+                ((java.util.function.Supplier<?>) invocation.getArgument(0)).get());
+        WorkflowValidator permissive = new WorkflowValidator(roleRepository, artifactRepository, toolRepository, taskRepository, none);
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.TRIGGERING_EVENT)
+                        .eventType("Anything").build());
+
+        assertThatCode(() -> permissive.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    /** Start events are optional; a workflow without any may be started by anyone. */
+    @Test
+    void acceptsAWorkflowWithNoStartEvents() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
         Workflow workflow = workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"));
 
@@ -278,23 +403,23 @@ class WorkflowValidatorTest {
     }
 
     @Test
-    void rejectsAStartConditionWithNoStartType() {
+    void rejectsAStartEventWithNoStartType() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
-                WorkflowStartCondition.builder().startType(null).build());
+                StartEvent.builder().id("start").startType(null).build());
 
         assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Start condition has no startType");
+                .hasMessageContaining("Start event 'start' has no startType");
     }
 
     @Test
     void rejectsARequiredStartArtifactTheOrganizationDoesNotHave() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
-                WorkflowStartCondition.builder()
+                StartEvent.builder().id("start")
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                                 .artifactDefinitionId("ghost").build()))
@@ -312,9 +437,9 @@ class WorkflowValidatorTest {
     @Test
     void rejectsARequiredStartArtifactTheWorkflowDoesNotDeclare() {
         catalog(List.of("developer"), List.of("spec"), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
-                WorkflowStartCondition.builder()
+                StartEvent.builder().id("start")
                         .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                         .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                                 .artifactDefinitionId("spec").build()))
@@ -322,15 +447,15 @@ class WorkflowValidatorTest {
 
         assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Start condition requires artifact 'spec', which the workflow does not declare");
+                .hasMessageContaining("Start event 'start' requires artifact 'spec', which the workflow does not declare");
     }
 
     @Test
     void rejectsAnAuthorizedStartRoleTheOrganizationDoesNotHave() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
-                WorkflowStartCondition.builder()
+                StartEvent.builder().id("start")
                         .startType(WorkflowStartConditionType.ROLE_DEFINITION)
                         .authorizedRoles(List.of("ghost"))
                         .build());
@@ -342,24 +467,341 @@ class WorkflowValidatorTest {
 
     /** The mechanisms that name nothing leave both collections null, which is not an error. */
     @Test
-    void acceptsAStartConditionWithNullCollections() {
+    void acceptsAStartEventWithNullCollections() {
         catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
-        WorkflowStartCondition condition = WorkflowStartCondition.builder()
+        StartEvent condition = StartEvent.builder().id("start")
                 .startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
                 .milestoneRef("MILESTONE_REACHED")
+                .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("R/P1D").build())
                 .build();
         condition.setRequiredArtifacts(null);
         condition.setAuthorizedRoles(null);
-        Workflow workflow = withStartCondition(
+        Workflow workflow = withStartEvents(
                 workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")), condition);
 
         assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
     }
 
+    @Test
+    void rejectsAStartEventWithNoId() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id(" ").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("A start event has no id");
+    }
+
+    @Test
+    void rejectsTwoStartEventsWithTheSameId() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.ROLE_DEFINITION).build(),
+                StartEvent.builder().id("start").startType(WorkflowStartConditionType.TRIGGERING_EVENT).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Duplicate start event 'start'");
+    }
+
+    /** Start event and task ids share one namespace, so that a later dependsOn can name either. */
+    @Test
+    void rejectsAStartEventNamedLikeATask() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("code").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Start event 'code' has the same id as a task");
+    }
+
+    // ---------------------------------------------------------------- intermediate events
+
+    @Test
+    void acceptsATaskThatDependsOnAnEvent() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("ship", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.MESSAGE));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("code", "developer"), assignment("ship", "developer", "approved")),
+                catching("approved", "Approved", "orderId", "code"));
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsAnEventNamedLikeATask() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                catching("code", "Approved", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Event 'code' has the same id as a task");
+    }
+
+    @Test
+    void rejectsTwoEventsWithTheSameId() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null), catching("e", "Approved", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("Duplicate event 'e'");
+    }
+
+    @Test
+    void rejectsAStartEventNamedLikeAnEvent() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withStartEvents(withEvents(workflow(List.of(), List.of(), List.of()),
+                        catching("e", "Approved", null)),
+                StartEvent.builder().id("e").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("same id as a task or event");
+    }
+
+    @Test
+    void rejectsADependsOnThatNamesAStartEvent() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withStartEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "begin")),
+                StartEvent.builder().id("begin").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("dependsOn start event 'begin'");
+    }
+
+    @Test
+    void rejectsAnEventThatDependsOnItselfOrOnNothingKnown() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null, "e")))).hasMessageContaining("Event 'e' cannot depend on itself");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Approved", null, "ghost")))).hasMessageContaining("Event 'e' dependsOn 'ghost'");
+    }
+
+    @Test
+    void rejectsAnEventTheCatalogDoesNotKnow() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of());
+        Workflow workflow = withEvents(workflow(List.of(), List.of(), List.of()), catching("e", "Ghost", null));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("not in this organization's event catalog");
+    }
+
+    @Test
+    void rejectsAnEventWithoutDirectionOrDefinition() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        EventUse noDirection = EventUse.builder().id("e").eventDefinitionId("Approved").build();
+        EventUse noDefinition = EventUse.builder().id("e").direction(EventDirection.CATCH).build();
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDirection)))
+                .hasMessageContaining("has no direction");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), noDefinition)))
+                .hasMessageContaining("either an eventDefinitionId or a timer");
+    }
+
+    @Test
+    void rejectsThrowingASystemEvent() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("OrderCreatedEvent", CatalogEventKind.SYSTEM));
+        EventUse throwing = EventUse.builder().id("e").eventDefinitionId("OrderCreatedEvent").direction(EventDirection.THROW).build();
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), throwing)))
+                .hasMessageContaining("throws SYSTEM event");
+    }
+
+    @Test
+    void aMessageNeedsACorrelationKeyAndNothingElseTakesOne() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Invoice", CatalogEventKind.MESSAGE, "Stock", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Invoice", null)))).hasMessageContaining("has no correlationKey");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Stock", "orderId")))).hasMessageContaining("only a MESSAGE takes a correlationKey");
+    }
+
+    @Test
+    void anUnknownKindSkipsTheKindRules() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        when(eventCatalog.exists(eq("acme"), anyString())).thenReturn(true);
+        when(eventCatalog.kindOf(eq("acme"), anyString())).thenReturn(Optional.empty());
+
+        assertThatCode(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()),
+                catching("e", "Anything", null)))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsACycleThroughTasksAndEventsAndNamesIt() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("a", "developer"), task("b", "developer")));
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("a", "developer", "e"), assignment("b", "developer", "a")),
+                catching("e", "Approved", null, "b"));
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("The flow has a cycle: a -> e -> b -> a");
+    }
+
+    // ---------------------------------------------------------------- timers and boundary events
+
+    @Test
+    void acceptsATimerCatchAndAnInterruptingBoundaryWithItsEscalation() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("escalate", "developer")));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(),
+                        assignment("code", "developer"), assignment("escalate", "developer", "overdue")),
+                boundary("overdue", "code", true, timer(TimerType.DURATION, "PT1H")),
+                timerCatch("wait", timer(TimerType.DATE, "$.deadline"), "code"));
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void anEventNamesEitherADefinitionOrATimerAndNotBoth() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+        EventUse both = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        both.setEventDefinitionId("Approved");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), both)))
+                .hasMessageContaining("either an eventDefinitionId or a timer");
+    }
+
+    @Test
+    void aTimerMustBeACatchWithAParsingLiteralAndNoCorrelationKey() {
+        catalog(List.of(), List.of(), List.of(), List.of());
+        EventUse throwing = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        throwing.setDirection(EventDirection.THROW);
+        EventUse unparsable = timerCatch("e", timer(TimerType.DURATION, "an hour"));
+        EventUse untyped = timerCatch("e", timer(null, "PT1H"));
+        EventUse correlated = timerCatch("e", timer(TimerType.DURATION, "PT1H"));
+        correlated.setCorrelationKey("orderId");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), throwing)))
+                .hasMessageContaining("must be a CATCH");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), unparsable)))
+                .hasMessageContaining("invalid timer").hasMessageContaining("an hour");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), untyped)))
+                .hasMessageContaining("has no type");
+        assertThatThrownBy(() -> validator.validate(withEvents(workflow(List.of(), List.of(), List.of()), correlated)))
+                .hasMessageContaining("only a MESSAGE takes a correlationKey");
+    }
+
+    @Test
+    void aCycleIsOnlyAllowedOnANonInterruptingBoundary() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        TimerDefinition cycle = timer(TimerType.CYCLE, "R2/PT5M");
+
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                timerCatch("e", cycle)))).hasMessageContaining("only a non-interrupting boundary event");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "code", true, cycle)))).hasMessageContaining("only a non-interrupting boundary event");
+        assertThatCode(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "code", false, cycle)))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aBoundaryNamesATaskIsACatchAndTakesNoDependsOn() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer"), task("test", "developer")));
+        TimerDefinition hour = timer(TimerType.DURATION, "PT1H");
+        EventUse dependent = boundary("e", "code", true, hour);
+        dependent.setDependsOn(List.of("test"));
+        EventUse throwing = boundary("e", "code", true, null);
+        throwing.setEventDefinitionId("Approved");
+        throwing.setDirection(EventDirection.THROW);
+        knownEvents(Map.of("Approved", CatalogEventKind.SIGNAL));
+
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                boundary("e", "ghost", true, hour)))).hasMessageContaining("which is not a task of this workflow");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer"), assignment("test", "developer")),
+                dependent))).hasMessageContaining("takes no dependsOn");
+        assertThatThrownBy(() -> validator.validate(withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                throwing))).hasMessageContaining("must be a CATCH");
+    }
+
+    @Test
+    void aTaskDependingOnItsOwnBoundaryIsACycle() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+        Workflow workflow = withEvents(
+                workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer", "overdue")),
+                boundary("overdue", "code", true, timer(TimerType.DURATION, "PT1H")));
+
+        assertThatThrownBy(() -> validator.validate(workflow)).hasMessageContaining("The flow has a cycle: code -> overdue -> code");
+    }
+
+    @Test
+    void aTimeBasedStartNeedsADateOrCycleLiteral() {
+        catalog(List.of("developer"), List.of(), List.of(), List.of(task("code", "developer")));
+
+        assertThatThrownBy(() -> validator.validate(timedStart(null))).hasMessageContaining("has no timer");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.DURATION, "PT1H"))))
+                .hasMessageContaining("DURATION timer");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.DATE, "$.when"))))
+                .hasMessageContaining("timer path");
+        assertThatThrownBy(() -> validator.validate(timedStart(timer(TimerType.CYCLE, "every day"))))
+                .hasMessageContaining("invalid timer");
+        assertThatCode(() -> validator.validate(timedStart(timer(TimerType.DATE, "2026-12-24"))))
+                .doesNotThrowAnyException();
+    }
+
+    private Workflow timedStart(TimerDefinition timer) {
+        return withStartEvents(workflow(List.of("developer"), List.of(), List.of(), assignment("code", "developer")),
+                StartEvent.builder().id("nightly").startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                        .timer(timer).build());
+    }
+
+    private static TimerDefinition timer(TimerType type, String expression) {
+        return TimerDefinition.builder().type(type).expression(expression).build();
+    }
+
+    private static EventUse timerCatch(String id, TimerDefinition timer, String... dependsOn) {
+        return EventUse.builder().id(id).direction(EventDirection.CATCH).timer(timer).dependsOn(List.of(dependsOn)).build();
+    }
+
+    private static EventUse boundary(String id, String task, boolean interrupting, TimerDefinition timer) {
+        return EventUse.builder().id(id).direction(EventDirection.CATCH).timer(timer).attachedTo(task)
+                .interrupting(interrupting).build();
+    }
+
     // ---------------------------------------------------------------- fixtures
 
-    private Workflow withStartCondition(Workflow workflow, WorkflowStartCondition condition) {
-        workflow.setStartCondition(condition);
+    private void knownEvents(Map<String, CatalogEventKind> kinds) {
+        lenient().when(eventCatalog.exists(eq("acme"), anyString())).thenAnswer(call -> kinds.containsKey(call.getArgument(1)));
+        lenient().when(eventCatalog.kindOf(eq("acme"), anyString()))
+                .thenAnswer(call -> Optional.ofNullable(kinds.get(call.<String>getArgument(1))));
+    }
+
+    private Workflow withEvents(Workflow workflow, EventUse... events) {
+        workflow.setEvents(List.of(events));
+        return workflow;
+    }
+
+    private EventUse catching(String id, String definition, String correlationKey, String... dependsOn) {
+        return EventUse.builder().id(id).eventDefinitionId(definition).direction(EventDirection.CATCH)
+                .correlationKey(correlationKey).dependsOn(List.of(dependsOn)).build();
+    }
+
+    private Workflow withStartEvents(Workflow workflow, StartEvent... startEvents) {
+        workflow.setStartEvents(List.of(startEvents));
         return workflow;
     }
 
@@ -384,6 +826,15 @@ class WorkflowValidatorTest {
     private TaskUse assignment(String taskId, String performedBy, String... dependsOn) {
         return TaskUse.builder()
                 .taskDefinitionId(taskId).performedBy(performedBy).dependsOn(List.of(dependsOn)).build();
+    }
+
+    private TaskUse withStates(TaskUse use, TaskArtifactState... states) {
+        use.setArtifactStates(List.of(states));
+        return use;
+    }
+
+    private TaskArtifactState state(String artifactId, String inputState, String outputState) {
+        return TaskArtifactState.builder().artifactDefinitionId(artifactId).inputState(inputState).outputState(outputState).build();
     }
 
     private Workflow workflow(List<String> roles, List<String> artifacts, List<String> tools,

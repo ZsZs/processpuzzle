@@ -1,6 +1,7 @@
 import dagre from '@dagrejs/dagre';
 import { Injectable } from '@angular/core';
-import { WorkflowEdge, WorkflowNode } from '../workflow-graph';
+import { isBoundaryNode, WorkflowEdge, WorkflowNode } from '../workflow-graph';
+import { placeBoundaryEvents, rankingEdges } from './boundary-event-placement';
 
 /**
  * Estimated node box, used only to space the graph out. The real nodes are auto-sized by their content, so
@@ -37,19 +38,31 @@ export class WorkflowLayoutService {
     graph.setGraph({ rankdir: 'LR', nodesep: 24, ranksep: 90 });
     graph.setDefaultEdgeLabel(() => ({}));
 
-    nodes.forEach((node) => graph.setNode(node.id, { ...(node.size ?? ESTIMATED_NODE_SIZE) }));
+    // A boundary event is not Dagre's to place: it is pinned to its task afterwards, and the edges leaving it
+    // are ranked as its task's — see `rankingEdges`.
+    const placeable = nodes.filter((node) => !isBoundaryNode(node));
+    placeable.forEach((node) => graph.setNode(node.id, { ...(node.size ?? ESTIMATED_NODE_SIZE) }));
     // Only edges whose ends are both nodes of this graph: a converter may name an element the catalog no
     // longer holds, and Dagre would silently invent a node for it and lay out a phantom.
-    const nodeIds = new Set(nodes.map((node) => node.id));
-    edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)).forEach((edge) => graph.setEdge(edge.source, edge.target));
+    const nodeIds = new Set(placeable.map((node) => node.id));
+    rankingEdges(nodes, edges)
+      .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+      .forEach((edge) => graph.setEdge(edge.source, edge.target));
 
     dagre.layout(graph);
 
-    return nodes.map((node) => {
-      const placed = graph.node(node.id);
-      // Dagre reports a node's centre; ng-diagram positions by its top-left corner.
-      const size = node.size ?? ESTIMATED_NODE_SIZE;
-      return { ...node, position: { x: placed.x - size.width / 2, y: placed.y - size.height / 2 } };
-    });
+    // A task carrying a boundary event is given the box it was laid out as. Measured, its card would be only
+    // as tall as its text, and the event pinned to the estimated lower edge would float under it.
+    const hostIds = new Set(nodes.filter(isBoundaryNode).map((node) => node.data.attachedTo));
+    return placeBoundaryEvents(
+      nodes.map((node) => {
+        if (isBoundaryNode(node)) return node;
+        const placed = graph.node(node.id);
+        // Dagre reports a node's centre; ng-diagram positions by its top-left corner.
+        const size = node.size ?? ESTIMATED_NODE_SIZE;
+        const position = { x: placed.x - size.width / 2, y: placed.y - size.height / 2 };
+        return hostIds.has(node.id) ? { ...node, position, size: { ...size }, autoSize: false } : { ...node, position };
+      }),
+    );
   }
 }

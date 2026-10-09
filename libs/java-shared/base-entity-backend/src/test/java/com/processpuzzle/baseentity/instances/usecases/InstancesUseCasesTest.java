@@ -27,6 +27,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -38,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -83,7 +86,11 @@ class InstancesUseCasesTest {
     void createEntityInstance_success() {
         EntityDefinitionView defView = new EntityDefinitionView("partner", false, List.of());
         when(definitionLookupPort.findByCode(ORG, "partner")).thenReturn(Optional.of(defView));
-        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
+            EntityObject argument = invocation.getArgument(0);
+            argument.setId(UUID.randomUUID());
+            return argument;
+        });
 
         Map<String, Object> payload = Map.of("name", "ACME Corp");
         EntityObject result = createUseCase.create(ORG, "partner", payload);
@@ -262,15 +269,22 @@ class InstancesUseCasesTest {
 
         createUseCase.create(ORG, "partner", Map.of("name", "ACME Corp"));
 
-        ArgumentCaptor<EntityObjectCreatedEvent> captor = ArgumentCaptor.forClass(EntityObjectCreatedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        EntityObjectCreatedEvent event = captor.getValue();
+        EntityObjectCreatedEvent event = published(EntityObjectCreatedEvent.class);
         assertThat(event.orgKey()).isEqualTo(ORG);
         assertThat(event.entityDefinitionCode()).isEqualTo("partner");
         assertThat(event.objectId()).isEqualTo(id);
         assertThat(event.version()).isZero();
         assertThat(event.payload()).containsEntry("name", "ACME Corp");
         assertThat(event.occurredAt()).isNotNull();
+
+        PlatformEvent fact = published(PlatformEvent.class);
+        assertThat(fact.orgKey()).isEqualTo(ORG);
+        assertThat(fact.subjectType()).isEqualTo("partner");
+        assertThat(fact.subjectId()).isEqualTo(id.toString());
+        assertThat(fact.action()).isEqualTo(PlatformEventAction.CREATED);
+        assertThat(fact.state()).isNull();
+        assertThat(fact.payload()).containsEntry("name", "ACME Corp");
+        assertThat(fact.occurredAt()).isEqualTo(event.occurredAt());
     }
 
     @Test
@@ -299,13 +313,14 @@ class InstancesUseCasesTest {
 
         updateUseCase.update(ORG, "partner", id, 1L, Map.of("name", "New"));
 
-        ArgumentCaptor<EntityObjectUpdatedEvent> captor = ArgumentCaptor.forClass(EntityObjectUpdatedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        EntityObjectUpdatedEvent event = captor.getValue();
+        EntityObjectUpdatedEvent event = published(EntityObjectUpdatedEvent.class);
         assertThat(event.orgKey()).isEqualTo(ORG);
         assertThat(event.entityDefinitionCode()).isEqualTo("partner");
         assertThat(event.objectId()).isEqualTo(id);
         assertThat(event.payload()).containsEntry("name", "New");
+        PlatformEvent fact = published(PlatformEvent.class);
+        assertThat(fact.action()).isEqualTo(PlatformEventAction.UPDATED);
+        assertThat(fact.payload()).containsEntry("name", "New");
     }
 
     @Test
@@ -328,13 +343,22 @@ class InstancesUseCasesTest {
 
         deleteUseCase.delete(ORG, "partner", id, false);
 
-        ArgumentCaptor<EntityObjectDeletedEvent> captor = ArgumentCaptor.forClass(EntityObjectDeletedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        EntityObjectDeletedEvent event = captor.getValue();
+        EntityObjectDeletedEvent event = published(EntityObjectDeletedEvent.class);
         assertThat(event.orgKey()).isEqualTo(ORG);
         assertThat(event.entityDefinitionCode()).isEqualTo("partner");
         assertThat(event.objectId()).isEqualTo(id);
         assertThat(event.occurredAt()).isNotNull();
+        PlatformEvent fact = published(PlatformEvent.class);
+        assertThat(fact.action()).isEqualTo(PlatformEventAction.DELETED);
+        assertThat(fact.subjectId()).isEqualTo(id.toString());
+        assertThat(fact.payload()).isEmpty();
+    }
+
+    private <T> T published(Class<T> type) {
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeastOnce()).publishEvent(captor.capture());
+        return captor.getAllValues().stream().filter(type::isInstance).map(type::cast).findFirst()
+                .orElseThrow(() -> new AssertionError("No " + type.getSimpleName() + " published"));
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.processpuzzle.workflow.execution.domain;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +27,10 @@ import java.util.Objects;
  * timestamps are broken by task definition id so that the result is stable rather than dependent on
  * row order, which matters because two steps of one completion can share an instant.
  *
+ * <p><b>Events.</b> A catch event that occurred contributes what its payload mapping took from the
+ * event, recorded on its {@link EventInstance} for the same reason a task records its own. Task and
+ * event contributions fold together in the order they happened — by time, then by id.
+ *
  * <p>A utility rather than a service: it needs no collaborators, and both callers
  * ({@code CompleteTaskUseCase} and {@code WorkflowExecutionMapper}) already hold the task instances
  * it folds — the mapper because the API returns them alongside the instance, so assembling costs no
@@ -32,8 +38,11 @@ import java.util.Objects;
  */
 public final class WorkflowContext {
 
-    private static final Comparator<TaskInstance> IN_COMPLETION_ORDER =
-            Comparator.comparing(TaskInstance::getCompletedAt).thenComparing(TaskInstance::getTaskDefinitionId);
+    private record Contribution(Instant at, String id, Map<String, Object> values) {
+    }
+
+    private static final Comparator<Contribution> IN_ORDER =
+            Comparator.comparing(Contribution::at).thenComparing(Contribution::id);
 
     private WorkflowContext() {
         // utility
@@ -44,11 +53,27 @@ public final class WorkflowContext {
      * contribution folded in, in completion order.
      */
     public static Map<String, Object> assemble(WorkflowInstance instance, List<TaskInstance> tasks) {
-        Map<String, Object> assembled = new LinkedHashMap<>(safeMap(instance == null ? null : instance.getInitialContext()));
+        return assemble(instance, tasks, List.of());
+    }
+
+    /**
+     * The effective context of {@code instance}: its initial values with every completed task's and
+     * every occurred catch event's contribution folded in, in the order they happened.
+     */
+    public static Map<String, Object> assemble(WorkflowInstance instance, List<TaskInstance> tasks,
+                                               List<EventInstance> events) {
+        List<Contribution> contributions = new ArrayList<>();
         safeList(tasks).stream()
                 .filter(task -> task.getCompletedAt() != null)
-                .sorted(IN_COMPLETION_ORDER)
-                .forEach(task -> assembled.putAll(safeMap(task.getContextContribution())));
+                .forEach(task -> contributions.add(new Contribution(
+                        task.getCompletedAt(), task.getTaskDefinitionId(), task.getContextContribution())));
+        safeList(events).stream()
+                .filter(event -> event.getStatus() == EventInstanceStatus.OCCURRED && event.getOccurredAt() != null)
+                .forEach(event -> contributions.add(new Contribution(
+                        event.getOccurredAt(), event.getEventUseId(), event.getContextContribution())));
+
+        Map<String, Object> assembled = new LinkedHashMap<>(safeMap(instance == null ? null : instance.getInitialContext()));
+        contributions.stream().sorted(IN_ORDER).forEach(contribution -> assembled.putAll(safeMap(contribution.values())));
         return assembled;
     }
 
@@ -76,7 +101,7 @@ public final class WorkflowContext {
         return map == null ? Map.of() : map;
     }
 
-    private static List<TaskInstance> safeList(List<TaskInstance> tasks) {
-        return tasks == null ? List.of() : tasks;
+    private static <T> List<T> safeList(List<T> list) {
+        return list == null ? List.of() : list;
     }
 }

@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { WORKFLOW_ROLE_DEFINITION_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ARTIFACT_DEFINITION_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME } from '../workflow-entity-names';
+import { timestampAttr } from '../timestamp-attr';
 
 export { WORKFLOW_ROLE_DEFINITION_ENTITY_NAME };
 
@@ -38,8 +39,7 @@ function createRoleDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const versionAttr = new BaseEntityAttrDescriptor('version', FormControlType.TEXT_BOX, 'Version');
   versionAttr.disabled = true;
 
-  const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
-  updatedAtAttr.disabled = true;
+  const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };

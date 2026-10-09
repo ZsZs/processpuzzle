@@ -6,11 +6,10 @@ import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUse
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
-import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
-import com.processpuzzle.workflow.execution.events.WorkflowInstanceCompletedEvent;
 import com.processpuzzle.workflow.execution.events.TaskSkippedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -34,18 +33,21 @@ public class SkipTaskUseCase {
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final ResolveWorkflowUseCase resolveWorkflow;
     private final TaskInstanceRepository taskInstanceRepository;
-    private final TaskActivationService taskActivationService;
+    private final EventInstanceRepository eventInstanceRepository;
+    private final WorkflowProgression progression;
     private final ApplicationEventPublisher eventPublisher;
 
     public SkipTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
                             ResolveWorkflowUseCase resolveWorkflow,
                             TaskInstanceRepository taskInstanceRepository,
-                            TaskActivationService taskActivationService,
+                            EventInstanceRepository eventInstanceRepository,
+                            WorkflowProgression progression,
                             ApplicationEventPublisher eventPublisher) {
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
-        this.taskActivationService = taskActivationService;
+        this.eventInstanceRepository = eventInstanceRepository;
+        this.progression = progression;
         this.eventPublisher = eventPublisher;
     }
 
@@ -57,7 +59,8 @@ public class SkipTaskUseCase {
                 .orElseThrow(() -> new NotFoundException(
                         "No task '%s' in workflow instance '%s'".formatted(taskDefinitionId, workflowInstanceId)));
 
-        if (taskInstance.getStatus() == TaskInstanceStatus.COMPLETED || taskInstance.getStatus() == TaskInstanceStatus.SKIPPED) {
+        if (taskInstance.getStatus() == TaskInstanceStatus.COMPLETED || taskInstance.getStatus() == TaskInstanceStatus.SKIPPED
+                || taskInstance.getStatus() == TaskInstanceStatus.CANCELLED) {
             throw new ConflictException("Task '%s' is already %s".formatted(taskDefinitionId, taskInstance.getStatus()));
         }
 
@@ -72,15 +75,9 @@ public class SkipTaskUseCase {
         // Skipping contributes nothing of its own, but the tasks it unblocks are guarded against the
         // context as it stands, so it has to be the assembled one and not just the initial values.
         Map<String, Object> context = WorkflowContext.assemble(
-                workflowInstance, taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId));
-        taskActivationService.activateEligibleTasks(orgKey, definition, workflowInstanceId, context);
-
-        if (taskActivationService.allTerminal(orgKey, workflowInstanceId)) {
-            workflowInstance.setStatus(WorkflowInstanceStatus.COMPLETED);
-            workflowInstance.setCompletedAt(Instant.now());
-            workflowInstanceRepository.save(workflowInstance);
-            eventPublisher.publishEvent(new WorkflowInstanceCompletedEvent(orgKey, workflowInstanceId, definition.id()));
-        }
+                workflowInstance, taskInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId),
+                eventInstanceRepository.findByOrgKeyAndWorkflowInstanceId(orgKey, workflowInstanceId));
+        progression.advance(orgKey, definition, workflowInstance, context);
 
         return taskInstance;
     }

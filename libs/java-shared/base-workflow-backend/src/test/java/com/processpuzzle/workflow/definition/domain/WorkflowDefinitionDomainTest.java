@@ -114,7 +114,7 @@ class WorkflowDefinitionDomainTest {
                 .isEqualTo(new RoleUse("analyst"))
                 .hasToString("RoleUse(roleDefinitionId=analyst)");
         assertThat(ArtifactUse.builder().artifactDefinitionId("spec").build())
-                .isEqualTo(new ArtifactUse("spec"));
+                .isEqualTo(new ArtifactUse("spec", null));
         assertThat(ToolUse.builder().toolDefinitionId("jira").build())
                 .isEqualTo(new ToolUse("jira"));
 
@@ -124,7 +124,7 @@ class WorkflowDefinitionDomainTest {
     }
 
     @Test
-    void workflow_replaceContentAndEmptyDef() {
+    void workflow_replacesContent() {
         Workflow def = Workflow.builder()
                 .orgKey("org-1")
                 .id("wf-1")
@@ -132,50 +132,83 @@ class WorkflowDefinitionDomainTest {
 
         TaskUse newUse = TaskUse.builder()
                 .taskDefinitionId("code").performedBy("dev").build();
-        WorkflowStartCondition condition = WorkflowStartCondition.builder()
+        StartEvent startEvent = StartEvent.builder()
+                .id("on-demand")
                 .startType(WorkflowStartConditionType.ROLE_DEFINITION)
                 .authorizedRoles(List.of("dev"))
                 .build();
 
-        def.replaceContent("New Name", "New Desc", "new-parent", condition,
+        def.replaceContent("New Name", "New Desc", "new-parent", List.of(startEvent),
                 List.of(RoleUse.builder().roleDefinitionId("dev").build()),
                 List.of(ArtifactUse.builder().artifactDefinitionId("pr").build()),
                 List.of(ToolUse.builder().toolDefinitionId("git").build()),
-                List.of(newUse));
+                List.of(newUse),
+                List.of(EventUse.builder().id("merged").eventDefinitionId("PrMerged").direction(EventDirection.CATCH).build()));
 
         assertThat(def.getName()).isEqualTo("New Name");
         assertThat(def.getDescription()).isEqualTo("New Desc");
         assertThat(def.getExtendsWorkflowId()).isEqualTo("new-parent");
-        assertThat(def.getStartCondition()).isSameAs(condition);
+        assertThat(def.getStartEvents()).containsExactly(startEvent);
         assertThat(def.roleDefinitionIds()).containsExactly("dev");
         assertThat(def.getTasks()).containsExactly(newUse);
         assertThat(def.artifactDefinitionIds()).containsExactly("pr");
         assertThat(def.toolDefinitionIds()).containsExactly("git");
+        assertThat(def.eventUseIds()).containsExactly("merged");
+        assertThat(def.findEventUse("merged")).map(EventUse::isCatch).contains(true);
+        assertThat(def.findEventUse("nope")).isEmpty();
+    }
 
-        // Test with null collections
+    @Test
+    void workflow_normalizesEmptyAndNullCollections() {
         Workflow emptyDef = new Workflow();
         assertThat(emptyDef.getRoles()).isNotNull().isEmpty();
         assertThat(emptyDef.getTasks()).isNotNull().isEmpty();
         assertThat(emptyDef.getArtifacts()).isNotNull().isEmpty();
         assertThat(emptyDef.getTools()).isNotNull().isEmpty();
-        assertThat(emptyDef.getStartCondition()).isNull();
+        assertThat(emptyDef.getStartEvents()).isNotNull().isEmpty();
 
-        emptyDef.replaceContent(null, null, null, null, List.of(), List.of(), List.of(), List.of());
+        emptyDef.replaceContent(null, null, null, null, List.of(), List.of(), List.of(), List.of(), null);
         assertThat(emptyDef.getRoles()).isEmpty();
         assertThat(emptyDef.getTasks()).isEmpty();
         assertThat(emptyDef.getArtifacts()).isEmpty();
         assertThat(emptyDef.getTools()).isEmpty();
-        assertThat(emptyDef.getStartCondition()).isNull();
+        assertThat(emptyDef.getStartEvents()).isEmpty();
+        assertThat(emptyDef.getEvents()).isEmpty();
+
+        // A row stored before the events column existed reads it as NULL.
+        emptyDef.setEvents(null);
+        assertThat(emptyDef.getEvents()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void events_surviveJsonRoundTrip() throws com.fasterxml.jackson.core.JsonProcessingException {
+        // An event use survives the JSONB column's Jackson round trip — its isThrow/isCatch are not properties.
+        EventUse event = EventUse.builder().id("e").eventDefinitionId("E").direction(EventDirection.THROW)
+                .correlationKey("k").payloadMapping(java.util.Map.of("a", "$.b")).build();
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        // So does a timer boundary event's timer, and a start event's: hasTimer() and isPath() are not
+        // properties either, and isBoundary() names none the event has.
+        EventUse boundary = EventUse.builder().id("b").direction(EventDirection.CATCH).attachedTo("t").interrupting(false)
+                .timer(TimerDefinition.builder().type(TimerType.CYCLE).expression("$.cycle").build()).build();
+        StartEvent nightly = StartEvent.builder().id("s").startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION)
+                .timer(TimerDefinition.builder().type(TimerType.DATE).expression("2026-12-24").build()).build();
+        assertThat(json.readValue(json.writeValueAsString(event), EventUse.class)).isEqualTo(event);
+        assertThat(json.readValue(json.writeValueAsString(boundary), EventUse.class)).isEqualTo(boundary);
+        assertThat(json.readValue(json.writeValueAsString(nightly), StartEvent.class)).isEqualTo(nightly);
+        // A row stored before boundaries existed has no interrupting, and reads as interrupting.
+        assertThat(json.readValue("{\"id\":\"old\",\"direction\":\"CATCH\"}", EventUse.class).isInterrupting()).isTrue();
     }
 
     /**
-     * A start condition is one flat value with a discriminant, so the assertion that matters is that
+     * A start event is one flat value with a discriminant, so the assertion that matters is that
      * every mechanism's fields survive on the same object — nothing is lost by the absence of a
      * subtype per {@code startType}.
      */
     @Test
-    void startCondition_carriesEveryMechanismsFields() {
-        WorkflowStartCondition condition = WorkflowStartCondition.builder()
+    void startEvent_carriesEveryMechanismsFields() {
+        StartEvent condition = StartEvent.builder()
+                .id("order-drafted")
+                .name("Order drafted")
                 .startType(WorkflowStartConditionType.INPUT_ARTIFACT)
                 .requiredArtifacts(List.of(RequiredStartArtifact.builder()
                         .artifactDefinitionId("order-entity").state("DRAFT").build()))
@@ -186,6 +219,8 @@ class WorkflowDefinitionDomainTest {
                 .preconditionExpression("milestone.status == 'PASSED'")
                 .build();
 
+        assertThat(condition.getId()).isEqualTo("order-drafted");
+        assertThat(condition.getName()).isEqualTo("Order drafted");
         assertThat(condition.getStartType()).isEqualTo(WorkflowStartConditionType.INPUT_ARTIFACT);
         assertThat(condition.getRequiredArtifacts()).singleElement().satisfies(required -> {
             assertThat(required.getArtifactDefinitionId()).isEqualTo("order-entity");
@@ -197,13 +232,23 @@ class WorkflowDefinitionDomainTest {
         assertThat(condition.getMilestoneRef()).isEqualTo("MILESTONE_REACHED");
         assertThat(condition.getPreconditionExpression()).isEqualTo("milestone.status == 'PASSED'");
 
-        WorkflowStartCondition plain = new WorkflowStartCondition();
+        StartEvent plain = new StartEvent();
         assertThat(plain.getRequiredArtifacts()).isNotNull().isEmpty();
         assertThat(plain.getStartType()).isNull();
+        assertThat(plain.admitsManualStart()).isFalse();
 
         RequiredStartArtifact anyState = new RequiredStartArtifact();
         anyState.setArtifactDefinitionId("order-entity");
         assertThat(anyState.getState()).isNull();
+    }
+
+    /** Only the two mechanisms an explicit start can satisfy admit one. */
+    @Test
+    void startEvent_admitsManualStartOnlyForRoleAndArtifactMechanisms() {
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.ROLE_DEFINITION).build().admitsManualStart()).isTrue();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.INPUT_ARTIFACT).build().admitsManualStart()).isTrue();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.TRIGGERING_EVENT).build().admitsManualStart()).isFalse();
+        assertThat(StartEvent.builder().startType(WorkflowStartConditionType.TIME_BASED_PRECONDITION).build().admitsManualStart()).isFalse();
     }
 
     @Test

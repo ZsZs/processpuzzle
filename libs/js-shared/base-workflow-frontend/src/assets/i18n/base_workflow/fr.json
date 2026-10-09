@@ -8,17 +8,12 @@
     "activeInstances": "Instances actives",
     "version": "Version",
     "updatedAt": "Modifié le",
-    "startType": "Type de démarrage",
-    "eventType": "Type d'événement",
-    "milestoneRef": "Jalon",
-    "preconditionExpression": "Précondition",
-    "authorizedRoles": "Rôles autorisés",
-    "payloadMapping": "Mappage de charge utile",
-    "requiredArtifacts": "Artefacts requis",
+    "startEvents": "Événements de démarrage",
     "roles": "Rôles",
     "artifacts": "Artefacts",
     "tools": "Outils",
     "tasks": "Tâches",
+    "events": "Événements",
     "tabs": {
       "modeler": "Modeleur de flux de travail"
     },
@@ -29,6 +24,8 @@
       "tools": "Outils",
       "unassigned": "Non attribué",
       "join_any": "au choix",
+      "start": "Début",
+      "end": "Fin",
       "save": "Enregistrer la disposition",
       "properties": {
         "none": "Sélectionnez un élément pour voir ses propriétés.",
@@ -49,7 +46,13 @@
           "start": "Requis au démarrage",
           "unknown": "En relation avec"
         }
-      }
+      },
+      "throw_event": "Événement émis",
+      "catch_event": "Événement intercepté",
+      "timer_event": "Événement temporisé",
+      "boundary_event": "Événement de bordure (interrompant)",
+      "non_interrupting_boundary_event": "Événement de bordure (non interrompant)",
+      "event": "Événement intermédiaire"
     }
   },
   "workflow_task_assignment": {
@@ -59,7 +62,8 @@
     "dependsOn": "Dépend de",
     "joinType": "Type de jonction",
     "parallel": "Parallèle",
-    "override": "Remplacer"
+    "override": "Remplacer",
+    "artifactStates": "États des artefacts"
   },
   "workflow_role_use": {
     "_self": "Utilisation de rôle",
@@ -67,16 +71,52 @@
   },
   "workflow_artifact_use": {
     "_self": "Utilisation d'artefact",
-    "artifactDefinitionId": "Artefact"
+    "artifactDefinitionId": "Artefact",
+    "objectName": "Nom de l'objet"
   },
   "workflow_tool_use": {
     "_self": "Utilisation d'outil",
     "toolDefinitionId": "Outil"
   },
+  "workflow_start_event": {
+    "_self": "Événement de démarrage",
+    "id": "Id",
+    "name": "Nom",
+    "startType": "Type de démarrage",
+    "eventType": "Type d'événement",
+    "milestoneRef": "Jalon",
+    "preconditionExpression": "Précondition",
+    "timerType": "Minuteur",
+    "timerExpression": "Expression du minuteur",
+    "authorizedRoles": "Rôles autorisés",
+    "payloadMapping": "Mappage de charge utile",
+    "requiredArtifacts": "Artefacts requis"
+  },
   "workflow_required_start_artifact": {
     "_self": "Artefact requis",
     "artifactDefinitionId": "Artefact",
     "state": "État"
+  },
+  "workflow_event_use": {
+    "_self": "Événement intermédiaire",
+    "id": "Id",
+    "name": "Nom",
+    "direction": "Direction",
+    "eventDefinitionId": "Événement",
+    "dependsOn": "Dépend de",
+    "joinType": "Type de jonction",
+    "correlationKey": "Clé de corrélation",
+    "timerType": "Minuteur",
+    "timerExpression": "Expression du minuteur",
+    "attachedTo": "Attaché à",
+    "interrupting": "Interrompant",
+    "payloadMapping": "Mappage de charge utile"
+  },
+  "workflow_task_artifact_state": {
+    "_self": "État d'artefact de la tâche",
+    "artifactDefinitionId": "Artefact",
+    "inputState": "État d'entrée",
+    "outputState": "État de sortie"
   },
   "workflow_role_definition": {
     "_self": "Rôle",
@@ -155,14 +195,17 @@
     "_self": "Instance de flux de travail",
     "id": "Id",
     "workflowId": "Flux de travail",
+    "startEventId": "Événement de démarrage",
     "workflowName": "Nom du flux de travail",
     "status": "Statut",
-    "entityId": "Entité",
+    "instanceNumber": "N°",
+    "entityLabel": "Entité",
     "startedAt": "Démarré le",
     "completedAt": "Terminé le",
     "context": "Contexte",
     "tasks": "Tâches",
-    "artifacts": "Artefacts"
+    "artifacts": "Artefacts",
+    "events": "Événements"
   },
   "task_instance": {
     "_self": "Instance de tâche",
@@ -175,6 +218,8 @@
     "activatedAt": "Activée le",
     "completedAt": "Terminée le",
     "skippedAt": "Ignorée le",
+    "cancelledAt": "Annulée le",
+    "cancelReason": "Motif d'annulation",
     "stepResults": "Résultats des étapes",
     "dashboard": {
       "title": "Mes tâches",
@@ -208,7 +253,8 @@
       "skip_reason": "Motif de l’omission",
       "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
       "unassigned": "non attribuée",
-      "assigned_to": "Attribuée à"
+      "assigned_to": "Attribuée à",
+      "waiting_for": "En attente de"
     }
   },
   "artifact_instance": {
@@ -221,6 +267,20 @@
     "stateMachineInstanceId": "Instance de machine à états",
     "currentState": "État actuel",
     "updatedAt": "Modifié le"
+  },
+  "event_instance": {
+    "_self": "Instance d'événement",
+    "eventUseId": "Événement",
+    "direction": "Direction",
+    "status": "Statut",
+    "eventDefinitionId": "Événement du catalogue",
+    "correlationValue": "Valeur de corrélation",
+    "waitingSince": "En attente depuis",
+    "occurredAt": "Survenu le",
+    "dueAt": "Échéance",
+    "fireCount": "Déclenchements",
+    "payload": "Charge utile",
+    "contextContribution": "Contribution au contexte"
   },
   "task_step_result": {
     "_self": "Résultat d'étape",

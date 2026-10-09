@@ -15,6 +15,7 @@ import com.processpuzzle.workflow.execution.usecases.inbound.FindTaskInstanceUse
 import com.processpuzzle.workflow.execution.usecases.inbound.FindArtifactInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstancesUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.ListEventInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
@@ -59,15 +60,17 @@ class WorkflowExecutionEndpointsTest {
         CancelWorkflowInstanceUseCase cancelUseCase = mock(CancelWorkflowInstanceUseCase.class);
         ListTaskInstancesUseCase listTasksUseCase = mock(ListTaskInstancesUseCase.class);
         ListArtifactInstancesUseCase listWpsUseCase = mock(ListArtifactInstancesUseCase.class);
+        ListEventInstancesUseCase listEventsUseCase = mock(ListEventInstancesUseCase.class);
 
         WorkflowInstancesEndpoint endpoint = new WorkflowInstancesEndpoint(
-                startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase, mapper);
+                startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase,
+                listEventsUseCase, mapper);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("p1")
-                .status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now()).build();
+                .status(WorkflowInstanceStatus.ACTIVE).startEventId("order-drafted").startedAt(Instant.now()).build();
 
-        when(startUseCase.start(eq(ORG), eq("p1"), eq("e1"), any())).thenReturn(pi);
+        when(startUseCase.start(eq(ORG), eq("p1"), eq("e1"), eq("order-drafted"), any())).thenReturn(pi);
         when(findUseCase.findByOrgKeyAndId(ORG, instanceId)).thenReturn(pi);
         when(listTasksUseCase.findAll(ORG, instanceId)).thenReturn(List.of());
         when(listWpsUseCase.findAll(ORG, instanceId)).thenReturn(List.of());
@@ -76,10 +79,12 @@ class WorkflowExecutionEndpointsTest {
         // Start
         StartWorkflowRequest startReq = new StartWorkflowRequest("p1");
         startReq.setEntityId("e1");
+        startReq.setStartEventId("order-drafted");
         startReq.setContext(Map.of("a", "b"));
         ResponseEntity<com.processpuzzle.workflow.model.WorkflowInstance> startRes = endpoint.startWorkflowInstance(ORG, startReq);
         assertThat(startRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(startRes.getBody().getId()).isEqualTo(instanceId.toString());
+        assertThat(startRes.getBody().getStartEventId()).isEqualTo("order-drafted");
 
         // Get
         ResponseEntity<com.processpuzzle.workflow.model.WorkflowInstance> getRes = endpoint.getWorkflowInstance(ORG, instanceId.toString());

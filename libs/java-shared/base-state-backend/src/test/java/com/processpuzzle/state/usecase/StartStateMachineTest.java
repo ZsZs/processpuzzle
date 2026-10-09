@@ -14,6 +14,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -72,16 +75,20 @@ class StartStateMachineTest {
 
         assertThat(written).contains("draft");
 
-        ArgumentCaptor<EntityObjectStateChangedEvent> captor =
-                ArgumentCaptor.forClass(EntityObjectStateChangedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        EntityObjectStateChangedEvent event = captor.getValue();
+        EntityObjectStateChangedEvent event = published(EntityObjectStateChangedEvent.class);
         assertThat(event.orgKey()).isEqualTo(ORG);
         assertThat(event.entityName()).isEqualTo(ENTITY);
         assertThat(event.objectId()).isEqualTo(OBJECT_ID);
         assertThat(event.newStateKey()).isEqualTo("draft");
         assertThat(event.version()).isEqualTo(1L);
         assertThat(event.occurredAt()).isNotNull();
+
+        PlatformEvent fact = published(PlatformEvent.class);
+        assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+        assertThat(fact.subjectType()).isEqualTo(ENTITY);
+        assertThat(fact.subjectId()).isEqualTo(OBJECT_ID.toString());
+        assertThat(fact.state()).isEqualTo("draft");
+        assertThat(fact.payload()).containsEntry("total", 12).containsEntry(ATTR, "draft");
     }
 
     /**
@@ -97,12 +104,10 @@ class StartStateMachineTest {
 
         startStateMachine.execute(ORG, ENTITY, OBJECT_ID, Map.of(), 0L);
 
-        ArgumentCaptor<EntityObjectStateChangedEvent> captor =
-                ArgumentCaptor.forClass(EntityObjectStateChangedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertThat(captor.getValue().previousStateKey()).isNull();
-        assertThat(captor.getValue().transitionKey()).isNull();
-        assertThat(captor.getValue().triggerKey()).isNull();
+        EntityObjectStateChangedEvent event = published(EntityObjectStateChangedEvent.class);
+        assertThat(event.previousStateKey()).isNull();
+        assertThat(event.transitionKey()).isNull();
+        assertThat(event.triggerKey()).isNull();
     }
 
     @Test
@@ -151,5 +156,12 @@ class StartStateMachineTest {
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, ATTR, "draft", 3L)).thenReturn(4L);
 
         assertThat(startStateMachine.execute(ORG, ENTITY, OBJECT_ID, null, 3L)).contains("draft");
+    }
+
+    private <T> T published(Class<T> type) {
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeastOnce()).publishEvent(captor.capture());
+        return captor.getAllValues().stream().filter(type::isInstance).map(type::cast).findFirst()
+                .orElseThrow(() -> new AssertionError("No " + type.getSimpleName() + " published"));
     }
 }

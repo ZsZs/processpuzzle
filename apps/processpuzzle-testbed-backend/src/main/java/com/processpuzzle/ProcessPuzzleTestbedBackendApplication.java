@@ -16,10 +16,14 @@ import org.springframework.modulith.Modulith;
  * no longer needed. The JPA attributes stay spelled out because the libraries' entities and
  * repositories are spread across sibling packages and saying so reads better than relying on the
  * default.
+ *
+ * <p>{@code org.springframework.modulith.events.jpa} is the event publication registry's own entity
+ * package. An explicit {@code @EntityScan} replaces the auto-configuration packages rather than adding
+ * to them, so without it the registry's entities would not be mapped and every publication would fail.
  */
 @Modulith(systemName = "ProcessPuzzle Testbed Backend")
 @EnableJpaRepositories(basePackages = "com.processpuzzle")
-@EntityScan(basePackages = "com.processpuzzle")
+@EntityScan(basePackages = {"com.processpuzzle", "org.springframework.modulith.events.jpa"})
 public class ProcessPuzzleTestbedBackendApplication {
 
     public static void main(String[] args) {

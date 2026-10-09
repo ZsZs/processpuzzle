@@ -24,6 +24,9 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.StepResult;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
@@ -66,6 +69,7 @@ class WorkflowExecutionUseCasesTest {
     private ResolveWorkflowUseCase resolveWorkflow;
     private WorkflowInstanceRepository procInstRepo;
     private TaskInstanceRepository taskInstRepo;
+    private EventInstanceRepository eventInstRepo;
     private ArtifactInstanceRepository wpInstRepo;
     private TaskActivationService taskActivationService;
     private ApplicationEventPublisher eventPublisher;
@@ -73,12 +77,14 @@ class WorkflowExecutionUseCasesTest {
     private ToolDefinitionRepository toolDefRepo;
     private ToolInvocationPort toolInvocationPort;
     private RoleMembershipPort roleMembershipPort;
+    private InstanceNumberAllocator instanceNumbers;
 
     @BeforeEach
     void setUp() {
         resolveWorkflow = mock(ResolveWorkflowUseCase.class);
         procInstRepo = mock(WorkflowInstanceRepository.class);
         taskInstRepo = mock(TaskInstanceRepository.class);
+        eventInstRepo = mock(EventInstanceRepository.class);
         wpInstRepo = mock(ArtifactInstanceRepository.class);
         taskActivationService = mock(TaskActivationService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
@@ -86,12 +92,20 @@ class WorkflowExecutionUseCasesTest {
         toolDefRepo = mock(ToolDefinitionRepository.class);
         toolInvocationPort = mock(ToolInvocationPort.class);
         roleMembershipPort = mock(RoleMembershipPort.class);
+        instanceNumbers = mock(InstanceNumberAllocator.class);
+        when(instanceNumbers.next(ORG)).thenReturn(7L, 8L);
+    }
+
+    /** The real close-out over the mocked activation service, so the tests still see the instance close. */
+    private WorkflowProgression progression() {
+        return new WorkflowProgression(taskActivationService, procInstRepo, eventPublisher);
     }
 
     @Test
     void startWorkflowInstanceUseCase_startsWorkflowWithTasksAndArtifacts() {
+        StartEventAdmission admission = mock(StartEventAdmission.class);
         StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
-                resolveWorkflow, procInstRepo, taskInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher);
 
         ArtifactDefinition wpDef = ArtifactDefinition.builder().id("wp-1").name("Doc")
                 .artifactType(ArtifactType.DOCUMENT).stateMachineId("sm-1").build();
@@ -110,8 +124,12 @@ class WorkflowExecutionUseCasesTest {
             return wpi;
         });
 
-        WorkflowInstance started = useCase.start(ORG, "proc-1", "entity-1", Map.of("initKey", "initVal"));
+        when(admission.admit(ORG, procDef, "manual", "entity-1")).thenReturn(Optional.of("manual"));
+
+        WorkflowInstance started = useCase.start(ORG, "proc-1", "entity-1", "manual", Map.of("initKey", "initVal"));
         assertThat(started).isNotNull();
+        assertThat(started.getStartEventId()).isEqualTo("manual");
+        assertThat(started.getInstanceNumber()).isEqualTo(7L);
         assertThat(started.getStatus()).isEqualTo(WorkflowInstanceStatus.ACTIVE);
         assertThat(started.getInitialContext()).containsEntry("initKey", "initVal");
 
@@ -120,21 +138,72 @@ class WorkflowExecutionUseCasesTest {
         // Start unknown workflow — the resolver is what refuses, strictly
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "unknown"))
                 .thenThrow(new NotFoundException("No workflow with id 'unknown'"));
-        assertThatThrownBy(() -> useCase.start(ORG, "unknown", "entity-1", null))
+        assertThatThrownBy(() -> useCase.start(ORG, "unknown", "entity-1", null, null))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    /**
+     * A triggered start skips admission — nobody asked, so there is no principal to admit — and does
+     * nothing for a subject that already has a running instance, because the publication registry can
+     * deliver the same event twice.
+     */
+    @Test
+    void startTriggered_bypassesAdmissionAndIsIdempotentPerSubject() {
+        StartEventAdmission admission = mock(StartEventAdmission.class);
+        StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+        ResolvedWorkflow procDef = resolved("proc-1", "Proc 1", List.of(), TaskDefinition.builder().id("t-1").name("T").build());
+        when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1")).thenReturn(procDef);
+        when(procInstRepo.save(any(WorkflowInstance.class))).thenAnswer(inv -> {
+            WorkflowInstance pi = inv.getArgument(0);
+            pi.setId(UUID.randomUUID());
+            return pi;
+        });
+        when(procInstRepo.existsByOrgKeyAndWorkflowIdAndEntityIdAndStatusIn(eq(ORG), eq("proc-1"), eq("order-1"), any()))
+                .thenReturn(false, true);
+
+        Optional<WorkflowInstance> first = useCase.startTriggered(ORG, "proc-1", "order-created", "order-1", "order", Map.of("orderId", "order-1"));
+        Optional<WorkflowInstance> again = useCase.startTriggered(ORG, "proc-1", "order-created", "order-1", "order", Map.of());
+
+        assertThat(first).hasValueSatisfying(instance -> {
+            assertThat(instance.getStartEventId()).isEqualTo("order-created");
+            assertThat(instance.getEntityId()).isEqualTo("order-1");
+            assertThat(instance.getEntityType()).isEqualTo("order");
+            assertThat(instance.getInitialContext()).containsEntry("orderId", "order-1");
+        });
+        assertThat(again).isEmpty();
+        verify(procInstRepo).save(any(WorkflowInstance.class));
+        org.mockito.Mockito.verifyNoInteractions(admission);
     }
 
     @Test
     void cancelWorkflowInstanceUseCase_successAndConflict() {
-        CancelWorkflowInstanceUseCase useCase = new CancelWorkflowInstanceUseCase(procInstRepo, eventPublisher);
+        CancelWorkflowInstanceUseCase useCase =
+                new CancelWorkflowInstanceUseCase(procInstRepo, taskInstRepo, eventInstRepo, eventPublisher);
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance active = WorkflowInstance.builder().id(instanceId).orgKey(ORG).status(WorkflowInstanceStatus.ACTIVE).build();
+        TaskInstance running = TaskInstance.builder().taskDefinitionId("a").status(TaskInstanceStatus.ACTIVE).build();
+        TaskInstance done = TaskInstance.builder().taskDefinitionId("b").status(TaskInstanceStatus.COMPLETED).build();
+        EventInstance timer = EventInstance.builder().eventUseId("t").status(EventInstanceStatus.WAITING)
+                .dueAt(java.time.Instant.now()).build();
+        EventInstance cycle = EventInstance.builder().eventUseId("c").status(EventInstanceStatus.OCCURRED)
+                .dueAt(java.time.Instant.now()).build();
 
         when(procInstRepo.findByOrgKeyAndId(ORG, instanceId)).thenReturn(Optional.of(active));
+        when(taskInstRepo.findByOrgKeyAndWorkflowInstanceId(ORG, instanceId)).thenReturn(List.of(running, done));
+        when(eventInstRepo.findByOrgKeyAndWorkflowInstanceId(ORG, instanceId)).thenReturn(List.of(timer, cycle));
 
         useCase.cancel(ORG, instanceId, "User requested");
         assertThat(active.getStatus()).isEqualTo(WorkflowInstanceStatus.CANCELLED);
         verify(procInstRepo).save(active);
+        assertThat(running.getStatus()).isEqualTo(TaskInstanceStatus.CANCELLED);
+        assertThat(running.getCancelReason()).isEqualTo("User requested");
+        assertThat(running.getCancelledAt()).isNotNull();
+        assertThat(done.getStatus()).isEqualTo(TaskInstanceStatus.COMPLETED);
+        assertThat(timer.getStatus()).isEqualTo(EventInstanceStatus.CANCELLED);
+        assertThat(timer.getDueAt()).isNull();
+        assertThat(cycle.getStatus()).isEqualTo(EventInstanceStatus.OCCURRED);
+        assertThat(cycle.getDueAt()).isNull();
 
         // Cancel already cancelled / completed throws ConflictException
         WorkflowInstance cancelled = WorkflowInstance.builder().id(instanceId).orgKey(ORG).status(WorkflowInstanceStatus.CANCELLED).build();
@@ -234,8 +303,8 @@ class WorkflowExecutionUseCasesTest {
     void completeTaskUseCase_successAndPostconditionFailure() {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
-                procInstRepo, resolveWorkflow, taskInstRepo, ruleEvaluationPort, stepExecutor,
-                taskActivationService, eventPublisher);
+                procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
+                progression(), eventPublisher);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -261,7 +330,7 @@ class WorkflowExecutionUseCasesTest {
         // Postcondition passed, all terminal -> completes workflow instance
         when(ruleEvaluationPort.evaluate(eq(ORG), eq("rule-post"), any()))
                 .thenReturn(RuleCheckResult.ALWAYS_PASSES);
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(true);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(true);
 
         CompleteTaskUseCase.Result successResult = useCase.complete(ORG, instanceId, "task-1", Map.of("extra", "2"));
         assertThat(successResult.accepted()).isTrue();
@@ -274,7 +343,7 @@ class WorkflowExecutionUseCasesTest {
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1"))
                 .thenReturn(resolved("proc-1", "Proc 1", List.of(), taskWithSteps));
         ti.setStatus(TaskInstanceStatus.ACTIVE);
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(false);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(false);
 
         CompleteTaskUseCase.Result stepsResult = useCase.complete(ORG, instanceId, "task-1", null);
         assertThat(stepsResult.accepted()).isTrue();
@@ -306,8 +375,8 @@ class WorkflowExecutionUseCasesTest {
     void completeTaskUseCase_doesNotWriteTheWorkflowInstanceMidWorkflow() {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
-                procInstRepo, resolveWorkflow, taskInstRepo, ruleEvaluationPort, stepExecutor,
-                taskActivationService, eventPublisher);
+                procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
+                progression(), eventPublisher);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -326,7 +395,7 @@ class WorkflowExecutionUseCasesTest {
                 .thenReturn(resolved("proc-1", "Proc 1", List.of(), leftDef));
         when(ruleEvaluationPort.evaluate(any(), any(), any())).thenReturn(RuleCheckResult.ALWAYS_PASSES);
         // "right" is still ACTIVE, so this is not the closing completion.
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(false);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(false);
 
         CompleteTaskUseCase.Result result = useCase.complete(ORG, instanceId, "left", Map.of("reviewedBy", "clerk"));
 
@@ -348,8 +417,8 @@ class WorkflowExecutionUseCasesTest {
     void completeTaskUseCase_writesTheWorkflowInstanceOnlyToCloseItOut() {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
-                procInstRepo, resolveWorkflow, taskInstRepo, ruleEvaluationPort, stepExecutor,
-                taskActivationService, eventPublisher);
+                procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
+                progression(), eventPublisher);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -365,7 +434,7 @@ class WorkflowExecutionUseCasesTest {
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1"))
                 .thenReturn(resolved("proc-1", "Proc 1", List.of(), onlyDef));
         when(ruleEvaluationPort.evaluate(any(), any(), any())).thenReturn(RuleCheckResult.ALWAYS_PASSES);
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(true);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(true);
 
         useCase.complete(ORG, instanceId, "only", null);
 
@@ -382,8 +451,8 @@ class WorkflowExecutionUseCasesTest {
     void completeTaskUseCase_inheritsEarlierTasksContributions() {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
-                procInstRepo, resolveWorkflow, taskInstRepo, ruleEvaluationPort, stepExecutor,
-                taskActivationService, eventPublisher);
+                procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
+                progression(), eventPublisher);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -404,7 +473,7 @@ class WorkflowExecutionUseCasesTest {
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1"))
                 .thenReturn(resolved("proc-1", "Proc 1", List.of(), laterDef));
         when(ruleEvaluationPort.evaluate(any(), any(), any())).thenReturn(RuleCheckResult.ALWAYS_PASSES);
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(false);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(false);
 
         useCase.complete(ORG, instanceId, "approve", Map.of("approvedBy", "manager"));
 
@@ -423,7 +492,7 @@ class WorkflowExecutionUseCasesTest {
     @Test
     void skipTaskUseCase_successAndConflict() {
         SkipTaskUseCase useCase = new SkipTaskUseCase(
-                procInstRepo, resolveWorkflow, taskInstRepo, taskActivationService, eventPublisher);
+                procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, progression(), eventPublisher);
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -438,7 +507,7 @@ class WorkflowExecutionUseCasesTest {
         when(taskInstRepo.save(ti)).thenReturn(ti);
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1"))
                 .thenReturn(resolved("proc-1", "Proc 1", List.of(), taskDef));
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(true);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(true);
 
         TaskInstance skipped = useCase.skip(ORG, instanceId, "task-1", "Not needed");
         assertThat(skipped.getStatus()).isEqualTo(TaskInstanceStatus.SKIPPED);
@@ -446,7 +515,7 @@ class WorkflowExecutionUseCasesTest {
 
         // Skip from PENDING when not all terminal
         ti.setStatus(TaskInstanceStatus.PENDING);
-        when(taskActivationService.allTerminal(ORG, instanceId)).thenReturn(false);
+        when(taskActivationService.allTerminal(eq(ORG), any(), eq(instanceId))).thenReturn(false);
         useCase.skip(ORG, instanceId, "task-1", "Skip pending");
         assertThat(ti.getStatus()).isEqualTo(TaskInstanceStatus.SKIPPED);
 

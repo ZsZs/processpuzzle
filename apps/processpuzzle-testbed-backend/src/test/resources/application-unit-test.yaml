@@ -57,6 +57,13 @@ base-state:
 base-workflow:
   loadDefaultWorkflows: no
   loadDefaultTranslations: no
+  # No background sweep: the timer tests call TimerSweep.sweep() themselves, and a scheduled one firing
+  # between their steps would make what they observe depend on timing.
+  timers:
+    enabled: no
+
+base-event:
+  loadDefaultEventDefinitions: no
 
 org-admin:
   loadDefaults: no

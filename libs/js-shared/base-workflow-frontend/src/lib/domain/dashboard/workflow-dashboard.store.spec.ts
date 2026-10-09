@@ -221,6 +221,14 @@ describe('WorkflowDashboardStore', () => {
       expect(completed?.rows.map((row) => row.task.status)).toEqual([TaskInstanceStatus.SKIPPED]);
     });
 
+    // CANCELLED neither: interrupted or unreachable is how a run went, not a state to watch.
+    it('folds a cancelled task into the completed column', () => {
+      reloadWith({ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'CANCELLED' }] });
+
+      const completed = store.columns().find((column) => column.status === TaskInstanceStatus.COMPLETED);
+      expect(completed?.rows.map((row) => row.task.status)).toEqual([TaskInstanceStatus.CANCELLED]);
+    });
+
     it('offers the runs newest first', () => {
       expect(store.selectableInstances().map((instance) => instance.id)).toEqual([runId, OTHER_WORKFLOW_INSTANCE_DTO.id]);
     });

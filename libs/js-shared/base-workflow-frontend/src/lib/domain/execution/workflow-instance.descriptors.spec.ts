@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, DEFAULT_DATE_TIME_FORMAT, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { createWorkflowInstanceDescriptor } from './workflow-instance.descriptors';
 import { WORKFLOW_INSTANCE_ENTITY_NAME, TASK_INSTANCE_ENTITY_NAME, ARTIFACT_INSTANCE_ENTITY_NAME } from '../workflow-entity-names';
 
@@ -31,16 +31,32 @@ describe('createWorkflowInstanceDescriptor', () => {
   });
 
   it('describes the run, its references, its timestamps and its two nested lists', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['workflowName', 'status', 'entityId', 'id', 'workflowId', 'startedAt', 'completedAt', 'context', 'tasks', 'artifacts']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['instanceNumber', 'workflowName', 'status', 'entityLabel', 'workflowId', 'startEventId', 'startedAt', 'completedAt', 'context', 'tasks', 'artifacts', 'events']);
   });
 
-  // The UUID opens the details, but the definition's name is what a monitor recognises a run by — so the
-  // status bar has to be told, or it would take the `isLinkToDetails` attribute and show the UUID.
-  it('opens the details by id but names the run by its definition', () => {
-    expect(byName('id')?.isLinkToDetails).toBe(true);
-    expect(descriptor.componentIdentification()).toBe('id');
-    expect(byName('workflowName')?.isHeading).toBe(true);
-    expect(descriptor.titleAttrName()).toBe('workflowName');
+  // The list's link opens the run itself, so it is the run's own identity — the server-assigned number —
+  // not the workflow's name, which belongs to the related definition and is shared by every run of it.
+  it('links by the instance number, titles by workflow and number, and shows no database key', () => {
+    expect(byName('instanceNumber')?.isLinkToDetails).toBe(true);
+    expect(descriptor.componentIdentification()).toBe('instanceNumber');
+    expect(byName('workflowName')?.isLinkToDetails).toBeFalsy();
+    expect(descriptor.titleAttrName()).toBe('title');
+    // The database keys are not shown at all — the UUID is in the URL, and the subject is shown by name.
+    expect(byName('id')).toBeUndefined();
+    expect(byName('entityId')).toBeUndefined();
+  });
+
+  it('shows the subject by its name rather than its id', () => {
+    expect(byName('entityLabel')?.hideInTable).toBeFalsy();
+    expect(byName('entityLabel')?.disabled).toBe(true);
+  });
+
+  it('renders the timestamps as date and time in the default format', () => {
+    for (const name of ['startedAt', 'completedAt']) {
+      expect(byName(name)?.formControlType).toBe(FormControlType.DATE);
+      expect(byName(name)?.dateFormat).toEqual(DEFAULT_DATE_TIME_FORMAT);
+      expect(byName(name)?.disabled).toBe(true);
+    }
   });
 
   it('offers the closed instance-status list as a dropdown', () => {
@@ -56,6 +72,6 @@ describe('createWorkflowInstanceDescriptor', () => {
   it('carries both nested lists as embedded components addressed by their own id', () => {
     expect(descriptor.embeddedAttrFor(TASK_INSTANCE_ENTITY_NAME)?.attrName).toBe('tasks');
     expect(descriptor.embeddedAttrFor(ARTIFACT_INSTANCE_ENTITY_NAME)?.attrName).toBe('artifacts');
-    expect(descriptor.embeddedAttrDescriptors().map((attr) => attr.referenceIdField)).toEqual(['id', 'id']);
+    expect(descriptor.embeddedAttrDescriptors().map((attr) => attr.referenceIdField)).toEqual(['id', 'id', 'id']);
   });
 });

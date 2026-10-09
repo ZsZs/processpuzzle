@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType } from '@processpuzzle/base-entity';
 import { createRequiredStartArtifactDescriptor, WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD } from './required-start-artifact.descriptors';
-import { ARTIFACT_DEFINITION_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME } from '../workflow-entity-names';
+import { ARTIFACT_DEFINITION_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, WORKFLOW_START_EVENT_ENTITY_NAME } from '../workflow-entity-names';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -12,12 +12,11 @@ describe('createRequiredStartArtifactDescriptor', () => {
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
 
-  // Embedded in the workflow because the start condition is part of the workflow and nothing else. It is
-  // an entity of its own only because `requiredArtifacts` is a list; the condition's other six fields are
-  // scalars, flattened onto the workflow's own form.
-  it('is an embedded component of the workflow', () => {
+  // Embedded in the start event because it is part of that event and nothing else — two levels below the
+  // workflow. It is an entity of its own only because `requiredArtifacts` is a list.
+  it('is an embedded component of the start event', () => {
     expect(descriptor.entityName).toBe(WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME);
-    expect(descriptor.componentParents).toEqual([WORKFLOW_ENTITY_NAME]);
+    expect(descriptor.componentParents).toEqual([WORKFLOW_START_EVENT_ENTITY_NAME]);
     expect(descriptor.isEmbedded).toBe(true);
   });
 

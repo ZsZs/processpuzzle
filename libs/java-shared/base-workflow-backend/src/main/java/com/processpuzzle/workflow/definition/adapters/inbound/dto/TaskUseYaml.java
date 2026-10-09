@@ -13,6 +13,7 @@ public record TaskUseYaml(
         List<String> dependsOn,
         String joinType,
         Boolean parallel,
-        Boolean override
+        Boolean override,
+        List<TaskArtifactStateYaml> artifactStates
 ) {
 }

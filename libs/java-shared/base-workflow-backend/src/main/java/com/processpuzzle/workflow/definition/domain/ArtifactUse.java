@@ -19,4 +19,10 @@ public class ArtifactUse {
 
     /** Id of an {@link ArtifactDefinition} of the same organization. */
     private String artifactDefinitionId;
+
+    /**
+     * The name this workflow's object of the artifact goes by — UML's {@code new_order : Order}.
+     * Display only; null means an anonymous object.
+     */
+    private String objectName;
 }

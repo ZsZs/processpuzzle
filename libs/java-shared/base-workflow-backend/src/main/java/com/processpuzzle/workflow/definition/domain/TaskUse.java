@@ -65,4 +65,8 @@ public class TaskUse {
      */
     @Builder.Default
     private boolean override = false;
+
+    /** The states this task expects its inputs in and leaves its outputs in, here. */
+    @Builder.Default
+    private List<TaskArtifactState> artifactStates = new ArrayList<>();
 }

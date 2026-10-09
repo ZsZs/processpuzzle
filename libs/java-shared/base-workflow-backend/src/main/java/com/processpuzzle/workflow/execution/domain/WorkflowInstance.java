@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -54,15 +55,24 @@ import java.util.UUID;
 @EqualsAndHashCode(of = "id")
 @ToString
 @Entity
-@Table(name = "workflow_instance")
+@Table(name = "workflow_instance",
+        uniqueConstraints = @UniqueConstraint(name = "uk_workflow_instance_number", columnNames = {"org_key", "instance_number"}))
 public class WorkflowInstance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "org_key", nullable = false)
     private String orgKey;
+
+    /**
+     * The instance's human-facing identity: 1, 2, 3… per organization, in start order, allocated by
+     * {@code InstanceNumberAllocator}. The UUID stays the key every reference uses; this is what a person
+     * reads and quotes. Nullable in the schema only because rows from before it existed have none.
+     */
+    @Column(name = "instance_number")
+    private Long instanceNumber;
 
     @Column(nullable = false)
     private String workflowId;
@@ -75,6 +85,16 @@ public class WorkflowInstance {
     private WorkflowInstanceStatus status;
 
     private String entityId;
+
+    /**
+     * The base-entity definition code of {@link #entityId}'s object — {@code order} — so the object can be
+     * named rather than shown by id. The triggering event's subject type for a triggered start; the
+     * workflow's first ENTITY artifact for an explicit one. Null when the run has no subject.
+     */
+    private String entityType;
+
+    /** The workflow's start event that admitted this start; null when the workflow had none. */
+    private String startEventId;
 
     /**
      * The context this instance was started with, and only that: task output is recorded on the task

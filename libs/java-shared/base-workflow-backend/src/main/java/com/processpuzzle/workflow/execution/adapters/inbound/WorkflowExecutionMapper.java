@@ -3,6 +3,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
+import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.model.CompleteTaskResponse;
 import com.processpuzzle.workflow.model.PageOfWorkflowInstance;
@@ -11,33 +12,83 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityLabelPort;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 
-/** Maps between execution-layer domain objects and the generated {@code workflow.model} classes. */
+/**
+ * Maps between execution-layer domain objects and the generated {@code workflow.model} classes.
+ *
+ * <p>An instance's {@code entityLabel} is resolved here, per response, through {@link EntityLabelPort}
+ * rather than stored: a name copied at start time would go stale the first time the object is renamed.
+ */
 @Component
 public class WorkflowExecutionMapper {
+
+    private final EntityLabelPort entityLabels;
+
+    /** Names no entity — for callers that only map, as the endpoint tests do. */
+    public WorkflowExecutionMapper() {
+        this(EntityLabelPort.NONE);
+    }
+
+    @Autowired
+    public WorkflowExecutionMapper(ObjectProvider<EntityLabelPort> entityLabelsProvider) {
+        this(entityLabelsProvider.getIfUnique(() -> EntityLabelPort.NONE));
+    }
+
+    public WorkflowExecutionMapper(EntityLabelPort entityLabels) {
+        this.entityLabels = entityLabels;
+    }
 
     // -- Workflow Instance --------------------------------------------------
 
     public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
                                                                       List<ArtifactInstance> artifacts) {
+        return toModel(instance, tasks, artifacts, List.of());
+    }
+
+    public com.processpuzzle.workflow.model.WorkflowInstance toModel(WorkflowInstance instance, List<TaskInstance> tasks,
+                                                                      List<ArtifactInstance> artifacts,
+                                                                      List<EventInstance> events) {
+        tasks = tasks == null ? List.of() : tasks;
+        artifacts = artifacts == null ? List.of() : artifacts;
+        events = events == null ? List.of() : events;
         com.processpuzzle.workflow.model.WorkflowInstance model = new com.processpuzzle.workflow.model.WorkflowInstance();
         model.setId(instance.getId().toString());
+        model.setInstanceNumber(instance.getInstanceNumber());
         model.setWorkflowId(instance.getWorkflowId());
         model.setWorkflowName(instance.getWorkflowName());
         model.setStatus(com.processpuzzle.workflow.model.WorkflowInstanceStatus.fromValue(instance.getStatus().name()));
         model.setEntityId(instance.getEntityId());
+        model.setEntityType(instance.getEntityType());
+        model.setEntityLabel(entityLabelOf(instance));
+        model.setStartEventId(instance.getStartEventId());
         model.setStartedAt(toOffsetDateTime(instance.getStartedAt()));
         model.setCompletedAt(toOffsetDateTime(instance.getCompletedAt()));
-        // Assembled, not stored: the API's `context` is still the *current* context, it is simply
-        // derived from the task contributions rather than from a field. Costs no query — the task
-        // instances are already here because the response carries them.
-        model.setContext(WorkflowContext.assemble(instance, tasks));
         model.setTasks(tasks.stream().map(this::toModel).toList());
         model.setArtifacts(artifacts.stream().map(this::toModel).toList());
+        model.setEvents(events.stream().map(this::toModel).toList());
+        // Assembled, not stored: the API's `context` is still the *current* context, it is simply
+        // derived from the task and event contributions rather than from a field. Costs no query — the
+        // task and event instances are already here because the response carries them.
+        model.setContext(WorkflowContext.assemble(instance, tasks, events));
         return model;
+    }
+
+    /** The subject's name; its id when it has no type to resolve a name by, or the host names nothing. */
+    private String entityLabelOf(WorkflowInstance instance) {
+        if (instance.getEntityId() == null) {
+            return null;
+        }
+        if (instance.getEntityType() == null) {
+            return instance.getEntityId();
+        }
+        return entityLabels.labelOf(instance.getOrgKey(), instance.getEntityType(), instance.getEntityId())
+                .orElse(instance.getEntityId());
     }
 
     /**
@@ -72,6 +123,8 @@ public class WorkflowExecutionMapper {
                 .activatedAt(toOffsetDateTime(instance.getActivatedAt()))
                 .completedAt(toOffsetDateTime(instance.getCompletedAt()))
                 .skippedAt(toOffsetDateTime(instance.getSkippedAt()))
+                .cancelledAt(toOffsetDateTime(instance.getCancelledAt()))
+                .cancelReason(instance.getCancelReason())
                 .stepResults(instance.getStepResults().stream().map(sr -> new StepResult()
                         .stepId(sr.getStepId())
                         .completedAt(toOffsetDateTime(sr.getCompletedAt()))
@@ -85,6 +138,25 @@ public class WorkflowExecutionMapper {
                 .accepted(result.accepted())
                 .task(toModel(result.task()))
                 .postconditionDetail(result.postconditionDetail());
+    }
+
+    // -- Event Instance -------------------------------------------------------
+
+    public com.processpuzzle.workflow.model.EventInstance toModel(EventInstance instance) {
+        return new com.processpuzzle.workflow.model.EventInstance()
+                .id(instance.getId() == null ? null : instance.getId().toString())
+                .eventUseId(instance.getEventUseId())
+                .eventDefinitionId(instance.getEventDefinitionId())
+                .name(instance.getName())
+                .direction(com.processpuzzle.workflow.model.EventDirection.fromValue(instance.getDirection().name()))
+                .status(com.processpuzzle.workflow.model.EventInstanceStatus.fromValue(instance.getStatus().name()))
+                .correlationValue(instance.getCorrelationValue())
+                .waitingSince(toOffsetDateTime(instance.getWaitingSince()))
+                .occurredAt(toOffsetDateTime(instance.getOccurredAt()))
+                .dueAt(toOffsetDateTime(instance.getDueAt()))
+                .fireCount(instance.firings())
+                .payload(instance.getPayload())
+                .contextContribution(instance.getContextContribution());
     }
 
     // -- Artifact Instance ------------------------------------------------

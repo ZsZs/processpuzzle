@@ -4,7 +4,9 @@ import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.domain.event.EntityObjectStateChangedEvent;
 import com.processpuzzle.state.usecase.service.EntityObjectGatewayResolver;
+import com.processpuzzle.shared.event.PlatformEvent;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,8 +75,18 @@ public class StartStateMachine {
         long newVersion = gatewayResolver.gateway().updateStateAttribute(
                 orgKey, entityName, objectId, definition.getStateAttributeKey(), initialStateKey, version);
 
+        Instant now = Instant.now();
         eventPublisher.publishEvent(new EntityObjectStateChangedEvent(
-                orgKey, entityName, objectId, null, initialStateKey, null, null, newVersion, Instant.now()));
+                orgKey, entityName, objectId, null, initialStateKey, null, null, newVersion, now));
+        eventPublisher.publishEvent(PlatformEvent.stateChanged(orgKey, entityName, objectId.toString(), initialStateKey,
+                withState(payload, definition.getStateAttributeKey(), initialStateKey), now));
         return Optional.of(initialStateKey);
+    }
+
+    /** The payload as it reads after the write — the creating payload plus the state just written. */
+    static Map<String, Object> withState(Map<String, Object> payload, String stateAttributeKey, String stateKey) {
+        Map<String, Object> after = payload == null ? new LinkedHashMap<>() : new LinkedHashMap<>(payload);
+        after.put(stateAttributeKey, stateKey);
+        return after;
     }
 }

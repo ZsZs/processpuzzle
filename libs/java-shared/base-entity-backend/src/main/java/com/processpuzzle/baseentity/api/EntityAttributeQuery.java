@@ -9,6 +9,9 @@ import java.util.Optional;
  * <p>base-state is the caller: a state machine names the attribute holding the current state, and
  * that name has to resolve to a real attribute of a kind that can hold a state key. Requiring it to
  * resolve is also what restricts state machines to entity types base-entity manages.
+ *
+ * <p>base-workflow's host adapter asks {@link #titleAttribute} to show a workflow instance's subject by
+ * name rather than by id.
  */
 public interface EntityAttributeQuery {
 
@@ -24,4 +27,11 @@ public interface EntityAttributeQuery {
 
     /** Whether {@code entityDefinitionCode} resolves to an entity type of {@code orgKey} at all. */
     boolean entityTypeExists(String orgKey, String entityDefinitionCode);
+
+    /**
+     * The attribute that names an object of {@code entityDefinitionCode} — the one its definition marks
+     * {@code isLinkToDetails}, which the generated list renders as the row's link. Empty when the type is
+     * unknown or marks none.
+     */
+    Optional<String> titleAttribute(String orgKey, String entityDefinitionCode);
 }

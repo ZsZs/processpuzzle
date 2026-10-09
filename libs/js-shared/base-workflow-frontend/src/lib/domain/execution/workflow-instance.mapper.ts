@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
+import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
-import { ArtifactInstance, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './workflow-instance';
+import { ArtifactInstance, EventInstance, EventInstanceStatus, WorkflowInstance, WorkflowInstanceStatus, StepResult, TaskInstance, TaskInstanceStatus } from './workflow-instance';
 
 // region wire shapes
 interface StepResultDto {
@@ -22,6 +23,8 @@ export interface TaskInstanceDto {
   activatedAt?: string;
   completedAt?: string;
   skippedAt?: string;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   stepResults?: StepResultDto[];
 }
 
@@ -36,17 +39,38 @@ interface ArtifactInstanceDto {
   updatedAt?: string;
 }
 
+interface EventInstanceDto {
+  id?: string;
+  eventUseId?: string;
+  eventDefinitionId?: string | null;
+  name?: string | null;
+  direction?: EventDirection;
+  status?: EventInstanceStatus;
+  correlationValue?: string | null;
+  waitingSince?: string | null;
+  occurredAt?: string | null;
+  payload?: PropertyMap | null;
+  contextContribution?: PropertyMap | null;
+  dueAt?: string | null;
+  fireCount?: number;
+}
+
 interface WorkflowInstanceDto {
   id?: string;
+  instanceNumber?: number;
   workflowId?: string;
+  startEventId?: string;
   workflowName?: string;
   status?: WorkflowInstanceStatus;
   entityId?: string;
+  entityType?: string;
+  entityLabel?: string;
   startedAt?: string;
   completedAt?: string;
   context?: PropertyMap;
   tasks?: TaskInstanceDto[];
   artifacts?: ArtifactInstanceDto[];
+  events?: EventInstanceDto[];
 }
 // endregion
 
@@ -70,30 +94,40 @@ export class WorkflowInstanceMapper implements BaseEntityMapper<WorkflowInstance
     const source = dto as WorkflowInstanceDto;
     return new WorkflowInstance({
       id: source.id,
+      instanceNumber: source.instanceNumber ?? undefined,
       workflowId: source.workflowId,
+      startEventId: source.startEventId,
       workflowName: source.workflowName,
       status: source.status,
       entityId: source.entityId,
+      entityType: source.entityType,
+      entityLabel: source.entityLabel,
       startedAt: source.startedAt,
       completedAt: source.completedAt,
       context: source.context,
       tasks: (source.tasks ?? []).map(toTaskInstance),
       artifacts: (source.artifacts ?? []).map(toArtifactInstance),
+      events: (source.events ?? []).map(toEventInstance),
     });
   }
 
   toDto(entity: WorkflowInstance): WorkflowInstanceDto {
     return {
       id: entity.id,
+      instanceNumber: entity.instanceNumber,
       workflowId: entity.workflowId,
+      startEventId: entity.startEventId,
       workflowName: entity.workflowName,
       status: entity.status,
       entityId: entity.entityId,
+      entityType: entity.entityType,
+      entityLabel: entity.entityLabel,
       startedAt: entity.startedAt,
       completedAt: entity.completedAt,
       context: entity.context,
       tasks: (entity.tasks ?? []).map(fromTaskInstance),
       artifacts: (entity.artifacts ?? []).map(fromArtifactInstance),
+      events: (entity.events ?? []).map(fromEventInstance),
     };
   }
 }
@@ -124,6 +158,8 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     activatedAt: dto.activatedAt,
     completedAt: dto.completedAt,
     skippedAt: dto.skippedAt,
+    cancelledAt: dto.cancelledAt ?? undefined,
+    cancelReason: dto.cancelReason ?? undefined,
     stepResults: (dto.stepResults ?? []).map(toStepResult),
   });
 }
@@ -139,6 +175,8 @@ function fromTaskInstance(task: TaskInstance): TaskInstanceDto {
     activatedAt: task.activatedAt,
     completedAt: task.completedAt,
     skippedAt: task.skippedAt,
+    cancelledAt: task.cancelledAt,
+    cancelReason: task.cancelReason,
     stepResults: (task.stepResults ?? []).map(fromStepResult),
   };
 }
@@ -166,6 +204,41 @@ function fromArtifactInstance(artifact: ArtifactInstance): ArtifactInstanceDto {
     stateMachineInstanceId: artifact.stateMachineInstanceId,
     currentState: artifact.currentState,
     updatedAt: artifact.updatedAt,
+  };
+}
+function toEventInstance(dto: EventInstanceDto): EventInstance {
+  return new EventInstance({
+    id: dto.id,
+    eventUseId: dto.eventUseId,
+    eventDefinitionId: dto.eventDefinitionId ?? undefined,
+    name: dto.name ?? undefined,
+    direction: dto.direction,
+    status: dto.status,
+    correlationValue: dto.correlationValue ?? undefined,
+    waitingSince: dto.waitingSince ?? undefined,
+    occurredAt: dto.occurredAt ?? undefined,
+    payload: dto.payload ?? undefined,
+    contextContribution: dto.contextContribution ?? undefined,
+    dueAt: dto.dueAt ?? undefined,
+    fireCount: dto.fireCount,
+  });
+}
+
+function fromEventInstance(event: EventInstance): EventInstanceDto {
+  return {
+    id: event.id,
+    eventUseId: event.eventUseId,
+    eventDefinitionId: event.eventDefinitionId,
+    name: event.name,
+    direction: event.direction,
+    status: event.status,
+    correlationValue: event.correlationValue,
+    waitingSince: event.waitingSince,
+    occurredAt: event.occurredAt,
+    payload: event.payload,
+    contextContribution: event.contextContribution,
+    dueAt: event.dueAt,
+    fireCount: event.fireCount,
   };
 }
 // endregion
