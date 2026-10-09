@@ -58,4 +58,16 @@ defineEntityCrudSuite({
       reason: 'workflow instances are read-only by contract; the descriptor is isAbstract, so New/Edit/Delete/Save are all disabled',
     },
   ],
+  fixtureOverrides: [
+    {
+      // The generator takes the first Kind, SYSTEM, which is the one kind that keeps the subject fields — but
+      // also the first Action, CREATED, while filling State. EventDefinition.validate allows a state only with
+      // STATE_CHANGED, so the POST came back 400 and the read-back found State empty. Pinned on both steps,
+      // since the update would otherwise move on to the next option.
+      entityName: 'Event Definition',
+      create: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
+      update: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
+      reason: "'state' is only meaningful with action STATE_CHANGED",
+    },
+  ],
 });
