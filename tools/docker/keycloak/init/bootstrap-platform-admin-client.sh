@@ -73,6 +73,13 @@ CUSTOM_SMTP_SSL="${KEYCLOAK_CUSTOM_SMTP_SSL:-false}"
 # `platform-admin` instead.
 E2E_STAFF_USERNAME="${PLATFORM_ADMIN_E2E_USERNAME:-}"
 E2E_STAFF_PASSWORD="${PLATFORM_ADMIN_E2E_PASSWORD:-}"
+# The account processpuzzle-biz's Publish-Business-Starters workflow dry-run imports every new
+# starter bundle with, into an organization of its own that never holds data. Reconciled here for
+# the staff account's reason, a reset stage. Optional: local and CI leave both unset.
+STARTER_GATE_USERNAME="${STARTER_GATE_USERNAME:-}"
+STARTER_GATE_PASSWORD="${STARTER_GATE_PASSWORD:-}"
+STARTER_GATE_ORG_KEY="${STARTER_GATE_ORG_KEY:-starter-gate}"
+STARTER_GATE_CLIENT_ID="${STARTER_GATE_CLIENT_ID:-starter-gate}"
 # Overridable so the argument construction below can be exercised against a stub; a container
 # never sets it.
 KCADM="${KCADM:-/opt/keycloak/bin/kcadm.sh}"
@@ -449,6 +456,106 @@ elif [ -n "${E2E_STAFF_USERNAME}${E2E_STAFF_PASSWORD}" ]; then
   exit 1
 else
   echo "No PLATFORM_ADMIN_E2E_USERNAME; skipping the end-to-end staff user."
+fi
+
+# --- the starter gate account -------------------------------------------------------------------
+# The custom backend authorizes `/organizations/{orgKey}/…` on the token's `organization` claim
+# alone, so the gate needs three things here and nothing in the backend: a client that may use the
+# password grant, an Organization whose alias is the orgKey, and a user who is a member of it. Its
+# own Organization rather than a customer's, because an import is refused with 409 into an
+# organization that already holds entity objects — a gate pointed at a real tenant breaks the day
+# that tenant enters its first row.
+ensure_starter_gate() {
+  local realm="processpuzzle-custom"
+  local username="$1"
+  local password="$2"
+  local org_key="$3"
+  local client_id="$4"
+  local client_uuid org_id user_id
+
+  # Direct access grants only: no browser ever logs in with this client, so no redirect URIs either.
+  login
+  client_uuid="$("$KCADM" get clients -r "${realm}" --query "clientId=${client_id}" --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+  if [ -z "${client_uuid}" ]; then
+    echo "Creating password-grant client '${client_id}' in '${realm}' ..."
+    "$KCADM" create clients -r "${realm}" \
+      -s "clientId=${client_id}" \
+      -s 'name=ProcessPuzzle Starter Gate' \
+      -s 'enabled=true' \
+      -s 'publicClient=true' \
+      -s 'standardFlowEnabled=false' \
+      -s 'directAccessGrantsEnabled=true' \
+      -s 'implicitFlowEnabled=false' \
+      -s 'serviceAccountsEnabled=false' \
+      -s 'protocol=openid-connect'
+  else
+    echo "Reconciling password-grant client '${client_id}' in '${realm}' ..."
+    "$KCADM" update "clients/${client_uuid}" -r "${realm}" \
+      -s 'enabled=true' \
+      -s 'publicClient=true' \
+      -s 'standardFlowEnabled=false' \
+      -s 'directAccessGrantsEnabled=true' \
+      -s 'implicitFlowEnabled=false' \
+      -s 'serviceAccountsEnabled=false'
+  fi
+  ensure_default_client_scope "${realm}" "${client_id}" organization
+
+  # The domain because Keycloak requires one on an Organization; the subdomain convention is
+  # platform-admin's KeycloakOrganizationAdapter's, so the gate looks like any other tenant.
+  login
+  org_id="$("$KCADM" get organizations -r "${realm}" --query "search=${org_key}" --query exact=true --fields id,alias --format csv --noquotes 2>/dev/null | grep ",${org_key}\$" | cut -d, -f1 | head -1 || true)"
+  if [ -z "${org_id}" ]; then
+    echo "Creating organization '${org_key}' in '${realm}' ..."
+    "$KCADM" create organizations -r "${realm}" \
+      -s "name=${org_key}" \
+      -s "alias=${org_key}" \
+      -s 'enabled=true' \
+      -s "domains=[{\"name\":\"${org_key}.processpuzzle.com\"}]"
+    org_id="$("$KCADM" get organizations -r "${realm}" --query "search=${org_key}" --query exact=true --fields id,alias --format csv --noquotes | grep ",${org_key}\$" | cut -d, -f1 | head -1)"
+  else
+    echo "Organization '${org_key}' already exists in '${realm}'."
+  fi
+
+  # Names and an address for the staff user's reason: a pending "update your account" action makes
+  # the password grant answer "Account is not fully set up".
+  user_id="$("$KCADM" get users -r "${realm}" --query "username=${username}" --query exact=true --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+  if [ -z "${user_id}" ]; then
+    echo "Creating starter gate user '${username}' in '${realm}' ..."
+    "$KCADM" create users -r "${realm}" \
+      -s "username=${username}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'firstName=Starter' \
+      -s 'lastName=Gate' \
+      -s "email=${username}@${org_key}.processpuzzle.com"
+    user_id="$("$KCADM" get users -r "${realm}" --query "username=${username}" --query exact=true --fields id --format csv --noquotes | head -1)"
+  else
+    echo "Reconciling starter gate user '${username}' in '${realm}' ..."
+    "$KCADM" update "users/${user_id}" -r "${realm}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'requiredActions=[]'
+  fi
+
+  # Set on every start, so rotating the secret needs nothing more than a redeploy.
+  "$KCADM" set-password -r "${realm}" --username "${username}" --new-password "${password}"
+
+  if "$KCADM" get "organizations/${org_id}/members" -r "${realm}" --fields id --format csv --noquotes 2>/dev/null | grep -qx "${user_id}"; then
+    echo "'${username}' is already a member of '${org_key}'."
+  else
+    echo "Adding '${username}' to organization '${org_key}' ..."
+    # The Organizations API takes the bare user id as a JSON string.
+    "$KCADM" create "organizations/${org_id}/members" -r "${realm}" -b "\"${user_id}\""
+  fi
+}
+
+if [ -n "${STARTER_GATE_USERNAME}" ] && [ -n "${STARTER_GATE_PASSWORD}" ]; then
+  ensure_starter_gate "${STARTER_GATE_USERNAME}" "${STARTER_GATE_PASSWORD}" "${STARTER_GATE_ORG_KEY}" "${STARTER_GATE_CLIENT_ID}"
+elif [ -n "${STARTER_GATE_USERNAME}${STARTER_GATE_PASSWORD}" ]; then
+  echo "ERROR: set both STARTER_GATE_USERNAME and STARTER_GATE_PASSWORD, or neither." >&2
+  exit 1
+else
+  echo "No STARTER_GATE_USERNAME; skipping the starter gate account."
 fi
 
 # --- the client -------------------------------------------------------------------------------
