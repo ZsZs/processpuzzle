@@ -290,6 +290,12 @@ services:
       # the seeded `platform-admin` instead.
       PLATFORM_ADMIN_E2E_USERNAME: ${PLATFORM_ADMIN_E2E_USERNAME:-}
       PLATFORM_ADMIN_E2E_PASSWORD: ${PLATFORM_ADMIN_E2E_PASSWORD:-}
+      # The account processpuzzle-biz's Publish-Business-Starters gate dry-run imports with, in an
+      # Organization of its own. Both or neither; unset locally and in CI, where no gate runs.
+      STARTER_GATE_USERNAME: ${STARTER_GATE_USERNAME:-}
+      STARTER_GATE_PASSWORD: ${STARTER_GATE_PASSWORD:-}
+      STARTER_GATE_ORG_KEY: ${STARTER_GATE_ORG_KEY:-starter-gate}
+      STARTER_GATE_CLIENT_ID: ${STARTER_GATE_CLIENT_ID:-starter-gate}
     networks:
       - processpuzzle
     restart: "no"
