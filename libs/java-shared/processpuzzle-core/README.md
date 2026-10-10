@@ -32,6 +32,17 @@ Do not use that policy on an internet-facing or multi-tenant deployment: it gran
 design, platform-administrator and role checks. Keep it in a demonstration-only configuration.
 Partial policy implementations now deny any checks they do not override.
 
+## Identity failures
+
+`IdentityProviderUnavailableException.getHttpStatus()` exposes the actual HTTP response status as
+an `OptionalInt`, retaining the original cause. Transport failures and failures without a response
+have no status; error messages and response bodies are never parsed as status codes.
+
+`KeycloakAdminClient.exchangeTolerating` accepts only exact status matches from the requested
+Admin API operation. Token-acquisition failures always propagate, even when their status is in
+the tolerated list. Callers translating identity failures should use the structured status rather
+than diagnostic text (PCR-ABS-01).
+
 ## Technologies
 
 - **Java 25**

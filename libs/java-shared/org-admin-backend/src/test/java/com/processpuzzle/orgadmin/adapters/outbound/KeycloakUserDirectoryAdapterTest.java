@@ -12,6 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.List;
 import java.util.Map;
@@ -120,7 +124,9 @@ class KeycloakUserDirectoryAdapterTest {
     @Test
     void translatesDuplicateAndTransportFailures() {
         UserDirectoryPort.NewUser user = new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null);
-        doThrow(unavailable("409 Conflict")).when(client).createAndReturnId(anyString(), any());
+        doThrow(new IdentityProviderUnavailableException("Keycloak failed",
+                HttpClientErrorException.create(HttpStatus.CONFLICT, "Conflict", HttpHeaders.EMPTY, null, null)))
+                .when(client).createAndReturnId(anyString(), any());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
                 .isInstanceOf(UserAlreadyExistsException.class);
 
@@ -132,6 +138,23 @@ class KeycloakUserDirectoryAdapterTest {
         when(client.getList(anyString())).thenThrow(unavailable("down"));
         assertThatThrownBy(() -> adapter.findRoles(REALM))
                 .isInstanceOf(DirectoryUnavailableException.class);
+    }
+
+    @Test
+    void diagnosticDigitsDoNotTurnAnOutageIntoADuplicateUser() {
+        UserDirectoryPort.NewUser user = new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null);
+        List<IdentityProviderUnavailableException> failures = List.of(
+                unavailable("Connection failed at port 409"),
+                new IdentityProviderUnavailableException("Keycloak failed",
+                        HttpServerErrorException.create(HttpStatus.INTERNAL_SERVER_ERROR, "Incident 409",
+                                HttpHeaders.EMPTY, null, null)));
+
+        for (IdentityProviderUnavailableException failure : failures) {
+            doThrow(failure).when(client).createAndReturnId(anyString(), any());
+            assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
+                    .isInstanceOf(DirectoryUnavailableException.class)
+                    .hasCause(failure);
+        }
     }
 
     @Test
