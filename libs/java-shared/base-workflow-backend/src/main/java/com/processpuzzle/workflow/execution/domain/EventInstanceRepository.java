@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /** Derived finders only: the library tests run on H2, so nothing here may query into JSONB. */
 public interface EventInstanceRepository extends JpaRepository<EventInstance, UUID> {
@@ -37,4 +40,12 @@ public interface EventInstanceRepository extends JpaRepository<EventInstance, UU
 
     /** Whether an occurrence was already delivered to a catch — a MESSAGE redelivery. */
     boolean existsByOrgKeyAndOccurrenceIdAndDirection(String orgKey, UUID occurrenceId, EventDirection direction);
+
+    /**
+     * Every event instance (throws, catches, timers) of a tenant in one statement, for erasing the tenant. A bulk delete, so it
+     * neither loads the rows nor checks their version.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from EventInstance e where e.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

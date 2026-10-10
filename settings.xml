@@ -11,11 +11,18 @@
             <username>${env.MAVEN_USERNAME}</username>
             <password>${env.MAVEN_PASSWORD}</password>
         </server>
+        <!-- GitHub Packages. The release workflow's GITHUB_TOKEN needs packages: write. -->
+        <server>
+            <id>github</id>
+            <username>${env.GITHUB_ACTOR}</username>
+            <password>${env.GITHUB_TOKEN}</password>
+        </server>
     </servers>
 
     <profiles>
+        <!-- Same id as the pom profile, so -Ppublish-central activates both. -->
         <profile>
-            <id>release</id>
+            <id>publish-central</id>
             <properties>
                 <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
             </properties>

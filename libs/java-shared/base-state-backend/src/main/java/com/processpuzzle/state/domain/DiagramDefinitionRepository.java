@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Every finder is scoped by {@code orgKey}, same discipline as
@@ -22,4 +25,12 @@ public interface DiagramDefinitionRepository
     List<DiagramDefinition> findByOrgKey(String orgKey);
 
     void deleteByOrgKey(String orgKey);
+
+    /**
+     * Every diagram of a tenant in one statement, for erasing the tenant. Not
+     * {@link #deleteByOrgKey}, which loads every row and removes it one by one.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from DiagramDefinition d where d.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

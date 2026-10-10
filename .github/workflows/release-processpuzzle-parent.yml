@@ -63,9 +63,10 @@ jobs:
 
       - name: Publish the parent pom to Maven Central
         # -N is essential: without it the whole reactor deploys and re-publishing an
-        # already-released lib version fails. -Prelease supplies gpg.passphrase from
-        # $GPG_PASSPHRASE (see settings.xml).
-        run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml -N deploy -Prelease
+        # already-released lib version fails. -Ppublish-central binds the GPG and Central
+        # plugins and supplies gpg.passphrase from $GPG_PASSPHRASE (see settings.xml). The
+        # parent always goes to Central: biz and any outside consumer inherit it from there.
+        run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml -N deploy -Ppublish-central
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}

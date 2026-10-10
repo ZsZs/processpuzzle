@@ -2,6 +2,9 @@ package com.processpuzzle.workflow.execution.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,4 +28,12 @@ public interface TaskInstanceRepository
 
     List<TaskInstance> findByOrgKeyAndWorkflowInstanceIdAndStatus(
             String orgKey, UUID workflowInstanceId, TaskInstanceStatus status);
+
+    /**
+     * Every task instance of a tenant in one statement, for erasing the tenant. A bulk delete, so it
+     * neither loads the rows nor checks their version.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from TaskInstance t where t.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

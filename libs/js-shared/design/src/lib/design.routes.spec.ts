@@ -120,7 +120,7 @@ describe('DESIGN_ROUTES', () => {
   });
 
   describe('the Workflows section', () => {
-    it('hosts the six base-workflow branches on the tabbed designer page', () => {
+    it('hosts the base-workflow branches and the event catalog on the tabbed designer page', () => {
       expect(workflowsRoute?.component).toBe(WorkflowDesignerComponent);
       expect(workflowsRoute?.data).toEqual({ icon: 'schema', menuTitle: 'design.workflows' });
       expect(workflowsRoute?.title).toBeDefined();
@@ -147,13 +147,14 @@ describe('DESIGN_ROUTES', () => {
      * build a details URL — a renamed tab path silently breaks the Name column and Edit navigation of that
      * branch. Asserted by name, not derived, so a lost or reordered tab fails.
      */
-    it('shows the workflow, the four catalog definitions and the runs, in that order', () => {
+    it('shows the workflow, the five catalog definitions and the runs, in that order', () => {
       expect(WORKFLOW_DESIGNER_TABS.map((tab) => tab.path)).toEqual([
         'workflow',
         'workflow-role-definition',
         'task-definition',
         'artifact-definition',
         'tool-definition',
+        'event-definition',
         'workflow-instance',
       ]);
     });

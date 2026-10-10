@@ -2,6 +2,9 @@ package com.processpuzzle.rule.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,4 +29,26 @@ public interface RuleDefinitionRepository
     List<RuleDefinition> findByOrgKeyAndExtendsRuleId(String orgKey, String extendsRuleId);
 
     void deleteByOrgKey(String orgKey);
+
+    /** The ids alone, for unregistering a tenant's rules from the engine without loading them. */
+    @Query("select r.id from RuleDefinition r where r.orgKey = :orgKey")
+    List<String> findIdsByOrgKey(@Param("orgKey") String orgKey);
+
+    /**
+     * The {@code fields} collection table, which has to go before the rows it belongs to: bulk
+     * deletes do not cascade, and a JPQL statement cannot address a collection table. Native, for
+     * that reason only.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "delete from rule_definition_fields where org_key = :orgKey", nativeQuery = true)
+    int eraseFieldsByOrgKey(@Param("orgKey") String orgKey);
+
+    /**
+     * Every rule of a tenant in one statement, for erasing the tenant. Not {@link #deleteByOrgKey},
+     * which loads every row and removes it one by one — fine for an import, slow for a large tenant.
+     * Run {@link #eraseFieldsByOrgKey} first.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from RuleDefinition r where r.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

@@ -411,6 +411,15 @@ login
   -s "actionTokenGeneratedByAdminLifespan=43200" \
   -s "smtpServer=${smtp_server}"
 
+# The activation mail's language and wording, reconciled for the same reason as SMTP above. Keycloak
+# renders that mail in the user's `locale` only while internationalization is on -- with it off, the
+# declarative user profile drops the attribute platform-admin sets and every mail goes out in the
+# default language. The supported locales are the languages the sign-up offers; `processpuzzle` is
+# the email theme baked into the Keycloak image (tools/docker/keycloak/themes/).
+echo "Reconciling languages and the email theme for the customer realm ..."
+login
+"$KCADM" update realms/processpuzzle-custom   -s "internationalizationEnabled=true"   -s 'supportedLocales=["en","de","es","fr","hu"]'   -s "defaultLocale=en"   -s "emailTheme=processpuzzle"
+
 # --- the end-to-end staff account ---------------------------------------------------------------
 # Both or neither: one without the other is a misconfigured resource, and skipping quietly would
 # surface much later as an e2e run that cannot log in.

@@ -3,9 +3,10 @@ name: Build-ProcessPuzzle-Infrastructure
 # Builds the shared infrastructure images on any change under tools/docker/, and — on `develop` —
 # pushes them to GHCR and hands off to Deploy-Infrastructure.
 #
-# Same shape as the other Build-* workflows: `feature/**` and pull requests **build only**, which is
-# what proves the Dockerfiles still build; `develop` is the branch that publishes. Pushing a
-# feature branch's bytes to a tag a deployment watches would defeat the point of watching it.
+# Same shape as the other Build-* workflows: pull requests **build only**, which is what proves the
+# Dockerfiles still build; `develop` is the branch that publishes. Pushing a feature branch's bytes
+# to a tag a deployment watches would defeat the point of watching it. There is no `feature/**` push
+# trigger: on a branch with an open pull request it built every commit a second time.
 #
 # The six images are the ProcessPuzzle half of tools/docker/docker-compose-infrastructure.yaml —
 # the services that file names but no longer builds, since it is pull-only so that Coolify pulls what
@@ -15,7 +16,7 @@ name: Build-ProcessPuzzle-Infrastructure
 
 on:
   push:
-    branches: [ "feature/**", develop ]
+    branches: [ develop ]
     paths:
       # Deliberately the whole directory rather than the four image folders. It over-triggers a
       # little — an app Dockerfile or a compose comment rebuilds all six — but `type=gha` caching

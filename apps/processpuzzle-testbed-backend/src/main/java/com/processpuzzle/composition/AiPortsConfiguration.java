@@ -183,6 +183,12 @@ public class AiPortsConfiguration {
             storage.deleteObject(bucket(), objectName);
         }
 
+        /** On the bucket as named, not created first: a bucket that does not exist holds nothing to delete. */
+        @Override
+        public void deleteByPrefix(String prefix) {
+            storage.deleteByPrefix(bucket, prefix);
+        }
+
         private String bucket() {
             if (!bucketReady.get()) {
                 storage.createBucket(bucket);

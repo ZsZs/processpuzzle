@@ -27,6 +27,12 @@
       "start": "Début",
       "end": "Fin",
       "save": "Enregistrer la disposition",
+      "routing": {
+        "title": "Tracé",
+        "orthogonal": "Angles droits",
+        "polyline": "Droite",
+        "bezier": "Courbe"
+      },
       "properties": {
         "none": "Sélectionnez un élément pour voir ses propriétés.",
         "lane": "Couloir",

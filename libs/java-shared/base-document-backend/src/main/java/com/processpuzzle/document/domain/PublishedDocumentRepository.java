@@ -1,6 +1,9 @@
 package com.processpuzzle.document.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,4 +29,12 @@ public interface PublishedDocumentRepository extends JpaRepository<PublishedDocu
     void deleteByOrgKeyAndDocumentId(String orgKey, String documentId);
 
     void deleteByOrgKey(String orgKey);
+
+    /**
+     * Every published snapshot of a tenant in one statement, for erasing the tenant. Not
+     * {@link #deleteByOrgKey}, which loads every row and removes it one by one.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from PublishedDocument p where p.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

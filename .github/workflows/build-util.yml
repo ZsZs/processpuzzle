@@ -2,7 +2,6 @@ name: Build-Util
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/js-shared/util/**'

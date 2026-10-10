@@ -2,7 +2,6 @@ name: Build-Base-State-Backend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/java-shared/base-state-backend/**'

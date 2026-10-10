@@ -12,6 +12,10 @@
   "bruteForceProtected": true,
   "organizationsEnabled": true,
   "actionTokenGeneratedByAdminLifespan": 43200,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "de", "es", "fr", "hu"],
+  "defaultLocale": "en",
+  "emailTheme": "processpuzzle",
   "browserSecurityHeaders": {
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9093 http://localhost:4203 http://localhost:9092 http://localhost:4202; object-src 'none';",
     "xFrameOptions": ""

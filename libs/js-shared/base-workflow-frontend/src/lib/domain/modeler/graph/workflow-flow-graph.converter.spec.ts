@@ -187,6 +187,14 @@ describe('WorkflowFlowGraphConverter', () => {
       expect(graph.nodes.find((node) => node.id === REVIEW)?.data).toMatchObject({ kind: 'task', label: 'Review Order', unresolved: false });
     });
 
+    // Not drawn, but what the properties panel shows of a task beyond its name.
+    it('carries a task’s guards and step names for the properties panel', () => {
+      const guarded = TASKS.map((task) => (task.id === 'review-order' ? new TaskDefinition({ ...task, preconditionRuleId: 'order-complete', postconditionRuleId: '' }) : task));
+      const graph = WorkflowFlowGraphConverter.toGraph(workflow(), guarded, ROLES, ARTIFACTS, TOOLS, { labels: LABELS });
+
+      expect(nodeOf(graph, REVIEW)?.data.task).toEqual({ preconditionRuleId: 'order-complete', postconditionRuleId: undefined, steps: ['Check Line Items'] });
+    });
+
     /**
      * The single most reversible thing in this converter. `dependsOn` names what must finish *first*, so an
      * edge runs from the dependency to the task naming it — the opposite of the field's direction.

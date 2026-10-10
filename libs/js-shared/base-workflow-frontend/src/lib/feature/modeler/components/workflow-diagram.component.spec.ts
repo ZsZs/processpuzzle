@@ -2,8 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DiagramEdgeLayout, DiagramNodeLayout, DiagramViewport, NodeSize, Point, WorkflowDiagram } from '../../../domain/modeler/models/workflow-diagram';
 import { WORKFLOW_LANE_TYPE, WORKFLOW_NODE_TYPE, WORKFLOW_RELATION_EDGE_TYPE, WorkflowGraph, WorkflowNode } from '../../../domain/modeler/workflow-graph';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { WorkflowSelectionService } from '../services/workflow-selection.service';
-import { REFUSE_CONNECTION, REFUSE_GROUPING, WorkflowDiagramComponent, WorkflowGraphLayout } from './workflow-diagram.component';
+import { REFUSE_GROUPING, SAME_NODE_RELINK_ONLY, WorkflowDiagramComponent, WorkflowGraphLayout } from './workflow-diagram.component';
 
 /**
  * Asserted on the model rather than on the rendered DOM: the diagram is drawn by `<ng-diagram>`, whose
@@ -19,11 +21,17 @@ describe('WorkflowDiagramComponent', () => {
     edges: [{ id: 'role:clerk->artifact:order-entity', source: 'role:clerk', target: 'artifact:order-entity', data: {} }],
   };
 
+  const edgeId = 'role:clerk->artifact:order-entity';
+
   let component: WorkflowDiagramComponent;
   let fixture: ComponentFixture<WorkflowDiagramComponent>;
 
+  /** The menu's service is the canvas's own, so it is read off the canvas's injector rather than the root. */
+  const contextMenu = () => fixture.debugElement.injector.get(EdgeContextMenuService);
+  const routingItem = (choice: string) => (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="routing-${choice}"]`);
+
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [WorkflowDiagramComponent] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [WorkflowDiagramComponent], providers: [provideTranslocoTesting({ translations: { en: {} } })] }).compileComponents();
 
     fixture = TestBed.createComponent(WorkflowDiagramComponent);
     component = fixture.componentInstance;
@@ -76,10 +84,39 @@ describe('WorkflowDiagramComponent', () => {
     fixture.detectChanges();
 
     expect(component.model.getNodes().every((node) => node.draggable === false && node.resizable === false && node.rotatable === false)).toBe(true);
-    expect(component.config.linking?.validateConnection).toBe(REFUSE_CONNECTION);
-    expect(REFUSE_CONNECTION()).toBe(false);
+    expect(component.config.linking?.validateConnection).toBe(SAME_NODE_RELINK_ONLY);
+    expect(component.config.linking?.defaultRelinkable).toBe(false);
     expect(component.config.grouping?.canGroup).toBe(REFUSE_GROUPING);
     expect(REFUSE_GROUPING()).toBe(false);
+  });
+
+  /**
+   * An edge stands for authored data, so the only connection the canvas accepts is a relink that stays on
+   * the node it joined — a different port, which is arrangement. ng-diagram passes the far end as it is.
+   */
+  describe('SAME_NODE_RELINK_ONLY', () => {
+    const node = (id: string) => ({ id }) as unknown as Parameters<typeof SAME_NODE_RELINK_ONLY>[0];
+    const edge = { id: 'a->b', source: 'a', target: 'b', data: {} };
+
+    it('refuses drawing a new edge', () => {
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('b'), null)).toBe(false);
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('b'), null, { reason: 'draw' })).toBe(false);
+    });
+
+    it('accepts moving an end to another port of the same node', () => {
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('b'), null, { reason: 'relink', edge, end: 'target' })).toBe(true);
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('b'), null, { reason: 'relink', edge, end: 'source' })).toBe(true);
+    });
+
+    it('refuses moving an end to another node', () => {
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('c'), null, { reason: 'relink', edge, end: 'target' })).toBe(false);
+      expect(SAME_NODE_RELINK_ONLY(node('c'), null, node('b'), null, { reason: 'relink', edge, end: 'source' })).toBe(false);
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, null, null, { reason: 'relink', edge, end: 'target' })).toBe(false);
+    });
+
+    it('refuses an attach', () => {
+      expect(SAME_NODE_RELINK_ONLY(node('a'), null, node('b'), null, { reason: 'attach', edge, end: 'target' })).toBe(false);
+    });
   });
 
   /**
@@ -177,6 +214,26 @@ describe('WorkflowDiagramComponent', () => {
       fixture.detectChanges();
     });
 
+    it('opens the routing menu on a right-clicked relation, ticking the routing it is drawn with', () => {
+      contextMenu().open(edgeId, new MouseEvent('contextmenu'));
+      fixture.detectChanges();
+
+      expect(routingItem('orthogonal')?.getAttribute('aria-checked')).toBe('true');
+    });
+
+    // Written into the model, which is what the next Save reads back out through `toLayout`.
+    it('draws the relation with the routing picked, and closes the menu', () => {
+      contextMenu().open(edgeId, new MouseEvent('contextmenu'));
+      fixture.detectChanges();
+
+      routingItem('bezier')?.click();
+      fixture.detectChanges();
+
+      expect(component.model.getEdges().find((edge) => edge.id === edgeId)?.routing).toBe('bezier');
+      expect(component.toLayout('wf')?.edges.find((edge) => edge.edgeId === edgeId)?.routing).toBe('bezier');
+      expect(routingItem('bezier')).toBeNull();
+    });
+
     it('lets every node be dragged and resized', () => {
       expect(component.model.getNodes().every((node) => node.draggable !== false && node.resizable !== false)).toBe(true);
     });
@@ -189,8 +246,9 @@ describe('WorkflowDiagramComponent', () => {
       expect(component.model.getNodes().every((node) => node.rotatable === false)).toBe(true);
     });
 
-    it('still refuses a new edge and a lane membership change', () => {
-      expect(component.config.linking?.validateConnection).toBe(REFUSE_CONNECTION);
+    it('lets an edge end be relinked, but still refuses a new edge and a lane membership change', () => {
+      expect(component.config.linking?.defaultRelinkable).toBe(true);
+      expect(component.config.linking?.validateConnection).toBe(SAME_NODE_RELINK_ONLY);
       expect(component.config.grouping?.canGroup).toBe(REFUSE_GROUPING);
     });
 

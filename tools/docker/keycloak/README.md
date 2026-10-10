@@ -27,6 +27,25 @@ The `master` realm's service account is *not* here: see `init/bootstrap-platform
 
 - **The management roles for a realm are not `realm-admin`.** `realm-admin` is a composite on the `realm-management` client *inside* a realm, and a `master` service account cannot reach it. What master has is a `<realm>-realm` client carrying the 18 fine-grained roles (`manage-users`, `manage-realm`, `view-clients`, …), and the script grants all of them, read back from Keycloak rather than hard-coded. Asking for `realm-admin` there fails with `Role not found for name: realm-admin` — which the script used to swallow, leaving the admin application unable to manage either stack realm's users with nothing in the log to say so.
 
+## The customer realm's email theme
+
+`themes/processpuzzle/email` is copied into the image and is the `emailTheme` of `processpuzzle-custom`. It
+inherits Keycloak's own theme and overrides one mail, `executeActions`: when the actions are exactly what
+activation asks for — `VERIFY_EMAIL` and `UPDATE_PASSWORD` — the new customer administrator gets a welcome
+with an "Activate my account" link; any other combination keeps Keycloak's wording. The subject cannot be
+conditional (Keycloak resolves it from `executeActionsSubject` alone), so it is worded for activation, the
+only execute-actions mail the platform sends.
+
+The mail is rendered in the user's `locale` attribute, which platform-admin sets from the language chosen at
+sign-up. That attribute only survives while the realm has `internationalizationEnabled` — otherwise the
+declarative user profile drops it silently and every mail is English. The realm import sets it, and
+`init/bootstrap-platform-admin-client.sh` reconciles it onto realms imported earlier, together with
+`supportedLocales` (`en`, `de`, `es`, `fr`, `hu`: the languages the sign-up offers) and the theme.
+
+The messages are `MessageFormat` patterns: `{0}` is the link, `{1}` the validity, and a literal apostrophe
+must be doubled (`S''il`). Adding a language means a `messages_<lang>.properties`, an entry in the theme's
+`locales`, and an entry in `supportedLocales` in both places above.
+
 ## Updating a realm after UI changes
 
 1. Make the change in the Keycloak admin UI against a running container.

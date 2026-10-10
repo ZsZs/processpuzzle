@@ -1,5 +1,15 @@
-import { Component, inject, Injector, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { initializeModel, NgDiagramComponent, NgDiagramConfig, NgDiagramEdgeTemplateMap, NgDiagramNodeTemplateMap, provideNgDiagram, SelectionChangedEvent } from 'ng-diagram';
+import { Component, effect, ElementRef, inject, Injector, Input, OnChanges, signal, SimpleChanges } from '@angular/core';
+import {
+  ConnectionValidationContext,
+  initializeModel,
+  NgDiagramComponent,
+  NgDiagramConfig,
+  NgDiagramEdgeTemplateMap,
+  NgDiagramNodeTemplateMap,
+  Node,
+  provideNgDiagram,
+  SelectionChangedEvent,
+} from 'ng-diagram';
 import { applySavedLayout, toDiagram } from '../../../domain/modeler/graph/workflow-diagram.converter';
 import { WorkflowLayoutService } from '../../../domain/modeler/graph/workflow-layout.service';
 import { DiagramViewport, WorkflowDiagram } from '../../../domain/modeler/models/workflow-diagram';
@@ -15,7 +25,10 @@ import {
   WorkflowNode,
   WorkflowNodeData,
 } from '../../../domain/modeler/workflow-graph';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { WorkflowSelectionService } from '../services/workflow-selection.service';
+import { EdgeRoutingMenuComponent } from './edge-routing-menu.component';
+import { activeEdgeRouting, DEFAULT_EDGE_ROUTING, EdgeRoutingChoice } from './edge-routing-options';
 import { WorkflowElementNodeComponent } from './workflow-element-node.component';
 import { WorkflowLaneNodeComponent } from './workflow-lane-node.component';
 import { WorkflowRelationEdgeComponent } from './workflow-relation-edge.component';
@@ -39,13 +52,16 @@ import { WorkflowRelationEdgeComponent } from './workflow-relation-edge.componen
  *
  * ## What {@link editable} does and does not open up
  *
- * Read-only is the default, and {@link editable} lifts exactly one restriction: the drag, resize and rotate
- * handles come back, so a user can move a task out of an edge's way and give a lane the height they want.
- * {@link toLayout} is how that arrangement is read back out, and the host's Save button is what persists it.
+ * Read-only is the default, and {@link editable} lifts the restrictions on *arranging*: the drag, resize and
+ * rotate handles come back, so a user can move a task out of an edge's way and give a lane the height they
+ * want; an edge's ends can be relinked to another port of the node they already join; and a right-click on
+ * a relation opens the routing menu. {@link toLayout} is how that arrangement is read back out, and the
+ * host's Save button is what persists it.
  *
  * The other four restrictions hold either way, and each guards something an arrangement must not be able to
- * change. `validateConnection` refuses new edges, because an edge here is a `dependsOn` entry or a task's
- * declared input — authored on a generated form, with fields nothing on this canvas could supply.
+ * change. `validateConnection` refuses new edges and any relink to a *different* node, because an edge here
+ * is a `dependsOn` entry or a task's declared input — authored on a generated form, with fields nothing on
+ * this canvas could supply. Moving an end between ports of the same node changes the picture only.
  * `canGroup` refuses lane membership changes, because a node's lane *is*
  * `WorkflowTaskAssignment.performedBy`; without it, dragging a task into the lane below would silently
  * reassign who performs it. `shortcuts: []` drops Delete, Backspace, cut and paste, which act on the
@@ -61,10 +77,17 @@ import { WorkflowRelationEdgeComponent } from './workflow-relation-edge.componen
  * stands for a relation authored on a generated form — a responsibility on the Roles perspective, a
  * dependency or a declared input on the Workflows one.
  *
+ * A relink is accepted only when the dragged end lands on the node it already joined. That is a different
+ * *port* of the same element — arrangement, persisted as the edge's port in the layout — whereas any other
+ * node would be a different relation, and so a change to the workflow this canvas does not make.
+ *
  * Named rather than inlined so the spec can call it: `NgDiagramConfig` is a deep-partial of ng-diagram's
  * config, which erases the call signature of every function in it.
  */
-export const REFUSE_CONNECTION = (): boolean => false;
+export const SAME_NODE_RELINK_ONLY = (source: Node | null, _sourcePort: unknown, target: Node | null, _targetPort: unknown, context?: ConnectionValidationContext): boolean => {
+  if (context?.reason !== 'relink' || !context.edge) return false;
+  return context.end === 'source' ? source?.id === context.edge.source : target?.id === context.edge.target;
+};
 
 /**
  * The grouping validator: no node is ever moved into or out of a lane, because lane membership is
@@ -92,12 +115,26 @@ export interface WorkflowGraphLayout {
 @Component({
   selector: 'pp-workflow-diagram',
   standalone: true,
-  imports: [NgDiagramComponent],
-  providers: [provideNgDiagram()],
-  template: ` <ng-diagram [model]="model" [config]="config" [nodeTemplateMap]="nodeTemplateMap" [edgeTemplateMap]="edgeTemplateMap" (selectionChanged)="onSelectionChanged($event)" /> `,
+  imports: [NgDiagramComponent, EdgeRoutingMenuComponent],
+  providers: [provideNgDiagram(), EdgeContextMenuService],
+  template: `
+    <ng-diagram [model]="model" [config]="config" [nodeTemplateMap]="nodeTemplateMap" [edgeTemplateMap]="edgeTemplateMap" (selectionChanged)="onSelectionChanged($event)" />
+
+    @if (editable && contextMenu.target(); as target) {
+      <pp-edge-routing-menu
+        [x]="menuPosition().x"
+        [y]="menuPosition().y"
+        [active]="activeRouting(target.edgeId)"
+        (chosen)="applyRouting(target.edgeId, $event)"
+        (closed)="contextMenu.close()"
+      />
+    }
+  `,
   styles: `
+    /* Positioned, because the routing menu is placed inside this box - see EdgeRoutingMenuComponent. */
     :host {
       display: flex;
+      position: relative;
       height: 100%;
       min-height: 300px;
     }
@@ -163,13 +200,31 @@ export class WorkflowDiagramComponent implements OnChanges {
    * node unselectable — so a click anywhere on a lane's band would lift that band above every edge on the
    * canvas and hide most of the flow behind it.
    */
-  config: NgDiagramConfig = diagramConfig(true);
+  config: NgDiagramConfig = diagramConfig(true, false);
 
+  protected readonly contextMenu = inject(EdgeContextMenuService);
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly selection = inject(WorkflowSelectionService);
 
+  /** Where the open routing menu sits, as an offset inside this component's box. */
+  private readonly menuPositionSignal = signal({ x: 0, y: 0 });
+  protected readonly menuPosition = this.menuPositionSignal.asReadonly();
+
   /** Empty until a graph arrives — an unloaded canvas shows nothing, not a placeholder diagram. */
   model = initializeModel({ nodes: [], edges: [] }, this.injector);
+
+  constructor() {
+    // The right-click reports viewport coordinates and the menu is placed inside this box, so the offset is
+    // computed here — once per open, rather than measuring the box on every change detection.
+    effect(() => {
+      const target = this.contextMenu.target();
+      if (!target) return;
+      const bounds = this.host.nativeElement.getBoundingClientRect();
+      this.menuPositionSignal.set({ x: target.clientX - bounds.left, y: target.clientY - bounds.top });
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     // A save writes the arrangement back into the store, which feeds `savedLayout` again — with the very
@@ -177,12 +232,14 @@ export class WorkflowDiagramComponent implements OnChanges {
     // re-frame the diagram to show nothing new, so the only `savedLayout` change worth rebuilding for is the
     // *first* one: a layout that arrived after the graph did.
     if (isPostSaveRefresh(changes)) return;
+    // The model is about to be rebuilt, so the edge an open routing menu was opened on may not survive it.
+    this.contextMenu.close();
 
     const viewport = this.viewportToKeep();
     const fitOnInit = !viewport;
     // Reassigned only when it actually differs: `config` is an input signal, so a new object identity is a
     // change ng-diagram would act on.
-    if (this.config.zoom?.zoomToFit?.onInit !== fitOnInit) this.config = diagramConfig(fitOnInit);
+    if (this.config.zoom?.zoomToFit?.onInit !== fitOnInit || this.config.linking?.defaultRelinkable !== this.editable) this.config = diagramConfig(fitOnInit, this.editable);
     // A reload replaces the graph, so whatever was selected in the previous one no longer exists.
     this.selection.clear();
 
@@ -252,6 +309,24 @@ export class WorkflowDiagramComponent implements OnChanges {
   }
 
   /**
+   * The routing the edge behind the open menu is drawn with, which is the item the menu ticks. An edge the
+   * model no longer holds reads as the default; the gesture that removed it closes the menu anyway.
+   */
+  protected activeRouting(edgeId: string): EdgeRoutingChoice {
+    return activeEdgeRouting(this.model.getEdges().find((edge) => edge.id === edgeId)?.routing);
+  }
+
+  /**
+   * Draws one relation with the chosen routing. Written into the model, so it shows at once and is picked up
+   * by the next {@link toLayout} — which persists it as the edge's `routing`. Waypoints are kept: the new
+   * algorithm draws its path through them, as the previous one did.
+   */
+  protected applyRouting(edgeId: string, routing: EdgeRoutingChoice): void {
+    this.model.updateEdges((edges) => edges.map((edge) => (edge.id === edgeId ? { ...edge, routing } : edge)));
+    this.contextMenu.close();
+  }
+
+  /**
    * Where the canvas should be looking after the rebuild, or `undefined` to let the automatic fit decide.
    *
    * **The live viewport wins over the saved one.** A layer toggle rebuilds the model, and taking the saved
@@ -300,13 +375,17 @@ function isPostSaveRefresh(changes: SimpleChanges): boolean {
 }
 
 /**
- * The canvas's config, with the automatic fit on or off. Built by a function rather than spread from a
- * constant so that nothing can mutate a shared nested object — `NgDiagramConfig` is a deep partial, and a
- * shallow spread would share `zoom` between every instance.
+ * The canvas's config, with the automatic fit on or off and edge ends relinkable or not. Built by a function
+ * rather than spread from a constant so that nothing can mutate a shared nested object — `NgDiagramConfig`
+ * is a deep partial, and a shallow spread would share `zoom` between every instance.
+ *
+ * `defaultRouting` restates ng-diagram's own default, because the routing menu has to tick the routing an
+ * edge is actually drawn with and most edges name none of their own.
  */
-function diagramConfig(fitOnInit: boolean): NgDiagramConfig {
+function diagramConfig(fitOnInit: boolean, relinkable: boolean): NgDiagramConfig {
   return {
-    linking: { validateConnection: REFUSE_CONNECTION },
+    linking: { validateConnection: SAME_NODE_RELINK_ONLY, defaultRelinkable: relinkable },
+    edgeRouting: { defaultRouting: DEFAULT_EDGE_ROUTING },
     grouping: { canGroup: REFUSE_GROUPING },
     zoom: { zoomToFit: { onInit: fitOnInit, padding: 40 } },
     zIndex: { elevateOnSelection: false },
