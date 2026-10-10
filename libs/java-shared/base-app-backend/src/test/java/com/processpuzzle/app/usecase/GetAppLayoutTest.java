@@ -27,7 +27,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +66,7 @@ class GetAppLayoutTest {
     }
 
     @Test
-    void permissiveDefault_filtersNothingEvenWhenRolesAreConfigured() {
+    void explicitPermissivePolicy_filtersNothingEvenWhenRolesAreConfigured() {
         GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
         stored(graphWithRoles());
 
@@ -155,12 +154,12 @@ class GetAppLayoutTest {
     @SuppressWarnings("unchecked")
     private static OrganizationGuard guard(OrganizationAccessPolicy policy) {
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenReturn(policy);
+        when(provider.getObject()).thenReturn(policy);
         return new OrganizationGuard(provider);
     }
 
     private static OrganizationAccessPolicy rolePolicy(Set<String> granted) {
-        return new OrganizationAccessPolicy() {
+        return new PermitAllOrganizationAccessPolicy() {
             @Override
             public boolean hasAnyRole(Collection<String> requiredRoles) {
                 return requiredRoles.stream().anyMatch(granted::contains);

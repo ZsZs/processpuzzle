@@ -65,8 +65,7 @@ public class JwtOrganizationAccessPolicy implements OrganizationAccessPolicy {
     }
 
     /**
-     * An empty or {@code null} collection means "any authenticated member" and must return true —
-     * the port's Javadoc explains why the default runs in that direction. An unauthenticated caller
+     * An empty or {@code null} collection means "any authenticated member". An unauthenticated caller
      * is treated as holding every role, consistently with {@link #requireAccess}: filtering nav items
      * away for a caller this policy has just permitted would hide entries in exactly the apps someone
      * had bothered to configure roles for.

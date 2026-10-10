@@ -2,8 +2,10 @@ package com.processpuzzle.security;
 
 import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
+import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.util.List;
 
@@ -23,6 +25,24 @@ class JwtOrganizationAccessPolicyTest {
     @AfterEach
     void clearContext() {
         SecurityTestTokens.clear();
+    }
+
+    @Test
+    void hostPolicyWiresTheGuardWithoutAnImplicitFallback() {
+        new ApplicationContextRunner()
+                .withBean(CurrentPrincipal.class, () -> new CurrentPrincipal(SecurityTestTokens.properties()))
+                .withBean(JwtOrganizationAccessPolicy.class)
+                .withBean(OrganizationGuard.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    OrganizationGuard guard = context.getBean(OrganizationGuard.class);
+                    SecurityTestTokens.authenticateAs("my-org", "ada", "org-member");
+                    assertThatCode(() -> guard.requireAccess("my-org")).doesNotThrowAnyException();
+                    assertThatThrownBy(() -> guard.requireAccess("other-org"))
+                            .isInstanceOf(OrganizationAccessDeniedException.class);
+                    assertThatThrownBy(guard::requirePlatformAdmin)
+                            .isInstanceOf(OrganizationAccessDeniedException.class);
+                });
     }
 
     @Test

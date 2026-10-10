@@ -25,9 +25,9 @@
  * </ul>
  *
  * <p>The libraries still have no Spring Security on their classpath and no opinion about who the
- * caller is — they declare {@code OrganizationAccessPolicy} and {@code RoleMembershipPort} and fall
- * back to permitting everything when nothing implements them. This package is what stops that
- * fallback being what runs.
+ * caller is. {@code OrganizationAccessPolicy} requires an explicit bean and denies unimplemented
+ * checks; {@code RoleMembershipPort} still has a permissive fallback. This package supplies both
+ * policies for this deployment.
  *
  * <p>Read {@link com.processpuzzle.security.SecurityConfig} before deploying: the tenant API is open
  * without a token by default, and the reason is spelled out there.

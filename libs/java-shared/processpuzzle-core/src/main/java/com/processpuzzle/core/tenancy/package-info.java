@@ -4,10 +4,10 @@
  * <p>{@link com.processpuzzle.core.tenancy.OrganizationGuard} is the single place any feature
  * consults {@link com.processpuzzle.core.tenancy.OrganizationAccessPolicy}, which the deploying
  * application supplies because identity lives there and not in any library — see
- * {@code JwtOrganizationAccessPolicy} in {@code apps/processpuzzle-testbed-backend}. With no such
- * bean the guard falls back to
+ * {@code JwtOrganizationAccessPolicy} in {@code apps/processpuzzle-testbed-backend}. Missing or
+ * ambiguous policy wiring fails startup. A demonstration host may explicitly register
  * {@link com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy}, which enforces nothing;
- * read its Javadoc before deploying.
+ * read its Javadoc before opting in.
  *
  * <p><b>Why this is in core.</b> These four types began in base-app, moved to platform-admin with
  * the {@code Organization} aggregate, and belong to neither. Nothing here reads a tenant row — the

@@ -11,6 +11,27 @@ ProcessPuzzle Core provides cross-cutting building blocks shared by every backen
 - `com.processpuzzle.core.exception` — generic REST exception handling (`ApiExceptionHandler`) for common Spring / Jackson / validation failures. Domain modules add their own `@RestControllerAdvice` for their specific exceptions.
 - `com.processpuzzle.core.logging` — reserved for cross-cutting logging support (AOP logger — TBD).
 
+## Organization authorization
+
+`OrganizationGuard` requires an `OrganizationAccessPolicy` bean at startup. Missing or ambiguous
+policies fail startup; when several policies exist, select the intended one with `@Primary`.
+Policy methods deny access unless overridden. Hosts must implement membership, design, staff and
+role decisions explicitly; the testbed's `JwtOrganizationAccessPolicy` does so.
+
+**Migration (PCR-SEC-01):** absence of a policy no longer enables unauthenticated access. A local
+demonstration or test host that intentionally needs unrestricted access must opt in:
+
+```java
+@Bean
+OrganizationAccessPolicy organizationAccessPolicy() {
+    return new PermitAllOrganizationAccessPolicy();
+}
+```
+
+Do not use that policy on an internet-facing or multi-tenant deployment: it grants all tenant,
+design, platform-administrator and role checks. Keep it in a demonstration-only configuration.
+Partial policy implementations now deny any checks they do not override.
+
 ## Technologies
 
 - **Java 25**
