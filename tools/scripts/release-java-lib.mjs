@@ -2,23 +2,38 @@
 // Per-lib Java release orchestration.
 //
 // Subcommands:
-//   prepare --project <name> --increment <major|minor|patch> [--allow-unpublished-deps]
+//   prepare --project <name> --increment <major|minor|patch> [--target <github|central>]
+//           [--allow-unpublished-deps]
 //   order
 //
 // prepare flow (matches tools/scripts/release-js-lib.mjs):
 //   1. Assert on develop, clean tree
 //   2. Read current version from the project's version property in the root pom
 //   3. Compute new version via semver bump
-//   4. Assert every in-repo dependency's pinned version is resolvable on Maven Central
+//   4. Assert every in-repo dependency's pinned version is resolvable from the target's
+//      registries (see Publishing targets below)
 //   5. Pre-flight build
 //   6. Create release/<project>/<newVersion> branch
 //   7. Bump the property via versions-maven-plugin (single edit, root pom only)
-//   8. Commit, push, open PR to develop
+//   8. Commit with a `Release-Target:` trailer, push, open PR to develop
 //
 // order prints the release tiers derived from the in-repo dependency graph: a lib can only
 // be released once every lib it depends on is already published, because the deployed pom
-// pins those siblings by version and Central rejects nothing — it just serves a pom no
-// external consumer can resolve.
+// pins those siblings by version and no registry rejects that — it just serves a pom no
+// consumer can resolve.
+//
+// Publishing targets:
+//   Each project has a default `target` in PROJECTS: `github` (GitHub Packages) or `central`
+//   (Maven Central). --target overrides it for one release, which is how a lib is promoted.
+//   The release workflow cannot take an input — it starts on a branch push — so the target
+//   travels in the release commit as a trailer, and .github/actions/release-java reads it.
+//   Central's monthly publishing limit is why most libs default to GitHub Packages; Central
+//   gets occasional consolidated public releases. Two rules follow:
+//   - A Central release may only depend on libs already on Central: Central users cannot
+//     resolve GitHub Packages. Promote bottom-up, in the order `order` prints. prepare
+//     enforces this. A GitHub release may depend on either registry.
+//   - Never publish the same version to both registries. The property only moves forward,
+//     so each release gets a fresh number; do not re-deploy an old one by hand.
 //
 // Design (why there's no finalize step):
 //   The property doubles as (a) the lib's own artifact version and (b) the pin
@@ -49,13 +64,18 @@ const NPX = process.env.NPX ?? (IS_WINDOWS ? 'npx.cmd' : 'npx');
 
 const JAVA_LIBS_DIR = 'libs/java-shared';
 const CENTRAL_BASE = 'https://repo1.maven.org/maven2';
+// Must match the publish-github profile's <distributionManagement> in the root pom.
+const GITHUB_BASE = 'https://maven.pkg.github.com/ZsZs/processpuzzle';
 const GROUP_PATH = 'com/processpuzzle';
 
-// project name -> { path, versionProperty }. The property name is not derivable from the
-// project name for the parent: Maven only substitutes `revision`, `sha1` and `changelist`
-// into a <version>, so the parent's version property has to be one of those.
+const TARGETS = new Set(['github', 'central']);
+
+// project name -> { path, versionProperty, target }. The property name is not derivable from
+// the project name for the parent: Maven only substitutes `revision`, `sha1` and `changelist`
+// into a <version>, so the parent's version property has to be one of those. The parent stays
+// on Central: it changes rarely, and a consumer then needs no token to resolve it.
 const PROJECTS = new Map([
-  ['processpuzzle-parent', { path: '.', versionProperty: 'revision' }],
+  ['processpuzzle-parent', { path: '.', versionProperty: 'revision', target: 'central' }],
   ...[
     'base-ai-backend',
     'api-contracts',
@@ -71,7 +91,7 @@ const PROJECTS = new Map([
     'org-admin-backend',
     'processpuzzle-core',
     'processpuzzle-store',
-  ].map((name) => [name, { path: `${JAVA_LIBS_DIR}/${name}`, versionProperty: `${name}.version` }]),
+  ].map((name) => [name, { path: `${JAVA_LIBS_DIR}/${name}`, versionProperty: `${name}.version`, target: 'github' }]),
 ]);
 
 const INCREMENTS = new Set(['major', 'minor', 'patch']);
@@ -248,7 +268,8 @@ function order() {
   const tiers = releaseTiers(graph);
   console.log(
     `Java release order — derived from the in-repo dependencies in ${JAVA_LIBS_DIR}/*/pom.xml.\n` +
-      `Release a tier only once every lib in the earlier tiers is on Maven Central.\n`,
+      `Release a tier only once every lib in the earlier tiers is published — on Maven Central,\n` +
+      `if the tier is to go to Central.\n`,
   );
   console.log(formatTiers(graph, tiers));
   console.log(
@@ -256,64 +277,99 @@ function order() {
   );
 }
 
-// --- Maven Central resolvability -------------------------------------------------
+// --- Registry resolvability ------------------------------------------------------
 
-function centralPomUrl(artifactId, version) {
-  return `${CENTRAL_BASE}/${GROUP_PATH}/${artifactId}/${version}/${artifactId}-${version}.pom`;
+function pomUrl(base, artifactId, version) {
+  return `${base}/${GROUP_PATH}/${artifactId}/${version}/${artifactId}-${version}.pom`;
 }
 
-async function isOnCentral(artifactId, version) {
-  const url = centralPomUrl(artifactId, version);
+async function probe(registry, url, headers = {}) {
   try {
-    const res = await fetch(url, {
-      method: 'HEAD',
-      redirect: 'follow',
-      signal: AbortSignal.timeout(20_000),
-    });
-    return res.ok;
+    // GET rather than HEAD: GitHub Packages does not answer HEAD reliably, and a pom is small.
+    return await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(20_000) });
   } catch (err) {
-    // Don't guess: an unreachable Central is not the same answer as a 404, and treating it
+    // Don't guess: an unreachable registry is not the same answer as a 404, and treating it
     // as one would either block every release offline or wave a broken pom through.
     throw new Error(
-      `Could not reach Maven Central (${url}): ${err.message}\n` +
+      `Could not reach ${registry} (${url}): ${err.message}\n` +
         `Retry, or pass --allow-unpublished-deps if you have verified the pins by hand.`,
       { cause: err },
     );
   }
 }
 
+async function isOnCentral(artifactId, version) {
+  return (await probe('Maven Central', pomUrl(CENTRAL_BASE, artifactId, version))).ok;
+}
+
+// GitHub Packages wants a token even to read a public repository's packages: the read:packages
+// PAT consumers already hold (PACKAGES_READ_TOKEN), else CI's GITHUB_TOKEN, else gh's own token
+// once it has the scope.
+let githubToken;
+function readGithubToken() {
+  githubToken ??=
+    process.env.PACKAGES_READ_TOKEN || process.env.GITHUB_TOKEN || capture(GH, ['auth', 'token']);
+  return githubToken;
+}
+
+async function isOnGithub(artifactId, version) {
+  const url = pomUrl(GITHUB_BASE, artifactId, version);
+  const res = await probe('GitHub Packages', url, { Authorization: `Bearer ${readGithubToken()}` });
+  if (res.status === 401 || res.status === 403) {
+    throw new Error(
+      `GitHub Packages refused the token (HTTP ${res.status}) for ${url}.\n` +
+        `Set PACKAGES_READ_TOKEN to a PAT with read:packages, or run \`gh auth refresh -s read:packages\`.`,
+    );
+  }
+  return res.ok;
+}
+
+// Where a dependency is published that the target's consumers can resolve it from. Central
+// first: most pins are there, and a Central hit needs no token.
+async function findDependency(dep, target) {
+  if (await isOnCentral(dep.artifactId, dep.version)) return 'central';
+  if (target === 'github' && (await isOnGithub(dep.artifactId, dep.version))) return 'github';
+  return undefined;
+}
+
 // CI installs a lib's in-repo dependencies into ~/.m2 before deploying (see
-// .github/actions/release-java/action.yml), so a dependency that is NOT on Central resolves
-// happily during the release and then 404s for every external consumer of the published pom.
-// This is the check that catches it, before a branch exists.
-async function assertDependenciesOnCentral(project, graph) {
+// .github/actions/release-java/action.yml), so a dependency that is NOT published resolves
+// happily during the release and then 404s for every consumer of the published pom. This is
+// the check that catches it, before a branch exists.
+async function assertDependenciesPublished(project, graph, target) {
   const info = graph.get(project);
+  const registries = target === 'central' ? 'Maven Central' : 'Maven Central or GitHub Packages';
   if (!info || !info.deps.length) {
-    console.log('No in-repo dependencies — skipping the Maven Central resolvability check.');
+    console.log(`No in-repo dependencies — skipping the ${registries} resolvability check.`);
     return;
   }
 
-  console.log(`Checking ${info.deps.length} in-repo dependencies against Maven Central...`);
-  // Sequential: a handful of requests at most, and concurrent HEADs against repo1 proved
+  console.log(`Checking ${info.deps.length} in-repo dependencies against ${registries}...`);
+  // Sequential: a handful of requests at most, and concurrent requests against repo1 proved
   // flaky here (connect timeouts) where one-at-a-time is reliable.
   const results = [];
   for (const dep of info.deps) {
-    const published = await isOnCentral(dep.artifactId, dep.version);
-    console.log(`  ${published ? 'ok     ' : 'MISSING'} ${dep.artifactId}:${dep.version}`);
-    results.push({ ...dep, published });
+    const foundIn = await findDependency(dep, target);
+    console.log(`  ${(foundIn ? `ok (${foundIn})` : 'MISSING').padEnd(12)} ${dep.artifactId}:${dep.version}`);
+    results.push({ ...dep, foundIn });
   }
 
-  const missing = results.filter((d) => !d.published);
+  const missing = results.filter((d) => !d.foundIn);
   if (!missing.length) return;
 
   const tiers = releaseTiers(graph);
+  const why =
+    target === 'central'
+      ? `A Central release may only depend on libs already on Central: Central users cannot\n` +
+        `resolve GitHub Packages. Promote the missing libs first (--target central), in this order:`
+      : `Releasing now would publish a pom no consumer can resolve. Release the missing libs\n` +
+        `first, in this order:`;
   throw new Error(
-    `${project} depends on ${missing.length} artifact(s) that are not on Maven Central:\n` +
-      missing.map((d) => `  - ${d.artifactId}:${d.version}\n    ${centralPomUrl(d.artifactId, d.version)}`).join('\n') +
-      `\n\nReleasing now would publish a pom no external consumer can resolve. Release the\n` +
-      `missing libs first, in this order:\n\n${formatTiers(graph, tiers)}\n\n` +
+    `${project} depends on ${missing.length} artifact(s) that are not on ${registries}:\n` +
+      missing.map((d) => `  - ${d.artifactId}:${d.version}`).join('\n') +
+      `\n\n${why}\n\n${formatTiers(graph, tiers)}\n\n` +
       `Pass --allow-unpublished-deps to override (the in-repo build still succeeds, because\n` +
-      `CI installs siblings into ~/.m2 — external consumers are what break).`,
+      `CI installs siblings into ~/.m2 — consumers are what break).`,
   );
 }
 
@@ -400,21 +456,23 @@ function preflightBuild(project) {
   }
 }
 
-async function prepare(project, increment, allowUnpublishedDeps) {
+async function prepare(project, increment, targetOverride, allowUnpublishedDeps) {
   projectPath(project);
   assertOnBranch('develop');
   assertCleanTree();
 
+  const target = targetOverride ?? PROJECTS.get(project).target;
+  const registry = target === 'central' ? 'Maven Central' : 'GitHub Packages';
   const current = readCurrentVersion(project);
   const newVersion = bumpVersion(current, increment);
   const branch = `release/${project}/${newVersion}`;
 
-  console.log(`\n>>> Releasing ${project}: ${current} -> ${newVersion} (${increment})\n`);
+  console.log(`\n>>> Releasing ${project}: ${current} -> ${newVersion} (${increment}) to ${registry}\n`);
 
   if (allowUnpublishedDeps) {
-    console.log('--allow-unpublished-deps: skipping the Maven Central resolvability check.');
+    console.log('--allow-unpublished-deps: skipping the registry resolvability check.');
   } else {
-    await assertDependenciesOnCentral(project, buildJavaGraph());
+    await assertDependenciesPublished(project, buildJavaGraph(), target);
   }
 
   preflightBuild(project);
@@ -422,7 +480,8 @@ async function prepare(project, increment, allowUnpublishedDeps) {
   run('git', ['checkout', '-b', branch]);
   setProperty(project, newVersion);
   run('git', ['add', 'pom.xml']);
-  run('git', ['commit', '-m', `release(${project}): bump version.`]);
+  // The trailer is what .github/actions/release-java reads to pick the registry.
+  run('git', ['commit', '-m', `release(${project}): bump version.`, '-m', `Release-Target: ${target}`]);
   run('git', ['push', '-u', 'origin', branch]);
   run(GH, [
     'pr', 'create',
@@ -430,8 +489,8 @@ async function prepare(project, increment, allowUnpublishedDeps) {
     '--head', branch,
     '--title', `release(${project}): ${newVersion}`,
     '--body',
-    `Release **${project}** at **${newVersion}** (${increment} bump).\n\n` +
-      `The Maven Central deploy workflow triggers on push to \`${branch}\`. ` +
+    `Release **${project}** at **${newVersion}** (${increment} bump) to **${registry}**.\n\n` +
+      `The deploy workflow triggers on push to \`${branch}\`. ` +
       `On publish success the release-merge composite auto-merges this PR ` +
       `into develop and opens+merges a PR into master.`,
   ]);
@@ -443,9 +502,10 @@ function usage() {
   return (
     `Usage:\n` +
     `  node tools/scripts/release-java-lib.mjs prepare --project <name> --increment <major|minor|patch>\n` +
-    `      [--allow-unpublished-deps]   release even if an in-repo dependency is not on Maven Central\n` +
+    `      [--target <github|central>]  override the project's default registry (to promote a lib)\n` +
+    `      [--allow-unpublished-deps]   release even if an in-repo dependency is not published\n` +
     `  node tools/scripts/release-java-lib.mjs order\n\n` +
-    `Known projects:\n  ${[...PROJECTS.keys()].join('\n  ')}\n`
+    `Known projects (default target):\n  ${[...PROJECTS].map(([name, { target }]) => `${name} (${target})`).join('\n  ')}\n`
   );
 }
 
@@ -474,6 +534,7 @@ async function main() {
       options: {
         project: { type: 'string', short: 'p' },
         increment: { type: 'string', short: 'i' },
+        target: { type: 'string', short: 't' },
         'allow-unpublished-deps': { type: 'boolean', default: false },
       },
     }));
@@ -499,7 +560,13 @@ async function main() {
     process.exit(2);
   }
 
-  await prepare(values.project, values.increment, values['allow-unpublished-deps']);
+  if (values.target && !TARGETS.has(values.target)) {
+    console.error(`Invalid --target '${values.target}' (expected ${[...TARGETS].join('|')})`);
+    console.error(usage());
+    process.exit(2);
+  }
+
+  await prepare(values.project, values.increment, values.target, values['allow-unpublished-deps']);
 }
 
 try {

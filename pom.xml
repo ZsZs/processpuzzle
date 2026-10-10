@@ -552,27 +552,56 @@
           <flattenMode>resolveCiFriendliesOnly</flattenMode>
         </configuration>
       </plugin>
-
-      <!-- GPG signing — required by Maven Central. Root-only: the app module must not
-           become publishable by inheriting it. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <inherited>false</inherited>
-      </plugin>
-
-      <!-- Central Publishing Plugin — lets `mvn -N deploy` publish this parent pom itself.
-           Root-only, for the same reason as the GPG plugin above. Sources/javadoc jars are
-           not required for `pom` packaging, so those plugins stay unbound here. -->
-      <plugin>
-        <groupId>org.sonatype.central</groupId>
-        <artifactId>central-publishing-maven-plugin</artifactId>
-        <inherited>false</inherited>
-        <extensions>true</extensions>
-        <configuration>
-          <publishingServerId>central</publishingServerId>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
+
+  <!-- Two publishing targets, picked per release by tools/scripts/release-java-lib.mjs (the
+       `target` of each lib) and activated by .github/actions/release-java. Sources, javadoc
+       and flatten stay in the default build, so promoting a lib from GitHub Packages to
+       Central changes no pom. Never publish the same version to both with different
+       contents: Central is permanent, GitHub Packages is not. -->
+  <profiles>
+    <profile>
+      <id>publish-central</id>
+      <build>
+        <plugins>
+          <!-- GPG signing — required by Maven Central. Root-only: the app module must not
+               become publishable by inheriting it. Each lib declares its own entry in its
+               own publish-central profile. -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <inherited>false</inherited>
+          </plugin>
+
+          <!-- Central Publishing Plugin — lets `mvn -N deploy` publish this parent pom itself.
+               Root-only, for the same reason as the GPG plugin above. Sources/javadoc jars are
+               not required for `pom` packaging, so those plugins stay unbound here. -->
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <inherited>false</inherited>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- GitHub Packages: the plain maven-deploy-plugin, no signature and no Central Portal, so
+         no propagation lag and no stuck deployment. The server id must match <server><id>github
+         in settings.xml. Inherited on purpose: it is what every lib deploys to. -->
+    <profile>
+      <id>publish-github</id>
+      <distributionManagement>
+        <repository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/ZsZs/processpuzzle</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+  </profiles>
 </project>
