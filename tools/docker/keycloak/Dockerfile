@@ -44,6 +44,9 @@ COPY --from=builder /opt/keycloak/ /opt/keycloak/
 # Bake the realm definition into the image. --import-realm on start is idempotent:
 # it imports realms only if they do not already exist in the database.
 COPY tools/docker/keycloak/import/ /opt/keycloak/data/import/
+# The customer realm's email theme (`emailTheme: processpuzzle`). Themes are read at run time, so they
+# need no `kc.sh build` and sit in the final stage only.
+COPY tools/docker/keycloak/themes/ /opt/keycloak/themes/
 
 # Set execution directory
 WORKDIR /opt/keycloak
