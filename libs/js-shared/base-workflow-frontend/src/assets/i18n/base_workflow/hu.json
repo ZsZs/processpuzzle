@@ -27,6 +27,12 @@
       "start": "Kezdés",
       "end": "Befejezés",
       "save": "Elrendezés mentése",
+      "routing": {
+        "title": "Vonalvezetés",
+        "orthogonal": "Derékszögű",
+        "polyline": "Egyenes",
+        "bezier": "Ívelt"
+      },
       "properties": {
         "none": "Válasszon egy elemet a tulajdonságai megtekintéséhez.",
         "lane": "Sáv",

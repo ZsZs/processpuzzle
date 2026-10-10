@@ -1,6 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { Edge, NgDiagramBaseEdgeComponent, NgDiagramBaseEdgeLabelComponent, NgDiagramDefaultEdgeLabelComponent, NgDiagramEdgeTemplate } from 'ng-diagram';
 import { WorkflowEdgeData, WorkflowRelation } from '../../../domain/modeler/workflow-graph';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 
 /**
  * How each relation of the Workflows perspective is drawn — registered against
@@ -19,6 +20,13 @@ import { WorkflowEdgeData, WorkflowRelation } from '../../../domain/modeler/work
  * dashed *and* faded: it is a real ordering, but one inferred from the row order of a form rather than
  * stated, and it should not read as firmly as the dependency beside it.
  *
+ * A selected edge is drawn heavier, and its dash pattern scaled with it: colour alone barely tells a selected
+ * dotted association from the ones beside it, since a dotted line is mostly gap. A faded edge is drawn at
+ * full opacity while selected, for the same reason.
+ *
+ * A right-click opens the routing menu, through {@link EdgeContextMenuService} — the only route there is,
+ * since ng-diagram instantiates this component and no template of ours binds it.
+ *
  * Drawing the label is not optional. ng-diagram's default template draws `data.label` and is not exported,
  * so a custom template that omitted it would silently lose every `ANY` join marker and every tool operation
  * name. The components underneath are the library's own, so the chip is its chip rather than a copy of it.
@@ -33,7 +41,9 @@ import { WorkflowEdgeData, WorkflowRelation } from '../../../domain/modeler/work
       targetArrowhead="ng-diagram-arrow"
       [strokeDasharray]="style().dash"
       [strokeOpacity]="style().opacity"
+      [strokeWidth]="style().width"
       [attr.data-relation]="relation()"
+      (contextmenu)="onContextMenu($event)"
     >
       @if (label(); as text) {
         <ng-diagram-base-edge-label id="edge-label" [positionOnEdge]="0.5">
@@ -53,6 +63,13 @@ import { WorkflowEdgeData, WorkflowRelation } from '../../../domain/modeler/work
     ng-diagram-base-edge.selected {
       --edge-stroke: var(--ngd-default-edge-stroke-selected);
       --edge-label-border-color: var(--ngd-default-edge-stroke-selected);
+      /* Lifts the selected edge, and with it its relink handles, over every node, port and edge. ng-diagram
+         stacks an edge under the nodes it joins, so where several edges share a port the handle sat beneath
+         that port and the other edges' ends, and a press on it started a refused link instead of a relink.
+         Done here rather than by zIndex.elevateOnSelection, which would lift a clicked lane over the whole
+         flow; !important because ng-diagram writes the computed z-index inline. Below its temporary-edge
+         z-index, so a relink preview still draws on top. */
+      z-index: 2147483000 !important;
     }
   `,
 })
@@ -66,23 +83,46 @@ export class WorkflowRelationEdgeComponent implements NgDiagramEdgeTemplate<Work
    */
   protected readonly relation = computed(() => this.edge().data?.relation);
   protected readonly label = computed(() => this.edge().data?.label);
-  protected readonly style = computed(() => RELATION_STYLES[this.relation() ?? 'sequence']);
+  protected readonly style = computed(() => strokeOf(RELATION_STYLES[this.relation() ?? 'sequence'], !!this.edge().selected));
+
+  private readonly contextMenu = inject(EdgeContextMenuService);
+
+  protected onContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenu.open(this.edge().id, event);
+  }
 }
 
+/** ng-diagram's own edge width, which an unselected edge keeps. */
+const STROKE_WIDTH = 2;
+/** A selected edge's width. Twice the default, so a dotted association still reads as picked. */
+const SELECTED_STROKE_WIDTH = 4;
+
 /**
- * The dash pattern and weight per relation.
+ * The dash pattern and weight per relation, stated for an unselected edge of {@link STROKE_WIDTH}.
  *
- * `undefined` dash is a solid line — the value ng-diagram's own default edge uses, so a sequence edge is
+ * An absent dash is a solid line — the value ng-diagram's own default edge uses, so a sequence edge is
  * drawn exactly as the library draws an edge.
  */
-const RELATION_STYLES: Record<WorkflowRelation, { dash?: string; opacity: number }> = {
+const RELATION_STYLES: Record<WorkflowRelation, { dash?: number[]; opacity: number }> = {
   // Control flow: what the model states outright.
   sequence: { dash: undefined, opacity: 1 },
   // Control flow the model only implies, through the order two rows were declared in.
-  implicit: { dash: '6 5', opacity: 0.55 },
+  implicit: { dash: [6, 5], opacity: 0.55 },
   // Associations. Dotted, as BPMN draws a data association.
-  input: { dash: '2 4', opacity: 0.8 },
-  output: { dash: '2 4', opacity: 0.8 },
-  start: { dash: '2 4', opacity: 0.8 },
-  tool: { dash: '2 4', opacity: 0.8 },
+  input: { dash: [2, 4], opacity: 0.8 },
+  output: { dash: [2, 4], opacity: 0.8 },
+  start: { dash: [2, 4], opacity: 0.8 },
+  tool: { dash: [2, 4], opacity: 0.8 },
 };
+
+/**
+ * The stroke one relation is drawn with. The dash scales with the width, because a pattern is measured in
+ * user units: `2 4` at twice the width would be square dots packed twice as close — a near-solid line.
+ */
+function strokeOf(style: { dash?: number[]; opacity: number }, selected: boolean): { dash?: string; opacity: number; width: number } {
+  const width = selected ? SELECTED_STROKE_WIDTH : STROKE_WIDTH;
+  const scale = width / STROKE_WIDTH;
+  return { dash: style.dash?.map((length) => length * scale).join(' '), opacity: selected ? 1 : style.opacity, width };
+}

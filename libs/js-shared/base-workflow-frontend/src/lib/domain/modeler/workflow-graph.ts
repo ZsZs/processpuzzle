@@ -144,6 +144,20 @@ export interface WorkflowNodeData {
    * ring when true, a dashed one when not. Unset on every other node.
    */
   interrupting?: boolean;
+  /**
+   * A task's guards and steps, as its catalog entry states them — shown by the properties panel, never drawn.
+   * The two rules are base-rule ids, kept as ids because this library has no rule store to name them from.
+   * Unset on every other kind, and on a task whose catalog entry does not resolve.
+   */
+  task?: WorkflowTaskDetails;
+}
+
+/** What {@link WorkflowNodeData.task} carries: the parts of a `TaskDefinition` a node does not draw. */
+export interface WorkflowTaskDetails {
+  preconditionRuleId?: string;
+  postconditionRuleId?: string;
+  /** The step names in declaration order — the order the dashboard's checklist shows them in. */
+  steps: string[];
 }
 
 /**

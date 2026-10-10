@@ -24,6 +24,9 @@ describe('WorkflowElementPropertiesPanelComponent', () => {
               'base_workflow.workflow.modeler.properties.description': 'Description',
               'base_workflow.workflow.modeler.properties.id': 'Identifier',
               'base_workflow.workflow.modeler.properties.unresolved': 'This reference does not resolve to a catalog entry.',
+              'base_workflow.task_definition.preconditionRuleId': 'Precondition Rule',
+              'base_workflow.task_definition.postconditionRuleId': 'Postcondition Rule',
+              'base_workflow.task_definition.steps': 'Steps',
             },
           },
         }),
@@ -90,6 +93,23 @@ describe('WorkflowElementPropertiesPanelComponent', () => {
     await render({ kind: 'task', elementId: 'review-order', label: 'Review Order' });
 
     expect(query('element-description')).toBeNull();
+  });
+
+  it('shows a task’s guards and its steps in order, under the Task form’s own labels', async () => {
+    await render({ ...task, task: { preconditionRuleId: 'order-complete', postconditionRuleId: 'order-reviewed', steps: ['Open', 'Check', 'Sign'] } });
+
+    expect(query('element-precondition')?.textContent).toContain('order-complete');
+    expect(query('element-postcondition')?.textContent).toContain('order-reviewed');
+    expect(Array.from(query('element-steps')?.querySelectorAll('li') ?? []).map((item) => item.textContent?.trim())).toEqual(['Open', 'Check', 'Sign']);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Precondition Rule');
+  });
+
+  it('omits the guard and step rows a task does not have', async () => {
+    await render({ ...task, task: { steps: [] } });
+
+    expect(query('element-precondition')).toBeNull();
+    expect(query('element-postcondition')).toBeNull();
+    expect(query('element-steps')).toBeNull();
   });
 
   /**

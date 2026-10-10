@@ -27,6 +27,12 @@
       "start": "Start",
       "end": "Ende",
       "save": "Layout speichern",
+      "routing": {
+        "title": "Linienführung",
+        "orthogonal": "Rechtwinklig",
+        "polyline": "Gerade",
+        "bezier": "Gebogen"
+      },
       "properties": {
         "none": "Wählen Sie ein Element, um seine Eigenschaften zu sehen.",
         "lane": "Bahn",
