@@ -4,7 +4,7 @@
   "projectType": "library",
   "tags": ["backend", "java", "springboot", "library"],
   "sourceRoot": "libs/java-shared/base-workflow-backend/src",
-  "implicitDependencies": ["api-contracts", "processpuzzle-core", "base-state-backend"],
+  "implicitDependencies": ["api-contracts", "processpuzzle-core", "base-state-backend", "base-rule-backend"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
