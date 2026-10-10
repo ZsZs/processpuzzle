@@ -58,6 +58,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -147,10 +148,8 @@ class TenantDataCleanerTest {
 
         erase(ERASED);
 
-        assertThat(TABLES).allSatisfy(table ->
-                assertThat(count(table, ERASED)).as("%s of the erased tenant", table).isZero());
-        assertThat(TABLES).allSatisfy(table ->
-                assertThat(count(table, KEPT)).as("%s of the kept tenant", table).isEqualTo(expectedRows(table)));
+        assertThat(rowsPerTable(ERASED)).as("rows of the erased tenant").isEqualTo(noRows());
+        assertThat(rowsPerTable(KEPT)).as("rows of the kept tenant").isEqualTo(seededRows());
     }
 
     /** Only once the rows are committed gone, and through the same removal a single role delete takes. */
@@ -188,7 +187,7 @@ class TenantDataCleanerTest {
 
         erase(ERASED);
 
-        assertThat(TABLES).allSatisfy(table -> assertThat(count(table, ERASED)).as(table).isZero());
+        assertThat(rowsPerTable(ERASED)).isEqualTo(noRows());
         verify(roleDirectory).deleteRole(ERASED, "reviewer");
         verify(roleDirectory).deleteRole(ERASED, "approver");
     }
@@ -202,8 +201,7 @@ class TenantDataCleanerTest {
             status.setRollbackOnly();
         });
 
-        assertThat(TABLES).allSatisfy(table ->
-                assertThat(count(table, ERASED)).as(table).isEqualTo(expectedRows(table)));
+        assertThat(rowsPerTable(ERASED)).isEqualTo(seededRows());
         verify(roleDirectory, never()).deleteRole(anyString(), anyString());
     }
 
@@ -212,7 +210,7 @@ class TenantDataCleanerTest {
     void erasingATenantWithNothingIsHarmless() {
         erase("nobody");
 
-        assertThat(TABLES).allSatisfy(table -> assertThat(count(table, "nobody")).as(table).isZero());
+        assertThat(rowsPerTable("nobody")).isEqualTo(noRows());
         verify(roleDirectory, never()).deleteRole(anyString(), anyString());
     }
 
@@ -250,8 +248,19 @@ class TenantDataCleanerTest {
         translations.saveAndFlush(new WorkflowTranslationBundle(orgKey, "workflow", "en", Map.of("title", "Workflows")));
     }
 
-    private static long expectedRows(String table) {
-        return "workflow_role_definition".equals(table) ? 2 : 1;
+    /** What one tenant seeded by {@link #givenAWorkflowWithARunningInstanceFor} holds, per table. */
+    private static Map<String, Long> seededRows() {
+        return TABLES.stream().collect(Collectors.toMap(table -> table,
+                table -> "workflow_role_definition".equals(table) ? 2L : 1L));
+    }
+
+    private static Map<String, Long> noRows() {
+        return TABLES.stream().collect(Collectors.toMap(table -> table, table -> 0L));
+    }
+
+    /** As a map, so a failure names every table that is off at once. */
+    private Map<String, Long> rowsPerTable(String orgKey) {
+        return TABLES.stream().collect(Collectors.toMap(table -> table, table -> count(table, orgKey)));
     }
 
     private static RoleDefinition role(String orgKey, String id) {

@@ -233,17 +233,21 @@ public class MinioFileStorageService implements FileStorageService {
      * error is raised.
      */
     private void removeAll(String bucketName, List<DeleteObject> batch) {
+        DeleteError firstError = null;
         try {
             for (Result<DeleteError> result : minioClient.removeObjects(RemoveObjectsArgs.builder()
                     .bucket(bucketName).objects(batch).build())) {
                 DeleteError error = result.get();
-                throw new RuntimeException("Error deleting object: " + error.objectName() + " from bucket: "
-                        + bucketName + " (" + error.code() + ": " + error.message() + ")");
+                if (firstError == null) {
+                    firstError = error;
+                }
             }
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error deleting objects from bucket: " + bucketName, e);
+            throw new ObjectDeletionException("Error deleting objects from bucket: " + bucketName, e);
+        }
+        if (firstError != null) {
+            throw new ObjectDeletionException("Error deleting object: " + firstError.objectName() + " from bucket: "
+                    + bucketName + " (" + firstError.code() + ": " + firstError.message() + ")", null);
         }
     }
 }

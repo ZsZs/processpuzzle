@@ -216,8 +216,9 @@ class MinioFileStorageServiceTest {
         when(error.objectName()).thenReturn("object-1");
         when(minioClient.removeObjects(any(RemoveObjectsArgs.class))).thenReturn(List.of(new Result<>(error)));
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fileStorageService.deleteObjects("test-bucket", List.of("object-1")));
+        List<String> names = List.of("object-1");
+        ObjectDeletionException exception = assertThrows(ObjectDeletionException.class,
+                () -> fileStorageService.deleteObjects("test-bucket", names));
         assertTrue(exception.getMessage().contains("object-1"));
     }
 
