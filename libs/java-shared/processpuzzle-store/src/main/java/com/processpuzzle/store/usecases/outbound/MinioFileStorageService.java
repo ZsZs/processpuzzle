@@ -4,12 +4,17 @@ import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import io.minio.messages.Bucket;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
+import io.minio.messages.Item;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +22,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class MinioFileStorageService implements FileStorageService {
+    /** S3 accepts at most this many keys in one multi-object delete request. */
+    private static final int DELETE_BATCH_SIZE = 1000;
+
     private final MinioClient minioClient;
     private final MinioClient minioPresignClient;
 
@@ -182,6 +190,64 @@ public class MinioFileStorageService implements FileStorageService {
                             .build());
         } catch (Exception e) {
             throw new RuntimeException("Error deleting object: " + objectName + " from bucket: " + bucketName, e);
+        }
+    }
+
+    @Override
+    public void deleteObjects(String bucketName, Collection<String> objectNames) {
+        if (objectNames == null || objectNames.isEmpty() || !bucketExists(bucketName)) {
+            return;
+        }
+        List<String> names = List.copyOf(objectNames);
+        for (int from = 0; from < names.size(); from += DELETE_BATCH_SIZE) {
+            List<DeleteObject> batch = names.subList(from, Math.min(from + DELETE_BATCH_SIZE, names.size()))
+                    .stream().map(DeleteObject::new).toList();
+            removeAll(bucketName, batch);
+        }
+    }
+
+    @Override
+    public void deleteByPrefix(String bucketName, String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            throw new IllegalArgumentException("Refusing to delete by an empty prefix: it would empty bucket "
+                    + bucketName + ".");
+        }
+        if (!bucketExists(bucketName)) {
+            return;
+        }
+        List<String> names = new ArrayList<>();
+        try {
+            for (Result<Item> result : minioClient.listObjects(ListObjectsArgs.builder()
+                    .bucket(bucketName).prefix(prefix).recursive(true).build())) {
+                names.add(result.get().objectName());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error listing objects under: " + prefix + " in bucket: " + bucketName, e);
+        }
+        deleteObjects(bucketName, names);
+    }
+
+    /**
+     * {@code removeObjects} is lazy: nothing is deleted until its results are iterated, and an
+     * individual failure is reported only as one of them. So every result is read, and the first
+     * error is raised.
+     */
+    private void removeAll(String bucketName, List<DeleteObject> batch) {
+        DeleteError firstError = null;
+        try {
+            for (Result<DeleteError> result : minioClient.removeObjects(RemoveObjectsArgs.builder()
+                    .bucket(bucketName).objects(batch).build())) {
+                DeleteError error = result.get();
+                if (firstError == null) {
+                    firstError = error;
+                }
+            }
+        } catch (Exception e) {
+            throw new ObjectDeletionException("Error deleting objects from bucket: " + bucketName, e);
+        }
+        if (firstError != null) {
+            throw new ObjectDeletionException("Error deleting object: " + firstError.objectName() + " from bucket: "
+                    + bucketName + " (" + firstError.code() + ": " + firstError.message() + ")", null);
         }
     }
 }

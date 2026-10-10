@@ -2,6 +2,7 @@ package com.processpuzzle.store.usecases.outbound;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -29,4 +30,25 @@ public interface FileStorageService {
     String getInternalObjectUri(String bucketName, String objectName, Duration expiry);
     boolean objectExists(String bucketName, String objectName);
     void deleteObject(String bucketName, String objectName);
+
+    /**
+     * Deletes many objects from one bucket. Idempotent: a name that is not there is not an error, and
+     * neither is a bucket that does not exist — there is nothing in it to delete.
+     *
+     * <p>For erasing what a tenant stored, where the objects are known by name but scattered across a
+     * shared bucket; see {@code StoredObjectsReleasedEvent}.
+     */
+    void deleteObjects(String bucketName, Collection<String> objectNames);
+
+    /**
+     * Deletes every object whose name starts with {@code prefix}. Idempotent, as
+     * {@link #deleteObjects}.
+     *
+     * <p>For a bucket whose keys are laid out per tenant — base-ai's media is under
+     * {@code <orgKey>/} — so that a tenant can be erased without listing its rows first. The prefix
+     * must not be empty: that would empty the bucket, which is never what erasing one tenant means.
+     *
+     * @throws IllegalArgumentException when {@code prefix} is blank
+     */
+    void deleteByPrefix(String bucketName, String prefix);
 }

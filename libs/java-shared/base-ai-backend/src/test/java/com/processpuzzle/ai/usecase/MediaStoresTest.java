@@ -45,5 +45,7 @@ class MediaStoresTest {
                 .isInstanceOf(MediaStoreUnavailableException.class).hasMessageContaining("No media store is configured");
         assertThatThrownBy(() -> store.delete("photo"))
                 .isInstanceOf(MediaStoreUnavailableException.class).hasMessageContaining("No media store is configured");
+        assertThatThrownBy(() -> store.deleteByPrefix("my-org/"))
+                .isInstanceOf(MediaStoreUnavailableException.class).hasMessageContaining("No media store is configured");
     }
 }

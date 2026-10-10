@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +51,17 @@ class AiPortsConfigurationTest {
         configuration.aiMediaStore(storage, "").exists("x");
 
         verify(storage).objectExists("ai-media", "x");
+    }
+
+    /** A tenant's media is erased by its key prefix, without creating the bucket just to empty it. */
+    @Test
+    void aTenantsMediaIsDeletedByPrefixFromTheStacksBucket() {
+        FileStorageService storage = mock(FileStorageService.class);
+
+        configuration.aiMediaStore(storage, "processpuzzle-testbed").deleteByPrefix("my-org/");
+
+        verify(storage).deleteByPrefix("processpuzzle-testbed-ai-media", "my-org/");
+        verify(storage, never()).createBucket(any());
     }
 
     @Test

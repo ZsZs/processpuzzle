@@ -2,6 +2,9 @@ package com.processpuzzle.document.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,4 +33,14 @@ public interface DocumentRepository
     List<Document> findByOrgKey(String orgKey);
 
     void deleteByOrgKey(String orgKey);
+
+    /**
+     * Every document of a tenant in one statement, for erasing the tenant. Not
+     * {@link #deleteByOrgKey}, which loads every row and removes it one by one. A bulk delete
+     * bypasses {@code lockVersion}, which is what an erasure wants: no concurrent edit should be able
+     * to keep a tenant's document alive. Run the draft and published erasures first.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from Document d where d.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

@@ -2,6 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.i18n.AppTranslationRepository;
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.event.TransactionPhase;
@@ -21,15 +22,17 @@ class TenantDataCleanerTest {
 
     private final AppDefinitionRepository appDefinitionRepository = mock(AppDefinitionRepository.class);
     private final ModuleDefinitionRepository moduleDefinitionRepository = mock(ModuleDefinitionRepository.class);
+    private final AppTranslationRepository translationRepository = mock(AppTranslationRepository.class);
     private final TenantDataCleaner cleaner =
-            new TenantDataCleaner(appDefinitionRepository, moduleDefinitionRepository);
+            new TenantDataCleaner(appDefinitionRepository, moduleDefinitionRepository, translationRepository);
 
     @Test
-    void deletesBothOfThisFeaturesTenantScopedTables() {
+    void deletesEveryOneOfThisFeaturesTenantScopedTables() {
         cleaner.onOrganizationDeleted(new OrganizationDeletedEvent("my-org"));
 
         verify(appDefinitionRepository).deleteByOrgKey("my-org");
         verify(moduleDefinitionRepository).deleteByOrgKey("my-org");
+        verify(translationRepository).eraseByOrgKey("my-org");
     }
 
     /**

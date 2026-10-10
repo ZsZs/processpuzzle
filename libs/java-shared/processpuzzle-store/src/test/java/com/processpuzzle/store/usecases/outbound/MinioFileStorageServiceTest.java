@@ -199,6 +199,62 @@ class MinioFileStorageServiceTest {
     }
 
     @Test
+    void deleteObjects_shouldBatchAtTheS3LimitAndReadEveryResult() throws Exception {
+        when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        when(minioClient.removeObjects(any(RemoveObjectsArgs.class))).thenReturn(List.of());
+        List<String> names = java.util.stream.IntStream.range(0, 1500).mapToObj(i -> "object-" + i).toList();
+
+        fileStorageService.deleteObjects("test-bucket", names);
+
+        verify(minioClient, times(2)).removeObjects(any(RemoveObjectsArgs.class));
+    }
+
+    @Test
+    void deleteObjects_shouldRaiseTheFirstReportedError() throws Exception {
+        when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        io.minio.messages.DeleteError error = mock(io.minio.messages.DeleteError.class);
+        when(error.objectName()).thenReturn("object-1");
+        when(minioClient.removeObjects(any(RemoveObjectsArgs.class))).thenReturn(List.of(new Result<>(error)));
+
+        List<String> names = List.of("object-1");
+        ObjectDeletionException exception = assertThrows(ObjectDeletionException.class,
+                () -> fileStorageService.deleteObjects("test-bucket", names));
+        assertTrue(exception.getMessage().contains("object-1"));
+    }
+
+    @Test
+    void deleteObjects_shouldDoNothing_whenTheBucketDoesNotExist() throws Exception {
+        when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(false);
+
+        fileStorageService.deleteObjects("missing-bucket", List.of("object-1"));
+
+        verify(minioClient, never()).removeObjects(any(RemoveObjectsArgs.class));
+    }
+
+    @Test
+    void deleteByPrefix_shouldDeleteEveryListedObject() throws Exception {
+        when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        io.minio.messages.Item item = mock(io.minio.messages.Item.class);
+        when(item.objectName()).thenReturn("my-org/uploads/1");
+        when(minioClient.listObjects(any(ListObjectsArgs.class))).thenReturn(List.of(new Result<>(item)));
+        when(minioClient.removeObjects(any(RemoveObjectsArgs.class))).thenReturn(List.of());
+
+        fileStorageService.deleteByPrefix("test-bucket", "my-org/");
+
+        ArgumentCaptor<ListObjectsArgs> listed = ArgumentCaptor.forClass(ListObjectsArgs.class);
+        verify(minioClient).listObjects(listed.capture());
+        assertEquals("my-org/", listed.getValue().prefix());
+        verify(minioClient).removeObjects(any(RemoveObjectsArgs.class));
+    }
+
+    /** An empty prefix matches every key: erasing one tenant must never empty a shared bucket. */
+    @Test
+    void deleteByPrefix_shouldRefuseABlankPrefix() {
+        assertThrows(IllegalArgumentException.class, () -> fileStorageService.deleteByPrefix("test-bucket", " "));
+        verifyNoInteractions(minioClient);
+    }
+
+    @Test
     void objectExists_shouldReturnTrue_whenStatSucceeds() throws Exception {
         when(minioClient.statObject(any(StatObjectArgs.class))).thenReturn(mock(StatObjectResponse.class));
 

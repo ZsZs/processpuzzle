@@ -29,4 +29,11 @@ public interface MediaStore {
 
     /** Deletes the object; an absent one is not an error. */
     void delete(String objectName);
+
+    /**
+     * Deletes every object whose name starts with {@code prefix}; none is not an error. The prefix is a
+     * tenant's {@code orgKey + "/"}, never blank — every object name above starts with it, so this is
+     * how a tenant's media goes when the tenant is erased, without listing its rows first.
+     */
+    void deleteByPrefix(String prefix);
 }
