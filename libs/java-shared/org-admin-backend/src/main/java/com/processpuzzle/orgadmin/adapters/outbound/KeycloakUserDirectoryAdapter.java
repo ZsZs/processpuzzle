@@ -114,7 +114,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
                     .orElseThrow(() -> new DirectoryUnavailableException(
                             "Keycloak created a user in realm '" + realm + "' but returned no id."));
         } catch (IdentityProviderUnavailableException ex) {
-            if (String.valueOf(ex.getCause()).contains("409")) {
+            if (ex.getHttpStatus().stream().anyMatch(status -> status == 409)) {
                 throw new UserAlreadyExistsException(realm, user.username());
             }
             throw new DirectoryUnavailableException(ex.getMessage(), ex);
