@@ -60,7 +60,7 @@ class PublishAppDefinitionTest {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
         ObjectProvider<OrganizationAccessPolicy> policyProvider = mock(ObjectProvider.class);
-        when(policyProvider.getIfUnique(any())).thenReturn(new PermitAllOrganizationAccessPolicy());
+        when(policyProvider.getObject()).thenReturn(new PermitAllOrganizationAccessPolicy());
 
         // No rule module wired by default; the rule-aware tests below opt in.
         ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();

@@ -16,7 +16,7 @@ import com.processpuzzle.app.usecase.service.NavVisibilityFilter;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
-import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -120,7 +120,7 @@ class GetRouteDefinitionTest {
     void aPageOnlyReachableThroughANavItemThePrincipalCannotSee_isReportedAsMissing() {
         given(new AppDefinition(ORG_KEY, APP_ID, "Claims Management", null, null, nestedGraph()));
         GetRouteDefinition withoutTheRole = routeUseCase(
-                AppTestFixtures.guardWith(new OrganizationAccessPolicy() {
+                AppTestFixtures.guardWith(new PermitAllOrganizationAccessPolicy() {
                     @Override
                     public boolean hasAnyRole(Collection<String> requiredRoles) {
                         return false;

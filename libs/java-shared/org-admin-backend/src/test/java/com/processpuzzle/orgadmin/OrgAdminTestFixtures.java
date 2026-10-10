@@ -66,8 +66,8 @@ public final class OrgAdminTestFixtures {
     }
 
     /**
-     * An {@code ObjectProvider} answering with exactly {@code instance}. The resolver and the guard
-     * both resolve their collaborator through {@code getIfUnique}, so a test that wants a stub in
+     * An {@code ObjectProvider} answering with exactly {@code instance}. The resolver
+     * resolves its collaborator through {@code getIfUnique}, so a test that wants a stub in
      * place has to hand them a provider rather than the stub itself.
      */
     @SuppressWarnings("unchecked")
@@ -108,7 +108,7 @@ public final class OrgAdminTestFixtures {
     @SuppressWarnings("unchecked")
     public static OrganizationGuard guardWith(OrganizationAccessPolicy policy) {
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenReturn(policy);
+        when(provider.getObject()).thenReturn(policy);
         return new OrganizationGuard(provider);
     }
 
