@@ -2,6 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.i18n.AppTranslationRepository;
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
  *
  * <p>The corollary is that throwing here rolls the deletion back, which is the intended behavior: if
  * a tenant's apps cannot be removed, the tenant should not disappear either.
+ *
+ * <p>The translation bundles go too. They were missed when this was first written, and an erased
+ * tenant kept its {@code app_translations} rows. They are one bulk statement rather than a derived
+ * delete, as {@code OrganizationDeletedEvent} recommends; the two definition tables keep theirs,
+ * because a tenant has a handful of apps and modules, not thousands.
  */
 @Component
 public class TenantDataCleaner {
@@ -35,17 +41,22 @@ public class TenantDataCleaner {
 
     private final AppDefinitionRepository appDefinitionRepository;
     private final ModuleDefinitionRepository moduleDefinitionRepository;
+    private final AppTranslationRepository translationRepository;
 
     public TenantDataCleaner(AppDefinitionRepository appDefinitionRepository,
-                             ModuleDefinitionRepository moduleDefinitionRepository) {
+                             ModuleDefinitionRepository moduleDefinitionRepository,
+                             AppTranslationRepository translationRepository) {
         this.appDefinitionRepository = appDefinitionRepository;
         this.moduleDefinitionRepository = moduleDefinitionRepository;
+        this.translationRepository = translationRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationDeleted(OrganizationDeletedEvent event) {
-        LOG.info("Organization '{}' deleted; removing its app and module definitions.", event.orgKey());
+        LOG.info("Organization '{}' deleted; removing its app and module definitions and translations.",
+                event.orgKey());
         appDefinitionRepository.deleteByOrgKey(event.orgKey());
         moduleDefinitionRepository.deleteByOrgKey(event.orgKey());
+        translationRepository.eraseByOrgKey(event.orgKey());
     }
 }

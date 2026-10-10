@@ -1,10 +1,13 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -30,4 +33,26 @@ public interface EntityObjectRepository
         value = "select exists (select 1 from entity_object o where o.payload::text like concat('%', :referencedId, '%'))",
         nativeQuery = true)
     boolean existsAnyReferenceTo(@Param("referencedId") String referencedId);
+
+    /**
+     * The payloads alone of a tenant's objects of the given definitions, without loading the objects
+     * as entities — for reading the files they refer to just before the rows are deleted in bulk.
+     */
+    @Query("select o.entityDefinitionCode as entityDefinitionCode, o.payload as payload from EntityObject o "
+        + "where o.orgKey = :orgKey and o.entityDefinitionCode in :entityDefinitionCodes")
+    List<PayloadView> findPayloadsByOrgKeyAndEntityDefinitionCodeIn(
+        @Param("orgKey") String orgKey, @Param("entityDefinitionCodes") Collection<String> entityDefinitionCodes);
+
+    /** Every object of a tenant in one statement, for erasing the tenant. */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from EntityObject o where o.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
+
+    /** An object's payload with the code of its definition. */
+    interface PayloadView {
+
+        String getEntityDefinitionCode();
+
+        Map<String, Object> getPayload();
+    }
 }

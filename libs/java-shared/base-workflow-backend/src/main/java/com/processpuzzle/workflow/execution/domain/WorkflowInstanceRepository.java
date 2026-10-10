@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -41,4 +42,12 @@ public interface WorkflowInstanceRepository
 
     long countByOrgKeyAndWorkflowIdAndStatusIn(
             String orgKey, String workflowId, Collection<WorkflowInstanceStatus> statuses);
+
+    /**
+     * Every workflow instance, whatever its status of a tenant in one statement, for erasing the tenant. A bulk delete, so it
+     * neither loads the rows nor checks their version.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from WorkflowInstance i where i.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

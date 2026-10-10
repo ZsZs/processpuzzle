@@ -2,6 +2,9 @@ package com.processpuzzle.workflow.execution.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,4 +29,12 @@ public interface ArtifactInstanceRepository
 
     /** Used by the (future) base-state change listener to find the row to refresh. */
     Optional<ArtifactInstance> findByOrgKeyAndStateMachineInstanceId(String orgKey, String stateMachineInstanceId);
+
+    /**
+     * Every artifact instance of a tenant in one statement, for erasing the tenant. A bulk delete, so it
+     * neither loads the rows nor checks their version.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ArtifactInstance a where a.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }

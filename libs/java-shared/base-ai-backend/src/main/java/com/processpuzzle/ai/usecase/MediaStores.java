@@ -44,6 +44,11 @@ public class MediaStores {
             throw unavailable();
         }
 
+        @Override
+        public void deleteByPrefix(String prefix) {
+            throw unavailable();
+        }
+
         private MediaStoreUnavailableException unavailable() {
             return new MediaStoreUnavailableException("No media store is configured for the AI feature.");
         }

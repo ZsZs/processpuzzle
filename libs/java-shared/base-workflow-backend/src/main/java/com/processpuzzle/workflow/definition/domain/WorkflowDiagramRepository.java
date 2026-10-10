@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Every finder is scoped by {@code orgKey}, same discipline as {@link WorkflowRepository}: the
@@ -23,4 +26,12 @@ public interface WorkflowDiagramRepository
     List<WorkflowDiagram> findByOrgKey(String orgKey);
 
     void deleteByOrgKeyAndWorkflowId(String orgKey, String workflowId);
+
+    /**
+     * Every workflow diagram layout of a tenant in one statement, for erasing the tenant. A bulk delete, so it
+     * neither loads the rows nor checks their version.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from WorkflowDiagram d where d.orgKey = :orgKey")
+    int eraseByOrgKey(@Param("orgKey") String orgKey);
 }
