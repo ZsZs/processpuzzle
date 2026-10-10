@@ -10,7 +10,7 @@ name: Build-Vision-Server
 
 on:
   push:
-    branches: [ "feature/**", develop ]
+    branches: [ develop ]
     paths:
       - 'apps/vision-server/**'
       - 'tools/docker/vision-server/**'

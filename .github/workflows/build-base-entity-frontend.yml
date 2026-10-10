@@ -2,7 +2,6 @@ name: Build-Base-Entity-Frontend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/js-shared/base-entity-frontend/**'

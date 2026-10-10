@@ -2,7 +2,6 @@ name: Build-Base-Rule-Backend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/java-shared/base-rule-backend/**'

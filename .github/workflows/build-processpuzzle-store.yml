@@ -2,7 +2,6 @@ name: Build-Processpuzzle-Store
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/java-shared/processpuzzle-store/**'

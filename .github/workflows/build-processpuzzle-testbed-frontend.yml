@@ -15,7 +15,7 @@ on:
       - 'apps/processpuzzle-testbed-e2e/**'
       - 'libs/js-shared/e2e-testing/**'
   workflow_run:
-    workflows: [ "Build-Auth", "Build-Base-Entity-Frontend", "Build-Util", "Build-Widgets" ]
+    workflows: [ "Build-Auth", "Build-Base-Entity-Frontend", "Build-Util", "Build-Base-Widget-Frontend" ]
     types:
       - completed
 jobs:

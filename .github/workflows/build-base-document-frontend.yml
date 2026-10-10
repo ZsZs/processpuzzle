@@ -2,7 +2,6 @@ name: Build-Base-Document-Frontend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/js-shared/base-document-frontend/**'

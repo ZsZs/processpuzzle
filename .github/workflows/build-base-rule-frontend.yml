@@ -2,7 +2,6 @@ name: Build-Base-Rule-Frontend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/js-shared/base-rule-frontend/**'

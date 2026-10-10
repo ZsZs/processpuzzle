@@ -2,7 +2,6 @@ name: Build-Org-Admin-Frontend
 on:
   push:
     branches:
-      - "feature/**"
       - "develop"
     paths:
       - 'libs/js-shared/org-admin-frontend/**'
