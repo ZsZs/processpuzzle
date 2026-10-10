@@ -559,6 +559,15 @@ function taskNode(taskId: string, definition: TaskDefinition | undefined, laneRo
       label: definition ? definition.name || taskId : taskId,
       description: definition?.description,
       unresolved: definition === undefined,
+      ...(definition
+        ? {
+            task: {
+              preconditionRuleId: definition.preconditionRuleId || undefined,
+              postconditionRuleId: definition.postconditionRuleId || undefined,
+              steps: definition.steps.map((step) => step.name || step.id),
+            },
+          }
+        : {}),
     },
   };
 }

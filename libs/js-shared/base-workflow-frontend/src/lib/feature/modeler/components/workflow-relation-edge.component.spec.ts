@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Edge, EdgeLabelPosition, NgDiagramBaseEdgeComponent, NgDiagramBaseEdgeLabelComponent, NgDiagramDefaultEdgeLabelComponent } from 'ng-diagram';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { EdgeContextMenuService } from '../services/edge-context-menu.service';
 import { WORKFLOW_RELATION_EDGE_TYPE, WorkflowEdgeData, WorkflowRelation } from '../../../domain/modeler/workflow-graph';
 import { WorkflowRelationEdgeComponent } from './workflow-relation-edge.component';
 
@@ -19,6 +20,7 @@ class StubBaseEdgeComponent {
   readonly targetArrowhead = input<string>();
   readonly strokeDasharray = input<string | undefined>();
   readonly strokeOpacity = input<number | undefined>();
+  readonly strokeWidth = input<number | undefined>();
 }
 
 @Component({ selector: 'ng-diagram-base-edge-label', standalone: true, template: '<ng-content />' })
@@ -31,13 +33,13 @@ class StubBaseEdgeLabelComponent {
 class StubDefaultEdgeLabelComponent {}
 
 describe('WorkflowRelationEdgeComponent', () => {
-  const edgeOf = (data?: WorkflowEdgeData): Edge<WorkflowEdgeData> =>
-    ({ id: 'a->b', type: WORKFLOW_RELATION_EDGE_TYPE, source: 'a', target: 'b', data }) as Edge<WorkflowEdgeData>;
+  const edgeOf = (data?: WorkflowEdgeData, selected = false): Edge<WorkflowEdgeData> =>
+    ({ id: 'a->b', type: WORKFLOW_RELATION_EDGE_TYPE, source: 'a', target: 'b', data, selected }) as Edge<WorkflowEdgeData>;
 
   let fixture: ComponentFixture<WorkflowRelationEdgeComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [WorkflowRelationEdgeComponent] })
+    await TestBed.configureTestingModule({ imports: [WorkflowRelationEdgeComponent], providers: [EdgeContextMenuService] })
       .overrideComponent(WorkflowRelationEdgeComponent, {
         remove: { imports: [NgDiagramBaseEdgeComponent, NgDiagramBaseEdgeLabelComponent, NgDiagramDefaultEdgeLabelComponent] },
         add: { imports: [StubBaseEdgeComponent, StubBaseEdgeLabelComponent, StubDefaultEdgeLabelComponent] },
@@ -56,8 +58,8 @@ describe('WorkflowRelationEdgeComponent', () => {
    */
   const stroke = () => fixture.debugElement.query(By.directive(StubBaseEdgeComponent)).componentInstance as StubBaseEdgeComponent;
 
-  function render(data?: WorkflowEdgeData): void {
-    fixture.componentRef.setInput('edge', edgeOf(data));
+  function render(data?: WorkflowEdgeData, selected = false): void {
+    fixture.componentRef.setInput('edge', edgeOf(data, selected));
     fixture.detectChanges();
   }
 
@@ -99,6 +101,32 @@ describe('WorkflowRelationEdgeComponent', () => {
 
     expect(impliedDash).toBe('6 5');
     expect(impliedOpacity).toBeLessThan(stroke().strokeOpacity() as number);
+  });
+
+  /**
+   * Colour alone barely marks a selected dotted line, which is mostly gap — so a selected edge is drawn
+   * heavier, its dash scaled with it so that the dots stay dots, and a faded one at full opacity.
+   */
+  it('draws a selected edge heavier, keeping its dash pattern in proportion', () => {
+    render({ relation: 'input' });
+    expect(stroke().strokeWidth()).toBe(2);
+
+    render({ relation: 'input' }, true);
+    expect(stroke().strokeWidth()).toBe(4);
+    expect(stroke().strokeDasharray()).toBe('4 8');
+
+    render({ relation: 'implicit' }, true);
+    expect(stroke().strokeOpacity()).toBe(1);
+  });
+
+  it('opens the routing menu on a right-click, for this edge', () => {
+    render({ relation: 'sequence' });
+    const event = new MouseEvent('contextmenu', { clientX: 12, clientY: 34, cancelable: true, bubbles: true });
+
+    baseEdge().dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(TestBed.inject(EdgeContextMenuService).target()).toEqual({ edgeId: 'a->b', clientX: 12, clientY: 34 });
   });
 
   /**

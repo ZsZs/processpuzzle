@@ -27,6 +27,12 @@
       "start": "Inicio",
       "end": "Fin",
       "save": "Guardar diseño",
+      "routing": {
+        "title": "Trazado",
+        "orthogonal": "Ángulos rectos",
+        "polyline": "Recta",
+        "bezier": "Curva"
+      },
       "properties": {
         "none": "Seleccione un elemento para ver sus propiedades.",
         "lane": "Carril",

@@ -144,7 +144,7 @@ export { DiagramEdgeLayout, DiagramNodeLayout, DiagramViewport, NodeSize, Point,
 export { WorkflowDiagramMapper } from './lib/domain/modeler/data-access/workflow-diagram.mapper';
 export { WorkflowDiagramService } from './lib/domain/modeler/data-access/workflow-diagram.service';
 export { WorkflowDiagramLayoutStore, WorkflowDiagramStore } from './lib/domain/modeler/data-access/workflow-diagram.store';
-export { REFUSE_CONNECTION, REFUSE_GROUPING, WorkflowDiagramComponent, type WorkflowGraphLayout } from './lib/feature/modeler/components/workflow-diagram.component';
+export { REFUSE_GROUPING, SAME_NODE_RELINK_ONLY, WorkflowDiagramComponent, type WorkflowGraphLayout } from './lib/feature/modeler/components/workflow-diagram.component';
 export { PROPERTIES_I18N_SCOPE, WorkflowElementPropertiesPanelComponent } from './lib/feature/modeler/pages/workflow-element-properties-panel.component';
 export { WorkflowRelationPropertiesPanelComponent } from './lib/feature/modeler/pages/workflow-relation-properties-panel.component';
 export { WorkflowSelectionService } from './lib/feature/modeler/services/workflow-selection.service';

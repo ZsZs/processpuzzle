@@ -27,6 +27,12 @@
       "start": "Start",
       "end": "End",
       "save": "Save layout",
+      "routing": {
+        "title": "Routing",
+        "orthogonal": "Right angles",
+        "polyline": "Straight",
+        "bezier": "Curved"
+      },
       "properties": {
         "none": "Select an element to see its properties.",
         "lane": "Lane",

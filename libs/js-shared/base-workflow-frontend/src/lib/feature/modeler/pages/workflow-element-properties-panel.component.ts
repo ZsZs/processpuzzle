@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { WORKFLOW_I18N_SCOPE } from '../../../base-workflow.i18n';
+import { TASK_DEFINITION_I18N_SCOPE, WORKFLOW_I18N_SCOPE } from '../../../base-workflow.i18n';
 import { modelerElementNameKey } from '../../../domain/modeler/modeler-element-names';
 import { modelerIconUrl } from '../../../domain/modeler/modeler-icons';
 import { WorkflowNodeData } from '../../../domain/modeler/workflow-graph';
@@ -53,6 +53,27 @@ export const PROPERTIES_I18N_SCOPE = `${WORKFLOW_I18N_SCOPE}.modeler.properties`
         <dt>{{ descriptionKey | transloco }}</dt>
         <dd data-testid="element-description">{{ description }}</dd>
       }
+
+      @if (element().task; as task) {
+        @if (task.preconditionRuleId; as ruleId) {
+          <dt>{{ preconditionKey | transloco }}</dt>
+          <dd class="pp-element-properties__id" data-testid="element-precondition">{{ ruleId }}</dd>
+        }
+        @if (task.postconditionRuleId; as ruleId) {
+          <dt>{{ postconditionKey | transloco }}</dt>
+          <dd class="pp-element-properties__id" data-testid="element-postcondition">{{ ruleId }}</dd>
+        }
+        @if (task.steps.length > 0) {
+          <dt>{{ stepsKey | transloco }}</dt>
+          <dd>
+            <ol class="pp-element-properties__steps" data-testid="element-steps">
+              @for (step of task.steps; track $index) {
+                <li>{{ step }}</li>
+              }
+            </ol>
+          </dd>
+        }
+      }
     </dl>
 
     @if (element().unresolved) {
@@ -97,6 +118,10 @@ export const PROPERTIES_I18N_SCOPE = `${WORKFLOW_I18N_SCOPE}.modeler.properties`
       font-family: monospace;
       font-size: 12px;
     }
+    .pp-element-properties__steps {
+      margin: 0;
+      padding-left: 20px;
+    }
     .pp-element-properties__unresolved {
       margin: 0;
       color: #b00020;
@@ -122,6 +147,14 @@ export class WorkflowElementPropertiesPanelComponent {
   protected readonly descriptionKey = `${PROPERTIES_I18N_SCOPE}.description`;
   protected readonly idKey = `${PROPERTIES_I18N_SCOPE}.id`;
   protected readonly unresolvedKey = `${PROPERTIES_I18N_SCOPE}.unresolved`;
+
+  /**
+   * The task-only rows borrow the Task form's own labels: unlike the four above they only ever label a task,
+   * so the entity's word for them is the right one in every language.
+   */
+  protected readonly preconditionKey = `${TASK_DEFINITION_I18N_SCOPE}.preconditionRuleId`;
+  protected readonly postconditionKey = `${TASK_DEFINITION_I18N_SCOPE}.postconditionRuleId`;
+  protected readonly stepsKey = `${TASK_DEFINITION_I18N_SCOPE}.steps`;
 
   /**
    * What to call the selected thing. A lane is named by the modeler — it is a band of the diagram, not a
