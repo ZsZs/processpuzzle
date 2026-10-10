@@ -1,5 +1,5 @@
 name: release-java
-description: Release Java artifacts to Maven Central
+description: Release Java artifacts to GitHub Packages or Maven Central
 inputs:
   base_dir:
     description: Base director of the source code
@@ -14,17 +14,17 @@ inputs:
     description: Token to get access to SonarCloud
     required: true
   gpg_private_key:
-    description: GPG private key for signing artifacts
-    required: true
+    description: GPG private key for signing artifacts (Maven Central only)
+    required: false
   gpg_passphrase:
-    description: GPG passphrase for signing artifacts
-    required: true
+    description: GPG passphrase for signing artifacts (Maven Central only)
+    required: false
   central_token_username:
-    description: Username for Maven Central token
-    required: true
+    description: Username for Maven Central token (Maven Central only)
+    required: false
   central_token_password:
-    description: Password for Maven Central token
-    required: true
+    description: Password for Maven Central token (Maven Central only)
+    required: false
   cicd_stage:
     description: Actual stage in the CI/CD pipeline
     required: false
@@ -104,7 +104,26 @@ runs:
         git config --global user.email "zsolt.zsuffa@gmail.com"
         git config --global user.name "Zsolt Zsuffa"
 
+    # The target is not an input: release workflows start on a branch push and cannot take
+    # one. tools/scripts/release-java-lib.mjs prepare writes it into the release commit as a
+    # `Release-Target:` trailer instead. Searched over the whole release branch rather than at
+    # HEAD, so a fix pushed onto the branch afterwards does not lose it. No trailer fails the
+    # release rather than guessing: a wrong guess could publish to Central, which is permanent.
+    - name: Read release target
+      id: target
+      shell: bash
+      run: |
+        set -euo pipefail
+        TARGET=$(git log --format='%(trailers:key=Release-Target,valueonly)' origin/develop..HEAD | grep -m1 . | tr -d '[:space:]' || true)
+        case "$TARGET" in
+          central|github) ;;
+          *) echo "::error::No valid 'Release-Target: central|github' trailer on this release branch (got '$TARGET'). Prepare releases with tools/scripts/release-java-lib.mjs."; exit 1 ;;
+        esac
+        echo "Publishing to $TARGET"
+        echo "TARGET=$TARGET" >> $GITHUB_OUTPUT
+
     - name: Import GPG key
+      if: steps.target.outputs.TARGET == 'central'
       shell: bash
       run: |
         echo "${{ inputs.gpg_private_key }}" | gpg --batch --import
@@ -131,12 +150,23 @@ runs:
       shell: bash
 
     - name: Publish to Maven Central
-      run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml deploy -Prelease
+      if: steps.target.outputs.TARGET == 'central'
+      run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml deploy -Ppublish-central
       working-directory: ${{ inputs.base_dir }}
       env:
         MAVEN_USERNAME: ${{ inputs.central_token_username }}
         MAVEN_PASSWORD: ${{ inputs.central_token_password }}
         GPG_PASSPHRASE: ${{ inputs.gpg_passphrase }}
+      shell: bash
+
+    # GITHUB_ACTOR comes from the runner; the token needs packages: write, which the
+    # repository's default workflow permissions grant.
+    - name: Publish to GitHub Packages
+      if: steps.target.outputs.TARGET == 'github'
+      run: mvn --batch-mode --settings ${{ github.workspace }}/settings.xml deploy -Ppublish-github
+      working-directory: ${{ inputs.base_dir }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       shell: bash
 
     - name: Create GitHub Release

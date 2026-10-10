@@ -39,11 +39,19 @@ runs:
       run: npm install --legacy-peer-deps --ignore-scripts
       shell: bash
     - name: Setup Java ${{ inputs.java-version }}
+      # setup-java writes ~/.m2/settings.xml with a `github` server; the credentials stay env
+      # references, resolved when Maven runs. A consumer of the libs on GitHub Packages
+      # (processpuzzle-biz) sets PACKAGES_TOKEN — a PAT with read:packages, because GitHub's
+      # Maven registry does not let another repository's GITHUB_TOKEN read these packages.
+      # This repository builds its libs from source and leaves it unset.
       uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: ${{ inputs.java-version }}
         cache: 'maven'
+        server-id: github
+        server-username: GITHUB_ACTOR
+        server-password: PACKAGES_TOKEN
     - name: Report Maven version
       # Uses the Maven preinstalled on the runner image (3.9.x) rather than
       # downloading a pinned tarball. stCarolas/setup-maven fetched Maven from

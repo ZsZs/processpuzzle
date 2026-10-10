@@ -31,7 +31,7 @@ jobs:
           java-version: '25.x'
 
       - id: release-java
-        name: Release the Java library to Maven Central
+        name: Release the Java library
         uses: ./.github/actions/release-java
         with:
           base_dir: ${{env.BASE_DIR}}
