@@ -1,13 +1,9 @@
-package com.processpuzzle.document.usecase.service;
+package com.processpuzzle.document.adapter.inbound;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentRepository;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
-import com.processpuzzle.document.usecase.DocumentYamlFile;
+import com.processpuzzle.document.usecase.DocumentCommand;
+import com.processpuzzle.document.usecase.DocumentTranslationCommand;
 import com.processpuzzle.document.usecase.ImportDocuments;
 import com.processpuzzle.document.usecase.ImportOutcome;
 import com.processpuzzle.document.usecase.PublishDocumentTranslation;
@@ -20,7 +16,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -71,17 +66,18 @@ public class SampleDocumentLoader {
     private final PublishDocumentTranslation publishTranslation;
     private final DocumentRepository repository;
     private final ResourcePatternResolver resourceResolver;
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    private final DocumentYamlCodec yaml;
 
     public SampleDocumentLoader(ImportDocuments importDocuments,
                                 PublishDocumentTranslation publishTranslation,
                                 DocumentRepository repository,
-                                ResourcePatternResolver resourceResolver) {
+                                ResourcePatternResolver resourceResolver,
+                                DocumentYamlCodec yaml) {
         this.importDocuments = importDocuments;
         this.publishTranslation = publishTranslation;
         this.repository = repository;
         this.resourceResolver = resourceResolver;
+        this.yaml = yaml;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -113,23 +109,20 @@ public class SampleDocumentLoader {
             return;
         }
 
-        byte[] yaml;
+        List<DocumentCommand> entries;
         try (InputStream input = resource.getInputStream()) {
-            yaml = input.readAllBytes();
-        } catch (IOException e) {
+            entries = yaml.read(input);
+        } catch (IOException | RuntimeException e) {
             LOG.warn("Failed to read sample documents from {}", name, e);
             return;
         }
 
-        // Parsed here as well as inside the import, because publishing needs to know which entries
-        // are public and which locales they carry — and which of them already existed beforehand.
-        List<DocumentInput> entries = parse(yaml, name);
         Set<String> alreadyPresent = presentSlugs(orgKey, entries);
 
         ImportOutcome outcome;
         try {
-            outcome = importDocuments.execute(orgKey, new ByteArrayInputStream(yaml));
-        } catch (IOException | RuntimeException e) {
+            outcome = importDocuments.execute(orgKey, entries);
+        } catch (RuntimeException e) {
             LOG.warn("Failed to import sample documents from {}", name, e);
             return;
         }
@@ -145,42 +138,31 @@ public class SampleDocumentLoader {
         publishNewPublicDocuments(orgKey, entries, alreadyPresent, name);
     }
 
-    /** The file's entries, or an empty list when it cannot be parsed — the import will report why. */
-    private List<DocumentInput> parse(byte[] yaml, String name) {
-        try {
-            DocumentYamlFile file = yamlMapper.readValue(new ByteArrayInputStream(yaml), DocumentYamlFile.class);
-            return file.documents() == null ? List.of() : file.documents();
-        } catch (IOException e) {
-            LOG.warn("Could not read the entries of {}; its documents will be imported but not published.", name, e);
-            return List.of();
-        }
-    }
-
     /** Which of the file's slugs the organization already holds, decided before anything is written. */
-    private Set<String> presentSlugs(String orgKey, List<DocumentInput> entries) {
+    private Set<String> presentSlugs(String orgKey, List<DocumentCommand> entries) {
         Set<String> present = new LinkedHashSet<>();
-        for (DocumentInput entry : entries) {
-            if (entry.getSlug() != null && repository.existsByOrgKeyAndSlug(orgKey, entry.getSlug())) {
-                present.add(entry.getSlug());
+        for (DocumentCommand entry : entries) {
+            if (entry.properties().slug() != null && repository.existsByOrgKeyAndSlug(orgKey, entry.properties().slug())) {
+                present.add(entry.properties().slug());
             }
         }
         return present;
     }
 
-    private void publishNewPublicDocuments(String orgKey, List<DocumentInput> entries,
+    private void publishNewPublicDocuments(String orgKey, List<DocumentCommand> entries,
                                            Set<String> alreadyPresent, String name) {
-        for (DocumentInput entry : entries) {
-            if (!Boolean.TRUE.equals(entry.getIsPublic()) || alreadyPresent.contains(entry.getSlug())) {
+        for (DocumentCommand entry : entries) {
+            if (!entry.properties().isPublic() || alreadyPresent.contains(entry.properties().slug())) {
                 continue;
             }
-            Optional<Document> imported = repository.findByOrgKeyAndSlug(orgKey, entry.getSlug());
+            Optional<Document> imported = repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug());
             if (imported.isEmpty()) {
                 LOG.warn("Sample document '{}' from {} was reported imported but cannot be found.",
-                        entry.getSlug(), name);
+                        entry.properties().slug(), name);
                 continue;
             }
             for (String locale : localesOf(entry)) {
-                publish(orgKey, imported.get().getId(), entry.getSlug(), locale);
+                publish(orgKey, imported.get().getId(), entry.properties().slug(), locale);
             }
         }
     }
@@ -203,17 +185,17 @@ public class SampleDocumentLoader {
      * sourceLocale}, which {@link ImportDocuments} materializes as an empty draft even when the
      * file names no translation for it.
      */
-    private static List<String> localesOf(DocumentInput entry) {
+    private static List<String> localesOf(DocumentCommand entry) {
         Set<String> locales = new LinkedHashSet<>();
-        if (entry.getTranslations() != null) {
-            for (DocumentTranslationInput translation : entry.getTranslations()) {
-                if (translation.getLocale() != null) {
-                    locales.add(translation.getLocale());
+        if (entry.translations() != null) {
+            for (DocumentTranslationCommand translation : entry.translations()) {
+                if (translation.locale() != null) {
+                    locales.add(translation.locale());
                 }
             }
         }
-        if (entry.getSourceLocale() != null) {
-            locales.add(entry.getSourceLocale());
+        if (entry.properties().sourceLocale() != null) {
+            locales.add(entry.properties().sourceLocale());
         }
         return new ArrayList<>(locales);
     }

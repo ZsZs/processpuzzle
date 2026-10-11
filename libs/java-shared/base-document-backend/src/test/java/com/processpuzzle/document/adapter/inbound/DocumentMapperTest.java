@@ -55,31 +55,29 @@ class DocumentMapperTest {
     // ── model -> domain ─────────────────────────────────────────
 
     @Test
-    void toDomainTakesIdentityFromTheCallerRatherThanThePayload() {
+    void commandsIgnoreWireIdentityAndCarryOnlyEditableMetadata() {
         DocumentInput input = input().id(UUID.randomUUID()).author("Ada");
 
-        Document document = mapper.toDomain(ORG, ID, input, "grace");
-
-        assertThat(document.getOrgKey()).isEqualTo(ORG);
-        assertThat(document.getId()).isEqualTo(ID);
-        assertThat(document.getCreatedBy()).isEqualTo("grace");
-        assertThat(document.getAuthor()).isEqualTo("Ada");
-        assertThat(document.getSlug()).isEqualTo("getting-started");
-        assertThat(document.getTitle()).isEqualTo("Getting started");
-        assertThat(document.getSubject()).isEqualTo("Onboarding");
-        assertThat(document.getDescription()).isEqualTo("How to start");
-        assertThat(document.getSourceLocale()).isEqualTo("en");
-        assertThat(document.isPublic()).isTrue();
-        assertThat(document.getRoles().readerRoles()).containsExactly("reader");
-        assertThat(document.getPorts().inputPorts()).extracting(DocumentInputPort::name).containsExactly("customer");
+        var command = mapper.toCommand(input);
+        assertThat(mapper.toCommand(input.id(UUID.randomUUID()))).isEqualTo(command);
+        var properties = command.properties();
+        assertThat(properties.author()).isEqualTo("Ada");
+        assertThat(properties.slug()).isEqualTo("getting-started");
+        assertThat(properties.title()).isEqualTo("Getting started");
+        assertThat(properties.subject()).isEqualTo("Onboarding");
+        assertThat(properties.description()).isEqualTo("How to start");
+        assertThat(properties.sourceLocale()).isEqualTo("en");
+        assertThat(properties.isPublic()).isTrue();
+        assertThat(properties.roles().readerRoles()).containsExactly("reader");
+        assertThat(properties.ports().inputPorts()).extracting(DocumentInputPort::name).containsExactly("customer");
     }
 
     @Test
-    void anOmittedAuthorFallsBackToThePrincipal() {
-        Document document = mapper.toDomain(ORG, ID, input().author(null).isPublic(null), "grace");
+    void anOmittedAuthorIsLeftForTheApplicationToDefault() {
+        var properties = mapper.toCommand(input().author(null).isPublic(null)).properties();
 
-        assertThat(document.getAuthor()).isEqualTo("grace");
-        assertThat(document.isPublic()).isFalse();
+        assertThat(properties.author()).isNull();
+        assertThat(properties.isPublic()).isFalse();
     }
 
     @Test
@@ -103,6 +101,8 @@ class DocumentMapperTest {
         assertThat(mapper.toPorts(properties).outputPorts()).extracting(DocumentOutputPort::name)
                 .containsExactly("selection");
         assertThat(mapper.toRoles(properties).publisherRoles()).containsExactly("publisher");
+        assertThat(mapper.toCommand(properties).ports()).isEqualTo(mapper.toPorts(properties));
+        assertThat(mapper.toCommand(properties).roles()).isEqualTo(mapper.toRoles(properties));
     }
 
     @Test
@@ -111,6 +111,9 @@ class DocumentMapperTest {
         // an explicit empty array means "start blank".
         assertThat(mapper.toContentOrNull(new DocumentTranslationInput().locale("de"))).isNull();
         assertThat(mapper.toContentOrNull(new DocumentTranslationInput().locale("de").blocks(List.of())))
+                .isEqualTo(DocumentContent.empty());
+        assertThat(mapper.toCommand(new DocumentTranslationInput().locale("de")).content()).isNull();
+        assertThat(mapper.toCommand(new DocumentTranslationInput().locale("de").blocks(List.of())).content())
                 .isEqualTo(DocumentContent.empty());
     }
 

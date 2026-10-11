@@ -1,6 +1,10 @@
-package com.processpuzzle.document.usecase;
+package com.processpuzzle.document.adapter.inbound;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.usecase.DocumentCommand;
+import com.processpuzzle.document.usecase.ImportDocuments;
+import com.processpuzzle.document.usecase.ImportOutcome;
+import com.processpuzzle.document.usecase.TestGuards;
+import com.processpuzzle.document.usecase.TestPolicies;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -26,7 +30,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -533,7 +536,7 @@ class ImportDocumentsTest {
     // region fixtures
     private ImportDocuments importDocuments(DocumentAccessPolicy policy) {
         return new ImportDocuments(repository, draftRepository, publishedRepository, new DocumentReferentialIntegrityChecker(),
-                TestGuards.with(policy), new DocumentMapper());
+                TestGuards.with(policy));
     }
 
     private void importSilently(String yaml) {
@@ -550,8 +553,9 @@ class ImportDocumentsTest {
         return captor.getAllValues();
     }
 
-    private static InputStream yaml(String content) {
-        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+    private static List<DocumentCommand> yaml(String content) throws IOException {
+        return new DocumentYamlCodec(new DocumentMapper())
+                .read(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static DocumentBlock text(String id) {

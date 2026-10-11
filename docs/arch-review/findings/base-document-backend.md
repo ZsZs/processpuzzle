@@ -40,6 +40,25 @@ live-provider tests were added; ports remain live rather than versioned with eac
 
 The original assessment and evidence below are retained as the review baseline.
 
+### BDO-LAY-01: addressed (2026-10-11)
+
+Application commands (`DocumentCommand`, `DocumentProperties`, `DocumentTranslationCommand`,
+`DocumentExport`) replace the use cases' prior dependency on the inbound `DocumentMapper` and
+generated `DocumentInput`/`DocumentPropertiesInput` wire models. `CreateDocument`,
+`UpdateDocumentProperties`, `AddDocumentTranslation`, `UpdateDocument` and `ImportDocuments` now take
+these domain-owned commands; YAML decoding moved out of `ImportDocuments` into an adapter-owned
+`DocumentYamlCodec`, and the former `usecase.service.SampleDocumentLoader` moved to
+`adapter.inbound.SampleDocumentLoader` alongside it. `DocumentMapper` and the new codec perform all
+HTTP/YAML translation and construct the commands; response assembly stays in the adapter.
+`DocumentApplicationArchitectureTest` enforces the dependency direction, failing the build if any
+`usecase` class depends on `adapter`, `model`, `api`, `shared.model`, Jackson dataformat or Spring
+web/http types.
+
+**Validation:** 349 tests passed through Nx `base-document-backend:test`, including the new
+architecture test and relocated `DocumentYamlCodecTest`/`ExportDocumentTest`/`ImportDocumentsTest`/
+`SampleDocumentLoaderTest`/`SampleDocumentsContentTest` under `adapter.inbound`. No behavior change
+is intended; only the dependency direction and class locations changed.
+
 ## Summary (review baseline)
 
 The document model has useful structural boundaries: language-invariant metadata, editable translations and published content occupy separate entities, and the public reader cannot access the draft repository. The most important debt is incomplete use-case enforcement of the module's own access policy, affecting private reads and imports even when a restrictive policy is supplied. Published content can also become inconsistent with subsequently edited port metadata because the integrity boundary checks drafts, not snapshots. A further layering debt couples application commands to REST/YAML representations despite the stated hexagonal design.
@@ -50,7 +69,7 @@ The document model has useful structural boundaries: language-invariant metadata
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | BDO-SEC-01 | Alternate access paths bypass document policy checks | SEC | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
 | BDO-MET-01 | Live port metadata can invalidate published snapshots | MET | 4 | 2 feature | M | High | 4.0 | Addressed 2026-10-11 |
-| BDO-LAY-01 | Use cases depend on inbound mappers and wire models | LAY | 3 | 1 slice | L | High | 0.8 | Open |
+| BDO-LAY-01 | Use cases depend on inbound mappers and wire models | LAY | 3 | 1 slice | L | High | 0.8 | Addressed 2026-10-11 |
 
 ## Findings
 

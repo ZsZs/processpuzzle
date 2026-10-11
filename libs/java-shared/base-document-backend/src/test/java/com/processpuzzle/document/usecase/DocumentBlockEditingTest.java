@@ -2,7 +2,6 @@ package com.processpuzzle.document.usecase;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -15,7 +14,6 @@ import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.WidgetPlacement;
-import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockReferencedException;
@@ -66,7 +64,7 @@ class DocumentBlockEditingTest {
     void appendPutsTheNewBlockLastAndMintsItsId() {
         stubFound(DocumentRoles.unrestricted(), text("intro"));
 
-        DocumentBlock appended = new AppendDocumentBlock(editor(TestPolicies.permitAll()), new DocumentMapper())
+        DocumentBlock appended = new AppendDocumentBlock(editor(TestPolicies.permitAll()))
                 .execute(ORG, ID, "en", textInput());
 
         assertThat(appended.id()).isNotBlank();
@@ -80,7 +78,7 @@ class DocumentBlockEditingTest {
     void replaceKeepsThePositionAndTheId() {
         stubFound(DocumentRoles.unrestricted(), text("intro"), text("outro"));
 
-        DocumentBlock replacement = new ReplaceDocumentBlock(editor(TestPolicies.permitAll()), new DocumentMapper())
+        DocumentBlock replacement = new ReplaceDocumentBlock(editor(TestPolicies.permitAll()))
                 .execute(ORG, ID, "en", "intro", textInput());
 
         assertThat(replacement.id()).isEqualTo("intro");
@@ -92,7 +90,7 @@ class DocumentBlockEditingTest {
     void replacingABlockThatIsNotThereIsNotFound() {
         stubFound(DocumentRoles.unrestricted(), text("intro"));
 
-        assertThatThrownBy(() -> new ReplaceDocumentBlock(editor(TestPolicies.permitAll()), new DocumentMapper())
+        assertThatThrownBy(() -> new ReplaceDocumentBlock(editor(TestPolicies.permitAll()))
                 .execute(ORG, ID, "en", "missing", textInput()))
                 .isInstanceOf(DocumentBlockNotFoundException.class);
         verify(draftRepository, never()).save(any());
@@ -183,12 +181,10 @@ class DocumentBlockEditingTest {
         // rather than what was already there is the step easiest to leave out.
         stubFound(DocumentRoles.unrestricted());
 
-        DocumentBlockInput boundToNothing = new DocumentBlockInput()
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .type("entity-grid")
-                .inputBindings(Map.of("rows", "gone"));
+        DocumentBlock boundToNothing = new DocumentBlock(null, BlockKind.WIDGET, null, null, null,
+                "entity-grid", null, Map.of("rows", "gone"), null);
 
-        assertThatThrownBy(() -> new AppendDocumentBlock(editor(TestPolicies.permitAll()), new DocumentMapper())
+        assertThatThrownBy(() -> new AppendDocumentBlock(editor(TestPolicies.permitAll()))
                 .execute(ORG, ID, "en", boundToNothing))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid document content");
@@ -200,12 +196,10 @@ class DocumentBlockEditingTest {
     void aWidgetBoundToADeclaredPortIsAccepted() {
         stubFound(DocumentRoles.unrestricted());
 
-        DocumentBlockInput bound = new DocumentBlockInput()
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .type("entity-grid")
-                .inputBindings(Map.of("rows", "customer"));
+        DocumentBlock bound = new DocumentBlock(null, BlockKind.WIDGET, null, null, null,
+                "entity-grid", null, Map.of("rows", "customer"), null);
 
-        DocumentBlock appended = new AppendDocumentBlock(editor(TestPolicies.permitAll()), new DocumentMapper())
+        DocumentBlock appended = new AppendDocumentBlock(editor(TestPolicies.permitAll()))
                 .execute(ORG, ID, "en", bound);
 
         assertThat(draft.getBlocks()).containsExactly(appended);
@@ -257,8 +251,8 @@ class DocumentBlockEditingTest {
         return new DocumentBlock(id, BlockKind.TEXT, true, null, null, null, null, null, null);
     }
 
-    private static DocumentBlockInput textInput() {
-        return new DocumentBlockInput().kind(com.processpuzzle.document.model.BlockKind.TEXT);
+    private static DocumentBlock textInput() {
+        return text("ignored-client-id");
     }
 
     private static DocumentBlock referencedWidget(String id) {

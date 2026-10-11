@@ -1,12 +1,10 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
@@ -23,8 +21,7 @@ import java.util.Optional;
  * point, which is what a translator wants far more often than a blank page — and it makes the
  * copied block ids line up with the source's, which is what
  * {@code DocumentReferentialIntegrityChecker.checkWidgetCoverage} compares later. An explicit empty
- * array still means "start blank"; see {@code DocumentMapper.toContentOrNull} for why that
- * distinction survives deserialization.
+ * content still means "start blank"; {@link DocumentTranslationCommand} retains that distinction.
  *
  * <p>{@code basedOnRevision} is recorded either way. Even a from-scratch translation was written
  * against some state of the original, and recording which one is what lets it be reported stale
@@ -38,33 +35,30 @@ public class AddDocumentTranslation {
     private final DocumentDraftRepository draftRepository;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
-    private final DocumentMapper mapper;
 
     public AddDocumentTranslation(DocumentRepository repository,
                                   DocumentDraftRepository draftRepository,
                                   DocumentTranslationAssembler assembler,
-                                  DocumentGuard guard,
-                                  DocumentMapper mapper) {
+                                  DocumentGuard guard) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.assembler = assembler;
         this.guard = guard;
-        this.mapper = mapper;
     }
 
-    public DocumentTranslationView execute(String orgKey, String documentId, DocumentTranslationInput input) {
+    public DocumentTranslationView execute(String orgKey, String documentId, DocumentTranslationCommand input) {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
 
-        String locale = input.getLocale();
+        String locale = input.locale();
         if (draftRepository.existsByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)) {
             throw new DocumentTranslationAlreadyExistsException(documentId, locale);
         }
 
         Optional<DocumentDraft> source = draftRepository
                 .findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, document.getSourceLocale());
-        DocumentContent requested = mapper.toContentOrNull(input);
+        DocumentContent requested = input.content();
         DocumentContent content = requested != null
                 ? requested
                 : source.map(DocumentDraft::getContent).orElse(DocumentContent.empty());
