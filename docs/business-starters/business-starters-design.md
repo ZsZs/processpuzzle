@@ -42,7 +42,7 @@ Sample data that demonstrates a starter lives in the Testbed instead.
 | Catalog read API | List starters and versions; tenant-free | `base-starter-backend` (`GET /starters...`) |
 | Catalog UI (marketing) | Browse starters | `processpuzzle-biz-frontend`, reads `catalog.json` directly |
 | Install | Fetch a bundle by reference, replace one org's definitions | `base-starter-backend` + `base-starter-frontend`, orgKey-scoped |
-| Applied-starter record | Which starter an org started from | Subscription in `PROCESSPUZZLE_ADMIN`; `starter_installed` in the org's backend |
+| Applied-starter record | Which starter an org started from | SeedJob (`starter_id`) in `PROCESSPUZZLE_ADMIN`; `starter_installed` in the org's backend |
 
 ## 4. Authoring and release
 
@@ -121,10 +121,10 @@ the install calls. It is no longer exposed to users until local file import exis
 
 Two callers, one per stack that installs:
 
-1. **Subscription** (Custom). Biz sends `starterId@version` with the subscription to Admin, which stores it
-   on the Subscription. Admin's seed call to the customer's Custom backend passes the reference on, and Custom
+1. **Subscription** (Custom). Biz sends the `starterId` with the sign-up to Admin, which stores it on the
+   organization's SeedJob. The SeedJob's data step passes it to the customer's Custom backend, and Custom
    installs it. **Zero or one starter per subscription.** If the install fails the organization is seeded
-   without a starter and the failure is recorded on the Subscription.
+   without a starter and the failure is recorded on the SeedJob.
 2. **Designer** (Custom, Testbed). "Install starter" from the catalog, dry-run preview first.
 
 ## 7. Importer rules
@@ -133,8 +133,9 @@ Two callers, one per stack that installs:
 - **Atomic:** schema and cross-reference validation before any write; all writes in one transaction.
 - **Replace, all or nothing:** installing a starter deletes the organization's existing definitions and
   imports the starter's. This is allowed **only while the organization holds no entity objects and no
-  workflow instances**; otherwise the install is refused (409). The dry-run report lists what would be
-  deleted as well as what would be created.
+  workflow instances**; otherwise the install is refused (409). The install never deletes instance data, and
+  there is deliberately no "reset organization" that would (decision 10). The dry-run report lists what would
+  be deleted as well as what would be created.
 - **Provenance:** every imported definition is tagged with `starterId`, `starterVersion` and a content hash,
   so "untouched" can later be told apart from "customized" — the basis for upgrades (§8).
 - **Schema versioning:** `definitionSchemaVersion` lets the importer migrate or reject old bundles.
@@ -156,6 +157,12 @@ Two callers, one per stack that installs:
    whether a starter may ship one.
 8. **All or nothing** (2026-10-06): no `requires`, no partial install, no conflict strategies, no sample data.
 9. **Replace only into an empty organization** (2026-10-06): see §7.
+10. **One application per organization** (2026-10-11). An organization is one tenant, runs one starter and
+    holds one subscription; there is no second isolation key for "applications" inside a tenant. A customer
+    who wants a second application takes a second subscription and gets a second organization. Changing the
+    starter of an organization that already holds data stays refused (409) — no reset that deletes instance
+    data. Nothing in Admin links several organizations to one customer yet; that is added only when asked
+    for.
 
 Postponed:
 
@@ -188,5 +195,18 @@ Next:
 1. CI publishing in `processpuzzle-biz`: run the packager, the dry-run gate, the upload; set the publisher
    password in the stage and prod infrastructure env files; NgInx `/starters/` route for the Biz frontend.
 2. One pilot starter (e.g. inventory) end to end: commit → CI → bucket → Designer install.
-3. Subscription: starter choice in Biz, field on Admin's Subscription, reference passed in the seed call,
-   Custom installs it and reports the outcome.
+3. Subscription: starter choice in Biz, field on Admin's SeedJob, reference passed in the seed call,
+   Custom installs it and reports the outcome. Implemented in `processpuzzle-biz` (PR #73, 2026-10-11);
+   end-to-end check on stage pending.
+4. **Delete guards per definition.** With decision 10 the only way to empty an organization is to delete
+   its data and definitions by hand, so a definition must not be deletable while data or other definitions
+   still depend on it. Today (audit 2026-10-11) only entity definitions (objects of the type), workflows
+   (ACTIVE / SUSPENDED instances only) and workflow catalog items (references) refuse. Missing: attribute
+   removal (TODO in `DeleteAttributeUseCase`, though the API promises 409), state machines, rules bound to an
+   entity, widgets, documents, apps, events, and every cross-feature reference (attribute `linkedEntityType`,
+   state machine and rule bound to an entity, workflow artifacts naming an entity / state machine / document,
+   apps naming widgets / documents). There are no FK constraints to fall back on — cross-feature references
+   are plain strings. Direction: add a keyed `count(orgKey, kind, key)` to `InstanceDataProbe` plus a
+   reference-probe SPI, so the importer's org-wide gate and the per-definition guards share one mechanism.
+   Align the workflow rule with the importer's (finished instances count too). The frontend deletes without
+   confirmation and does not show the 409; fix that alongside.
