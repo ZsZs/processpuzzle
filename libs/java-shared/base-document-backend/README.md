@@ -39,6 +39,12 @@ Identity itself is supplied by the deploying application through the `DocumentAc
 
 A reader who may not see a document gets **404, not 403** — telling them it exists is what a restricted document is meant to withhold. 403 is reserved for a caller who demonstrably knows it exists, such as an editor without publish rights.
 
+Private published reads check membership before reader roles; matching roles alone never authorize
+a nonmember. YAML import checks the stored editor policy of **every existing target before any
+entry is mutated**, including entries that replace role metadata. One unauthorized target rejects
+the whole import without creating or changing earlier entries. Creating a new document still
+requires organization membership.
+
 ## Sample documents
 
 `SampleDocumentLoader` imports the bundled samples on `ApplicationReadyEvent` when `base-document.loadSamples` is true (it is, in `processpuzzle-testbed-backend`). The owning organization is the part of the file name before `-documents.yaml`, so `sample-documents/processpuzzle-testbed-documents.yaml` lands in `processpuzzle-testbed` — the same convention `SampleRuleLoader` and `DefaultAppLoader` use, and the reason seeding another tenant is adding a file rather than changing configuration. The scan is `classpath*:`, so a host application can contribute its own `sample-documents/` directory.

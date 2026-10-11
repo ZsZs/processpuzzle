@@ -21,3 +21,22 @@
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
+
+## Architecture-debt remediation workflow
+
+For findings in `docs\arch-review\findings`, handle each finding separately:
+
+1. Start from clean, up-to-date `develop`. Before editing, create
+   `refactor/<library>/<finding-id>` (for example `refactor/base-document-backend/BDO-SEC-01`).
+2. Fix that finding only, preserving unrelated work. Add regression coverage and update the
+   library documentation and the finding's remediation/status section; retain the review baseline.
+3. Run the relevant tests through the library's Nx target. Resolve failures before committing.
+4. Commit as `refactor(<library>): <finding-id>` and push the finding branch.
+5. Open a PR targeting `develop`, documenting the change, validation and any remaining limitations.
+   Merge through normal repository rules; never bypass required checks or approvals.
+6. Verify the PR is merged, fast-forward local `develop`, and confirm a clean worktree before
+   starting the next finding on its own branch.
+
+One finding means one branch and one PR, even when several findings share files. Do not accumulate
+fixes on `develop` or combine findings into one PR. If blocked, report the exact incomplete stage
+instead of claiming completion. Apply this workflow across sessions unless the user changes it.

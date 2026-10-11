@@ -9,6 +9,9 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentInputPort;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentRoles;
+import com.processpuzzle.document.domain.DocumentPorts;
+import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.junit.jupiter.api.BeforeEach;
@@ -354,6 +357,80 @@ class ImportDocumentsTest {
     void importingRequiresMembershipOfTheOrganization() {
         assertThatThrownBy(() -> importDocuments(TestPolicies.outsider()).execute(ORG, yaml("documents:\n")))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void anImportCannotClearEditorRolesToAuthorizeItsOwnOverwrite() {
+        Document existing = editorDocument(ID, "locked", "restricted-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "locked")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> importDocuments(TestPolicies.holding("reader")).execute(ORG, yaml("""
+                documents:
+                  - slug: locked
+                    title: Replaced
+                    sourceLocale: en
+                    isPublic: true
+                    editorRoles: []
+                    translations:
+                      - locale: en
+                        blocks: []
+                """))).isInstanceOf(DocumentAccessDeniedException.class);
+        assertThat(existing.getTitle()).isEqualTo("Original");
+        assertThat(existing.getRoles().editorRoles()).containsExactly("restricted-editor");
+        assertThat(existing.isPublic()).isFalse();
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+    }
+
+    @Test
+    void allExistingImportTargetsAreAuthorizedBeforeAnyEntryIsChanged() {
+        Document allowed = editorDocument(ID, "allowed", "own-editor");
+        Document denied = editorDocument("other-id", "locked", "restricted-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "allowed")).thenReturn(Optional.of(allowed));
+        when(repository.findByOrgKeyAndSlug(ORG, "locked")).thenReturn(Optional.of(denied));
+
+        assertThatThrownBy(() -> importDocuments(TestPolicies.holding("own-editor")).execute(ORG, yaml("""
+                documents:
+                  - slug: brand-new
+                    title: New
+                    sourceLocale: en
+                  - slug: allowed
+                    title: Replaced
+                    sourceLocale: en
+                  - slug: locked
+                    title: Replaced
+                    sourceLocale: en
+                    editorRoles: [own-editor]
+                """))).isInstanceOf(DocumentAccessDeniedException.class);
+        assertThat(allowed.getTitle()).isEqualTo("Original");
+        assertThat(allowed.getRoles().editorRoles()).containsExactly("own-editor");
+        assertThat(denied.getTitle()).isEqualTo("Original");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+    }
+
+    @Test
+    void anAuthorizedEditorCanImportChangesToAnExistingDocument() throws IOException {
+        Document existing = editorDocument(ID, "allowed", "own-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "allowed")).thenReturn(Optional.of(existing));
+
+        ImportOutcome outcome = importDocuments(TestPolicies.holding("own-editor")).execute(ORG, yaml("""
+                documents:
+                  - slug: allowed
+                    title: Replaced
+                    sourceLocale: en
+                    editorRoles: [own-editor]
+                """));
+
+        assertThat(outcome.updated()).isEqualTo(1);
+        assertThat(existing.getTitle()).isEqualTo("Replaced");
+    }
+
+    private static Document editorDocument(String id, String slug, String editorRole) {
+        Document document = new Document(ORG, id, slug, "Original", "en", "ada");
+        document.replaceProperties(slug, "Original", null, null, null, "en", false,
+                new DocumentRoles(List.of(), List.of(editorRole), List.of()), DocumentPorts.empty());
+        return document;
     }
 
     @Test

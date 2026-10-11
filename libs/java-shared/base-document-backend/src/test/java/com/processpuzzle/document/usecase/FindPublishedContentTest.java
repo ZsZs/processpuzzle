@@ -11,9 +11,12 @@ import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
+import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -25,6 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.any;
 
 class FindPublishedContentTest {
 
@@ -132,6 +140,45 @@ class FindPublishedContentTest {
         FindPublishedContent.PublishedContentView view = useCase(holding("secret-reader")).execute(ORG, SLUG, "en");
 
         assertThat(view.served().content().blocks()).extracting(DocumentBlock::id).containsExactly("intro-en");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void anAuthenticatedNonmemberCannotReadPrivateContentEvenWithMatchingRoles(boolean restrictedRoles) {
+        Document document = restrictedRoles ? restrictedDocument()
+                : new Document(ORG, ID, SLUG, "Private", "en", "ada");
+        stub(document, List.of(snapshot("en", "intro-en")));
+        DocumentAccessPolicy policy = mock(DocumentAccessPolicy.class);
+        when(policy.isAuthenticated()).thenReturn(true);
+        when(policy.hasAnyRole(any())).thenReturn(true);
+        doThrow(new DocumentAccessDeniedException("Not a member")).when(policy).requireAccess(ORG);
+
+        assertThatThrownBy(() -> useCase(policy).execute(ORG, SLUG, "en"))
+                .isInstanceOf(DocumentNotFoundException.class);
+        verify(policy, never()).hasAnyRole(any());
+        verifyNoInteractions(publishedRepository);
+    }
+
+    @Test
+    void publicContentStillBypassesMembershipChecks() {
+        stub(publicDocument(), List.of(snapshot("en", "intro-en")));
+        DocumentAccessPolicy policy = mock(DocumentAccessPolicy.class);
+        doThrow(new DocumentAccessDeniedException("Not a member")).when(policy).requireAccess(ORG);
+
+        assertThat(useCase(policy).execute(ORG, SLUG, "en").served().locale()).isEqualTo("en");
+        verifyNoInteractions(policy);
+    }
+
+    @Test
+    void aMembershipProviderFailureIsNotSilentlyTranslatedToNotFound() {
+        stub(restrictedDocument(), List.of(snapshot("en", "intro-en")));
+        DocumentAccessPolicy policy = mock(DocumentAccessPolicy.class);
+        when(policy.isAuthenticated()).thenReturn(true);
+        doThrow(new IllegalStateException("Provider unavailable")).when(policy).requireAccess(ORG);
+
+        assertThatThrownBy(() -> useCase(policy).execute(ORG, SLUG, "en"))
+                .isInstanceOf(IllegalStateException.class).hasMessage("Provider unavailable");
+        verifyNoInteractions(publishedRepository);
     }
 
     @Test
