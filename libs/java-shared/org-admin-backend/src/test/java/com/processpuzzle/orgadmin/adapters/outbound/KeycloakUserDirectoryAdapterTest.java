@@ -1,6 +1,7 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
@@ -99,10 +100,11 @@ class KeycloakUserDirectoryAdapterTest {
         ArgumentCaptor<Map<String, Object>> representation = mapCaptor();
         verify(client).createAndReturnId(eq("/admin/realms/acme/users"), representation.capture());
         assertThat(representation.getValue()).containsEntry("username", "ada")
-                .containsEntry("enabled", true)
+                .containsEntry("enabled", false)
                 .containsEntry("requiredActions", List.of("UPDATE_PASSWORD"));
         verify(client).exchange(HttpMethod.POST, "/admin/realms/acme/users/user-1/role-mappings/realm",
                 List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
+        verify(client).exchange(HttpMethod.PUT, "/admin/realms/acme/users/user-1", Map.of("enabled", true), null);
     }
 
     @Test
@@ -110,15 +112,16 @@ class KeycloakUserDirectoryAdapterTest {
         UserDirectoryPort.NewUser user = new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null);
         when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.empty());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
-                .isInstanceOf(DirectoryUnavailableException.class)
-                .hasMessageContaining("returned no id");
+                .isInstanceOf(InvitationRecoveryRequiredException.class)
+                .hasMessageContaining("before retrying");
 
         when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.of(USER_ID));
         when(client.exchange(HttpMethod.GET, "/admin/realms/acme/users/user-1", null, Map.class))
                 .thenReturn(Optional.empty());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
                 .isInstanceOf(DirectoryUnavailableException.class)
-                .hasMessageContaining("will not read it back");
+                .hasMessageContaining("account was removed");
+        verify(client).exchangeTolerating(HttpMethod.DELETE, "/admin/realms/acme/users/user-1", null, 404);
     }
 
     @Test
@@ -132,7 +135,7 @@ class KeycloakUserDirectoryAdapterTest {
 
         doThrow(unavailable("down")).when(client).createAndReturnId(anyString(), any());
         assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
-                .isInstanceOf(DirectoryUnavailableException.class)
+                .isInstanceOf(InvitationRecoveryRequiredException.class)
                 .hasCauseInstanceOf(IdentityProviderUnavailableException.class);
 
         when(client.getList(anyString())).thenThrow(unavailable("down"));
@@ -152,9 +155,40 @@ class KeycloakUserDirectoryAdapterTest {
         for (IdentityProviderUnavailableException failure : failures) {
             doThrow(failure).when(client).createAndReturnId(anyString(), any());
             assertThatThrownBy(() -> adapter.inviteUser(REALM, user, List.of()))
-                    .isInstanceOf(DirectoryUnavailableException.class)
+                    .isInstanceOf(InvitationRecoveryRequiredException.class)
                     .hasCause(failure);
         }
+    }
+
+    @Test
+    void compensatesRoleGrantFailuresAndNeverEnablesTheAccount() {
+        when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.of(USER_ID));
+        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/org-member", null, Map.class))
+                .thenReturn(Optional.of(role("org-member")));
+        doThrow(unavailable("grant failed")).when(client).exchange(HttpMethod.POST,
+                "/admin/realms/acme/users/user-1/role-mappings/realm",
+                List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
+
+        assertThatThrownBy(() -> adapter.inviteUser(REALM,
+                new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null), List.of("org-member")))
+                .isInstanceOf(DirectoryUnavailableException.class).hasMessageContaining("safe to retry");
+
+        verify(client).exchangeTolerating(HttpMethod.DELETE, "/admin/realms/acme/users/user-1", null, 404);
+        verify(client, never()).exchange(eq(HttpMethod.PUT), anyString(), any(), eq(null));
+    }
+
+    @Test
+    void aRoleDisappearingDuringInvitationIsNotReportedAsSuccess() {
+        when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.of(USER_ID));
+        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/users/user-1", null, Map.class))
+                .thenReturn(Optional.of(user(USER_ID, false, null)));
+
+        assertThatThrownBy(() -> adapter.inviteUser(REALM,
+                new UserDirectoryPort.NewUser("ada", "ada@example.com", null, null), List.of("missing")))
+                .isInstanceOf(DirectoryUnavailableException.class).hasMessageContaining("safe to retry");
+
+        verify(client).exchangeTolerating(HttpMethod.DELETE, "/admin/realms/acme/users/user-1", null, 404);
+        verify(client, never()).exchange(eq(HttpMethod.PUT), anyString(), any(), eq(null));
     }
 
     @Test

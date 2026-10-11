@@ -6,7 +6,37 @@
 - **Date:** 2026-10-10
 - **Tools run:** Read-only glob/ripgrep, source/test/documentation reads, Git HEAD/status, and `npm exec nx show project org-admin-backend --json` (successful; resolved test target runs Maven with `-am`). No tests, builds, lint, live Keycloak calls or Modulith verification executed.
 
-## Summary
+## Remediation log
+
+### OAD-OPS-01: addressed (2026-10-11)
+
+Both adapters now share a compensating invitation workflow (`KeycloakInvitation`): create disabled,
+assign membership/roles, verify the requested roles, enable, then read back the final result.
+Every handled post-create provider failure attempts deletion of the account identified by the
+create response. Confirmed deletion (including provider 404) permits a fresh invitation; failed
+cleanup, a lost create response or a missing create id returns 409
+`user.invitation-recovery-required`, with an operation correlation id and the created user id when
+known. The original and cleanup failures are retained for diagnosis. Duplicate accounts are never
+adopted or deleted by username.
+
+**Design choice:** compensation with explicit operator reconciliation, not the suggested durable
+invitation journal/resume protocol. This preserves Keycloak-only ownership without pretending that
+remote calls are atomic or that this POST is idempotent. Process crashes and lost API responses
+still require reconciliation; accounts remain disabled until provisioning is verified. The port,
+exception contract, OpenAPI response and library README describe those limits and the recovery
+procedure. OAD-SEC-01 and OAD-ABS-01 are unchanged.
+
+**Validation:** `org-admin-backend:test` through Nx passed 62 focused tests across
+`KeycloakInvitationTest`, both adapter tests, `OrgAdminApiExceptionHandlerTest` and
+`OrgAdminEndpointsTest`. They cover every post-create failure boundary, unknown creation, failed
+compensation, fresh retry after confirmed rollback, missing roles, duplicate-account isolation and
+the actual HTTP recovery response with/without a known user id. `OrgAdminModularityTests` also
+passed in the preceding run. The Maven reactor regenerated/compiled the OpenAPI contracts and
+compiled core/org-admin. No live Keycloak or process-crash recovery test was performed.
+
+The original assessment and evidence below are retained as the review baseline.
+
+## Summary (review baseline)
 
 The actual module has removed its feature dependency on platform-admin: tenant resolution and user administration are outbound ports, and core owns the reused identity client. The absence of a user database is a sound ownership choice, but it does not make a multi-call external operation atomic or safely retryable. The principal debts are partially applied invitations reported as ordinary retryable failures, shared-account mutations hidden behind a tenant-local port, and role replacement that can produce a union under concurrent requests. Metadata-driven tenant roles and centralized use-case authorization are strengths to retain rather than replace with hard-coded application roles.
 
@@ -14,11 +44,11 @@ Effort estimates are provisional: rubric section 9 calibration has not been perf
 
 ## Findings table
 
-| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OAD-OPS-01 | Invitation failures conceal committed external work | OPS | 3 | 2 feature | M | High | 3.0 |
-| OAD-SEC-01 | Tenant administration can mutate a shared global account | SEC | 5 | 2 feature | L | High | 2.5 |
-| OAD-ABS-01 | Role replacement has no concurrency contract | ABS | 5 | 2 feature | L | High | 2.5 |
+| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OAD-OPS-01 | Invitation failures conceal committed external work | OPS | 3 | 2 feature | M | High | 3.0 | Addressed 2026-10-11 |
+| OAD-SEC-01 | Tenant administration can mutate a shared global account | SEC | 5 | 2 feature | L | High | 2.5 | Open |
+| OAD-ABS-01 | Role replacement has no concurrency contract | ABS | 5 | 2 feature | L | High | 2.5 | Open |
 
 ## Findings
 
