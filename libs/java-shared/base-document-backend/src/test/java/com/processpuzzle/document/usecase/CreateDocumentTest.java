@@ -1,15 +1,14 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.domain.BlockKind;
+import com.processpuzzle.document.domain.DocumentContent;
+import com.processpuzzle.document.domain.WidgetPlacement;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
-import com.processpuzzle.document.model.DocumentBlockInput;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
@@ -48,19 +47,15 @@ class CreateDocumentTest {
     }
 
     @Test
-    void mintsTheIdItselfAndIgnoresAnyTheClientEchoedBack() {
-        UUID clientSupplied = UUID.fromString("22222222-2222-2222-2222-222222222222");
-
-        DocumentDetails details = create(TestPolicies.permitAll()).execute(ORG, input().id(clientSupplied));
-
-        assertThat(details.document().getId()).isNotEqualTo(clientSupplied.toString());
+    void mintsTheIdItself() {
+        DocumentDetails details = create(TestPolicies.permitAll()).execute(ORG, input());
         assertThat(UUID.fromString(details.document().getId())).isNotNull();
     }
 
     @Test
     void createsTheSourceLocalesDraftInTheSameCallAndPublishesNothing() {
-        create(TestPolicies.permitAll()).execute(ORG, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of(textBlock("intro"))))));
+        create(TestPolicies.permitAll()).execute(ORG, input(List.of(
+                new DocumentTranslationCommand("en", DocumentContent.of(List.of(textBlock("intro")))))));
 
         ArgumentCaptor<DocumentDraft> saved = ArgumentCaptor.forClass(DocumentDraft.class);
         verify(draftRepository).save(saved.capture());
@@ -82,7 +77,7 @@ class CreateDocumentTest {
 
     @Test
     void anOmittedTranslationsArrayIsTheSameAsAnEmptyOne() {
-        create(TestPolicies.permitAll()).execute(ORG, input().translations(null));
+        create(TestPolicies.permitAll()).execute(ORG, input(null));
 
         ArgumentCaptor<DocumentDraft> saved = ArgumentCaptor.forClass(DocumentDraft.class);
         verify(draftRepository).save(saved.capture());
@@ -92,8 +87,8 @@ class CreateDocumentTest {
 
     @Test
     void translationsForOtherLocalesAreIgnoredBecauseThereIsNoSourceRevisionToBaseThemOn() {
-        create(TestPolicies.permitAll()).execute(ORG, input().translations(List.of(
-                new DocumentTranslationInput().locale("de").blocks(List.of(textBlock("einleitung"))))));
+        create(TestPolicies.permitAll()).execute(ORG, input(List.of(
+                new DocumentTranslationCommand("de", DocumentContent.of(List.of(textBlock("einleitung")))))));
 
         ArgumentCaptor<DocumentDraft> saved = ArgumentCaptor.forClass(DocumentDraft.class);
         verify(draftRepository).save(saved.capture());
@@ -104,8 +99,8 @@ class CreateDocumentTest {
 
     @Test
     void aSourceTranslationThatOmitsBlocksEntirelyIsTreatedAsBlankRatherThanNull() {
-        create(TestPolicies.permitAll()).execute(ORG, input().translations(List.of(
-                new DocumentTranslationInput().locale("en"))));
+        create(TestPolicies.permitAll()).execute(ORG, input(List.of(
+                new DocumentTranslationCommand("en", null))));
 
         ArgumentCaptor<DocumentDraft> saved = ArgumentCaptor.forClass(DocumentDraft.class);
         verify(draftRepository).save(saved.capture());
@@ -123,13 +118,11 @@ class CreateDocumentTest {
 
     @Test
     void contentThatDoesNotValidateIsRejectedBeforeAnythingIsWritten() {
-        DocumentBlockInput widget = new DocumentBlockInput()
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .type("entity-grid")
-                .inputBindings(Map.of("rows", "gone"));
+        DocumentBlock widget = new DocumentBlock(null, BlockKind.WIDGET, null, null, null,
+                "entity-grid", null, Map.of("rows", "gone"), null);
 
-        assertThatThrownBy(() -> create(TestPolicies.permitAll()).execute(ORG, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of(widget))))))
+        assertThatThrownBy(() -> create(TestPolicies.permitAll()).execute(ORG, input(List.of(
+                new DocumentTranslationCommand("en", DocumentContent.of(List.of(widget)))))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid document");
         verify(repository, never()).save(any());
@@ -139,14 +132,11 @@ class CreateDocumentTest {
     @Test
     void aWarningOnItsOwnDoesNotBlockTheCreate() {
         // An orphaned REFERENCED widget is legitimate — it may be placed later.
-        DocumentBlockInput orphan = new DocumentBlockInput()
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .placement(com.processpuzzle.document.model.WidgetPlacement.REFERENCED)
-                .id("grid-1")
-                .type("entity-grid");
+        DocumentBlock orphan = new DocumentBlock("grid-1", BlockKind.WIDGET, null, null,
+                WidgetPlacement.REFERENCED, "entity-grid", null, null, null);
 
-        DocumentDetails details = create(TestPolicies.permitAll()).execute(ORG, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of(orphan)))));
+        DocumentDetails details = create(TestPolicies.permitAll()).execute(ORG, input(List.of(
+                new DocumentTranslationCommand("en", DocumentContent.of(List.of(orphan))))));
 
         assertThat(details.document()).isNotNull();
         verify(draftRepository).save(any());
@@ -161,7 +151,7 @@ class CreateDocumentTest {
 
     @Test
     void theCreatedByFieldComesFromThePrincipalRatherThanThePayload() {
-        Document document = create(TestPolicies.principal("ada")).execute(ORG, input().author(null)).document();
+        Document document = create(TestPolicies.principal("ada")).execute(ORG, input()).document();
 
         assertThat(document.getCreatedBy()).isEqualTo("ada");
         assertThat(document.getAuthor()).isEqualTo("ada");
@@ -174,17 +164,21 @@ class CreateDocumentTest {
                 draftRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.with(policy),
-                new DocumentMapper());
+                TestGuards.with(policy));
     }
 
 
-    private static DocumentInput input() {
-        return new DocumentInput().slug("getting-started").title("Getting started").sourceLocale("en");
+    private static DocumentCommand input() {
+        return input(List.of());
     }
 
-    private static DocumentBlockInput textBlock(String id) {
-        return new DocumentBlockInput().id(id).kind(com.processpuzzle.document.model.BlockKind.TEXT);
+    private static DocumentCommand input(List<DocumentTranslationCommand> translations) {
+        return new DocumentCommand(new DocumentProperties("getting-started", "Getting started", null, null,
+                null, "en", false, null, null), translations);
+    }
+
+    private static DocumentBlock textBlock(String id) {
+        return new DocumentBlock(id, BlockKind.TEXT, true, null, null, null, null, null, null);
     }
     // endregion
 }

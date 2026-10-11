@@ -1,9 +1,5 @@
 package com.processpuzzle.document.usecase;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
@@ -11,15 +7,11 @@ import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -28,11 +20,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Bulk-imports documents from YAML. {@link DocumentInput} deserializes straight from YAML with
- * Jackson's YAML factory — no intermediate {@code *YamlEntry} DTO is needed the way rules use one,
- * since a document has no cross-entry linkage comparable to {@code extendsRuleId} to resolve during
- * import. All-or-nothing: the whole file is validated before anything is persisted, the guarantee
- * the contract promises.
+ * Bulk-imports already decoded candidates. All-or-nothing: all candidates are validated and all
+ * existing targets authorized before anything is mutated or persisted.
  *
  * <h2>Matching on slug, not id</h2>
  *
@@ -56,30 +45,22 @@ public class ImportDocuments {
     private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentGuard guard;
-    private final DocumentMapper mapper;
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     public ImportDocuments(DocumentRepository repository,
                            DocumentDraftRepository draftRepository,
                            PublishedDocumentRepository publishedRepository,
                            DocumentReferentialIntegrityChecker integrityChecker,
-                           DocumentGuard guard,
-                           DocumentMapper mapper) {
+                           DocumentGuard guard) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.guard = guard;
-        this.mapper = mapper;
     }
 
     @Transactional
-    public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
+    public ImportOutcome execute(String orgKey, List<DocumentCommand> entries) {
         guard.requireOrganizationAccess(orgKey);
-
-        DocumentYamlFile yamlFile = yamlMapper.readValue(input, DocumentYamlFile.class);
-        List<DocumentInput> entries = yamlFile.documents() == null ? List.of() : yamlFile.documents();
 
         List<String> errors = validate(entries);
         if (!errors.isEmpty()) {
@@ -87,18 +68,18 @@ public class ImportDocuments {
         }
 
         // Authorize against stored roles, before an earlier entry can replace any access metadata.
-        for (DocumentInput entry : entries) {
-            repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).ifPresent(guard::requireEditor);
+        for (DocumentCommand entry : entries) {
+            repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug()).ifPresent(guard::requireEditor);
         }
 
-        for (DocumentInput entry : entries) {
-            repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).ifPresent(existing -> {
+        for (DocumentCommand entry : entries) {
+            repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug()).ifPresent(existing -> {
                 List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
-                        integrityChecker.checkPortChange(mapper.toPorts(entry),
+                        integrityChecker.checkPortChange(entry.properties().ports(),
                                 draftRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId()),
                                 contentByLocale(entry),
                                 publishedRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId())));
-                blocking.forEach(problem -> errors.add("Entry '" + entry.getSlug() + "': " + problem));
+                blocking.forEach(problem -> errors.add("Entry '" + entry.properties().slug() + "': " + problem));
             });
         }
         if (!errors.isEmpty()) {
@@ -107,8 +88,8 @@ public class ImportDocuments {
 
         int created = 0;
         int updated = 0;
-        for (DocumentInput entry : entries) {
-            if (repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).isPresent()) {
+        for (DocumentCommand entry : entries) {
+            if (repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug()).isPresent()) {
                 applyToExisting(orgKey, entry);
                 updated++;
             } else {
@@ -119,55 +100,46 @@ public class ImportDocuments {
         return new ImportOutcome(created, updated, List.of());
     }
 
-    private List<String> validate(List<DocumentInput> entries) {
+    private List<String> validate(List<DocumentCommand> entries) {
         List<String> errors = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
-            DocumentInput entry = entries.get(i);
-            if (entry.getSlug() == null || entry.getSlug().isBlank()) {
+            DocumentCommand entry = entries.get(i);
+            if (entry.properties().slug() == null || entry.properties().slug().isBlank()) {
                 errors.add("Entry " + i + " is missing 'slug' and was skipped.");
                 continue;
             }
-            if (entry.getSourceLocale() == null || entry.getSourceLocale().isBlank()) {
-                errors.add("Entry '" + entry.getSlug() + "' is missing 'sourceLocale'.");
+            if (entry.properties().sourceLocale() == null || entry.properties().sourceLocale().isBlank()) {
+                errors.add("Entry '" + entry.properties().slug() + "' is missing 'sourceLocale'.");
                 continue;
             }
-            DocumentPorts ports = mapper.toPorts(entry);
+            DocumentPorts ports = entry.properties().ports();
             contentByLocale(entry).forEach((locale, content) -> {
                 List<DocumentValidationProblem> blocking =
                         DocumentValidationProblem.blocking(integrityChecker.check(ports, content));
                 if (!blocking.isEmpty()) {
-                    errors.add("Entry '" + entry.getSlug() + "' locale '" + locale + "': " + blocking);
+                    errors.add("Entry '" + entry.properties().slug() + "' locale '" + locale + "': " + blocking);
                 }
             });
         }
         return errors;
     }
 
-    private void createFrom(String orgKey, DocumentInput entry) {
+    private void createFrom(String orgKey, DocumentCommand entry) {
         String documentId = UUID.randomUUID().toString();
-        Document document = mapper.toDomain(orgKey, documentId, entry, guard.currentPrincipal());
+        Document document = entry.properties().create(orgKey, documentId, guard.currentPrincipal());
         repository.save(document);
 
         Map<String, DocumentContent> byLocale = contentByLocale(entry);
-        byLocale.putIfAbsent(entry.getSourceLocale(), DocumentContent.empty());
+        byLocale.putIfAbsent(entry.properties().sourceLocale(), DocumentContent.empty());
         Long sourceRevision = 1L;
         byLocale.forEach((locale, content) -> draftRepository.save(new DocumentDraft(
                 orgKey, documentId, locale, content,
-                locale.equals(entry.getSourceLocale()) ? null : sourceRevision)));
+                locale.equals(entry.properties().sourceLocale()) ? null : sourceRevision)));
     }
 
-    private void applyToExisting(String orgKey, DocumentInput entry) {
-        Document existing = repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).orElseThrow();
-        existing.replaceProperties(
-                entry.getSlug(),
-                entry.getTitle(),
-                entry.getSubject(),
-                entry.getDescription(),
-                entry.getAuthor(),
-                entry.getSourceLocale(),
-                Boolean.TRUE.equals(entry.getIsPublic()),
-                mapper.toRoles(entry),
-                mapper.toPorts(entry));
+    private void applyToExisting(String orgKey, DocumentCommand entry) {
+        Document existing = repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug()).orElseThrow();
+        entry.properties().applyTo(existing);
         repository.save(existing);
 
         Map<String, DocumentDraft> draftsByLocale = new HashMap<>();
@@ -178,7 +150,7 @@ public class ImportDocuments {
             DocumentDraft draft = draftsByLocale.get(locale);
             if (draft == null) {
                 draftRepository.save(new DocumentDraft(orgKey, existing.getId(), locale, content,
-                        locale.equals(entry.getSourceLocale()) ? null : sourceRevisionOf(draftsByLocale, entry)));
+                        locale.equals(entry.properties().sourceLocale()) ? null : sourceRevisionOf(draftsByLocale, entry)));
             } else {
                 draft.replaceBlocks(content.blocks());
                 draftRepository.save(draft);
@@ -186,19 +158,15 @@ public class ImportDocuments {
         });
     }
 
-    private static Long sourceRevisionOf(Map<String, DocumentDraft> draftsByLocale, DocumentInput entry) {
-        DocumentDraft source = draftsByLocale.get(entry.getSourceLocale());
+    private static Long sourceRevisionOf(Map<String, DocumentDraft> draftsByLocale, DocumentCommand entry) {
+        DocumentDraft source = draftsByLocale.get(entry.properties().sourceLocale());
         return source == null ? null : source.getRevision();
     }
 
-    private Map<String, DocumentContent> contentByLocale(DocumentInput entry) {
+    private Map<String, DocumentContent> contentByLocale(DocumentCommand entry) {
         Map<String, DocumentContent> byLocale = new LinkedHashMap<>();
-        if (entry.getTranslations() == null) {
-            return byLocale;
-        }
-        for (DocumentTranslationInput translation : entry.getTranslations()) {
-            DocumentContent content = mapper.toContentOrNull(translation);
-            byLocale.put(translation.getLocale(), content == null ? DocumentContent.empty() : content);
+        for (DocumentTranslationCommand translation : entry.translations()) {
+            byLocale.put(translation.locale(), translation.contentOrEmpty());
         }
         return byLocale;
     }

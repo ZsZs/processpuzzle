@@ -1,13 +1,10 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
@@ -32,33 +29,29 @@ public class CreateDocument {
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
-    private final DocumentMapper mapper;
 
     public CreateDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
                           DocumentReferentialIntegrityChecker integrityChecker,
                           DocumentTranslationAssembler assembler,
-                          DocumentGuard guard,
-                          DocumentMapper mapper) {
+                          DocumentGuard guard) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
-        this.mapper = mapper;
     }
 
-    public DocumentDetails execute(String orgKey, DocumentInput input) {
+    public DocumentDetails execute(String orgKey, DocumentCommand input) {
         guard.requireOrganizationAccess(orgKey);
 
-        // Any id in the payload is ignored rather than rejected: identity is the server's to mint,
-        // and a client that echoes an entity back should not have to strip a field to create one.
+        // Identity is the server's to mint, never part of the command.
         String documentId = UUID.randomUUID().toString();
-        if (repository.existsByOrgKeyAndSlug(orgKey, input.getSlug())) {
-            throw new DocumentSlugAlreadyExistsException(orgKey, input.getSlug());
+        if (repository.existsByOrgKeyAndSlug(orgKey, input.properties().slug())) {
+            throw new DocumentSlugAlreadyExistsException(orgKey, input.properties().slug());
         }
 
-        Document document = mapper.toDomain(orgKey, documentId, input, guard.currentPrincipal());
+        Document document = input.properties().create(orgKey, documentId, guard.currentPrincipal());
         DocumentContent sourceContent = sourceContentOf(input);
 
         List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
@@ -83,19 +76,12 @@ public class CreateDocument {
      * made from, and there is no meaningful revision to record until the source exists. Add them
      * with {@code addDocumentTranslation} once it does.
      */
-    private DocumentContent sourceContentOf(DocumentInput input) {
-        if (input.getTranslations() == null) {
-            return DocumentContent.empty();
-        }
-        return input.getTranslations().stream()
-                .filter(translation -> input.getSourceLocale().equals(translation.getLocale()))
+    private DocumentContent sourceContentOf(DocumentCommand input) {
+        return input.translations().stream()
+                .filter(translation -> input.properties().sourceLocale().equals(translation.locale()))
                 .findFirst()
-                .map(this::contentOf)
+                .map(DocumentTranslationCommand::contentOrEmpty)
                 .orElse(DocumentContent.empty());
     }
 
-    private DocumentContent contentOf(DocumentTranslationInput translation) {
-        DocumentContent content = mapper.toContentOrNull(translation);
-        return content == null ? DocumentContent.empty() : content;
-    }
 }

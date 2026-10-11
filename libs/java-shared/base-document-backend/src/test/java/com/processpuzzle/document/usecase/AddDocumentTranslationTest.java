@@ -1,6 +1,5 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -11,8 +10,6 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
-import com.processpuzzle.document.model.DocumentBlockInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationAlreadyExistsException;
@@ -55,7 +52,7 @@ class AddDocumentTranslationTest {
         // line up with the source's, which is what the widget-coverage check compares later.
         stubFound(DocumentRoles.unrestricted(), sourceDraft());
 
-        DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationInput().locale("de"));
+        DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationCommand("de", null));
 
         assertThat(view.locale()).isEqualTo("de");
         assertThat(view.content().blocks()).extracting(DocumentBlock::id).containsExactly("intro");
@@ -66,7 +63,7 @@ class AddDocumentTranslationTest {
         stubFound(DocumentRoles.unrestricted(), sourceDraft());
 
         DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID,
-                new DocumentTranslationInput().locale("de").blocks(List.of()));
+                new DocumentTranslationCommand("de", DocumentContent.empty()));
 
         assertThat(view.content().blocks()).isEmpty();
     }
@@ -76,9 +73,7 @@ class AddDocumentTranslationTest {
         stubFound(DocumentRoles.unrestricted(), sourceDraft());
 
         DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID,
-                new DocumentTranslationInput().locale("de").blocks(List.of(
-                        new DocumentBlockInput().id("einleitung")
-                                .kind(com.processpuzzle.document.model.BlockKind.TEXT))));
+                new DocumentTranslationCommand("de", DocumentContent.of(List.of(text("einleitung")))));
 
         assertThat(view.content().blocks()).extracting(DocumentBlock::id).containsExactly("einleitung");
     }
@@ -92,7 +87,7 @@ class AddDocumentTranslationTest {
         stubFound(DocumentRoles.unrestricted(), source);
 
         DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID,
-                new DocumentTranslationInput().locale("de").blocks(List.of()));
+                new DocumentTranslationCommand("de", DocumentContent.empty()));
 
         assertThat(source.getRevision()).isEqualTo(2L);
         assertThat(view.basedOnRevision()).isEqualTo(2L);
@@ -103,7 +98,7 @@ class AddDocumentTranslationTest {
     void aDocumentWhoseSourceLocaleHasNoDraftYetGetsABlankTranslationBasedOnNothing() {
         stubFound(DocumentRoles.unrestricted(), null);
 
-        DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationInput().locale("de"));
+        DocumentTranslationView view = add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationCommand("de", null));
 
         assertThat(view.content().blocks()).isEmpty();
         assertThat(view.basedOnRevision()).isNull();
@@ -114,7 +109,7 @@ class AddDocumentTranslationTest {
         stubFound(DocumentRoles.unrestricted(), sourceDraft());
         when(draftRepository.existsByOrgKeyAndDocumentIdAndLocale(ORG, ID, "de")).thenReturn(true);
 
-        assertThatThrownBy(() -> add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationInput().locale("de")))
+        assertThatThrownBy(() -> add(TestPolicies.permitAll()).execute(ORG, ID, new DocumentTranslationCommand("de", null)))
                 .isInstanceOf(DocumentTranslationAlreadyExistsException.class);
         verify(draftRepository, never()).save(any());
     }
@@ -123,7 +118,7 @@ class AddDocumentTranslationTest {
     void addingATranslationRequiresAnEditorRole() {
         stubFound(new DocumentRoles(List.of(), List.of("editor"), List.of()), sourceDraft());
 
-        assertThatThrownBy(() -> add(TestPolicies.holding("reader")).execute(ORG, ID, new DocumentTranslationInput().locale("de")))
+        assertThatThrownBy(() -> add(TestPolicies.holding("reader")).execute(ORG, ID, new DocumentTranslationCommand("de", null)))
                 .isInstanceOf(DocumentAccessDeniedException.class);
     }
 
@@ -131,7 +126,7 @@ class AddDocumentTranslationTest {
     void unknownDocumentIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> add(TestPolicies.permitAll()).execute(ORG, "missing", new DocumentTranslationInput().locale("de")))
+        assertThatThrownBy(() -> add(TestPolicies.permitAll()).execute(ORG, "missing", new DocumentTranslationCommand("de", null)))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
@@ -139,7 +134,7 @@ class AddDocumentTranslationTest {
     private AddDocumentTranslation add(DocumentAccessPolicy policy) {
         return new AddDocumentTranslation(repository, draftRepository,
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.with(policy), new DocumentMapper());
+                TestGuards.with(policy));
     }
 
     private void stubFound(DocumentRoles roles, DocumentDraft source) {

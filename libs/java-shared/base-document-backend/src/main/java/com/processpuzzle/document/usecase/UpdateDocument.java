@@ -1,6 +1,5 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
@@ -8,8 +7,6 @@ import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
@@ -42,34 +39,32 @@ public class UpdateDocument {
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
-    private final DocumentMapper mapper;
 
     public UpdateDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
                           PublishedDocumentRepository publishedRepository,
                           DocumentReferentialIntegrityChecker integrityChecker,
                           DocumentTranslationAssembler assembler,
-                          DocumentGuard guard,
-                          DocumentMapper mapper) {
+                          DocumentGuard guard) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
-        this.mapper = mapper;
     }
 
-    public DocumentDetails execute(String orgKey, String documentId, DocumentInput input) {
+    public DocumentDetails execute(String orgKey, String documentId, DocumentCommand input) {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
 
-        if (!document.getSlug().equals(input.getSlug()) && repository.existsByOrgKeyAndSlug(orgKey, input.getSlug())) {
-            throw new DocumentSlugAlreadyExistsException(orgKey, input.getSlug());
+        DocumentProperties properties = input.properties();
+        if (!document.getSlug().equals(properties.slug()) && repository.existsByOrgKeyAndSlug(orgKey, properties.slug())) {
+            throw new DocumentSlugAlreadyExistsException(orgKey, properties.slug());
         }
 
-        DocumentPorts newPorts = mapper.toPorts(input);
+        DocumentPorts newPorts = properties.ports();
         Map<String, DocumentDraft> draftsByLocale = new HashMap<>();
         for (DocumentDraft draft : draftRepository.findByOrgKeyAndDocumentId(orgKey, documentId)) {
             draftsByLocale.put(draft.getLocale(), draft);
@@ -85,16 +80,7 @@ public class UpdateDocument {
             throw new IllegalArgumentException("Invalid document: " + blocking);
         }
 
-        document.replaceProperties(
-                input.getSlug(),
-                input.getTitle(),
-                input.getSubject(),
-                input.getDescription(),
-                input.getAuthor(),
-                input.getSourceLocale(),
-                Boolean.TRUE.equals(input.getIsPublic()),
-                mapper.toRoles(input),
-                newPorts);
+        properties.applyTo(document);
         Document saved = repository.save(document);
 
         replacements.forEach((locale, content) -> {
@@ -113,23 +99,20 @@ public class UpdateDocument {
      * that has no translation is an error rather than an implicit create: creating one has to decide
      * which source revision it is based on, which is {@code AddDocumentTranslation}'s job.
      */
-    private Map<String, DocumentContent> replacementsOf(DocumentInput input,
+    private Map<String, DocumentContent> replacementsOf(DocumentCommand input,
                                                         Map<String, DocumentDraft> draftsByLocale,
                                                         String orgKey,
                                                         String documentId) {
         Map<String, DocumentContent> replacements = new HashMap<>();
-        if (input.getTranslations() == null) {
-            return replacements;
-        }
-        for (DocumentTranslationInput translation : input.getTranslations()) {
-            DocumentContent content = mapper.toContentOrNull(translation);
+        for (DocumentTranslationCommand translation : input.translations()) {
+            DocumentContent content = translation.content();
             if (content == null) {
                 continue;
             }
-            if (!draftsByLocale.containsKey(translation.getLocale())) {
-                throw new DocumentTranslationNotFoundException(orgKey, documentId, translation.getLocale());
+            if (!draftsByLocale.containsKey(translation.locale())) {
+                throw new DocumentTranslationNotFoundException(orgKey, documentId, translation.locale());
             }
-            replacements.put(translation.getLocale(), content);
+            replacements.put(translation.locale(), content);
         }
         return replacements;
     }

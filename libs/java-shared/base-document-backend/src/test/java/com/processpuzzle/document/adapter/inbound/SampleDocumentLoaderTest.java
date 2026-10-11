@@ -1,4 +1,4 @@
-package com.processpuzzle.document.usecase.service;
+package com.processpuzzle.document.adapter.inbound;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -18,12 +18,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -83,7 +83,8 @@ class SampleDocumentLoaderTest {
         publishTranslation = mock(PublishDocumentTranslation.class);
         repository = mock(DocumentRepository.class);
         resourceResolver = mock(ResourcePatternResolver.class);
-        loader = new SampleDocumentLoader(importDocuments, publishTranslation, repository, resourceResolver);
+        loader = new SampleDocumentLoader(importDocuments, publishTranslation, repository, resourceResolver,
+                new DocumentYamlCodec(new DocumentMapper()));
     }
 
     @Test
@@ -94,8 +95,8 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments).execute(eq("a"), any(InputStream.class));
-        verify(importDocuments).execute(eq("b"), any(InputStream.class));
+        verify(importDocuments).execute(eq("a"), anyList());
+        verify(importDocuments).execute(eq("b"), anyList());
     }
 
     @Test
@@ -108,7 +109,7 @@ class SampleDocumentLoaderTest {
         loader.loadSamples();
 
         ArgumentCaptor<String> orgKey = ArgumentCaptor.forClass(String.class);
-        verify(importDocuments).execute(orgKey.capture(), any(InputStream.class));
+        verify(importDocuments).execute(orgKey.capture(), anyList());
         assertThat(orgKey.getValue()).isEqualTo("processpuzzle-testbed");
     }
 
@@ -147,7 +148,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments).execute(eq("testbed"), any(InputStream.class));
+        verify(importDocuments).execute(eq("testbed"), anyList());
         verify(publishTranslation, never()).execute(any(), any(), any());
     }
 
@@ -155,7 +156,7 @@ class SampleDocumentLoaderTest {
     void loadSamples_publishesNothingFromAFileThatImportedWithErrors() throws IOException {
         // The import is all-or-nothing, so a rejected file persisted nothing to publish.
         givenFiles(new NamedByteArrayResource("testbed-documents.yaml", PUBLIC_DOCUMENT));
-        when(importDocuments.execute(any(String.class), any(InputStream.class)))
+        when(importDocuments.execute(any(String.class), anyList()))
                 .thenReturn(new ImportOutcome(0, 0, List.of("Entry 'platform-overview': broken")));
 
         loader.loadSamples();
@@ -181,7 +182,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
@@ -190,7 +191,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
@@ -200,19 +201,16 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
-    void loadSamples_stillImportsAFileWhoseEntriesCannotBeParsed() throws IOException {
-        // Reading the entries only informs publishing; deciding that the file is malformed is the
-        // import's job, and its error message is the useful one.
+    void loadSamples_rejectsMalformedFilesBeforeInvokingTheImport() throws IOException {
         givenFiles(new NamedByteArrayResource("testbed-documents.yaml", "documents: [ this is not a document"));
-        givenImportSucceeds();
 
         loader.loadSamples();
 
-        verify(importDocuments).execute(eq("testbed"), any(InputStream.class));
+        verify(importDocuments, never()).execute(eq("testbed"), anyList());
         verify(publishTranslation, never()).execute(any(), any(), any());
     }
 
@@ -222,7 +220,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
@@ -231,21 +229,21 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
     void loadSamples_continuesWhenSingleFileFails() throws IOException {
         givenFiles(new NamedByteArrayResource("bad-documents.yaml", "documents: []"),
                 new NamedByteArrayResource("good-documents.yaml", "documents: []"));
-        when(importDocuments.execute(any(String.class), any(InputStream.class)))
-                .thenThrow(new IOException("boom"))
+        when(importDocuments.execute(any(String.class), anyList()))
+                .thenThrow(new IllegalStateException("boom"))
                 .thenReturn(new ImportOutcome(1, 0, List.of()));
 
         loader.loadSamples();
 
-        verify(importDocuments).execute(eq("bad"), any(InputStream.class));
-        verify(importDocuments).execute(eq("good"), any(InputStream.class));
+        verify(importDocuments).execute(eq("bad"), anyList());
+        verify(importDocuments).execute(eq("good"), anyList());
     }
 
     @Test
@@ -257,7 +255,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments, never()).execute(any(String.class), any(InputStream.class));
+        verify(importDocuments, never()).execute(any(String.class), anyList());
     }
 
     @Test
@@ -267,7 +265,7 @@ class SampleDocumentLoaderTest {
 
         loader.loadSamples();
 
-        verify(importDocuments).execute(eq("testbed"), any(InputStream.class));
+        verify(importDocuments).execute(eq("testbed"), anyList());
         verify(publishTranslation, never()).execute(any(), any(), any());
     }
 
@@ -344,7 +342,7 @@ class SampleDocumentLoaderTest {
     }
 
     private void givenImportSucceeds() throws IOException {
-        when(importDocuments.execute(any(String.class), any(InputStream.class)))
+        when(importDocuments.execute(any(String.class), anyList()))
                 .thenReturn(new ImportOutcome(1, 0, List.of()));
     }
 
