@@ -11,8 +11,8 @@
  * a parent that has only a min-height resolves to auto, the 1fr row collapses to its content, and the
  * footer rides up under the header.
  *
- * height: 100% covers the other case — an ancestor chain that does have definite heights, as the
- * standalone runtime host will.
+ * height: 100% covers the other case — an ancestor chain that does have definite heights, as a runtime
+ * host's does.
  */
 :host {
   display: grid;
@@ -24,6 +24,17 @@
   align-items: stretch;
   display: flex;
   background-color: var(--pp-surface-header);
+}
+
+/* A host's own controls, after the header region — which grows to fill the row — so they sit at its end.
+   The element is the host's content, so the shell's emulated styles reach it only through ::ng-deep. */
+.pp-app-shell__top ::ng-deep .pp-app-shell__actions {
+  align-items: center;
+  color: var(--pp-on-header);
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  padding: 0 8px;
 }
 
 /* min-height: 0 keeps the sidenav container from being sized by its content and overflowing the

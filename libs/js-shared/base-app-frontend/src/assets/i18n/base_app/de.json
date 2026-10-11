@@ -151,7 +151,8 @@
   },
   "publish": {
     "button": "Veröffentlichen",
-    "tooltip": "Die gespeicherte Definition veröffentlichen: ihre Version wird zur veröffentlichten Version"
+    "tooltip": "Die gespeicherte Definition veröffentlichen: Sie wird zu dem, was die Benutzer Ihrer Anwendung sehen",
+    "done": "Veröffentlicht. Ihre Anwendung zeigt jetzt diese Version."
   },
   "concepts": {
     "title": "Wie eine dynamische Anwendung aufgebaut ist",

@@ -151,7 +151,8 @@
   },
   "publish": {
     "button": "Publicar",
-    "tooltip": "Publica la definición guardada: su versión pasa a ser la versión publicada"
+    "tooltip": "Publica la definición guardada: pasa a ser lo que ven los usuarios de su aplicación",
+    "done": "Publicado. Su aplicación muestra ahora esta versión."
   },
   "concepts": {
     "title": "Cómo se construye una aplicación dinámica",

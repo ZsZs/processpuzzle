@@ -185,7 +185,8 @@ public class AppEndpoint implements BaseAppApi {
     @Override
     public ResponseEntity<AppLayout> getAppLayout(String orgKey, String appId, Boolean draft) {
         GetAppLayout.Result result = getAppLayout.execute(orgKey, appId, Boolean.TRUE.equals(draft));
-        return ResponseEntity.ok(mapper.toLayout(result.definition(), result.graph(), result.defaultLocale()));
+        return ResponseEntity.ok(mapper.toLayout(
+                result.definition(), result.graph(), result.defaultLocale(), result.version()));
     }
 
     @Override

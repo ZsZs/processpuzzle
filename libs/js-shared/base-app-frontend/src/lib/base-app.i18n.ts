@@ -58,6 +58,8 @@ export const APP_CONCEPTS_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.concepts`;
 /** Keys of the `Publish` form action contributed by `AppDefinitionContainerComponent`. */
 export const PUBLISH_BUTTON_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.button`;
 export const PUBLISH_TOOLTIP_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.tooltip`;
+/** Confirms a successful Publish: the published revision is what the runtime host now serves. */
+export const PUBLISH_DONE_I18N_KEY = `${BASE_APP_TRANSLOCO_SCOPE}.publish.done`;
 
 /**
  * Where this library's transloco bundles come from when the application ships without its assets.

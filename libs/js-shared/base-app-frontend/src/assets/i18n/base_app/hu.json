@@ -151,7 +151,8 @@
   },
   "publish": {
     "button": "Közzététel",
-    "tooltip": "A mentett definíció közzététele: a verziója lesz a közzétett verzió"
+    "tooltip": "A mentett definíció közzététele: ez lesz az, amit az alkalmazása felhasználói látnak",
+    "done": "Közzétéve. Az alkalmazása mostantól ezt a verziót mutatja."
   },
   "concepts": {
     "title": "Hogyan épül fel egy dinamikus alkalmazás",

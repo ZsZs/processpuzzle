@@ -26,7 +26,7 @@ export interface RegionView {
  * Turns one authored `RegionDefinition` into the {@link RegionView} that renders it.
  *
  * An injectable rather than a free function, though stateless today, for the reason `AppRouteRenderer`
- * is one: the Preview tab and the eventual standalone runtime host must resolve regions *identically*,
+ * is one: the Preview tab and the runtime host must resolve regions *identically*,
  * so there has to be exactly one of these, and a constructor parameter is a cheaper way to grow it than
  * a rewrite.
  */

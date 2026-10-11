@@ -9,7 +9,7 @@ import { APPLICATION_CONTEXT, AppTitleComponent, SidenavAutosizeDirective, Theme
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition, RouteDefinition } from '../../domain/app-definition';
-import { AppShellComponent } from './app-shell.component';
+import { AppShellComponent, ShellActionsDirective } from './app-shell.component';
 
 @Component({ selector: 'pp-shell-test-widget', template: `<span class="test-widget">{{ label() }}</span>` })
 class ShellTestWidgetComponent {
@@ -404,5 +404,31 @@ describe('AppShellComponent host class merging', () => {
 
     const shell = hostFixture.nativeElement.querySelector('pp-app-shell') as HTMLElement;
     expect([...shell.classList]).toEqual(expect.arrayContaining(['caller-owned', 'pp-theme-azure-blue', 'pp-scheme-auto']));
+  });
+});
+
+describe('AppShellComponent host actions', () => {
+  @Component({
+    selector: 'pp-shell-actions-host',
+    standalone: true,
+    imports: [AppShellComponent, ShellActionsDirective],
+    template: `<pp-app-shell [definition]="definition"><button ppShellActions class="design-button">Design</button></pp-app-shell>`,
+  })
+  class ShellActionsHostComponent {
+    // No header region at all: the state of a freshly provisioned application.
+    definition = new AppDefinition({ id: 'starter', name: 'Starter' });
+  }
+
+  it("renders the host's controls in the top row even when the definition declares no header", async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [ShellActionsHostComponent], providers: [provideRouter([]), provideTranslocoTesting({ translations: {} })] });
+
+    const hostFixture = TestBed.createComponent(ShellActionsHostComponent);
+    hostFixture.detectChanges();
+    await hostFixture.whenStable();
+
+    const button = hostFixture.nativeElement.querySelector('.pp-app-shell__top .design-button') as HTMLElement | null;
+    expect(button).not.toBeNull();
+    expect(button?.classList).toContain('pp-app-shell__actions');
   });
 });
