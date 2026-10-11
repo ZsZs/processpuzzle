@@ -30,11 +30,17 @@ The `master` realm's service account is *not* here: see `init/bootstrap-platform
 ## The customer realm's email theme
 
 `themes/processpuzzle/email` is copied into the image and is the `emailTheme` of `processpuzzle-custom`. It
-inherits Keycloak's own theme and overrides one mail, `executeActions`: when the actions are exactly what
+inherits Keycloak's own theme and overrides two mails. The first is `executeActions`: when the actions are exactly what
 activation asks for — `VERIFY_EMAIL` and `UPDATE_PASSWORD` — the new customer administrator gets a welcome
 with an "Activate my account" link; any other combination keeps Keycloak's wording. The subject cannot be
 conditional (Keycloak resolves it from `executeActionsSubject` alone), so it is worded for activation, the
 only execute-actions mail the platform sends.
+
+The second override is `org-invite`, Keycloak's organization invitation. platform-admin sends it only to an
+account that already exists — a customer subscribing to another application with the same e-mail — through
+`.../organizations/{id}/members/invite-existing-user`. So it says "accept, then log in with your usual
+password" instead of Keycloak's generic "join the organization". Accepting makes the account a member and
+lands on the organization's `redirectUrl`, which platform-admin sets to Customer Home.
 
 The mail is rendered in the user's `locale` attribute, which platform-admin sets from the language chosen at
 sign-up. That attribute only survives while the realm has `internationalizationEnabled` — otherwise the
