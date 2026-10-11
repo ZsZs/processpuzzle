@@ -7,17 +7,34 @@
 - **Tools run:** Static review using IDE directory/source inspection, scoped ripgrep, PowerShell read-only source inspection and file reads. Read `AGENTS.md`, the rubric and relevant README intent. Inspected publication, public-read, import, properties, persistence and Modulith tests; did not execute tests, builds, ArchUnit or Modulith verification. No Nx configuration was needed or read.
 - **Calibration:** Reviewer/owner calibration was not performed. Effort estimates are provisional; rubric scales and effort points are unchanged.
 
-## Summary
+## Remediation log
+
+### BDO-SEC-01: addressed (2026-10-11)
+
+Private published reads now enforce organization membership before reader roles. Membership denial
+uses the existing not-found response and never loads snapshots; provider failures still propagate
+instead of being hidden as denials. Public documents retain anonymous access. Import preflights
+every existing target against its stored editor roles before mutating or saving any entry, so role
+replacement cannot authorize its own overwrite and mixed-authority files leave all entries intact.
+
+**Validation:** 35 focused tests passed through Nx `base-document-backend:test`, including public
+reads, imports and `BaseDocumentModularityTests`. Five new regression cases failed against the
+original implementation before the fix; public access and authorized imports remain supported.
+
+The branch/test/commit/PR/merge workflow is now recorded in root `AGENTS.md` for future sessions.
+The original assessment and evidence below are retained as the review baseline.
+
+## Summary (review baseline)
 
 The document model has useful structural boundaries: language-invariant metadata, editable translations and published content occupy separate entities, and the public reader cannot access the draft repository. The most important debt is incomplete use-case enforcement of the module's own access policy, affecting private reads and imports even when a restrictive policy is supplied. Published content can also become inconsistent with subsequently edited port metadata because the integrity boundary checks drafts, not snapshots. A further layering debt couples application commands to REST/YAML representations despite the stated hexagonal design.
 
 ## Findings table
 
-| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| BDO-SEC-01 | Alternate access paths bypass document policy checks | SEC | 5 | 2 feature | M | High | 5.0 |
-| BDO-MET-01 | Live port metadata can invalidate published snapshots | MET | 4 | 2 feature | M | High | 4.0 |
-| BDO-LAY-01 | Use cases depend on inbound mappers and wire models | LAY | 3 | 1 slice | L | High | 0.8 |
+| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BDO-SEC-01 | Alternate access paths bypass document policy checks | SEC | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
+| BDO-MET-01 | Live port metadata can invalidate published snapshots | MET | 4 | 2 feature | M | High | 4.0 | Open |
+| BDO-LAY-01 | Use cases depend on inbound mappers and wire models | LAY | 3 | 1 slice | L | High | 0.8 | Open |
 
 ## Findings
 

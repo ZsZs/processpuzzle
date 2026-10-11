@@ -61,6 +61,11 @@ public class DocumentGuard {
         if (!policy.isAuthenticated()) {
             return false;
         }
+        try {
+            requireOrganizationAccess(document.getOrgKey());
+        } catch (DocumentAccessDeniedException denied) {
+            return false;
+        }
         return holdsAnyOf(document.getRoles().readerRoles());
     }
 

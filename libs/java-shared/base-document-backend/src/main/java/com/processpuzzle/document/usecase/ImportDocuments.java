@@ -82,6 +82,11 @@ public class ImportDocuments {
             return new ImportOutcome(0, 0, errors);
         }
 
+        // Authorize against stored roles, before an earlier entry can replace any access metadata.
+        for (DocumentInput entry : entries) {
+            repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).ifPresent(guard::requireEditor);
+        }
+
         int created = 0;
         int updated = 0;
         for (DocumentInput entry : entries) {
