@@ -12,6 +12,7 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.WidgetPlacement;
 import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.model.DocumentInput;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,6 +59,7 @@ class UpdateDocumentTest {
         updateDocument = new UpdateDocument(
                 repository,
                 draftRepository,
+                publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
                 TestGuards.permitAll(),
@@ -161,6 +164,36 @@ class UpdateDocumentTest {
         assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().translations(List.of(
                 new DocumentTranslationInput().locale("en").blocks(List.of(broken))))))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThat(english.getBlocks()).isEmpty();
+    }
+
+    @Test
+    void replacingDraftContentDoesNotAuthorizeBreakingPublishedBindings() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("grid", "customer")));
+        stubFound(document, english);
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(
+                new PublishedDocument(ORG, ID, "en", english.getContent(), 1L, Instant.now(), "ada")));
+
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().inputPorts(List.of()).translations(
+                List.of(new DocumentTranslationInput().locale("en").blocks(List.of())))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("unknown-port");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+        assertThat(english.getBlocks()).hasSize(1);
+        assertThat(document.getPorts().inputPorts()).hasSize(1);
+    }
+
+    @Test
+    void portsAndDraftBindingsCanBeRemovedTogetherWhenNothingPublishedReferencesThem() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("grid", "customer")));
+        stubFound(document, english);
+
+        updateDocument.execute(ORG, ID, input().inputPorts(List.of()).translations(
+                List.of(new DocumentTranslationInput().locale("en").blocks(List.of()))));
+
+        assertThat(document.getPorts().inputPorts()).isEmpty();
         assertThat(english.getBlocks()).isEmpty();
     }
 

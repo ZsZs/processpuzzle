@@ -10,6 +10,7 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
@@ -52,6 +53,7 @@ public class ImportDocuments {
 
     private final DocumentRepository repository;
     private final DocumentDraftRepository draftRepository;
+    private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentGuard guard;
     private final DocumentMapper mapper;
@@ -60,11 +62,13 @@ public class ImportDocuments {
 
     public ImportDocuments(DocumentRepository repository,
                            DocumentDraftRepository draftRepository,
+                           PublishedDocumentRepository publishedRepository,
                            DocumentReferentialIntegrityChecker integrityChecker,
                            DocumentGuard guard,
                            DocumentMapper mapper) {
         this.repository = repository;
         this.draftRepository = draftRepository;
+        this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.guard = guard;
         this.mapper = mapper;
@@ -85,6 +89,20 @@ public class ImportDocuments {
         // Authorize against stored roles, before an earlier entry can replace any access metadata.
         for (DocumentInput entry : entries) {
             repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).ifPresent(guard::requireEditor);
+        }
+
+        for (DocumentInput entry : entries) {
+            repository.findByOrgKeyAndSlug(orgKey, entry.getSlug()).ifPresent(existing -> {
+                List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
+                        integrityChecker.checkPortChange(mapper.toPorts(entry),
+                                draftRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId()),
+                                contentByLocale(entry),
+                                publishedRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId())));
+                blocking.forEach(problem -> errors.add("Entry '" + entry.getSlug() + "': " + problem));
+            });
+        }
+        if (!errors.isEmpty()) {
+            return new ImportOutcome(0, 0, errors);
         }
 
         int created = 0;

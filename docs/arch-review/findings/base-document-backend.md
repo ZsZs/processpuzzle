@@ -22,6 +22,22 @@ reads, imports and `BaseDocumentModularityTests`. Five new regression cases fail
 original implementation before the fix; public access and authorized imports remain supported.
 
 The branch/test/commit/PR/merge workflow is now recorded in root `AGENTS.md` for future sessions.
+
+### BDO-MET-01: addressed (2026-10-11)
+
+Properties replacement, full updates and imports now share `checkPortChange`: proposed ports must
+validate every resulting draft (including retained locales) and every extant published snapshot.
+Published failures identify the locale and publication in their diagnostics. Import preflights
+all targets before writing, preserving all-or-nothing behavior. Snapshots remain untouched; remove
+their bindings through republishing or unpublish the affected locales before removing live ports.
+
+**Validation:** 83 focused tests passed through Nx, including module boundaries and the shared
+integrity checker. Three regressions first failed on the original code: publish/edit/remove-port
+with two locales and public readback, full replacement of draft bindings while a snapshot retains
+them, and an import invalidating an omitted draft. Further tests cover published input/output
+bindings during import and valid removal after snapshots are withdrawn. No concurrency or
+live-provider tests were added; ports remain live rather than versioned with each publication.
+
 The original assessment and evidence below are retained as the review baseline.
 
 ## Summary (review baseline)
@@ -33,7 +49,7 @@ The document model has useful structural boundaries: language-invariant metadata
 | ID | Title | Cat | Crit | Blast | Effort | Conf | Priority | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | BDO-SEC-01 | Alternate access paths bypass document policy checks | SEC | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
-| BDO-MET-01 | Live port metadata can invalidate published snapshots | MET | 4 | 2 feature | M | High | 4.0 | Open |
+| BDO-MET-01 | Live port metadata can invalidate published snapshots | MET | 4 | 2 feature | M | High | 4.0 | Addressed 2026-10-11 |
 | BDO-LAY-01 | Use cases depend on inbound mappers and wire models | LAY | 3 | 1 slice | L | High | 0.8 | Open |
 
 ## Findings
