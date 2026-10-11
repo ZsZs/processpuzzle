@@ -12,10 +12,17 @@ import com.processpuzzle.orgadmin.usecases.inbound.FindOrganizationUsers;
 import com.processpuzzle.orgadmin.usecases.inbound.InviteOrganizationUser;
 import com.processpuzzle.orgadmin.usecases.inbound.ReplaceOrganizationUserRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.UpdateOrganizationUser;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
@@ -26,6 +33,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * The controllers hold no logic, so what is worth pinning down is the status codes the contract
@@ -80,6 +90,31 @@ class OrgAdminEndpointsTest {
         verify(inviteUser).execute(ORG_KEY,
                 new UserDirectoryPort.NewUser("ada", "ada@my-org.example", null, null),
                 List.of("claims-auditor"));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"created-id"})
+    void invitationRecoveryReachesTheClientWithItsCorrelationId(String userId) throws Exception {
+        when(inviteUser.execute(any(), any(), any())).thenThrow(
+                new InvitationRecoveryRequiredException("operation-1", userId,
+                        new DirectoryUnavailableException("provider outcome unknown")));
+        var mvc = MockMvcBuilders.standaloneSetup(users)
+                .setControllerAdvice(new OrgAdminApiExceptionHandler()).build();
+
+        var response = mvc.perform(post("/organizations/" + ORG_KEY + "/admin/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"ada\",\"email\":\"ada@example.com\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorId").value("user.invitation-recovery-required"))
+                .andExpect(jsonPath("$.operationId").value("operation-1"))
+                .andExpect(jsonPath("$.errorText").value(
+                        org.hamcrest.Matchers.containsString("before retrying")));
+        if (userId == null) {
+            response.andExpect(jsonPath("$.userId").doesNotExist());
+        } else {
+            response.andExpect(jsonPath("$.userId").value(userId));
+        }
     }
 
     @Test

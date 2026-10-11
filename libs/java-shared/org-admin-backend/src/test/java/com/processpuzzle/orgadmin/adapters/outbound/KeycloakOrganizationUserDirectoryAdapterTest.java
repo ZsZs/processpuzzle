@@ -12,6 +12,8 @@ import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -110,6 +112,7 @@ class KeycloakOrganizationUserDirectoryAdapterTest {
         verify(client).exchange(HttpMethod.POST, REALM_PATH + "/users/" + ALICE + "/role-mappings/realm",
                 List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
         verify(client).exchange(HttpMethod.PUT, ORG_PATH + "/groups/reviewer-id/members/" + ALICE, null, null);
+        verify(client).exchange(HttpMethod.PUT, REALM_PATH + "/users/" + ALICE, Map.of("enabled", true), null);
     }
 
     @Test
@@ -121,7 +124,55 @@ class KeycloakOrganizationUserDirectoryAdapterTest {
         assertThatThrownBy(() -> adapter.inviteUser("acme",
                 new UserDirectoryPort.NewUser("alice", "alice@acme", null, null), List.of()))
                 .isInstanceOf(DirectoryUnavailableException.class);
-        verify(client).exchange(HttpMethod.DELETE, REALM_PATH + "/users/" + ALICE, null, null);
+        verify(client).exchangeTolerating(HttpMethod.DELETE, REALM_PATH + "/users/" + ALICE, null, 404);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"platform-role", "group", "member-read", "roles-read", "missing-member"})
+    void compensatesEveryPostMembershipFailure(String boundary) {
+        when(client.createAndReturnId(eq(REALM_PATH + "/users"), any())).thenReturn(Optional.of(ALICE));
+        givenMember(ALICE);
+        givenRoles(ALICE, List.of(role("org-member")), List.of(group("reviewer", "/reviewer")));
+        IdentityProviderUnavailableException failure =
+                new IdentityProviderUnavailableException("down", new IllegalStateException(boundary));
+        switch (boundary) {
+            case "platform-role" -> doThrow(failure).when(client).exchange(HttpMethod.POST,
+                    REALM_PATH + "/users/" + ALICE + "/role-mappings/realm",
+                    List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
+            case "group" -> doThrow(failure).when(client).exchange(HttpMethod.PUT,
+                    ORG_PATH + "/groups/reviewer-id/members/" + ALICE, null, null);
+            case "member-read" -> doThrow(failure).when(client).exchange(
+                    HttpMethod.GET, ORG_PATH + "/members/" + ALICE, null, Map.class);
+            case "roles-read" -> when(client.getList(ORG_PATH + "/members/" + ALICE + "/groups"))
+                    .thenThrow(failure);
+            case "missing-member" -> givenNotAMember(ALICE);
+            default -> throw new AssertionError(boundary);
+        }
+
+        assertThatThrownBy(() -> adapter.inviteUser("acme",
+                new UserDirectoryPort.NewUser("alice", "alice@acme", null, null),
+                List.of("org-member", "reviewer")))
+                .isInstanceOf(DirectoryUnavailableException.class).hasMessageContaining("safe to retry");
+
+        verify(client).exchangeTolerating(HttpMethod.DELETE, REALM_PATH + "/users/" + ALICE, null, 404);
+        verify(client, never()).exchange(HttpMethod.PUT, REALM_PATH + "/users/" + ALICE,
+                Map.of("enabled", true), null);
+    }
+
+    @Test
+    void aMissingRequestedGroupPreventsActivation() {
+        when(client.createAndReturnId(eq(REALM_PATH + "/users"), any())).thenReturn(Optional.of(ALICE));
+        givenMember(ALICE);
+        givenRoles(ALICE, List.of(role("org-member")), List.of());
+
+        assertThatThrownBy(() -> adapter.inviteUser("acme",
+                new UserDirectoryPort.NewUser("alice", "alice@acme", null, null),
+                List.of("org-member", "missing")))
+                .isInstanceOf(DirectoryUnavailableException.class);
+
+        verify(client).exchangeTolerating(HttpMethod.DELETE, REALM_PATH + "/users/" + ALICE, null, 404);
+        verify(client, never()).exchange(HttpMethod.PUT, REALM_PATH + "/users/" + ALICE,
+                Map.of("enabled", true), null);
     }
 
     @Test

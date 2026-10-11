@@ -2,6 +2,7 @@ package com.processpuzzle.orgadmin.adapters.inbound;
 
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
@@ -82,7 +83,6 @@ class OrgAdminApiExceptionHandlerTest {
         assertThat(response.getBody().getErrorId()).isEqualTo("role.unknown");
     }
 
-    /** 503, not 500: the operation did not happen and the identical request can be retried. */
     @Test
     void anUnreachableDirectoryIs503() {
         var response = handler.handleDirectoryUnavailable(
@@ -91,6 +91,33 @@ class OrgAdminApiExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getErrorId()).isEqualTo("user-directory.unavailable");
+    }
+
+    @Test
+    void anUnknownInvitationOutcomeIs409WithRecoveryIdentifiersRatherThanRetryable503() {
+        var response = handler.handleInvitationRecovery(
+                new InvitationRecoveryRequiredException("operation-1", "user-1",
+                        new DirectoryUnavailableException("cleanup failed")));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull().satisfies(body -> {
+            assertThat(body.getErrorId()).isEqualTo("user.invitation-recovery-required");
+            assertThat(body.getErrorText()).contains("before retrying");
+            assertThat(body.getOperationId()).isEqualTo("operation-1");
+            assertThat(body.getUserId()).isEqualTo("user-1");
+        });
+    }
+
+    @Test
+    void anUnknownCreateDoesNotInventAUserId() {
+        var response = handler.handleInvitationRecovery(
+                new InvitationRecoveryRequiredException("operation-2", null,
+                        new DirectoryUnavailableException("create response lost")));
+
+        assertThat(response.getBody()).isNotNull().satisfies(body -> {
+            assertThat(body.getOperationId()).isEqualTo("operation-2");
+            assertThat(body.getUserId()).isNull();
+        });
     }
 
     /**

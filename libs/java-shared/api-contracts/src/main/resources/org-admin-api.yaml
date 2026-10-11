@@ -110,6 +110,13 @@ paths:
         `UPDATE_PASSWORD` as a required action, so the invitee sets their own password on first
         login and the administrator never knows it. Roles named in the payload are granted at
         creation; an empty list means `org-member`.
+
+        The account starts disabled and is enabled only after membership and requested roles are
+        verified. A post-create failure removes that account before returning a retryable 503.
+        When creation or removal cannot be confirmed, 409 `user.invitation-recovery-required`
+        carries an operation id for operator reconciliation, and the user id if known. Do not
+        retry that outcome automatically. This endpoint is not idempotent: if the HTTP response
+        is lost, reconcile before retrying. An unrelated existing account is never adopted.
       requestBody:
         required: true
         content:
@@ -130,7 +137,16 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          $ref: "#/components/responses/Conflict"
+          description: >-
+            Duplicate username/email (`user.already-exists`), or an unknown invitation outcome
+            (`user.invitation-recovery-required`). The latter must be reconciled by an operator
+            before retrying, using the operation id to find the server log and provider audit.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+                  - $ref: "#/components/schemas/InvitationRecoveryRequired"
         "503":
           $ref: "#/components/responses/IdentityProviderUnavailable"
 
@@ -365,16 +381,33 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     IdentityProviderUnavailable:
       description: >-
-        The identity provider could not be reached or refused the operation. Distinct from 500
-        because it is retryable and not the platform's own fault. Since the directory is the
-        system of record, a failure here means the operation did not happen — there is no local
-        copy that could have drifted.
+        The identity provider could not be reached or refused the operation. This does not imply
+        that a write was unapplied or atomic. An invitation returning 503 either did not reach
+        creation or its newly created account was removed, so it can be retried. Other mutations
+        may be partially applied and must be reconciled before retrying.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
+    InvitationRecoveryRequired:
+      type: object
+      required: [ errorId, errorText, operationId ]
+      properties:
+        errorId:
+          type: string
+          description: Always `user.invitation-recovery-required`.
+        errorText:
+          type: string
+        operationId:
+          type: string
+          description: Correlation id for the server's invitation log, not an idempotency key.
+        userId:
+          type: string
+          nullable: true
+          description: Confirmed created account id, absent or null when the create response was lost or had no id.
+
     OrganizationUser:
       type: object
       required: [ id, username, enabled ]

@@ -2,6 +2,8 @@ package com.processpuzzle.orgadmin.adapters.inbound;
 
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
+import com.processpuzzle.orgadmin.model.InvitationRecoveryRequired;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
@@ -72,10 +74,14 @@ public class OrgAdminApiExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "role.unknown", ex.getMessage());
     }
 
-    /**
-     * 503, not 500. The directory is the system of record and this module keeps no copy, so a failure
-     * means the operation did not happen — the caller can retry the identical request.
-     */
+    @ExceptionHandler(InvitationRecoveryRequiredException.class)
+    public ResponseEntity<InvitationRecoveryRequired> handleInvitationRecovery(InvitationRecoveryRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new InvitationRecoveryRequired(
+                "user.invitation-recovery-required", ex.getMessage(), ex.getOperationId())
+                .userId(ex.getUserId()));
+    }
+
+    /** Provider failure; retry safety is operation-specific, not implied by HTTP 503. */
     @ExceptionHandler(DirectoryUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleDirectoryUnavailable(DirectoryUnavailableException ex) {
         return error(HttpStatus.SERVICE_UNAVAILABLE, "user-directory.unavailable", ex.getMessage());

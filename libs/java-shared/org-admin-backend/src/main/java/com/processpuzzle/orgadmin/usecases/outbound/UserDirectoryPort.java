@@ -7,9 +7,9 @@ import java.util.Optional;
  * The tenant's user directory. One realm per organization, named after the {@code orgKey}.
  *
  * <p><b>The directory is the system of record.</b> Nothing in this module keeps a copy, so every
- * method here is the authoritative read or write — and a failure means the operation did not happen,
- * with no local state left inconsistent. That is why the failure maps to a retryable 503 rather than
- * to a 500.
+ * method here is an authoritative read or write. Multiple provider calls are not atomic, and a
+ * failed write may already have taken effect. Retry safety depends on the operation, not on whether
+ * this module has a local copy.
  *
  * <p>Two things this port deliberately cannot do. It cannot create or delete a <em>realm</em>: realm
  * lifecycle belongs to {@code platform-admin}, and a tenant administrator must not be able to remove
@@ -37,8 +37,16 @@ public interface UserDirectoryPort {
      * Creates a user, enabled, with no credentials and a required action forcing a password reset on
      * first login — so the administrator never knows the invitee's password.
      *
+     * <p>The account starts disabled and is enabled only after membership and requested roles have
+     * been read back. A subsequent failure compensates by deleting only the newly created account.
+     * Confirmed compensation is retryable; unconfirmed creation or compensation requires operator
+     * reconciliation, identified by the exception's operation id. Never adopt an existing account
+     * by username on retry. This is a compensating workflow, not an idempotent invitation endpoint.
+     *
      * @param roles realm roles to grant at creation; an empty list means {@code org-member} only
      * @return the created user, read back so the caller need not guess what the provider stored
+     * @throws com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException
+     *         when external work may remain; do not retry before reconciliation
      */
     DirectoryUser inviteUser(String realm, NewUser user, List<String> roles);
 
