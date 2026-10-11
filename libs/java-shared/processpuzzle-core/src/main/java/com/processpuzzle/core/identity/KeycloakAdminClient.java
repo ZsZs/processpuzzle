@@ -166,6 +166,32 @@ public class KeycloakAdminClient {
         }
     }
 
+    /**
+     * Posts an {@code application/x-www-form-urlencoded} body and discards the response.
+     *
+     * <p>A few Admin API calls take a form rather than JSON, for instance
+     * {@code .../organizations/{id}/members/invite-existing-user}, whose user id is a form field.
+     *
+     * @param path path below the server root, starting with {@code /admin}
+     * @param form the form fields
+     * @throws IdentityProviderUnavailableException on any transport or protocol failure
+     */
+    public void postForm(String path, MultiValueMap<String, String> form) {
+        String token = accessToken();
+        try {
+            restClient.post()
+                    .uri(path)
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            throw new IdentityProviderUnavailableException(
+                    "Keycloak admin call failed: " + HttpMethod.POST + " " + path, ex);
+        }
+    }
+
     private static boolean hasStatus(IdentityProviderUnavailableException ex, int... tolerated) {
         OptionalInt actual = ex.getHttpStatus();
         if (actual.isEmpty()) {

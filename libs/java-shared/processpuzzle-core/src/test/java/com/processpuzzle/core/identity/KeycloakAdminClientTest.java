@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
@@ -231,6 +232,31 @@ class KeycloakAdminClientTest {
                     assertThat(failure.getHttpStatus()).isEmpty();
                     assertThat(failure.getCause()).hasCause(transportFailure);
                 });
+        server.verify();
+    }
+
+    @Test
+    void postsFormBodiesWithTheBearerToken_andWrapsTheirFailures() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        KeycloakAdminClient client = client(builder);
+        String path = "/admin/realms/acme/organizations/org-1/members/invite-existing-user";
+
+        expectToken(server);
+        server.expect(requestTo("https://keycloak.example" + path))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer token-1"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(content().formDataContains(Map.of("id", "user-1")))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+        server.expect(requestTo("https://keycloak.example" + path))
+                .andRespond(withStatus(HttpStatus.CONFLICT));
+
+        client.postForm(path, new LinkedMultiValueMap<>(Map.of("id", List.of("user-1"))));
+        assertThatThrownBy(() -> client.postForm(path, new LinkedMultiValueMap<>(Map.of("id", List.of("user-1")))))
+                .isInstanceOfSatisfying(IdentityProviderUnavailableException.class, failure ->
+                        assertThat(failure.getHttpStatus()).hasValue(409))
+                .hasMessageContaining("POST " + path);
         server.verify();
     }
 

@@ -86,6 +86,9 @@ export class KeycloakAuthService extends AuthService {
     await this.keycloak.init({
       onLoad: 'check-sso',
       silentCheckSsoRedirectUri: new URL('assets/auth/silent-check-sso.html', document.baseURI).href,
+      // The default for login() too, so the silent check and an interactive login ask for the same
+      // claims. Omitted when not configured: an explicit undefined would still be one more key.
+      ...(this.config.scope ? { scope: this.config.scope } : {}),
     });
 
     // Check if authenticated using the keycloak-js instance directly
